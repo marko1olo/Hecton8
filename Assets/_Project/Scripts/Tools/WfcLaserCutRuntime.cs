@@ -36,6 +36,7 @@ namespace Hecton8.Tools
         private static readonly int _CutProgressId = Shader.PropertyToID("_WfcLaserCutProgress01");
         private static readonly int _CutHeatId = Shader.PropertyToID("_WfcLaserCutHeat01");
         private static readonly int _CutMoltenId = Shader.PropertyToID("_WfcLaserCutMolten01");
+        private static readonly int _CutOverkillId = Shader.PropertyToID("_WfcLaserCutOverkill01");
 
         private static VaultBufferHandle<float> _cutProgressHandle;
         private static VaultBufferHandle<WfcLaserCutTelemetryEntry> _blackBoxHandle;
@@ -112,7 +113,7 @@ namespace Hecton8.Tools
                 telemetryFlags,
                 blackBox);
 
-            PublishShaderClipGlobals(runtimeHitPoint, progress01, safeHeat);
+            PublishShaderClipGlobals(runtimeHitPoint, progress01, safeHeat, systemStress01);
             PublishReactiveFeedback(hitAup, toolHash, sectorHash, cellIndex, progress01, safePower, safeHeat, systemStress01, frame);
             door.ApplyWfcOutpostLaserCutProgress(progress01, frame);
 
@@ -243,13 +244,30 @@ namespace Hecton8.Tools
             return math.saturate(_latestSystemStress01);
         }
 
-        private static void PublishShaderClipGlobals(Vector3 runtimeHitPoint, float progress01, float heat01)
+        private static void PublishShaderClipGlobals(Vector3 runtimeHitPoint, float progress01, float heat01, float systemStress01)
         {
             float radius = math.lerp(BaseClipRadiusMeters, MaxClipRadiusMeters, math.saturate(progress01));
             Shader.SetGlobalVector(_CutSphereWsId, new Vector4(runtimeHitPoint.x, runtimeHitPoint.y, runtimeHitPoint.z, radius));
             Shader.SetGlobalFloat(_CutProgressId, math.saturate(progress01));
             Shader.SetGlobalFloat(_CutHeatId, math.saturate(heat01));
             Shader.SetGlobalFloat(_CutMoltenId, math.saturate(heat01 * (0.35f + progress01)));
+            Shader.SetGlobalFloat(_CutOverkillId, ResolveVisualOverkill01(systemStress01));
+        }
+
+        private static float ResolveVisualOverkill01(float systemStress01)
+        {
+            if (systemStress01 > StressSparkDropThreshold)
+                return 0f;
+
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            if (tier == HectonQualityTier.Ultra)
+                return 1f;
+            if (tier == HectonQualityTier.High)
+                return 0.7f;
+            if (tier == HectonQualityTier.Mid)
+                return 0.2f;
+
+            return 0f;
         }
 
         private static void PublishReactiveFeedback(

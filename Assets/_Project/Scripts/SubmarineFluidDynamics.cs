@@ -144,7 +144,6 @@ namespace Hecton8.Physics
         private const float DefaultCavitationStallSpeedMetersPerSecond = 2f;
         private const float DefaultCavitationCooldownSeconds = 0.35f;
         private const int ExteriorBuoyancySampleCount = 8;
-        private const int MaxQueuedSplashEvents = 32;
         private const int ExteriorThermalAnomalyCapacity = 8;
         private const int ExteriorThermalContactCapacity = 16;
         private const int VaultCompartmentFloodVolumesFlag = 1 << 0;
@@ -586,7 +585,6 @@ namespace Hecton8.Physics
         private bool _baselineMassCached;
         private bool _massPropertiesJobRunning;
         private bool _hullImplosionActive;
-        private int _queuedSplashEventCount;
         private int _hydroBlackBoxCursor;
         private bool _hydroBlackBoxDumped;
         private CompartmentState[] _compartmentStates;
@@ -634,8 +632,6 @@ namespace Hecton8.Physics
         private NativeArray<HydroKinematicJobInput> _hydroKinematicInput;
         private NativeArray<HydroKinematicJobOutput> _hydroKinematicOutput;
         private NativeArray<HydroBlackBoxEntry> _hydroBlackBox;
-        private NativeQueue<SplashEvent> _splashEventQueue;
-        private string _splashEventQueueSentinelLabel;
         private FluidMathCore _fluidMathCore;
         private bool _fluidSimulationRegistered;
         private bool _isBrineSubmerged;
@@ -1055,7 +1051,7 @@ namespace Hecton8.Physics
         public float FloodFillRatio => _floodFillRatio;
 
         /// <summary>Number of deferred splash payloads available for downstream VFX polling.</summary>
-        public int PendingSplashEventCount => _queuedSplashEventCount;
+        public int PendingSplashEventCount => 0;
 
         /// <summary>Reported local-space flood centroid for telemetry, audio, or VFX queries.</summary>
         public Vector3 ReportedFloodCenterOfMassLocal => _reportedFloodCenterOfMassLocal;
@@ -1653,21 +1649,8 @@ namespace Hecton8.Physics
         /// <returns>True when a splash payload was dequeued.</returns>
         public bool TryDequeueSplashEvent(out SplashEvent splashEvent)
         {
-            if (!_splashEventQueue.IsCreated || _queuedSplashEventCount <= 0)
-            {
-                splashEvent = default;
-                return false;
-            }
-
-            if (!_splashEventQueue.TryDequeue(out splashEvent))
-            {
-                splashEvent = default;
-                _queuedSplashEventCount = 0;
-                return false;
-            }
-
-            _queuedSplashEventCount--;
-            return true;
+            splashEvent = default;
+            return false;
         }
 
         /// <summary>

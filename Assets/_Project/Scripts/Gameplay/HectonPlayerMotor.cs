@@ -26,17 +26,17 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Player/Hecton Player Motor")]
     public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces, IPostFixedTickable, ILateFrameTickable, IInventoryEventListener
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 16, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
         private struct ScheduledSweepState
         {
-            public Vector3 StartPosition;
-            public Vector3 CapsulePoint1;
-            public Vector3 CapsulePoint2;
-            public Vector3 Direction;
-            public float CapsuleRadius;
-            public float Distance;
-            public int SelfColliderInstanceId;
-            public float SkinWidth;
+            [FieldOffset(0)] public Vector3 StartPosition;
+            [FieldOffset(12)] public Vector3 CapsulePoint1;
+            [FieldOffset(24)] public Vector3 CapsulePoint2;
+            [FieldOffset(36)] public Vector3 Direction;
+            [FieldOffset(48)] public float CapsuleRadius;
+            [FieldOffset(52)] public float Distance;
+            [FieldOffset(56)] public int SelfColliderInstanceId;
+            [FieldOffset(60)] public float SkinWidth;
         }
 
         private const float MinVectorMagnitudeSq = 0.000001f;
@@ -81,11 +81,7 @@ namespace Hecton8.Gameplay
         private const float SdfSqueezeVelocityMetersPerSecond = 0.65f;
         private const float SdfSqueezeCorrectionMaxMeters = 0.22f;
         private const float SdfSqueezeMaxCandidateSolidDensity = 0.02f;
-        private const float SdfSqueezeHapticIntensity = 0.12f;
         private const float SdfSqueezeCameraSeverity = 0.72f;
-        private const float SdfFabricScrapeRadiusMeters = 5.5f;
-        private const float SdfFabricScrapeIntensity = 0.08f;
-        private const uint SdfFabricScrapeFrameMask = 7u;
         private const float DirectionalDragDominantAxisThresholdSq = 100f;
         private const float DirectionalDragSpeedSqPolynomialScale = 0.01f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1480,8 +1476,7 @@ namespace Hecton8.Gameplay
             if (HectonFloatingOrigin.IsShiftInProgress)
                 return false;
 
-            float3 sample3 = new float3(samplePosition.x, samplePosition.y, samplePosition.z);
-            if (!math.all(math.isfinite(sample3)) ||
+            if (!TryResolveAupRuntimeSample(samplePosition, out float3 sample3) ||
                 !HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload(
                     samplePosition,
                     out NativeArray<byte> encodedSdf,
@@ -1558,6 +1553,22 @@ namespace Hecton8.Gameplay
 
             squeezeDirection = SafeVelocity(new Vector3(squeeze3.x, squeeze3.y, squeeze3.z), Vector3.zero);
             return squeezeDirection.sqrMagnitude > MinVectorMagnitudeSq;
+        }
+
+        private static bool TryResolveAupRuntimeSample(Vector3 runtimePosition, out float3 sample)
+        {
+            sample = default;
+            float3 runtime3 = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(runtime3)))
+                return false;
+
+            AbsoluteUniversePosition sampleAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            double3 runtimeFromAup = sampleAup.ToAbsoluteDouble3() - HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(runtimeFromAup)))
+                return false;
+
+            sample = new float3((float)runtimeFromAup.x, (float)runtimeFromAup.y, (float)runtimeFromAup.z);
+            return math.all(math.isfinite(sample));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1654,36 +1665,10 @@ namespace Hecton8.Gameplay
             stateSignal.Flags = flags;
             GlobalSignals.Publish(in stateSignal);
 
-            HapticRequest haptic = default;
-            haptic.Intensity01 = math.saturate(SdfSqueezeHapticIntensity * intensity);
-            haptic.DurationSeconds = 0.09f;
-            haptic.Frequency01 = 0.38f;
-            haptic.SourceHash = _kinematicCcdSourceHash;
-            haptic.Frame = frame;
-            haptic.Channel = HapticRequest.ChannelGearScrape;
-            haptic.Flags = flags;
-            GlobalSignals.Publish(in haptic);
-
             CameraJuiceSignals.PublishImpact(
                 math.saturate(SdfSqueezeCameraSeverity * intensity),
                 position,
                 squeezeDirection);
-
-            uint randomGate = math.hash(new uint3(
-                unchecked((uint)PhysicsFrame.Current),
-                _sdfSqueezeInterventions,
-                _kinematicCcdSourceHash));
-            if ((randomGate & SdfFabricScrapeFrameMask) != 0u)
-                return;
-
-            AcousticPingSignal acoustic = default;
-            acoustic.PositionAup = positionAup;
-            acoustic.RadiusMeters = SdfFabricScrapeRadiusMeters;
-            acoustic.Intensity01 = math.saturate(SdfFabricScrapeIntensity * intensity);
-            acoustic.SourceId = _kinematicCcdSourceHash;
-            acoustic.Channel = AcousticPingSignal.ChannelFabricScrape;
-            acoustic.Flags = AcousticPingSignal.FlagFabricScrape;
-            GlobalSignals.Publish(in acoustic);
         }
 
         internal static float ResolveHeavyBrineSinkMultiplier(float fluidDensityKgPerCubicMeter, float referenceSeaWaterDensityKgPerCubicMeter)

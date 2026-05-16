@@ -260,7 +260,8 @@ namespace Hecton8.Core.Memory
         EcosystemPopulationCullEvents = 207,
         EcosystemPopulationTelemetryRing = 208,
         EcosystemPopulationFreeRing = 209,
-        EcosystemPopulationCounters = 210
+        EcosystemPopulationCounters = 210,
+        ResolutionScaleTelemetry = 211
     }
 
     [Flags]
@@ -299,7 +300,7 @@ namespace Hecton8.Core.Memory
     /// <summary>
     /// Native memory-map descriptor for occupied/free regions owned by <see cref="H8Memory"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
     public struct BlockDescriptor
     {
         public IntPtr BasePointer;
@@ -317,7 +318,7 @@ namespace Hecton8.Core.Memory
     /// <summary>
     /// Blittable record copied to crash dumps and leak-reap passes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     public struct H8AllocationRecord
     {
         public IntPtr Pointer;
@@ -337,7 +338,7 @@ namespace Hecton8.Core.Memory
     /// <summary>
     /// Fixed-size sentinel heartbeat copied into fatal memory dumps.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     public struct H8MemoryTelemetryEntry
     {
         public long TotalBytes;

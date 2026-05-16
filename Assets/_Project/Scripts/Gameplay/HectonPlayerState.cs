@@ -15,7 +15,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Compact player kinematic snapshot owned by the locomotion orchestrator.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 16)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct HectonPlayerState
     {
         private const float PredictionHorizonSeconds = 0.1f;
@@ -96,7 +96,7 @@ namespace Hecton8.Gameplay
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct PlayerKinematicsLinearDragJob : IJob
     {
         [ReadOnly] public NativeArray<float3> Velocities;
@@ -125,7 +125,7 @@ namespace Hecton8.Gameplay
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 16)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct PlayerKinematicsNativeState : IDisposable
     {
         public const int KinematicCapacity = 1;
@@ -337,7 +337,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Owns persistent native buffers used by <see cref="HectonPlayerMotor"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 16)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct HectonPlayerMotorNativeState : IDisposable
     {
         public NativeArray<CapsulecastCommand> ScheduledSweepCommands;

@@ -78,9 +78,7 @@ namespace Hecton8.Graphics.Scalability
         private IDynamicResolutionRuntime _dynamicResolutionRuntime;
         private IDataVault _dataVault;
         private VaultBufferHandle<ResolutionScaleState> _scaleStateHandle;
-        private NativeArray<ResolutionScaleState> _scaleState;
-        private NativeArray<ResolutionScaleState> _fallbackScaleState;
-        private NativeArray<DrsTelemetryEntry> _telemetryRing;
+        private VaultBufferHandle<DrsTelemetryEntry> _telemetryHandle;
         private JobHandle _stressEwmaHandle;
         private int _telemetryCursor;
         private uint _sequence;
@@ -128,24 +126,41 @@ namespace Hecton8.Graphics.Scalability
         public byte HardwareTier => _hardwareTier;
         public bool StpActive => _stpActive;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
         private struct DrsTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public float CurrentScale01;
+            [FieldOffset(8)]
             public float TargetScale01;
+            [FieldOffset(12)]
             public float FrameTimeEwmaMs;
+            [FieldOffset(16)]
             public float SystemStress01;
+            [FieldOffset(20)]
             public float SystemStressEwma01;
+            [FieldOffset(24)]
             public float SharpenIntensity01;
+            [FieldOffset(28)]
             public uint Flags;
+            [FieldOffset(32)]
             public uint Sequence;
+            [FieldOffset(36)]
             public byte PressureLevel;
+            [FieldOffset(37)]
             public byte ThermalSeverity;
+            [FieldOffset(38)]
             public byte StpActive;
+            [FieldOffset(39)]
             public byte AupLockFrames;
+            [FieldOffset(40)]
             public ushort HysteresisCounters;
+            [FieldOffset(42)]
             public ushort Reserved;
+            [FieldOffset(44)]
+            public uint Reserved0;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
@@ -219,9 +234,9 @@ namespace Hecton8.Graphics.Scalability
             _lastObservedScaleMilli = ScaleToMilli(_currentScale);
             s_systemScalePercentage = _currentScale * 100f;
             _notificationMessageHash = NotificationEvents.RegisterMessage(NotificationMessage);
-            EnsureTelemetry();
-            ResolveScaleStateBuffer();
-            UpdateScaleState(0);
+            TryResolveTelemetryBuffer(out _);
+            TryResolveScaleStateBuffer(out NativeArray<ResolutionScaleState> scaleState);
+            UpdateScaleState(0, scaleState);
             ApplySharpenGlobal();
             InstallSystemDynamicResolutionScaler();
             RebindDynamicResolutionRuntime(GlobalRegistry.DynamicResolutionRuntime);
@@ -287,16 +302,8 @@ namespace Hecton8.Graphics.Scalability
                 ReleaseSystemDynamicResolutionScaler();
             }
 
-            if (_telemetryRing.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
-                _telemetryRing.Dispose();
-                _telemetryRing = default;
-            }
-
-            ReleaseFallbackScaleState();
-            _scaleState = default;
             _scaleStateHandle = default;
+            _telemetryHandle = default;
             _dataVault = null;
         }
 
@@ -306,7 +313,7 @@ namespace Hecton8.Graphics.Scalability
             if (!ReferenceEquals(s_activeAdapter, this))
                 return;
 
-            ResolveScaleStateBuffer();
+            TryResolveScaleStateBuffer(out NativeArray<ResolutionScaleState> scaleState);
             ConsumeSignals();
             _latestFrameTimeEwmaMs = SanitizePositive(_latestFrameTimeEwmaMs, TargetFrameTimeMs);
             _latestSystemHealth01 = Sanitize01(_latestSystemHealth01);
@@ -317,9 +324,9 @@ namespace Hecton8.Graphics.Scalability
             if (_latestSystemStressEwma01 <= 0f)
                 _latestSystemStressEwma01 = _latestSystemStress01;
 
-            if (RecoverInvalidScaleState())
+            if (RecoverInvalidScaleState(scaleState))
             {
-                ScheduleStressEwmaJob(_latestSystemStress01);
+                ScheduleStressEwmaJob(_latestSystemStress01, scaleState);
                 return;
             }
 
@@ -335,9 +342,9 @@ namespace Hecton8.Graphics.Scalability
                 _targetScale = _currentScale;
                 CommitRuntimeSnapshot(flags);
                 _aupShiftLockFrames--;
-                UpdateScaleState(flags);
+                UpdateScaleState(flags, scaleState);
                 WriteTelemetry(flags);
-                ScheduleStressEwmaJob(_latestSystemStress01);
+                ScheduleStressEwmaJob(_latestSystemStress01, scaleState);
                 return;
             }
 
@@ -372,18 +379,17 @@ namespace Hecton8.Graphics.Scalability
                 _notificationArmed = true;
             }
 
-            UpdateScaleState(flags);
+            UpdateScaleState(flags, scaleState);
             WriteTelemetry(flags);
-            ScheduleStressEwmaJob(_latestSystemStress01);
+            ScheduleStressEwmaJob(_latestSystemStress01, scaleState);
         }
 
         public bool TryGetScaleState(out ResolutionScaleState state)
         {
             CompletePendingStressJob();
-            ResolveScaleStateBuffer();
-            if (_scaleState.IsCreated && _scaleState.Length > 0)
+            if (TryResolveScaleStateBuffer(out NativeArray<ResolutionScaleState> scaleState))
             {
-                state = _scaleState[0];
+                state = scaleState[0];
                 return true;
             }
 

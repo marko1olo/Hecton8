@@ -7,7 +7,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Assembly marker for isolated core contract-only packages.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct CoreContractsAssemblyMarker
     {
     }
@@ -57,37 +57,69 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Last committed dynamic-resolution runtime state, stored without managed payloads.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 24)]
     public struct DynamicResolutionRuntimeSnapshot
     {
+        [FieldOffset(0)]
         public float CurrentRenderScale01;
+        [FieldOffset(4)]
         public float TargetRenderScale01;
+        [FieldOffset(8)]
         public float FrameTimeEwmaMs;
+        [FieldOffset(12)]
         public byte PressureLevel;
+        [FieldOffset(13)]
         public byte Flags;
+        [FieldOffset(16)]
         public uint Frame;
+        [FieldOffset(20)]
         public uint Sequence;
     }
 
     /// <summary>
     /// DataVault-backed STP render-scale state. One element is owned by the graphics scalability adapter.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
     public struct ResolutionScaleState
     {
+        [FieldOffset(0)]
         public float CurrentRenderScale01;
+        [FieldOffset(4)]
         public float TargetRenderScale01;
+        [FieldOffset(8)]
         public float SystemStress01;
+        [FieldOffset(12)]
         public float SystemStressEwma01;
+        [FieldOffset(16)]
         public float FrameTimeEwmaMs;
+        [FieldOffset(20)]
         public float SharpenIntensity01;
+        [FieldOffset(24)]
         public uint Frame;
+        [FieldOffset(28)]
         public uint Sequence;
+        [FieldOffset(32)]
         public byte HardwareTier;
+        [FieldOffset(33)]
         public byte StpActive;
+        [FieldOffset(34)]
         public byte Flags;
+        [FieldOffset(35)]
         public byte AupLockFrames;
+        [FieldOffset(36)]
         public int Reserved0;
+        [FieldOffset(40)]
+        public int Reserved1;
+        [FieldOffset(44)]
+        public int Reserved2;
+        [FieldOffset(48)]
+        public int Reserved3;
+        [FieldOffset(52)]
+        public int Reserved4;
+        [FieldOffset(56)]
+        public int Reserved5;
+        [FieldOffset(60)]
+        public int Reserved6;
     }
 
     /// <summary>

@@ -30,13 +30,16 @@ namespace Hecton8.AI.Cognition
                 (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.HasSonarPing) != 0u &
                 stimulus.SonarPingAgeSeconds <= AlphaLeviathanStalkConstants.SonarLureHoldSeconds &
                 stimulus.SonarPingIntensity01 > AlphaLeviathanStalkConstants.DirectionEpsilon;
+            bool hasTrackingAnchor = hasPlayerAnchor | sonarActive;
+            float systemStress = math.saturate(math.select(0f, stimulus.SystemStress01, math.isfinite(stimulus.SystemStress01)));
             bool lowTier =
                 (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.MathLodLow) != 0u |
-                stimulus.SystemStress01 > 0.8f;
+                systemStress > 0.8f;
             bool highTierSdf =
                 (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.HighTierSdfContour) != 0u &
                 !lowTier;
             bool shiftChanged = stimulus.ObservedShiftFrameId != state.LastShiftFrameId;
+            ushort slotId = (ushort)math.min(index, (int)ushort.MaxValue);
 
             AlphaLeviathanAup anchor = SelectAup(stimulus.PlayerAup, stimulus.PingAup, sonarActive);
             double3 anchorAbsolute = anchor.ToAbsoluteDouble3();
@@ -86,7 +89,7 @@ namespace Hecton8.AI.Cognition
                           !lightRetreat;
 
             int phase = AlphaLeviathanStalkPhase.Circle;
-            phase = math.select(phase, AlphaLeviathanStalkPhase.Idle, !active | !hasPlayerAnchor);
+            phase = math.select(phase, AlphaLeviathanStalkPhase.Idle, !active | !hasTrackingAnchor);
             phase = math.select(phase, AlphaLeviathanStalkPhase.Charge, charge);
             phase = math.select(phase, AlphaLeviathanStalkPhase.Retreat, lightRetreat);
 
@@ -107,7 +110,7 @@ namespace Hecton8.AI.Cognition
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.AcousticLure, sonarActive);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.LightRetreat, lightRetreat);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.ShiftFenceReset, shiftChanged);
-            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.Fault, !validDelta);
+            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.Fault, !validDelta & active & hasTrackingAnchor);
 
             uint stateHash = BuildStateHash(index, (byte)phase, flags, aggression, Frame);
             state.TargetAnchorAup = anchor;
@@ -118,6 +121,7 @@ namespace Hecton8.AI.Cognition
             state.Flags = flags;
             state.LastShiftFrameId = stimulus.ObservedShiftFrameId;
             state.StateHash = stateHash;
+            state.Slot = slotId;
             state.Reserved0 = 0u;
             States[index] = state;
 
@@ -156,7 +160,7 @@ namespace Hecton8.AI.Cognition
                 HullDentImpulse01 = dentImpulse,
                 SubsurfaceScatterPulse01 = sssPulse,
                 ParticleOverkillBudget01 = particleBudget,
-                Slot = state.Slot,
+                Slot = slotId,
                 CurrentPhase = (byte)phase,
                 Flags = flags,
             };
@@ -167,7 +171,7 @@ namespace Hecton8.AI.Cognition
             TelemetryRing[telemetryIndex] = new AlphaLeviathanTelemetryEntry
             {
                 Frame = Frame,
-                Slot = state.Slot,
+                Slot = slotId,
                 Phase = (byte)phase,
                 Flags = flags,
                 DistanceToPlayerMeters = distanceMeters,

@@ -744,6 +744,12 @@ namespace Hecton8.Gameplay
         private const float SdfSqueezeCo2EquivalentPressureKPa = 0.12f;
         private const float SdfSqueezeOxygenDrainScaleBonus = 0.35f;
         private const float SdfSqueezeRollDegrees = 3.0f;
+        private const float SdfSqueezeVisualImpulseMinStress01 = 0.35f;
+        private const float SdfSqueezeVisualImpulseVelocityScale = 0.35f;
+        private const float SdfSqueezeVisualImpulseBaseRadiusMeters = 0.9f;
+        private const float SdfSqueezeVisualImpulseExtraRadiusMeters = 1.3f;
+        private const float SdfSqueezeVisualImpulseBaseLifetimeSeconds = 0.45f;
+        private const float SdfSqueezeVisualImpulseExtraLifetimeSeconds = 0.65f;
         private const float SdfSqueezeSystemStressSlowThreshold01 = 0.8f;
         private const int SdfSqueezeSlowCadenceFrameInterval = 5;
         private const float BracePhaseWrap = 1024.0f;
@@ -2198,6 +2204,7 @@ namespace Hecton8.Gameplay
             PublishSdfSqueezePhysiology(stress01, playerState.Frame);
             PublishSdfSqueezeGasLoad(stress01);
             TryPublishSdfSqueezeFeedback(in positionAup, stress01, pushSpeed, playerState.Frame);
+            TryPublishSdfSqueezeVisualImpulse(in positionAup, result.Normal, velocity, stress01, playerState.Frame);
             WriteSdfSqueezeTelemetry(in result, position, velocity);
         }
 
@@ -2254,6 +2261,38 @@ namespace Hecton8.Gameplay
             GlobalSignals.Publish(in acoustic);
 
             _sdfSqueezeFeedbackCooldown = SdfSqueezeFeedbackCooldownSeconds;
+        }
+
+        private void TryPublishSdfSqueezeVisualImpulse(
+            in AbsoluteUniversePosition positionAup,
+            float3 normal,
+            float3 velocity,
+            float stress01,
+            uint frame)
+        {
+            float intensity = SanitizeUnit(stress01);
+            if (!IsHighScalabilityTier() || intensity < SdfSqueezeVisualImpulseMinStress01)
+                return;
+
+            float3 safeNormal = SafeNormalize(normal, float3.zero);
+            float3 safeVelocity = SanitizeFloat3(velocity, float3.zero);
+            float3 vector = safeNormal * (0.65f + intensity * 1.15f) +
+                            safeVelocity * SdfSqueezeVisualImpulseVelocityScale;
+            float vectorSq = math.lengthsq(vector);
+            if (!math.isfinite(vectorSq) || vectorSq <= 0.000001f)
+                return;
+
+            FluidImpulseSignal impulse = default;
+            impulse.PositionAup = positionAup;
+            impulse.Vector = vector;
+            impulse.Radius = SdfSqueezeVisualImpulseBaseRadiusMeters +
+                             intensity * SdfSqueezeVisualImpulseExtraRadiusMeters;
+            impulse.Lifetime = SdfSqueezeVisualImpulseBaseLifetimeSeconds +
+                               intensity * SdfSqueezeVisualImpulseExtraLifetimeSeconds;
+            impulse.Frame = frame;
+            impulse.SourceHash = _sourceId;
+            impulse.Flags = PlayerStateSignal.FlagSqueezing | PlayerStateSignal.FlagSdfGradientValid;
+            GlobalSignals.Publish(in impulse);
         }
 
         private void WriteSdfSqueezeTelemetry(in SdfSqueezeResult result, float3 position, float3 velocity)
@@ -2457,6 +2496,12 @@ namespace Hecton8.Gameplay
                 _accumulatorState.SqueezeInterventions++;
             }
 
+            float stress01 = SanitizeUnit(signal.Intensity01);
+            PublishSdfSqueezePhysiology(stress01, signal.Frame);
+            PublishSdfSqueezeGasLoad(stress01);
+            TryPublishSdfSqueezeFeedback(in signal.PositionAup, stress01, stress01, signal.Frame);
+            float3 externalVelocity = _body != null ? ToFloat3(_body.linearVelocity) : ReadVelocitySnapshot(float3.zero);
+            TryPublishSdfSqueezeVisualImpulse(in signal.PositionAup, float3.zero, externalVelocity, stress01, signal.Frame);
             WriteSqueezeTelemetry(in signal);
         }
 
