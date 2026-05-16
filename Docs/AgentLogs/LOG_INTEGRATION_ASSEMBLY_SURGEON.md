@@ -77,3 +77,107 @@ Residual risk:
 
 Current Status:
 - VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-16 - Loop42 Helper Repair Revalidation
+
+What was wrong:
+- Loop41 failed after a concurrent partial merge left `BinaryLayoutManifest` calling reflection helpers before those helper methods were present on disk.
+
+What was done:
+- Re-added `AssertSize(Type,int)`, `AssertOffset(Type,string,int)`, `AssertResolved(Type,string)`, and `ResolveOptionalType(string)`.
+- Reconfirmed `EcosystemRuntimeInstaller` and `BinaryLayoutManifest` have no hard `using Hecton8.AI.Ecosystem` dependency and no banned find calls.
+
+Cinematic Cheats used:
+- No gameplay/visual feature added.
+- Compile boundary remains optional cold-path reflection only.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Loop41 failed compile time: 28,780,000 us.
+- Loop42 successful compile time: 52,200,000 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_113845_Loop42.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- ASMDEF scan remained `ASMDEF_COUNT=94`, `AUTO_REFERENCED_TRUE_COUNT=0`.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, Quest/Android player build, Metal player build, and IL2CPP strip build were not run.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-16 - Loop39 AI Boundary and ASMDEF Tail Closure
+
+What was wrong:
+- Loop38 failed on current disk with 2 CS0234 errors: `EcosystemRuntimeInstaller.cs` and `BinaryLayoutManifest.cs` reintroduced a hard Core dependency on `Hecton8.AI.Ecosystem`.
+- `Directory.Build.targets` again forced `Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs` into the Core compile lane.
+- `Hecton8.Core.Content.Editor.asmdef` reverted to `autoReferenced: true`, violating the strict manual dependency graph.
+- `_MATH_LOD_LOW` had runtime/shader paths but lacked a robust explicit low-tier MSBuild property trigger.
+
+What was done:
+- Converted `EcosystemRuntimeInstaller` to cold-path reflection for optional `EcosystemPopulationBalancer`.
+- Converted `BinaryLayoutManifest` ecosystem population layout checks to optional reflection by full type name, preserving validation when the leaf assembly is loaded without forcing Core to reference it.
+- Removed the forced `EcosystemPopulationBalancer.cs` include from `Directory.Build.targets`.
+- Set `Hecton8.Core.Content.Editor.asmdef` to `autoReferenced: false`.
+- Added `_MATH_LOD_LOW` injection for Android, explicit low-tier defines, `HectonMathLodLow=true`, and `HectonBuildTier=Low`.
+
+Cinematic Cheats used:
+- No gameplay feature or visual simulation was added.
+- Low-tier gets the compile define for cheap math paths.
+- Normal standalone/editor and High/Ultra PC remain outside toaster-mode defines, preserving visual-overkill paths.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Loop38 failed compile time: 34,430,000 us.
+- Loop39 successful compile time: 60,510,000 us.
+- Measured compile/runtime speedup claim: none.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_112626_Loop39.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Dump_COMPILE_ERROR.txt`: preserves Loop38 failure for other agents.
+- ASMDEF scan: `ASMDEF_COUNT=94`, `AUTO_REFERENCED_TRUE_COUNT=0`.
+- ASMDEF graph scan: `ASMDEF_CYCLES=0`, `MISSING_HECTON8_REFERENCES=0`.
+- `Hecton8.Core.asmdef`: no stale `Hecton8.World.GPR`, `World.GPR`, or `Hecton8.AI.Ecosystem` reference.
+- MSBuild define probe with `HectonMathLodLow=true` returned `_MATH_LOD_LOW`.
+- DI anti-bloat scan of touched files found no `GameObject.Find` or `FindObjectOfType` calls.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, Quest/Android player build, Metal player build, and IL2CPP strip build were not run.
+- Git tree contains concurrent agent edits. Do not stage the whole tree as this agent's work.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-16 - Tail08 Green Integration Snapshot
+
+What was wrong:
+- A post-commit concurrent dirty tail made `Dump_COMPILE_ERROR.txt` stale. It reported direct `Hecton8.AI.Ecosystem` namespace errors that were already absent from current source.
+- Later `Core/Bridge` and ecosystem files changed timestamps after the first tail builds.
+- Tail05 failed on missing `BinaryBlittableSafe` import; the current `H8BridgeContracts` source contains `using Hecton8.Core.Memory.Layout`.
+- Tail06 failed on missing `BinaryLayoutManifest` Type helper methods; those helpers were restored.
+- Later bridge/content edits landed after tail07, so tail08 is the current-disk proof.
+- The git tree was ahead of origin by one local commit and still contained new uncommitted agent work.
+
+What was done:
+- Re-read `Status_INTEGRATION_ASSEMBLY_SURGEON.md`, `Rationale_INTEGRATION_ASSEMBLY_SURGEON.md`, and the exact `CURRENT_BATCH.md` XML block.
+- Rechecked current `EcosystemRuntimeInstaller` and `BinaryLayoutManifest`: both avoid direct ecosystem namespace usings and resolve optional ecosystem types by name/reflection.
+- Ran fresh normal Core compile on current disk after the bridge and binary-layout repairs landed.
+
+Cinematic Cheats used:
+- No gameplay/visual feature added by Integrator.
+- Compile-only evidence pass preserved low-tier platform guards and high-tier visual feature paths.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Tail compile verification time: 74,320,000 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_tail08.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `git diff --check`: no whitespace errors, only CRLF conversion warnings.
+- Conflict marker audit: no real `<<<<<<<`, `=======`, `>>>>>>>` markers in active source/docs scan.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.

@@ -66,10 +66,15 @@ namespace Hecton8.Core.Content
             ObjectBatchInstance[] bakedInstances,
             ObjectBatchChunk[] bakedChunks)
         {
+#if UNITY_EDITOR
+            if (Application.isPlaying)
+                return;
+
             meshes = bakedMeshes ?? Array.Empty<Mesh>();
             materials = bakedMaterials ?? Array.Empty<Material>();
             instances = bakedInstances ?? Array.Empty<ObjectBatchInstance>();
             chunks = bakedChunks ?? Array.Empty<ObjectBatchChunk>();
+#endif
         }
 
         public abstract void BindToBatchRendererGroup(BatchRendererGroup group);

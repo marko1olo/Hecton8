@@ -905,6 +905,16 @@ namespace Hecton8.Gameplay.Loot
                 }
 
                 float3 runtime = views.EntityAups[index].ToRuntimeFloat3();
+                if (!IsFiniteFloat3(runtime))
+                {
+                    fault = true;
+                    telemetryFlags |= TelemetryPickupPoseNonFiniteFlag;
+                    views.EntityFlags[index] = flags | LootEntityFlags.NonFinite;
+                    pickup.RestoreLootMagnetRuntimeState();
+                    FoldActiveSlotHash(in views, ref flagsHash, ref lastActiveIndex, index);
+                    continue;
+                }
+
                 pickup.ApplyLootMagnetPose(
                     new Vector3(runtime.x, runtime.y, runtime.z),
                     slotVelocity,
@@ -1041,6 +1051,12 @@ namespace Hecton8.Gameplay.Loot
                     continue;
 
                 float3 runtime = aup.ToRuntimeFloat3();
+                if (!IsFiniteFloat3(runtime))
+                {
+                    pickup.RestoreLootMagnetRuntimeState();
+                    continue;
+                }
+
                 pickup.ApplyLootMagnetPose(
                     new Vector3(runtime.x, runtime.y, runtime.z),
                     views.EntityVelocities[index],
@@ -1084,6 +1100,11 @@ namespace Hecton8.Gameplay.Loot
             return math.isfinite(position.x) &&
                    math.isfinite(position.y) &&
                    math.isfinite(position.z);
+        }
+
+        private static bool IsFiniteFloat3(float3 value)
+        {
+            return math.all(math.isfinite(value));
         }
 
         private static float SanitizeFiniteRange(

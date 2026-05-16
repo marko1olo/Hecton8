@@ -64,6 +64,27 @@ namespace Hecton8.Core.Bridge
                 lastAppliedValue = value;
             }
 
+            public void ConfigureVisualDefaults(
+                string name,
+                int offset,
+                float defaultValue,
+                float min,
+                float max,
+                int vramWidth,
+                int vramHeight,
+                int vramMipCount,
+                int vramBytesPerPixel)
+            {
+                ConfigureDefaults(name, offset, defaultValue, min, max, false);
+                affectsVram = vramWidth > 0 && vramHeight > 0;
+                textureWidth = math.max(1, vramWidth);
+                textureHeight = math.max(1, vramHeight);
+                textureMipCount = math.max(1, vramMipCount);
+                textureBytesPerPixel = math.max(1, vramBytesPerPixel);
+                oneDimensionalLutHash = H8BridgeHashes.ComputeFnv1A(name, H8BridgeHashes.LutSeed);
+                highTierVisualHash = H8BridgeHashes.ComputeFnv1A(name, H8BridgeHashes.VisualOverkillSeed);
+            }
+
             public bool SanitizeAndDetectChange(out float oldSerializedValue)
             {
                 oldSerializedValue = lastAppliedValue;
@@ -136,8 +157,6 @@ namespace Hecton8.Core.Bridge
             private void RebuildHash()
             {
                 fieldHash = H8BridgeHashes.ComputeFnv1A(displayName);
-                if (oneDimensionalLutHash == 0u)
-                    oneDimensionalLutHash = H8BridgeHashes.ComputeFnv1A(displayName, H8BridgeHashes.LutSeed);
             }
         }
 
@@ -212,8 +231,40 @@ namespace Hecton8.Core.Bridge
             floatBindings.Add(addedMass);
 
             FloatBinding visorLut = new FloatBinding();
-            visorLut.ConfigureDefaults("VisorSaltCrystalLut", 8, 1f, 0f, 1f, false);
+            visorLut.ConfigureVisualDefaults("VisorSaltCrystalLut01", 8, 1f, 0f, 1f, 1024, 1, 1, 4);
             floatBindings.Add(visorLut);
+
+            FloatBinding triangleNoise = new FloatBinding();
+            triangleNoise.ConfigureVisualDefaults("ToasterTriangleNoise01", 12, 0.35f, 0f, 1f, 256, 1, 1, 4);
+            floatBindings.Add(triangleNoise);
+
+            FloatBinding dotProductVision = new FloatBinding();
+            dotProductVision.ConfigureDefaults("DotProductVisionMask01", 16, 0.75f, 0f, 1f, false);
+            floatBindings.Add(dotProductVision);
+
+            FloatBinding siltWake = new FloatBinding();
+            siltWake.ConfigureVisualDefaults("VolumetricSiltWake01", 20, 1f, 0f, 1f, 512, 512, 6, 4);
+            floatBindings.Add(siltWake);
+
+            FloatBinding hullDents = new FloatBinding();
+            hullDents.ConfigureVisualDefaults("ProceduralHullDents01", 24, 1f, 0f, 1f, 2048, 2048, 8, 4);
+            floatBindings.Add(hullDents);
+
+            FloatBinding raymarchSteps = new FloatBinding();
+            raymarchSteps.ConfigureDefaults("RaymarchStepBudget", 28, 16f, 1f, 64f, false);
+            floatBindings.Add(raymarchSteps);
+
+            FloatBinding pomTaps = new FloatBinding();
+            pomTaps.ConfigureDefaults("PomTapCount", 32, 16f, 1f, 16f, false);
+            floatBindings.Add(pomTaps);
+
+            FloatBinding subsurface = new FloatBinding();
+            subsurface.ConfigureVisualDefaults("SubsurfaceScatterWeight01", 36, 0.85f, 0f, 1f, 1024, 1024, 6, 4);
+            floatBindings.Add(subsurface);
+
+            FloatBinding particleBudget = new FloatBinding();
+            particleBudget.ConfigureDefaults("ParticleOverkillBudget01", 40, 1f, 0f, 1f, false);
+            floatBindings.Add(particleBudget);
         }
 
         private void ValidateBindings(bool pushLive)
@@ -224,7 +275,7 @@ namespace Hecton8.Core.Bridge
             if (oneDimensionalLutHash == 0u)
                 oneDimensionalLutHash = H8BridgeHashes.ComputeFnv1A(name, H8BridgeHashes.LutSeed);
             if (highTierVisualHash == 0u)
-                highTierVisualHash = H8BridgeHashes.ComputeFnv1A(name, H8BridgeHashes.AcousticSeed);
+                highTierVisualHash = H8BridgeHashes.ComputeFnv1A(name, H8BridgeHashes.VisualOverkillSeed);
 
             bool changed = false;
             for (int i = 0; i < floatBindings.Count; i++)

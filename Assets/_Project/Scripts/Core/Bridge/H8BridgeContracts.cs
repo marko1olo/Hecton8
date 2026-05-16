@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Core.Memory.Layout;
 
 namespace Hecton8.Core.Bridge
 {
@@ -29,6 +30,7 @@ namespace Hecton8.Core.Bridge
         HighTierVisualOverkill = 1 << 5
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     public struct H8PrefabMappingEntry
     {
@@ -45,6 +47,7 @@ namespace Hecton8.Core.Bridge
         public uint Reserved1;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct H8PrefabLoreLinkEntry
     {
@@ -58,6 +61,7 @@ namespace Hecton8.Core.Bridge
         public uint Reserved1;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct H8DesignValueEntry
     {
@@ -72,6 +76,7 @@ namespace Hecton8.Core.Bridge
         public ushort Reserved;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
     public struct H8FacadeTelemetryEntry
     {
@@ -87,6 +92,7 @@ namespace Hecton8.Core.Bridge
         public ushort Reserved;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct H8InputFacadeBindingEntry
     {
@@ -101,6 +107,7 @@ namespace Hecton8.Core.Bridge
         public uint Reserved3;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     public struct H8FacadeMacroHeader
     {
@@ -134,6 +141,9 @@ namespace Hecton8.Core.Bridge
         public const uint LoreSeed = 0x10AE0001u;
         public const uint AddressSeed = 0xADAD0001u;
         public const uint LutSeed = 0x1D105EEDu;
+        public const uint VisualOverkillSeed = 0x4090F00Du;
+        public const uint BridgeHeartbeat = 0xB10B0001u;
+        public const uint BridgeLayoutFault = 0xB10B0002u;
         public const ulong FacadeMacroHeaderSectorHash = 0xFACADEB8D0D00001UL;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -208,6 +218,7 @@ namespace Hecton8.Core.Bridge
 
 namespace Hecton8.Core.Contracts.Signals
 {
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct DataVaultUpdateSignal : ISignal
     {
@@ -221,6 +232,7 @@ namespace Hecton8.Core.Contracts.Signals
         public ushort Flags;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct PrefabAcousticSignatureSignal : ISignal
     {
@@ -234,6 +246,7 @@ namespace Hecton8.Core.Contracts.Signals
         public ushort Reserved;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct PrefabLoreLinkSignal : ISignal
     {

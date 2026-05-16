@@ -43,6 +43,10 @@ namespace Hecton8.Core.Content
         public float RamPressure01;
         public uint StateHash;
         public uint Reserved0;
+        public uint Reserved1;
+        public uint Reserved2;
+        public uint Reserved3;
+        public uint Reserved4;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
@@ -169,6 +173,31 @@ namespace Hecton8.Core.Content
                 state.LastAccessFrame = frame;
                 becameUnused = state.RefCount == 0;
                 states[i] = state;
+                return true;
+            }
+
+            return false;
+        }
+
+        public unsafe bool TryGetState(uint hash, out ContentBundleRefState state)
+        {
+            state = default;
+            if (hash == 0u)
+                return false;
+
+            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
+                return false;
+
+            int count = *countPtr;
+            if ((uint)count > (uint)_capacity)
+                return false;
+
+            for (int i = 0; i < count; i++)
+            {
+                if (states[i].Hash != hash)
+                    continue;
+
+                state = states[i];
                 return true;
             }
 
@@ -327,8 +356,15 @@ namespace Hecton8.Core.Content
         private const uint HologramFlag = 1u << 2;
         private const uint NonFiniteFlag = 1u << 3;
         private const uint VramLedgerOwnerHash = 0xC0A77A57u;
+        private const ulong BlackBoxMagic = 0x484543544F4E3800UL;
+        private const uint BlackBoxEntrySizeBytes = 64u;
         private const int TelemetryCapacity = 300;
         private const int PendingLoadCapacity = 64;
+#if UNITY_ADDRESSABLES_EXIST
+        private const int BundleHandleCapacity = 256;
+#endif
+        private const string BlackBoxRelativePath = "Docs/AgentLogs/Dump_CONTENT_AUTHORITY_DICTATOR.bin";
+        private const string BlackBoxFallbackFileName = "Dump_CONTENT_AUTHORITY_DICTATOR.bin";
 
         [SerializeField] private ContentAssetHashMap assetHashMap;
         [SerializeField] private Mesh hologramProxyMesh;
@@ -340,6 +376,10 @@ namespace Hecton8.Core.Content
         // COLD ALLOC: ContentBundleReferenceCounter[256] - duplicate bundle load guard - owner: ContentAuthorityRuntime
         private readonly ContentBundleReferenceCounter _bundleRefs = new ContentBundleReferenceCounter(256);
 #if UNITY_ADDRESSABLES_EXIST
+        // COLD ALLOC: uint[256] - content bundle handle hashes - owner: ContentAuthorityRuntime
+        private readonly uint[] _bundleHandleHashes = new uint[BundleHandleCapacity];
+        // COLD ALLOC: AsyncOperationHandle[256] - Addressables handles released by content authority - owner: ContentAuthorityRuntime
+        private readonly AsyncOperationHandle[] _bundleHandles = new AsyncOperationHandle[BundleHandleCapacity];
         // COLD ALLOC: List<AsyncOperationHandle>[64] - VFX prewarm handle ledger - owner: ContentAuthorityRuntime
         private readonly List<AsyncOperationHandle> _vfxPrewarmHandles = new List<AsyncOperationHandle>(64);
         // COLD ALLOC: List<AsyncOperationHandle>[64] - resident prewarmed VFX handles for release - owner: ContentAuthorityRuntime
@@ -358,6 +398,8 @@ namespace Hecton8.Core.Content
         private Renderer[] _hologramRenderers;
         private bool _registeredTick;
         private bool _vfxPrewarmStarted;
+        private bool _blackBoxDumpedThisSession;
+        private string _blackBoxDumpPath;
         private int _nextHologramIndex;
         private int _hologramsActive;
 
@@ -373,6 +415,7 @@ namespace Hecton8.Core.Content
             _hologramPool = new GameObject[capacity];
             // COLD ALLOC: Renderer[capacity] - hidden hologram proxy renderers - owner: ContentAuthorityRuntime
             _hologramRenderers = new Renderer[capacity];
+            _blackBoxDumpPath = ResolveBlackBoxDumpPath();
             BuildHologramPool(capacity);
         }
 
@@ -399,6 +442,15 @@ namespace Hecton8.Core.Content
             TryUnregister();
 
 #if UNITY_ADDRESSABLES_EXIST
+            for (int i = 0; i < _bundleHandles.Length; i++)
+            {
+                if (_bundleHandles[i].IsValid())
+                    Addressables.Release(_bundleHandles[i]);
+
+                _bundleHandles[i] = default;
+                _bundleHandleHashes[i] = 0u;
+            }
+
             for (int i = 0; i < _vfxPrewarmHandles.Count; i++)
             {
                 if (_vfxPrewarmHandles[i].IsValid())
@@ -453,6 +505,34 @@ namespace Hecton8.Core.Content
             return accepted;
         }
 
+#if UNITY_ADDRESSABLES_EXIST
+        /// <summary>
+        /// Registers a content-owned Addressables handle. Do not pass handles already owned by AssetLifecycleGovernor.
+        /// </summary>
+        public bool RegisterBundleAcquire(uint hash, AsyncOperationHandle handle)
+        {
+            bool accepted = RegisterBundleAcquire(hash);
+            if (!accepted)
+            {
+                if (handle.IsValid())
+                    Addressables.Release(handle);
+
+                return false;
+            }
+
+            if (!handle.IsValid())
+                return true;
+
+            if (TryTrackBundleHandle(hash, handle))
+                return true;
+
+            _bundleRefs.Release(hash, Time.frameCount, out _);
+            _bundleRefs.Remove(hash);
+            VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
+            return false;
+        }
+#endif
+
         public bool RegisterBundleRelease(uint hash)
         {
             if (_dataVault == null)
@@ -460,7 +540,19 @@ namespace Hecton8.Core.Content
 
             bool released = _bundleRefs.Release(hash, Time.frameCount, out bool becameUnused);
             if (released && becameUnused)
+            {
+                bool retainAsBiomeCache = _bundleRefs.TryGetState(hash, out ContentBundleRefState state) &&
+                                          state.IsBiomeCache != 0;
+                if (!retainAsBiomeCache)
+                {
+#if UNITY_ADDRESSABLES_EXIST
+                    TryReleaseTrackedBundleHandle(hash);
+#endif
+                    _bundleRefs.Remove(hash);
+                }
+
                 VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
+            }
 
             return released;
         }
@@ -727,6 +819,9 @@ namespace Hecton8.Core.Content
             AssetLifecycleGovernor governor = _assetLifecycle;
             if (_bundleRefs.TrySelectOldestUnusedBiomeCache(out uint hash))
             {
+#if UNITY_ADDRESSABLES_EXIST
+                TryReleaseTrackedBundleHandle(hash);
+#endif
                 _bundleRefs.Remove(hash);
                 VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
             }
@@ -767,6 +862,70 @@ namespace Hecton8.Core.Content
         }
 
 #if UNITY_ADDRESSABLES_EXIST
+        private bool TryTrackBundleHandle(uint hash, AsyncOperationHandle handle)
+        {
+            if (hash == 0u || !handle.IsValid())
+                return false;
+
+            int emptyIndex = -1;
+            for (int i = 0; i < _bundleHandleHashes.Length; i++)
+            {
+                uint slotHash = _bundleHandleHashes[i];
+                if (slotHash == hash)
+                {
+                    AsyncOperationHandle current = _bundleHandles[i];
+                    if (!current.IsValid())
+                    {
+                        _bundleHandles[i] = handle;
+                        return true;
+                    }
+
+                    if (!current.Equals(handle))
+                        Addressables.Release(handle);
+
+                    return true;
+                }
+
+                if (emptyIndex < 0 && slotHash == 0u)
+                    emptyIndex = i;
+            }
+
+            if (emptyIndex >= 0)
+            {
+                _bundleHandleHashes[emptyIndex] = hash;
+                _bundleHandles[emptyIndex] = handle;
+                return true;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError("[ContentAuthorityRuntime] Bundle handle table exhausted.", this);
+#endif
+            Addressables.Release(handle);
+            return false;
+        }
+
+        private bool TryReleaseTrackedBundleHandle(uint hash)
+        {
+            if (hash == 0u)
+                return false;
+
+            for (int i = 0; i < _bundleHandleHashes.Length; i++)
+            {
+                if (_bundleHandleHashes[i] != hash)
+                    continue;
+
+                AsyncOperationHandle handle = _bundleHandles[i];
+                if (handle.IsValid())
+                    Addressables.Release(handle);
+
+                _bundleHandles[i] = default;
+                _bundleHandleHashes[i] = 0u;
+                return true;
+            }
+
+            return false;
+        }
+
         private void RemoveVfxPrewarmHandleAt(int index)
         {
             int last = _vfxPrewarmHandles.Count - 1;
@@ -922,16 +1081,28 @@ namespace Hecton8.Core.Content
 
         private unsafe void DumpBlackBox()
         {
+            if (_blackBoxDumpedThisSession)
+                return;
+
             if (!TryResolveTelemetryPointer(out ContentAuthorityTelemetryEntry* telemetry, out int* cursorPtr))
                 return;
 
+            string path = _blackBoxDumpPath;
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            _blackBoxDumpedThisSession = true;
             int cursor = *cursorPtr;
             if ((uint)cursor >= TelemetryCapacity)
                 cursor = 0;
 
-            string path = Path.Combine(Directory.GetCurrentDirectory(), "Docs/AgentLogs/Dump_CONTENT_AUTHORITY_DICTATOR.bin");
             using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
             {
+                writer.Write(BlackBoxMagic);
+                writer.Write((uint)TelemetryCapacity);
+                writer.Write(BlackBoxEntrySizeBytes);
+                writer.Write((uint)0u);
+
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
                     int index = cursor + i;
@@ -950,8 +1121,25 @@ namespace Hecton8.Core.Content
                     writer.Write(entry.RamPressure01);
                     writer.Write(entry.StateHash);
                     writer.Write(entry.Reserved0);
+                    writer.Write(entry.Reserved1);
+                    writer.Write(entry.Reserved2);
+                    writer.Write(entry.Reserved3);
+                    writer.Write(entry.Reserved4);
                 }
             }
+        }
+
+        private static string ResolveBlackBoxDumpPath()
+        {
+            string projectPath = Path.Combine(Directory.GetCurrentDirectory(), BlackBoxRelativePath);
+            string projectDirectory = Path.GetDirectoryName(projectPath);
+            if (!string.IsNullOrEmpty(projectDirectory) && Directory.Exists(projectDirectory))
+                return projectPath;
+
+            string fallbackDirectory = Application.persistentDataPath;
+            return string.IsNullOrEmpty(fallbackDirectory)
+                ? BlackBoxFallbackFileName
+                : Path.Combine(fallbackDirectory, BlackBoxFallbackFileName);
         }
 
         private static bool IsFinite(float value)

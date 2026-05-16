@@ -120,3 +120,65 @@ Verification:
 
 Blocked:
 - Full `Assembly-CSharp` graph is outside this domain and currently blocked by MSBuild/third-party project graph instability, not by SignalBus lane code.
+
+## Surgical Record - 2026-05-16 Tool Lane Drift Closure
+
+What was wrong:
+- `LaserCutterEventPayload` was introduced in the gameplay namespace while implementing `ISignal`.
+- `LaserCutterEvents` configured its own `SignalBus<LaserCutterEventPayload>` lane outside `GlobalSignals`.
+- The current build wall moved again due to concurrent out-of-domain edits, now in submarine fluid vault relocation.
+
+What was done:
+- Moved cutter event enum and payload into `Hecton8.Core.Contracts.Signals`.
+- Added central `LaserCutterEventPayload` lane policy, 16-byte validation, and Push-time heat saturation in `GlobalSignals`.
+- Removed local cutter lane Configure; the gameplay bridge now initializes through `GlobalSignals` and uses typed Push/snapshot reads.
+- Re-applied lockstep centralization after concurrent drift returned local Configure calls.
+
+Cinematic cheats used:
+- Cutter heat/beam packets stay bounded on low tier while high tier can spend the clean event stream on richer beam shimmer, visor heat bloom, and salt-glow feedback.
+
+Exact microseconds saved:
+- Cutter lane centralization: estimated 1-3 us saved during cutter event bootstrap.
+- Cutter heat guard: not a savings; below 1 us for normal event counts, prevents invalid heat from driving presentation.
+
+Verification:
+- Decentralized `SignalBus<T>.Configure` audit: `CONFIGURE_CENTRALIZED`.
+- Line-tracked `ISignal` namespace audit: `ISIGNAL_NAMESPACE_OK`.
+- Old namespace scan for `Hecton8.Core.Signals`: 0 matches.
+- Duplicate combat signal scan: 0 matches.
+- Managed event scan in `PlayerInteraction.cs`: 0 matches.
+- Signal authority `string.Format` / `$"` / `Update()` scans on touched domain files: 0 matches.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`: blocked by `SubmarineFluidDynamics.cs(1250)` missing `RefreshVaultNativeStateAfterRelocation`, outside CORE/SIGNALS. No signal lane errors.
+
+Blocked:
+- Latest core build is dependency-blocked by submarine fluid/vault relocation churn outside this domain.
+
+## Surgical Record - 2026-05-16 Final Core Compile Recovery
+
+What was wrong:
+- The active core compile reached bridge DTOs and failed because `[BinaryBlittableSafe]` was used in `H8BridgeContracts.cs` without importing `Hecton8.Core.Memory.Layout`.
+- Subsequent full project verification failed in RealtimeCSG because the generated third-party project references missing source files.
+
+What was done:
+- Added the missing bridge namespace import only; no DTO layout, signal payload field order, or lane runtime code changed.
+- Re-ran centralization, namespace, duplicate, stale namespace, hot-path string/update scans, core build, full project build, and diff whitespace checks.
+- Recorded the full-project RealtimeCSG wall as outside CORE/SIGNALS.
+
+Cinematic cheats used:
+- None in the compile repair. Existing low-tier stress shedding and high-tier full propagation remain the signal scalability strategy.
+
+Exact microseconds saved:
+- Bridge import repair: 0 us runtime; compile-only recovery.
+- Preserved binary-safe markers avoid future ABI drift rather than saving frame time.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: PASS, 0 warnings, 0 errors.
+- `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: FAIL outside domain in `RealtimeCSG.csproj` with 216 missing third-party source file errors and 26 third-party warnings.
+- Decentralized `SignalBus<T>.Configure` audit: `CONFIGURE_CENTRALIZED`.
+- Line-tracked `ISignal` namespace audit: `ISIGNAL_NAMESPACE_OK`.
+- Duplicate combat signal and old namespace scan: 0 matches.
+- Signal authority `string.Format` / `$"` / `Update()` scans on touched domain files: 0 matches.
+- `git diff --check` on touched signal/doc files: whitespace-clean; only CRLF conversion warning reported for `H8BridgeContracts.cs`.
+
+Blocked:
+- Full Unity project graph remains blocked by RealtimeCSG third-party project/source inventory, not by CORE/SIGNALS.

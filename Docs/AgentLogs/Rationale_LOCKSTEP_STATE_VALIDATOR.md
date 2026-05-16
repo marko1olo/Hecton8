@@ -191,3 +191,63 @@ Rejected Alternatives: Reporting the old compile attempt as current proof, or pa
 Scalability potential: No runtime scalability change. The pass reduces integration risk and preserves the lockstep cadence rules already implemented.
 
 Hardware Impact: 0us runtime. Unity batchmode timed out after 900s in AssetDatabase/script compilation request with no compiler diagnostics; direct csc is blocked by missing external ref assemblies.
+
+## Omega Hash Guard Polish
+
+Problem: The Omega mandate requires `math.select` handling for zero-length hash guards. The validator already skipped empty arrays before scheduling, but the count resolution still depended on branch-only guard shape in the hash-count and default-hash paths.
+
+Solution: Add `ResolveScheduleCount<T>()` and use `math.select` in hash count resolution, room count resolution, schedule-count clamping, and default array hash count normalization. Jobs still early-out before invalid zero-count scheduling, because scheduling a zero-length Burst job is not useful proof and can hide data-absence mistakes.
+
+Rejected Alternatives: Scheduling zero-count jobs, using managed helper collections, or leaving all guard logic as plain branch predicates. Those options either add no determinism value or violate the exact Omega guard requirement.
+
+Scalability potential: Low/MX350 keeps the cheapest no-work path for missing or empty buffers. High/Ultra keep full hash fidelity without spending cycles on empty categories.
+
+Hardware Impact: No measured microseconds are claimed. The expected runtime delta is 0us to sub-microsecond per hash fence because this is integer guard selection at the 60/300/1200-frame cadence, not per-frame simulation work.
+
+## Omega Signal Lane Purge
+
+Problem: A concurrent edit restored `GlobalSignals.InitializeAllQueues()` inside `ConfigureSignalLanes()`. That violates the typed-lane ownership rule by letting the lockstep validator initialize every global queue instead of only the two signals it emits.
+
+Solution: Re-apply narrow typed-lane configuration for `LockstepSnapshotSignal` and `SystemGlitchSignal`, using fixed capacities and lane hashes that match `GlobalSignals.cs`. The validator now configures and ensures only its two lanes.
+
+Rejected Alternatives: Calling monolithic global initialization from determinism, relying on another system's initialization ordering, or adding managed delegate fallbacks.
+
+Scalability potential: Low tier avoids broad cold-start signal work from this system. High/Ultra still receive high-cadence hash snapshots and fault-only glitch signals through typed lanes.
+
+Hardware Impact: Hot-path cost remains 0us because configuration is cold `OnEnable` work. Cold-start savings are unmeasured; no profiler number is claimed.
+
+## Steam Deck Replay I/O Polish
+
+Problem: Ghost replay load used default read buffering for fixed 300-frame replay blocks. On MicroSD or pressure-heavy storage, small default buffering increases stutter risk during replay initialization.
+
+Solution: Open replay reads with `FileOptions.SequentialScan` and a `ReplayBlockBytes * 4` buffer. The writer already used sequential scan. Disk I/O remains cold replay setup work, not fixed-tick work.
+
+Rejected Alternatives: Per-frame disk reads, memory-mapped save-header writes from this domain, or default read buffering with no access hint.
+
+Scalability potential: Low/Middle devices get lower replay-start I/O pressure. High/Ultra keep the same deterministic replay block format and can spend the saved pressure on tighter 60-frame hash validation.
+
+Hardware Impact: No exact microseconds are claimed. Expected gain is reduced read-call churn and lower MicroSD stutter probability during replay load, not a measured fixed-frame saving.
+
+## Replay Authority API Reality Check
+
+Problem: The XML names `GlobalRegistry.IsReplayActive`, but active source contains no such API. Inventing it inside the lockstep pass would create a direct dependency and collide with registry ownership.
+
+Solution: Keep low-tier hash exception tied to `_ghostReplayActive`, the validator-owned state set by its ghost replay loader. Record the missing registry API as an integration reality rather than fabricating a field.
+
+Rejected Alternatives: Adding `GlobalRegistry.IsReplayActive` without a registry-owner contract, polling unrelated replay systems, or disabling low-tier hashing during replay.
+
+Scalability potential: Toaster mode still skips normal gameplay hashing. Replay mode still forces validation because replay desync detection is the reason to spend the budget.
+
+Hardware Impact: 0us runtime change. The decision prevents an unmanaged ownership expansion and keeps registry traffic out of the hot path.
+
+## Omega Validation Refresh
+
+Problem: After the final lane repair, validation had to reflect the current files. A separate `UBER_NOIR_INTEGRATOR` Unity batch process is active in the same project, so launching another Unity compile would create editor/process contention instead of clean proof.
+
+Solution: Run strict static scans for determinism hot-path debt, Pack=1 layout drift, typed-lane configuration, whitespace errors, and active Unity processes. Defer Unity rerun while PID 47176 owns the project batch session.
+
+Rejected Alternatives: Running a competing Unity batchmode instance, killing another agent's Unity process, or reporting the previous compile wall as a fresh run.
+
+Scalability potential: No runtime behavior change. This preserves cross-agent build stability while keeping deterministic validator evidence current.
+
+Hardware Impact: 0us runtime. Static scans show only the vault helper NativeArray return, which is not a local allocation or persistent private array.

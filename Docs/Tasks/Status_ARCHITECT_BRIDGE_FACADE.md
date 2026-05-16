@@ -49,11 +49,20 @@ PROMPT IDENTIFIED: ARCHITECT_BRIDGE_FACADE | DOMAIN: CORE/INTERFACES | TASK COUN
 - [x] Compile verification after tasks 16-20 | completed with 0 errors; external package warnings remain.
 
 ## Iteration 5: Re-Verification And Polish
-- [ ] Re-read bridge code for `Update()`, managed delegate, local NativeArray, hot-path string lookup, implicit struct padding, and `string.Format`.
-- [ ] Execute Omega Polish Mandate after all task boxes are complete or blocked.
-- [ ] Append final report to `Docs/AgentLogs/LOG_ARCHITECT_BRIDGE_FACADE.md`.
+- [x] Re-read bridge code for `Update()`, managed delegate, local NativeArray, hot-path string lookup, implicit struct padding, and `string.Format`. Result: no sync-layer `Update()` methods, no `string.Format`, no persistent private Bridge NativeArray fields, all runtime payload structs packed.
+- [x] Execute Omega Polish Mandate after all task boxes are complete or blocked. Result: 1D LUT hash fields exist on prefab and design facades; DataVault write hot path uses only precomputed hashes and offsets.
+- [x] Append final report to `Docs/AgentLogs/LOG_ARCHITECT_BRIDGE_FACADE.md`.
+
+## Iteration 6: GO AGAIN Multiplatform Inquisition
+- [x] Disk truth recovery | DOD: exact original XML assignment was written to `Docs/Tasks/Prompt_ARCHITECT_BRIDGE_FACADE.xml` because `CURRENT_BATCH.md` does not contain this agent prompt. Rejected: relying on compressed chat memory. Static estimate: 0 us runtime.
+- [x] ARM64/Quest/Mac layout sentinel | DOD: added `H8BridgeBinaryLayoutVerifier` and `[BinaryBlittableSafe]` markers for all Bridge DTO/signal payloads; cold boot verifies size and critical offsets before consumers read DataVault buffers. Rejected: trusting `[StructLayout]` without runtime validation. Static estimate: 0 us steady-state; cold boot only.
+- [x] Edit-mode SignalBus allocation cut | DOD: prefab registry publish path returns before typed SignalBus pushes unless `Application.isPlaying`; runtime binder still publishes boot-time acoustic/lore lanes. Rejected: persistent editor queue allocation from asset drag/drop. Static estimate: editor-only allocation avoided.
+- [x] Visual overkill seed repair | DOD: design and prefab facades now generate high-tier visual hashes from `VisualOverkillSeed`, not acoustic/default absence. Rejected: manual string lookup for Ultra visuals. Static estimate: 0 us steady-state; high-tier consumers read hashes.
+- [x] Blackbox heartbeat without `Update()` | DOD: facade sync writes an explicit `BridgeHeartbeat` telemetry entry into the 300-entry DataVault ring. Rejected: per-frame monitor or local NativeArray. Static estimate: one ring write per designer sync only.
+- [x] Re-audit Bridge domain | DOD: `rg` scan found no sync-layer `Update()`, `string.Format`, managed events/delegates, UnityEvent, EventBus usage, private NativeArray fields, local NativeArray allocation, or allocator ownership in `Assets/_Project/Scripts/Core/Bridge`. Rejected: visual inspection only.
+- [x] Recompile after inquisition | `dotnet build Hecton8.Core.csproj /m:1 -v:minimal` exits 0; `dotnet build Hecton8.Editor.csproj /m:1 -v:minimal` exits 0 after a clean standalone rerun; `git diff --check` on touched paths exits 0.
 
 ## Current State
-- Status: CORE TASKS IMPLEMENTED; POLISH PASS PENDING.
-- Compile state: `Hecton8.Core.csproj` and `Hecton8.Editor.csproj` exit 0.
-- Known integration notes: `CURRENT_BATCH.md` still lacks this agent prompt; CLI verification required manual csproj compile includes until Unity regenerates project files.
+- Status: VERIFIED MASTER GRADE - ENGINE CONTROL READY.
+- Compile state: `dotnet build Hecton8.Core.csproj /m:1 -v:minimal` exits 0; `dotnet build Hecton8.Editor.csproj /m:1 -v:minimal` exits 0.
+- Known integration notes: `CURRENT_BATCH.md` still lacks this agent prompt; CLI verification required manual csproj compile includes until Unity regenerates project files; Unity Play Mode/Profiler proof is not available in this CLI-only session.

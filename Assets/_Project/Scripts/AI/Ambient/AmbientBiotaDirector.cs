@@ -72,12 +72,15 @@ namespace Hecton8.AI.Ambient
         private VaultBufferHandle<int> _macroHydrationCounterHandle;
         private VaultBufferHandle<AmbientBiotaTelemetryEntry> _telemetryRingHandle;
         private VaultBufferHandle<int> _telemetryCursorHandle;
-        private GraphicsBuffer _gpuAupBuffer;
-        private GraphicsBuffer _gpuVelocityBuffer;
-        private GraphicsBuffer _gpuStateBuffer;
+        private GraphicsBuffer _gpuAupBufferA;
+        private GraphicsBuffer _gpuAupBufferB;
+        private GraphicsBuffer _gpuVelocityBufferA;
+        private GraphicsBuffer _gpuVelocityBufferB;
+        private GraphicsBuffer _gpuStateBufferA;
+        private GraphicsBuffer _gpuStateBufferB;
         private GraphicsBuffer _indirectArgsBuffer;
-        private GraphicsBuffer.IndirectDrawIndexedArgs[] _indirectArgsUpload;
         private Mesh _runtimeFallbackMesh;
+        private Mesh _indirectArgsMesh;
         private JobHandle _activeJobHandle;
         private AbsoluteUniversePosition _lastPlayerAup;
         private float3 _lastPlayerRuntimePosition;
@@ -98,9 +101,12 @@ namespace Hecton8.AI.Ambient
         private uint _previousBiomeHash;
         private ushort _lastTelemetryFlags;
         private int _gpuBufferCapacity;
+        private int _gpuBufferIndex;
+        private int _indirectArgsCapacity = -1;
         private bool _jobPending;
         private bool _pendingDebrisDrainActive;
         private bool _blackBoxDumped;
+        private bool _gpuPayloadDirty = true;
         private bool _serviceRegistered;
         private bool _tickRegistered;
         private bool _slowTickRegistered;
@@ -258,13 +264,14 @@ namespace Hecton8.AI.Ambient
 
             if (TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states))
             {
-                if (completedJob || _pendingDebrisDrainActive)
+                bool debrisWasPending = _pendingDebrisDrainActive;
+                if (completedJob || debrisWasPending)
                     PublishPendingDebrisSignals(aups, velocities, states);
 
-                if (completedJob || _pendingDebrisDrainActive)
+                if (completedJob || debrisWasPending)
                     RecountActiveBiota(states);
 
-                RenderIndirectBiota(aups, velocities, states);
+                RenderIndirectBiota(aups, velocities, states, completedJob || debrisWasPending);
             }
 
             WriteTelemetryHeartbeat();
@@ -711,7 +718,8 @@ namespace Hecton8.AI.Ambient
         private void RenderIndirectBiota(
             NativeArray<AbsoluteUniversePosition> aups,
             NativeArray<float4> velocities,
-            NativeArray<AmbientBiotaState> states)
+            NativeArray<AmbientBiotaState> states,
+            bool payloadDirty)
         {
             if (!enableIndirectDraw || _capacity <= 0 || _activeBiotaCount <= 0)
                 return;
@@ -720,23 +728,18 @@ namespace Hecton8.AI.Ambient
             if (material == null || !TryResolveDrawMesh(out Mesh mesh) || !EnsureGraphicsResources(_capacity))
                 return;
 
-            _gpuAupBuffer.SetData(aups, 0, 0, _capacity);
-            _gpuVelocityBuffer.SetData(velocities, 0, 0, _capacity);
-            _gpuStateBuffer.SetData(states, 0, 0, _capacity);
+            if ((_gpuPayloadDirty || payloadDirty) && !UploadGpuPayload(aups, velocities, states, _capacity))
+                return;
 
-            _indirectArgsUpload[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            if (!TryResolveGpuReadBuffers(out GraphicsBuffer aupBuffer, out GraphicsBuffer velocityBuffer, out GraphicsBuffer stateBuffer) ||
+                !UploadIndirectArgs(mesh, _capacity))
             {
-                indexCountPerInstance = mesh.GetIndexCount(0),
-                instanceCount = (uint)_capacity,
-                startIndex = mesh.GetIndexStart(0),
-                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
-                startInstance = 0u
-            };
-            _indirectArgsBuffer.SetData(_indirectArgsUpload);
+                return;
+            }
 
-            material.SetBuffer(BiotaAupsShaderId, _gpuAupBuffer);
-            material.SetBuffer(BiotaVelocitiesShaderId, _gpuVelocityBuffer);
-            material.SetBuffer(BiotaStatesShaderId, _gpuStateBuffer);
+            material.SetBuffer(BiotaAupsShaderId, aupBuffer);
+            material.SetBuffer(BiotaVelocitiesShaderId, velocityBuffer);
+            material.SetBuffer(BiotaStatesShaderId, stateBuffer);
             material.SetInt(BiotaCapacityShaderId, _capacity);
             material.SetInt(BiotaActiveCountShaderId, _activeBiotaCount);
             material.SetFloat(BiotaBiomeHashShaderId, (float)_currentBiomeHash);
@@ -761,28 +764,150 @@ namespace Hecton8.AI.Ambient
             if (capacity <= 0)
                 return false;
 
-            if (_gpuAupBuffer != null && _gpuAupBuffer.IsValid() && _gpuBufferCapacity >= capacity)
-                return _gpuVelocityBuffer != null &&
-                       _gpuVelocityBuffer.IsValid() &&
-                       _gpuStateBuffer != null &&
-                       _gpuStateBuffer.IsValid() &&
-                       _indirectArgsBuffer != null &&
+            if (_gpuBufferCapacity >= capacity && AreGraphicsBuffersValid(capacity))
+                return _indirectArgsBuffer != null &&
                        _indirectArgsBuffer.IsValid();
 
             ReleaseGraphicsResources();
-            _gpuAupBuffer = CreateStructuredBuffer<AbsoluteUniversePosition>(capacity); // COLD ALLOC: GraphicsBuffer[BiotaAUPs] - ambient biota AUP upload lane - owner: AMBIENT_BIOTA_DIRECTOR
-            _gpuVelocityBuffer = CreateStructuredBuffer<float4>(capacity); // COLD ALLOC: GraphicsBuffer[BiotaVelocities] - ambient biota velocity/motion-vector upload lane - owner: AMBIENT_BIOTA_DIRECTOR
-            _gpuStateBuffer = CreateStructuredBuffer<AmbientBiotaState>(capacity); // COLD ALLOC: GraphicsBuffer[BiotaStates] - ambient biota state upload lane - owner: AMBIENT_BIOTA_DIRECTOR
+            _gpuAupBufferA = CreateStructuredBuffer<AbsoluteUniversePosition>(capacity); // COLD ALLOC: GraphicsBuffer[BiotaAUPs A] - double-buffered ambient biota AUP upload lane - owner: AMBIENT_BIOTA_DIRECTOR
+            _gpuAupBufferB = CreateStructuredBuffer<AbsoluteUniversePosition>(capacity); // COLD ALLOC: GraphicsBuffer[BiotaAUPs B] - double-buffered ambient biota AUP upload lane - owner: AMBIENT_BIOTA_DIRECTOR
+            _gpuVelocityBufferA = CreateStructuredBuffer<float4>(capacity); // COLD ALLOC: GraphicsBuffer[BiotaVelocities A] - double-buffered ambient biota velocity/motion-vector upload lane - owner: AMBIENT_BIOTA_DIRECTOR
+            _gpuVelocityBufferB = CreateStructuredBuffer<float4>(capacity); // COLD ALLOC: GraphicsBuffer[BiotaVelocities B] - double-buffered ambient biota velocity/motion-vector upload lane - owner: AMBIENT_BIOTA_DIRECTOR
+            _gpuStateBufferA = CreateStructuredBuffer<AmbientBiotaState>(capacity); // COLD ALLOC: GraphicsBuffer[BiotaStates A] - double-buffered ambient biota state upload lane - owner: AMBIENT_BIOTA_DIRECTOR
+            _gpuStateBufferB = CreateStructuredBuffer<AmbientBiotaState>(capacity); // COLD ALLOC: GraphicsBuffer[BiotaStates B] - double-buffered ambient biota state upload lane - owner: AMBIENT_BIOTA_DIRECTOR
             _indirectArgsBuffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 1,
-                GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - ambient biota indirect draw args - owner: AMBIENT_BIOTA_DIRECTOR
-            _indirectArgsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: managed args mirror[1] - ambient indirect args upload - owner: AMBIENT_BIOTA_DIRECTOR
+                GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - locked ambient biota indirect draw args - owner: AMBIENT_BIOTA_DIRECTOR
             _gpuBufferCapacity = capacity;
-            return _gpuAupBuffer.IsValid() &&
-                   _gpuVelocityBuffer.IsValid() &&
-                   _gpuStateBuffer.IsValid() &&
+            _gpuBufferIndex = 0;
+            _gpuPayloadDirty = true;
+            _indirectArgsMesh = null;
+            _indirectArgsCapacity = -1;
+            return AreGraphicsBuffersValid(capacity) &&
+                   _indirectArgsBuffer != null &&
                    _indirectArgsBuffer.IsValid();
+        }
+
+        private bool AreGraphicsBuffersValid(int capacity)
+        {
+            return IsValidBuffer(_gpuAupBufferA, capacity) &&
+                   IsValidBuffer(_gpuAupBufferB, capacity) &&
+                   IsValidBuffer(_gpuVelocityBufferA, capacity) &&
+                   IsValidBuffer(_gpuVelocityBufferB, capacity) &&
+                   IsValidBuffer(_gpuStateBufferA, capacity) &&
+                   IsValidBuffer(_gpuStateBufferB, capacity);
+        }
+
+        private static bool IsValidBuffer(GraphicsBuffer buffer, int capacity)
+        {
+            return buffer != null &&
+                   buffer.IsValid() &&
+                   buffer.count >= capacity;
+        }
+
+        private bool UploadGpuPayload(
+            NativeArray<AbsoluteUniversePosition> aups,
+            NativeArray<float4> velocities,
+            NativeArray<AmbientBiotaState> states,
+            int count)
+        {
+            int writeIndex = 1 - _gpuBufferIndex;
+            if (!TryResolveGpuBuffers(writeIndex, out GraphicsBuffer aupBuffer, out GraphicsBuffer velocityBuffer, out GraphicsBuffer stateBuffer))
+                return false;
+
+            bool uploaded = UploadNativeArray(aupBuffer, aups, count) &&
+                            UploadNativeArray(velocityBuffer, velocities, count) &&
+                            UploadNativeArray(stateBuffer, states, count);
+            if (!uploaded)
+                return false;
+
+            _gpuBufferIndex = writeIndex;
+            _gpuPayloadDirty = false;
+            return true;
+        }
+
+        private bool TryResolveGpuReadBuffers(
+            out GraphicsBuffer aupBuffer,
+            out GraphicsBuffer velocityBuffer,
+            out GraphicsBuffer stateBuffer)
+        {
+            return TryResolveGpuBuffers(_gpuBufferIndex, out aupBuffer, out velocityBuffer, out stateBuffer);
+        }
+
+        private bool TryResolveGpuBuffers(
+            int index,
+            out GraphicsBuffer aupBuffer,
+            out GraphicsBuffer velocityBuffer,
+            out GraphicsBuffer stateBuffer)
+        {
+            bool first = (index & 1) == 0;
+            aupBuffer = first ? _gpuAupBufferA : _gpuAupBufferB;
+            velocityBuffer = first ? _gpuVelocityBufferA : _gpuVelocityBufferB;
+            stateBuffer = first ? _gpuStateBufferA : _gpuStateBufferB;
+            return IsValidBuffer(aupBuffer, _capacity) &&
+                   IsValidBuffer(velocityBuffer, _capacity) &&
+                   IsValidBuffer(stateBuffer, _capacity);
+        }
+
+        private bool UploadIndirectArgs(Mesh mesh, int capacity)
+        {
+            if (_indirectArgsBuffer == null ||
+                !_indirectArgsBuffer.IsValid() ||
+                mesh == null ||
+                capacity <= 0)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(_indirectArgsMesh, mesh) && _indirectArgsCapacity == capacity)
+                return true;
+
+            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
+                _indirectArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            {
+                indexCountPerInstance = mesh.GetIndexCount(0),
+                instanceCount = (uint)capacity,
+                startIndex = mesh.GetIndexStart(0),
+                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                startInstance = 0u
+            };
+            _indirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            _indirectArgsMesh = mesh;
+            _indirectArgsCapacity = capacity;
+            return true;
+        }
+
+        private static unsafe bool UploadNativeArray<T>(GraphicsBuffer destination, NativeArray<T> source, int count)
+            where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount(destination, source.IsCreated ? source.Length : 0, count, UnsafeUtility.SizeOf<T>());
+            if (safeCount <= 0)
+                return false;
+
+            NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
+            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+            long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
+            bool copied = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
+            destination.UnlockBufferAfterWrite<T>(safeCount);
+            if (!copied)
+                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AmbientBiotaDirector));
+            return copied;
+        }
+
+        private static int ResolveSafeWriteCount(GraphicsBuffer destination, int sourceLength, int requestedCount, int stride)
+        {
+            if (destination == null || requestedCount <= 0 || sourceLength <= 0 || destination.count <= 0)
+                return 0;
+
+            if (destination.stride != stride)
+                return 0;
+
+            return math.min(math.min(requestedCount, sourceLength), destination.count);
         }
 
         private static GraphicsBuffer CreateStructuredBuffer<T>(int capacity) where T : struct
@@ -834,12 +959,18 @@ namespace Hecton8.AI.Ambient
 
         private void ReleaseGraphicsResources()
         {
-            ReleaseBuffer(ref _gpuAupBuffer);
-            ReleaseBuffer(ref _gpuVelocityBuffer);
-            ReleaseBuffer(ref _gpuStateBuffer);
+            ReleaseBuffer(ref _gpuAupBufferA);
+            ReleaseBuffer(ref _gpuAupBufferB);
+            ReleaseBuffer(ref _gpuVelocityBufferA);
+            ReleaseBuffer(ref _gpuVelocityBufferB);
+            ReleaseBuffer(ref _gpuStateBufferA);
+            ReleaseBuffer(ref _gpuStateBufferB);
             ReleaseBuffer(ref _indirectArgsBuffer);
-            _indirectArgsUpload = null;
             _gpuBufferCapacity = 0;
+            _gpuBufferIndex = 0;
+            _gpuPayloadDirty = true;
+            _indirectArgsMesh = null;
+            _indirectArgsCapacity = -1;
 
             if (_runtimeFallbackMesh != null)
             {

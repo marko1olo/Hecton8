@@ -191,3 +191,27 @@ Rejected Alternatives: Claiming Unity runtime readiness from `dotnet build` was 
 Scalability potential: Low/Middle/High/Ultra code paths now compile through the C# gate. Runtime tier behavior still needs Unity-side visual and GPU profiling before "shipping ready" can be asserted.
 
 Hardware Impact: Compile success has 0 us direct runtime effect. It removes the validation wall; measured CPU/GPU/GC deltas remain pending until Unity profiling is executed.
+
+## Decision 17: Double-Buffered Locked GPU Uploads
+
+Problem: The indirect draw path used `GraphicsBuffer.SetData` for AUPs, velocities, states, and args. That compiled, but it violated the project bandwidth rule requiring `LockBufferForWrite`, and it pushed full-capacity uploads even when the SOA payload had not changed.
+
+Solution: Replaced the single GPU payload lanes with double-buffered A/B GraphicsBuffers. Payload upload now writes to the non-current buffer with `LockBufferForWrite`, copies through `UnsafeMemoryCopyGuard`, and swaps the read index only after all three SOA streams copy successfully. The indirect args buffer now uses `LockBufferForWrite` and is refreshed only when mesh or capacity changes. The ambient asmdef now allows unsafe code because the copy path uses Unity's native pointer APIs.
+
+Rejected Alternatives: Keeping `SetData` was rejected because it directly violates the current bandwidth mandate. Uploading only active compacted slots was rejected for this pass because the shader/state contract is capacity-indexed and compaction would require another indirection buffer and new shader agreement.
+
+Scalability potential: Low = avoids unnecessary PCIe/upload churn when no job changed the payload. Middle = keeps stable double-buffered presentation. High/Ultra = retains dense indirect draw and richer material interpretation without CPU matrix generation.
+
+Hardware Impact: Exact microseconds remain unmeasured. Expected gain is lower upload overhead and reduced GPU/CPU synchronization risk versus full `SetData` every late frame; no file I/O is added, so Steam Deck microSD pressure remains 0 B/frame in this domain.
+
+## Decision 18: Current Compile Warning Is Ecosystem Integration
+
+Problem: After the bandwidth pass, an initial `dotnet build` failed in a foreign ecosystem namespace. A later run now exits 0, but still reports one non-ambient warning.
+
+Solution: Reran the required build and recorded output to `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`. The latest result is build succeeded with 1 warning and 0 errors. The warning is `CS2002`: `Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs` is specified multiple times.
+
+Rejected Alternatives: Editing `Directory.Build.targets`, `Hecton8.Core.csproj`, or ecosystem files from the ambient agent was rejected because that crosses the authoritative `Assets/_Project/Scripts/AI/Ambient/` domain. Claiming 0 warnings was rejected because the build log has one foreign warning.
+
+Scalability potential: No runtime scalability change. This is an integration/build graph ownership issue.
+
+Hardware Impact: 0 us runtime effect. Dotnet exit is green; Unity runtime/profiler proof remains pending.

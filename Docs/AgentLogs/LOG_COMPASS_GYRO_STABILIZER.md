@@ -101,3 +101,34 @@ Validation:
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:minimal` fails outside compass at `EcosystemRuntimeInstaller.cs` missing `Hecton8.AI.Ecosystem` and `SubmarineFluidDynamics.cs` missing `VaultNativeBuffer<>`.
 - `dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal` fails outside compass because `Temp/obj/Assembly-CSharp/project.assets.json` is missing.
 - Final status remains not `VERIFIED MASTER GRADE`; build and scene binding are not proven.
+
+## 2026-05-16 - Physical authoring bridge and build-wall recheck
+
+What was still wrong:
+- The runtime had cold binding APIs, but no serialized authoring bridge existed in the navigation domain.
+- A bad `TextMeshProUGUI` binding could leave `_diegeticTextValid` false after the author replaced it with valid world-space TMP text.
+- Unity scene/prefab wiring still is not proven; no Unity MCP scene resources are exposed in this session.
+
+What was done:
+- Added/verified `DiegeticGyroCompassPhysicalBinding` as the cold physical-tool bridge. It maps tool root, dial pivot, cardinal TMP, indirect dial mesh/material, and optional High/Ultra anomaly particles into `DiegeticGyroCompassRuntime`.
+- Kept dependency injection cold: startup only, using `GlobalRegistry.Player`, `GlobalRegistry.DataVault`, and `GlobalRegistry.ScalabilityTier`; gameplay ticks still use cached dependencies or return.
+- Reset `_diegeticTextValid` before validating a TMP binding, so corrected diegetic text authoring recovers without a runtime restart.
+
+Cinematic cheats used:
+- Low/MX350 remains the triangle-noise Dear Lie with snapped cardinal output and no particle emission.
+- Middle keeps physical pivot rotation only.
+- High/Ultra can bind indirect dial rendering and local compass-glass salt/static bursts while gameplay truth remains the same SOA compass state.
+
+Exact microseconds saved:
+- Authoring bridge: 0 us steady-frame cost; it prevents hot lookup debt by doing all mapping during startup/cold paths.
+- Text validation reset: no measurable frame saving; it removes a dead-label authoring failure.
+- Maintaining no hot registry fallback: preserves the earlier estimated 1-4 us per SlowTick on stressed/low-tier runs.
+
+Validation:
+- Re-read `CURRENT_BATCH.md` XML for `COMPASS_GYRO_STABILIZER`; task count remains 18 and domain remains `Assets/_Project/Scripts/UI/Navigation/`.
+- Navigation forbidden-pattern scan found no private `NativeArray`, `new NativeArray`, `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `.ToString`, TMP `.text`, `SetText`, `Camera.main`, `transform.eulerAngles`, EventBus, managed delegates, `new List`, `foreach`, `FindObjectOfType`, `GameObject.Find`, coroutine, or direct `H8Memory.Allocate`.
+- `git diff --check` on touched compass/contract files reports only LF-to-CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:minimal` succeeded once in this pass with 0 warnings and 0 errors.
+- After concurrent worktree movement, latest `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:quiet /clp:ErrorsOnly` fails outside compass at `SubmarineFluidDynamics.cs(2004)` for missing `RefreshNativeStateViewsFromVault`.
+- `dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal` fails outside compass: `RealtimeCSG.csproj` references many missing source files under `Assets/RealtimeCSG/...`, then `SubmarineFluidDynamics.cs` reports missing hot-swap/native-state helpers.
+- Final status remains not `VERIFIED MASTER GRADE`; scene binding and full project build are not proven.

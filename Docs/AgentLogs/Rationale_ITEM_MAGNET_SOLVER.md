@@ -2,7 +2,7 @@
 
 Prompt: ITEM_MAGNET_SOLVER
 Domain: GAMEPLAY/ITEMS
-Status: VERIFIED MASTER GRADE - BUILD BLOCKED BY EXTERNAL DEPENDENCY
+Status: VERIFIED MASTER GRADE
 
 ## Initial Decision Log
 
@@ -209,3 +209,39 @@ Solution: Ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p
 Rejected Alternatives: Claiming the previous green gate still represents current disk; editing spatial audio from the loot magnet task; hiding the dependency wall.
 Scalability potential: No runtime impact for loot magnet. The Low/Middle/High/Ultra magnet paths remain source-validated while the audio owner resolves the helper drift.
 Hardware Impact: None at runtime for loot magnet.
+
+Problem: The Burst kernel still relied on managed scheduler sanitization for dt, radius, strength, and max velocity before speed-square math.
+Solution: Added `LootMagnetJob.TryResolveKernelParameters` so every worker validates finite kernel scalars, clamps them to stable bounds including `0.0001f..MaxIntegrationDeltaTimeSeconds` for dt, and fails closed with zero velocity plus `LootEntityFlags.NonFinite` before `rsqrt`, reciprocal force, or max-speed-squared calculations.
+Rejected Alternatives: Trusting inspector ranges; relying only on `SchedulePull` sanitization; letting NaN/negative/tiny-positive dt values reach Burst and get caught after velocity corruption.
+Scalability potential: Low/Middle/High/Ultra keep the same math LOD behavior. Low still runs 10 Hz lerp; High/Ultra still buy wake/fluid visual budget with safe kernel inputs.
+Hardware Impact: Adds a small branch block inside the hot job and prevents NaN propagation. Exact microseconds are not claimed.
+
+Problem: `ItemAcquiredSignal` was still explicit-size without explicit `Pack=1`, while the magnet path publishes it on Quest/Android-sensitive typed lanes.
+Solution: Added `Pack=1` to `ItemAcquiredSignal` and rechecked all magnet-emitted public signals: `ItemAcquiredSignal`, `WakeGeneratedSignal`, `FluidImpulseSignal`, `DebrisSpawnSignal`, and `AcousticPingSignal`.
+Rejected Alternatives: Trusting default explicit layout packing; packing unrelated global signals outside the item magnet boundary.
+Scalability potential: Same signal packet ABI across Android/Quest, Metal/Mac, Steam Deck, and PC; High/Ultra visual overkill consumers read the same packet layout.
+Hardware Impact: 0 runtime cost. Removes ARM64 layout ambiguity for acquisition packets.
+
+Problem: Disabling or dependency-clearing the scheduler restored managed pickup Rigidbody state but could leave stale item-magnet `EntityFlags`, AUPs, velocities, hashes, and quantities in shared DataVault slots.
+Solution: Added `ClearKnownRuntimeVaultSlots`, which clears only slots that the item-magnet sidecar identifies as owned, then resets counters. This runs on runtime clear, shutdown, and sidecar replacement.
+Rejected Alternatives: Clearing the whole generic `EntityFlags` buffer; leaving stale vault state for external readers; storing another private NativeArray ownership map.
+Scalability potential: Low/Middle/High/Ultra retain the same hot path. Cleanup is cold-path only and avoids stale shared-vault signals confusing higher-tier VFX/diagnostics.
+Hardware Impact: 0 hot-frame cost. Cold cleanup is O(known sidecar slots) and avoids external consumers spending cycles on dead loot flags.
+
+Problem: Current compile validation shifted again under concurrent project edits.
+Solution: Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`; current hard wall is external to item magnet in `LockstepStateValidator.cs` missing `LockstepSnapshotSignalCapacity`, `LockstepSnapshotLaneHash`, `SystemGlitchSignalCapacity`, and `SystemGlitchLaneHash`.
+Rejected Alternatives: Claiming green because a previous gate passed; editing core determinism signal constants from the item magnet task.
+Scalability potential: No runtime impact for loot magnet.
+Hardware Impact: None at runtime for loot magnet.
+
+Problem: AUP local fields were finite, but `ToRuntimeFloat3()` can still return non-finite coordinates if floating-origin state is poisoned.
+Solution: Added `IsFiniteFloat3` gates before every `PickupItem.ApplyLootMagnetPose` call from the scheduler, including normal commit and origin-shift reapply. Non-finite runtime conversion marks fault telemetry, restores pickup runtime state, and avoids transform mutation.
+Rejected Alternatives: Trusting AUP local validity alone; adding guards inside every pickup transform setter; allowing Unity transforms to receive NaN/Infinity.
+Scalability potential: Low/Middle/High/Ultra keep identical magnet math and VFX lanes. The guard prevents one bad origin offset from taking down the presentation path on mobile or desktop.
+Hardware Impact: One finite branch per visually applied pulled pickup; exact microseconds not claimed.
+
+Problem: Final status needed current compile evidence after the runtime-pose vaccination pass.
+Solution: Ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`; latest build succeeded with 0 errors and one external duplicate-source warning for `AI/Ecosystem/EcosystemPopulationBalancer.cs`.
+Rejected Alternatives: Keeping stale external-blocked status; claiming a green build before rerunning the gate; claiming 0 warnings after the duplicate-source warning appeared.
+Scalability potential: No runtime change; confirms Low/Middle/High/Ultra item magnet paths compile in the contained core assembly.
+Hardware Impact: 0 runtime impact. Build validation only.

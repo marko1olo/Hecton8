@@ -583,9 +583,26 @@ namespace Hecton8.Physics
                 _handle = default;
             }
 
-            public bool MatchesBufferId(int bufferId)
+            public bool Refresh(IDataVault vault)
             {
-                return _handle.BufferId != BufferID.Unknown && (int)_handle.BufferId == bufferId;
+                if (vault == null || !_handle.IsCreated)
+                {
+                    Clear();
+                    return false;
+                }
+
+                BufferID bufferId = _handle.BufferId;
+                int requiredLength = _handle.Length;
+                if (!vault.TryGetBufferHandle(bufferId, out VaultBufferHandle<T> refreshed) ||
+                    refreshed.Length < requiredLength)
+                {
+                    Clear();
+                    return false;
+                }
+
+                _vault = vault;
+                _handle = refreshed;
+                return true;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1921,7 +1938,13 @@ namespace Hecton8.Physics
                 _oceanKinematics = oceanKinematicsService != null ? oceanKinematicsService.ActiveProvider : null;
             }
 
-            _dataVault ??= GlobalRegistry.DataVault;
+            IDataVault registryDataVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, registryDataVault))
+            {
+                _dataVault = registryDataVault;
+                _vaultNativeRefreshRequested = true;
+            }
+
             RefreshRuntimeActorContextsIfMissing();
             ResolvePowerGridService();
 
@@ -1962,11 +1985,60 @@ namespace Hecton8.Physics
             }
         }
 
-        private void EnsureNativeState()
+        private void RefreshVaultNativeStateAfterRelocation()
         {
-            if (_compartmentFloodVolumes.IsCreated)
+            ReadOnlySpan<MemoryAddressShiftSignal> shifts = SignalBus<MemoryAddressShiftSignal>.GetFrameSnapshot();
+            for (int i = 0; i < shifts.Length; i++)
+            {
+                MemoryAddressShiftSignal shift = shifts[i];
+                if (shift.SystemId == (byte)SystemID.VehiclesPhysics || IsSubmarineFluidVaultBuffer(shift.BufferId))
+                {
+                    _vaultNativeRefreshRequested = true;
+                    break;
+                }
+            }
+
+            if (!_vaultNativeRefreshRequested)
                 return;
 
+            RefreshNativeStateViewsFromVault();
+            _vaultNativeRefreshRequested = false;
+        }
+
+        private static bool IsSubmarineFluidVaultBuffer(int bufferId)
+        {
+            switch ((BufferID)bufferId)
+            {
+                case BufferID.SubmarineFluidCompartmentFloodVolumes:
+                case BufferID.SubmarineFluidCompartmentViscosity01:
+                case BufferID.SubmarineFluidCompartmentBaseMaxVolumes:
+                case BufferID.SubmarineFluidCompartmentMaxVolumes:
+                case BufferID.SubmarineFluidCompartmentBreachAreas:
+                case BufferID.SubmarineFluidCompartmentLocalCentroids:
+                case BufferID.SubmarineFluidCompartmentFlags:
+                case BufferID.SubmarineFluidBulkheadPairs:
+                case BufferID.SubmarineFluidBulkheadSealed:
+                case BufferID.SubmarineFluidBulkheadDoorAreas:
+                case BufferID.SubmarineFluidComAccumulatorFront:
+                case BufferID.SubmarineFluidComAccumulatorBack:
+                case BufferID.SubmarineFluidMassPropertiesFront:
+                case BufferID.SubmarineFluidMassPropertiesBack:
+                case BufferID.SubmarineFluidAngularVelocityHistoryLocal:
+                case BufferID.SubmarineFluidPreviousExteriorSampleSubmersionFactors:
+                case BufferID.SubmarineFluidJobFloodVolumes:
+                case BufferID.SubmarineFluidJobCompartmentFlags:
+                case BufferID.SubmarineFluidBulkheadTransferDeltas:
+                case BufferID.SubmarineHydroKinematicInput:
+                case BufferID.SubmarineHydroKinematicOutput:
+                case BufferID.SubmarineHydroBlackBox:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private void EnsureNativeState()
+        {
             if (_compartmentStates == null)
             {
                 // COLD ALLOC: CompartmentState[8] â€” compartment flood snapshots for CoM and telemetry â€” owner: SubmarineFluidDynamics
@@ -2017,6 +2089,7 @@ namespace Hecton8.Physics
             EnsureNativeStateBuffer(ref _hydroKinematicOutput, BufferID.SubmarineHydroKinematicOutput, 1, nameof(_hydroKinematicOutput), VaultHydroOutputFlag);
             // COLD ALLOC: NativeArray<HydroBlackBoxEntry>[300] - fixed hydro crash telemetry ring - owner: SubmarineFluidDynamics
             EnsureNativeStateBuffer(ref _hydroBlackBox, BufferID.SubmarineHydroBlackBox, HydroBlackBoxCapacity, nameof(_hydroBlackBox), VaultHydroBlackBoxFlag);
+            _vaultNativeRefreshRequested = false;
         }
 
         private void SeedNativeStateFromAuthoring()
@@ -2263,6 +2336,14 @@ namespace Hecton8.Physics
             _fluidSimulationRegistered = true;
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
         private void TryRegisterOriginShiftListener()
         {
             if (_registeredOriginShiftListener || !Application.isPlaying)
@@ -2298,6 +2379,15 @@ namespace Hecton8.Physics
 
             GlobalRegistry.UnregisterFluidSimulationService(_fluidMathCore);
             _fluidSimulationRegistered = false;
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.UnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void TryUnregisterOriginShiftListener()
@@ -5764,6 +5854,40 @@ namespace Hecton8.Physics
         {
             _ = label;
             if (buffer.Ensure(_dataVault, bufferId, requiredLength))
+                _vaultNativeStateMask |= vaultFlag;
+            else
+                _vaultNativeStateMask &= ~vaultFlag;
+        }
+
+        private void RefreshNativeStateViewsFromVault()
+        {
+            RefreshNativeStateBuffer(ref _compartmentFloodVolumes, VaultCompartmentFloodVolumesFlag);
+            RefreshNativeStateBuffer(ref _compartmentViscosity01, VaultCompartmentViscosityFlag);
+            RefreshNativeStateBuffer(ref _compartmentBaseMaxVolumes, VaultCompartmentBaseMaxVolumesFlag);
+            RefreshNativeStateBuffer(ref _compartmentMaxVolumes, VaultCompartmentMaxVolumesFlag);
+            RefreshNativeStateBuffer(ref _compartmentBreachAreas, VaultCompartmentBreachAreasFlag);
+            RefreshNativeStateBuffer(ref _compartmentLocalCentroids, VaultCompartmentLocalCentroidsFlag);
+            RefreshNativeStateBuffer(ref _compartmentFlags, VaultCompartmentFlagsFlag);
+            RefreshNativeStateBuffer(ref _bulkheadPairs, VaultBulkheadPairsFlag);
+            RefreshNativeStateBuffer(ref _bulkheadSealed, VaultBulkheadSealedFlag);
+            RefreshNativeStateBuffer(ref _bulkheadDoorAreas, VaultBulkheadDoorAreasFlag);
+            RefreshNativeStateBuffer(ref _comAccumulatorFront, VaultComAccumulatorFrontFlag);
+            RefreshNativeStateBuffer(ref _comAccumulatorBack, VaultComAccumulatorBackFlag);
+            RefreshNativeStateBuffer(ref _massPropertiesFront, VaultMassPropertiesFrontFlag);
+            RefreshNativeStateBuffer(ref _massPropertiesBack, VaultMassPropertiesBackFlag);
+            RefreshNativeStateBuffer(ref _angularVelocityHistoryLocal, VaultAngularVelocityHistoryFlag);
+            RefreshNativeStateBuffer(ref _previousExteriorSampleSubmersionFactors, VaultExteriorSubmersionHistoryFlag);
+            RefreshNativeStateBuffer(ref _jobFloodVolumes, VaultJobFloodVolumesFlag);
+            RefreshNativeStateBuffer(ref _jobCompartmentFlags, VaultJobCompartmentFlagsFlag);
+            RefreshNativeStateBuffer(ref _bulkheadTransferDeltas, VaultBulkheadTransferDeltasFlag);
+            RefreshNativeStateBuffer(ref _hydroKinematicInput, VaultHydroInputFlag);
+            RefreshNativeStateBuffer(ref _hydroKinematicOutput, VaultHydroOutputFlag);
+            RefreshNativeStateBuffer(ref _hydroBlackBox, VaultHydroBlackBoxFlag);
+        }
+
+        private void RefreshNativeStateBuffer<T>(ref VaultNativeBuffer<T> buffer, int vaultFlag) where T : struct
+        {
+            if (buffer.Refresh(_dataVault))
                 _vaultNativeStateMask |= vaultFlag;
             else
                 _vaultNativeStateMask &= ~vaultFlag;

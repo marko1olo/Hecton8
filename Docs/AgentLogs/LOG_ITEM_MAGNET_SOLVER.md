@@ -260,3 +260,115 @@ Validation:
 - `git diff --check` reports only CRLF normalization warnings for the touched files.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal` currently fails outside item magnet in `SpatialAudioManager.cs`: missing `ClearVaultBackedTelemetryAliases` and `EnsureVaultBackedArray`.
 - No loot/item magnet compile errors were emitted before the external wall.
+
+## 2026-05-16 Kernel ABI And Vault Scrub Pass
+
+What was wrong:
+- The Burst job still trusted scheduler-sanitized dt/radius/strength/max-velocity before local speed-square and reciprocal math.
+- `ItemAcquiredSignal` lacked explicit `Pack=1` while magnet acquisition publishes that packet on the typed lane.
+- Runtime clear paths restored pickup physics state but could leave known item-magnet slots stale in shared DataVault buffers.
+
+What was done:
+- Added `LootMagnetJob.TryResolveKernelParameters` to validate finite kernel parameters inside Burst, clamp stable bounds, and fail closed with `LootEntityFlags.NonFinite`.
+- Added `Pack=1` to `ItemAcquiredSignal`; verified all magnet-emitted public signals now use explicit `Pack=1`.
+- Added `ClearKnownRuntimeVaultSlots` to scrub only sidecar-owned item-magnet slots during shutdown, dependency clear, and sidecar replacement.
+
+Cinematic Cheats used:
+- Low tier still uses the Dear Lie: 10 Hz scan plus bounded lerp.
+- High/Ultra still spend saved cycles through wake/fluid/debris typed lanes; no shader or GPU-domain edits were made from this item task.
+
+Exact Microseconds saved:
+- 0 us hot-loop savings claimed. The new kernel guard is a safety branch, not an arithmetic win.
+- Vault scrub is cold-path O(known sidecar slots), 0 us hot Burst cost.
+
+Validation:
+- Forbidden-pattern scan is clean for `Gameplay/Loot`, `Items/PickupItem.cs`, and `HectonItem.cs`.
+- `LootMagnetSystem.cs` local NativeArray ownership scan is clean: no `NativeArray<T>` fields, `new NativeArray`, `Allocator.Persistent`, `H8Memory.Allocate`, or `H8Memory.Release`.
+- `git diff --check` is clean for the current touched item-magnet and signal files.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal` currently fails outside item magnet in `SubmarineFluidDynamics.cs`: missing `TryRegisterHotSwapListener`, `TryUnregisterHotSwapListener`, and `RefreshVaultNativeStateAfterRelocation`.
+- No loot/item magnet compile errors were emitted before the external wall.
+
+## 2026-05-16 Kernel Delta-Time Clamp Pass
+
+What was wrong:
+- The new Burst kernel parameter guard rejected non-finite and non-positive dt, but a tiny positive dt could still reach `math.rcp(safeDeltaTime)` in the low-tier path.
+
+What was done:
+- Changed `LootMagnetJob.TryResolveKernelParameters` to clamp dt to `0.0001f..MaxIntegrationDeltaTimeSeconds`, matching the managed scheduler contract inside Burst.
+
+Cinematic Cheats used:
+- Low tier keeps the 10 Hz lerp fake; this patch prevents pathological reciprocal spikes inside that cheap path.
+
+Exact Microseconds saved:
+- 0 us claimed. This is NaN/reciprocal survival hardening.
+
+Validation:
+- `rg` confirmed no old `math.min(DeltaTimeSeconds, ...)` or `math.max(DeltaTimeSeconds, ...)` dt-only clamp remains in `LootMagnetPullJob.cs`.
+- `git diff --check` is clean for `LootMagnetPullJob.cs` except Git CRLF normalization warnings.
+
+## 2026-05-16 Post-Clamp Validation Refresh
+
+What was wrong:
+- The previous validation note named `SubmarineFluidDynamics.cs` as the active external wall, but concurrent project edits shifted the current compile wall.
+
+What was done:
+- Re-extracted the `ITEM_MAGNET_SOLVER` XML prompt.
+- Re-ran forbidden-pattern scan across item-magnet scope.
+- Re-ran `git diff --check` on current touched files.
+- Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`.
+
+Cinematic Cheats used:
+- None. Validation refresh only.
+
+Exact Microseconds saved:
+- 0 us runtime savings claimed.
+
+Validation:
+- Forbidden-pattern scan is clean for `Gameplay/Loot`, `Items/PickupItem.cs`, and `HectonItem.cs`.
+- `git diff --check` is clean except Git CRLF normalization warnings.
+- Current build wall is external to item magnet in `LockstepStateValidator.cs`: missing `LockstepSnapshotSignalCapacity`, `LockstepSnapshotLaneHash`, `SystemGlitchSignalCapacity`, and `SystemGlitchLaneHash`.
+- No loot/item magnet compile errors were emitted before the external wall.
+
+## 2026-05-16 Runtime Pose NaN Vaccination Pass
+
+What was wrong:
+- AUP local values were guarded, but `ToRuntimeFloat3()` could still return non-finite coordinates if floating-origin state was poisoned.
+
+What was done:
+- Added `IsFiniteFloat3` and gated both scheduler transform-write sites before `PickupItem.ApplyLootMagnetPose`.
+- Normal commit now flags the fault, marks the slot `NonFinite`, restores pickup runtime state, and avoids transform mutation.
+- Origin-shift reapply now restores pickup runtime state and skips the transform write when runtime conversion is non-finite.
+
+Cinematic Cheats used:
+- None. This preserves the existing mathematical magnet fake by preventing presentation NaNs from reaching Unity transforms.
+
+Exact Microseconds saved:
+- 0 us claimed. One finite branch per visually applied pulled pickup; this is crash-prevention, not a speed win.
+
+Validation:
+- `rg` confirmed both `ToRuntimeFloat3()` call sites are followed by `IsFiniteFloat3` checks before `ApplyLootMagnetPose`.
+- `git diff --check` is clean for `LootMagnetSystem.cs` except Git CRLF normalization warnings.
+
+## 2026-05-16 Final Green Validation Pass
+
+What was wrong:
+- Status still reported an external compile wall after the runtime-pose vaccination patch.
+
+What was done:
+- Re-ran the scoped forbidden-pattern scan for item magnet files.
+- Re-ran the local `NativeArray` ownership scan for `LootMagnetSystem.cs`.
+- Re-ran `git diff --check` for current touched source and log files.
+- Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`.
+
+Cinematic Cheats used:
+- None. Validation only.
+
+Exact Microseconds saved:
+- 0 us runtime savings claimed. Build elapsed time: 1.23 seconds.
+
+Validation:
+- Forbidden-pattern scan is clean for `Gameplay/Loot`, `Items/PickupItem.cs`, and `HectonItem.cs`.
+- `LootMagnetSystem.cs` local ownership scan is clean: no `NativeArray<T>` declarations, `new NativeArray`, `Allocator.Persistent`, `H8Memory.Allocate`, or `H8Memory.Release`.
+- `git diff --check` is clean except Git CRLF normalization warnings.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal` succeeded with 0 errors and 1 warning.
+- Warning is external to item magnet: `AI/Ecosystem/EcosystemPopulationBalancer.cs` is specified multiple times in `Hecton8.Core.csproj`.

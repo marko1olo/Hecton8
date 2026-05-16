@@ -1,6 +1,6 @@
 # Rationale_COMPASS_GYRO_STABILIZER
 
-Status: IMPLEMENTED CODE; PREFAB/SCENE BINDING NOT SERIALIZED; FINAL BUILD BLOCKED BY EXTERNAL DEPENDENCIES
+Status: IMPLEMENTED CODE + COLD PHYSICAL BINDING BRIDGE; PREFAB/SCENE BINDING NOT SERIALIZED; FINAL BUILD BLOCKED BY EXTERNAL DEPENDENCIES
 
 ## Decision 001 - Scope And Authority
 Problem: Existing compass behavior is a screen-space ribbon installed at runtime and driven from camera orientation, while the task requires a diegetic drifting 64-bit compass.
@@ -120,3 +120,17 @@ Solution: Re-ran domain forbidden-pattern scan, duplicate compass-signal scan, s
 Rejected Alternatives: Claiming Unity scene binding from code review would be false. Editing `InputDispatcher.cs` or restoring Assembly-CSharp packages from this UX task would cross the domain boundary.
 Scalability potential: No new runtime branch beyond the High/Ultra optional particle emission; low-tier remains cheaper than the previous coherent-noise path.
 Hardware Impact: Static scans show no new GC hot-path pattern. Build is blocked externally: latest Core build stops at `EcosystemRuntimeInstaller.cs` / `SubmarineFluidDynamics.cs` for missing `Hecton8.AI.Ecosystem` and `VaultNativeBuffer<>`; Assembly-CSharp still lacks `Temp/obj/Assembly-CSharp/project.assets.json`.
+
+## Decision 018 - Physical Authoring Bridge
+Problem: The runtime had a cold `ConfigurePhysicalBinding(...)` API, but no authoring component existed to carry serialized physical-tool references without editing prefab YAML blindly.
+Solution: Added `DiegeticGyroCompassPhysicalBinding` in the navigation domain. It resolves an assigned runtime, or cold-adds one to the physical tool when explicitly allowed; then it applies tool root, dial pivot, diegetic TMP text, indirect mesh/material, and optional anomaly particle emitter. Dependency injection from `GlobalRegistry` is limited to startup/cold authoring, not gameplay ticks.
+Rejected Alternatives: Raw-editing `Player.prefab` without Unity API readback risks prefab corruption. Keeping code-only binding leaves no reliable authoring surface. Creating a Canvas fallback violates the XML rule.
+Scalability potential: Low/MX350 binds only root/text/pivot and keeps triangle-noise/SlowTick behavior. Middle rotates the physical pivot. High/Ultra can bind indirect mesh and local salt/static failure particles without changing compass truth.
+Hardware Impact: Cold binding has no steady-frame cost. Avoided runtime GameObject searches and hot registry polling keep MX350/i3 savings in the previous 1-4 us SlowTick range.
+
+## Decision 019 - Validation After Loop 9
+Problem: A new authoring bridge and text-binding edge case needed proof, and the shared worktree changed during validation.
+Solution: Re-read XML and status/rationale from disk, scanned navigation for forbidden hot-path patterns, fixed `ValidateDiegeticTextBinding()` so a corrected world-space TMP binding re-enables output, and reran builds.
+Rejected Alternatives: Claiming full Unity validation would be false because no MCP scene resources are available and no serialized prefab/scene reference is present. Editing RealtimeCSG or submarine-fluid code from UX Navigation would violate domain ownership.
+Scalability potential: No new runtime math branch. The bridge exposes Low/Middle/High/Ultra presentation hooks without duplicating compass authority or signals.
+Hardware Impact: Navigation scan shows no new GC/hot-path allocation. `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:minimal` succeeded once with 0 warnings/0 errors, then after concurrent worktree movement latest Core build stops outside compass at `SubmarineFluidDynamics.cs(2004)` missing `RefreshNativeStateViewsFromVault`. `Assembly-CSharp.csproj` remains blocked by external `RealtimeCSG.csproj` missing-source CS2001 errors and the same submarine-fluid wall.

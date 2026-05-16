@@ -148,3 +148,36 @@ Validation:
 - Latest rerun now fails outside PHYSICS/VEHICLES in `Assets/_Project/Scripts/Fauna/FaunaBrain.cs`: missing `NormalizeVectorOrFallback`, `IsFiniteBounds`, and `IsFiniteVector`.
 - No visible compiler error references the edited submarine PID, submarine fluid dynamics, or dynamic flood contract files.
 - Final validation status: BLOCKED BY EXTERNAL DEPENDENCY.
+
+## 2026-05-16 - HYDRO_MECHANIC - DataVault Relocation / Hot-Swap Polish Pass
+
+What was wrong:
+- Fluid state had moved into `GlobalDataVault`, but scalar hot-path reads still used cached raw pointers inside the vault wrapper.
+- A DataVault relocation signal could make those cached pointers stale before the next job-boundary resolve.
+- Rebinding every wrapper to a fixed canonical BufferID would break the transfer/mass-properties ping-pong swaps already used by the fluid jobs.
+
+What was done:
+- Added typed `MemoryAddressShiftSignal` snapshot consumption in `SubmarineFluidDynamics.FixedTick`.
+- Added in-place `VaultNativeBuffer<T>.Refresh` using `IDataVault.TryGetBufferHandle`, preserving whichever front/back buffer a wrapper currently owns after swaps.
+- Added DataVault/PowerGrid GlobalRegistry hot-swap handling for the fluid owner, with DataVault replacement forcing teardown-safe reinitialization instead of stale handle reuse.
+- Re-ran static scans for private `NativeArray`, `NativeQueue`, `H8Memory.Allocate`, `Update()`, `FixedUpdate()`, `string.Format`, and non-`Pack = 1` task-owned layouts.
+
+Cinematic cheats used:
+- No new physical simulation.
+- Low tier still uses bounded compartment truth and existing cheap cadence.
+- High tier keeps the same drag/inertia/VFX intent path; this pass prevents maintenance faults instead of spending more frame time.
+
+Microseconds saved, estimated not profiled:
+- No new microsecond claim.
+- Rejected per-index handle resolving to avoid dictionary/generation validation inside the compartment loop.
+- Existing low-tier savings remain: 20-40 us/frame avoided by not running flood mass truth at 60 Hz during active flooding.
+
+Validation:
+- Static scans returned no hits for persistent private `NativeArray`, `NativeQueue`, local splash queue, `H8Memory.Allocate`, `H8Memory.Release`, `Update()`, `FixedUpdate()`, or `string.Format` in the submarine PID/fluid domain files.
+- Struct-layout scan returned no non-`Pack = 1` task-owned layouts in the submarine PID/fluid/domain contract files.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` was rerun.
+- Current blocker is outside PHYSICS/VEHICLES:
+  - `Assets/_Project/Scripts/Ecosystem/EcosystemRuntimeInstaller.cs(1,18)`: missing `Hecton8.AI.Ecosystem`.
+  - `Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs(4,18)`: missing `Hecton8.AI.Ecosystem`.
+- No visible compiler error references the edited submarine PID, submarine fluid dynamics, or dynamic flood contract files.
+- Final validation status: BLOCKED BY EXTERNAL DEPENDENCY.

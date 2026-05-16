@@ -48,3 +48,38 @@ Solution: Used `Graphics.DrawMeshInstancedIndirect` with a structured instance b
 Rejected Alternatives: Compute-generated quads, geometry-shader billboards, `Debug.DrawLine`, or IMGUI runtime overlays. These are brittle on mobile/Metal or allocate.
 Scalability potential: Toaster mode emits coarse hash cells and triangle-line fakes; God-mode increases the same indirect instance count instead of changing architecture.
 Hardware Impact: Steam Deck/MX350 avoids canvas rebuilds and line renderer churn; RTX tier pays only more instance count, not new draw-call classes.
+
+## Decision 7 - Blackbox and Fault Survival
+Problem: A non-finite value in a vault buffer can poison the debug renderer and mobile GPU pipeline before a normal log tells the Architect what broke.
+Solution: Scan sampled vault data with guarded finite checks, draw a red indirect warning at the last AUP fault, and write the 300-frame fixed blackbox ring to `Docs/AgentLogs/Dump_ARCHITECT_EYE_VISUALIZER.bin` once per fault burst.
+Rejected Alternatives: `Debug.LogError` spam, exception-only handling, or a managed list of recent frames. Those miss player builds, allocate, or do not preserve the last stable frames.
+Scalability potential: Low samples fewer entities and still dumps the same 300-frame record; Middle/High/Ultra increase visible vector/label density without changing crash evidence format.
+Hardware Impact: Fault scan estimate is 3-20 microseconds at 5Hz on i3/MX350 by sample budget. Binary dump is fault-path I/O only, not a normal-frame cost.
+
+## Decision 8 - Editor Replay and Breadcrumb CSV
+Problem: Runtime binary dumps and designer POIs need offline inspection without adding runtime GameObjects or asset types that bypass Balance CSV authority.
+Solution: Added an EditorWindow timeline reader for fixed blackbox records and a SceneView Ctrl+Click breadcrumb writer that appends AUP rows with FNV-1a hash columns to `Data/Balance/POIs.csv`.
+Rejected Alternatives: JSON replay files, ScriptableObject POI assets, or runtime Handles. These either allocate more, avoid the Data Monolith path, or do not ship with deterministic binary evidence.
+Scalability potential: Runtime is unaffected on all tiers. High/Ultra machines get richer editor visualization from the same dump; low-tier runtime pays 0 microseconds for editor playback.
+Hardware Impact: 0 microseconds player hot path. Editor-only parsing is bounded by fixed record size and happens on demand.
+
+## Decision 9 - Diegetic Command and STP Control
+Problem: The Architect needs emergency bit flips and STP raw visibility without UGUI/TMP or managed console callbacks.
+Solution: Added a fixed-char diegetic PDA command receiver using the existing physical panel interface and routed commands into preserved `SubmitCommand(ReadOnlySpan<char>)` APIs. Commands support kill-switch mask set/clear and raw STP overlay state.
+Rejected Alternatives: Unity `InputField`, Canvas console, reflection console, or managed delegate command buses. These violate zero-UGUI/zero-GC requirements or bypass typed systems.
+Scalability potential: Low tier has idle cost 0 and only processes on panel events; Middle/High/Ultra can expose the same command surface with denser visual diagnostics.
+Hardware Impact: 0 microseconds idle. Input cost is O(command length) on deliberate panel input only.
+
+## Decision 10 - Compile-Wall Repairs
+Problem: Final `dotnet build` was blocked by small external compile faults unrelated to diagnostics: unavailable `BitConverter.SingleToUInt32Bits`, a missing `Unity.Collections` import, and missing lockstep lane constants.
+Solution: Applied surgical compatibility repairs: bridge-local float bit union, one namespace import, and lockstep constants mirrored from `GlobalSignals` literals. No behavioral refactor was made in those domains.
+Rejected Alternatives: Marking `PLATINUM_COMPILE` blocked while a safe compile fix was available, or editing broad system behavior to hide errors.
+Scalability potential: These repairs are compile-time hygiene and do not change tier behavior.
+Hardware Impact: 0 microseconds player impact; the bridge helper is an inline 4-byte reinterpret used where the unavailable framework API was intended.
+
+## Decision 11 - Final Polish Audit
+Problem: The diagnostics domain must prove no standard `Update`, no `string.Format`, no UGUI Canvas renderer, no private native allocation, and no DX-only shader shortcut.
+Solution: Ran a targeted `rg` audit over `Assets/_Project/Scripts/Core/Diagnostics/Visuals`. Findings: no `Update`/`LateUpdate`/`FixedUpdate`, no `string.Format`, no `new NativeArray`, no `EventBus`, no delegate command path, no `Debug.DrawLine`. The only `Canvas` string is the existing diegetic panel interface name, not a UGUI component. Shaders use vertex/fragment paths, no compute groups, no geometry shader.
+Rejected Alternatives: Relying on visual inspection or compile success alone. Compile success does not prove allocation/rendering discipline.
+Scalability potential: Low clamps entity/quad counts; Middle opens more overlays; High increases densities; Ultra spends saved draw-call budget on denser diagnostic overkill through the same indirect path.
+Hardware Impact: Current estimate remains 35-120 microseconds CPU at 5Hz by tier when active, 0 microseconds when disabled except registration overhead.

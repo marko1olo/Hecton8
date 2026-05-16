@@ -96,8 +96,8 @@ Hardware Impact: MX350 avoids texture-heavy paths; RTX pays additional texture t
 
 ## Decision 014 - Final Validation Block
 Problem: Required 0-error Vulkan/DX12 validation cannot run while Unity script compilation fails in unrelated assemblies.
-Solution: Reran Unity 6000.4.1f1 batch compile. The current log fails in `Animation/IK/VRPhysicalHandPresenceIkJobs.cs`, `Core/Bucketing/ModuloSimulationBucketer.cs`, and `Audio/Virtualization/AudioVirtualizationJobs.cs`; no errors reference UberNoir shader/runtime files.
-Rejected Alternatives: Editing IK, Core Bucketing, or Audio from a Rendering/URP prompt was rejected as domain violation. Claiming Master Grade without compile/build proof was rejected.
+Solution: Reran Unity 6000.4.1f1 batch compile. The earlier run failed in `Animation/IK/VRPhysicalHandPresenceIkJobs.cs`, `Core/Bucketing/ModuloSimulationBucketer.cs`, and `Audio/Virtualization/AudioVirtualizationJobs.cs`; no errors referenced UberNoir shader/runtime files. A later run after the AUP transform correction reached AssetDatabase script compilation, produced no new UberNoir errors or material consolidation report, then stalled with no log growth and was killed to avoid a dangling Unity batch process. A `dotnet build Assembly-CSharp.csproj --no-restore` validation attempt also failed before domain validation because `RealtimeCSG.csproj` references 216 missing source files; `Docs/AgentLogs/Dotnet_UBER_NOIR_INTEGRATOR.log` contains no UberNoir matches.
+Rejected Alternatives: Editing IK, Core Bucketing, Audio, or RealtimeCSG from a Rendering/URP prompt was rejected as domain violation. Claiming Master Grade without compile/build proof was rejected. Leaving the Unity validation process alive after a long no-output stall was rejected because it would poison subsequent agents' editor/batch runs.
 Scalability potential: Source-side scalability work is present, but build/runtime proof remains blocked by other domains.
 Hardware Impact: No measured runtime numbers can be claimed until the compile dependency clears.
 
@@ -121,3 +121,17 @@ Solution: Changed the reciprocal to `sign(value) / max(abs(value), eps)` using `
 Rejected Alternatives: Maintaining the sign-losing reciprocal was rejected as a subtle UV inversion risk. Using raw `rcp(value)` was rejected because zero/denormal inputs can produce INF/NaN on mobile GPUs.
 Scalability potential: Low tier still strips POM; Middle/High/Ultra get safer parallax and texture-scale math.
 Hardware Impact: Adds two scalar ALU ops where the helper is used; exact cost is unmeasured and expected to be below measurement noise, pending profiler validation.
+
+## Decision 018 - Texture Gate Honesty
+Problem: Branchless `lerp` gates for textured caustics and screen refraction still executed `_HectonCausticsMap` and `_CameraOpaqueTexture` samples when high-cost effects were disabled by params or homeostasis. That made the status claim "disabled" visually true but GPU-cost false.
+Solution: Added explicit `[branch]` work-shed guards around the textured caustic sample and screen-refraction sample block. POM already used this pattern because skipping the 16 taps is the point of the homeostasis gate.
+Rejected Alternatives: Keeping fully branchless fragment code was rejected because it preserves Omega wording while wasting texture bandwidth. Removing the features entirely from the keyword variant was rejected because High/Ultra still need the visual overkill path.
+Scalability potential: Low compiles out these paths; Middle can keep procedural caustics only; High/Ultra pay texture samples only when quality and stress gates allow them.
+Hardware Impact: Expected savings under stress are one caustic-map sample plus one to three opaque-texture samples per affected fragment. Exact microseconds are not claimed without profiler capture.
+
+## Decision 019 - Dither Texture Gate Honesty
+Problem: `H8UberNoirClipDitheredTransparency` called `H8UberNoirBlueNoise(positionCS)` inside a `lerp`, so non-low variants could still sample `_BlueNoiseTex` even when the feature flag was off or homeostasis had disabled high-cost work. Runtime telemetry also reported `FeatureBlueNoiseDither` on low/stress frames.
+Solution: Added `H8UberNoirCheapDither`, an ALU interleaved-gradient fallback that reuses the water-extinction noise helper. `_BlueNoiseTex` is now sampled only after a `[branch]` work-shed gate where dither is active and `H8UberNoirHighCostAllowed()` permits texture spend. Runtime feature-mask reporting now omits `FeatureBlueNoiseDither` on low tier and stress-shed frames.
+Rejected Alternatives: Keeping the branchless `lerp` was rejected because it repeats the same false-disable bug as caustics/refraction. Removing dither entirely under stress was rejected because HLOD/impostor cutouts still need stable coverage without alpha blending.
+Scalability potential: Low/stress uses deterministic ALU noise; Middle can keep cutout transitions without texture bandwidth; High/Ultra spend one blue-noise sample only when quality gates allow it.
+Hardware Impact: Expected static saving under low/stress/disabled dither is one `_BlueNoiseTex` sample per clipped fragment. Exact microseconds are not claimed without profiler capture.

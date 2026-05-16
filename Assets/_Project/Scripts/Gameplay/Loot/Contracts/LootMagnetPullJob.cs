@@ -195,7 +195,10 @@ namespace Hecton8.Gameplay.Loot.Contracts
                 return false;
             }
 
-            safeDeltaTime = math.min(DeltaTimeSeconds, LootMagnetConstants.MaxIntegrationDeltaTimeSeconds);
+            safeDeltaTime = math.clamp(
+                DeltaTimeSeconds,
+                0.0001f,
+                LootMagnetConstants.MaxIntegrationDeltaTimeSeconds);
             pullRadiusSq = math.clamp(
                 PullRadiusSq,
                 LootMagnetConstants.AcquireDistanceSq,

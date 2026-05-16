@@ -59,3 +59,15 @@ Cinematic Cheats used: Low tier remains a deterministic billboard soup: triangle
 Exact Microseconds saved: Exact measured microseconds are unavailable; no Unity Profiler/GCMonitor run occurred. Engineering estimates unchanged: `Instantiate` burst avoidance 2000-8000 us per 64-object burst, modulo bucket drift reduction 70-90% versus full sweep, telemetry under 2 us/late frame, and indirect draw replacing per-instance matrix submission. Branchless Omega pass is a determinism/compliance tradeoff, not a measured frame-time claim.
 
 Verification: `AmbientBiotaDriftJob.Execute` has no `if (` source after the Omega pass. `Assets/_Project/Scripts/AI/Ambient` has no forbidden ambient hot-path patterns from the static scan. `git diff --check` passed with CRLF warnings only. Final compile log is `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`: build succeeded, 0 warnings, 0 errors. Unity Editor import, Play Mode, GCMonitor, Frame Debugger, RenderDoc, and player-build proof remain pending.
+
+## 2026-05-16 - Loop 6 Multiplatform GPU Bandwidth Pass
+
+What was wrong: The ambient indirect renderer still used `GraphicsBuffer.SetData` for full-capacity AUP, velocity, state, and indirect-args uploads. That is unacceptable for Steam Deck/MX350 bandwidth discipline and violates the `LockBufferForWrite` upload rule.
+
+What was done: Replaced single GPU payload buffers with double-buffered A/B lanes. Uploads now write to the non-current buffer with `LockBufferForWrite`, copy from vault-resolved `NativeArray` views through `UnsafeMemoryCopyGuard`, and swap the read index only after all SOA payload streams succeed. Indirect args now use a locked write and update only when mesh/capacity changes. The ambient asmdef now enables unsafe code for the explicit native copy path.
+
+Cinematic Cheats used: Low tier remains a cheap deterministic visual fake: billboard flags, triangle noise, no collision, stress radius clamp. High/Ultra keep light avoidance, panic emission, biome-tinted species families, and indirect rendering from the same buffers.
+
+Exact Microseconds saved: No profiler measurement was run. Expected gain is reduced upload/synchronization overhead versus full `SetData` every late frame. Runtime file I/O added by this pass is 0 B/frame; all rendering payload data comes from DataVault buffers already in memory.
+
+Verification: Static ambient scan found no `SetData`, `private NativeArray`, direct `H8Memory.Allocate`, `Update`, `LateUpdate`, `FixedUpdate`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, legacy `EventBus`, managed delegate patterns, `Camera.main`, scene find, coroutine, or `Resources.Load`. `AmbientBiotaDriftJob.Execute` still has no `if (` source. `git diff --check` passed with CRLF warnings only. Latest `dotnet build` exits 0 with 1 warning and 0 errors. The warning is outside ambient: `CS2002` duplicate source include for `Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs`. Evidence is in `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`.

@@ -20,6 +20,9 @@ namespace Hecton8.Core.Content.Editor
         private const string HighResGroupName = "High_Res";
         private const string OverkillGroupName = "Overkill";
         private const long MaxSingleContentAssetBytes = 256L * 1024L * 1024L;
+        private const string ResourcesApiPrefix = "Resources.";
+        private const string ResourcesLoadMethod = "Load";
+        private const string ResourcesLoadAllMethod = "LoadAll";
         private static readonly Regex _hashRegex = new Regex(
             "\"(?:itemHash|meshHash|prefabHash|assetHash|hash)\"\\s*:\\s*\"?(?<hash>0x[0-9A-Fa-f]{1,8}|[0-9]{1,10})\"?",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -33,6 +36,7 @@ namespace Hecton8.Core.Content.Editor
 
         public static void RunAllBuildValidators()
         {
+            ValidateNoFirstPartyResourcesLoads();
             ValidateAddressableGroups();
             ContentAssetHashMap[] maps = FindHashMaps();
             ValidateHashMapIntegrity(maps);
@@ -43,6 +47,29 @@ namespace Hecton8.Core.Content.Editor
             ValidateLoreBlockIoBudgets();
             ValidateComputeShaderThreadGroups();
             ValidateVfxPrewarmManifests();
+        }
+
+        private static void ValidateNoFirstPartyResourcesLoads()
+        {
+            const string firstPartyRoot = "Assets/_Project";
+            if (!Directory.Exists(firstPartyRoot))
+                return;
+
+            string loadCall = ResourcesApiPrefix + ResourcesLoadMethod + "(";
+            string loadAllCall = ResourcesApiPrefix + ResourcesLoadAllMethod + "(";
+            string[] files = Directory.GetFiles(firstPartyRoot, "*.cs", SearchOption.AllDirectories);
+            for (int i = 0; i < files.Length; i++)
+            {
+                string path = files[i].Replace('\\', '/');
+                string source = File.ReadAllText(path);
+                if (source.IndexOf(loadCall, StringComparison.Ordinal) < 0 &&
+                    source.IndexOf(loadAllCall, StringComparison.Ordinal) < 0)
+                {
+                    continue;
+                }
+
+                Fail("First-party Resources API usage is banned: " + path);
+            }
         }
 
         private static ContentAssetHashMap[] FindHashMaps()
@@ -267,6 +294,14 @@ namespace Hecton8.Core.Content.Editor
 
         private static void ValidateTierGroups(ContentAssetHashMap[] maps)
         {
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings == null)
+                Fail("Addressables settings asset missing.");
+
+            Dictionary<string, string> groupByAddress = new Dictionary<string, string>(512, StringComparer.Ordinal);
+            Dictionary<string, string> groupByGuid = new Dictionary<string, string>(512, StringComparer.Ordinal);
+            BuildAddressableGroupLookup(settings, groupByAddress, groupByGuid);
+
             for (int i = 0; i < maps.Length; i++)
             {
                 ContentAssetHashMap map = maps[i];
@@ -276,16 +311,95 @@ namespace Hecton8.Core.Content.Editor
                 for (int j = 0; j < map.Count; j++)
                 {
                     ContentAssetEntry entry = map.GetEntryAt(j);
-                    if (entry.Tier != ContentTier.Overkill)
+                    if (entry.Kind == ContentAssetKind.LoreText)
                         continue;
 
-                    if (string.IsNullOrEmpty(entry.Address) ||
-                        entry.Address.IndexOf(OverkillGroupName, StringComparison.OrdinalIgnoreCase) < 0)
+                    string groupName = ResolveAddressableGroupName(in entry, groupByAddress, groupByGuid);
+                    if (string.IsNullOrEmpty(groupName))
                     {
-                        Fail("Overkill asset is not isolated behind the Overkill Addressables group/address: 0x" +
+                        Fail("Content entry is not present in Addressables settings: 0x" +
                              entry.Hash.ToString("X8"));
                     }
+
+                    string expectedGroup = ResolveExpectedGroupName(entry.Tier);
+                    if (!string.Equals(groupName, expectedGroup, StringComparison.Ordinal))
+                    {
+                        Fail("Content entry assigned to wrong Addressables tier group: 0x" +
+                             entry.Hash.ToString("X8") + " expected=" + expectedGroup + " actual=" + groupName);
+                    }
                 }
+            }
+        }
+
+        private static void BuildAddressableGroupLookup(
+            AddressableAssetSettings settings,
+            Dictionary<string, string> groupByAddress,
+            Dictionary<string, string> groupByGuid)
+        {
+            List<AddressableAssetGroup> groups = settings.groups;
+            if (groups == null)
+                return;
+
+            for (int i = 0; i < groups.Count; i++)
+            {
+                AddressableAssetGroup group = groups[i];
+                if (group == null || group.entries == null)
+                    continue;
+
+                string groupName = group.Name;
+                HashSet<AddressableAssetEntry>.Enumerator enumerator = group.entries.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    AddressableAssetEntry entry = enumerator.Current;
+                    if (entry == null)
+                        continue;
+
+                    if (!string.IsNullOrEmpty(entry.address) && !groupByAddress.ContainsKey(entry.address))
+                        groupByAddress.Add(entry.address, groupName);
+
+                    if (!string.IsNullOrEmpty(entry.guid) && !groupByGuid.ContainsKey(entry.guid))
+                        groupByGuid.Add(entry.guid, groupName);
+                }
+            }
+        }
+
+        private static string ResolveAddressableGroupName(
+            in ContentAssetEntry entry,
+            Dictionary<string, string> groupByAddress,
+            Dictionary<string, string> groupByGuid)
+        {
+            if (!string.IsNullOrEmpty(entry.Address) &&
+                groupByAddress.TryGetValue(entry.Address, out string groupName))
+            {
+                return groupName;
+            }
+
+#if UNITY_ADDRESSABLES_EXIST
+            if (entry.Asset != null)
+            {
+                string assetGuid = entry.Asset.AssetGUID;
+                if (!string.IsNullOrEmpty(assetGuid) &&
+                    groupByGuid.TryGetValue(assetGuid, out groupName))
+                {
+                    return groupName;
+                }
+            }
+#endif
+            return null;
+        }
+
+        private static string ResolveExpectedGroupName(ContentTier tier)
+        {
+            switch (tier)
+            {
+                case ContentTier.Overkill:
+                    return OverkillGroupName;
+
+                case ContentTier.HighRes:
+                    return HighResGroupName;
+
+                default:
+                    return CoreGroupName;
             }
         }
 

@@ -3,7 +3,7 @@
 Agent ID: AMBIENT_BIOTA_DIRECTOR
 Domain: AI/ENVIRONMENT
 Task Count: 18
-Status: VERIFIED MASTER GRADE - BIOTA PULSING (DOTNET BUILD GREEN; UNITY RUNTIME PENDING)
+Status: VERIFIED MASTER GRADE - BIOTA PULSING (DOTNET EXIT 0; UNITY RUNTIME PENDING)
 
 ## Prompt Extraction Evidence
 
@@ -101,10 +101,10 @@ Status: VERIFIED MASTER GRADE - BIOTA PULSING (DOTNET BUILD GREEN; UNITY RUNTIME
   - Rejected alternative: inventing a new ambient biome signal or direct `BiomeMatrixDirector` hard dependency.
   - Microsecond estimate: O(signal count) cold/slow path scan, typically sub-1 us when no biome transition signals are present.
 - [x] 18. FINAL_VALIDATION
-  - Status: DOTNET BUILD GREEN
+  - Status: DOTNET BUILD EXIT 0
   - Command: `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false`
-  - Result: succeeded, 0 warnings, 0 errors; see `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`.
-  - Local note: Unity runtime/profiler verification is still pending; only compile validation is green.
+  - Result: latest run succeeded with 1 warning and 0 errors; see `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`.
+  - Local note: warning is outside `AI/Ambient`: duplicate source include for `Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs`. Unity runtime/profiler verification is still pending.
 
 ## Loop 2: Tasks 6-10
 
@@ -140,6 +140,22 @@ Status: VERIFIED MASTER GRADE - BIOTA PULSING (DOTNET BUILD GREEN; UNITY RUNTIME
 - [x] Diff hygiene: `git diff --check -- Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs Docs/Tasks/Status_AMBIENT_BIOTA_DIRECTOR.md Docs/AgentLogs/Rationale_AMBIENT_BIOTA_DIRECTOR.md Docs/AgentLogs/LOG_AMBIENT_BIOTA_DIRECTOR.md` passed; only CRLF normalization warnings.
 - [x] Final compile: `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false` succeeded with 0 warnings and 0 errors, writing `Temp\bin\Debug\Hecton8.Core.dll`.
 - [x] Runtime caveat: Unity Editor import, Play Mode, GCMonitor, Frame Debugger, and GPU profiler proof were not run in this shell session; measured microseconds remain absent.
+
+## Loop 6: Multiplatform GPU Bandwidth Polish
+
+- [x] Prompt re-read before loop: `CURRENT_BATCH.md` lines 2134-2189 still define `AMBIENT_BIOTA_DIRECTOR`, 18 tasks, and the indirect draw / Omega requirements.
+- [x] ARM64/Quest layout audit: `AbsoluteUniversePosition`, `AmbientBiotaState`, and `AmbientBiotaTelemetryEntry` are `[StructLayout(LayoutKind.Explicit, Pack = 1)]`; ambient state remains 32 B and telemetry remains 64 B.
+- [x] GPU upload bandwidth: replaced per-frame `GraphicsBuffer.SetData` in `AmbientBiotaDirector` with double-buffered `GraphicsBuffer` lanes and `LockBufferForWrite` uploads guarded by `UnsafeMemoryCopyGuard`.
+- [x] Steam Deck/MicroSD pressure: no ambient runtime file/asset reads are introduced in the hot path; indirect draw uses existing material/mesh references or one cold fallback mesh.
+- [x] Typed-lane audit: ambient domain still uses `SignalBus<BiomeChangedSignal>.GetFrameSnapshot()` and `GlobalSignals.Publish(in ...)`; no legacy `EventBus`, managed delegate lane, or duplicate ambient signal was added.
+- [x] Static forbidden-pattern audit: no `SetData`, `private NativeArray`, direct `H8Memory.Allocate`, `Update`, `LateUpdate`, `FixedUpdate`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, `EventBus`, managed delegate patterns, `Camera.main`, scene find, coroutine, or `Resources.Load` in `Assets/_Project/Scripts/AI/Ambient`.
+- [x] Omega advection audit: `AmbientBiotaDriftJob.Execute` still contains no `if (` branch source.
+- [x] Diff hygiene: `git diff --check -- Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs Assets/_Project/Scripts/AI/Ambient/Hecton8.AI.Ambient.asmdef ...` passed; only CRLF normalization warnings.
+- [x] Current compile verification: DOTNET EXIT 0 WITH FOREIGN WARNING
+  - Command: `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false`
+  - Result: succeeded with 1 warning and 0 errors.
+  - Evidence: `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`.
+  - Domain note: the remaining warning is `CS2002` duplicate source include for `Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs`; this belongs to ecosystem/integration ownership, not `AI/Ambient`.
 
 ## Phase 1 Audit Notes
 

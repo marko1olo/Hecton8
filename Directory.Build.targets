@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
     <DefineConstants>$(DefineConstants);HECTON_CORE_CONTRACTS_DLL_LEGACY</DefineConstants>
-    <DefineConstants Condition="!$([System.String]::Copy('$(DefineConstants)').Contains('_MATH_LOD_LOW')) And ($([System.String]::Copy('$(DefineConstants)').Contains('UNITY_ANDROID')) Or $([System.String]::Copy('$(DefineConstants)').Contains('HECTON_LOW_TIER')) Or $([System.String]::Copy('$(DefineConstants)').Contains('HECTON_MATH_LOD_LOW')))">$(DefineConstants);_MATH_LOD_LOW</DefineConstants>
+    <DefineConstants Condition="!$([System.String]::Copy('$(DefineConstants)').Contains('_MATH_LOD_LOW')) And ($([System.String]::Copy('$(DefineConstants)').Contains('UNITY_ANDROID')) Or $([System.String]::Copy('$(DefineConstants)').Contains('HECTON_LOW_TIER')) Or $([System.String]::Copy('$(DefineConstants)').Contains('HECTON_MATH_LOD_LOW')) Or '$(HectonMathLodLow)' == 'true' Or '$(HectonBuildTier)' == 'Low')">$(DefineConstants);_MATH_LOD_LOW</DefineConstants>
     <NoWarn>$(NoWarn);0414;0436;0618;2002</NoWarn>
     <RunAnalyzers>false</RunAnalyzers>
     <UseSharedCompilation>false</UseSharedCompilation>

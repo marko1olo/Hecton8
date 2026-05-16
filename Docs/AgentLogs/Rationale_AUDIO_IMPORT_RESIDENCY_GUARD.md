@@ -74,7 +74,7 @@ Hardware Impact: On i3/MX350, ambient output work can drop by roughly 50 percent
 
 ## Decision 10: Development RAM Overlay And Frozen Creature Eviction
 Problem: Audio RAM regressions are invisible during development, and frozen predators should not keep decoded creature banks resident.
-Solution: Add a `#if DEVELOPMENT_BUILD` overlay driven by `AudioResidencyCache.CurrentResidentBytes`, and evict `Creatures` residency when virtual/foveated audio reaches Tier 2 Frozen or a threat source becomes culled.
+Solution: Add a `#if DEVELOPMENT_BUILD` TextMeshPro overlay driven by `AudioResidencyCache.CurrentResidentBytes`, and evict `Creatures` residency when virtual/foveated audio reaches Tier 2 Frozen or a threat source becomes culled.
 Rejected Alternatives: Shipping HUD text was rejected because this is diagnostics. Per-predator hard references were rejected because the cache domain already gives a decoupled sound-bank boundary without direct AI ownership.
 Scalability potential: Low evicts creature banks aggressively. Middle keeps recent active creature cues warm. High/Ultra can refill creature audio on renewed proximity while frozen predators stop consuming RAM.
 Hardware Impact: Overlay is 0 us in shipping builds. Creature bank eviction saves an estimated 1-16 MB when frozen predator pressure leaves hearing range.
@@ -154,4 +154,18 @@ Problem: The focused compile still cannot complete after the audio data-vault an
 Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`; it failed on unrelated `Core/Determinism/LockstepStateValidator.cs` missing constants: `LockstepSnapshotSignalCapacity`, `LockstepSnapshotLaneHash`, `SystemGlitchSignalCapacity`, and `SystemGlitchLaneHash`.
 Rejected Alternatives: Editing LockstepStateValidator was rejected as outside CORE/AUDIO authority. Reporting platinum was rejected because the command exits 1.
 Scalability potential: Not runtime-relevant; this records the verification wall.
+Hardware Impact: 0 us runtime impact from the compile boundary.
+
+## Decision 22: Loop 7 Overlay Anti-IMGUI Cleanup
+Problem: The development audio RAM debugger satisfied visibility but still used `OnGUI`, `GUI.Label`, and string interpolation. That violates the no-IMGUI/no-hot-formatting polish requirement even though it was stripped outside development builds.
+Solution: Replace `OnGUI` with a development-only TextMeshPro overlay created during cold `SpatialAudioManager` service initialization. Refresh it from `LateFrameTick` only when resident kilobytes or clip count changes, using a preallocated 48-character buffer and integer ASCII writers.
+Rejected Alternatives: Keeping IMGUI was rejected because it adds dev-frame layout overhead and hides hot-path debt. Using `string.Format`, interpolation, or TMP formatted strings was rejected because the overlay is a recurring diagnostic surface.
+Scalability potential: Low/Middle/High/Ultra shipping builds pay 0 us because the entire overlay remains behind `DEVELOPMENT_BUILD`. Development builds keep audio residency visible without masking per-frame GC or IMGUI layout spikes.
+Hardware Impact: Shipping i3/MX350 impact is 0 us. Development builds avoid the previous IMGUI callback and string formatting path; expected saved dev-frame cost is small but measurable during overlay visibility, roughly 5-40 us depending on Unity IMGUI layout state.
+
+## Decision 23: Loop 7 Compile Boundary
+Problem: The focused compile still cannot complete after the overlay cleanup.
+Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`; it failed on unrelated `EcosystemRuntimeInstaller.cs` and `BinaryLayoutManifest.cs` references to missing namespace `Hecton8.AI.Ecosystem`.
+Rejected Alternatives: Editing AI/Ecosystem or core binary manifest files was rejected as outside CORE/AUDIO authority. Reporting platinum was rejected because the command exits 1.
+Scalability potential: Not runtime-relevant; this records the current verification wall.
 Hardware Impact: 0 us runtime impact from the compile boundary.

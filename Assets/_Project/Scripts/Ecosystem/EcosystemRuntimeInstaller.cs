@@ -12,7 +12,6 @@ namespace Hecton8.Ecosystem
     {
         private const string RuntimeRootName = "__HECTON_ECOSYSTEM_RUNTIME";
         private const string EcosystemPopulationBalancerTypeName = "Hecton8.AI.Ecosystem.EcosystemPopulationBalancer";
-
         /// <summary>
         /// Ensures genetics, infection, and migration ecosystem owners exist in the active gameplay scene.
         /// </summary>
@@ -47,14 +46,10 @@ namespace Hecton8.Ecosystem
 
         private static Type ResolveType(string typeName)
         {
-            Type type = Type.GetType(typeName, false);
-            if (type != null)
-                return type;
-
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int i = 0; i < assemblies.Length; i++)
             {
-                type = assemblies[i].GetType(typeName, false);
+                Type type = assemblies[i].GetType(typeName, false);
                 if (type != null)
                     return type;
             }

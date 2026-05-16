@@ -139,3 +139,38 @@ Solution: Logged attempt 13 and attempt 14. Core build now fails in `SpatialAudi
 Rejected Alternatives: Editing SpatialAudio/Tool files was rejected because they are outside CORE/ASSETS and not necessary cross-domain interfaces for the content authority pass.
 Scalability potential: Not applicable.
 Hardware Impact: Not applicable until external compile wall is cleared.
+
+## Phase 6 Blackbox Binary Correctness
+Problem: `ContentAuthorityTelemetryEntry` was declared as a 64-byte record, but the dump serialized only the explicit 48 bytes of fields and omitted a header. A crash dump reader would not know the record size or have the missing tail bytes.
+Solution: Added explicit reserved fields to bring the serialized telemetry payload to 64 bytes, wrote a magic header, entry count, and struct-size header before the 300-entry ring, cached the dump path in `Awake`, and gated dump execution to once per session. The path still targets `Docs/AgentLogs/Dump_CONTENT_AUTHORITY_DICTATOR.bin` in-project and falls back to `Application.persistentDataPath` on platforms where that project directory is unavailable.
+Rejected Alternatives: Keeping implicit `[StructLayout(Size=64)]` padding was rejected because managed field-by-field serialization does not write padding bytes. Rebuilding the file path on every non-finite frame was rejected because a persistent NaN would cause repeated fault-path work.
+Scalability potential: Low/Quest/Steam Deck get a parseable, bounded 19.2 KB telemetry body plus 16-byte header without repeated dump storms. High/Ultra get the same deterministic forensic payload when visual overkill exposes data faults.
+Hardware Impact: No normal-frame microsecond claim. Fault path now writes one bounded dump instead of repeatedly rewriting the file under a sustained non-finite pressure signal.
+
+## Phase 6 Compile Wall
+Problem: A green core build and green editor build were achieved, but a follow-up core build failed after concurrent external edits moved the compile wall.
+Solution: Logged attempt 15 (`Hecton8.Core.csproj` exit 0), attempt 16 (`Hecton8.Editor.csproj /m:1` exit 0), and attempt 17 (core fail in `EcosystemRuntimeInstaller` and `BinaryLayoutManifest`). No failure referenced CORE/ASSETS.
+Rejected Alternatives: Declaring PLATINUM_COMPILE complete from a transient green checkpoint was rejected because the latest build command failed. Editing Ecosystem/Core manifest files was rejected because those are outside the CONTENT authority boundary.
+Scalability potential: Not applicable.
+Hardware Impact: Not applicable until external compile wall is cleared again.
+
+## Phase 7 Addressables Release Bridge and Tier Proof
+Problem: The content VRAM intercept could remove the oldest unused biome from the content reference ledger and ask the lifecycle governor to evict low-priority assets, but it did not have an explicit `Addressables.Release` bridge for content-owned bundle handles. The tier validator also needed to prove actual Addressables group membership, not infer tier correctness from an address string.
+Solution: Added a fixed 256-slot Addressables handle bridge in `ContentAuthorityRuntime`. Callers can bind an `AsyncOperationHandle` to `RegisterBundleAcquire(hash, handle)`. Duplicate handles for the same hash are released immediately, unused non-biome handles release when their ref count reaches zero, and the VRAM pressure path releases the tracked handle for the oldest unused biome cache before removing it from the ledger. Editor validation now resolves Addressables group membership by address and GUID and fails Core/High_Res/Overkill entries placed in the wrong group. `ObjectBatchBase.ReplacePayload` now refuses runtime mutation and remains an editor-only bake surface.
+Rejected Alternatives: Keeping ledger-only eviction was rejected because it could report lower residency without releasing the actual Addressables handle. Storing `AsyncOperationHandle` in `GlobalDataVault` was rejected because it is not blittable vault data. Address substring validation was rejected because a wrong group can still have a correct-looking address.
+Scalability potential: Low/Quest/MX350 get deterministic release of unused biome handles under the 1.8 GB ceiling and cannot download Overkill groups. Middle keeps High_Res assets only when grouped correctly. High/Ultra can retain Overkill handles only when the registry and Addressables group contract both prove ownership.
+Hardware Impact: i3/MX350 benefit is VRAM correctness, not a claimed frame-time number. The handle bridge adds no per-frame scan; it uses bounded 256-slot scans only on acquire/release/pressure events. Editor tier validation is build-time, 0 runtime us.
+
+## Phase 7 Compile Wall
+Problem: Post-patch verification cannot declare PLATINUM_COMPILE because `Hecton8.Core.csproj` currently fails in external `Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs`; the latest editor recheck now fails through that same core wall.
+Solution: Logged attempt 19 with the exact external errors: missing `ResolveOptionalType`, missing `AssertResolved`, and incompatible `AssertSize`/`AssertOffset` overload calls. Attempt 20 against `Hecton8.Editor.csproj /m:1` exited 0 after the content patch. Attempt 21, run after the final handle-ownership comment, failed again through `BinaryLayoutManifest.cs`. No compile error references `Assets/_Project/Scripts/Core/Content`.
+Rejected Alternatives: Editing `BinaryLayoutManifest.cs` was rejected because it is outside the CORE/ASSETS content authority surface and has active concurrent ownership.
+Scalability potential: Not applicable.
+Hardware Impact: Not applicable until the external binary-layout compile wall is cleared.
+
+## Phase 7 First-Party Resources Gate and Compile Recovery
+Problem: The one-time first-party `Resources.Load` purge could regress later unless content validation enforced it. The previous compile state was stale because the external binary-layout wall cleared after the phase 7 patch.
+Solution: Added a first-party source scan to the content editor validator that fails any `Assets/_Project/**/*.cs` use of the banned Resources load APIs. Re-ran static scans: first-party Resources load scan returned no hits, and content-domain banned-pattern scan returned no hits. Re-ran compile: attempt 22 `Hecton8.Core.csproj` exited 0; attempt 23 `Hecton8.Editor.csproj /m:1` exited 0.
+Rejected Alternatives: Relying on manual `rg` reports was rejected because a future first-party regression would bypass the build gate. Keeping task 20 blocked was rejected after the current build commands succeeded.
+Scalability potential: Low/Quest/MX350 stay protected from accidental Resources-path loads and Overkill bundle pulls. High/Ultra keep explicit Addressables-tier ownership and can spend budget only through validated registries.
+Hardware Impact: Build-time gate is 0 runtime us. Runtime benefit is avoiding accidental synchronous Resources path loads and their uncontrolled RAM residency.

@@ -351,7 +351,7 @@ namespace Hecton8.Core
 
         private static uint BuildFeatureMask(bool lowTier, bool stressShed, float highCostAllowed01, float visualOverkill01)
         {
-            uint mask = FeatureAnalyticalCaustics | FeatureHullDents | FeatureBlueNoiseDither | FeatureWakeSilt;
+            uint mask = FeatureAnalyticalCaustics | FeatureHullDents | FeatureWakeSilt;
             if (lowTier)
                 mask |= FeatureLowTier;
 
@@ -359,7 +359,11 @@ namespace Hecton8.Core
                 mask |= FeatureHomeostasisShed;
 
             if (highCostAllowed01 > 0.5f)
+            {
                 mask |= FeaturePom | FeatureSecondaryCaustics | FeatureScreenRefraction;
+                if (!lowTier)
+                    mask |= FeatureBlueNoiseDither;
+            }
 
             if (visualOverkill01 > 0.5f)
                 mask |= FeatureVisualOverkill;

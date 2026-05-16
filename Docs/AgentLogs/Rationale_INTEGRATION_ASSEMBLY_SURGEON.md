@@ -67,3 +67,31 @@ Solution: Resolved vault handles through `GlobalRegistry.DataVault`, cached `Nat
 Rejected Alternatives: Reverting the migration to private persistent NativeArrays, keeping a local `NativeQueue` for breakdown events, or adding gameplay behavior.
 Scalability potential: Low tier centralizes memory ownership for deterministic budget tracking; High/Ultra can scale tool telemetry without per-system allocation sprawl.
 Hardware Impact: Runtime gain is 0 us measured. Expected benefit is reduced leak risk and better vault observability.
+
+## 2026-05-16 Tail Repair - Loop39 Current Disk Green
+
+Problem: Parallel edits reintroduced a hard Core compile dependency on `Hecton8.AI.Ecosystem` through `EcosystemRuntimeInstaller` and `BinaryLayoutManifest`. Loop38 failed with 2 CS0234 errors and wrote the failure to `Docs/AgentLogs/Dump_COMPILE_ERROR.txt`.
+Solution: Replaced the concrete `EcosystemPopulationBalancer` add path with cold-path reflection, converted ecosystem population binary-layout checks to optional reflection, and removed the forced `EcosystemPopulationBalancer.cs` compile include from `Directory.Build.targets`.
+Rejected Alternatives: Adding a direct Core reference to the AI ecosystem leaf assembly, compiling the whole AI population balancer into Core, or deleting the binary layout verification outright.
+Scalability potential: Low/Quest builds keep Core independent from AI leaf assemblies; Middle/High/Ultra still validate ecosystem population layout when the leaf assembly is loaded.
+Hardware Impact: Runtime gain is 0 us measured. Compile recovery evidence: Loop38 failed in 34,430,000 us; Loop39 succeeded in 60,510,000 us.
+
+Problem: Strict asmdef graph enforcement was not stable under concurrent file churn; `Hecton8.Core.Content.Editor.asmdef` reverted to `autoReferenced: true`.
+Solution: Set it back to `autoReferenced: false` and reran the asmdef scan. Current result: `ASMDEF_COUNT=94`, `AUTO_REFERENCED_TRUE_COUNT=0`, `ASMDEF_CYCLES=0`, and `MISSING_HECTON8_REFERENCES=0` across all Assets asmdefs.
+Rejected Alternatives: Leaving editor assemblies auto-injected, editing generated projects, or removing live Unity/package references from asmdefs.
+Scalability potential: Low/Middle/High/Ultra builds get explicit dependency graph behavior instead of hidden auto-reference edges.
+Hardware Impact: Runtime gain is 0 us measured. This is compile graph debt removal.
+
+Problem: `_MATH_LOD_LOW` had runtime/shader paths but no robust MSBuild-level explicit low-tier trigger for standalone low builds.
+Solution: Added a guarded `Directory.Build.targets` define injection for Android, `HECTON_LOW_TIER`, `HECTON_MATH_LOD_LOW`, `HectonMathLodLow=true`, or `HectonBuildTier=Low`; verified with an MSBuild property probe that `_MATH_LOD_LOW` appears.
+Rejected Alternatives: Forcing low-tier defines into all standalone/editor builds, which would downgrade PC high-tier visual paths.
+Scalability potential: Toaster mode gets the cheap math path; High/Ultra standalone remains free to use expensive visual-overkill paths.
+Hardware Impact: Runtime gain is 0 us measured in this shell. Expected benefit is platform-tier correctness, not profiler proof.
+
+## 2026-05-16 Tail Integration Revalidation
+
+Problem: After commit `d7dd79d3c`, concurrent agents added a new dirty tail. `Docs/AgentLogs/Dump_COMPILE_ERROR.txt` rotated through stale `Hecton8.AI.Ecosystem`, missing `BinaryBlittableSafe`, and missing `BinaryLayoutManifest` helper errors while source was still changing.
+Solution: Re-read current source, re-extracted the XML prompt with an attribute-aware CLI regex, ran fresh normal Core compiles, and treated stale dumps as obsolete evidence. Current tail artifact: `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_tail08.log` reports `Build succeeded. 0 Warning(s). 0 Error(s). EXIT=0` after restoring `BinaryLayoutManifest` Type-based helper methods, preserving the `Hecton8.Core.Memory.Layout` import in `H8BridgeContracts`, and absorbing later bridge/content edits.
+Rejected Alternatives: Editing files to fix line numbers that no longer existed, deleting another agent's ecosystem work, or committing against stale failure evidence from tail05/tail06/tail07.
+Scalability potential: Low/Quest tiers avoid direct Core-to-AI assembly pressure; High/Ultra retain ecosystem population validation through optional layout probes without forcing a compile-time dependency.
+Hardware Impact: Runtime gain is 0 us measured. Latest tail compile verification cost: 74,320,000 us.

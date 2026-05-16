@@ -40,6 +40,7 @@ namespace Hecton8.Core.Bridge
                 return false;
 
             int count = facade.BindingCount;
+            RecordHeartbeat(vault, facade.FacadeHash, count, facade.EstimateVramBytes(), extraFlags);
             if (count <= 0)
                 return true;
 
@@ -173,6 +174,24 @@ namespace Hecton8.Core.Bridge
             }
 
             return hash;
+        }
+
+        public static void RecordHeartbeat(IDataVault vault, uint facadeHash, int bindingCount, long estimatedVramBytes, ushort flags)
+        {
+            if (vault == null)
+                return;
+
+            H8DesignValueEntry heartbeat = new H8DesignValueEntry
+            {
+                FieldHash = H8BridgeHashes.BridgeHeartbeat,
+                OffsetBytes = -1,
+                Value = estimatedVramBytes > 0L ? estimatedVramBytes * (1f / (1024f * 1024f)) : 0f,
+                SafeDefault = bindingCount > 0 ? bindingCount : 0,
+                MinValue = 0f,
+                MaxValue = 65535f,
+                Flags = flags
+            };
+            RecordDelta(vault, facadeHash, heartbeat, bindingCount, flags);
         }
 
         public static void PersistFacadeHeader(H8DesignDataFacade facade, IDataVault vault)

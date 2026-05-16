@@ -3,7 +3,7 @@
 Identification: CONTENT_AUTHORITY_DICTATOR
 Domain: CORE/ASSETS
 Task count: 20
-Status: VERIFIED MASTER GRADE - TASK 20 BLOCKED BY EXTERNAL COMPILE DEPENDENCY
+Status: VERIFIED MASTER GRADE
 
 ## Relevant Mandates Read Before Coding
 - STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt
@@ -41,7 +41,7 @@ Status: VERIFIED MASTER GRADE - TASK 20 BLOCKED BY EXTERNAL COMPILE DEPENDENCY
 - [x] 17. MEMORY_MAPPED_LORE_LINK - DOD: `ContentLoreBinaryProvider` reads `Babel_Dictionary.h8bin` blocks by uint hash through memory-mapped access when supported. Rejected alternative: TextAsset lore loading. Estimate: avoids managed string/table allocations.
 - [x] 18. PHYSICS_PROXY_BAKER - DOD: editor baker merges selected BoxCollider fields into one convex proxy hull asset. Rejected alternative: 50 independent box colliders. Estimate: hundreds of us saved in dense PhysX scenes.
 - [x] 19. SHADOW_CASTER_PURGE - DOD: postprocessor disables shadow casting on renderers with scale < 0.2m. Rejected alternative: runtime shadow toggles. Estimate: shadow caster/render setup savings content-dependent.
-- [BLOCKED BY DEPENDENCY] 20. PLATINUM_COMPILE - DOD: attempt 1 failed in dirty non-CORE/ASSETS files; no new Content file errors detected. Rejected alternative: reverting other agents' dirty files. Estimate: blocked.
+- [x] 20. PLATINUM_COMPILE - DOD: latest `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly` and `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` exit 0 after phase 7 recovery. Rejected alternative: keeping the stale external-blocked state after the compile wall cleared. Estimate: verification only.
 
 ## Loop 5: Self-Audit
 - [x] Runtime hot-path audit - DOD: `rg` scan of `Assets/_Project/Scripts/Core/Content` found no `foreach`, `Resources.Load`, LINQ list chains, scene searches, coroutine hooks, or renderer material allocation paths. Rejected alternative: manual visual inspection only. Estimate: keeps runtime service tick under the 0.1 ms suspicion line.
@@ -76,6 +76,23 @@ Status: VERIFIED MASTER GRADE - TASK 20 BLOCKED BY EXTERNAL COMPILE DEPENDENCY
 - [x] Registry integrity build gate - DOD: editor validation now fails zero hashes, duplicate hashes, missing Addressables bindings, missing dependency hashes, and single content entries above 256 MB estimated VRAM. Rejected alternative: skipping duplicates/missing deps during DFS and finding them at runtime. Estimate: build-time only, 0 runtime us.
 - [BLOCKED BY DEPENDENCY] Phase 5 compile - DOD: core/editor builds were attempted after mutation purge and failed in external SpatialAudio/LaserCutter files; no CORE/ASSETS errors appeared in logs. Rejected alternative: editing non-domain audio/tool files. Estimate: blocked.
 
+## Loop 10: Blackbox Binary Correctness Pass
+- [x] Blackbox dump byte contract - DOD: `ContentAuthorityTelemetryEntry` now has explicit 64 bytes of written fields and the dump writes magic, entry count, struct size, and every 64-byte record. Rejected alternative: relying on implicit struct tail padding that `BinaryWriter` never serialized. Estimate: post-mortem correctness, not frame-time.
+- [x] Fault-path IO containment - DOD: dump path is cached in `Awake`, supports `Docs/AgentLogs` in project and persistent-data fallback on restricted platforms, and dumps once per session for a sustained NaN. Rejected alternative: rebuilding paths and rewriting 300 frames every bad tick. Estimate: avoids repeated fault-path IO; no normal-frame impact.
+- [x] Green compile checkpoint - DOD: `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly` exited 0 once after the blackbox pass, and `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` exited 0. Rejected alternative: claiming final stability from one moving build. Estimate: verification only.
+- [BLOCKED BY DEPENDENCY] Latest compile state - DOD: subsequent core build failed after external edits in `EcosystemRuntimeInstaller` and `BinaryLayoutManifest`; no CORE/ASSETS errors appeared. Rejected alternative: editing Ecosystem/Core manifest ownership from content pass. Estimate: blocked.
+
+## Loop 11: Addressables Release Bridge and Tier Proof
+- [x] Actual Addressables release bridge - DOD: content runtime can register an `AsyncOperationHandle` with a hash acquire, deduplicates duplicate handles, releases unused non-biome handles immediately, and releases the oldest unused biome handle under the 1.8 GB VRAM intercept. Rejected alternative: ledger-only removal that never called `Addressables.Release`. Estimate: bounded 256-slot acquire/release scan only on load/release/pressure paths, no per-frame scan added.
+- [x] Strict tier membership validation - DOD: editor validator resolves real Addressables group membership by address/GUID and fails Core/High_Res/Overkill entries assigned to the wrong group. Rejected alternative: substring checks on authored addresses. Estimate: build-time only, 0 runtime us.
+- [x] Object batch runtime mutation stop - DOD: `ObjectBatchBase.ReplacePayload` is editor-only and exits during play so runtime cannot mutate authored ScriptableObject payloads. Rejected alternative: allowing live SO payload replacement. Estimate: removes runtime authoring drift; no frame-time claim.
+- [x] Phase 7 static audit - DOD: post-patch `rg` scan of `Assets/_Project/Scripts/Core/Content` returned no `foreach`, local NativeArray containers, runtime Resources loads/sweeps, Unity Update hooks, managed delegate/event markers, coroutine calls, scene search, `Camera.main`, `string.Format`, or renderer material allocation markers. Rejected alternative: relying on previous scans after code changes. Estimate: audit-only.
+- [BLOCKED BY DEPENDENCY] Phase 7 core compile - DOD: `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly` failed in external `Core/BinaryLayoutManifest.cs`; no CORE/ASSETS errors appeared. Rejected alternative: editing another agent's binary-layout manifest from the content pass. Estimate: blocked.
+- [x] Phase 7 editor compile - DOD: `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` exited 0 after the Addressables release bridge. Rejected alternative: stopping at core-wall failure without verifying editor content validators. Estimate: verification only.
+- [BLOCKED BY DEPENDENCY] Latest phase 7 editor recheck - DOD: after the final handle-ownership comment, `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` failed through external `Core/BinaryLayoutManifest.cs`; no CORE/ASSETS errors appeared. Rejected alternative: declaring the earlier editor green checkpoint as current. Estimate: blocked.
+- [x] First-party Resources build gate - DOD: editor validator now scans `Assets/_Project/**/*.cs` and fails any first-party `Resources.Load`/`Resources.LoadAll` usage; `rg` scan confirms no first-party hits. Rejected alternative: one-time manual purge without a regression gate. Estimate: build-time only, 0 runtime us.
+- [x] Phase 7 PLATINUM recovery - DOD: after the external binary-layout wall cleared, core attempt 22 and editor attempt 23 both exited 0 with 0 warnings and 0 errors. Rejected alternative: leaving task 20 marked blocked from stale attempts. Estimate: verification only.
+
 ## Compile Attempts
 - Attempt 0: not run.
 - Attempt 1: `dotnet build Hecton8.Core.csproj` exit 1. Errors are in DiegeticGyroCompassRuntime, HomeostasisBrain, BiolumPulseSyncRuntime, SargassumMicroFaunaBoids, and TetherSignals; none reference `Assets/_Project/Scripts/Core/Content`.
@@ -92,3 +109,12 @@ Status: VERIFIED MASTER GRADE - TASK 20 BLOCKED BY EXTERNAL COMPILE DEPENDENCY
 - Attempt 12: phase4 editor build `/m:1` exit 1. Error in `ArchitectEyeBlackBoxTimelineViewer`; no `Assets/_Project/Scripts/Core/Content/Editor` errors reported in the log.
 - Attempt 13: phase5 core build exit 1. Errors in `SpatialAudioManager`; no `Assets/_Project/Scripts/Core/Content` errors reported.
 - Attempt 14: phase5 editor build `/m:1` exit 1 through `Hecton8.Core.csproj`. Errors in `LaserCutter`; no `Assets/_Project/Scripts/Core/Content` errors reported.
+- Attempt 15: phase6 core build exit 0. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly` succeeded after blackbox binary fix.
+- Attempt 16: phase6 editor build `/m:1` exit 0. `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` succeeded with 48 warnings and 0 errors.
+- Attempt 17: phase6 follow-up core build exit 1 after concurrent external changes. Errors in `EcosystemRuntimeInstaller` and `BinaryLayoutManifest`; no CORE/ASSETS errors reported.
+- Attempt 18: phase7 editor build `/m:1` exit 0. `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` succeeded after strict Addressables tier membership and ObjectBatch runtime-mutation fixes.
+- Attempt 19: phase7 core build exit 1. Errors are in `Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs` missing `ResolveOptionalType`/`AssertResolved` and overloads for `AssertSize`/`AssertOffset`; no CORE/ASSETS errors reported.
+- Attempt 20: phase7 editor build `/m:1` exit 0. `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` succeeded after the Addressables release-handle bridge.
+- Attempt 21: phase7 editor recheck `/m:1` exit 1 after final ownership comment. Errors are again in `Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs`; no CORE/ASSETS errors reported.
+- Attempt 22: phase7 core recovery exit 0. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors.
+- Attempt 23: phase7 editor recovery `/m:1` exit 0. `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` succeeded with 0 warnings and 0 errors.

@@ -268,6 +268,13 @@ half H8UberNoirBlueNoise(float4 positionCS)
     return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, screenUV * (_ScaledScreenParams.xy * (1.0 / 64.0)) + r2).r;
 }
 
+half H8UberNoirCheapDither(float4 positionCS)
+{
+    float2 screenUV = H8UberNoirScreenUV(positionCS);
+    float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
+    return (half)H8WaterExtinctionInterleavedGradientNoise(pixel);
+}
+
 half H8UberNoirFogIgnDither(float4 positionCS, half fogCurve)
 {
     float2 screenUV = H8UberNoirScreenUV(positionCS);
@@ -281,8 +288,16 @@ half H8UberNoirFogIgnDither(float4 positionCS, half fogCurve)
 void H8UberNoirClipDitheredTransparency(half alpha, float4 positionCS)
 {
     half threshold = (half)_Cutoff;
+    half ditherActive = (half)step(0.5, _UberNoirFeatureFlags.w);
 #if !defined(_MATH_LOD_LOW)
-    threshold = lerp(threshold, H8UberNoirBlueNoise(positionCS), (half)step(0.5, _UberNoirFeatureFlags.w));
+    half blueNoiseAllowed = ditherActive * (half)H8UberNoirHighCostAllowed();
+    [branch]
+    if (blueNoiseAllowed > (half)H8_UBER_NOIR_EPS)
+        threshold = H8UberNoirBlueNoise(positionCS);
+    else
+        threshold = lerp(threshold, H8UberNoirCheapDither(positionCS), ditherActive);
+#else
+    threshold = lerp(threshold, H8UberNoirCheapDither(positionCS), ditherActive);
 #endif
     half coverage = saturate(alpha * (half)max(_UberNoirDitherParams.w, 0.0));
     clip(coverage - threshold);
@@ -779,9 +794,14 @@ half3 H8UberNoirEvaluateAnalyticalCaustics(float3 positionWS, half3 normalWS, Li
     float caustic = H8UberNoirEvaluateProceduralCaustics(uv);
 
 #if defined(H8_UBERNOIR_CAUSTICS_TEXTURED)
-    float3 sampled = SAMPLE_TEXTURE2D(_HectonCausticsMap, sampler_HectonCausticsMap, uv).rgb;
-    float sampledCaustic = dot(sampled, float3(0.27, 0.54, 0.19));
-    caustic = lerp(caustic, sampledCaustic, step(0.5, _HectonCausticsRuntimeParams.x) * H8UberNoirHighCostAllowed());
+    float texturedCausticAllowed = step(0.5, _HectonCausticsRuntimeParams.x) * H8UberNoirHighCostAllowed();
+    [branch]
+    if (texturedCausticAllowed > H8_UBER_NOIR_EPS)
+    {
+        float3 sampled = SAMPLE_TEXTURE2D(_HectonCausticsMap, sampler_HectonCausticsMap, uv).rgb;
+        float sampledCaustic = dot(sampled, float3(0.27, 0.54, 0.19));
+        caustic = lerp(caustic, sampledCaustic, texturedCausticAllowed);
+    }
 #endif
 
     caustic *= lerp(1.0, 1.22, H8UberNoirVisualOverkill01() * normalMask);
@@ -931,6 +951,10 @@ half3 H8UberNoirApplyScreenRefraction(H8UberNoirVaryings input, H8UberNoirSurfac
 {
 #if !defined(_MATH_LOD_LOW) && defined(H8_UBERNOIR_SCREEN_REFRACTION)
     float active = step(H8_UBER_NOIR_EPS, _UberNoirRefractionParams.x) * step(H8_UBER_NOIR_EPS, _UberNoirRefractionParams.z) * H8UberNoirHighCostAllowed();
+    [branch]
+    if (active <= H8_UBER_NOIR_EPS)
+        return color;
+
     float2 screenUV = H8UberNoirScreenUV(input.positionCS);
     float3 safeNormal = H8UberNoirSafeNormalize((float3)surface.normalWS, float3(0.0, 1.0, 0.0));
     float3 safeView = H8UberNoirSafeNormalize((float3)input.viewDirWS, float3(0.0, 0.0, 1.0));

@@ -140,3 +140,37 @@ Scalability potential: Low devices amortize population recovery through index re
 
 Hardware Impact: Free-ring scan is bounded by the DataVault ring capacity and ColdTick cadence. Runtime microseconds are unmeasured until profiler capture.
 
+## Loop 5 - Self-Inquisition, Omega, Final Build
+
+Problem: The earlier full-build attempts were blocked by unrelated files, and the final task requires evidence rather than a chat claim.
+
+Solution: Re-ran the prompt extraction, status/rationale readback, forbidden-pattern scan, struct layout scan, whitespace check, and final `dotnet build`. The final build succeeded with 0 warnings and 0 errors in 2,950,000 us wall-clock. No standalone `<POLISH_MANDATE>` tag exists in `CURRENT_BATCH.md`; the in-prompt Omega requirement is `STATUS: MUST BE "VERIFIED MASTER GRADE"`.
+
+Rejected Alternatives: Rejected editing outside the ecology domain to chase earlier external compile walls. Rejected claiming exact runtime microseconds because no Unity profiler or Burst capture was available in this CLI session.
+
+Scalability potential: Low uses ColdTick, Tier 2 invisible cull, fixed-size rings, and scalar clamps. Middle uses native biomass from `EcosystemDirector`. High uses Tier 1 flee-down flags. Ultra can consume telemetry/flee flags for richer SDF dive and ecological presentation without changing the balancer storage contract.
+
+Hardware Impact: Final compile wall-clock was 2,950,000 us. Runtime impact remains profiler-unmeasured; design is bounded by 1 Hz scheduling, sequential SoA reads, DataVault-owned fixed buffers, and no GameObject lifetime churn.
+
+## Loop 6 - Multiplatform Inquisition
+
+Problem: The sector hash originally packed two macro-sector coordinates into 32-bit halves after `(int)math.floor(...)`. That was adequate for local play space, but it is an unnecessary narrowing point for AUP-scale worlds and weak evidence for Android/Quest/Steam Deck determinism.
+
+Solution: Replace 32-bit packing with saturated 64-bit sector coordinates and a deterministic 64-bit FNV mix. Non-finite coordinates fall back to sector zero through the existing AUP finite gate and saturated floor helper.
+
+Rejected Alternatives: Rejected relying on `int` truncation because the AUP model exists specifically to avoid local-world coordinate ceilings. Rejected a managed dictionary sector key because this job needs Burst-safe scalar math.
+
+Scalability potential: Low/MX350 still gets the same 1 Hz ColdTick and invisible Tier 2 cull. Middle/High/Ultra gain larger deterministic world coverage without changing the DataVault surface. Visual overkill remains delegated to Tier 1 flee-down consumers and telemetry consumers rather than adding render work to this AI kernel.
+
+Hardware Impact: Two extra 64-bit FNV mixes per ecology entity on ColdTick. Runtime microseconds are not measured. Latest `dotnet build` after this change succeeded with 0 warnings and 0 errors in 64,840,000 us wall-clock.
+
+Problem: The multiplatform audit asked for ABI proof on mobile/ARM64.
+
+Solution: Re-scanned `EcosystemPopulationCoefficient`, `EcosystemPopulationSectorState`, `EcosystemPopulationCullEvent`, `EcosystemPopulationFreeSlot`, and `EcosystemPopulationTelemetryEntry`; all are `[StructLayout(LayoutKind.Explicit, Pack = 1, Size = ...)]` with explicit field offsets.
+
+Rejected Alternatives: Rejected assuming default sequential C# layout is stable enough for Quest/Android.
+
+Scalability potential: Identical binary layout across PC, Steam Deck, Mac, Quest, and Android keeps DataVault telemetry/cull/free-ring payloads portable.
+
+Hardware Impact: No runtime cost; this is ABI hardening.
+

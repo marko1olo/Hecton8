@@ -97,6 +97,9 @@ namespace Hecton8.Core.Bridge
                 if (oneDimensionalLutHash == 0u)
                     oneDimensionalLutHash = H8BridgeHashes.ComputeFnv1A(prefabName, H8BridgeHashes.LutSeed);
 
+                if (highTierVisualHash == 0u)
+                    highTierVisualHash = H8BridgeHashes.ComputeFnv1A(prefabName, H8BridgeHashes.VisualOverkillSeed);
+
                 H8PrefabMappingFlags nextFlags = H8PrefabMappingFlags.None;
 #if UNITY_ADDRESSABLES_EXIST
                 if (addressablePrefab != null && !string.IsNullOrEmpty(addressablePrefab.AssetGUID))
@@ -276,6 +279,9 @@ namespace Hecton8.Core.Bridge
         private static void PublishPrefabSignals(Entry entry)
         {
             if (entry == null)
+                return;
+
+            if (!Application.isPlaying)
                 return;
 
             uint frame = unchecked((uint)Time.frameCount);

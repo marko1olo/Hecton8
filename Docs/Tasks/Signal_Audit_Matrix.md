@@ -26,6 +26,7 @@ Authority file: Assets/_Project/Scripts/Core/GlobalSignals.cs
 | AUP shift | PRE_SIMULATION | `GlobalSignals.FlushPreSimulation()` drains lanes before render and applies AUP shift safety. |
 | Lockstep / glitch / tether fire | Centralized | Late local Configure drift removed; capacity/hash authority now lives in `GlobalSignals.InitializeAllQueues()`. |
 | Physics determinism | Centralized | Input, state correction, desync, sync fence, and KCC velocity lanes are configured only by `GlobalSignals`. |
+| Laser cutter events | Centralized | Cutter heat/beam event payload lives in contracts and gameplay bridge only pushes/reads the central typed lane. |
 
 ## Layout Audit
 
@@ -39,12 +40,12 @@ Authority file: Assets/_Project/Scripts/Core/GlobalSignals.cs
 
 | Command | Result |
 | --- | --- |
-| `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` | Succeeded: 0 warnings, 0 errors, `Hecton8.Core.dll` emitted. |
-| `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal` | Failed outside CORE/SIGNALS with `MSB4166` child-node shutdown and `MSB4242` SDK resolver failures in third-party project graph entries including GPUInstancer, RealtimeCSG, MoreMountains, and VolumetricLightBeam; leftover dotnet worker stopped. |
+| `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` | PASS: 0 warnings, 0 errors. Latest wall was a bridge DTO `[BinaryBlittableSafe]` namespace import; repaired without changing runtime logic. |
+| `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` | FAIL outside CORE/SIGNALS: `RealtimeCSG.csproj` references 216 missing third-party source files. Signal/core assemblies compile before this wall. |
 
 Audit conclusion: 0 duplicate signal names, 0 signal payloads outside `Hecton8.Core.Contracts.Signals`, and 0 decentralized SignalBus lane Configure calls remain.
 
-Late drift note: final scans caught stale signal imports and local lane authority in compass/anomaly, lockstep/glitch, tether fire, physics determinism, and a thermal scalability adapter import. They were folded back to `Hecton8.Core.Contracts.Signals` and `GlobalSignals.InitializeAllQueues()` before this audit was finalized.
+Late drift note: final scans caught stale signal imports and local lane authority in compass/anomaly, lockstep/glitch, tether fire, physics determinism, laser cutter events, and a thermal scalability adapter import. They were folded back to `Hecton8.Core.Contracts.Signals` and `GlobalSignals.InitializeAllQueues()` before this audit was finalized.
 
 ## Omega Polish
 
@@ -52,8 +53,8 @@ Late drift note: final scans caught stale signal imports and local lane authorit
 | --- | --- |
 | 0.1 ms flush dictatorship | Flush path uses bounded native queue drain, NativeList snapshot writes, stress caps, and `NativeQueue<T>.Clear()` on overflow storms. No managed containers were added to the flush path. |
 | Managed format strings in signal surface | `rg` found 0 interpolated strings and 0 `string.Format` calls in the signal authority files. |
-| Status | VERIFIED MASTER GRADE, except task 4 ABI layout migration and task 18 integration build are explicitly blocked as recorded. |
+| Status | VERIFIED MASTER GRADE for CORE/SIGNALS. Task 4 legacy explicit-layout migration remains ABI-blocked; full Unity project graph remains blocked outside domain by third-party RealtimeCSG source inventory. |
 
 ## Finite Guard Coverage
 
-Late Push-time guard expansion covers tether tension/snap/fire, visual flare, voxel carve, docking request/complete/fail, anomaly proximity, compass calibration, system glitch, deterministic input, state correction, sync fence, and KCC velocity payloads. Invalid numeric fields are sanitized to zero or safe defaults and emit math-guard telemetry instead of trusting producers.
+Late Push-time guard expansion covers tether tension/snap/fire, visual flare, voxel carve, docking request/complete/fail, anomaly proximity, compass calibration, system glitch, deterministic input, state correction, sync fence, KCC velocity, and laser cutter event payloads. Invalid numeric fields are sanitized to zero or safe defaults and emit math-guard telemetry instead of trusting producers.

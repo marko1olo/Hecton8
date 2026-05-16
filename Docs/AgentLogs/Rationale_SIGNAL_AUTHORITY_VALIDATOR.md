@@ -122,3 +122,35 @@ Solution: Moved `InputSignal`, `StateCorrectionSignal`, `DesyncDetectedSignal`, 
 Rejected Alternatives: Leaving the generic local `ConfigureLane<T>` helper would keep a hidden capacity/hash authority; disposing typed lanes from `PhysicsDeterminismSignals` would race the central `GlobalSignals` ownership flag.
 Scalability potential: Low/MX350 gets bounded deterministic input/fence lanes and central finite fallback; High/Ultra can consume richer KCC and replay telemetry without mutating lane authority.
 Hardware Impact: Estimated 2-5 us saved during deterministic bootstrap by removing local reconfiguration and disposal churn. Runtime gain is small; correctness gain is centralized ownership and clean Push-time NaN vaccination.
+
+## Decision - Laser Cutter Lane Closure
+
+Problem: A late zero-GC refactor introduced `LaserCutterEventPayload` in `Hecton8.Gameplay` and a local `SignalBus<LaserCutterEventPayload>.Configure` call inside `LaserCutterEvents`.
+Solution: Moved the cutter event enum/payload to `Hecton8.Core.Contracts.Signals`, added central lane policy and exact 16-byte validation in `GlobalSignals`, removed the local Configure call, and added Push-time `Heat01` saturation.
+Rejected Alternatives: Reintroducing the old local `NativeQueue` sidecar would bypass `SignalBus<T>` snapshots; keeping the local Configure call would leave a hidden capacity/hash authority in gameplay.
+Scalability potential: Low/MX350 keeps cutter heat/beam feedback bounded at 16 packets; High/Ultra can spend the stable lane on richer beam heat shimmer, salt crystal glow, and visor feedback without changing gameplay truth cost.
+Hardware Impact: Estimated 1-3 us saved during cutter event bootstrap by removing local lane configuration. Push guard cost is below 1 us for normal event counts.
+
+## Decision - Latest Compile Wall
+
+Problem: After CORE/SIGNALS scans were clean, concurrent out-of-domain edits moved the current `Hecton8.Core.csproj` failure to `SubmarineFluidDynamics.cs(1250)` missing `RefreshVaultNativeStateAfterRelocation`.
+Solution: Stopped dotnet workers, recorded the dependency wall, and did not edit submarine fluid/vault code because it is outside CORE/SIGNALS and unrelated to the signal lane rewrite.
+Rejected Alternatives: Adding a guessed submarine vault method would violate the domain boundary and risk corrupting another agent's data-sovereignty work.
+Scalability potential: Signal authority remains independent; submarine vault relocation repair can proceed in its owning domain.
+Hardware Impact: No runtime gain. Prevents cross-domain churn and false build ownership claims.
+
+## Decision - Bridge Signal DTO Compile Recovery
+
+Problem: The current core build reached bridge DTOs carrying `[BinaryBlittableSafe]` markers, but `H8BridgeContracts.cs` imported `Hecton8.Core.Memory` without the `Hecton8.Core.Memory.Layout` namespace that owns the attribute.
+Solution: Added the missing layout namespace import only. No layout, field order, lane policy, or runtime logic changed.
+Rejected Alternatives: Removing the attributes would weaken binary layout enforcement; moving or duplicating `BinaryBlittableSafeAttribute` would recreate the prior duplicate-owner warning problem.
+Scalability potential: Low/Quest/Android keep explicit ABI markers on bridge signal DTOs; High/Ultra keep the same verified signal contracts for richer bridge-driven visual/audio consumers.
+Hardware Impact: Runtime gain is 0 us. Compile recovery unblocks `Hecton8.Core.csproj` verification and preserves layout safety for packed signal DTOs.
+
+## Decision - Final Project Graph Boundary
+
+Problem: After the core assembly passed, `Assembly-CSharp.csproj` failed in `RealtimeCSG.csproj` with 216 missing third-party source file errors and 26 third-party warnings.
+Solution: Classified the full graph failure as outside CORE/SIGNALS because the signal/core assemblies already compiled and the failing paths are absent RealtimeCSG plugin files.
+Rejected Alternatives: Editing generated third-party `.csproj` entries or recreating vendor source files from the signal pass would violate asset integrity and domain boundaries.
+Scalability potential: SignalBus remains independently verified; third-party project hygiene can be handled by the integrator without mutating signal contracts.
+Hardware Impact: No runtime gain. Prevents signal work from becoming a third-party asset repair pass.

@@ -57,3 +57,52 @@ Cinematic cheats used:
 
 Exact microseconds saved:
 - None claimed. This pass is correctness/stability work, not a measured optimization. Compile/profiler validation is still blocked by unrelated project errors.
+
+Validation:
+- Static scans after the AUP correction found no stale `H8UberNoirObjectToAupWorld` references.
+- HLSL brace count remains balanced.
+- Forbidden-pattern scan over UberNoir-owned shader/runtime files found no `GrabPass`, legacy `sampler2D`, `tex2D`, DirectX-only marker, compute `numthreads`, `NativeArray<`, `Update()`, or `string.Format`.
+- Unity batch validation was rerun. The editor reached AssetDatabase script compilation and emitted no UberNoir errors in the partial log, but no `UberNoirMaterialConsolidationReport.md` was produced and the process stalled with no log growth; it was terminated rather than left running.
+
+## 2026-05-16 Loop 9 - Texture Gate Honesty
+
+What was wrong:
+- The branchless textured-caustic `lerp` still sampled `_HectonCausticsMap` when high-cost caustics were disabled.
+- The branchless screen-refraction `lerp` still sampled `_CameraOpaqueTexture` one to three times when refraction params or homeostasis disabled the effect.
+- That was a false economy: visually disabled, but still paying bandwidth.
+
+What was done:
+- Added a `[branch]` guard around the textured caustic sample.
+- Added a `[branch]` early return around the screen-refraction sample block.
+- Kept POM early-outs for the same reason: disabled high-cost effects must actually skip texture work.
+
+Cinematic cheats used:
+- Low/Middle stay on procedural caustics and no refraction taps.
+- High/Ultra keep Snell refraction and textured caustics only when the runtime gate allows the spend.
+
+Exact microseconds saved:
+- None measured. Static effect: under homeostasis shed, affected fragments skip one caustic map sample and one to three opaque-texture samples. Profiler proof is still blocked.
+
+## 2026-05-16 Loop 10 - Dither Texture Gate Honesty
+
+What was wrong:
+- `H8UberNoirClipDitheredTransparency` sampled `_BlueNoiseTex` through a branchless `lerp`, so disabled/stress-shed dither could still pay a texture fetch.
+- `HectonUberNoirRuntimeBridge` reported `FeatureBlueNoiseDither` even on low-tier/stress frames where the shader should not spend texture bandwidth on blue noise.
+
+What was done:
+- Added `H8UberNoirCheapDither` as an ALU interleaved-gradient fallback.
+- Gated `_BlueNoiseTex` behind dither-active and high-cost runtime state.
+- Updated runtime feature-mask generation so blue-noise telemetry is emitted only when non-low high-cost work is allowed.
+
+Cinematic cheats used:
+- Low/stress HLOD coverage uses deterministic ALU noise instead of blue-noise texture bandwidth.
+- High/Ultra keep the blue-noise transition quality only when the runtime gate permits it.
+
+Exact microseconds saved:
+- None measured. Static effect: disabled/low/stress dither paths skip one `_BlueNoiseTex` sample per clipped fragment. Profiler proof is still blocked.
+
+Verification:
+- HLSL brace count remains balanced (`63/63`).
+- Forbidden-pattern scan over UberNoir-owned shader/runtime files found no `GrabPass`, legacy `sampler2D`, `tex2D`, DirectX-only marker, compute `numthreads`, `NativeArray<`, `Update()`, or `string.Format`.
+- No Unity process was left running. Unity validation was not rerun because the previous batch session stalled during AssetDatabase script compilation.
+- `dotnet build Assembly-CSharp.csproj --no-restore` failed before domain validation in `RealtimeCSG.csproj` due 216 missing source files; `Docs/AgentLogs/Dotnet_UBER_NOIR_INTEGRATOR.log` has no UberNoir matches.

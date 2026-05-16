@@ -69,3 +69,45 @@ Solution: Added temporary compile includes to `Hecton8.Core.csproj` and `Hecton8
 Rejected Alternatives: Claiming compile success from stale project files was rejected as fake verification.
 Scalability potential: Low runtime impact, high integration value.
 Hardware Impact: 0 us runtime; prevents shipping uncompiled Bridge code.
+
+## Decision 011 - Final Compile Wall Stabilization
+Problem: A later CLI build surfaced another unrelated generated-project gap: `Hecton8.AI.Ecosystem` source existed but was absent from `Hecton8.Core.csproj`, causing downstream editor build failure.
+Solution: Added `Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs` to the CLI project include list so `BinaryLayoutManifest` and runtime installer references compile.
+Rejected Alternatives: Reporting stale success from a prior build was rejected because the final build must reflect the current worktree.
+Scalability potential: Middle. The repair keeps ecosystem population data packed in DataVault and visible to binary layout verification.
+Hardware Impact: 0 us runtime; compile-only project metadata repair.
+
+## Decision 012 - Prompt Archived As Disk Truth
+Problem: The batch extraction rule could not be satisfied from `Docs/Tasks/CURRENT_BATCH.md` because the `ARCHITECT_BRIDGE_FACADE` XML block is absent from that file.
+Solution: Wrote the exact active XML assignment to `Docs/Tasks/Prompt_ARCHITECT_BRIDGE_FACADE.xml` and re-read it by CLI before the GO AGAIN pass.
+Rejected Alternatives: Depending on chat memory, summary memory, or neighboring agent prompts is rejected by strict parsing.
+Scalability potential: High. Future context compression can recover the precise Bridge scope without cross-agent contamination.
+Hardware Impact: 0 us runtime; avoids duplicate or wrong-system implementation passes.
+
+## Decision 013 - Cold Binary Layout Sentinel
+Problem: Quest/ARM64 and Mac/Metal builds can desync or crash if Bridge DTOs gain implicit padding despite DataVault and MacroDB assuming byte-stable layouts.
+Solution: Added `H8BridgeBinaryLayoutVerifier` and `[BinaryBlittableSafe]` markers. The verifier checks size and critical offsets for prefab mappings, lore links, design values, telemetry, input bindings, MacroDB header, and typed signals at cold boot.
+Rejected Alternatives: Relying only on `[StructLayout(Pack = 1)]` was rejected because attributes can be removed later without an immediate failure.
+Scalability potential: Ultra. Low/Middle/High/Ultra tiers share one binary contract; high-tier visual metadata stays packed rather than string-discovered.
+Hardware Impact: 0 us steady-state on i3/MX350 and Quest; cold boot validation only.
+
+## Decision 014 - Edit-Mode SignalBus Allocation Block
+Problem: Drag/drop registry edits in edit mode could publish typed signals before runtime, waking persistent SignalBus lanes for an editor-only asset operation.
+Solution: `H8PrefabRegistry.PublishPrefabSignals` now exits unless `Application.isPlaying`; runtime boot binding still publishes acoustic and lore signals when the game is live.
+Rejected Alternatives: Letting editor asset validation allocate runtime lanes was rejected because the sync-layer must remain setter/boot only.
+Scalability potential: High. Steam Deck and low RAM devices avoid stray queue residency; PC still receives boot-time high-tier metadata.
+Hardware Impact: Static estimate saves 30-150 us and native queue residency during editor drag/drop bursts; 0 us steady-state.
+
+## Decision 015 - Visual Overkill Hash Repair
+Problem: The design facade high-tier visual hash used the acoustic seed, and prefab entries did not auto-generate high-tier visual metadata.
+Solution: Switched design and prefab high-tier hashes to `VisualOverkillSeed`, while low-tier "Dear Lie" LUT hashes keep `LutSeed`.
+Rejected Alternatives: Runtime string lookup for Ultra visual variants was rejected because DataVault consumers must read raw hashes.
+Scalability potential: Low uses 1D LUT/triangle-noise/dot-product controls; Middle reads the same packed floats with modest VFX; High/Ultra can map deterministic hashes to raymarch, 16-tap POM, SSS, salt-crystal, silt, dent, and particle-overkill consumers.
+Hardware Impact: 0 us steady-state; removes future per-spawn or per-material string lookup pressure.
+
+## Decision 016 - Blackbox Heartbeat Without Per-Frame Polling
+Problem: The Bridge blackbox recorded value deltas but not a high-level sync heartbeat, while a per-frame monitor would violate the no-`Update()` sync mandate.
+Solution: `SyncDesignData` records a `BridgeHeartbeat` entry into the existing 300-entry DataVault telemetry ring each time the setter path runs.
+Rejected Alternatives: A local NativeArray heartbeat store, MonoBehaviour `Update()`, or managed list log was rejected as private data and steady-frame overhead.
+Scalability potential: High. Low tier pays only on edits; high tier gets enough forensic context to explain designer-value crashes.
+Hardware Impact: One packed ring write per explicit sync; 0 us on frames with no designer changes.

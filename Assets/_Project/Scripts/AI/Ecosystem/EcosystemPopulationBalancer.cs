@@ -1150,6 +1150,10 @@ namespace Hecton8.AI.Ecosystem
         private const double SectorSizeMeters = 1000d;
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
+        private const ulong Fnv64Offset = 14695981039346656037UL;
+        private const ulong Fnv64Prime = 1099511628211UL;
+        private const double LongMinAsDouble = -9223372036854775808d;
+        private const double LongMaxAsDouble = 9223372036854775807d;
 
         public static EcosystemPopulationCoefficient SanitizeCoefficient(in EcosystemPopulationCoefficient input)
         {
@@ -1202,10 +1206,32 @@ namespace Hecton8.AI.Ecosystem
         {
             double absoluteX = (aup.GridX * (double)AbsoluteUniversePosition.CellSizeMeters) + aup.LocalX;
             double absoluteZ = (aup.GridZ * (double)AbsoluteUniversePosition.CellSizeMeters) + aup.LocalZ;
-            int sectorX = (int)math.floor(absoluteX / SectorSizeMeters);
-            int sectorZ = (int)math.floor(absoluteZ / SectorSizeMeters);
-            ulong packed = ((ulong)(uint)sectorX << 32) | (uint)sectorZ;
-            return unchecked((long)packed);
+            long sectorX = FloorToLongSaturated(absoluteX / SectorSizeMeters);
+            long sectorZ = FloorToLongSaturated(absoluteZ / SectorSizeMeters);
+            ulong hash = Fnv64Offset;
+            hash = HashUInt64(hash, unchecked((ulong)sectorX));
+            hash = HashUInt64(hash, unchecked((ulong)sectorZ));
+            return unchecked((long)(hash != 0UL ? hash : 1UL));
+        }
+
+        private static long FloorToLongSaturated(double value)
+        {
+            if (!math.isfinite(value))
+                return 0L;
+
+            double floored = math.floor(value);
+            if (floored <= LongMinAsDouble)
+                return long.MinValue;
+            if (floored >= LongMaxAsDouble)
+                return long.MaxValue;
+            return (long)floored;
+        }
+
+        private static ulong HashUInt64(ulong hash, ulong value)
+        {
+            hash = (hash ^ (uint)value) * Fnv64Prime;
+            hash = (hash ^ (uint)(value >> 32)) * Fnv64Prime;
+            return hash;
         }
 
         public static uint ResolveEntityHash(int entityIndex, long sectorHash)

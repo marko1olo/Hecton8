@@ -70,3 +70,29 @@ Exact Microseconds saved -> No profiler-backed microseconds claimed. Determinist
 Verification -> Static content scan stayed clean for local native containers, `foreach`, runtime Resources loads, Unity Update hooks, coroutine calls, and renderer material allocation markers. `dotnet build Hecton8.Core.csproj` after this pass failed in `SpatialAudioManager` only. `dotnet build Hecton8.Editor.csproj /m:1` failed through `Hecton8.Core.csproj` in `LaserCutter`. No CORE/ASSETS errors appeared in either log.
 
 Status -> CORE/ASSETS Phase 5 pass complete. PLATINUM_COMPILE remains BLOCKED BY EXTERNAL SPATIAL AUDIO / TOOL ERRORS.
+
+## Phase 6 Report - Blackbox Binary Correctness
+What was wrong -> The content blackbox struct was declared as 64 bytes, but `DumpBlackBox()` wrote only 48 bytes per entry and no file header. That made the last-300-frame dump ambiguous and undercut the post-mortem requirement.
+
+What was done -> Added explicit reserved fields so each telemetry entry writes exactly 64 bytes. Added dump header fields: magic, entry count, struct size, and reserved version slot. Cached the dump path in `Awake`, preserved the required project path when available, added persistent-data fallback for restricted platforms, and made the dump one-shot per session.
+
+Cinematic Cheats used -> None added; this was forensic correctness. The existing visual budget split remains: Dear Lie for low/XR and Overkill budgets for high-end hardware.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic facts: normal Tick still writes vault structs only; fault dump body is 300 * 64 bytes plus a 16-byte header; sustained NaN now triggers one dump instead of repeated rewrites.
+
+Verification -> Static scan found no content-domain `NativeArray`, `foreach`, runtime Resources loads, Unity Update hooks, coroutine calls, scene search, `Camera.main`, or renderer material allocation markers. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly` exited 0 after the blackbox fix. `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` exited 0 with 48 warnings and 0 errors. A follow-up core build then failed after external changes in `EcosystemRuntimeInstaller` and `BinaryLayoutManifest`; no CORE/ASSETS errors appeared.
+
+Status -> CORE/ASSETS Phase 6 pass complete. PLATINUM_COMPILE has green checkpoints but latest core build is BLOCKED BY EXTERNAL ECOSYSTEM / BINARY LAYOUT MANIFEST ERRORS.
+
+## Phase 7 Report - Addressables Release Bridge and Tier Proof
+What was wrong -> The content VRAM intercept could remove a biome cache from its own ledger without owning an explicit Addressables handle release. That was accounting without guaranteed residency cleanup. The tier validator also needed hard group membership proof, not address-name inference. `ObjectBatchBase` still exposed a payload replacement path that could mutate ScriptableObject state during play.
+
+What was done -> Added a fixed 256-slot Addressables handle bridge in `ContentAuthorityRuntime`. `RegisterBundleAcquire(hash, handle)` now binds content hashes to handles, releases duplicate handles for the same hash, releases unused non-biome handles when ref count reaches zero, and releases the tracked oldest unused biome handle when the 1.8 GB VRAM intercept fires. Tightened Addressables tier validation to resolve group membership by address/GUID and fail entries assigned outside `Core`, `High_Res`, or `Overkill` according to their `ContentTier`. Made `ObjectBatchBase.ReplacePayload` editor-only and a no-op during play.
+
+Cinematic Cheats used -> No new simulation added. This pass preserves the existing Dear Lie low tier and Overkill high tier by making the bundle residency contract honest: low devices can shed stale biome handles, while high-end machines keep Overkill only through explicit registry and group ownership.
+
+Exact Microseconds saved -> No profiler-backed frame number claimed. Deterministic facts: the handle bridge adds no normal per-frame scan; it scans at most 256 slots only on acquire, release, or VRAM pressure events. Tier group validation is build-time only, 0 runtime us. Runtime object-batch mutation is removed.
+
+Verification -> Post-patch `rg` scan of `Assets/_Project/Scripts/Core/Content` found no `foreach`, local native containers, runtime Resources loads/sweeps, Unity Update hooks, managed delegate/event markers, coroutine calls, scene search, `Camera.main`, `string.Format`, or renderer material allocation markers. Full-project `Resources.Load` scan still reports third-party/vendor/editor package usage outside CORE/ASSETS; first-party `Assets/_Project` scan is clean and now enforced by the content validator. Earlier builds hit an external `Core/BinaryLayoutManifest.cs` wall; after it cleared, `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly` and `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` both exited 0 with 0 warnings and 0 errors.
+
+Status -> CORE/ASSETS Phase 7 pass complete. VERIFIED MASTER GRADE. PLATINUM_COMPILE GREEN.

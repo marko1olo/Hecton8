@@ -512,6 +512,10 @@ namespace Hecton8.Audio
         private const int SabineReverbDecayLutMaxIndex = SabineReverbDecayLutSize - 1;
         private const float SabineReverbDepthReferenceMeters = 6000f;
         private const float SabineReverbModuleVolumeReferenceCubicMeters = 6000f;
+#if DEVELOPMENT_BUILD
+        private const int AudioRamDebugTextCapacity = 48;
+        private const int AudioRamDebugCanvasSortingOrder = 32760;
+#endif
         private static readonly uint _virtualVoiceTelemetryHash = unchecked((uint)LocHash.Compute("Audio.VirtualVoiceTelemetry"));
         private static readonly uint _virtualVoiceActiveHash = unchecked((uint)LocHash.Compute("Audio.VirtualVoice.Active"));
         private static readonly uint _virtualVoiceCulledHash = unchecked((uint)LocHash.Compute("Audio.VirtualVoice.Culled"));
@@ -816,6 +820,12 @@ namespace Hecton8.Audio
         private float _listenerSabineRt60Seconds;
         private float _listenerSabineVolumeCubicMeters;
         private float _listenerSabineSurfaceAreaSquareMeters;
+#if DEVELOPMENT_BUILD
+        private TMPro.TextMeshProUGUI _audioRamDebugLabel;
+        private char[] _audioRamDebugTextBuffer;
+        private int _audioRamDebugLastResidentKilobytes = -1;
+        private int _audioRamDebugLastClipCount = -1;
+#endif
         private float _threatBusDuck01;
         private float _parasiteRoomTarget01;
         private float _parasiteRoomSmoothed01;
@@ -1203,6 +1213,9 @@ namespace Hecton8.Audio
             InitializePool2D();
             InitializeTelemetryCaches();
             PrepareGlobalWindHowlSource();
+#if DEVELOPMENT_BUILD
+            EnsureAudioRamDebugOverlay();
+#endif
             _runtimeResourcesInitialized = true;
         }
 
@@ -1476,15 +1489,117 @@ namespace Hecton8.Audio
             CompleteVirtualVoiceSort();
             InjectVirtualVoiceSelections();
             DrainAudioEventQueue();
+#if DEVELOPMENT_BUILD
+            UpdateAudioRamDebugOverlay();
+#endif
         }
 
 #if DEVELOPMENT_BUILD
-        private void OnGUI()
+        private void EnsureAudioRamDebugOverlay()
         {
-            float audioRamMb = AudioResidencyCache.CurrentResidentBytes / (1024f * 1024f);
-            GUI.Label(
-                new Rect(12f, 12f, 320f, 24f),
-                $"Audio RAM: {audioRamMb:0.0} MB | Clips: {AudioResidencyCache.ResidentClipCount}");
+            if (_audioRamDebugLabel != null)
+                return;
+
+            if (_audioRamDebugTextBuffer == null || _audioRamDebugTextBuffer.Length < AudioRamDebugTextCapacity)
+                _audioRamDebugTextBuffer = new char[AudioRamDebugTextCapacity]; // COLD ALLOC: char[48] - development audio RAM overlay text staging - owner: SpatialAudioManager
+
+            GameObject overlayRoot = new GameObject("AudioRamDebugOverlay", typeof(RectTransform), typeof(Canvas)); // COLD ALLOC: GameObject[1] - development audio RAM overlay canvas - owner: SpatialAudioManager
+            overlayRoot.transform.SetParent(transform, false);
+
+            Canvas canvas = overlayRoot.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = AudioRamDebugCanvasSortingOrder;
+
+            GameObject labelObject = new GameObject("AudioRamDebugLabel", typeof(RectTransform), typeof(CanvasRenderer), typeof(TMPro.TextMeshProUGUI)); // COLD ALLOC: GameObject[1] - development audio RAM overlay label - owner: SpatialAudioManager
+            labelObject.transform.SetParent(overlayRoot.transform, false);
+
+            _audioRamDebugLabel = labelObject.GetComponent<TMPro.TextMeshProUGUI>();
+            TMPro.TMP_FontAsset defaultFont = TMPro.TMP_Settings.defaultFontAsset;
+            if (defaultFont != null)
+                _audioRamDebugLabel.font = defaultFont;
+
+            _audioRamDebugLabel.fontSize = 12f;
+            _audioRamDebugLabel.alignment = TMPro.TextAlignmentOptions.Left;
+            _audioRamDebugLabel.color = new Color32(126, 226, 255, 230);
+            _audioRamDebugLabel.raycastTarget = false;
+
+            RectTransform rect = (RectTransform)labelObject.transform;
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = new Vector2(12f, -12f);
+            rect.sizeDelta = new Vector2(320f, 24f);
+
+            _audioRamDebugLastResidentKilobytes = -1;
+            _audioRamDebugLastClipCount = -1;
+            UpdateAudioRamDebugOverlay();
+        }
+
+        private void UpdateAudioRamDebugOverlay()
+        {
+            if (_audioRamDebugLabel == null)
+                return;
+
+            long residentBytes = AudioResidencyCache.CurrentResidentBytes;
+            if (residentBytes < 0L)
+                residentBytes = 0L;
+
+            int residentKilobytes = residentBytes >= int.MaxValue ? int.MaxValue : (int)(residentBytes >> 10);
+            int clipCount = math.max(0, AudioResidencyCache.ResidentClipCount);
+            if (residentKilobytes == _audioRamDebugLastResidentKilobytes &&
+                clipCount == _audioRamDebugLastClipCount)
+                return;
+
+            _audioRamDebugLastResidentKilobytes = residentKilobytes;
+            _audioRamDebugLastClipCount = clipCount;
+
+            int residentTenthsMb = residentKilobytes >= int.MaxValue / 10
+                ? int.MaxValue
+                : residentKilobytes * 10 / 1024;
+            int cursor = 0;
+            cursor = WriteAscii("Audio RAM: ".AsSpan(), _audioRamDebugTextBuffer, cursor);
+            cursor = WritePositiveInt(residentTenthsMb / 10, _audioRamDebugTextBuffer, cursor);
+            cursor = WriteAscii(".".AsSpan(), _audioRamDebugTextBuffer, cursor);
+            cursor = WritePositiveInt(residentTenthsMb % 10, _audioRamDebugTextBuffer, cursor);
+            cursor = WriteAscii(" MB | Clips: ".AsSpan(), _audioRamDebugTextBuffer, cursor);
+            cursor = WritePositiveInt(clipCount, _audioRamDebugTextBuffer, cursor);
+
+            _audioRamDebugLabel.SetCharArray(_audioRamDebugTextBuffer, 0, cursor);
+        }
+
+        private static int WriteAscii(ReadOnlySpan<char> source, char[] destination, int cursor)
+        {
+            int limit = math.min(source.Length, destination.Length - cursor);
+            for (int i = 0; i < limit; i++)
+                destination[cursor++] = source[i];
+
+            return cursor;
+        }
+
+        private static int WritePositiveInt(int value, char[] destination, int cursor)
+        {
+            value = math.max(0, value);
+            if (value == 0)
+            {
+                if (cursor < destination.Length)
+                    destination[cursor++] = '0';
+
+                return cursor;
+            }
+
+            int divisor = 1;
+            while (value / divisor >= 10)
+                divisor *= 10;
+
+            while (divisor > 0 && cursor < destination.Length)
+            {
+                int digit = value / divisor;
+                destination[cursor++] = (char)('0' + digit);
+                value -= digit * divisor;
+                divisor /= 10;
+            }
+
+            return cursor;
         }
 #endif
 
