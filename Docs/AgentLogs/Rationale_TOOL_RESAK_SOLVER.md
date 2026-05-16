@@ -1,6 +1,6 @@
 # Rationale - TOOL_RESAK_SOLVER
 
-Current state: CORE BUILD VERIFIED - MULTIPLATFORM INQUISITION + DATA SOVEREIGNTY + SIGNAL LANE PASS COMPLETE
+Current state: TOOL SIGNAL/SPAN PURGE STATIC VERIFIED - GLOBAL BUILD BLOCKED BY UI/ECOSYSTEM DEPENDENCIES
 
 ## Decision Log
 
@@ -113,3 +113,30 @@ Solution: Re-run `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /
 Rejected Alternatives: Reporting the refactor without a build, or ignoring the remaining `LaserCutterEvents` queue because the WFC runtime was already clean.
 Scalability potential: No additional runtime behavior beyond typed-lane delivery.
 Hardware Impact: Build evidence only. Latest result: 0 errors, 0 warnings in 58.69 s.
+
+### 2026-05-16 - Signal Payload Guard Pass
+Problem: The cutter typed lane used the global `SignalBus`, but `LaserCutterEvents.EnsureInitialized()` had drifted into `GlobalSignals.InitializeAllQueues()`, which cold-allocates every configured signal lane just to register one cutter event bridge. The cutter payload guard also sanitized heat only, leaving invalid event type and stale flags able to propagate.
+Solution: Configure only `SignalBus<LaserCutterEventPayload>` in `LaserCutterEvents.EnsureInitialized()`. Add `LaserCutterEventPayload.StateFlagBeamActive` to the canonical signal contract and extend `SanitizeLaserCutterEventPayload` to clamp heat, reset invalid event types to `HeatChanged`, and mask flags to the legal bit set for the selected event type.
+Rejected Alternatives: Keeping the whole-registry initialization in the cutter bridge, adding a local duplicate payload struct, or relying on consumers to reject invalid flags. Whole-registry init creates cold-start noise; duplicate structs create interface chaos; consumer-side rejection spreads the NaN/flag policy across audio/world.
+Scalability potential: Low/MX350 pays only one 16-payload lane initialization when the cutter bridge is touched. Middle/High/Ultra keep the same payload truth with no extra event path. Invalid event data is corrected before listeners see it.
+Hardware Impact: Avoids cold-initializing unrelated signal lanes from the cutter path. Exact microseconds are unmeasured; expected low-end benefit is lower cold-start/native queue churn, not per-frame math savings.
+
+Problem: Latest validation build no longer reaches a clean global compile because another domain currently breaks `DiegeticGyroCompassRuntime`.
+Solution: Stop after confirming the errors are outside TOOL_RESAK and do not reference `LaserCutter`, `GlobalSignals` cutter payload edits, WFC, haptics, or durability. Preserve the scoped tool changes and record the dependency wall for integration.
+Rejected Alternatives: Editing UI/navigation from the laser cutter task or reverting the typed payload guard. UI/navigation is outside GAMEPLAY/TOOLS and the errors are not caused by this pass.
+Scalability potential: No runtime effect in TOOL_RESAK.
+Hardware Impact: Build evidence only. Result: global build blocked by `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs` missing `_dialMatrixBuffer`/`_dialMatrices` and a `ComputeBuffer` to `GraphicsBuffer` mismatch. Static TOOL_RESAK scans stayed clean.
+
+### 2026-05-16 - Tool Signal Delegate Purge
+Problem: Tool durability and player-tool break/use propagation still used managed C# events: `ToolDurabilitySystem.OnToolBroken`, `PlayerTool.OnToolUsed`, `PlayerTool.OnToolBroken`, and `PlayerToolManager` slot events. This violated the typed-lane requirement and kept a hot gameplay state-change path outside `SignalBus<T>`.
+Solution: Route durability break handling through the existing `ItemDurabilityChangedSignal` lane and `ReadOnlySpan<ItemDurabilityChangedSignal>` consumption in `PlayerToolManager`. Remove the `PlayerTool` event bridge; expose only cached last-use scalar state for `PlayerNoiseEmitter` so tool-use noise stays direct, bounded, and non-subscribing. Remove `PlayerToolManager` slot delegates and make `PlayerTransportCoordinator` consume `ToolLoadoutChangedSignal` by source id/sequence through the typed lane.
+Rejected Alternatives: Creating a duplicate "ToolBroken" signal, keeping managed events as "compatibility", or polling `ToolDurabilitySystem.IsBroken()` every frame. Duplicate signal names create interface chaos; managed events preserve the exact debt being purged; durability polling adds frame work and misses the existing canonical item-durability lane.
+Scalability potential: Low/MX350 consumes bounded frame snapshots only when the manager/coordinator ticks. Middle/High/Ultra keep the same gameplay truth and can add presentation consumers on existing lanes without adding gameplay delegate fanout.
+Hardware Impact: Removes managed event subscription/unsubscription and delegate invocation from the tool break/use/slot path. Exact microseconds are unmeasured; expected low-end gain is reduced GC/delegate risk and less callback fanout. Latest filtered build found no TOOL_RESAK file errors; full global build remains outside-domain blocked.
+
+### 2026-05-16 - Haptic ReadOnlySpan Bridge
+Problem: `ToolHapticsRuntime` still exposed a `NativeArray<HapticCommand>.ReadOnly` front-buffer snapshot to `InputDispatcher`, so a consumer-facing tool API kept leaking the native container shape instead of the mandated span surface.
+Solution: Convert `GetFrontBuffer()` and `TryGetFrontBufferSnapshot(...)` to return `ReadOnlySpan<HapticCommand>` backed by the DataVault-resolved front buffer pointer and bounded by `_frontCount`. Update `InputDispatcher` to consume the span. Add `ItemDurabilityChangedSignal.FlagBroken` to remove the magic broken bit from tool-manager filtering.
+Rejected Alternatives: Keeping the `NativeArray.ReadOnly` API as "already vault-backed", copying haptic commands into a managed array, or creating a second haptic signal. The first preserves the interface leak; the second allocates; the third duplicates the haptic command lane.
+Scalability potential: Low/MX350 reads at most 16 haptic commands through a span. Middle/High/Ultra can use richer command envelopes without exposing vault containers to device dispatch.
+Hardware Impact: No command-copy allocation; haptic snapshot remains a pointer/length view. Exact microseconds are unmeasured. Latest filtered build found no TOOL_RESAK file errors; latest full global build is blocked outside this task by `DiegeticGyroCompassRuntime` missing blackbox/AUP fields and `EcosystemDirector` generic native pointer/upload inference errors.

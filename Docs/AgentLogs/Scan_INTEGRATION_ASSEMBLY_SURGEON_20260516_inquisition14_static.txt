@@ -1,0 +1,9 @@
+LASER_PAYLOAD_DEFS=2
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\GlobalSignals.cs:132:public enum LaserCutterEventType : byte
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\GlobalSignals.cs:145:public struct LaserCutterEventPayload : ISignal
+VALIDATE_PACKED_STRUCT_SIZES_HITS=2
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\Diagnostics\Visuals\ArchitectEyeVisualizer.cs:120:ValidatePackedStructSizes();
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\Diagnostics\Visuals\ArchitectEyeVisualizer.cs:151:private static void ValidatePackedStructSizes()
+DIEGETIC_COMPASS_GLOBAL_INIT_HITS=1
+CORE_FIND_HITS=0
+CORE_STRING_FORMAT_HITS=0

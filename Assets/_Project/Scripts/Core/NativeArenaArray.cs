@@ -13,7 +13,7 @@ namespace Hecton8.Core
     [NativeContainer]
     [NativeContainerSupportsMinMaxWriteRestriction]
     [NoAlias]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public unsafe struct NativeArenaArray<T> where T : unmanaged
     {
         [NativeDisableUnsafePtrRestriction]

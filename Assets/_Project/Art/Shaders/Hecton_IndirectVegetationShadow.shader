@@ -157,6 +157,16 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 return approxLen > 0.0001 ? value * rcp(approxLen) : float2(1.0, 0.0);
             }
 
+            float SanitizeNonNegativeFinite(float value)
+            {
+                return isfinite(value) ? max(value, 0.0) : 0.0;
+            }
+
+            float SanitizePositiveFinite(float value, float fallbackValue)
+            {
+                return isfinite(value) && value > fallbackValue ? value : fallbackValue;
+            }
+
             float3 TransformDirection(float4x4 matrixValue, float3 direction)
             {
                 return SafeNormalize3(mul((float3x3)matrixValue, direction));
@@ -375,12 +385,12 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 {
                     FloraInteractionPointGpuData interactionPoint = _HectonFloraInteractionPoints[i];
                     float3 velocity = interactionPoint.velocitySpeed.xyz;
-                    float speed = interactionPoint.velocitySpeed.w;
+                    float speed = SanitizeNonNegativeFinite(interactionPoint.velocitySpeed.w);
                     float speedFactor = saturate(speed * 0.18);
                     float3 delta = evaluationPositionWS - interactionPoint.positionRadius.xyz;
                     delta.y *= 0.22;
 
-                    float bendRadius = max(interactionPoint.positionRadius.w, 0.05);
+                    float bendRadius = SanitizePositiveFinite(interactionPoint.positionRadius.w, 0.05);
                     float bendRadiusSq = bendRadius * bendRadius;
                     float proximity = saturate(1.0 - dot(delta, delta) / bendRadiusSq);
                     if (proximity <= 0.0001 || speedFactor <= 0.0001)
@@ -395,17 +405,17 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
 
             float3 ResolvePlayerBendOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
             {
-                float playerRadius = _HectonPlayerAbsoluteUniversePosition.w;
+                float playerRadius = SanitizeNonNegativeFinite(_HectonPlayerAbsoluteUniversePosition.w);
                 if (bendMask <= 0.0001 ||
-                    _HectonPlayerFloraInteractionParams.w < 0.5 ||
+                    SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.w) < 0.5 ||
                     playerRadius <= 0.0001)
                 {
                     return float3(0.0, 0.0, 0.0);
                 }
 
                 float playerRuntimePosition = _HectonPlayerAbsoluteUniversePosition.xyz + _GlobalFloatingOffset.xyz;
-                float playerSpeed = _HectonPlayerFloraInteractionParams.x;
-                float playerPush = _HectonPlayerFloraInteractionParams.y;
+                float playerSpeed = SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.x);
+                float playerPush = SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.y);
                 if (playerSpeed <= 0.0001 || playerPush <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
 
@@ -425,21 +435,29 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
 
             float ResolveOrganicEntropyProgress(float encodedHeightScale, float encodedWidthScale)
             {
+                if (!isfinite(encodedHeightScale))
+                    return 0.0;
+
                 if (encodedHeightScale >= 0.0)
                     return 0.0;
 
-                return saturate((_Time.y - max(0.0, encodedWidthScale)) / 0.85);
+                float safeWidthScale = isfinite(encodedWidthScale) ? encodedWidthScale : 0.0;
+                return saturate((_Time.y - max(0.0, safeWidthScale)) / 0.85);
             }
 
             float2 ResolveStateBlendWeights(float runtimeState)
             {
-                float agitated = saturate(1.0 - abs(runtimeState - 1.0));
-                float dying = saturate(1.0 - abs(runtimeState - 2.0));
+                float safeRuntimeState = isfinite(runtimeState) ? runtimeState : 0.0;
+                float agitated = saturate(1.0 - abs(safeRuntimeState - 1.0));
+                float dying = saturate(1.0 - abs(safeRuntimeState - 2.0));
                 return float2(agitated, dying);
             }
 
             float ResolveMetadataGrowth01(float encodedGrowth01)
             {
+                if (!isfinite(encodedGrowth01))
+                    return 1.0;
+
                 if (encodedGrowth01 < 0.0)
                     return -1.0;
 
@@ -449,6 +467,9 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
             float ResolveGrowth01(uint sourceInstanceIndex, float encodedGrowth01)
             {
                 float soaAge01 = _HectonFloraAges01[sourceInstanceIndex];
+                if (!isfinite(soaAge01))
+                    return ResolveMetadataGrowth01(encodedGrowth01);
+
                 if (soaAge01 < 0.0)
                     return -1.0;
 

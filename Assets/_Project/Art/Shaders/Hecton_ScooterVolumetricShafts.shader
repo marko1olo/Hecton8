@@ -1104,7 +1104,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             half3 acousticSonarOverlay = EvaluateAcousticSonarOverlay(screenUV, depthValid, scenePositionWS, rawDepth, linearEyeDepth) * exposureMultiplier;
             if (depthValid > 0.5)
             {
-                extinctionColor = H8WaterExtinctionSampleRgbByDepthMeters(linearEyeDepth, (half)_ExtinctionLUTRuntime.y);
+                extinctionColor = H8WaterExtinctionResolveRgbByDepthMeters(linearEyeDepth, (half)_ExtinctionLUTRuntime.y);
                 shafts *= extinctionColor;
                 float3 normalWS = ApproximateWorldNormal(screenUV, scenePositionWS);
                 biolumProjection = EvaluateBiolumFloorProjection(screenUV, depthValid, scenePositionWS, linearEyeDepth, normalWS) * exposureMultiplier;

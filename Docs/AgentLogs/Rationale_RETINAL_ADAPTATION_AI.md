@@ -1,6 +1,6 @@
 # RETINAL_ADAPTATION_AI Rationale
 
-Status: CODE BUILD VERIFIED - retinal/adjacent alpha telemetry scope static-verified after DataVault/ABI/typed-lane/core-native-array/active-slot inquisition; Unity runtime/profiler verification still not executed.
+Status: CODE BUILD VERIFIED - retinal/adjacent fauna ABI scope static-verified after DataVault/ABI/typed-lane/core-native-array/active-slot/hash-map eviction and Pack=1 descriptor polish. Unity runtime/profiler verification still not executed.
 
 ## Decision 1 - Existing Owner Boundary
 Problem: Prompt domain names `Assets/_Project/Scripts/AI/Perception/`, but the active source owner for predator utility cognition is `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs`; no `AI/Perception` folder exists.
@@ -113,3 +113,31 @@ Solution: Added `BufferID.PredatorCognitionActiveSlots` and resolved `_activeSlo
 Rejected Alternatives: Keeping `NativeList<int>` was rejected because it preserved local persistent native ownership. Iterating the full 256-slot vault buffer was rejected because stale cleared slots would pollute swarm bounds and telemetry. Inventing a new list-capable vault API was rejected as a cross-domain interface change during batch execution.
 Scalability potential: Low/toaster path scans only active predators and keeps the 1Hz stressed retinal cadence. Middle keeps deterministic dense scheduling. High/Ultra still spend saved cycles on deterministic retinal thrash and biolum strobe without duplicating active-slot truth.
 Hardware Impact: Runtime ownership cost after cold DataVault resolve is 0 us/frame. Swap-back removal remains O(active slots) search plus O(1) removal, matching the old list behavior. Avoiding full-capacity stale scans reduces memory traffic on i3/MX350, but exact microseconds were not measured. `dotnet build` is green with 0 warnings and 0 errors; Unity runtime/profiler evidence is absent.
+
+## Decision 17 - Native HashMap Vault Eviction
+Problem: After the `NativeArray` and active-slot passes, `PredatorCognitionDomain` still owned two local persistent `NativeParallelHashMap` containers for species pack target sharing and species tuning lookup.
+Solution: Added vault-backed SoA lanes for species target ids, target positions, target count, species tuning ids, species tuning values, and tuning count. `SwarmAnalysisJob` now appends species targets into bounded arrays through an atomic count, and `PredatorCognitionJob` resolves species targets/tuning through bounded count-window scans. `SpeciesCognitionTuning` is now Pack=1 Size=32 and validated by `UnsafeUtility.SizeOf`.
+Rejected Alternatives: Keeping local `NativeParallelHashMap` ownership was rejected because it preserved private native state. Adding a hash-map API to `IDataVault` was rejected as a batch-time interface change with wider integration risk. A managed dictionary was rejected because Burst jobs cannot read it and it would violate zero-GC/hot-path rules.
+Scalability potential: Low/toaster keeps the active species window bounded to 256 and avoids hash-map ownership. Middle keeps deterministic array data flow. High/Ultra continue using pack coordination and retinal visual overkill from the same vault-owned truth without a duplicate target registry.
+Hardware Impact: Runtime ownership cost after cold DataVault resolve is 0 us/frame. Lookup changes from hash probe to bounded linear scan over <=256 entries; exact CPU delta was not measured. For MX350/i3, the scan is cache-linear and avoids separate hash-map allocation metadata. `dotnet build` is green with 0 warnings and 0 errors; Unity runtime/profiler evidence is absent.
+
+## Decision 18 - Shared Workspace Build Wall
+Problem: A fresh build after the reporting update no longer passes because the shared workspace has new compile failures outside the retinal/cognition files.
+Solution: Keep the retinal implementation intact, record the current build wall as external, and avoid cross-domain edits to gameplay tool, bootstrap, or fluid feedback systems without ownership. The retinal static audit remains clean.
+Rejected Alternatives: Editing `GameBootstrapper`, `FluidFeedbackListener`, `PlayerTool`, `PlayerToolManager`, or `PlayerNoiseEmitter` from the retinal agent was rejected because those are outside the assigned AI/COGNITION retinal domain and would risk trampling parallel agents' work. Reporting the older green build as current was rejected because it would be false after the fresh build.
+Scalability potential: Low/Middle/High/Ultra retinal behavior is unchanged by the external compile wall: the domain still uses four-light dot-product exposure, stress cadence, DataVault-backed SoA state, typed signal lanes, black-box telemetry, and high-tier deterministic visual overkill.
+Hardware Impact: No runtime change. Latest build failed with 11 external errors and 0 retinal/cognition errors; exact microseconds remain unmeasured because Unity runtime/profiler captures were not executed.
+
+## Decision 19 - RuntimeDescriptor Pack=1 ABI Closure
+Problem: `FaunaDataTemplate.RuntimeDescriptor` was explicit-size 64 bytes but still declared `Pack = 4`, leaving one adjacent fauna runtime payload outside the current ARM64/Quest Pack=1 mandate.
+Solution: Changed `RuntimeDescriptor` to `StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)` and kept the explicit size unchanged. Re-ran a Pack audit across `PredatorCognitionDomain`, `AI/Perception`, and `FaunaDataTemplate`.
+Rejected Alternatives: Keeping Pack=4 was rejected because the inquisition mandate now requires Pack=1 on native payload structs in the retinal/fauna cognition scope. Repacking fields or changing the size was rejected because the payload already has a stable 64-byte size and only the packing contract needed closure.
+Scalability potential: Low/toaster, Middle, High, and Ultra all receive the same deterministic descriptor stride. This does not alter retinal behavior: low path remains dot-product glare and turn-away/flee; high/ultra keep deterministic thrash and biolum strobe from the same DataVault truth.
+Hardware Impact: Runtime impact is 0 us/frame; this is ABI metadata on a 64-byte descriptor. `dotnet build` is green with 0 warnings and 0 errors. Exact microseconds were not measured; Unity runtime/profiler verification remains absent.
+
+## Decision 20 - Volatile Shared Build Evidence Handling
+Problem: Multiple build walls appeared and disappeared in external systems while parallel agents edited the workspace, making stale compiler output unsafe as final evidence.
+Solution: Treat only the latest current-state compiler pass as final build evidence, and record intermediate external walls as volatile shared-workspace observations. The retinal pass only changed the fauna descriptor Pack value after the previous report; no external source file edits were made by this pass.
+Rejected Alternatives: Claiming ownership of external fixes was rejected because the source changes landed outside this pass. Editing `PhysicsApplySystem`, `TetherInstance`, `SargassumMicroFaunaBoids`, or `LockstepStateValidator` from the retinal agent was rejected once current file snapshots showed those walls had already moved or cleared.
+Scalability potential: Retinal low/mid/high/ultra behavior is unchanged. The system remains dot-product glare, DataVault SoA state, typed signal lanes, finite guards, 300-frame black-box telemetry, low-tier turn-away, and high-tier deterministic visual overkill.
+Hardware Impact: No runtime change. Final current-state `dotnet build` is green with 0 warnings and 0 errors. Exact microseconds remain unmeasured; Unity runtime/profiler verification remains absent.

@@ -17,7 +17,11 @@ namespace Hecton8.VFX.Materials
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-86)]
     [AddComponentMenu("Hecton8/VFX/Material Decay Runtime")]
-    public sealed class MaterialDecayRuntime : MonoBehaviour, IUpdatable
+    public sealed class MaterialDecayRuntime : MonoBehaviour,
+        IUpdatable,
+        IGlobalRegistryHotSwapListener,
+        IGlobalRegistryHotSwapRefListener,
+        IScalabilityChangedEventListener
     {
         private const int TelemetryCapacity = 300;
         private const int MaterialDecayStateSizeBytes = 28;
@@ -68,6 +72,9 @@ namespace Hecton8.VFX.Materials
         private ushort _lastSlotIndex;
         private byte _lastReason;
         private bool _registered;
+        private bool _hotSwapRegistered;
+        private bool _scalabilityEventsRegistered;
+        private bool _lowTier;
         private bool _hasDurabilitySignal;
         private bool _blackBoxReady;
         private bool _dumpedFault;
@@ -116,6 +123,8 @@ namespace Hecton8.VFX.Materials
             }
 
             s_runtimeInstance = this;
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityEvents();
             EnsureBlackBox();
             BindRustAtlas();
             UploadShaderGlobals(force: true);
@@ -124,18 +133,24 @@ namespace Hecton8.VFX.Materials
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityEvents();
             TryRegisterTick();
         }
 
         private void OnDisable()
         {
             TryUnregisterTick();
+            TryUnregisterScalabilityEvents();
+            TryUnregisterHotSwapListener();
             UploadZeroState();
         }
 
         private void OnDestroy()
         {
             TryUnregisterTick();
+            TryUnregisterScalabilityEvents();
+            TryUnregisterHotSwapListener();
             if (ReferenceEquals(s_runtimeInstance, this))
                 s_runtimeInstance = null;
 
@@ -183,6 +198,74 @@ namespace Hecton8.VFX.Materials
             _registered = false;
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+            RefreshCachedRegistryServices();
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+            {
+                ScalabilityEvents.Register(this);
+                _scalabilityEventsRegistered = true;
+            }
+
+            _lowTier = IsLowTier(GlobalRegistry.ScalabilityTier);
+        }
+
+        private void TryUnregisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityEventsRegistered = false;
+        }
+
+        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _lowTier = IsLowTier(payload.CurrentQualityTier);
+        }
+
+        void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        private void RefreshCachedRegistryServices()
+        {
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
+        }
+
+        private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+                BindDataVault(currentService as IDataVault);
+        }
+
         private void ConsumeDurabilitySignals()
         {
             ReadOnlySpan<ItemDurabilityChangedSignal> signals = SignalBus<ItemDurabilityChangedSignal>.GetFrameSnapshot();
@@ -214,9 +297,14 @@ namespace Hecton8.VFX.Materials
 
         private void ConsumePlayerState()
         {
-            if (GlobalSignals.TryGetLatestPlayerStressSignal(out PlayerStressSignal stressSignal, out int sequence) &&
-                sequence != _lastStressSequence)
+            ReadOnlySpan<PlayerStressSignal> stressSignals = SignalBus<PlayerStressSignal>.GetFrameSnapshot();
+            for (int i = 0; i < stressSignals.Length; i++)
             {
+                PlayerStressSignal stressSignal = stressSignals[i];
+                int sequence = unchecked((int)stressSignal.Frame);
+                if (sequence == _lastStressSequence)
+                    continue;
+
                 _lastStressSequence = sequence;
                 _stress01 = SanitizeUnit(stressSignal.Stress01);
             }
@@ -232,7 +320,7 @@ namespace Hecton8.VFX.Materials
                 return;
 
             _lastAcousticFrame = frame;
-            GlobalSignals.Publish(new ToolAcousticSignal
+            ToolAcousticSignal acousticSignal = new ToolAcousticSignal
             {
                 ToolHash = MaterialDecayToolHash,
                 TargetHash = signal.ItemHash,
@@ -242,14 +330,15 @@ namespace Hecton8.VFX.Materials
                 Frame = (uint)math.max(0, frame),
                 State = signal.Reason,
                 Flags = signal.Flags
-            });
+            };
+            SignalBus<ToolAcousticSignal>.Push(in acousticSignal);
         }
 
         private void UploadShaderGlobals(bool force)
         {
             float rust01 = _hasDurabilitySignal ? SanitizeUnit(_rust01) : SanitizeUnit(defaultRust01);
             float wetness01 = math.saturate(_wetnessFadeRemaining * (1f / WetnessFadeSeconds));
-            float lowTier01 = IsLowTier(GlobalRegistry.ScalabilityTier) ? 1f : 0f;
+            float lowTier01 = _lowTier ? 1f : 0f;
             float stableSeed01 = (_lastItemHash & 0x3FFu) * (1f / 1023f);
             Vector4 runtimeVector = new Vector4(rust01, wetness01, lowTier01, stableSeed01);
             float bloodActive01 = math.saturate(math.max(_stress01, _healthDamage01));
@@ -333,6 +422,16 @@ namespace Hecton8.VFX.Materials
             return texture;
         }
 
+        private void BindDataVault(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            _dataVault = vault;
+            _blackBoxHandle = default;
+            _blackBoxReady = false;
+        }
+
         private bool EnsureBlackBox()
         {
             if (!ValidateNativeLayout())
@@ -341,18 +440,22 @@ namespace Hecton8.VFX.Materials
                 return false;
             }
 
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null || vault.IsCompactionFenceActive)
+            IDataVault vault = _dataVault;
+            if (vault == null)
             {
                 ClearBlackBoxLease();
+                return false;
+            }
+            if (vault.IsCompactionFenceActive)
+            {
+                _blackBoxHandle = default;
+                _blackBoxReady = false;
                 return false;
             }
 
             if (!ReferenceEquals(_dataVault, vault))
             {
-                _dataVault = vault;
-                _blackBoxHandle = default;
-                _blackBoxReady = false;
+                BindDataVault(vault);
             }
 
             if (!vault.TryGetBufferHandle(BufferID.MaterialDecayBlackBox, out _blackBoxHandle) ||
@@ -406,7 +509,7 @@ namespace Hecton8.VFX.Materials
             float rust01 = _hasDurabilitySignal ? SanitizeUnit(_rust01) : SanitizeUnit(defaultRust01);
             float wetness01 = math.saturate(_wetnessFadeRemaining * (1f / WetnessFadeSeconds));
             byte flags = 0;
-            if (IsLowTier(GlobalRegistry.ScalabilityTier)) flags |= TelemetryFlagLowTier;
+            if (_lowTier) flags |= TelemetryFlagLowTier;
             if (rust01 > RustPomGate) flags |= TelemetryFlagRustActive;
             if (wetness01 > 0.001f) flags |= TelemetryFlagWet;
             if (math.max(_stress01, _healthDamage01) > 0.001f) flags |= TelemetryFlagBlood;

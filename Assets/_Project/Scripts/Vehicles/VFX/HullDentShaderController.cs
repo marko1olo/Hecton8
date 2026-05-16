@@ -407,7 +407,7 @@ namespace Hecton8.Vehicles.VFX
             try
             {
                 var dents = _hullDentsHandle.Resolve(vault);
-                if (!dents.IsCreated)
+                if (!dents.IsCreated || dents.Length < MaxHullDents)
                     return false;
 
                 bool changed = false;
@@ -456,7 +456,7 @@ namespace Hecton8.Vehicles.VFX
             try
             {
                 var dents = _hullDentsHandle.Resolve(vault);
-                if (!dents.IsCreated)
+                if (!dents.IsCreated || dents.Length < MaxHullDents)
                     return false;
 
                 int count = math.min(MaxHullDents, dents.Length);
@@ -512,7 +512,8 @@ namespace Hecton8.Vehicles.VFX
 
             if (!_hullDentsHandle.IsCreated ||
                 _hullDentsHandle.BufferId != BufferID.HullDents ||
-                _hullDentsHandle.Length < MaxHullDents)
+                _hullDentsHandle.Length < MaxHullDents ||
+                !vault.ResolveBuffer(ref _hullDentsHandle))
             {
                 _hullDentsHandle = vault.GetBufferHandle<float4>(
                     BufferID.HullDents,
@@ -521,7 +522,7 @@ namespace Hecton8.Vehicles.VFX
                     NativeArrayOptions.ClearMemory);
             }
 
-            return _hullDentsHandle.IsCreated;
+            return _hullDentsHandle.IsCreated && _hullDentsHandle.Length >= MaxHullDents;
         }
 
         private void RefreshDentWriteState()
@@ -590,7 +591,7 @@ namespace Hecton8.Vehicles.VFX
                 Channel = signal.Channel,
                 DamageType = signal.DamageType
             };
-            GlobalSignals.Publish(in deformedSignal);
+            SignalBus<HullDeformedSignal>.Push(in deformedSignal);
         }
 
         private uint BuildTelemetryFlags()

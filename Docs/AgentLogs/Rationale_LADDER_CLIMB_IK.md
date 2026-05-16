@@ -1,6 +1,6 @@
 # Rationale_LADDER_CLIMB_IK
 
-Runtime Status: PENDING VERIFICATION - LOOP 9 HARDENED; CORE BUILD BLOCKED BY DEPENDENCY
+Runtime Status: PENDING UNITY/PROFILER VERIFICATION - LOOP 17 GRIP STATE + BLACKBOX COUNT HARDENED; CORE BUILD GREEN
 
 ## Initial Technical Direction
 Problem: Ladder traversal currently requested as embodiment-critical locomotion; teleport-style vertical movement would break VR body continuity and gives no hand contact truth.
@@ -164,3 +164,137 @@ Solution: Re-ran `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false
 Rejected Alternatives: Editing Ecosystem/AI assembly contracts from the Animation/IK prompt. That is not a ladder cross-domain interface.
 Scalability potential: None; validation remains blocked by external compile debt.
 Hardware Impact: 0 us runtime.
+
+### Loop 10 - Adapter Bloat Cleanup and Core Build Green
+Problem: `ClimbableLadder` had no live teleport/delegate path left, but it still carried corrupted non-ASCII banner comments, an unused `Hecton8.Audio` namespace, and empty explanatory hover comments. The adapter was also one of the user-visible files in the ladder path, so leaving mojibake in it was unprofessional debt.
+Solution: Rewrote `ClimbableLadder` as a compact ASCII interaction adapter while preserving the procedural climb request, localization cache, collider trigger setup, editor gizmos, and public `RequestClimbToExit`/`RequestClimbToEntry` API.
+Rejected Alternatives: Leaving the banners because they are comments. Comments still damage maintainability and obscure the small interaction surface this adapter should expose.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged; this removes editor/source bloat without adding frame work.
+Hardware Impact: 0 us runtime. The removed code was comments and an unused namespace.
+
+Problem: The platform-layout scan still found two sequential structs in touched signal infrastructure without `Pack = 1`: `SpscSignalRingBuffer<T>` and `CombatDamageSignalAupShiftTransformer`.
+Solution: Added `Pack = 1` to both sequential layouts and re-ran the layout scan across `Animation/Locomotion`, `GlobalSignals.cs`, and `ClimbableLadder.cs`; it returned no hits.
+Rejected Alternatives: Treating them as harmless because they are not ladder payloads. They live in the same signal infrastructure and were inside a file already touched by this task.
+Scalability potential: Quest/ARM64 and desktop use the same declared layout assumptions; tiering remains behavioral, not memory-layout dependent.
+Hardware Impact: 0 us runtime. This is crash-risk reduction, not a frame-time optimization.
+
+Problem: Previous Core validation was blocked by external project state. After the cleanup patch, a new `--no-restore` build first failed because `Temp/obj/Hecton8.Core/project.assets.json` was missing.
+Solution: Ran `dotnet restore Hecton8.Core.csproj` successfully, then ran `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:minimal`. Result: `Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll`, build succeeded, 0 warnings, 0 errors, 4.21 s.
+Rejected Alternatives: Reporting the initial NETSDK1004 as a dependency wall. Restore was permitted and resolved that wall.
+Scalability potential: None; this is compile validation evidence.
+Hardware Impact: 0 us runtime. Status remains pending Unity/editor/profiler verification because no runtime capture was executed.
+
+### Loop 11 - Owner Sentinel and Reentry Hardening
+Problem: Ladder DataVault buffers and the scheduled IK job were still registered under `SystemID.GameplayPlayer`. The runtime is player-facing, but memory ownership belongs to the Animation/Locomotion solver, and the user explicitly called out SystemID correctness.
+Solution: Added `SystemID.AnimationLocomotion = 150` and routed ladder input/output/AUP/telemetry/cursor DataVault handles plus `H8Memory.RegisterActiveJob` through a local `OwnerSystemId` constant.
+Rejected Alternatives: Leaving the owner as `GameplayPlayer`. That hides animation memory under gameplay and makes sentinel attribution weaker during leak/postmortem review.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; memory accountability is tighter across all tiers.
+Hardware Impact: 0 us runtime. This is ownership correctness, not an optimization.
+
+Problem: `TryBeginClimbInstance` could be called while a climb was already active or a solve job was scheduled. Interaction spam could reset state mid-climb.
+Solution: Added an early reject for `_active`, `_pendingFinish`, or `_solveScheduled` before mutating climb state or touching DataVault views.
+Rejected Alternatives: Letting `CompleteOutstandingJob()` reset an active climb. That creates nondeterministic embodiment state under repeated interactions.
+Scalability potential: Low/Middle/High/Ultra all get deterministic single-owner climb sessions.
+Hardware Impact: One boolean branch on cold climb request, 0 us steady-state.
+
+Problem: Low-tier camera slide was skipped when `IPlayerMovementForceSink` existed; the runtime only queued movement velocity and applied head stabilization. The stricter XML requires linear camera Z/Y interpolation along the ladder vector in PC mode.
+Solution: When the movement sink exists and low-tier slide is active, the runtime now still applies the absolute low-tier camera slide and FastNlerp stabilization after queueing the external velocity change.
+Rejected Alternatives: Assuming the player movement sink always makes the camera motion visible. That is an integration assumption, not prompt-compliant presentation.
+Scalability potential: Low = explicit camera slide; Middle/High/Ultra unchanged except for the same deterministic presentation target if low-tier mode is forced.
+Hardware Impact: Existing estimate remains roughly 2 us/frame for one absolute `Vector3.Lerp` plus one FastNlerp when low-tier slide is active; no new heap allocation.
+
+Problem: The latest Core build no longer reproduces the prior green state because unrelated repository files changed again.
+Solution: Re-ran focused debt/layout/shader/IO scans and a filtered Core build. The debt/layout scans are clean for the ladder domain. Latest build wall is external `World/EcosystemDirector.cs` CS1612 native-view mutation errors; the filtered wall contains no `LadderClimb`, `ProceduralLadder`, `ClimbableLadder`, `AnimationLocomotion`, or `OwnerSystemId` failures.
+Rejected Alternatives: Editing `World/EcosystemDirector.cs` from the Animation/IK prompt. That is outside the domain boundary.
+Scalability potential: None; this is compile-wall isolation.
+Hardware Impact: 0 us runtime.
+
+### Loop 12 - Explicit Registry Slot
+Problem: `ProceduralLadderClimbRuntime` had a concrete GlobalRegistry field and register/clear methods, but `ResolveServiceSlotCold(typeof(ProceduralLadderClimbRuntime))` still fell through to `GlobalRegistryServiceSlot.Unknown`. That weakens ghost-service diagnostics and makes unregister-time memory reaping unable to associate the service slot with the new animation owner.
+Solution: Added `GlobalRegistryServiceSlot.ProceduralLadderClimbRuntime = 172`, appended the slot name, mapped `ResolveMemoryOwner` to `SystemID.AnimationLocomotion`, and added the concrete type to `ResolveServiceSlotCold`.
+Rejected Alternatives: Leaving the runtime as an unknown registry service. That preserves exactly the attribution hole the owner-sentinel patch was meant to close.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; registry diagnostics and leak attribution are now deterministic for the ladder runtime.
+Hardware Impact: 0 us runtime. This is cold-path registry metadata only.
+
+Problem: After restore, the latest Core build wall moved again to an unrelated syntax failure in `SubmarineFluidDynamics.cs`.
+Solution: Re-ran filtered `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q`. The wall is `SubmarineFluidDynamics.cs` CS1001/CS1003/CS8124 syntax errors around lines 2051-2075. Filtered output contains no `LadderClimb`, `ProceduralLadder`, `ClimbableLadder`, `AnimationLocomotion`, `OwnerSystemId`, or `GlobalRegistryServiceSlot` errors.
+Rejected Alternatives: Editing submarine fluid syntax from the Animation/IK prompt. That is outside the domain boundary.
+Scalability potential: None; this is compile-wall isolation.
+Hardware Impact: 0 us runtime.
+
+### Loop 13 - Runtime NativeArray View Eviction
+Problem: `ProceduralLadderClimbRuntime` no longer owned native arrays, but its helper signatures still exposed local `NativeArray<T>` out parameters. That kept the system looking like a data owner during static audit even though the arrays were DataVault views.
+Solution: Added a packed `LadderClimbIkVaultViews` packet in `LadderClimbIkJobs.cs` and refactored the runtime to read/write through that packet. `ProceduralLadderClimbRuntime.cs` now has zero `NativeArray<T>` declarations; `NativeArray<T>` appears only in the vault-view packet and Burst job fields.
+Rejected Alternatives: Leaving `out NativeArray<T>` helper signatures and explaining them in documentation. The code shape should make DataVault ownership obvious without relying on a report.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; data ownership is clearer and still vault-backed.
+Hardware Impact: 0 us runtime intended. The packet wraps the same resolved native views and does not allocate.
+
+Problem: Adding the vault-view packet introduced another struct in the IK file that needed explicit layout.
+Solution: Annotated `LadderClimbIkVaultViews` with `[StructLayout(LayoutKind.Sequential, Pack = 1)]` and re-ran the missing-pack scan; it returned no hits for the ladder path and touched signal path.
+Rejected Alternatives: Leaving the view packet unannotated because it is not persisted. The project mandate is stricter than pure persistence needs.
+Scalability potential: Quest/ARM64 and desktop use identical declared layout for the packet.
+Hardware Impact: 0 us runtime.
+
+Problem: The latest Core build wall moved again while validating the refactor.
+Solution: Re-ran filtered Core build. Latest wall is external `UI/Navigation/DiegeticGyroCompassRuntime.cs` missing members/overload mismatches plus `World/EcosystemDirector.cs` generic native pointer inference errors. Filtered output contains no `LadderClimb`, `ProceduralLadder`, `ClimbableLadder`, `AnimationLocomotion`, `OwnerSystemId`, or `GlobalRegistryServiceSlot` errors.
+Rejected Alternatives: Editing UI compass or World ecosystem code from the Animation/IK prompt.
+Scalability potential: None; this is compile-wall isolation.
+Hardware Impact: 0 us runtime.
+
+### Loop 14 - Signal Semantics and Ordered Blackbox
+Problem: Climb shutdown packets still used `PlayerStateSignal.StateClimbing` even after `_active` had been cleared. That made latest-state consumers store an inactive climb packet as a climb state and hid the difference between finished, active, and slip terminal states.
+Solution: Added explicit `PlayerStateSignal.StateNone = 0`; active climb now publishes `StateClimbing + FlagActive + FlagClimbing`, terminal slip publishes `StateClimbing + FlagClimbing + FlagLadderSlip`, and finished climb publishes `StateNone` with only AUP-safe metadata.
+Rejected Alternatives: Leaving state clearing implicit in missing flags. Consumers already cache `State`, so the packet should carry a literal inactive state instead of relying on readers to reverse-engineer inactive flags.
+Scalability potential: Low/Middle/High/Ultra all get deterministic state clear semantics with the same 64-byte signal payload; no new lane was invented.
+Hardware Impact: One scalar branch in the signal builder, estimated 0-1 us only on state publication.
+
+Problem: Climb physiology was publishing neutral zero-stress packets during frames with no climb movement. Because `PlayerStressSignal` is consumed as a latest snapshot by audio, visor, and IK consumers, neutral climb spam could overwrite a more meaningful stress producer.
+Solution: Suppressed neutral climb stress publication unless a slip is pending, added `FlagActive | FlagClimbing` to non-neutral physiology/stress packets, and emits a minimum slip stress impulse when the player drops.
+Rejected Alternatives: Continuing to publish `Stress01 = 0` every active ladder tick. That preserves a false latest signal and makes cross-domain stress composition cache-hostile.
+Scalability potential: Low = fewer neutral lane writes; High/Ultra = richer stress/heartbeat reaction only when movement or slip justifies it.
+Hardware Impact: Saves up to two signal publishes on stationary ladder frames. Estimated 2-4 us avoided per idle climb tick; no profiler proof claimed.
+
+Problem: The blackbox ring recorded the last 300 frames but the cold dump wrote raw array order, not chronological ring order after wrap.
+Solution: Bounded telemetry cursor wrap to the actual dump capacity and exported entries oldest-to-newest from `TelemetryCursor[0]`. The runtime dump writes exactly the active dump count, capped at `BlackBoxFrameCapacity`.
+Rejected Alternatives: Raw index dump with an external parser guessing cursor order. Postmortem data must be self-evident.
+Scalability potential: Low/Middle/High/Ultra unchanged; cold postmortem quality improves without frame cost.
+Hardware Impact: 0 us hot path beyond replacing one modulo capacity constant. Dump ordering is cold NaN/crash path only.
+
+Problem: Latest validation is again blocked outside the ladder domain.
+Solution: Re-ran filtered `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q`. The wall is `Core/Determinism/LockstepStateValidator.cs` missing `LockstepSnapshotSignalCapacity`, `LockstepSnapshotLaneHash`, `SystemGlitchSignalCapacity`, and `SystemGlitchLaneHash`. Filtered output contains no `LadderClimb`, `ProceduralLadder`, `ClimbableLadder`, `AnimationLocomotion`, `PlayerStateSignal`, or registry owner errors.
+Rejected Alternatives: Editing Determinism constants from the Animation/IK prompt. That is outside the domain boundary.
+Scalability potential: None; this is compile-wall isolation.
+Hardware Impact: 0 us runtime.
+
+### Loop 15 - VR Embodiment Sign and Rotation Polish
+Problem: VR grip input accepted hand deltas, but the progress resolver treated the submitted delta as player progress in the same direction. For embodied ladder climbing, moving the gripped hands down should pull the world/player up. A no-grip packet also needed to clear stale pending grip state immediately, and clean VR finish should not snap the root rotation to a ladder endpoint.
+Solution: `SubmitUniversalInputState` now clears `_pendingGripPullMeters` and `_pendingGripMask` whenever the grip bit is absent. `ResolveProgressDelta` consumes grip motion with inverted sign, then clears the pending packet after one frame. `StopClimb` now applies the endpoint root-rotation snap only for non-VR clean finishes.
+Rejected Alternatives: Treating controller deltas as same-direction climb progress or leaving rotation snapping enabled for VR. Same-direction deltas create wrong body mechanics, and forced root snapping can fight HMD/controller authority at ladder exit.
+Scalability potential: Low = unchanged camera-slide Dear Lie; Middle = deterministic non-VR movement with FastNlerp head stabilization; High = grip-gated hand-pull climb with correct inverse motion; Ultra = richer haptic/heartbeat consumers can build on the same rung-lock and stress signals without changing the gameplay truth lane.
+Hardware Impact: 0 us intended steady-state change. The patch changes sign/branch semantics on existing scalar work; no new allocation or per-frame service lookup was added.
+
+Problem: Latest validation moved again after unrelated repository changes.
+Solution: Re-ran filtered Core build. The wall is external `UI/Navigation/DiegeticGyroCompassRuntime.cs` DTO/presentation drift plus `Core/SystemDispatcher.cs` missing `DisposeDispatcherBlackBox` and `EnsureDispatcherBlackBox`. Filtered output contains no `LadderClimb`, `ProceduralLadder`, `ClimbableLadder`, `AnimationLocomotion`, `PlayerStateSignal`, or registry owner errors.
+Rejected Alternatives: Editing UI compass or Core dispatcher blackbox helpers from the Animation/IK prompt. Those files are outside the ladder domain and not required cross-domain contracts for procedural ladder climb.
+Scalability potential: None; this is compile-wall isolation.
+Hardware Impact: 0 us runtime.
+
+### Loop 16 - Typed Input Lane Grip Mask Hardening
+Problem: VR grip semantics still had a contract defect. The serialized default grip mask was formerly `1 << 6`, but the authoritative Core input map exposes `Interact = 1 << 1` and `SecondaryFire = 1 << 3`; XR grip publishes both through `InputDispatcher.ResolveXRToolActionBitsAndPublishSignal`. A scene carrying the old serialized mask could fail to clear or accept grip correctly.
+Solution: Default grip resolution now uses `PlayerInputAction.Interact | PlayerInputAction.SecondaryFire`, treats legacy serialized `1 << 6` as stale data, and ORs designer-configured masks with the Core grip bits. `ProceduralLadderClimbRuntime` also consumes `SignalBus<InputStateSignal>.GetFrameSnapshot()` as `ReadOnlySpan<InputStateSignal>` each hot tick while VR grip mode is active, using the sequence field to skip already-consumed packets and clear pending grip pull when the latest typed packet has no grip.
+Rejected Alternatives: Adding a new `UniversalInputStateSignal` lane, taking a direct dependency on the input assembly, or polling an input service through the registry every frame. Those options either duplicate an existing typed lane, deepen assembly coupling, or add a per-frame service lookup.
+Scalability potential: Low = unchanged PC camera-slide Dear Lie; Middle = deterministic typed input clear without custom input ownership; High = VR grip pull now follows the actual Core XR grip bits; Ultra = richer haptic and stress consumers can trust the same typed input and rung-lock truth without a duplicate signal.
+Hardware Impact: Estimated 1-2 us/frame only while VR grip mode is active for a bounded 64-entry signal snapshot scan; zero allocation. The legacy mask guard is scalar cold/hot branch work with no measurable claim. Static validation found no forbidden ladder-domain patterns, no missing `Pack = 1`, and no runtime `NativeArray<T>` declarations. Latest Core build is blocked outside the domain by `Assets/_Project/Scripts/TetherInstance.cs` missing `IsFrameCooldownActive`; no ladder/runtime/input-lane symbols appeared in the filtered wall.
+
+### Loop 17 - Grip Truth and Blackbox Retained Count
+Problem: Grip-held state and hand-pull distance were still coupled. A VR input packet could say grip is held while no hand delta arrives that frame; the runtime would then resolve `_lastResolvedGripMask = 0`, and looking down could trigger the release-slip branch even though the player was still holding grip.
+Solution: Added `_currentInputGripHeld` as scalar runtime state separate from `_pendingGripPullMeters`. `SubmitUniversalInputState`, `SubmitGripPullDelta`, and `ConsumeInputStateSignals` now update held/released truth independently from pull distance; a zero-mask direct hand-delta packet clears grip state, while a held zero-delta packet blocks release-slip but produces no movement.
+Rejected Alternatives: Treating lack of hand delta as release, or forcing every caller to submit fake zero hand deltas each frame. Both make embodiment depend on caller behavior instead of typed grip truth.
+Scalability potential: Low = unchanged PC camera-slide Dear Lie; Middle = deterministic no-motion held grip; High = VR pull still needs real hand delta for progress; Ultra = look-down slip becomes a real release-gated fail state instead of an input-bridge artifact.
+Hardware Impact: One bool branch in VR grip mode, estimated below 1 us/frame; no allocation and no new signal lane.
+
+Problem: The 300-frame blackbox ring wrote full capacity on dump even when fewer than 300 samples had been recorded, so a short-session NaN dump could serialize uninitialized cleared entries before the real frames.
+Solution: Expanded the vault-owned telemetry cursor lane to two ints: next-write index and retained-sample count. The Burst job updates both in the DataVault, `EnsureVaultBuffers()` grows stale one-int handles to the required two-int lane, and `DumpBlackBox()` writes only the retained sample count, oldest-to-newest after wrap.
+Rejected Alternatives: Keeping a private managed retained-count field, parsing zero hashes during dump, or trusting old one-int cursor handles after the layout change. A private field violates data sovereignty, zero-hash filtering is ambiguous post-crash, and stale handles can silently block solve capacity.
+Scalability potential: Low/Middle/High/Ultra all get a deterministic postmortem payload without extra hot-path allocations. The retained count improves crash evidence quality on short test sessions and still caps at exactly 300 frames.
+Hardware Impact: One additional int read/write in the Burst telemetry path, estimated below 1 us/frame. Static validation found no forbidden ladder-domain patterns, no missing `Pack = 1`, and no runtime `NativeArray<T>` declarations. Latest `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` returned `CORE_BUILD_EXIT:0`. Unity editor/profiler verification remains unrun.

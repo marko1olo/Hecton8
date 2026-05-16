@@ -90,3 +90,87 @@ Solution: Preserve hardware changes, record the current build log, and mark vali
 Rejected Alternatives: Editing tools/bootstrap from the hardware prompt; reverting the hardware mask correction to hide unrelated errors; claiming the earlier green build applies to the post-patch workspace.
 Scalability potential: Hardware policy is cleaner and ready to validate once the unrelated compile wall clears.
 Hardware Impact: Current build measurement: failed after 00:00:53.08 with 140 errors, none in `HomeostasisBrain`, `HardwareProfileCatalog`, hardware JSON, or `HardwareThermalService`.
+
+## Decision 14 - Thermal Service Dump Identity
+Problem: `HardwareThermalService` still emitted its emergency binary dump under the previous thermal-director identity, leaving one owned blackbox artifact under a stale agent name.
+Solution: Rename the thermal service emergency dump to `Dump_HARDWARE_THROTTLING_DIRECTOR_ThermalService.bin` while leaving the SHI/homeostasis fault dump at the canonical `Dump_HARDWARE_THROTTLING_DIRECTOR.bin`.
+Rejected Alternatives: Sharing one binary filename for two different record layouts; leaving the stale filename because the SHI dump was already correct.
+Scalability potential: Low/Middle/High/Ultra devices keep the same fixed 300-frame rings; crash triage can now distinguish the SHI ring from the cold thermal-service ring without parsing ambiguity.
+Hardware Impact: 0 us runtime. Filename is only used on emergency dump path; steady-state blackbox writes are unchanged.
+
+## Decision 15 - Omega Pass 3 Compile Wall
+Problem: Rebuild after the blackbox filename patch fails in `PredatorCognitionDomain.cs`, which is outside `CORE/HARDWARE` and unrelated to the edited thermal/homeostasis files.
+Solution: Record `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass3.txt`, preserve the hardware patch, and keep final validation blocked by dependency.
+Rejected Alternatives: Editing fauna cognition from the hardware prompt; reverting the blackbox filename fix; claiming the historical green Phase4 build still validates the current workspace.
+Scalability potential: Hardware behavior remains unchanged across Low/Middle/High/Ultra; the patch improves postmortem routing only.
+Hardware Impact: Current build measurement: failed after 00:01:06.16 with 12 errors, none in the owned hardware/homeostasis files.
+
+## Decision 16 - Explicit ARM64 Payload Padding
+Problem: `ThermalTelemetryEntry` and `DynamicResolutionRuntimeSnapshot` were fixed-size 24-byte payloads with bytes left to unnamed tail/gap padding. Pack=1 existed, but the binary contract still depended on compiler layout for those unused bytes.
+Solution: Convert `ThermalTelemetryEntry` to explicit field offsets and add named reserved bytes through byte 23. Add named reserved bytes at offsets 14 and 15 in `DynamicResolutionRuntimeSnapshot`. Keep both ABI sizes at 24 bytes.
+Rejected Alternatives: Shrinking the thermal ring entry to 22 bytes and changing persisted blackbox stride; leaving unnamed padding because current C# likely lays it out correctly; widening the DRS snapshot and breaking the existing DataVault contract.
+Scalability potential: Quest/Android and Apple Silicon get deterministic payload stride. Steam Deck and PC keep the same binary compatibility and DataVault buffer sizing.
+Hardware Impact: 0 us runtime. This is ABI hardening only; blackbox steady-state ring cost remains the same static 1 us/frame estimate.
+
+## Decision 17 - Omega Pass 4 Compile Wall
+Problem: Rebuild after the ARM64 padding patch fails before hardware code on unresolved tether request types in `TetherManager.cs` and `Physics/TetherSignals.cs`.
+Solution: Record `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass4.txt`, preserve the hardware ABI patch, and keep final validation blocked by dependency.
+Rejected Alternatives: Editing physics tether code from the hardware prompt; reverting ABI hardening to hide unrelated errors; claiming the earlier Phase4 green build applies to this post-patch workspace.
+Scalability potential: Hardware payload determinism remains improved for Quest/Android, Steam Deck, Mac, and PC once the external tether compile wall is cleared.
+Hardware Impact: Current build measurement: failed after 00:00:26.76 with 2 errors, none in the owned hardware/homeostasis/contract files.
+
+## Decision 18 - Fixed-Endian Blackbox Dumps
+Problem: The owned thermal-service and SHI blackbox fault dumps still depended on a managed binary writer object, and `HomeostasisBlackBoxEntry` had 4 unnamed tail bytes despite its declared 64-byte size.
+Solution: Replace both owned blackbox dump writers with fixed little-endian `Span<byte>` serialization; make `HomeostasisBlackBoxEntry` explicit layout with named reserved bytes through byte 63; keep the 300-frame DataVault rings unchanged.
+Rejected Alternatives: Keeping managed writer objects because dumps only run during faults; shrinking the homeostasis entry to 60 bytes and breaking dump stride; using unsafe pointer casts in an asmdef that has unsafe disabled.
+Scalability potential: Low-tier and mobile crash dumps no longer depend on managed writer behavior. High/Ultra retain the same blackbox fidelity while fault output stays deterministic across Quest, Steam Deck, PC, and Mac.
+Hardware Impact: 0 us steady-state frame impact. Emergency dump path removes managed formatter object risk; no profiler capture was run.
+
+## Decision 19 - Omega Pass 5 Compile Wall
+Problem: Rebuild after the blackbox writer purge fails before hardware code on syntax errors in `SubmarineFluidDynamics.cs`.
+Solution: Record `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass5.txt`, preserve the hardware blackbox patch, and keep final validation blocked by dependency.
+Rejected Alternatives: Editing submarine fluid code from the hardware prompt; reverting deterministic blackbox serialization to hide unrelated syntax errors; claiming a green build while parse errors exist.
+Scalability potential: Hardware crash forensics remain deterministic once the external submarine compile wall is cleared.
+Hardware Impact: Current build measurement: failed after 00:00:24.11 with 187 external syntax errors, none in the owned hardware/homeostasis/contract files.
+
+## Decision 20 - Chronological SHI Dump And Green Validation
+Problem: The SHI blackbox dump serialized the 300-frame ring in raw slot order while recording the cursor separately. This was recoverable, but it forced crash readers to reconstruct chronology differently from the thermal-service dump.
+Solution: Emit the SHI blackbox from `_blackBoxCursor` forward, matching the thermal-service oldest-to-newest ring order. Re-run full `Hecton8.Core` build after external compile walls cleared.
+Rejected Alternatives: Leaving cursor reconstruction to every crash reader; reordering the live ring and risking runtime writer churn; claiming earlier blocked builds as sufficient.
+Scalability potential: Low-tier/mobile crash triage gets deterministic chronological telemetry without extra runtime writes. High/Ultra retain the same 300-frame blackbox fidelity and visual-overkill policy.
+Hardware Impact: 0 us steady-state frame impact. Fault dump order changes only during crash/NaN export. Build validation measured green at 00:02:46.41 with 0 warnings and 0 errors.
+
+## Decision 21 - Pass 7 Shared Output Lock Isolation
+Problem: The owned surface re-audit found no code debt, but the first Pass 7 build logged one MSB3026 copy-retry warning because the shared `Temp/bin/Debug/Hecton8.Core.dll` output was locked by another process before the retry succeeded.
+Solution: Keep the shared-output warning as evidence, then run a clean-output validation with `OutDir=Temp\bin\HARDWARE_THROTTLING_DIRECTOR_Pass7\`. The clean-output build succeeded with 0 warnings and 0 errors.
+Rejected Alternatives: Reporting the shared-output retry as a hardware warning; deleting the warning log; skipping revalidation because Pass 6 was already green.
+Scalability potential: No runtime behavior changed. Low/Middle/High/Ultra policy remains the same: cheap SHI/EWMA pressure sensing under stress, targeted sacrifices, and high-tier visual-overkill budget while healthy.
+Hardware Impact: 0 us runtime. Pass 7 was validation and ledger hardening only. Clean-output build measured 00:02:03.55 with 0 warnings and 0 errors.
+
+## Decision 22 - Deterministic DRS Fault Dump
+Problem: `ThermalDynamicResolutionAdapter` had Pack=1 telemetry and ABI validation, but its fault dump still wrote a raw `ReadOnlySpan<byte>` over native telemetry memory. That made the dump dependent on native field encoding and raw ring slot order, unlike the explicit SHI and thermal-service dump writers.
+Solution: Replace the raw native-memory write with explicit 48-byte little-endian serialization for every DRS telemetry field, emitted from `_telemetryCursor` forward. Keep the DataVault ring, lock discipline, ABI size constants, and hot-path telemetry writes unchanged.
+Rejected Alternatives: Leaving raw memory dumps because ABI validation currently passes; changing the live DataVault layout; moving this to the graphics owner despite the hardware XML directly coupling SHI Level 2 to DRS behavior.
+Scalability potential: Low/Quest/Steam Deck crash triage gets deterministic DRS telemetry without changing runtime pressure math. High/Ultra keep visual-overkill flags in the same dump fields while healthy and retain precise postmortem evidence when DRS intervenes.
+Hardware Impact: 0 us steady-state frame impact. Cost exists only on fault/NaN dump export. No profiler capture was run.
+
+## Decision 23 - Omega Pass 8 Compile Wall
+Problem: After the DRS dump patch, clean-output validation no longer reaches a full green build because parallel non-hardware edits broke Core determinism. First build failed on duplicate `PhysicsForce*` BufferID entries in `H8Memory.cs`; after clean, retries fail on `LockstepStateValidator.cs(279,36)` missing `ValidateBinaryLayout`.
+Solution: Preserve the deterministic DRS dump patch, record all Pass 8 build logs, and mark current validation blocked by dependency. Static owned scans and hardware profile validation passed, and no compiler error names `HardwareThermalService`, `HomeostasisBrain`, `ThermalDynamicResolutionAdapter`, `CoreContractsAssemblyMarker`, or `GlobalSignals`.
+Rejected Alternatives: Editing determinism/memory/physics ownership from the hardware prompt; reverting the DRS dump hardening; claiming the Pass 7 green build validates the post-Pass8 workspace.
+Scalability potential: Hardware policy remains unchanged across Low/Middle/High/Ultra; the patch improves postmortem portability for DRS telemetry once the external determinism wall clears.
+Hardware Impact: Current build measurement failed after 00:00:38.82 on retry 2 with 1 external error. Runtime impact of the DRS dump patch remains 0 us steady-state.
+
+## Decision 24 - Android Sensor Ownership Centralization
+Problem: `HomeostasisBrain` still owned a fallback Android `PowerManager` JNI bridge while `HardwareThermalService` owned the registry hardware service. That created two thermal sensor owners and made the predictive `getThermalHeadroom(30)` path live outside the FrostTick service.
+Solution: Move Android predictive thermal headroom into `HardwareThermalService.TrySampleAndroidCold`; cache `Build.VERSION`, `UnityPlayer`, activity, `PowerManager`, and the battery intent filter in the service; combine `getThermalHeadroom(30)` with `getCurrentThermalStatus`; remove the HomeostasisBrain Android JNI bridge entirely. HomeostasisBrain now consumes `IHardwareThermalService.TryGetSnapshot` and falls back to non-JNI synthetic pressure only when no service snapshot exists.
+Rejected Alternatives: Keeping two cached JNI bridges as a startup safety net; polling headroom from HomeostasisBrain; storing another local NativeArray or signal to shuttle Android thermal data.
+Scalability potential: Quest/Android has one cold hardware sensor owner. Steam Deck and PC remain on SystemInfo/processor fallback with no sensor file reads. High/Ultra still preserve visual overkill until SHI thresholds prove stress.
+Hardware Impact: Static estimate unchanged for no per-frame JNI: 40 us/frame avoided versus illegal frame polling. Extra saving is ownership/duplication removal: one cached JNI bridge instead of two; 0 us steady-state frame impact because the call remains FrostTick-only. No profiler capture was run.
+
+## Decision 25 - Omega Pass 9 Compile Wall
+Problem: After the Android ownership patch, clean-output validation is blocked by external ecosystem compile errors in `World/EcosystemDirector.cs`.
+Solution: Preserve the hardware patch, record `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass9_CleanOutDir.txt`, and mark current validation blocked by dependency. Static owned scans, Pack=1 scan, hardware profile guard, and diff check passed.
+Rejected Alternatives: Editing world/ecosystem index state from the hardware prompt; reverting Android ownership centralization; claiming the last green Pass 7 build validates the post-Pass9 workspace.
+Scalability potential: Hardware behavior is cleaner across Low/Middle/High/Ultra; Android predictive throttling is centralized while high-tier visual-overkill policy remains unchanged.
+Hardware Impact: Current build measurement failed after 00:02:40.10 with 23 external errors and 4 warnings. No compiler error names the hardware/homeostasis/DRS files.

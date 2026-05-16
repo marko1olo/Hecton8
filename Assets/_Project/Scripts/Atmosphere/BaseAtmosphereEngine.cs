@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -16,10 +17,10 @@ namespace Hecton8.Atmosphere
     public sealed class BaseAtmosphereEngine : MonoBehaviour, IFixedTickable, IPostFixedTickable
     {
         private const int MaxCompartmentCapacity = 128;
-        private const float DefaultMaxPressureKPa = 101.325f;
-        private const float DefaultOxygenConsumptionKPaPerSecond = 0.012f;
-        private const float DefaultCarbonDioxideGenerationKPaPerSecond = 0.010f;
-        private const float DefaultScrubberKPaPerSecond = 0.055f;
+        private const float DefaultMaxPressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
+        private const float DefaultOxygenConsumptionKPaPerSecond = HectonSurvivalContract.DefaultPlayerOxygenKPaPerSecond;
+        private const float DefaultCarbonDioxideGenerationKPaPerSecond = HectonSurvivalContract.DefaultPlayerCarbonDioxideKPaPerSecond;
+        private const float DefaultScrubberKPaPerSecond = HectonSurvivalContract.DefaultScrubberKPaPerSecond;
         private const float DefaultSuitRuptureThreshold = 0.65f;
         private const float DefaultSuitRuptureDrainPerSecond = 0.35f;
         private const float OxygenDepletedKPa = 1f;

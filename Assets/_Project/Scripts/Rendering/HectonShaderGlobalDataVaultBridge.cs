@@ -16,7 +16,9 @@ namespace Hecton8.Core
         private const int WaterExtinctionRuntimeSlot = 2;
         private const int WaterExtinctionWeatherSlot = 3;
         private const int WaterExtinctionParamsSlot = 4;
-        private const int SlotCount = 5;
+        private const int UberNoirRuntimeSlot = 5;
+        private const int UberNoirFeatureMaskSlot = 6;
+        private const int SlotCount = 7;
 
         private static readonly int _BiolumMasterPhaseId = Shader.PropertyToID("_BiolumMasterPhase");
         private static readonly int _GlobalBiolumPhaseId = Shader.PropertyToID("_GlobalBiolumPhase");
@@ -27,6 +29,8 @@ namespace Hecton8.Core
         private static readonly int _ExtinctionLutParamsId = Shader.PropertyToID("_ExtinctionLUTParams");
         private static readonly int _ExtinctionLutRuntimeId = Shader.PropertyToID("_ExtinctionLUTRuntime");
         private static readonly int _ExtinctionLutWeatherParamsId = Shader.PropertyToID("_ExtinctionLUTWeatherParams");
+        private static readonly int _HectonUberNoirRuntimeParamsId = Shader.PropertyToID("_HectonUberNoirRuntimeParams");
+        private static readonly int _HectonActiveShaderFeatureMaskId = Shader.PropertyToID("_HectonActiveShaderFeatureMask");
 
         private static IDataVault _cachedVault;
         private static uint _cachedVaultGeneration;
@@ -36,6 +40,8 @@ namespace Hecton8.Core
         private static float4 _fallbackWaterExtinctionRuntime;
         private static float4 _fallbackWaterExtinctionWeather;
         private static float4 _fallbackWaterExtinctionParams;
+        private static float4 _fallbackUberNoirRuntime;
+        private static float4 _fallbackUberNoirFeatureMask;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -48,6 +54,8 @@ namespace Hecton8.Core
             _fallbackWaterExtinctionRuntime = new float4(0f, 1f, 1f, 0f);
             _fallbackWaterExtinctionWeather = default;
             _fallbackWaterExtinctionParams = new float4(1500f, 2.5f, 0f, 0f);
+            _fallbackUberNoirRuntime = new float4(0f, 1f, 0f, 0f);
+            _fallbackUberNoirFeatureMask = default;
         }
 
         public static void PublishBiolumMasterPhase(Vector4 phaseVector)
@@ -139,6 +147,46 @@ namespace Hecton8.Core
             PublishWaterExtinctionParams(new Vector4(1500f, 2.5f, 0f, 0f));
             PublishWaterExtinctionRuntime(new Vector4(0f, 1f, 1f, 0f));
             PublishWaterExtinctionWeather(Vector4.zero);
+        }
+
+        /// <summary>
+        /// Publishes a deterministic analytical Beer-Lambert fallback while keeping LUT texture sampling disabled.
+        /// </summary>
+        public static void PublishWaterExtinctionAnalyticalFallback()
+        {
+            PublishWaterExtinctionParams(new Vector4(1500f, 2.5f, 1f, 0f));
+            PublishWaterExtinctionRuntime(new Vector4(0f, 1f, 1f, 1f));
+            PublishWaterExtinctionWeather(Vector4.zero);
+        }
+
+        /// <summary>
+        /// Publishes UberNoir runtime feature state through the shared DataVault-backed shader-global lane.
+        /// </summary>
+        /// <param name="runtimeVector">x=system stress, y=high-cost allowed, z=feature mask, w=visual overkill.</param>
+        /// <param name="featureMask">Feature mask mirrored as a scalar for shaders that cannot safely unpack vector state.</param>
+        public static void PublishUberNoirRuntime(Vector4 runtimeVector, float featureMask)
+        {
+            float4 value = ToFiniteFloat4(runtimeVector);
+            value.x = math.saturate(value.x);
+            value.y = math.saturate(value.y);
+            value.z = math.clamp(value.z, 0f, 16777215f);
+            value.w = math.saturate(value.w);
+            float4 storedRuntime = WriteReadSlot(
+                UberNoirRuntimeSlot,
+                value,
+                ref _fallbackUberNoirRuntime);
+
+            float safeFeatureMask = math.clamp(
+                math.isfinite(featureMask) ? featureMask : 0f,
+                0f,
+                16777215f);
+            float4 storedMask = WriteReadSlot(
+                UberNoirFeatureMaskSlot,
+                new float4(safeFeatureMask, 0f, 0f, 0f),
+                ref _fallbackUberNoirFeatureMask);
+
+            Shader.SetGlobalVector(_HectonUberNoirRuntimeParamsId, ToVector4(storedRuntime));
+            Shader.SetGlobalFloat(_HectonActiveShaderFeatureMaskId, storedMask.x);
         }
 
         private static float4 WriteReadSlot(int slot, float4 value, ref float4 fallback)

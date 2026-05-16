@@ -6,7 +6,8 @@
 #define HECTON_FLUID_ADVECTION_THREADS 64
 #define HECTON_BUBBLE_POPPED_FLAG 256u
 #define HECTON_DEBRIS_RESTING_FLAG 512u
-#define HECTON_DYNAMIC_WAKE_CAPACITY 8
+#define HECTON_DYNAMIC_WAKE_CAPACITY 16
+#define HECTON_DYNAMIC_WAKE_LOW_TIER_CAPACITY 4
 #define HECTON_CARVE_DEBRIS_MAX_SPEED 3.5
 #define HECTON_CARVE_DEBRIS_MAX_STEP 0.20
 
@@ -48,8 +49,8 @@ RWStructuredBuffer<uint> _CarveDebrisVisibleIndices;
 RWByteAddressBuffer _CarveDebrisIndirectArgs;
 
 StructuredBuffer<float4> _AbyssalFlowFieldResult;
-StructuredBuffer<float4> _DynamicWakes;       // xyz=AUP/runtime position, w=intensity
-StructuredBuffer<float4> _DynamicWakeVectors; // xyz=push axis, w=radius
+float4 _GlobalWakeBuffer[HECTON_DYNAMIC_WAKE_CAPACITY];  // xyz=AUP/runtime position, w=intensity
+float4 _GlobalWakeVectors[HECTON_DYNAMIC_WAKE_CAPACITY]; // xyz=push axis, w=radius
 Texture3D<float4> _AbyssalFlowFieldTexture;
 SamplerState sampler_AbyssalFlowFieldTexture;
 
@@ -67,7 +68,7 @@ float4 _CarveDebrisAupShiftDelta;    // xyz=runtime rebase delta applied before 
 float4 _CarveDebrisCameraParams;     // xyz=camera, w=max render distance squared
 float4 _CarveDebrisCullParams;       // xyz=camera forward, w=min forward dot
 float4 _CarveDebrisDrawArgsParams;   // x=index count, y=start index, z=base vertex, w=max instances
-float4 _DynamicWakeParams;           // x=slot limit, y=low tier, z=active count, w=unused
+float4 _GlobalWakeParams;            // x=slot limit, y=low tier, z=active count, w=stress
 float4 _AbyssalGridResolution;       // xyz=grid resolution, w=flattened count
 float4 _AbyssalFlowCenter;           // xyz=center
 float4 _AbyssalFlowSpacing;          // xyz=spacing
@@ -85,7 +86,8 @@ float3 Sanitize(float3 value)
 float3 SafeNormalize(float3 value, float3 fallback)
 {
     float lengthSq = dot(value, value);
-    return lengthSq > 0.000001 ? value * rsqrt(lengthSq) : fallback;
+    float validMask = step(0.000001, lengthSq);
+    return lerp(fallback, value * rsqrt(max(lengthSq, 0.000001)), validMask);
 }
 
 float3 ClampCarveDebrisVelocity(float3 velocity, float dt)
@@ -126,9 +128,11 @@ float3 SampleAbyssalFlow(float3 positionWS)
     return Sanitize(_AbyssalFlowFieldResult[flatIndex].xyz);
 }
 
-float3 ApplyDynamicWakes(float3 positionWS, float3 flow)
+float3 ApplyGlobalWakes(float3 positionWS, float3 flow)
 {
-    int slotLimit = min((int)max(0.0, _DynamicWakeParams.x), HECTON_DYNAMIC_WAKE_CAPACITY);
+    int rawSlotLimit = min((int)max(0.0, _GlobalWakeParams.x), HECTON_DYNAMIC_WAKE_CAPACITY);
+    float lowTierMask = step(0.5, _GlobalWakeParams.y);
+    int slotLimit = min(rawSlotLimit, (int)lerp((float)HECTON_DYNAMIC_WAKE_CAPACITY, (float)HECTON_DYNAMIC_WAKE_LOW_TIER_CAPACITY, lowTierMask));
     if (slotLimit <= 0)
         return Sanitize(flow);
 
@@ -138,8 +142,8 @@ float3 ApplyDynamicWakes(float3 positionWS, float3 flow)
         if (i >= slotLimit)
             continue;
 
-        float4 wake = _DynamicWakes[i];
-        float4 vectorRadius = _DynamicWakeVectors[i];
+        float4 wake = _GlobalWakeBuffer[i];
+        float4 vectorRadius = _GlobalWakeVectors[i];
         float intensity = max(0.0, wake.w);
         float radius = max(0.0, vectorRadius.w);
         if (intensity <= 0.0001 || radius <= 0.0001)
@@ -160,7 +164,7 @@ float3 ApplyDynamicWakes(float3 positionWS, float3 flow)
         float3 push = pushAxis * (intensity * falloff * (0.55 + directionalGate * 0.45));
         flow += push + vortex;
 
-        if (_DynamicWakeParams.y <= 0.5)
+        if (_GlobalWakeParams.y <= 0.5)
         {
             float core = saturate(1.0 - distSq * rcp(max(radiusSq * 0.18, 0.0001)));
             float3 sheetAxis = SafeNormalize(cross(pushAxis, float3(0.0, 1.0, 0.0)), float3(1.0, 0.0, 0.0));
@@ -217,7 +221,7 @@ void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
         Silt particle = _SiltRead[index];
         float3 previousPosition = particle.PositionWS + shiftDelta;
         float3 flow = SampleAbyssalFlow(previousPosition);
-        flow = ApplyDynamicWakes(previousPosition, flow);
+        flow = ApplyGlobalWakes(previousPosition, flow);
         float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.x);
         float3 nextPosition = previousPosition + velocity * dt;
 
@@ -240,7 +244,7 @@ void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
         Bubble particle = _BubbleRead[index];
         float3 previousPosition = particle.PositionWS + shiftDelta;
         float3 flow = _FluidAdvectionParams.y > 0.5 ? float3(0.0, 0.0, 0.0) : SampleAbyssalFlow(previousPosition);
-        flow = ApplyDynamicWakes(previousPosition, flow);
+        flow = ApplyGlobalWakes(previousPosition, flow);
         float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.y);
         float3 nextPosition = previousPosition + velocity * dt;
 
@@ -266,7 +270,7 @@ void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
         Debris particle = _DebrisRead[index];
         float3 previousPosition = particle.PositionWS + shiftDelta;
         float3 flow = _FluidAdvectionParams.y > 0.5 ? float3(0.0, 0.0, 0.0) : SampleAbyssalFlow(previousPosition);
-        flow = ApplyDynamicWakes(previousPosition, flow);
+        flow = ApplyGlobalWakes(previousPosition, flow);
         float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.z);
         float3 nextPosition = previousPosition + velocity * dt;
 
@@ -316,7 +320,7 @@ void AdvectCarveDebris(uint3 id : SV_DispatchThreadID)
     float3 velocity = Sanitize(velocityPacked.xyz);
     float3 flow = float3(0.0, 0.0, 0.0);
     if (_CarveDebrisParams.y <= 0.5)
-        flow = ApplyDynamicWakes(previousPosition, SampleAbyssalFlow(previousPosition));
+        flow = ApplyGlobalWakes(previousPosition, SampleAbyssalFlow(previousPosition));
     float flowBlend = saturate(max(0.0, _CarveDebrisParams.w) * dt);
     velocity = Sanitize(lerp(velocity, flow, flowBlend) + _CarveDebrisForces.xyz * dt);
     velocity = ClampCarveDebrisVelocity(velocity, dt);

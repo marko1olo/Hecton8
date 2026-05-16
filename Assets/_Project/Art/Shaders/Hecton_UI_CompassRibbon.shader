@@ -24,7 +24,7 @@ Shader "Hecton8/UI/CompassRibbon"
         Cull Off
         Lighting Off
         ZWrite Off
-        ZTest Always
+        ZTest LEqual
         Blend Off
         AlphaToMask On
 

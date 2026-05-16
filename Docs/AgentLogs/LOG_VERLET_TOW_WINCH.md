@@ -148,3 +148,97 @@ Validation:
 - Hot-path scan found no tether `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy EventBus/delegate path, Unity Joint type, `TetherManager.Instance`, `math.distance`, or `distance(` hit in the touched tether path.
 - `dotnet build Hecton8.Core.csproj -v:minimal /p:UseSharedCompilation=false` still fails on unrelated `GameBootstrapper.Initialize` arity and `ToolDurabilitySystem` missing-field/member errors. No tether compiler errors appeared in the reported set.
 - Unity runtime and profiler validation were not executed.
+
+## 2026-05-16 - Fire Sidecar Purge / Fixed-Step Clock
+
+What was wrong:
+- `TetherSignals` still carried Unity object references through a managed fire resolver sidecar after the typed lane migration.
+- Payload current sampling read `Time.fixedTime` inside the fixed-step tether solve path.
+
+What was done:
+- Removed the fire resolver sidecar completely.
+- `TetherSignals.PublishFire` now publishes only the unmanaged `TetherFiredSignal` typed lane payload.
+- `HeavyTowWinch` executes same-owner attach directly through `TetherManager.ExecuteFireRequest` after the fire signal is published.
+- Added a finite wrapped tether fixed-step clock in `TetherManager`, advanced only from dispatcher `fixedDeltaTime`, and passed it into `TetherInstance.Simulate`.
+- Replaced `Time.fixedTime` in payload-current sampling with the passed fixed-step clock.
+
+Cinematic Cheats used:
+- Low tier keeps the 3-segment authority solve and taut-line visual fake under high tension.
+- High/Ultra keep indirect cylindrical cable impostors and stress pulses; no extra physical truth was added.
+
+Exact Microseconds saved:
+- Fire resolver sidecar purge: no measured frame-time claim. Removed the fixed resolver queue and scan path.
+- `Time.fixedTime` removal: no measured frame-time claim. Determinism/clock ownership fix.
+- Existing estimates remain unchanged: Low tier saves roughly 6-12 us versus full 10-segment authority; DataVault publish remains estimated +3-6 us per active tether.
+
+Validation:
+- Static scan found no `TetherFireRequest`, fire resolver array, `TryConsumeFireForManager`, private fire queue, `Time.fixedTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, EventBus/delegate path, Unity Joint type, `Update` family, `string.Format`, `TetherManager.Instance`, `math.distance`, or `distance(` hit in touched tether files.
+- Duplicate BufferID value scan returned `NO_DUPLICATE_BUFFER_ID_VALUES`.
+- Struct layout scan confirmed tether signal/telemetry payloads remain `Pack=1`.
+- `dotnet build Hecton8.Core.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` succeeded with 0 warnings and 0 errors.
+- `dotnet build Assembly-CSharp.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` failed in unrelated `RealtimeCSG.csproj` missing source-file references. No tether compiler errors appeared in the reported set.
+- Unity runtime and profiler validation were not executed.
+
+## 2026-05-16 - GPU Double Buffer / High-Tier Cable Surface Pass
+
+What was wrong:
+- Tether visuals still uploaded position and tension data into the same public GPU buffers that the render pass consumed.
+- High/Ultra cable visuals had the indirect cylindrical impostor route but not enough quality-tier surface detail to justify the saved CPU path.
+
+What was done:
+- Replaced the single visual position/tension `GraphicsBuffer` fields with explicit A/B buffers.
+- Added buffer-size/stride guards so both A/B lanes are released and rebuilt together when visual point count or tension segment count changes.
+- Upload now writes to the non-current buffer with `GraphicsBuffer.UsageFlags.LockBufferForWrite`, then flips the read index after upload.
+- Added shader quality controls: `_TetherVisualTier`, `_TetherCrystalDensity`, and `_TetherSiltIntensity`.
+- High tier now uses a 16-tap procedural cable-fiber occlusion pass plus salt glints and silt tint in `Hecton_TetherLineStrip.shader`.
+- Ultra adds a stress rim on the same impostor path. Low/MX350 remains visual tier 0.
+
+Cinematic Cheats used:
+- Salt crystals, silt wake tint, and cable fiber breakup are fragment-stage procedural fakes, not new physics, particles, textures, or file reads.
+- Low tier still uses 3 authority segments and the taut-line fake under high tension.
+
+Exact Microseconds saved:
+- No new measured microsecond win is claimed.
+- Existing estimate remains: Low/MX350 saves roughly 6-12 us versus full 10-segment authority; High/Ultra indirect repetition remains estimated CPU neutral to -5 us versus repeated primitive submission.
+- The 16-tap shader path is quality-gated and unmeasured without Unity/Profiler evidence.
+
+Validation:
+- Static scan found no direct upload to `VisualSegmentBuffer` or `VisualSegmentTensionBuffer`, no property assignments to read-only buffer accessors, and no single-buffer release sites.
+- Hot-path scan found no `Time.fixedTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, `H8Memory.Allocate`, `H8Memory.Release`, `NativeQueue<TetherFiredSignal>`, `NativeQueue<TetherSnappedSignal>`, EventBus/delegate path, `Update` family, `string.Format`, Unity Joint type, `TetherManager.Instance`, `math.distance`, or `distance(` hit in touched tether files.
+- Shader scan found no `numthreads`, `RWTexture`, `ByteAddressBuffer`, `SV_Group`, or `groupshared` token in the tether shader.
+- `git diff --check` reported only line-ending normalization warnings.
+- `dotnet build Hecton8.Core.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` succeeded once after the initial GPU double-buffer pass, then later failed after concurrent out-of-domain edits in `DiegeticGyroCompassRuntime`, `ArchitectEyeVisualizer`, `GlobalSignals`, and `SystemDispatcher`. No tether compiler errors appeared in those reported sets.
+- `dotnet build Assembly-CSharp.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` remains blocked by unrelated `RealtimeCSG.csproj` missing source-file references.
+- Unity runtime and profiler validation were not executed.
+
+## 2026-05-16 - Deterministic Visual Clock / Time Purge
+
+What was wrong:
+- The tether shader still used Unity `_Time` for cable stress pulse and salt glint animation.
+- The High/Ultra procedural hash used `sin`, which is unnecessary ALU for a deterministic surface fake.
+- Tether fire/snap/tension/blackbox frame stamps still read `Time.frameCount`.
+
+What was done:
+- Added `_TetherVisualClock` to the tether shader and property block.
+- Fed `_TetherVisualClock` from `TetherManager`'s wrapped fixed-step clock.
+- Replaced shader `_Time` usage with `_TetherVisualClock`.
+- Replaced the sine hash with multiply/frac hash math.
+- Added a manager-owned fixed simulation frame index and passed it into `TetherInstance.Simulate`.
+- Replaced tether telemetry, tension, snap, fire, and cooldown frame stamps with the fixed simulation frame index.
+- Reworked snap snapshot cursor reset to use the snapshot's own `FrameIndex`, not Unity frame count.
+
+Cinematic Cheats used:
+- Salt/silt/fiber breakup now uses deterministic multiply/frac and triangle fake math.
+- Low tier remains the 3-segment authority solve with taut-line visual fake; no high-tier shader branch is forced onto MX350.
+
+Exact Microseconds saved:
+- No measured microsecond win is claimed.
+- Expected benefit: removed shader trig from the High/Ultra salt/silt hash path; exact GPU time requires Unity/Profiler capture.
+- Existing estimates remain: Low/MX350 saves roughly 6-12 us versus full 10-segment authority; High/Ultra indirect repetition remains estimated CPU neutral to -5 us versus repeated primitive submission.
+
+Validation:
+- Static scan found no `Time.frameCount`, `Time.fixedTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, `_Time`, or `sin(` hit in touched tether scripts/shader.
+- Static scan found no `H8Memory.Allocate`, `H8Memory.Release`, private fire/snap `NativeQueue`, EventBus/delegate path, `Update` family, `string.Format`, Unity Joint type, `TetherManager.Instance`, `math.distance`, or `distance(` hit in touched tether files.
+- `git diff --check` reported only line-ending normalization warnings.
+- `dotnet build Hecton8.Core.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` failed first on out-of-domain `BiolumPulseSyncRuntime.ResolveDataVault`, then on out-of-domain `LockstepStateValidator` missing signal capacity/hash constants. No tether compiler errors appeared in the reported sets.
+- Unity runtime and profiler validation were not executed.

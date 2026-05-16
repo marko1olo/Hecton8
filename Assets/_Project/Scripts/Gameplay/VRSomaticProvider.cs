@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Burst;
@@ -53,7 +54,7 @@ namespace Hecton8.Gameplay
         private const byte BothMotorMask = LeftMotorMask | RightMotorMask;
         private const byte HapticPriorityCritical = ToolHapticsRuntime.PriorityCritical;
         private const byte HapticBlendAdditive = ToolHapticsRuntime.BlendModeAdditive;
-        private const float AupCellSizeMeters = 5000f;
+        private const float AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersFloat;
         private const float HapticSideThreshold = 0.2f;
         private const float JerkEventDebounceSeconds = 0.2f;
         private const float VrComfortTelemetryStep01 = 0.05f;

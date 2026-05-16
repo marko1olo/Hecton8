@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.Core.Memory
@@ -42,13 +41,13 @@ namespace Hecton8.Core.Memory
         /// <summary>Largest contiguous free block from the most recent gap analysis.</summary>
         long LargestContiguousBlockBytes { get; }
 
-        /// <summary>Bytes moved by the most recent relocation pass; telemetry-only defrag keeps this at zero.</summary>
+        /// <summary>Bytes moved by the most recent bounded relocation pass.</summary>
         long LastDefragMovedBytes { get; }
 
-        /// <summary>Largest occupied block that would require a pause/loading mask before any future relocation pass.</summary>
+        /// <summary>Largest occupied block that would require a pause/loading mask before relocation.</summary>
         long PendingMassiveMoveBytes { get; }
 
-        /// <summary>True when a future relocation pass exceeds its watchdog threshold.</summary>
+        /// <summary>True when a relocation pass exceeds its watchdog threshold.</summary>
         bool LastDefragWatchdogExceeded { get; }
 
         /// <summary>Bitfield describing the most recent defrag telemetry pass.</summary>
@@ -57,10 +56,10 @@ namespace Hecton8.Core.Memory
         /// <summary>Occupied buffers that failed the 64-byte alignment audit.</summary>
         int UnalignedBufferCount { get; }
 
-        /// <summary>Total bytes moved by future vault relocation since initialization.</summary>
+        /// <summary>Total bytes moved by vault relocation since initialization.</summary>
         long TotalDefragMovedBytes { get; }
 
-        /// <summary>Total number of future relocation passes that breached the watchdog.</summary>
+        /// <summary>Total number of relocation passes that breached the watchdog.</summary>
         int CompactionWatchdogBreachCount { get; }
 
         /// <summary>Global vault generation for black-box telemetry and stale-handle audits.</summary>
@@ -69,7 +68,7 @@ namespace Hecton8.Core.Memory
         /// <summary>Records one no-allocation heartbeat into the fixed 300-frame vault telemetry ring.</summary>
         void RecordHeartbeat();
 
-        /// <summary>Relocation records emitted by future offline relocation; telemetry-only defrag emits none.</summary>
+        /// <summary>Relocation records emitted by bounded live relocation.</summary>
         int LastRelocationRecordCount { get; }
 
         /// <summary>Returns a persistent buffer view, growing the vault buffer when required.</summary>
@@ -242,55 +241,6 @@ namespace Hecton8.Core.Memory
         public byte Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
-    internal struct VaultGapAuditResult
-    {
-        public long TotalFreeBytes;
-        public long LargestFreeBytes;
-        public float FragmentationRatio;
-        public int FreeBlockCount;
-        public int OccupiedBlockCount;
-        public int UnalignedOccupiedCount;
-    }
-
-    internal struct VaultGapAuditJob : IJob
-    {
-        [ReadOnly] public NativeArray<VaultArenaBlock> Blocks;
-        public NativeArray<VaultGapAuditResult> Result;
-
-        public void Execute()
-        {
-            VaultGapAuditResult result = default;
-            for (int i = 0; i < Blocks.Length; i++)
-            {
-                VaultArenaBlock block = Blocks[i];
-                if (block.State == GlobalDataVault.BlockStateFree)
-                {
-                    result.TotalFreeBytes += block.Bytes;
-                    result.FreeBlockCount++;
-                    if (block.Bytes > result.LargestFreeBytes)
-                        result.LargestFreeBytes = block.Bytes;
-                    continue;
-                }
-
-                if (block.State != GlobalDataVault.BlockStateOccupied)
-                    continue;
-
-                result.OccupiedBlockCount++;
-                if (((ulong)block.OffsetBytes & (ulong)(GlobalDataVault.VaultBlockAlignment - 1)) != 0UL)
-                    result.UnalignedOccupiedCount++;
-            }
-
-            if (result.TotalFreeBytes > 0L)
-            {
-                float fragmentedBytes = (float)(result.TotalFreeBytes - result.LargestFreeBytes);
-                result.FragmentationRatio = fragmentedBytes / (float)result.TotalFreeBytes;
-            }
-
-            Result[0] = result;
-        }
-    }
-
     /// <summary>
     /// Persistent raw-memory authority for cross-system buffers.
     /// </summary>
@@ -306,6 +256,7 @@ namespace Hecton8.Core.Memory
         private const float FragmentationRatioThreshold = 0.15f;
         private const float StressDefragHaltThreshold = 0.9f;
         private const long MassiveMoveThresholdBytes = 50L * 1024L * 1024L;
+        private const long MaxLiveDefragMoveBytesPerSlice = 5L * 1024L * 1024L;
         private const long ArenaGrowSlackBytes = 64L * 1024L * 1024L;
         private const byte MacroDatabasePayloadDirtyFlag = 1 << 0;
         private const int MaxMacroDatabasePayloadBytes = 256 * 1024;
@@ -321,23 +272,23 @@ namespace Hecton8.Core.Memory
         private const byte DefragFlagFault = 1 << 4;
         private const byte DefragFlagRelocated = 1 << 5;
         private const byte DefragFlagUnaligned = 1 << 6;
+        private const byte DefragFlagAliasBlocked = 1 << 7;
         private const int DefragBlackBoxFrameCount = 300;
         private const int VaultBufferHandleSizeBytes = 24;
         private const int VaultRelocationRecordSizeBytes = 32;
         private const int VaultBufferMetaSizeBytes = 48;
         private const int VaultArenaBlockSizeBytes = 32;
         private const int MemoryDefragTelemetryEntrySizeBytes = 128;
-        private const int VaultGapAuditResultSizeBytes = 32;
         private const ulong DefragDumpMagic = 0x3147445648384848UL; // HH8HVDG1
-        private const string DefragDumpPath = "Docs/AgentLogs/Dump_VAULT_SOVEREIGNTY_ENFORCER.bin";
-        private const string PhiVodDumpPath = "Docs/AgentLogs/Dump_VAULT_SOVEREIGNTY_ENFORCER_PHIVOD.bin";
+        private const int DefragDumpVersion = 2;
+        private const string DefragDumpPath = "Docs/AgentLogs/Dump_MEMORY_DEFRAGMENTATION_OVERSEER.bin";
+        private const string PhiVodDumpPath = "Docs/AgentLogs/Dump_MEMORY_DEFRAGMENTATION_OVERSEER_PHIVOD.bin";
 
         private UnsafeHashMap<int, IntPtr> _buffers;
         private UnsafeHashMap<int, VaultBufferMeta> _metadata;
         private NativeList<int> _keys;
         private NativeList<VaultArenaBlock> _blocks;
         private NativeArray<MemoryDefragTelemetryEntry> _defragBlackBox;
-        private NativeArray<VaultGapAuditResult> _gapAuditResult;
         private NativeArray<VaultRelocationRecord> _lastRelocationRecords;
         private NativeParallelHashMap<ulong, MacroDatabasePayloadHandle> _macroDatabasePayloadCache;
         private NativeParallelHashMap<ulong, uint> _macroDatabasePayloadAccessTicks;
@@ -452,11 +403,6 @@ namespace Hecton8.Core.Memory
                 SystemID.CoreDataVault,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
-            _gapAuditResult = H8Memory.Allocate<VaultGapAuditResult>(
-                1,
-                SystemID.CoreDataVault,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
             _lastRelocationRecords = H8Memory.Allocate<VaultRelocationRecord>(
                 MaxRelocationRecordCount,
                 SystemID.CoreDataVault,
@@ -531,8 +477,7 @@ namespace Hecton8.Core.Memory
                 UnsafeUtility.SizeOf<VaultRelocationRecord>() != VaultRelocationRecordSizeBytes ||
                 UnsafeUtility.SizeOf<VaultBufferMeta>() != VaultBufferMetaSizeBytes ||
                 UnsafeUtility.SizeOf<VaultArenaBlock>() != VaultArenaBlockSizeBytes ||
-                UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>() != MemoryDefragTelemetryEntrySizeBytes ||
-                UnsafeUtility.SizeOf<VaultGapAuditResult>() != VaultGapAuditResultSizeBytes)
+                UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>() != MemoryDefragTelemetryEntrySizeBytes)
             {
                 FatalMemoryException.ThrowAbiLayoutMismatch();
             }
@@ -1079,6 +1024,18 @@ namespace Hecton8.Core.Memory
                 PendingMassiveMoveBytes = EstimateLargestOccupiedMoveCandidate();
                 if (PendingMassiveMoveBytes >= MassiveMoveThresholdBytes)
                     LastDefragFlags |= DefragFlagMassiveMovePending;
+
+                if (!stressHalted)
+                {
+                    TryRunLiveCompactionSlice();
+                    AnalyzeGaps();
+                    if (!ValidateDefragTelemetry() || !ValidateBlockMap())
+                    {
+                        RecordDefragBlackBox(sequence);
+                        DumpDefragBlackBox();
+                        return;
+                    }
+                }
             }
 
             RecordDefragBlackBox(sequence);
@@ -1305,10 +1262,6 @@ namespace Hecton8.Core.Memory
             if (_defragBlackBox.IsCreated)
             {
                 H8Memory.Release(ref _defragBlackBox, SystemID.CoreDataVault);
-            }
-            if (_gapAuditResult.IsCreated)
-            {
-                H8Memory.Release(ref _gapAuditResult, SystemID.CoreDataVault);
             }
             if (_lastRelocationRecords.IsCreated)
             {
@@ -1556,16 +1509,33 @@ namespace Hecton8.Core.Memory
                 return;
             }
 
-            VaultGapAuditJob auditJob = default;
-            auditJob.Blocks = _blocks.AsArray();
-            auditJob.Result = _gapAuditResult;
-            auditJob.Run();
+            long totalFreeBytes = 0L;
+            long largestFreeBytes = 0L;
+            int unalignedOccupiedCount = 0;
+            for (int i = 0; i < _blocks.Length; i++)
+            {
+                VaultArenaBlock block = _blocks[i];
+                if (block.State == BlockStateFree)
+                {
+                    totalFreeBytes += block.Bytes;
+                    if (block.Bytes > largestFreeBytes)
+                        largestFreeBytes = block.Bytes;
+                    continue;
+                }
 
-            VaultGapAuditResult result = _gapAuditResult[0];
-            TotalFreeSpaceBytes = result.TotalFreeBytes;
-            LargestContiguousBlockBytes = result.LargestFreeBytes;
-            UnalignedBufferCount = result.UnalignedOccupiedCount;
-            HeapFragmentationRatio = result.FragmentationRatio;
+                if (block.State == BlockStateOccupied &&
+                    ((ulong)block.OffsetBytes & (ulong)(VaultBlockAlignment - 1)) != 0UL)
+                {
+                    unalignedOccupiedCount++;
+                }
+            }
+
+            TotalFreeSpaceBytes = totalFreeBytes;
+            LargestContiguousBlockBytes = largestFreeBytes;
+            UnalignedBufferCount = unalignedOccupiedCount;
+            HeapFragmentationRatio = totalFreeBytes > 0L
+                ? math.saturate((float)((double)(totalFreeBytes - largestFreeBytes) / totalFreeBytes))
+                : 0f;
             IsFragmented = HeapFragmentationRatio > FragmentationRatioThreshold;
             if (IsFragmented)
                 LastDefragFlags |= DefragFlagFragmented;
@@ -1643,6 +1613,165 @@ namespace Hecton8.Core.Memory
             }
 
             return largest;
+        }
+
+        private bool TryRunLiveCompactionSlice()
+        {
+            if (_memMoveBlockedByStress ||
+                _allocationLock != 0 ||
+                _compactionFence != 0 ||
+                !_blocks.IsCreated ||
+                _blocks.Length < 2 ||
+                _arenaBase == null)
+            {
+                return false;
+            }
+
+            long movedBytes = 0L;
+            bool movedAny = false;
+            bool faulted = false;
+            ResetRelocationRecords();
+            _compactionFence = 1;
+            try
+            {
+                for (int i = 0; i + 1 < _blocks.Length && movedBytes < MaxLiveDefragMoveBytesPerSlice; i++)
+                {
+                    VaultArenaBlock freeBlock = _blocks[i];
+                    if (freeBlock.State != BlockStateFree || freeBlock.Bytes <= 0L)
+                        continue;
+
+                    VaultArenaBlock occupiedBlock = _blocks[i + 1];
+                    if (occupiedBlock.State != BlockStateOccupied)
+                        continue;
+
+                    if ((occupiedBlock.Reserved0 & BlockFlagLocked) != 0 || occupiedBlock.Reserved1 != 0)
+                    {
+                        LastDefragFlags = (byte)(LastDefragFlags | DefragFlagAliasBlocked);
+                        continue;
+                    }
+
+                    if ((occupiedBlock.Reserved0 & BlockFlagExternalView) != 0)
+                    {
+                        LastDefragFlags = (byte)(LastDefragFlags | DefragFlagAliasBlocked);
+                        continue;
+                    }
+
+                    if (occupiedBlock.Bytes > MaxLiveDefragMoveBytesPerSlice - movedBytes)
+                    {
+                        if (occupiedBlock.Bytes > PendingMassiveMoveBytes)
+                            PendingMassiveMoveBytes = occupiedBlock.Bytes;
+                        LastDefragFlags = (byte)(LastDefragFlags | DefragFlagMassiveMovePending);
+                        break;
+                    }
+
+                    if (!TryMoveOccupiedBlockLeft(i, i + 1, ref movedBytes))
+                    {
+                        LastDefragFlags = (byte)(LastDefragFlags | DefragFlagFault);
+                        faulted = true;
+                        break;
+                    }
+
+                    movedAny = true;
+                    if (i > 0)
+                        i--;
+                }
+            }
+            finally
+            {
+                _compactionFence = 0;
+            }
+
+            if (movedAny)
+            {
+                LastDefragMovedBytes = movedBytes;
+                _totalDefragMovedBytes += movedBytes;
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagRelocated);
+                BumpVaultGeneration();
+            }
+
+            if (faulted)
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagFault);
+
+            return movedAny;
+        }
+
+        private bool TryMoveOccupiedBlockLeft(int freeIndex, int occupiedIndex, ref long movedBytes)
+        {
+            if ((uint)freeIndex >= (uint)_blocks.Length ||
+                (uint)occupiedIndex >= (uint)_blocks.Length ||
+                occupiedIndex != freeIndex + 1)
+            {
+                return false;
+            }
+
+            VaultArenaBlock freeBlock = _blocks[freeIndex];
+            VaultArenaBlock occupiedBlock = _blocks[occupiedIndex];
+            if (freeBlock.State != BlockStateFree ||
+                occupiedBlock.State != BlockStateOccupied ||
+                freeBlock.Bytes <= 0L ||
+                occupiedBlock.Bytes <= 0L ||
+                occupiedBlock.OffsetBytes != freeBlock.OffsetBytes + freeBlock.Bytes ||
+                occupiedBlock.BufferKey == 0 ||
+                occupiedBlock.Bytes > _arenaBytes - occupiedBlock.OffsetBytes)
+            {
+                return false;
+            }
+
+            if ((occupiedBlock.Reserved0 & (BlockFlagLocked | BlockFlagExternalView)) != 0 ||
+                occupiedBlock.Reserved1 != 0)
+            {
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagAliasBlocked);
+                return false;
+            }
+
+            int key = occupiedBlock.BufferKey;
+            if (!_metadata.TryGetValue(key, out VaultBufferMeta meta) ||
+                !_buffers.TryGetValue(key, out IntPtr oldPointer) ||
+                oldPointer == IntPtr.Zero ||
+                meta.BlockIndex != occupiedIndex ||
+                meta.OffsetBytes != occupiedBlock.OffsetBytes ||
+                meta.Bytes != occupiedBlock.Bytes)
+            {
+                return false;
+            }
+
+            IntPtr expectedOldPointer = (IntPtr)((byte*)_arenaBase + occupiedBlock.OffsetBytes);
+            if (oldPointer != expectedOldPointer)
+                return false;
+
+            IntPtr newPointer = (IntPtr)((byte*)_arenaBase + freeBlock.OffsetBytes);
+            UnsafeUtility.MemMove(newPointer.ToPointer(), oldPointer.ToPointer(), occupiedBlock.Bytes);
+
+            VaultArenaBlock movedBlock = occupiedBlock;
+            movedBlock.OffsetBytes = freeBlock.OffsetBytes;
+            movedBlock.Version = NextGeneration(occupiedBlock.Version);
+
+            VaultArenaBlock newFreeBlock = freeBlock;
+            newFreeBlock.OffsetBytes = movedBlock.OffsetBytes + movedBlock.Bytes;
+            newFreeBlock.Bytes = freeBlock.Bytes;
+            newFreeBlock.BufferKey = 0;
+            newFreeBlock.State = BlockStateFree;
+            newFreeBlock.Reserved0 = 0;
+            newFreeBlock.Reserved1 = 0;
+            newFreeBlock.Version = NextGeneration(freeBlock.Version);
+
+            _blocks[freeIndex] = movedBlock;
+            _blocks[occupiedIndex] = newFreeBlock;
+            UpdateH8Descriptor(in movedBlock);
+            UpdateH8Descriptor(in newFreeBlock);
+
+            meta.BlockIndex = freeIndex;
+            meta.OffsetBytes = movedBlock.OffsetBytes;
+            meta.Version = movedBlock.Version;
+            _metadata[key] = meta;
+            _buffers[key] = newPointer;
+            RecordRelocation(key, in meta, oldPointer, newPointer, occupiedBlock.Bytes, movedBlock.Version);
+            movedBytes += occupiedBlock.Bytes;
+
+            if (occupiedIndex + 1 < _blocks.Length && IsFree(occupiedIndex) && IsFree(occupiedIndex + 1))
+                MergeFreeBlocks(occupiedIndex, occupiedIndex + 1);
+
+            return true;
         }
 
         private bool MarkExternalView(int key, long offsetBytes)
@@ -1787,8 +1916,10 @@ namespace Hecton8.Core.Memory
                     recordedCount = _defragBlackBox.Length;
 
                 writer.Write(DefragDumpMagic);
+                writer.Write(DefragDumpVersion);
                 writer.Write(recordedCount);
                 writer.Write(entrySize);
+                writer.Write(_defragBlackBox.Length);
                 writer.Flush();
 
                 if (recordedCount == 0)

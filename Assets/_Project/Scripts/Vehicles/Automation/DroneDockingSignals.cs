@@ -5,46 +5,49 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts.Signals
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
     public struct DockingRequestSignal : ISignal
     {
-        public int DroneId;
-        public int HubGridId;
-        public AbsoluteUniversePositionBlit DockAup;
-        public float3 DockForward;
-        public uint RequestId;
-        public byte Flags;
-        public byte Reserved0;
-        public byte Reserved1;
-        public byte Reserved2;
+        [FieldOffset(0)] public int DroneId;
+        [FieldOffset(4)] public int HubGridId;
+        [FieldOffset(8)] public AbsoluteUniversePositionBlit DockAup;
+        [FieldOffset(56)] public float3 DockForward;
+        [FieldOffset(68)] public uint RequestId;
+        [FieldOffset(72)] public byte Flags;
+        [FieldOffset(73)] public byte Reserved0;
+        [FieldOffset(74)] public byte Reserved1;
+        [FieldOffset(75)] public byte Reserved2;
+        [FieldOffset(76)] public uint ReservedTail;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
     public struct DockingCompleteSignal : ISignal
     {
-        public int DroneId;
-        public int HubGridId;
-        public AbsoluteUniversePositionBlit DockAup;
-        public float3 DockForward;
-        public uint RequestId;
-        public byte Flags;
-        public byte Reserved0;
-        public byte Reserved1;
-        public byte Reserved2;
+        [FieldOffset(0)] public int DroneId;
+        [FieldOffset(4)] public int HubGridId;
+        [FieldOffset(8)] public AbsoluteUniversePositionBlit DockAup;
+        [FieldOffset(56)] public float3 DockForward;
+        [FieldOffset(68)] public uint RequestId;
+        [FieldOffset(72)] public byte Flags;
+        [FieldOffset(73)] public byte Reserved0;
+        [FieldOffset(74)] public byte Reserved1;
+        [FieldOffset(75)] public byte Reserved2;
+        [FieldOffset(76)] public uint ReservedTail;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
     public struct DockingFailedSignal : ISignal
     {
-        public int DroneId;
-        public int HubGridId;
-        public AbsoluteUniversePositionBlit LastAup;
-        public float3 FailureVector;
-        public uint RequestId;
-        public byte Reason;
-        public byte Flags;
-        public byte Reserved0;
-        public byte Reserved1;
+        [FieldOffset(0)] public int DroneId;
+        [FieldOffset(4)] public int HubGridId;
+        [FieldOffset(8)] public AbsoluteUniversePositionBlit LastAup;
+        [FieldOffset(56)] public float3 FailureVector;
+        [FieldOffset(68)] public uint RequestId;
+        [FieldOffset(72)] public byte Reason;
+        [FieldOffset(73)] public byte Flags;
+        [FieldOffset(74)] public byte Reserved0;
+        [FieldOffset(75)] public byte Reserved1;
+        [FieldOffset(76)] public uint ReservedTail;
     }
 }
 

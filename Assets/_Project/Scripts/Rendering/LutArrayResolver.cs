@@ -22,6 +22,7 @@ namespace Hecton8.Core
         private const float DefaultStrength = 1f;
         private const int StreamingReadChunkBytes = 128 * 1024;
         private const int StreamingUriTimeoutSeconds = 30;
+        private const int AnalyticalFallbackGraphicsMemoryMb = 2048;
         private const string MatrixProjectRelativePath = "Data/Visuals/Water_Extinction_Matrix.bin";
         private const string MatrixStreamingRelativePath = "Data/Visuals/Water_Extinction_Matrix.bin";
         private const string MatrixCacheDirectoryName = "Hecton8/WaterExtinction";
@@ -44,7 +45,13 @@ namespace Hecton8.Core
                 return;
 
             _loaded = true;
-            PublishFallbackGlobals();
+            PublishAnalyticalFallbackGlobals();
+
+            if (ShouldUseAnalyticalFallbackOnly())
+            {
+                LogAnalyticalFallbackOnly();
+                return;
+            }
 
             string path = ResolveMatrixPath();
             if (string.IsNullOrEmpty(path))
@@ -98,7 +105,7 @@ namespace Hecton8.Core
             _streamScratch = null;
             _loaded = false;
             _usingFallbackFormat = false;
-            PublishFallbackGlobals();
+            PublishAnalyticalFallbackGlobals();
         }
 
         private static Texture2D BuildRHalfTexture(string matrixPath)
@@ -403,6 +410,21 @@ namespace Hecton8.Core
             return !string.IsNullOrEmpty(path) && path.IndexOf("://", StringComparison.Ordinal) < 0;
         }
 
+        private static bool ShouldUseAnalyticalFallbackOnly()
+        {
+#if UNITY_EDITOR
+            return false;
+#elif UNITY_ANDROID || UNITY_VISIONOS
+            return true;
+#else
+            if (HardwareTierDetector.IsSteamDeckLike)
+                return true;
+
+            int graphicsMemoryMb = SystemInfo.graphicsMemorySize;
+            return graphicsMemoryMb > 0 && graphicsMemoryMb <= AnalyticalFallbackGraphicsMemoryMb;
+#endif
+        }
+
         private static void TryDeleteFile(string path)
         {
             if (string.IsNullOrEmpty(path))
@@ -463,17 +485,16 @@ namespace Hecton8.Core
             return math.asfloat((uint)bits);
         }
 
-        private static void PublishFallbackGlobals()
+        private static void PublishAnalyticalFallbackGlobals()
         {
-            Shader.SetGlobalTexture(_ExtinctionLutId, Texture2D.blackTexture);
-            HectonShaderGlobalDataVaultBridge.ResetWaterExtinctionGlobals();
+            HectonShaderGlobalDataVaultBridge.PublishWaterExtinctionAnalyticalFallback();
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMissingMatrix()
         {
-            Debug.LogWarning("[LutArrayResolver] Water_Extinction_Matrix.bin not found. Extinction LUT disabled.");
+            Debug.LogWarning("[LutArrayResolver] Water_Extinction_Matrix.bin not found. Using analytical Beer-Lambert fallback.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -509,6 +530,13 @@ namespace Hecton8.Core
         private static void LogStreamingUriFailure(string error)
         {
             Debug.LogWarning("[LutArrayResolver] StreamingAssets URI staging failed: " + error);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogAnalyticalFallbackOnly()
+        {
+            Debug.LogWarning("[LutArrayResolver] Portable or low-memory target detected. Using analytical Beer-Lambert fallback instead of streaming Water_Extinction_Matrix.bin.");
         }
 
         /// <summary>

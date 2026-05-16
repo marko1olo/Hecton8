@@ -24,15 +24,20 @@ float HectonSaturateFinite(float value)
     return saturate(HectonFiniteOrZero(value));
 }
 
+float HectonSanitizePackedDent(float packed)
+{
+    return isfinite(packed) ? max(packed, 0.0) : 0.0;
+}
+
 float HectonUnpackRadius(float packed)
 {
-    uint packedInt = (uint)max(0.0, floor(packed + 0.5));
+    uint packedInt = (uint)floor(HectonSanitizePackedDent(packed) + 0.5);
     return (float)(packedInt & 255u) * HECTON_INV_RADIUS_QUANT;
 }
 
 float HectonUnpackDepth(float packed)
 {
-    uint packedInt = (uint)max(0.0, floor(packed + 0.5));
+    uint packedInt = (uint)floor(HectonSanitizePackedDent(packed) + 0.5);
     return (float)((packedInt >> 8) & 255u) * HECTON_INV_DEPTH_QUANT;
 }
 

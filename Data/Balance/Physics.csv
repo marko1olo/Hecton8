@@ -1,0 +1,4 @@
+Id,version_id,Name,Description,MassKg,AddedMass,LinearDrag,Buoyancy,CrushDepthM,AccessFrequency
+submarine_hull,1.2,Submarine Hull,Primary pressure hull scalar package,18000,4200,0.42,0.96,1200,100
+diver_suit,1.2,Diver Suit,Player EVA suit mass and drag package,110,18,0.74,0.62,450,92
+tow_winch_hook,1.2,Tow Winch Hook,Compact grapple body for towing,34,6,0.58,0.20,900,73

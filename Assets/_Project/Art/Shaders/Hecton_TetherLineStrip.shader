@@ -7,6 +7,10 @@ Shader "Hecton8/Physics/TetherLineStrip"
         _TetherStress01 ("Tether Stress", Range(0, 1)) = 0
         _TetherSegmentStressScale ("Tether Segment Stress Scale", Float) = 2.5
         _TetherRadius ("Tether Radius", Float) = 0.045
+        _TetherVisualTier ("Tether Visual Tier", Float) = 0
+        _TetherCrystalDensity ("Tether Salt Crystal Density", Range(0, 1)) = 0
+        _TetherSiltIntensity ("Tether Silt Wake Intensity", Range(0, 1)) = 0
+        _TetherVisualClock ("Tether Visual Clock", Float) = 0
     }
 
     SubShader
@@ -50,6 +54,10 @@ Shader "Hecton8/Physics/TetherLineStrip"
                 float _TetherStress01;
                 float _TetherSegmentStressScale;
                 float _TetherRadius;
+                float _TetherVisualTier;
+                float _TetherCrystalDensity;
+                float _TetherSiltIntensity;
+                float _TetherVisualClock;
                 int _TetherPointCount;
                 int _TetherIndirectMode;
             CBUFFER_END
@@ -64,6 +72,10 @@ Shader "Hecton8/Physics/TetherLineStrip"
             {
                 UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
+                float2 cableUV : TEXCOORD0;
+                half stress01 : TEXCOORD1;
+                half segmentStress01 : TEXCOORD2;
+                half visualTier : TEXCOORD3;
                 half4 color : COLOR0;
             };
 
@@ -71,6 +83,34 @@ Shader "Hecton8/Physics/TetherLineStrip"
             {
                 float2 pixel = floor(positionCS);
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float HectonHash11(float value)
+            {
+                float p = frac(value * 0.1031);
+                p *= p + 33.33;
+                p *= p + p;
+                return frac(p);
+            }
+
+            float HectonTriangle(float value)
+            {
+                return abs(frac(value) * 2.0 - 1.0);
+            }
+
+            float HectonHighTierFiberOcclusion(float2 cableUV, float stress01)
+            {
+                float occlusion = 0.0;
+                [unroll]
+                for (int tap = 0; tap < 16; tap++)
+                {
+                    float tapOffset = (tap + 0.5) * 0.0625;
+                    float twistA = HectonTriangle(cableUV.y * 7.0 + cableUV.x * 0.45 + tapOffset);
+                    float twistB = HectonTriangle(cableUV.y * -5.0 + cableUV.x * 0.35 + tapOffset * 1.7);
+                    occlusion += smoothstep(0.18, 0.92, 1.0 - abs(twistA - twistB));
+                }
+
+                return saturate((occlusion * 0.0625) * (0.35 + stress01 * 0.65));
             }
 
             Varyings vert(Attributes input)
@@ -107,7 +147,8 @@ Shader "Hecton8/Physics/TetherLineStrip"
                 float globalStress01 = saturate(_TetherStress01);
                 float segmentStress01 = saturate(_TetherSegmentTensions[segmentIndex] * _TetherSegmentStressScale);
                 float stress01 = saturate(max(globalStress01, segmentStress01));
-                float pulse = abs(frac(_Time.y * 6.0) * 2.0 - 1.0);
+                float visualClock = max(_TetherVisualClock, 0.0);
+                float pulse = abs(frac(visualClock * 6.0) * 2.0 - 1.0);
                 float stressPulse = stress01 * pulse;
                 float radius = max(_TetherRadius * (1.0 + stressPulse * 0.18), 0.001);
                 bool useEnd = cornerIndex >= 2;
@@ -115,6 +156,10 @@ Shader "Hecton8/Physics/TetherLineStrip"
                 float3 basePosition = useEnd ? p1 : p0;
                 float3 positionWS = basePosition + side * (positiveSide ? radius : -radius);
                 output.positionCS = TransformWorldToHClip(positionWS);
+                output.cableUV = float2(positiveSide ? 1.0 : -1.0, segmentIndex + (useEnd ? 1.0 : 0.0));
+                output.stress01 = (half)stress01;
+                output.segmentStress01 = (half)segmentStress01;
+                output.visualTier = (half)_TetherVisualTier;
                 output.color = lerp(_TetherColor, _TetherStressColor, stress01);
                 output.color.rgb += stressPulse * 0.08;
                 return output;
@@ -124,7 +169,33 @@ Shader "Hecton8/Physics/TetherLineStrip"
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 clip(input.color.a - (half)HectonDitherCoverage(input.positionCS.xy));
-                return half4(input.color.rgb, 1.0h);
+                half3 color = input.color.rgb;
+                UNITY_BRANCH
+                if (input.visualTier >= 2.0h)
+                {
+                    float visualClock = max(_TetherVisualClock, 0.0);
+                    float stress01 = saturate((float)input.stress01);
+                    float edge01 = saturate(abs(input.cableUV.x));
+                    float fiber = HectonHighTierFiberOcclusion(input.cableUV, stress01);
+                    float saltHash = HectonHash11(floor(input.cableUV.y * 37.0) + floor((input.cableUV.x + 1.0) * 13.0));
+                    float salt = step(1.0 - saturate(_TetherCrystalDensity) * 0.075, saltHash);
+                    float saltPulse = HectonTriangle(visualClock * 9.0 + input.cableUV.y * 0.37);
+                    float glint = salt * stress01 * edge01 * (0.35 + saltPulse * 0.65);
+                    float siltHash = HectonHash11(floor(input.cableUV.y * 53.0) + 19.0);
+                    float silt = siltHash * saturate(_TetherSiltIntensity) * stress01 * (1.0 - edge01 * 0.35);
+                    color *= (half)(0.84 + fiber * 0.32);
+                    color += (half3)(glint * float3(0.9, 0.96, 1.0));
+                    color += (half3)(silt * float3(0.20, 0.32, 0.28));
+
+                    UNITY_BRANCH
+                    if (input.visualTier >= 3.0h)
+                    {
+                        float ultraRim = edge01 * edge01 * edge01 * stress01;
+                        color += (half3)(ultraRim * float3(0.08, 0.18, 0.22));
+                    }
+                }
+
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }

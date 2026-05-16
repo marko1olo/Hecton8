@@ -1,6 +1,6 @@
 # Rationale - VAULT_SOVEREIGNTY_ENFORCER
 
-Status: DATAVAULT NO-REGRESSION GATE GREEN; HECTON8.CORE CURRENTLY BLOCKED BY EXTERNAL COMPILE WALL; ZERO-DEBT SOVEREIGNTY STILL PENDING
+Status: DATAVAULT NO-REGRESSION GATE GREEN; HECTON8.CORE BUILD GREEN; ZERO-DEBT SOVEREIGNTY STILL PENDING
 
 ## Decision 001 - Scope Boundary
 Problem: The prompt asks for DataVault statelessness across all domains, but the authoritative write domain is Core/Memory and the workspace is active with many agents.
@@ -162,3 +162,17 @@ Solution: Classified the wall as external dependency debt: `ProceduralBiteIkJobs
 Rejected Alternatives: Editing animation, bootstrap, visuals, or tools code from the DataVault sovereignty pass would violate domain boundaries and collide with active agents. Reporting the previous green Core build as current would be false.
 Scalability potential: No direct runtime scalability effect; this preserves integration truth while the no-regression gate prevents new memory-sovereignty debt.
 Hardware Impact: 0 us runtime. Build verification is currently blocked outside owned files.
+
+## Decision 024 - Moving Compile Wall Recovery
+Problem: The active workspace kept changing under validation; stale compiler walls reported missing predator job fields, duplicate audio helpers, tether request contracts, and finally a real missing brace in `SubmarineFluidDynamics`.
+Solution: Revalidated against current disk each time, avoided duplicate patches when another agent had already moved the file, and repaired the owned submarine guard brace inside `PublishSplashFluidImpulse`. The focused Core build now succeeds with 0 warnings and 0 errors.
+Rejected Alternatives: Trusting stale compiler output would have introduced duplicate methods/types. Killing unrelated active-agent build processes would have disrupted shared validation. Leaving the submarine syntax fault would block Core validation.
+Scalability potential: No direct tier behavior change. The repaired guard preserves NaN vaccination before publishing fluid impulse signals on all tiers.
+Hardware Impact: 0 us hot-path gain claimed. The brace fix restores the existing early-return finite guard; it does not add new runtime work.
+
+## Decision 025 - Drone Fleet Culling No-Regression Repair
+Problem: `python Tools\DataVaultSovereigntyAudit.py --fail-on-regression` caught a new `DroneFleetManager` direct `NativeArray<DroneCullingStateGpu>` constructor, increasing that file from 14 to 15 forbidden sites.
+Solution: Added `SystemID.Construction` and `BufferID.DroneFleetCullingStates`, routed the culling upload lane through `GlobalDataVault.GetBuffer`, and kept an `H8Memory.Allocate` fallback only when the vault is unavailable. Vault aliases are not disposed by `DroneFleetManager`; fallback allocations release through `H8Memory.Release`.
+Rejected Alternatives: Updating the baseline would normalize new debt. Keeping direct `new NativeArray<T>` would violate the no-regression gate. Rewriting all 14 remaining legacy drone arrays in this pass was rejected because that is a construction-domain migration larger than the regression.
+Scalability potential: Low/Middle keep the compact 16-byte culling payload centralized under the vault cap. High/Ultra can keep the GPU culling path without adding another private native heap island.
+Hardware Impact: Runtime hot path is unchanged; the culling payload still writes one compact element per drone before upload. Cold allocator churn avoided for this new lane is at most the removed persistent `NativeArray<DroneCullingStateGpu>[64]` constructor; exact microseconds are not profiled.

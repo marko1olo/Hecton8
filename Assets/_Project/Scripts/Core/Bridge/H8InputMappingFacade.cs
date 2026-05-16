@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace Hecton8.Core.Bridge
@@ -66,7 +68,7 @@ namespace Hecton8.Core.Bridge
             return bindings != null && index >= 0 && index < bindings.Count ? bindings[index] : null;
         }
 
-        public bool SyncToVault(IDataVault vault)
+        public unsafe bool SyncToVault(IDataVault vault)
         {
             if (vault == null)
                 return false;
@@ -74,9 +76,12 @@ namespace Hecton8.Core.Bridge
             EnsureDefaultBindings();
             int count = bindings.Count;
             if (count <= 0)
+            {
+                ClearExistingBuffer(vault);
                 return true;
+            }
 
-            NativeArray<H8InputFacadeBindingEntry> buffer = vault.GetBuffer<H8InputFacadeBindingEntry>(
+            VaultBufferHandle<H8InputFacadeBindingEntry> buffer = vault.GetBufferHandle<H8InputFacadeBindingEntry>(
                 BufferID.BridgeInputFacadeBindings,
                 count,
                 SystemID.CoreBridge,
@@ -85,6 +90,13 @@ namespace Hecton8.Core.Bridge
             if (!buffer.IsCreated || buffer.Length < count)
                 return false;
 
+            H8InputFacadeBindingEntry* bufferPtr = (H8InputFacadeBindingEntry*)buffer.ResolvePointer(vault);
+            if (bufferPtr == null)
+                return false;
+
+            Thread.MemoryBarrier();
+            UnsafeUtility.MemClear(bufferPtr, buffer.Length * UnsafeUtility.SizeOf<H8InputFacadeBindingEntry>());
+
             for (int i = 0; i < count; i++)
             {
                 Binding binding = bindings[i];
@@ -92,11 +104,30 @@ namespace Hecton8.Core.Bridge
                     continue;
 
                 binding.RebuildHashes();
-                buffer[i] = binding.ToEntry();
+                bufferPtr[i] = binding.ToEntry();
             }
 
+            Thread.MemoryBarrier();
             GlobalTelemetryBus.PublishModTelemetry(H8BridgeHashes.InputFacade, H8BridgeHashes.InputFacade, count);
             return true;
+        }
+
+        private static unsafe void ClearExistingBuffer(IDataVault vault)
+        {
+            if (vault == null ||
+                !vault.TryGetBufferHandle(BufferID.BridgeInputFacadeBindings, out VaultBufferHandle<H8InputFacadeBindingEntry> buffer) ||
+                !buffer.IsCreated)
+            {
+                return;
+            }
+
+            H8InputFacadeBindingEntry* bufferPtr = (H8InputFacadeBindingEntry*)buffer.ResolvePointer(vault);
+            if (bufferPtr == null)
+                return;
+
+            Thread.MemoryBarrier();
+            UnsafeUtility.MemClear(bufferPtr, buffer.Length * UnsafeUtility.SizeOf<H8InputFacadeBindingEntry>());
+            Thread.MemoryBarrier();
         }
 
         private void Reset()

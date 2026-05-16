@@ -132,3 +132,156 @@ Validation:
 Integrator notes:
 - First remaining error groups: `ProceduralBiteIkJobs.cs(306,24)` duplicate local `candidate`; `ToolDurabilitySystem.cs` missing `TryResolveNativeState`, `TryResolveItemStates`, `TryResolvePendingDecay`, and backing native fields; `GameBootstrapper.cs(2761,34)` calls an `Initialize` overload that no longer exists.
 - Do not treat the acoustic prompt as Unity-runtime verified until these external domains compile and Play Mode/profiler evidence is collected.
+
+## 2026-05-16 - Current Disk Green Compile Closure
+What was wrong:
+- The dependency-blocked status became stale as parallel agents repaired several external compile walls.
+- A fresh build narrowed the remaining project blocker to adjacent AI: `PredatorCognitionDomain.cs` used a nonexistent local `IsFinite(float3)` helper in the species-target read path.
+
+What was done:
+- Re-ran the mandated status/rationale read before continuing.
+- Re-ran the build repeatedly against current disk instead of trusting stale error lists.
+- Patched `PredatorCognitionDomain.cs` to use the existing `MathGuard.IsFinite(candidate)` helper.
+- Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`.
+- Updated `Status_ACOUSTIC_ECHO_LOCATION_AI.md` and `Rationale_ACOUSTIC_ECHO_LOCATION_AI.md` back to green compile evidence.
+
+Cinematic Cheats used:
+- Acoustic behavior unchanged: low-tier direct-node fake, 32 scored echo taps, 64 queued tap cap, and high-tier sine head sweep remain intact.
+- The compile repair did not add physical simulation.
+
+Exact Microseconds saved/estimated:
+- Acoustic runtime cost added: 0 us.
+- Adjacent AI finite-helper correction added: 0 us measured; it reuses an existing math guard call.
+- Compile verification wall-clock: 79,130,000 us.
+
+Validation:
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`: Build succeeded, 0 warnings, 0 errors, 1m19.13s.
+- Final current-disk rerun of the same command after a transient parallel Bootstrap/DataVault signature race: Build succeeded, 0 warnings, 0 errors, 3m06.93s.
+
+Residual risk:
+- Unity Editor import, Play Mode, GCMonitor, profiler capture, Quest/Android player build, Metal/Mac player build, Steam Deck storage profiling, and IL2CPP strip build were not run in this terminal pass.
+
+## 2026-05-16 - Queue Hardening And External Wall Recheck
+What was wrong:
+- The acoustic runtime still exposed an unused direct `NativeQueue<EchoTap>.ParallelWriter` surface.
+- If a future producer used that writer, it could bypass `TryEnqueueEchoTap` validation and `_queuedEchoTapCount` accounting.
+- A fresh build after the hardening pass exposed new external compile walls outside AI/Sensory.
+
+What was done:
+- Re-ran the mandated status/rationale read and re-extracted the exact XML assignment.
+- Re-read the only owned domain script: `Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs`.
+- Removed the unused `EchoTapWriter` API.
+- Added `IsValidTap` and revalidates every dequeued echo tap before it enters the frame slab and `EchoTrackingJob`.
+- Re-scanned AI/Sensory for direct writer use, forbidden managed/event/update patterns, private NativeArray allocation, and struct packing.
+
+Cinematic Cheats used:
+- No physical acoustic wavefield was added.
+- Toaster path remains 64 queued taps, 32 scored taps, direct-node fake for low tier.
+- High/Ultra retain the cheap sine head sweep and saved CPU budget for presentation systems.
+
+Exact Microseconds saved/estimated:
+- Removed direct writer bypass: 0 us hot-path cost.
+- Added queue-drain finite validation: <1 us/frame for the 32-tap cap on i3/MX350.
+- Latest failed compile validation wall-clock: 35,980,000 us.
+
+Validation:
+- `rg` found no `EchoTapWriter` or `AsParallelWriter()` remaining in AI/Sensory.
+- `rg` found no private persistent `NativeArray`, `new NativeArray`, `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, legacy EventBus, or managed `Action`/`Func` in AI/Sensory.
+- `rg "StructLayout"` in AI/Sensory shows all four acoustic structs use `Pack = 1`.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` failed outside AI/Sensory: first stable groups are `LockstepStateValidator.cs`, `EcosystemDirector.cs`, `GlobalSignals.cs`, and `TetherManager.cs`.
+
+Integrator notes:
+- Unity batchmode was not run because the C# compile gate is currently blocked before Unity import/runtime evidence can be trusted.
+- The acoustic patch itself is static-clean; project validation is blocked by external current-disk edits.
+
+## 2026-05-16 - Current-Disk Wall Shift Recheck
+What was wrong:
+- The previous external compile-wall report was stale after more parallel edits landed.
+- First current-disk recheck hit `SubmarineFluidDynamics.cs(4925,10): error CS1513`; source readback showed balanced braces and the error disappeared on rerun, so it was treated as a transient race.
+- Stable current-disk build now fails outside AI/Sensory in UI navigation, ecosystem DataVault migration, dispatcher scheduled raycasts, and tether/winch contracts.
+
+What was done:
+- Re-ran the mandatory status/rationale read and re-extracted the exact XML prompt.
+- Re-read `AGENTS.md` and `Docs/Actual Domains of Project.txt`.
+- Re-scanned the owned AI/Sensory directory: one `.cs`, packed structs present, no `EchoTapWriter`, no `AsParallelWriter`, no local persistent NativeArray allocation, no `Update`, no `string.Format`, no legacy EventBus/delegate patterns.
+- Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`.
+
+Cinematic Cheats used:
+- Acoustic behavior unchanged: portal breadcrumb truth stays bounded to 32 scored taps.
+- Low tier remains direct-node fake.
+- High/Ultra remain sine head-sweep only; no physical wavefield or smell simulation was added.
+
+Exact Microseconds saved/estimated:
+- Acoustic runtime cost added in this pass: 0 us.
+- Current failed build wall-clock: 220,720,000 us.
+- Static scan cost only; no gameplay hot path was modified.
+
+Validation:
+- Owned-domain static scans remain clean.
+- Current stable build fails with 167 errors outside AI/Sensory. First groups: `DiegeticGyroCompassRuntime.cs` missing private snapshot/calibration/blackbox fields, `EcosystemDirector.cs` missing many DataVault handle fields and alias methods, `SystemDispatcher.cs` missing scheduled raycast buffers, `TetherSignals.cs` / `TetherManager.cs` / `HeavyTowWinch.cs` tether API mismatch.
+
+Integrator notes:
+- Task 18 remains `[BLOCKED BY DEPENDENCY]`.
+- Unity batchmode, Play Mode, GCMonitor, profiler, Quest/Android, Metal/Mac, and Steam Deck I/O validation remain blocked by the current C# compile wall.
+
+## 2026-05-16 - Current-Disk Green Compile And Unity Gate Attempt
+What was wrong:
+- The last dependency-blocked compile report was stale against current source.
+- `DiegeticGyroCompassRuntime.cs` no longer contained the `_snapshot` line reported by the previous build output.
+
+What was done:
+- Re-ran the mandatory status/rationale read.
+- Re-extracted the exact `ACOUSTIC_ECHO_LOCATION_AI` XML assignment from `CURRENT_BATCH.md`.
+- Re-scanned AI/Sensory for forbidden direct writer, private NativeArray, Update-family, string formatting, legacy EventBus/delegate, and packing defects.
+- Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`.
+- Attempted Unity 6000.4.1f1 batchmode import/compile and wrote `Docs/AgentLogs/Unity_ACOUSTIC_ECHO_LOCATION_AI.log`.
+
+Cinematic Cheats used:
+- Acoustic behavior unchanged: low tier direct-node fake, 64 queued tap cap, 32 scored taps, loudest noisemaker priority, five-second silence expiry, and high-tier sine head sweep.
+- No physical acoustic wavefield or smell simulation was added.
+
+Exact Microseconds saved/estimated:
+- Acoustic runtime cost added in this pass: 0 us.
+- Latest green C# compile gate wall-clock: 1,310,000 us.
+- Unity batchmode abort gate wall-clock: approximately 500,000 us; no runtime validation occurred.
+
+Validation:
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`: Build succeeded, 0 warnings, 0 errors, 1.31s.
+- `rg` found no `EchoTapWriter`, `AsParallelWriter()`, private persistent `NativeArray`, `new NativeArray`, `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, legacy EventBus, or managed `Action`/`Func` in `Assets/_Project/Scripts/AI/Sensory/`.
+- `rg "StructLayout"` in AI/Sensory shows all four acoustic structs use `Pack = 1`.
+- `git diff --check` on acoustic and documentation files reports repository-normal CRLF conversion warnings only.
+- Unity batchmode failed before project import because another Unity instance has `C:/hades/Hecton8` open. MCP resource/template discovery returned empty lists, so the live Editor could not be queried through MCP.
+
+Integrator notes:
+- Task 18 is green for its explicit `dotnet build` requirement.
+- Unity runtime, Play Mode, GCMonitor, profiler, Quest/Android, Metal/Mac, and Steam Deck I/O validation are still pending because the current open Unity Editor blocks batchmode and no MCP bridge is available.
+
+## 2026-05-16 - Project-Root Dump Path And Unity Batchmode Green
+What was wrong:
+- `AcousticEchoLocationRuntime.DumpBlackBox()` resolved `Docs/AgentLogs/Dump_ACOUSTIC_ECHO_LOCATION_AI.bin` from the process working directory.
+- That is not stable across Unity batchmode, open Editor launch contexts, or Steam Deck shortcuts.
+
+What was done:
+- Added `ResolveDumpPath()` to anchor the dump under `Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath))`.
+- Kept the old relative path only as a fallback when `Application.dataPath` is empty.
+- Re-ran the acoustic static scans, `dotnet build`, and Unity batchmode.
+
+Cinematic Cheats used:
+- No new physical simulation.
+- Low tier remains direct-node fake.
+- High/Ultra remain portal breadcrumb plus cheap sine head sweep; saved CPU remains presentation budget for the consumer-side overkill systems.
+
+Exact Microseconds saved/estimated:
+- Hot-path cost added: 0 us.
+- Fault-path path resolution: one-shot only after invalid AUP/NaN queue payload, not per frame.
+- Latest green C# compile gate wall-clock: 80,580,000 us.
+- Unity batchmode gate wall-clock: approximately 3,700,000 us.
+
+Validation:
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`: Build succeeded, 0 warnings, 0 errors, 1m20.58s.
+- `rg` found no `EchoTapWriter`, `AsParallelWriter()`, private persistent `NativeArray`, `new NativeArray`, `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, legacy EventBus, or managed `Action`/`Func` in `Assets/_Project/Scripts/AI/Sensory/`.
+- `rg "StructLayout|ResolveDumpPath|Application.dataPath|Path.GetFullPath"` confirms all four acoustic structs are `Pack = 1` and the dump path is project-root anchored.
+- Unity 6000.4.1f1 batchmode log `Docs/AgentLogs/Unity_ACOUSTIC_ECHO_LOCATION_AI_RERUN.log`: process exit code 0. No `error CS`, `warning CS`, `Exception`, `Fatal`, `Aborting`, or `Compilation failed` matches. One licensing access-token update message appears, followed by successful entitlement/license initialization.
+
+Residual risk:
+- Play Mode, GCMonitor, profiler timing, Quest/Android IL2CPP, Metal/Mac, and Steam Deck I/O profiling are still not executed from this terminal pass.

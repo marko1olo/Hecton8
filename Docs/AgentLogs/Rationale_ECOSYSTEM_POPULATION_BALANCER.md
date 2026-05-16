@@ -174,3 +174,123 @@ Scalability potential: Identical binary layout across PC, Steam Deck, Mac, Quest
 
 Hardware Impact: No runtime cost; this is ABI hardening.
 
+## Loop 7 - Static Dispatch And ABI Hook Hardening
+
+Problem: The ecology runtime installer and central binary layout verifier still used `System.Reflection`/`AppDomain.GetAssemblies()` to locate the balancer and its ABI payloads. That is cold-path work, but it is still forbidden outside editor paths and weak IL2CPP/AOT evidence.
+
+Solution: Replace type-name reflection with direct `EcosystemPopulationBalancer` component installation and direct generic `AssertSize<T>`/`AssertOffset<T>` checks for the five ecology Pack=1 payload structs.
+
+Rejected Alternatives: Rejected keeping optional reflection because missing ecology types should be a compile-time error, not a silent runtime skip. Rejected a new duplicate layout manifest inside the balancer because the central binary sentinel already owns cold-boot ABI checks.
+
+Scalability potential: Low/Quest/Steam Deck avoid assembly scans and AOT ambiguity at boot. High/Ultra keep the same ABI sentinel path without adding runtime simulation work.
+
+Hardware Impact: Cold-start reflection scan removed. Exact microseconds are unmeasured. `dotnet build` after this pass was blocked externally after 61,490,000 us wall-clock by unrelated `ArchitectEyeVisualizer`, `PlayerCriticalProceduralAudioRenderer`, and `AbyssalThermalManager` errors; no owned ecology file error was emitted.
+
+## Loop 8 - Data Sovereignty And Steam Deck I/O Polish
+
+Problem: The balancer still resolved `GlobalRegistry.DataVault` and `GlobalRegistry.EcosystemDirector` inside ColdTick/LateFrame paths, and coefficient import used `File.ReadAllText`. Both were acceptable only as cold conveniences, not as final H-Phi evidence.
+
+Solution: Cache DataVault and ecosystem director dependencies on the component, use the cached DataVault for ColdTick/LateFrame completion, and refresh the director only when absent or not initialized. Replace whole-file coefficient loading with bounded sequential cold I/O: max 16 KiB JSON, 2 KiB read buffer, `FileOptions.SequentialScan`.
+
+Rejected Alternatives: Rejected direct registry polling every tick because dependency access must be staged. Rejected inventing a new binary coefficient format because OSHINO's current artifact is JSON and changing the bake contract is outside this task. Rejected local persistent NativeArrays; remaining `NativeArray<T>` mentions are DataVault-resolved views, method boundaries, or Burst job payloads required by Unity's job API.
+
+Scalability potential: Low/Steam Deck gets bounded cold disk read behavior and no repeated registry service lookup once dependencies are cached. Middle/High/Ultra keep identical Lotka-Volterra behavior; visual overkill remains through `Flag_EcologyFleeDown` consumers instead of extra AI simulation.
+
+Hardware Impact: Runtime microseconds remain unmeasured. Cold coefficient file read is capped to 16 KiB and sequentially read with a 2 KiB buffer to reduce MicroSD pressure. A later compile attempt was blocked externally after 103,870,000 us wall-clock by unrelated `HectonMarineSnowRenderer` missing kernel thread-group helpers; no owned ecology file error was emitted.
+
+## Loop 9 - Registry Hot-Swap And Tick-Lane Hardening
+
+Problem: After dependency caching, a runtime `GlobalRegistry` DataVault or ecosystem-director replacement could leave the balancer holding stale handles or stale service references. That is a cross-agent crash path because the scheduled Burst job owns DataVault views until completion.
+
+Solution: Wire `EcosystemPopulationBalancer` into `IGlobalRegistryHotSwapListener`, complete any scheduled job before DataVault handle reset, clear coefficient/sector state after DataVault replacement, refresh director cache only through the registry replacement callback, and unregister ColdTick/LateFrame lanes when replacement vault setup fails.
+
+Rejected Alternatives: Rejected polling `GlobalRegistry` every ColdTick because Loop 8 deliberately removed recurring registry lookups from the runtime path. Rejected local ownership of backup NativeArrays because the prompt and H-Phi mandate require DataVault-owned storage.
+
+Scalability potential: Low/Steam Deck/Quest avoid stale native-handle crashes during service replacement without adding per-frame lookups. Middle/High/Ultra keep the same Lotka-Volterra kernel and visual overkill delegation through `Flag_EcologyFleeDown`.
+
+Hardware Impact: Runtime microseconds remain unmeasured. The added hot-swap listener only runs on registry replacement, not per frame. `dotnet build` first stopped after 18,970,000 us wall-clock in shared `GlobalSignals.cs`; after that shared duplicate helper was no longer present on disk, the retry stopped after 89,580,000 us wall-clock in unrelated `PhysicsApplySystem` fields `_queueHash` and `PendingEventCapacity`. No owned AI/Ecosystem compiler error was emitted.
+
+## Loop 10 - Atomic Tick Registration And Telemetry Reset
+
+Problem: ColdTick and LateFrame registration were independent. If ColdTick registered and LateFrame failed, the balancer could schedule a Burst job that never reaches the signal-publish completion lane. DataVault replacement also reset handles but left the telemetry cursor and fault-dump latch from the prior storage generation.
+
+Solution: Make tick registration all-or-none by unregistering both lanes when either registration fails. Reset `_telemetryCursor` and `_dumpedFault` when DataVault storage is replaced or cached dependencies are cleared.
+
+Rejected Alternatives: Rejected leaving partial registration alive because silent unpublished culls are harder to diagnose than an unregistered system. Rejected a managed retry timer because tick manager/hot-swap ownership belongs to `GlobalRegistry`, not this ecology kernel.
+
+Scalability potential: Low/Quest/Steam Deck avoid stranded scheduled jobs and stale blackbox offsets. Middle/High/Ultra keep identical population math and event-driven hot-swap behavior.
+
+Hardware Impact: Runtime microseconds remain unmeasured. The additional branch only runs on registration attempts; telemetry reset runs only on service replacement/disable. `dotnet build` after this patch stopped after 104,140,000 us wall-clock with 194 external errors in `World/EcosystemDirector`, `SystemDispatcher`, and `TetherManager`; no owned AI/Ecosystem compiler error was emitted.
+
+## Loop 11 - ABI Tail Fill, Event Capacity, And Cold I/O Fault Containment
+
+Problem: Two Pack=1 ecology payloads used explicit `Size` values with unnamed tail bytes. That is legal C# explicit layout, but it is weak ABI evidence for ARM64/Quest because binary sentinels did not name every byte. The free-ring write cursor also used a monotonic `int`, which can wrap in long sessions. Finally, the cull job could clear active flags after the cull-event buffer was full, causing deaths without `EntityDeathSignal`.
+
+Solution: Add explicit reserved fields to fill `EcosystemPopulationSectorState` and `EcosystemPopulationCullEvent` tails, and assert those offsets in `BinaryLayoutManifest`. Bound the free-ring cursor to `[0, FreeRing.Length)`. Add `TelemetryCullEventOverflowFlag` and stop Tier 2 culling when the cull-event buffer is full, preserving the one-cull-one-signal contract. Wrap cold coefficient JSON read/parse in fallback handling so malformed or inaccessible baked data falls back to sanitized defaults instead of aborting boot.
+
+Rejected Alternatives: Rejected relying on unnamed explicit-size tail padding. Rejected dropping death signals under event pressure because biomass consumers require the typed lane. Rejected an ever-increasing ring cursor because overflow is avoidable with a bounded write index. Rejected crashing on coefficient JSON faults because the default Lotka-Volterra coefficients already provide a safe deterministic fallback.
+
+Scalability potential: Low/Quest/Steam Deck get stronger ABI portability, bounded ring state, and no silent signal loss. Middle/High/Ultra keep identical population math and presentation hooks while gaining clearer overflow telemetry.
+
+Hardware Impact: Runtime microseconds remain unmeasured. Added hot-path work is one bounded cursor branch and one cull-event-capacity branch inside the 1 Hz job. `dotnet build` after this pass succeeded in 54,770,000 us wall-clock with 4 external `ArchitectEyeVisualizer` warnings and 0 errors; no owned AI/Ecosystem warning or error was emitted.
+
+## Loop 12 - Blackbox Fault Containment
+
+Problem: The invalid-math blackbox dump path could return without publishing a math-guard marker when telemetry storage was missing, and a filesystem exception during dump creation could escape the fault-report path. That weakens postmortem evidence exactly when the AI kernel is already reporting invalid Lotka-Volterra math.
+
+Solution: Keep the 300-frame DataVault telemetry ring as the authority, but harden the fault export path. Missing telemetry now publishes `BlackBoxMissingTelemetryHash`; dump I/O failure publishes `BlackBoxDumpIoFaultHash`; both paths still publish `GlobalTelemetryBus.PublishMathGuardInvalidNumber(ECOL)`. The Burst job and ColdTick math path are unchanged.
+
+Rejected Alternatives: Rejected throwing on dump failure because a blackbox export cannot become a second crash source. Rejected managed `Debug.Log` fallback because it creates string/log churn and is weaker than the existing typed telemetry bus. Rejected adding another local buffer because the DataVault ring already owns the 300-frame state.
+
+Scalability potential: Low/Quest/Steam Deck get deterministic fault markers without new frame work. Middle/High/Ultra keep the same population and presentation hooks; richer analysis can consume the same hashed telemetry events and binary dump when disk is writable.
+
+Hardware Impact: Runtime microseconds remain unmeasured. Added work is fault-only after invalid math detection, not steady-state. `dotnet build` after this pass was blocked externally by 8 `SaturateFinite01` errors in unrelated `World/SargassumMicroFaunaBoids.cs`; command wrapper wall-clock was 123,654,153 us, `dotnet` reported 104,080,000 us elapsed, and no owned AI/Ecosystem warning or error was emitted.
+
+## Loop 13 - Free-Ring Rebuild From Authoritative Flags
+
+Problem: The free-ring counters were retained across ColdTicks. That preserved useful reuse state, but it could also preserve stale slots after hot-swap, external flag repair, or any interrupted cull/spawn cycle. A stale free slot can reactivate the wrong ecology index or block valid inactive prey reuse.
+
+Solution: Rebuild `BufferID.EcosystemPopulationFreeRing` during the existing ColdTick SoA scan from authoritative `EntityFlags` and `EntityAUPs`. Inactive prey carrying `Flag_FreeList` repopulate bounded ring slots; the cursor/count counters are rewritten from the rebuilt state; overflow sets `TelemetryFreeRingOverflowFlag`.
+
+Rejected Alternatives: Rejected trusting retained counters because counters are derived state, not authority. Rejected a managed hash set for duplicate detection because the ring can be rebuilt deterministically from SoA flags. Rejected cross-domain spawn remapping because this balancer only owns ecology prey reuse, not prefab/archetype conversion.
+
+Scalability potential: Low/Quest/Steam Deck get deterministic reuse without stale slots or managed allocation. Middle/High/Ultra keep the same cull/spawn behavior and can still consume `Flag_EcologyFleeDown` for presentation overkill.
+
+Hardware Impact: Runtime microseconds remain unmeasured. Added work is one bounded free-ring clear plus reuse-slot writes inside the 1 Hz ColdTick preparation pass, not a per-frame hot path. `dotnet build` after this pass succeeded with 0 warnings and 0 errors; command wrapper wall-clock was 40,580,935 us and `dotnet` reported 40,220,000 us elapsed.
+
+## Loop 14 - Death-Signal Lane Capacity Alignment
+
+Problem: The balancer defaulted to 256 cull events per ColdTick while the existing `EntityDeathSignal` lane is configured with a 64-signal expected/prewarm capacity. The frame snapshot can hold more, but pushing four times the prewarm budget can force typed-lane queue growth and native allocation under a heavy ecology cull.
+
+Solution: Align ecology cull-event production with the existing `EntityDeathSignal` budget. `DefaultCullEventCapacity` now equals 64, runtime `cullEventCapacity` is clamped to `[1, 64]`, and the Burst job receives a scalar `CullEventLimit` so even an already-larger DataVault event buffer cannot publish beyond the lane budget. Existing overflow telemetry handles remaining cull demand without unsignaled culls.
+
+Rejected Alternatives: Rejected editing `GlobalSignals` to expand the death lane because this ecology task should not widen a shared core signal budget. Rejected allowing queue growth because zero-GC evidence matters more than one large ColdTick cull burst. Rejected dropping signals after flag mutation because biomass consumers require one signal per actual cull.
+
+Scalability potential: Low/Quest/Steam Deck avoid native queue growth under stress. Middle/High/Ultra still get deterministic overflow telemetry and can spend visual budget through `Flag_EcologyFleeDown` rather than unbounded death-signal bursts.
+
+Hardware Impact: Runtime microseconds remain unmeasured. The cap is scalar and uses the existing overflow branch; it should reduce worst-case native queue pressure but needs Unity profiler/GCMonitor proof. `dotnet build` after this pass was blocked externally by `Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs` missing `DebugSignal`; command wrapper wall-clock was 21,443,453 us, `dotnet` reported 20,630,000 us elapsed, and no owned AI/Ecosystem compiler error was emitted.
+
+## Loop 15 - Empty-Sector Heartbeat Completion
+
+Problem: The empty-sector telemetry path wrote frame, active count, flags, and hash, but omitted free-ring count and system stress. That leaves weaker postmortem evidence when the blackbox captures a no-sector crash or a DataVault state where entity buffers exist but no ecology sector was active.
+
+Solution: Add `FreeRingCount` and `SystemStress01` to `RecordEmptyTelemetry` using existing DataVault counters and `SignalBusRegistry.SystemStress01`. This keeps the 300-frame heartbeat shape consistent with the scheduled Burst job telemetry without adding new storage.
+
+Rejected Alternatives: Rejected a separate empty-state telemetry struct because that would split blackbox parsing. Rejected managed logging for no-sector states because the fixed DataVault ring already owns crash context.
+
+Scalability potential: Low/Quest/Steam Deck get better crash evidence with only scalar reads on the rare empty path. Middle/High/Ultra preserve the same telemetry schema for tooling and visual-overkill consumers.
+
+Hardware Impact: Runtime microseconds remain unmeasured. Added work is two scalar reads/writes only when no ecology sector job is scheduled. `dotnet build` after this pass succeeded with 0 warnings and 0 errors; command wrapper wall-clock was 90,999,387 us and `dotnet` reported 90,210,000 us elapsed.
+
+## Loop 16 - Chronological Blackbox Dump Ordering
+
+Problem: The DataVault telemetry ring correctly retained the last 300 ecology frames, but the invalid-math dump wrote raw ring slots in storage order. Once the ring wrapped, postmortem readers had to infer the oldest entry from frame values, and partially filled rings included unwritten default slots.
+
+Solution: Pass the current telemetry cursor into `DumpBlackBox`, write `DumpFormatVersion = 2`, capacity, written count, cursor, and oldest slot, then serialize only written telemetry entries in chronological order with bounded wraparound indexing.
+
+Rejected Alternatives: Rejected leaving raw slot order because it weakens the crash blackbox requirement. Rejected sorting by frame because frame counters can wrap and sorting would add unnecessary managed work in a fault path. Rejected adding a second local telemetry buffer because the DataVault ring is the authoritative 300-frame storage.
+
+Scalability potential: Low/Quest/Steam Deck get deterministic postmortem ordering without new steady-state work. Middle/High/Ultra retain the same telemetry schema and can parse richer dump metadata for visual-overkill/debug tooling.
+
+Hardware Impact: Runtime microseconds remain unmeasured. Added work is fault-only binary dump metadata and bounded index arithmetic after invalid math detection. First compile attempt timed out before log creation under concurrent workspace builds; retry succeeded with 0 warnings and 0 errors, command wrapper wall-clock `164,498,586 us`, `dotnet` elapsed `146,390,000 us`.
+

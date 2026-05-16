@@ -149,6 +149,35 @@ Validation:
 - No visible compiler error references the edited submarine PID, submarine fluid dynamics, or dynamic flood contract files.
 - Final validation status: BLOCKED BY EXTERNAL DEPENDENCY.
 
+## 2026-05-16 - HYDRO_MECHANIC - Docking Automation / Final Build Pass
+
+What was wrong:
+- `DockingAutopilotService` held only a DataVault handle, but validated that handle through `ResolveBuffer(ref _activeSplineHandle)`.
+- `GlobalDataVault.ResolveBuffer` hard-fails stale cached metadata after relocation, so the docking service still had a stale-pointer fault surface.
+- Docking spline payloads used sequential `Pack = 1` layout; the stride was correct but not as auditable as explicit offsets for ARM64/Quest.
+
+What was done:
+- Converted `ActiveSplineData` and `DockingSplineSample` to explicit `Pack = 1` layouts with fixed offsets.
+- Replaced direct `ResolveBuffer` validation with `TryGetBufferGeneration` and `TryGetBufferHandle`, then used the refreshed vault pointer.
+- Added GlobalRegistry DataVault hot-swap handling to clear and reacquire the active spline handle on service replacement.
+- Re-ran domain static scans and the core build.
+
+Cinematic cheats used:
+- No physical docking simulation was added.
+- Docking remains cubic Bezier math with low-tier inertial smoothstep and high-tier zero-jerk Hermite when stress allows.
+- Existing docking VFX/audio signal lanes remain reused; no duplicate docking signal invented.
+
+Microseconds saved, estimated not profiled:
+- No new microsecond claim.
+- Rejected per-frame/private-array mirrors; the gain is relocation safety and deterministic native stride.
+
+Validation:
+- Static scans returned no hits for persistent private `NativeArray`, `NativeQueue`, `H8Memory.Allocate`, `H8Memory.Release`, `Update()`, `FixedUpdate()`, `string.Format`, stale docking `ResolveBuffer`, or direct docking `ResolvePointer` in PHYSICS/VEHICLES files.
+- Struct-layout scan returned no non-`Pack = 1` task-owned layouts in the submarine/docking vehicle physics boundary.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` passed with 0 warnings and 0 errors.
+- Unity Editor Play Mode, profiler, GCMonitor, Quest/Android IL2CPP, Metal, and Steam Deck hardware validation are not proven by this CLI build.
+- Final validation status: DOTNET BUILD GREEN / UNITY RUNTIME PROFILING PENDING.
+
 ## 2026-05-16 - HYDRO_MECHANIC - DataVault Relocation / Hot-Swap Polish Pass
 
 What was wrong:
@@ -181,3 +210,80 @@ Validation:
   - `Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs(4,18)`: missing `Hecton8.AI.Ecosystem`.
 - No visible compiler error references the edited submarine PID, submarine fluid dynamics, or dynamic flood contract files.
 - Final validation status: BLOCKED BY EXTERNAL DEPENDENCY.
+
+## 2026-05-16 - HYDRO_MECHANIC - Burst Job Packing / Compile Wall Recheck
+What was wrong:
+- Two PID-owned Burst job containers lacked explicit packing declarations.
+- A broad struct audit also surfaced private fluid Burst job containers. Those contain `NativeArray<T>` handles and are not binary payload structs.
+
+What was done:
+- Added `StructLayout(LayoutKind.Sequential, Pack = 1)` to `SubmarineAutoLevelPidJob` and `SubmarineMassSolverJob`.
+- Kept task-owned payload structs on explicit fixed-size layouts.
+- Rejected explicit offsets on `NativeArray<T>` job containers because that would hard-code Unity.Collections safety-handle internals.
+- Removed one duplicate `ArchitectEyeVisualizer.ValidatePackedStructSizes` copy while triaging the full build; this was a compile-wall unblock, not a physics-domain feature change.
+
+Cinematic cheats used:
+- Low tier remains 1 Hz flood-mass truth plus visual interpolation.
+- High/Ultra still spend saved physics work on 6DOF drag tensor response, bounded bubble events, and high-tier `FluidImpulseSignal` intent for silt/wake VFX.
+
+Validation:
+- Domain static scan returned no hits for missing `Pack = 1`, private `NativeArray`, `NativeQueue`, `H8Memory.Allocate/Release`, `Update()`, `FixedUpdate()`, `string.Format`, singleton pitch, or legacy EventBus.
+- `git diff --check` reports only existing line-ending normalization warnings.
+- Latest full `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` is blocked outside this domain with 17 errors in `PredatorCognitionDomain.cs` and `DroneFleetManager.cs`. No submarine PID/fluid/docking file appears in the error set.
+
+Exact microseconds saved:
+- 0 measured runtime microseconds claimed for the packing declarations.
+- Compile-wall triage saved no runtime time; it only removed one external duplicate-symbol blocker before the current Fauna/Construction wall.
+
+## 2026-05-16 - HYDRO_MECHANIC - Fluid Layout Closure / Tether Compile Wall
+
+What was wrong:
+- `CompartmentDefinition`, `BulkheadDefinition`, and `HydroKinematicDragJob` had no explicit `StructLayout` declaration.
+- The structs were in the submarine fluid boundary, so the ARM64/Quest audit trail was incomplete even though payload structs were already explicit.
+
+What was done:
+- Added `StructLayout(LayoutKind.Sequential, Pack = 1)` to those three structs.
+- Left Unity-serialized DTO field types unchanged to avoid corrupting inspector-authored compartment and bulkhead data.
+- Re-ran domain debt scans and the core build.
+
+Cinematic cheats used:
+- No additional simulation was added.
+- Low tier stays at bounded room-volume mass truth and 1 Hz PID flood solve.
+- High/Ultra retain the existing 6DOF drag tensor, engine-vent bubble, and high-tier `FluidImpulseSignal` hooks.
+
+Validation:
+- Domain static scan returned no hits for missing `Pack = 1`, private `NativeArray`, `NativeQueue`, `H8Memory.Allocate/Release`, `Update()`, `FixedUpdate()`, `string.Format`, singleton pitch, or legacy EventBus.
+- `git diff --check` reports only line-ending normalization warnings.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` fails outside PHYSICS/VEHICLES with 2 Tether errors: `TetherManager.cs(264,58)` missing `TetherSignals.TetherFireRequest`, and `Physics/TetherSignals.cs(167,82)` missing `TetherFireRequest`.
+- No submarine PID/fluid/docking file appears in the error set.
+
+Exact microseconds saved:
+- 0 measured runtime microseconds claimed for layout attributes.
+- The change removes implicit-layout audit debt only; runtime profiler evidence is still not available in this CLI session.
+
+## 2026-05-16 - HYDRO_MECHANIC - Compartment State Vault Eviction / External UI-World Compile Wall
+
+What was wrong:
+- `_compartmentStates` was still a private managed `CompartmentState[]` mirror in `SubmarineFluidDynamics`.
+- That state feeds gas partial pressure, flood volume snapshots, CoM resolution, and telemetry, so it was authoritative simulation state rather than harmless inspector authoring data.
+
+What was done:
+- Added `BufferID.SubmarineFluidCompartmentStates = 444` without renumbering existing Vault IDs.
+- Replaced `_compartmentStates` with `VaultNativeBuffer<CompartmentState>`.
+- Wired the new buffer through VehiclesPhysics Vault allocation, `MemoryAddressShiftSignal` relocation recognition, refresh, dispose, and clear paths.
+- Preserved the existing explicit 64-byte `Pack = 1` `CompartmentState` layout.
+
+Cinematic cheats used:
+- No new simulation was added.
+- Low tier remains bounded room-volume mass truth plus 1 Hz flood solve.
+- High/Ultra retain 6DOF drag tensor response, engine-vent bubble signaling, and high-tier `FluidImpulseSignal` hooks.
+
+Validation:
+- Static domain scans returned no hits for missing `Pack = 1`, private `NativeArray`, `NativeQueue`, `H8Memory.Allocate/Release`, `Update()`, `FixedUpdate()`, `string.Format`, singleton pitch, or legacy EventBus.
+- `git diff --check` reports only line-ending normalization warnings.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` fails outside PHYSICS/VEHICLES with 23 errors in `UI/Navigation/DiegeticGyroCompassRuntime.cs` and `World/EcosystemDirector.cs`.
+- No submarine PID/fluid/docking file appears in the error set.
+
+Exact microseconds saved:
+- 0 measured runtime microseconds claimed.
+- The change removes a private managed authority and stale-handle risk; runtime profiler evidence remains unavailable in this CLI session.

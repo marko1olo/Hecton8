@@ -155,3 +155,31 @@ Solution: After the lunge/query purge and signal purge, rerun `dotnet build Hect
 Rejected Alternatives: Reporting earlier blocked state as final would be stale; skipping rebuild after EventBus/physics edits would be unverifiable.
 Scalability potential: Build-green state confirms the current Low/Middle/High/Ultra bite implementation is at least C#-valid in the shared project.
 Hardware Impact: No direct runtime impact from compilation. Runtime impact is covered by Decisions 19 and 20.
+
+## Decision 22 - Adjacent Tentacle ABI Pack
+Problem: The broader fauna IK ARM64 audit found `FaunaTentacleConstrainedIkChain` and `FaunaTentacleJointPose` using explicit field offsets without `Pack = 1`, leaving native/Burst layout dependent on platform defaults even though the payloads are 32-byte job packets.
+Solution: Add `Pack = 1` to both explicit `StructLayout` declarations and re-run the struct layout scan over owned bite IK plus the adjacent tentacle IK file.
+Rejected Alternatives: Leaving the file untouched because it is outside `Assets/_Project/Scripts/Animation/Fauna/` would preserve a concrete Quest/Android ABI risk in a fauna IK payload. Moving the entire tentacle solver to this agent's ownership was rejected as domain drift.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; this is deterministic binary layout hardening for mobile/Quest and desktop Burst consistency.
+Hardware Impact: No measured frame-time change. Static expectation is zero runtime cost and lower platform-layout failure risk.
+
+## Decision 23 - Leviathan Tentacle Memory Owner
+Problem: `LeviathanTentacleVerletSolver` allocated and released native tentacle solver buffers through `H8Memory` with `SystemID.External`, hiding an animation/fauna IK allocation under the external bucket.
+Solution: Keep the existing cold allocation/deferred release pattern intact but tag both calls with `SystemID.AnimationFauna` so the memory sentinel attributes the buffers to the correct owner.
+Rejected Alternatives: Leaving `SystemID.External` violates the memory sentinel audit. A full DataVault migration is the right larger cleanup but was not done in this step because it requires adding buffer IDs and replacing all persistent NativeArray fields in a broad adjacent solver while the repo has an external compile wall.
+Scalability potential: Low/Middle/High/Ultra solver behavior is unchanged; owner telemetry now remains useful on Quest/Android, Steam Deck, and PC when tracking leaks or pressure.
+Hardware Impact: No measured frame-time change. Static expectation is zero runtime cost and better leak attribution on memory-constrained devices.
+
+## Decision 24 - Procedural Crab ABI Pack Sweep
+Problem: The adjacent procedural crab IK runtime carried sequential data, telemetry, and Burst job packet structs without explicit `Pack = 1`, so the ARM64/Quest layout audit still had platform-default layout ambiguity outside the bite kernel.
+Solution: Add `Pack = 1` to every `StructLayout(LayoutKind.Sequential)` declaration in `ProceduralCrabLegIKRuntime.cs` and re-run the no-missing-pack scan over the adjacent fauna IK files and owned bite IK folder.
+Rejected Alternatives: Only fixing bite-specific packets would leave obvious adjacent IK ABI debt. Rewriting crab IK native ownership was rejected for this step because it is a broader DataVault migration and the repository currently has an external compile wall.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; this is portable native metadata hardening for job payloads and telemetry.
+Hardware Impact: No measured frame-time change. Static expectation is zero runtime cost and lower layout mismatch risk on Quest/Android and IL2CPP.
+
+## Decision 25 - Leviathan Tentacle DataVault Eviction
+Problem: `LeviathanTentacleVerletSolver` still owned persistent private `NativeArray<T>` fields for positions, previous positions, radii, GPU matrices, stretch fractions, constraint scratch, root/target AUP caches, state bits, and black-box telemetry after the earlier owner-ID-only correction.
+Solution: Add dedicated `LeviathanTentacle*` `BufferID` values, replace private persistent arrays with `VaultBufferHandle<T>` fields, and resolve short-lived `NativeArray<T>` views from `GlobalDataVault` only at seeding, Burst scheduling, origin-shift rebase, upload, contact damage, and telemetry dump boundaries.
+Rejected Alternatives: Keeping `H8Memory.Allocate` with `SystemID.AnimationFauna` was better than `External` but still a private data island. Reusing `LeviathanBoneMatrices` or bite buffers would corrupt ownership and conflate tentacle Verlet state with spine or jaw state. Calling `ReleaseOwnerBuffers(SystemID.AnimationFauna)` on teardown was rejected because the owner bucket is shared by adjacent animation/fauna systems.
+Scalability potential: Low keeps one-iteration cheap tentacle motion and fixed-size vault buffers; Middle/High/Ultra use the same vault-owned streams while spending CPU/GPU budget on richer matrix/radius upload, suction pulse, flow-reactive motion, and high-tier AUP contact direction.
+Hardware Impact: No profiler capture was available, so 0 us measured. Static expectation is lower leak/stale-view risk on Quest/Android and Steam Deck, no new per-frame allocation, and no claimed frame-time saving beyond removing private native lifetime management.

@@ -80,10 +80,9 @@ Shader "Hecton8/Rendering/UberNoir"
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile _ _LIGHT_LAYERS
-            #pragma multi_compile _ _SCREEN_SPACE_OCCLUSION
             #pragma multi_compile _ _LIGHT_COOKIES
 
-            #pragma skip_variants SHADOWS_SHADOWMASK DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
+            #pragma skip_variants SHADOWS_SHADOWMASK DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _SCREEN_SPACE_OCCLUSION
 
             #include "Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl"
             ENDHLSL

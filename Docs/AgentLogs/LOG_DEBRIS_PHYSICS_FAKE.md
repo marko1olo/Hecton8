@@ -245,3 +245,146 @@ Verification:
 Status:
 - Debris source/static status remains complete.
 - Final compile status is `[BLOCKED BY DEPENDENCY]` outside DEBRIS/VFX ownership.
+
+## 2026-05-16 - Final Compile Gate Green
+
+What was wrong:
+- The last recorded state was stale: task 18 was blocked by external compile drift.
+- Current source needed a fresh compiler pass before the status could be upgraded.
+
+What was done:
+- Re-read the DEBRIS XML assignment from `Docs/Tasks/CURRENT_BATCH.md`.
+- Re-ran the C# project compile gate after the external compile wall moved.
+- Updated status and rationale to current evidence.
+
+Cinematic Cheats used:
+- No new runtime cheat was added in this pass. The debris system remains GPU-only indirect shards with tiered low/mid/high behavior from the previous source pass.
+
+Exact Microseconds saved:
+- Measured: none. This was a compile validation pass, not a profiler capture.
+- Static estimates from prior debris entries remain static estimates only.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`
+- Result: passed, 0 warnings, 0 errors, elapsed 00:00:04.22.
+- Output: `Temp\bin\Debug\Hecton8.Core.dll`.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE.
+- Unity runtime, platform player builds, Quest/Android, Metal, and profiler microsecond proof are not claimed.
+
+## 2026-05-16 - Multiplatform Static Inquisition Recheck
+
+What was wrong:
+- The recorded final validation still referenced the older 4.22s compile pass.
+- The renewed order required explicit rechecks for instantiation, local NativeArray ownership, SetData stalls, shader thread-group limits, signal-lane contamination, and stale status claims.
+
+What was done:
+- Re-read `Docs/Tasks/Status_DEBRIS_PHYSICS_FAKE.md`, `Docs/AgentLogs/Rationale_DEBRIS_PHYSICS_FAKE.md`, and the active DEBRIS XML assignment.
+- Re-ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`; result passed with 0 warnings and 0 errors in 58.78s.
+- Re-ran targeted debris static scans across `Assets/_Project/Scripts/VFX/Debris`, `Hecton_FluidAdvection.compute`, and `Hecton_CarveDebrisIndirect.shader`.
+- Confirmed no `Instantiate`, `Object.Instantiate`, `DebrisManager.Instance`, `GraphicsBuffer.SetData`, `ForceNoMotion`, standard `Update()`, `string.Format`, legacy `EventBus`, `Action<`, `UnityEvent`, private debris `NativeArray<T>` storage field, or `new NativeArray` match in the target set.
+- Confirmed carve debris compute kernels use 64-thread or 1-thread groups, below the 1024 thread-group ceiling relevant to Metal/Quest.
+
+Cinematic Cheats used:
+- No new runtime cheat was added in this pass. Existing source remains the GPU-only SoA/indirect shard fake: low-tier cap and wake/SDF bypass, high-tier 16,384 shard budget, shader tumble, lifetime scale-down, motion vectors, and blackbox ring.
+
+Exact Microseconds saved:
+- Measured: none. No profiler capture, player build, Quest/Android, Metal, or Steam Deck runtime pass was executed.
+- Static estimates remain static only: removed GameObject debris work, removed hot `SetData`, and GPU-only indirect rendering should remove burst-frame CPU cost, but exact microseconds require Unity profiler evidence.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`
+- Result: passed, 0 warnings, 0 errors, elapsed 00:00:58.78.
+- Static scan target set: debris scripts plus carve debris compute/render shaders.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by source/static and C# compile gates.
+- Runtime visual quality, GPU timings, platform player builds, and actual microsecond savings remain pending external verification.
+
+## 2026-05-16 - Shader Omega Mask Polish
+
+What was wrong:
+- Carve debris shader helper code still had small ternary selections for safe normalization and basis-up choice.
+- The dynamic wake cap selection also had a low-tier ternary in the current shader source.
+
+What was done:
+- Replaced safe-normalize ternaries with `step`/`lerp`/`rsqrt(max())`.
+- Replaced forward and motion-vector basis-up ternaries with `step`/`lerp`.
+- Replaced dynamic wake low-tier cap selection with `step`/`lerp`.
+- Preserved the explicit low-tier SDF/wake skip guard because forcing those helper calls would make MX350 worse.
+
+Cinematic Cheats used:
+- Same visual fake remains: GPU-only shard SoA, shader tumble, low-tier wake/SDF avoidance, high-tier density, and motion-vector stabilization.
+
+Exact Microseconds saved:
+- Measured: none. Shader compiler/GPU profiler data was not captured.
+- Static: fewer branch-like helper selections; exact timing remains pending GPU capture.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`
+- Result: passed, 0 warnings, 0 errors, elapsed 00:00:05.61.
+- `git diff --check` returned no whitespace errors for the debris/shader/docs target set, only existing LF-to-CRLF warnings.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by source/static and C# compile gates.
+- Runtime shader import, platform player builds, and GPU profiler timings remain unclaimed.
+
+## 2026-05-16 - High-Tier Material Overkill And Honest Validation Wall
+
+What was wrong:
+- High-tier debris density had improved, but the material response still looked too close to middle tier.
+- The status file overstated final validation because `Hecton8.Core.csproj` passes while Unity import is currently blocked before the debris assembly and shader import can be proven.
+
+What was done:
+- Added high-tier-only procedural crystal/strata masking and normal perturbation in `Assets/_Project/Art/Shaders/Hecton_CarveDebrisIndirect.shader`.
+- Updated `Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs` so high tier resolves once, receives shadows, and forces shadow casting on if serialized debris shadows are Off.
+- Verified Unity 6000.4.1f1 exposes `RenderParams.motionVectorMode`, `RenderParams.receiveShadows`, and `RenderParams.shadowCastingMode` in `UnityEngine.CoreModule.xml`.
+- Re-ran validation attempts and updated status/rationale with the current external blockers instead of keeping stale success.
+
+Cinematic Cheats used:
+- Triangle-noise-style crystal/strata bands, hashed shard edge masks, high-tier-only normal perturbation, and shader-side rim crystal response.
+- Low-tier Dear Lie remains unchanged: capped shards, no wake/SDF, no extra shadow cost, and GPU-only indirect rendering.
+
+Exact Microseconds saved:
+- Measured: none. Unity import and player/profiler validation are externally blocked.
+- Static only: high-tier work is intentional extra GPU ALU, not a savings claim. Low-tier avoids the added material/shadow cost.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` passed: 0 warnings, 0 errors, elapsed 00:01:17.83.
+- `Assembly-CSharp.csproj` is blocked by missing external RealtimeCSG source files.
+- Direct Bee debris compilation is blocked by stale/missing generated refs: `Hecton8.Core.ref.dll` and `Hecton8.Audio.Virtualization.ref.dll`.
+- Unity batch import fails externally in Audio/Editor asmdef/reference errors, logged at `Docs/AgentLogs/UnityImport_DEBRIS_PHYSICS_FAKE.log`.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by debris source/static and core C# compile.
+- Task 18 is `[BLOCKED BY DEPENDENCY]` for Unity import/player/shader validation until external Audio/Editor/RealtimeCSG references are repaired.
+
+## 2026-05-16 - Global Wake Param Mirror And Blackbox Wake Evidence
+
+What was wrong:
+- Carve debris compute consumed the global wake array contract but did not explicitly mirror `_GlobalWakeParams` into the compute dispatch.
+- Blackbox flags could report SDF and flow response, but not whether the bounded wake response path was active.
+- The project compile wall moved again outside debris, so prior validation text needed another update.
+
+What was done:
+- Added `GlobalWakeParamsId` and `ResolveGlobalWakeParamsForCompute()` in `CarveDebrisComputeRenderer.cs`.
+- Low tier now forces `_GlobalWakeParams = (0, 1, 0, 0)` for carve debris compute.
+- Middle/high tiers mirror global wake params, clamp slot limit to 16, and record `_lastWakeActive`.
+- Added `WakeActiveFlag` to blackbox telemetry and reset `_blackBoxDumped` when the DataVault-backed ring is cleared.
+
+Cinematic Cheats used:
+- Same bounded wake fake: debris only reacts to the shared 16-slot global wake field off low tier. No private wake simulation and no CPU particle physics.
+
+Exact Microseconds saved:
+- Measured: none.
+- Static: low-tier wake work remains zero; middle/high pay one compute uniform update and the existing bounded wake loop only when global wake data is active.
+
+Verification:
+- Targeted debris forbidden-pattern scan returned no matches for `Instantiate`, `GraphicsBuffer.SetData`, `ComputeBuffer`, `ForceNoMotion`, standard `Update()`, `string.Format`, legacy `EventBus`, managed delegate lanes, private native allocations, or blocking GPU readback patterns.
+- `git diff --check` on debris/shader/log targets returned no whitespace errors; only existing LF-to-CRLF warnings.
+- `Hecton8.Core.csproj` is currently blocked outside debris. First rerun failed in `Core/Contracts/HectonContractValidator.cs` on missing contract symbols. Latest rerun failed in `World/EcosystemDirector.cs` on missing index helper symbols and duplicate contract source warnings.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by debris source/static validation.
+- Final C#/Unity import/player/shader validation remains `[BLOCKED BY DEPENDENCY]` outside DEBRIS/VFX ownership.

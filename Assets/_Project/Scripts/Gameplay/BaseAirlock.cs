@@ -21,6 +21,7 @@
 using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Input;
 using Hecton8.Interaction;
 using Hecton8.Physics;
@@ -58,7 +59,7 @@ namespace Hecton8.Gameplay
         private const float MinimumEnvironmentSnapshotTransitionSeconds = 1.5f;
         private const float DryOceanRoarLowPassHz = 650f;
         private const float WetOceanRoarLowPassHz = 22000f;
-        private const float InteriorPressureKPa = 101.325f;
+        private const float InteriorPressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
         private const float PressureWhistleStartDeltaKPa = 450f;
         private const uint FastSqrtApproximationBias = 0x1FC00000u;
         private const float PressureWhistleFullDeltaKPa = 2200f;

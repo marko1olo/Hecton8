@@ -83,3 +83,42 @@ The 1,000-row values are sample caps, not proof that those threads have exactly 
 `logs_2.sqlite` is useful for operational noise and active-thread evidence. It is not the source of cost truth. Token/cost truth remains the JSONL usage ledger plus SQLite `threads.tokens_used`.
 
 STATUS: AUDIT COMPLETE.
+
+## Continuation Tail - 2026-05-16T15:05+04:00
+
+The first continuation query attempted to use a nonexistent `timestamp` column and failed. Actual schema uses `ts` and `ts_nanos`, with indexes on `ts` and `thread_id`. The corrected sample below uses the indexed `ts DESC, ts_nanos DESC, id DESC` order.
+
+| Metric | Value |
+|---|---:|
+| SQLite file size | 3,608,047,616 bytes |
+| WAL size | 343,084,792 bytes |
+| Latest 5,000-row sample window | 2026-05-16T15:04:11+04:00 to 2026-05-16T15:05:10+04:00 |
+| Latest sample estimated bytes | 25,968,579 |
+| Latest sample ERROR rows | 5 |
+
+### Level Split, Corrected Tail
+
+| Level | Rows | Estimated bytes |
+|---|---:|---:|
+| INFO | 2,086 | 2,691,676 |
+| TRACE | 1,982 | 22,432,998 |
+| WARN | 703 | 478,447 |
+| DEBUG | 224 | 345,795 |
+| ERROR | 5 | 19,663 |
+
+### Top Targets, Corrected Tail
+
+| Target | Rows | Estimated bytes |
+|---|---:|---:|
+| `codex_otel.log_only` | 1,184 | 1,467,683 |
+| `codex_otel.trace_safe` | 764 | 1,013,271 |
+| `codex_api::sse::responses` | 688 | 480,806 |
+| `codex_api::endpoint::responses_websocket` | 673 | 3,443,270 |
+| `codex_core_skills::loader` | 432 | 279,804 |
+| `log` | 341 | 343,204 |
+| `codex_core_plugins::manifest` | 259 | 194,817 |
+| `codex_core::stream_events_utils` | 148 | 252,474 |
+
+The log DB is still operational telemetry, not billing. Its useful signal is that the latest minute is dominated by response streaming and telemetry while token totals continue rising in `state_5.sqlite`.
+
+STATUS: AUDIT COMPLETE.

@@ -234,3 +234,71 @@ Solution: Converted the shim to configure and publish `InputSignal`, `StateCorre
 Rejected Alternatives: Keeping local `NativeQueue` ownership was rejected because it bypasses typed-lane telemetry and central sentinel ownership. Adding managed delegates or a new event bridge was rejected as worse signal fragmentation.
 Scalability potential: Low/Quest gets central lane caps and memory accounting; Middle/High/Ultra keep the same KCC/lockstep API while using the common signal telemetry path.
 Hardware Impact: 0.0 us direct frame gain; practical gain is one fewer private native queue family and unified SignalBus memory sentinel reporting.
+
+### Phase 9: Typed-Lane Event Inquisition
+
+Problem: The physics presentation event bridges still owned private native event queues and relied on local deferred dispatch state outside the central signal telemetry path.
+Solution: Converted `FluidFeedbackEvents`, `PhysicsEventBus`, and deferred submarine impact trauma dispatch to typed `SignalBus<T>` lanes. `SplashEvent`, `PhysicsEventPayload`, and `DeferredSubmarineImpactSignal` are packed unmanaged `ISignal` payloads; consumers drain `ReadOnlySpan<T>` snapshots and requeue unconsumed tails on late-frame budget exhaustion.
+Rejected Alternatives: Renaming/removing `PhysicsEventBus` was rejected because existing listeners and producers depend on the API name. Converting fixed-step `ForcePacket` command queues in the same pass was rejected because they expose a `NativeQueue<ForcePacket>.ParallelWriter` command contract for physics jobs and need a separate vault-backed command-buffer migration.
+Scalability potential: Low/Quest gets central lane caps and no duplicate presentation event queues. Middle/High/Ultra keep the same listener API while SignalBus telemetry can scale event caps by tier.
+Hardware Impact: 0.0 us direct frame gain. Practical gain is lower memory-accounting fragmentation and removal of redundant private native queues; requeue cost only appears on late-frame budget exhaustion.
+
+Problem: `PhysicsApplySystem` still had physics-facing packets without explicit ARM64 pack declarations.
+Solution: Added `Pack = 1` to force packet, pressure, EMP, acoustic ping, acoustic impulse, large acoustic impulse, and deferred submarine impact packets.
+Rejected Alternatives: Reordering or resizing packets was rejected because force application and listener payloads already depend on the field order.
+Scalability potential: All tiers keep identical packet ABI; Quest/Android avoid implicit padding drift.
+Hardware Impact: 0.0 us runtime gain; removes ABI ambiguity on ARM64.
+
+Problem: Final compile status needed to reflect the current workspace, not stale dependency-wall logs.
+Solution: Re-ran the full `Hecton8.Core.csproj` build after the typed-lane conversion and source stabilization.
+Rejected Alternatives: Reporting blocked from older attempt logs was rejected after the latest compile passed.
+Scalability potential: Green compile restores integration confidence for low/high tier paths.
+Hardware Impact: 0.0 us runtime; compile hygiene only.
+
+### Phase 10: Force Command Vault Migration
+
+Problem: `PhysicsApplySystem` still owned fixed-step force command storage as private `NativeQueue<ForcePacket>` front/back queues plus private validation `NativeArray` fields. That violated DataVault sovereignty even after the event lanes were migrated.
+Solution: Audited all force producers and confirmed the `NativeQueue<ForcePacket>.ParallelWriter` accessor had no repo consumers. Removed the dead writer API and moved force command front/back buffers plus validation packet/mask staging into `GlobalDataVault` via `VaultBufferHandle<T>` using `BufferID.PhysicsForceCommandFront`, `PhysicsForceCommandBack`, `PhysicsForceValidationPackets`, and `PhysicsForceValidationMask`.
+Rejected Alternatives: Keeping the private queues was rejected because it preserved duplicate native ownership. Converting `ForcePacket` to a normal `SignalBus<T>` lane was rejected because signal snapshots flush on a different cadence than the fixed-step force front/back swap. A managed `List<ForcePacket>` was rejected because it breaks zero-GC and Burst validation.
+Scalability potential: Low/MX350 keeps the same 64-packet cap and O(1) bounded writes with central memory accounting. Middle/High/Ultra can raise the DataVault buffer length later without changing producers or validation jobs, buying denser impact VFX/acoustic feedback while physics authority remains deterministic.
+Hardware Impact: Estimated 0.0 us direct frame gain. The practical low-end gain is memory-sentinel consolidation and removal of two private persistent NativeQueue allocations; enqueue remains a bounded array write and validation remains capped to 64 packets.
+
+Problem: Post-migration compile attempts surfaced external dependency drift after the AUP/physics force path compiled past its own changes.
+Solution: Restored missing lockstep typed-lane constants and fully qualified the diagnostics `DebugSignal` reference. After those repairs, the remaining attempt 13 errors are `DiegeticGyroCompassRuntime` presentation DTO mismatch and `SystemDispatcher` missing blackbox/raycast-lock members.
+Rejected Alternatives: Editing the UI compass presentation layer from the AUP agent was rejected as cross-domain ownership drift. Reporting green compile was rejected because attempt 13 is not green.
+Scalability potential: No AUP runtime effect; the force buffer migration remains isolated for integration once UI/SystemDispatcher owners restore their contracts.
+Hardware Impact: 0.0 us runtime; compile-wall status only.
+
+### Phase 11: Global Physics Vault Migration
+
+Problem: `GlobalPhysicsStateManager` still held private persistent `NativeArray` lanes and a private `NativeQueue<PhysicsImpactEventData>`, so rigidbody culling, last-valid position recovery, culling telemetry, and impact deferral bypassed full DataVault sovereignty.
+Solution: Replaced those fields with typed `VaultBufferHandle<T>` bindings backed by `GlobalDataVault`. Existing culling jobs still receive contiguous `NativeArray` views resolved at schedule time, while deferred physics impacts now use a vault-backed bounded ring with read/write cursors and the same late-frame flush budget.
+Rejected Alternatives: Keeping the private native containers was rejected because it preserved untracked system-owned memory. Moving collision impacts to `SignalBus<T>` was rejected for this path because SignalBus snapshots flush on pre-simulation cadence, while this collision queue must bridge fixed collision callbacks into late-frame presentation without changing timing. Managed `Queue<T>` was rejected for GC and Burst-adjacent memory accounting.
+Scalability potential: Low/MX350 keeps the same capped culling and impact counts with central sentinel accounting. Middle/High/Ultra can raise DataVault capacities later for denser rigidbody wakeups, richer impact feedback, or more culling telemetry without changing the physics authority path.
+Hardware Impact: Estimated 0.0 us direct frame gain; impact enqueue remains O(1), culling remains contiguous SoA, and the real low-end gain is duplicate persistent allocation removal plus cleaner memory sentinel ownership.
+
+Problem: Global physics packets and scalar math still had ARM64/NaN risk after the force-buffer pass.
+Solution: Added `Pack = 1` to `RigidbodyState`, `PhysicsConnection`, `PhysicsImpactEventData`, and `PhysicsCullingTelemetryEntry`; clamped remaining impact-normal, acoustic-energy, and rigidbody-sleep `rsqrt` paths through `math.max`.
+Rejected Alternatives: Reordering struct fields or changing culling packet semantics was rejected because replay/telemetry readers depend on the current order. Branch-only `distSq > epsilon` guards were rejected because mobile NaN propagation can still poison downstream GPU or signal paths when malformed inputs slip through.
+Scalability potential: Low/Quest gets deterministic packet layout and fault containment; High/Ultra keep the same culling telemetry and can spend saved stability budget on impact VFX overkill without changing authoritative physics.
+Hardware Impact: Pack changes are 0.0 us runtime. Guarded `rsqrt` is neutral-to-tiny cost, estimated below 0.01 us per impacted event path, with the benefit of avoiding NaN recovery and blackbox dump churn.
+
+Problem: Compile validation after the migration cannot be reported green.
+Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` and wrote attempt 14. The build stops on external save/data-baker contract drift: missing `HectonContractVersion`, `CsvReadBufferBytes`, and `SignalBusRegistry`.
+Rejected Alternatives: Editing save system and data-baker ownership from the AUP agent was rejected under the domain boundary and dependency-wall protocol. Claiming AUP compile success from an incomplete build was rejected.
+Scalability potential: No AUP runtime effect; the global physics vault pass remains scan-clean for integrator replay once save/data owners restore their contracts.
+Hardware Impact: 0.0 us runtime; compile-wall status only.
+
+### Phase 12: Player Blackbox Vault Closure
+
+Problem: A broader AUP/player/physics scan still found `HectonPlayerMovement` holding the cinematic focus blackbox as a private `NativeArray<CinematicFocusTelemetryEntry>` field.
+Solution: Replaced the field with `VaultBufferHandle<CinematicFocusTelemetryEntry>` and resolve the DataVault-backed `NativeArray` only inside write/dump methods. The 300-entry ring, binary dump layout, and cooldown behavior remain unchanged.
+Rejected Alternatives: Keeping the cached `NativeArray` view was rejected because the audit target is no private native field ownership. Moving the cinematic focus blackbox to a managed array was rejected because fault telemetry must remain contiguous and zero-GC.
+Scalability potential: Low/MX350 keeps the same 300-entry compact ring. Middle/High/Ultra can raise the DataVault buffer capacity later for richer camera/focus diagnostics without changing player movement authority.
+Hardware Impact: 0.0 us direct frame gain; blackbox writes still hit contiguous DataVault storage and only run while focus telemetry is active.
+
+Problem: Final compile status needed to be updated after the player blackbox migration and external contract drift settled.
+Solution: Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`; attempt 15 passes with 0 warnings and 0 errors.
+Rejected Alternatives: Leaving the status as dependency-blocked was rejected after objective green build evidence.
+Scalability potential: Green compile restores integration confidence for low-tier and high-tier AUP paths.
+Hardware Impact: 0.0 us runtime; compile hygiene only.

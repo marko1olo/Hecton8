@@ -272,12 +272,22 @@ Shader "Hecton8/Flora/ProceduralBio"
                 if (secondaryIndex >= activeCount)
                     secondaryIndex = 0;
                 float4 secondaryState = _GlobalBiolumStates[secondaryIndex];
-                half overPulse = (half)(1.0 - abs(frac(_GlobalBiolumClock.x * 0.07 + selector * 3.0) * 2.0 - 1.0));
-                half overdrive = highTier * overPulse * 0.35h;
+                half overdrive = 0.0h;
+                half godSpark = 0.0h;
+                half godHaze = 0.0h;
+                if (highTier > 0.5h)
+                {
+                    half overPulse = (half)(1.0 - abs(frac(_GlobalBiolumClock.x * 0.07 + selector * 3.0) * 2.0 - 1.0));
+                    half filament = (half)(1.0 - abs(frac(positionWS.x * 0.173 + positionWS.y * 0.097 + positionWS.z * 0.131 + _GlobalBiolumClock.x * 0.23) * 2.0 - 1.0));
+                    godHaze = smoothstep(0.42h, 0.92h, overPulse) * (0.55h + filament * 0.45h);
+                    godSpark = smoothstep(0.82h, 0.98h, filament) * overPulse;
+                    overdrive = saturate(overPulse * 0.35h + godSpark * 0.22h);
+                }
                 half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
                 half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
                 color = lerp(color, (half3)secondaryState.rgb, overdrive);
-                intensity = clamp(intensity + (half)secondaryState.w * overdrive, 0.0h, 10.0h);
+                color = saturate(color + godHaze * half3(0.07h, 0.21h, 0.18h));
+                intensity = clamp(intensity + (half)secondaryState.w * overdrive + godSpark * 0.65h + godHaze * 0.32h, 0.0h, 10.0h);
                 return half4(color, intensity);
             }
 

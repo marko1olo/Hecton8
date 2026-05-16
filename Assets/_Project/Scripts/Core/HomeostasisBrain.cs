@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using AOT;
@@ -107,25 +108,43 @@ namespace Hecton8.Core
         XrRefreshRateShed = 1 << 11
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
     public struct HomeostasisBlackBoxEntry
     {
+        [FieldOffset(0)]
         public uint Frame;
+        [FieldOffset(4)]
         public float SystemHealthIndex01;
+        [FieldOffset(8)]
         public ulong KillSwitchMask;
+        [FieldOffset(16)]
         public float FpsEwma;
+        [FieldOffset(20)]
         public float JitterSigmaMs;
+        [FieldOffset(24)]
         public float CpuTempC;
+        [FieldOffset(28)]
         public float GpuUtil01;
+        [FieldOffset(32)]
         public float BatteryLife01;
+        [FieldOffset(36)]
         public byte PressureLevel;
+        [FieldOffset(37)]
         public byte FoveatedPressureTier;
+        [FieldOffset(38)]
         public ushort Flags;
+        [FieldOffset(40)]
         public float TimeDilationScalar;
+        [FieldOffset(44)]
         public float PeakSystemHealthIndex01;
+        [FieldOffset(48)]
         public uint LastThermalAction;
+        [FieldOffset(52)]
         public uint Reserved0;
+        [FieldOffset(56)]
         public uint Reserved1;
+        [FieldOffset(60)]
+        public uint Reserved2;
     }
 
     /// <summary>
@@ -134,23 +153,23 @@ namespace Hecton8.Core
     /// </summary>
     public static class HomeostasisBrain
     {
-        private const int FrameTimeWindow = 120;
-        private const int BlackBoxCapacity = 300;
-        private const int TelemetryCadenceFrames = 60;
-        private const int RecoveryArmFrames = 3000;
-        private const int RecoveryStepFrames = 60;
-        private const float FrostPollSeconds = 5f;
-        private const float FpsEwmaAlpha = 0.1f;
-        private const float ShiEwmaAlpha = 0.12f;
-        private const float JitterUnstableSigmaMs = 2.0f;
-        private const float Level1ActivateShi = 0.60f;
-        private const float Level1RestoreShi = 0.50f;
-        private const float Level2ActivateShi = 0.80f;
-        private const float Level2RestoreShi = 0.70f;
-        private const float Level3ActivateShi = 0.95f;
-        private const float Level3RestoreShi = 0.90f;
-        private const float SequentialRecoveryShi = 0.30f;
-        private const long PersistentNativeBudgetBytes = 8192L;
+        private const int FrameTimeWindow = ScalabilityContract.HomeostasisFrameTimeWindow;
+        private const int BlackBoxCapacity = ScalabilityContract.HomeostasisBlackBoxCapacity;
+        private const int TelemetryCadenceFrames = ScalabilityContract.HomeostasisTelemetryCadenceFrames;
+        private const int RecoveryArmFrames = ScalabilityContract.HomeostasisRecoveryArmFrames;
+        private const int RecoveryStepFrames = ScalabilityContract.HomeostasisRecoveryStepFrames;
+        private const float FrostPollSeconds = ScalabilityContract.HomeostasisFrostPollSeconds;
+        private const float FpsEwmaAlpha = ScalabilityContract.HomeostasisFpsEwmaAlpha;
+        private const float ShiEwmaAlpha = ScalabilityContract.HomeostasisShiEwmaAlpha;
+        private const float JitterUnstableSigmaMs = ScalabilityContract.HomeostasisJitterUnstableSigmaMs;
+        private const float Level1ActivateShi = ScalabilityContract.HomeostasisLevel1ActivateShi;
+        private const float Level1RestoreShi = ScalabilityContract.HomeostasisLevel1RestoreShi;
+        private const float Level2ActivateShi = ScalabilityContract.HomeostasisLevel2ActivateShi;
+        private const float Level2RestoreShi = ScalabilityContract.HomeostasisLevel2RestoreShi;
+        private const float Level3ActivateShi = ScalabilityContract.HomeostasisLevel3ActivateShi;
+        private const float Level3RestoreShi = ScalabilityContract.HomeostasisLevel3RestoreShi;
+        private const float SequentialRecoveryShi = ScalabilityContract.HomeostasisSequentialRecoveryShi;
+        private const long PersistentNativeBudgetBytes = ScalabilityContract.HomeostasisPersistentNativeBudgetBytes;
         private const string OwnerName = nameof(HomeostasisBrain);
         private const string BlackBoxDumpFileName = "Dump_HARDWARE_THROTTLING_DIRECTOR.bin";
         private const uint ReasonHash = 0x484F4D45u; // HOME
@@ -202,19 +221,6 @@ namespace Hecton8.Core
         private static byte _currentPressureLevel;
         private static uint _lastThermalAction;
         private static uint _frameTimeSignalSequence;
-
-#if UNITY_ANDROID && !UNITY_EDITOR
-        private static AndroidJavaClass _unityPlayerClass;
-        private static AndroidJavaClass _androidVersionClass;
-        private static AndroidJavaObject _unityActivity;
-        private static AndroidJavaObject _powerManager;
-        private static int _androidSdkInt;
-        private static int _androidThermalFeatureFlags;
-        private static int _androidThermalPollCountdown;
-        private static bool _androidBridgeReady;
-        private static bool _androidBridgeFaulted;
-        private static float _androidCpuTempC = 45f;
-#endif
 
 #if UNITY_OSX && !UNITY_EDITOR
         private static IntPtr _macProcessInfoClass;
@@ -299,9 +305,7 @@ namespace Hecton8.Core
             _shiEwmaSeeded = false;
             _peakSystemHealthIndex01 = 0f;
 
-#if UNITY_ANDROID && !UNITY_EDITOR
-            EnsureAndroidThermalBridge();
-#elif UNITY_OSX && !UNITY_EDITOR
+#if UNITY_OSX && !UNITY_EDITOR
             EnsureMacThermalBridge();
 #endif
 
@@ -310,9 +314,7 @@ namespace Hecton8.Core
 
         public static void ShutdownRuntime()
         {
-#if UNITY_ANDROID && !UNITY_EDITOR
-            DisposeAndroidThermalBridge();
-#elif UNITY_OSX && !UNITY_EDITOR
+#if UNITY_OSX && !UNITY_EDITOR
             DisposeMacThermalBridge();
 #endif
             MemoryBudgetTracker.Unregister(OwnerName);
@@ -448,10 +450,7 @@ namespace Hecton8.Core
             if (TrySampleHardwareThermalSnapshot(targetFps, hardwareMetrics))
                 return;
 
-#if UNITY_ANDROID && !UNITY_EDITOR
-            if (!TrySampleAndroidThermals(targetFps, hardwareMetrics))
-                SampleFallbackHardwareMetrics(targetFps, hardwareMetrics);
-#elif UNITY_OSX && !UNITY_EDITOR
+#if UNITY_OSX && !UNITY_EDITOR
             if (!TrySampleMacThermals(targetFps, hardwareMetrics))
                 SampleFallbackHardwareMetrics(targetFps, hardwareMetrics);
 #else
@@ -470,9 +469,11 @@ namespace Hecton8.Core
             float framePressure01 = ResolveFramePressure01(targetFps);
             float pressure01 = math.saturate(math.max(framePressure01 + _fallbackHardwareBias, severity01));
             short rawTemperature = snapshot.TemperatureTenthsCelsius;
+            float syntheticTemperatureC = 48f + pressure01 * 34f;
             float temperatureC = rawTemperature != short.MinValue
                 ? rawTemperature * 0.1f
-                : 48f + pressure01 * 34f;
+                : syntheticTemperatureC;
+            temperatureC = math.max(temperatureC, syntheticTemperatureC);
             hardwareMetrics[(int)HardwareMetricSlot.CpuTempC] = math.isfinite(temperatureC) ? temperatureC : 82f;
             hardwareMetrics[(int)HardwareMetricSlot.GpuUtil01] = math.isfinite(pressure01) ? pressure01 : 1f;
 
@@ -505,102 +506,6 @@ namespace Hecton8.Core
             bias += graphicsMemoryMb > 0 && graphicsMemoryMb <= 2048 ? 0.08f : 0f;
             return math.saturate(bias);
         }
-
-#if UNITY_ANDROID && !UNITY_EDITOR
-        private static bool TrySampleAndroidThermals(float targetFps, NativeArray<float> hardwareMetrics)
-        {
-            EnsureAndroidThermalBridge();
-            if (!_androidBridgeReady || _androidBridgeFaulted || _powerManager == null)
-                return false;
-
-            if (_androidThermalPollCountdown > 0)
-            {
-                _androidThermalPollCountdown--;
-                hardwareMetrics[(int)HardwareMetricSlot.CpuTempC] = _androidCpuTempC;
-                return true;
-            }
-
-            _androidThermalPollCountdown = ResolveFrostPollFrames(targetFps);
-            try
-            {
-                if ((_androidThermalFeatureFlags & 1) != 0)
-                {
-                    float headroom = _powerManager.Call<float>("getThermalHeadroom", 30);
-                    if (math.isfinite(headroom))
-                    {
-                        float clamped = math.saturate(headroom);
-                        _androidCpuTempC = 45f + (1f - clamped) * 45f;
-                        hardwareMetrics[(int)HardwareMetricSlot.CpuTempC] = _androidCpuTempC;
-                        hardwareMetrics[(int)HardwareMetricSlot.GpuUtil01] = math.saturate(1f - clamped);
-                        return true;
-                    }
-                }
-
-                if ((_androidThermalFeatureFlags & 2) != 0)
-                {
-                    int status = _powerManager.Call<int>("getCurrentThermalStatus");
-                    float status01 = math.saturate(status / 6f);
-                    _androidCpuTempC = 45f + status01 * 45f;
-                    hardwareMetrics[(int)HardwareMetricSlot.CpuTempC] = _androidCpuTempC;
-                    hardwareMetrics[(int)HardwareMetricSlot.GpuUtil01] = status01;
-                    return true;
-                }
-            }
-            catch (Exception)
-            {
-                _androidBridgeFaulted = true;
-            }
-
-            return false;
-        }
-
-        private static void EnsureAndroidThermalBridge()
-        {
-            if (_androidBridgeReady || _androidBridgeFaulted)
-                return;
-
-            try
-            {
-                _unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-                _androidVersionClass = new AndroidJavaClass("android.os.Build$VERSION");
-                _androidSdkInt = _androidVersionClass.GetStatic<int>("SDK_INT");
-                _unityActivity = _unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
-                _powerManager = _unityActivity != null
-                    ? _unityActivity.Call<AndroidJavaObject>("getSystemService", "power")
-                    : null;
-                _androidThermalFeatureFlags = 0;
-                if (_androidSdkInt >= 30)
-                    _androidThermalFeatureFlags |= 1;
-                if (_androidSdkInt >= 29)
-                    _androidThermalFeatureFlags |= 2;
-
-                _androidBridgeReady = _powerManager != null && _androidThermalFeatureFlags != 0;
-            }
-            catch (Exception)
-            {
-                DisposeAndroidThermalBridge();
-                _androidBridgeFaulted = true;
-            }
-        }
-
-        private static void DisposeAndroidThermalBridge()
-        {
-            _powerManager?.Dispose();
-            _unityActivity?.Dispose();
-            _androidVersionClass?.Dispose();
-            _unityPlayerClass?.Dispose();
-            _powerManager = null;
-            _unityActivity = null;
-            _androidVersionClass = null;
-            _unityPlayerClass = null;
-            _androidSdkInt = 0;
-            _androidThermalFeatureFlags = 0;
-            _androidThermalPollCountdown = 0;
-            _androidBridgeReady = false;
-            _androidBridgeFaulted = false;
-            _androidCpuTempC = 45f;
-        }
-#endif
 
 #if UNITY_OSX && !UNITY_EDITOR
         private static bool TrySampleMacThermals(float targetFps, NativeArray<float> hardwareMetrics)
@@ -730,11 +635,13 @@ namespace Hecton8.Core
             if (_usingHardwareSnapshot)
             {
                 flags |= (ushort)HomeostasisSignalFlags.HardwareThermalSnapshot;
+#if UNITY_ANDROID && !UNITY_EDITOR
+                flags |= (ushort)HomeostasisSignalFlags.AndroidThermalBridge;
+#endif
                 return flags;
             }
 #if UNITY_ANDROID && !UNITY_EDITOR
-            if (_androidBridgeReady && !_androidBridgeFaulted)
-                flags |= (ushort)HomeostasisSignalFlags.AndroidThermalBridge;
+            flags |= (ushort)HomeostasisSignalFlags.PlatformFallback;
 #elif UNITY_OSX && !UNITY_EDITOR
             if (_macBridgeReady && !_macBridgeFaulted)
                 flags |= (ushort)HomeostasisSignalFlags.MacThermalBridge;
@@ -1030,31 +937,42 @@ namespace Hecton8.Core
                 Directory.CreateDirectory(directory);
                 string path = Path.Combine(directory, BlackBoxDumpFileName);
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(0x484F4D42u);
-                    writer.Write(1);
-                    writer.Write(BlackBoxCapacity);
-                    writer.Write(_blackBoxCursor);
+                    Span<byte> header = stackalloc byte[20];
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), 0x484F4D42u);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), 1);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), BlackBoxCapacity);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(12, 4), _blackBoxCursor);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), 64);
+                    stream.Write(header);
+
+                    Span<byte> entryBytes = stackalloc byte[64];
                     for (int i = 0; i < BlackBoxCapacity; i++)
                     {
-                        HomeostasisBlackBoxEntry entry = blackBox[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.SystemHealthIndex01);
-                        writer.Write(entry.KillSwitchMask);
-                        writer.Write(entry.FpsEwma);
-                        writer.Write(entry.JitterSigmaMs);
-                        writer.Write(entry.CpuTempC);
-                        writer.Write(entry.GpuUtil01);
-                        writer.Write(entry.BatteryLife01);
-                        writer.Write(entry.PressureLevel);
-                        writer.Write(entry.FoveatedPressureTier);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.TimeDilationScalar);
-                        writer.Write(entry.PeakSystemHealthIndex01);
-                        writer.Write(entry.LastThermalAction);
-                        writer.Write(entry.Reserved0);
-                        writer.Write(entry.Reserved1);
+                        int index = _blackBoxCursor + i;
+                        if (index >= BlackBoxCapacity)
+                            index -= BlackBoxCapacity;
+
+                        HomeostasisBlackBoxEntry entry = blackBox[index];
+                        entryBytes.Clear();
+                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(0, 4), entry.Frame);
+                        WriteFloatLittleEndian(entryBytes.Slice(4, 4), entry.SystemHealthIndex01);
+                        BinaryPrimitives.WriteUInt64LittleEndian(entryBytes.Slice(8, 8), entry.KillSwitchMask);
+                        WriteFloatLittleEndian(entryBytes.Slice(16, 4), entry.FpsEwma);
+                        WriteFloatLittleEndian(entryBytes.Slice(20, 4), entry.JitterSigmaMs);
+                        WriteFloatLittleEndian(entryBytes.Slice(24, 4), entry.CpuTempC);
+                        WriteFloatLittleEndian(entryBytes.Slice(28, 4), entry.GpuUtil01);
+                        WriteFloatLittleEndian(entryBytes.Slice(32, 4), entry.BatteryLife01);
+                        entryBytes[36] = entry.PressureLevel;
+                        entryBytes[37] = entry.FoveatedPressureTier;
+                        BinaryPrimitives.WriteUInt16LittleEndian(entryBytes.Slice(38, 2), entry.Flags);
+                        WriteFloatLittleEndian(entryBytes.Slice(40, 4), entry.TimeDilationScalar);
+                        WriteFloatLittleEndian(entryBytes.Slice(44, 4), entry.PeakSystemHealthIndex01);
+                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(48, 4), entry.LastThermalAction);
+                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(52, 4), entry.Reserved0);
+                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(56, 4), entry.Reserved1);
+                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(60, 4), entry.Reserved2);
+                        stream.Write(entryBytes);
                     }
                 }
             }
@@ -1062,6 +980,11 @@ namespace Hecton8.Core
             {
                 // Fault-path only: black-box dumping must never crash the runtime while already degraded.
             }
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination, math.asuint(value));
         }
 
         private static long ResolveRequestedVaultBytes()

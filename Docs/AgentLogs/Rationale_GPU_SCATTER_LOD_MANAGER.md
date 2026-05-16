@@ -377,3 +377,167 @@ Rejected Alternatives: Leaving audit divergence was rejected because diagnostic 
 Scalability potential: Low devices keep the audit disabled by default and pay no runtime cost. High/Ultra validation captures can enable audit without getting false positives from a weaker CPU path.
 
 Hardware Impact: Normal shipping frame cost remains 0us because the Burst audit is opt-in. Compute constant upload now receives sanitized bounds with no extra allocation; exact microseconds remain PENDING PROFILER.
+
+## 2026-05-16 Loop 13: DataVault Visual Payload
+
+Problem: The high-tier scatter path had broad material-level SSS/caustic/bloom controls, but no DataVault-owned per-instance visual payload. Using only shared material scalars makes 100k flora visually uniform on High/Ultra and pushes agents toward private renderer arrays or unmanaged shader side channels.
+
+Solution: Added additive `BufferID.FloraScatterVisualPayload = 382`, a `VaultBufferHandle<Vector4>`, a matching `GraphicsBuffer`, generation-aware uploads, safe teardown, and deterministic cold defaults only when the Vault lane is absent or undersized. The indirect vegetation shader now reads `_HectonFloraScatterVisualPayload` only in `_QUALITY_HIGH` and uses the payload to modulate existing edge mask, curvature/SSS mask, flow caustic strength, and biolum intensity without adding a new interpolator.
+
+Rejected Alternatives: A private renderer `NativeArray<Vector4>` was rejected by DataVault sovereignty. Adding new TEXCOORD varyings was rejected because the shader is already mobile-interpolator heavy. Per-frame material randomization was rejected because it would be uniform, stateful, and not source-index stable. Shifting existing `BufferID` values was rejected because other agents already claimed 376-381.
+
+Scalability potential: Low/MX350 binds the buffer but disables consumption through `_HectonFloraScatterVisualPayloadEnabled = 0`, so the shader returns zero payload and keeps the cheaper visual path. Middle can keep the lane dormant. High/Ultra uses the same 500m residency to buy per-instance translucent rim, organic SSS, caustic shimmer, and biolum variation without C# simulation.
+
+Hardware Impact: Extra memory is 16 bytes per active flora instance, about 1.6MB at 100k before allocator overhead. Default initialization is cold only. Normal-frame upload follows existing Vault generation/dirty rules and is skipped when generations do not change. No measured microseconds are claimed; exact cost remains PENDING PROFILER.
+
+Problem: The validation wall changed after the visual payload pass.
+
+Solution: Re-ran static debt scans, `git diff --check`, `Hecton8.Core.csproj --no-restore -m:1`, and `Assembly-CSharp.csproj --no-dependencies -m:1`. Static scans stayed clean. `git diff --check` only reported LF-to-CRLF normalization warnings. `Hecton8.Core` now fails outside scatter in `ArchitectEyeVisualizer` duplicate `ValidatePackedStructSizes` and ambiguous `LaserCutterEventPayload` references in audio/world systems. `Assembly-CSharp` restores, then fails before scatter on missing `Assembly-CSharp-firstpass.dll` and `RealtimeCSG.dll`.
+
+Rejected Alternatives: Editing ArchitectEye, audio, or world systems from a rendering scatter prompt was rejected as outside the domain boundary. Inventing Unity-generated metadata DLLs was rejected as false validation. Claiming measured savings was rejected because no Unity player/profile capture exists.
+
+Scalability potential: Not runtime-relevant. The implementation remains tier-gated, but final player validation requires the external compile wall to be repaired.
+
+Hardware Impact: 0us runtime for the validation blocker. Integration remains dependency-blocked.
+
+## 2026-05-16 Loop 14: Shared-Material Mutation Purge
+
+Problem: The render path still mutated `floraMaterial.enableInstancing` and toggled `HECTON_GPU_INDIRECT`, `_QUALITY_MX350`, and `_QUALITY_HIGH` keywords on the shared material during draw submission. That is render-state contamination and violates the no shared-material mutation rule for SRP/instanced geometry.
+
+Solution: Added optional pre-authored low/high material variant references and tier-based material selection. Removed runtime material keyword toggles and `enableInstancing` mutation from `Render`. Runtime tier scalar values remain draw-local through the existing `MaterialPropertyBlock`, while keyword-bearing shader variants must be authored on the material assets.
+
+Rejected Alternatives: Runtime material clones were rejected because they leak/state-split assets and violate third-party/material integrity rules. Continuing to mutate shared material keywords was rejected because it contaminates other renderers. Converting shader feature keywords into dynamic branches was rejected because it would increase shader cost on low/MX350 and touches a broad shader contract beyond this scatter manager pass.
+
+Scalability potential: Low uses a pre-authored `_QUALITY_MX350` material variant. High/Ultra use a pre-authored `_QUALITY_HIGH` material variant and can consume the visual-payload lane. If variants are not assigned, the fallback `floraMaterial` is used without runtime mutation, so authoring remains explicit and deterministic.
+
+Hardware Impact: Removes per-frame shared material keyword churn and instancing flag writes; exact microseconds are PENDING PROFILER. The main benefit is deterministic render-state isolation, not a measured timing claim.
+
+Problem: The validation wall changed again after the shared-material purge.
+
+Solution: Re-ran the stricter scatter-domain static scan including `EnableKeyword`, `DisableKeyword`, `enableInstancing`, `renderer.material`, shared `material.Set*`, Unity `Update` methods, scene search, legacy EventBus, local private `NativeArray`, `Allocator.Persistent`, direct `H8Memory.Allocate/Release`, `Debug.Log`, and `string.Format`. It returned no matches. `git diff --check` only reported LF-to-CRLF normalization warnings. Latest `Hecton8.Core` fails outside scatter in `HectonMarineSnowRenderer` missing `CeilDivide`. `Assembly-CSharp` restores project references, then fails before scatter on 63 missing `Temp/bin/Debug` metadata DLLs.
+
+Rejected Alternatives: Editing VFX marine snow, package metadata, or generated plugin DLLs was rejected as outside the RENDERING/BRG scatter domain. Claiming final validation was rejected because compile is still externally blocked.
+
+Scalability potential: Not runtime-relevant. Material-variant selection supports Low/Middle/High/Ultra, but final player validation still requires external compile repair.
+
+Hardware Impact: 0us runtime for the validation blocker.
+
+## 2026-05-16 Loop 19: Companion Pass NaN Vaccination
+
+Problem: The main scatter compute path and lit payload path were guarded, but the vegetation depth, shadow, and motion-vector passes still used raw player/interaction radius and speed lanes. A NaN radius or enable flag can bypass `<=` comparisons and then poison division or `smoothstep` threshold math.
+
+Solution: Added finite non-negative/positive sanitizers to the lit, motion-vector, depth-only, and shadow vegetation shaders. The passes now sanitize player interaction enable/radius/speed/push, interaction point speed/radius, impact radius, submarine wash radius/speed, predator dim radius, and flash radius before divisions or radius-squared thresholds.
+
+Rejected Alternatives: Guarding only the main lit pass was rejected because depth/shadow/motion can still poison the frame on mobile. Trusting producer-side values was rejected because optional VFX buffers can be stale or externally authored. Removing interaction deformation from low tier was rejected because the cheap deformation fake is part of the visual language; the correct fix is finite gates.
+
+Scalability potential: Low/MX350 keeps the cheap triangle/current deformation but fails closed when optional lanes are poisoned. High/Ultra keep submarine wash, predator dimming, flash boosts, and interaction deformation without allowing one malformed event to corrupt motion vectors or shadow depth.
+
+Hardware Impact: Adds small scalar finite checks around optional VFX lanes. Exact GPU cost is PENDING PROFILER; the checks are only on paths that already execute interaction/wash logic.
+
+Problem: Validation after companion-pass shader hardening.
+
+Solution: Re-ran shader scans for raw player enable comparisons, raw radius max patterns, groupshared/group-memory/wave constructs, forbidden scatter-domain C# patterns, and `git diff --check`. The remaining radius scan hit only the already-sanitized predator dim line. No groupshared, wave, group-memory, forbidden C# scatter patterns, or whitespace errors were found beyond LF-to-CRLF warnings.
+
+Rejected Alternatives: Running a Unity shader import was not possible through the available tool surface. `dotnet build` does not compile HLSL, so shader validation remains static until Unity import/player build.
+
+Scalability potential: Not runtime-relevant.
+
+Hardware Impact: 0us runtime for validation itself.
+
+## 2026-05-16 Loop 17: Compute Constant NaN Vaccination
+
+Problem: The compute shader rejected poisoned matrices, bounds, center positions, and distance values, but packed frame constants still used direct `max` before uint casts and threshold math. A malformed constant lane should fail closed the same way malformed per-instance data does.
+
+Solution: Added `SanitizeNonNegative`, `ResolveMaxDistanceSq`, `ResolveMotionStrength`, and `ResolveCrossfadeEnabled` to `GpuScatterLodCull.compute`. Instance count, frame index, max distance squared, motion strength, and crossfade scalar are now checked with `isfinite` before the shader casts, applies thresholds, or scales motion.
+
+Rejected Alternatives: Trusting C# constant upload was rejected because GPU-side fault containment must survive stale buffers and backend-specific NaN behavior. Adding a broader dynamic validation buffer was rejected because the constants already fit in the packed 176B lane and do not need another resource.
+
+Scalability potential: Low/Quest fails closed if a constant is poisoned instead of dispatching garbage instance counts or motion vectors. High/Ultra keep the same 64-thread Metal-safe kernel and spend cycles on visual payloads, not exception recovery.
+
+Hardware Impact: Adds a few scalar finite checks in the compute kernel. Exact GPU cost is PENDING PROFILER; the branch count is tiny relative to 100k matrix/frustum work and prevents a poisoned constant from corrupting the whole append stream.
+
+Problem: Validation after the compute-constant pass.
+
+Solution: Re-ran symbol scans for `SanitizeNonNegative`, max-distance/motion-strength/crossfade resolver usage, thread-group declaration, and forbidden compute constructs. No groupshared barriers, wave intrinsics, or group-memory barriers were found. The forbidden scatter-domain scan remained clean. `git diff --check` reported only LF-to-CRLF warnings.
+
+Rejected Alternatives: Skipping validation was rejected because this shader path is backend-sensitive on Metal/Mobile.
+
+Scalability potential: Not runtime-relevant.
+
+Hardware Impact: 0us runtime for validation itself.
+
+## 2026-05-16 Loop 18: Shared-Material Revalidation
+
+Problem: The material variant validator cached the last material instance/tier result and returned it without re-reading keywords. That is vulnerable if another renderer mutates a shared material keyword after this scatter manager has cached a valid result.
+
+Solution: Removed the early-return cache path. `IsRenderMaterialVariantValid` now re-reads `HECTON_GPU_INDIRECT`, `_QUALITY_HIGH`, and `_QUALITY_MX350` on every validation pass before cull dispatch. The existing cache fields are retained only as last-observed blackbox telemetry.
+
+Rejected Alternatives: Trusting the cache was rejected because this project is running many agents and shared material mutation has already been found as debt. Reintroducing runtime keyword repair was rejected because that would contaminate shared material state. Runtime material cloning was rejected because it creates allocation/state-split risk.
+
+Scalability potential: Low/MX350 and High/Ultra both fail closed if material state is externally changed between frames. High/Ultra no longer risk spending 500m residency on a stale cached variant verdict.
+
+Hardware Impact: Adds three material keyword checks per validation pass. Exact cost is PENDING PROFILER; correctness is prioritized because an invalid indirect keyword can break the shader indexing path.
+
+Problem: Compile evidence after revalidation.
+
+Solution: Re-ran forbidden scatter-domain scan, `git diff --check`, `dotnet build Hecton8.Core.csproj --no-restore -m:1`, and `dotnet build Assembly-CSharp.csproj --no-dependencies -m:1`. The forbidden scan returned no matches. `git diff --check` reported only LF-to-CRLF warnings. `Hecton8.Core` fails outside scatter with 41 errors in `DiegeticGyroCompassRuntime`/`CompassStateDTO`, `ArchitectEyeVisualizer`, and `SystemDispatcher`. `Assembly-CSharp` fails before scatter on missing `Assembly-CSharp-firstpass.dll` and `RealtimeCSG.dll`.
+
+Rejected Alternatives: Editing UI/core contracts or generated/plugin metadata from this rendering scatter task was rejected as outside the domain boundary. Claiming final validation was rejected because compile remains externally blocked.
+
+Scalability potential: Not runtime-relevant.
+
+Hardware Impact: 0us runtime for the validation blocker.
+
+## 2026-05-16 Loop 16: Material Variant Fail-Closed
+
+Problem: Runtime material keyword mutation was removed, but the renderer still trusted the authored material variant. A high-tier draw using a material without `HECTON_GPU_INDIRECT` or `_QUALITY_HIGH` would either index the wrong shader path or render mobile-grade flora on High/Ultra.
+
+Solution: Added cached material-variant validation in `GpuScatterLodManager`. The check requires `HECTON_GPU_INDIRECT` for all draw materials, requires `_QUALITY_HIGH` on High/Ultra, and accepts low-tier variants that are `_QUALITY_MX350` or at least not `_QUALITY_HIGH`. Invalid variants clear indirect args before cull dispatch, skip `Graphics.RenderMeshIndirect`, and write `BlackBoxFlagInvalidMaterialVariant` into the 300-frame blackbox.
+
+Rejected Alternatives: Re-enabling runtime `EnableKeyword`/`DisableKeyword` was rejected because it mutates shared material assets and contaminates other renderers. Runtime material cloning was rejected because it creates state split and leak risk. Drawing anyway was rejected because it can produce incorrect source-index reads or hidden high-tier visual downgrade.
+
+Scalability potential: Low/MX350 still has a cheap authored path and fails closed if a high material is accidentally assigned. High/Ultra now prove the authored high shader variant before spending the 500m residency and visual-payload path.
+
+Hardware Impact: Normal-frame work is a cached material instance/tier check plus one cache read after the first validation. Exact microseconds are PENDING PROFILER. Fault path clears indirect args before GPU cull dispatch and avoids an invalid draw.
+
+Problem: Compile evidence changed after the material-variant pass.
+
+Solution: Re-ran the forbidden scatter-domain scan, `git diff --check`, `dotnet build Hecton8.Core.csproj --no-restore -m:1`, and `dotnet build Assembly-CSharp.csproj --no-dependencies -m:1`. The forbidden scan returned no matches. `git diff --check` reported only LF-to-CRLF warnings. Compile evidence is externally unstable: one `Hecton8.Core` probe succeeded with four unrelated `ArchitectEyeVisualizer` CS0649 warnings, then later probes failed outside scatter in tether/physics contracts and finally `SargassumMicroFaunaBoids` missing `SaturateFinite01` at 9 callsites. The latest `Assembly-CSharp` probe restores, then fails before scatter on 3 missing generated/plugin metadata DLLs in `Temp/bin/Debug`.
+
+Rejected Alternatives: Editing generated/plugin metadata or third-party assemblies from this rendering scatter task was rejected as outside the domain boundary. Claiming final validation was rejected because `Assembly-CSharp` still cannot compile without those metadata DLLs.
+
+Scalability potential: Not runtime-relevant.
+
+Hardware Impact: 0us runtime for the validation blocker.
+
+## 2026-05-16 Loop 15: Blackbox Visual Payload Telemetry
+
+Problem: The visual-payload DataVault lane was generation-tracked for uploads, but the 300-frame scatter blackbox still only wrote matrix, metadata, age, and phase seed generations. A high-tier payload fault would be visible in rendering but opaque in the crash dump.
+
+Solution: Bumped scatter `BlackBoxVersion` to 2 and preserved the fixed 64-byte `ScatterBlackBoxEntry` size by replacing separate age/phase generation fields with `AuxiliaryGenerationHash = hash(age, phase)` plus explicit `VisualPayloadGeneration`. Dump order was updated to write the new fields chronologically.
+
+Rejected Alternatives: Expanding `ScatterBlackBoxEntry` was rejected because the blackbox contract is fixed-size and platform layout-guarded. Dropping auxiliary lane evidence entirely was rejected because age/phase lanes are still shader inputs. Adding managed diagnostic strings was rejected because blackbox dumps are binary and zero-GC in the hot path.
+
+Scalability potential: Low/MX350 still records payload generation even when high-tier consumption is disabled, proving the lane state. High/Ultra now have crash telemetry for the per-instance visual-overkill payload.
+
+Hardware Impact: No measured microseconds. Entry size remains 64 bytes and write cadence is unchanged; only two uint field meanings changed under version 2.
+
+Problem: The high-tier shader payload read returned `saturate(payload)` directly. If a producer wrote NaN/Inf into the payload, saturate was not a sufficient cross-backend NaN vaccine.
+
+Solution: `ResolveScatterVisualPayload` now checks `all(isfinite(payload))` and returns a zero payload on poison before payload values reach edge, curvature/SSS, flow, or biolum output channels.
+
+Rejected Alternatives: Trusting DataVault producers was rejected because mobile GPU fault containment must survive malformed data. Clamping in C# only was rejected because stale GPU buffers and producer-side writes can still race validation. Expanding varyings to carry diagnostic flags was rejected because the shader is already interpolator-heavy for Quest.
+
+Scalability potential: Low path remains disabled and cheap. High/Ultra keep per-instance visual payloads but fail closed to baseline flora variation when the payload is poisoned.
+
+Hardware Impact: Adds one finite check on the high-tier vertex path only. Exact GPU cost is PENDING PROFILER; the value is NaN containment.
+
+Problem: The validation wall moved again after the blackbox/payload NaN pass.
+
+Solution: Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:1` and `dotnet build Assembly-CSharp.csproj --no-dependencies -m:1`. `Hecton8.Core` fails outside scatter in `PlayerCriticalProceduralAudioRenderer` missing `ClearVaultBackedAudioBufferAliases` and `TetherManager` missing `_fixedStepClockSeconds`/`TetherFixedClockWrapSeconds`. `Assembly-CSharp` restores, then fails before scatter on 55 missing `Temp/bin/Debug` metadata DLLs.
+
+Rejected Alternatives: Editing audio/tether systems or generated plugin metadata was rejected as outside the RENDERING/BRG scatter domain. Claiming final validation was rejected because compile remains externally blocked.
+
+Scalability potential: Not runtime-relevant.
+
+Hardware Impact: 0us runtime for the validation blocker.

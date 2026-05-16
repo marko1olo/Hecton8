@@ -122,7 +122,7 @@ namespace Hecton8.AI.Cognition
             float3 outputDirection = math.select(float3.zero, desiredDirection, eligibleToAct);
 
             byte flags = 0;
-            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.LowTierRadialFallback, lowTier);
+            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.LowTierRadialFallback, lowTier & eligibleToAct);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.SdfDiveRequested, highTierSdf);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.PlayerGazeBreak, playerGazeBreak);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.AcousticLure, eligibleToAct & sonarActive);
@@ -156,6 +156,7 @@ namespace Hecton8.AI.Cognition
                 AlphaLeviathanStalkConstants.HighTierCadenceSeconds,
                 AlphaLeviathanStalkConstants.LowTierCadenceSeconds,
                 lowTier);
+            recommendedCadence = math.select(0f, recommendedCadence, eligibleToAct);
             float charge01 = math.select(0f, 1f, phase == AlphaLeviathanStalkPhase.Charge);
             float saltGrowth = math.select(0f, math.select(0.03f, math.saturate(0.25f + aggression * 0.55f + sdfWeight * 0.2f), highTierSdf), eligibleToAct);
             float dentImpulse = math.saturate(charge01 * (aggression * 0.75f + math.abs(radialCorrection) * 0.25f));
@@ -202,7 +203,7 @@ namespace Hecton8.AI.Cognition
                 DesiredDirection = outputDirection,
                 StateHash = stateHash,
                 LeviathanAgressivity01 = reportedAggression,
-                Reserved1 = 0u
+                Reserved1 = stimulus.ObservedShiftFrameId
             };
         }
 

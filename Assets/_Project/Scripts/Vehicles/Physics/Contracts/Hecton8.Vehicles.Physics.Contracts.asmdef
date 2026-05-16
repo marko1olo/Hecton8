@@ -2,7 +2,8 @@
     "name": "Hecton8.Vehicles.Physics.Contracts",
     "rootNamespace": "Hecton8.Vehicles.Physics.Contracts",
     "references": [
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "Hecton8.Core.Contracts"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

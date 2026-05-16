@@ -16,6 +16,19 @@ namespace Hecton8.Audio.Editor
     /// </summary>
     internal sealed class AudioImportDictator : AssetPostprocessor
     {
+        internal struct AudioImportPolicy
+        {
+            public AudioResidencyDomain Domain;
+            public bool Dialogue;
+            public bool Spatial3D;
+            public AudioClipLoadType LoadType;
+            public AudioCompressionFormat CompressionFormat;
+            public int SampleRate;
+            public float Quality;
+            public bool Preload;
+            public bool BackgroundLoad;
+        }
+
         internal const string ProjectAudioRoot = "Assets/_Project/Audio";
         internal const long PreloadRamBudgetBytes = 50L * 1024L * 1024L;
 
@@ -78,46 +91,37 @@ namespace Hecton8.Audio.Editor
             if (importer == null || !IsProjectAudioAsset(assetPath))
                 return false;
 
-            string normalizedPath = NormalizePath(assetPath);
-            AudioResidencyDomain domain = ResolveDomain(normalizedPath);
-            bool dialogue = IsDialoguePath(normalizedPath);
-            bool spatial3D = IsSpatialized3DPath(normalizedPath, domain, dialogue);
-            AudioClipLoadType loadType = ResolveLoadType(domain, clipLengthSeconds);
-            AudioCompressionFormat compressionFormat = ResolveCompressionFormat(domain, dialogue, clipLengthSeconds, loadType);
-            int sampleRate = ResolveSampleRate(domain, dialogue);
-            float quality = ResolveVorbisQuality(domain, dialogue);
-            bool preload = ShouldPreloadAudio(domain, loadType);
-            bool backgroundLoad = loadType != AudioClipLoadType.DecompressOnLoad;
+            AudioImportPolicy policy = ResolvePolicy(assetPath, clipLengthSeconds);
 
             bool changed = false;
-            if (importer.forceToMono != spatial3D)
+            if (importer.forceToMono != policy.Spatial3D)
             {
-                importer.forceToMono = spatial3D;
+                importer.forceToMono = policy.Spatial3D;
                 changed = true;
             }
 
-            if (importer.preloadAudioData != preload)
+            if (importer.preloadAudioData != policy.Preload)
             {
-                importer.preloadAudioData = preload;
+                importer.preloadAudioData = policy.Preload;
                 changed = true;
             }
 
-            if (importer.loadInBackground != backgroundLoad)
+            if (importer.loadInBackground != policy.BackgroundLoad)
             {
-                importer.loadInBackground = backgroundLoad;
+                importer.loadInBackground = policy.BackgroundLoad;
                 changed = true;
             }
 
             AudioImporterSampleSettings settings = importer.defaultSampleSettings;
-            if (settings.loadType != loadType)
+            if (settings.loadType != policy.LoadType)
             {
-                settings.loadType = loadType;
+                settings.loadType = policy.LoadType;
                 changed = true;
             }
 
-            if (settings.compressionFormat != compressionFormat)
+            if (settings.compressionFormat != policy.CompressionFormat)
             {
-                settings.compressionFormat = compressionFormat;
+                settings.compressionFormat = policy.CompressionFormat;
                 changed = true;
             }
 
@@ -127,16 +131,16 @@ namespace Hecton8.Audio.Editor
                 changed = true;
             }
 
-            if (settings.sampleRateOverride != sampleRate)
+            if (settings.sampleRateOverride != policy.SampleRate)
             {
-                settings.sampleRateOverride = sampleRate;
+                settings.sampleRateOverride = policy.SampleRate;
                 changed = true;
             }
 
-            if (compressionFormat == AudioCompressionFormat.Vorbis &&
-                Math.Abs(settings.quality - quality) > 0.001f)
+            if (policy.CompressionFormat == AudioCompressionFormat.Vorbis &&
+                Math.Abs(settings.quality - policy.Quality) > 0.001f)
             {
-                settings.quality = quality;
+                settings.quality = policy.Quality;
                 changed = true;
             }
 
@@ -144,6 +148,136 @@ namespace Hecton8.Audio.Editor
                 importer.defaultSampleSettings = settings;
 
             return changed;
+        }
+
+        internal static AudioImportPolicy ResolvePolicy(string assetPath, float clipLengthSeconds)
+        {
+            string normalizedPath = NormalizePath(assetPath);
+            AudioResidencyDomain domain = ResolveDomain(normalizedPath);
+            bool dialogue = IsDialoguePath(normalizedPath);
+            AudioClipLoadType loadType = ResolveLoadType(domain, clipLengthSeconds);
+
+            return new AudioImportPolicy
+            {
+                Domain = domain,
+                Dialogue = dialogue,
+                Spatial3D = IsSpatialized3DPath(normalizedPath, domain, dialogue),
+                LoadType = loadType,
+                CompressionFormat = ResolveCompressionFormat(domain, dialogue, clipLengthSeconds, loadType),
+                SampleRate = ResolveSampleRate(domain, dialogue),
+                Quality = ResolveVorbisQuality(domain, dialogue),
+                Preload = ShouldPreloadAudio(domain, loadType),
+                BackgroundLoad = loadType != AudioClipLoadType.DecompressOnLoad
+            };
+        }
+
+        internal static bool IsPolicyCompliant(
+            AudioImporter importer,
+            string assetPath,
+            float clipLengthSeconds,
+            StringBuilder builder)
+        {
+            if (importer == null || !IsProjectAudioAsset(assetPath))
+                return true;
+
+            AudioImportPolicy policy = ResolvePolicy(assetPath, clipLengthSeconds);
+            AudioImporterSampleSettings settings = importer.defaultSampleSettings;
+            bool compliant = true;
+
+            if (importer.forceToMono != policy.Spatial3D)
+            {
+                AppendPolicyIssue(builder, assetPath, "forceToMono", policy.Spatial3D, importer.forceToMono);
+                compliant = false;
+            }
+
+            if (importer.preloadAudioData != policy.Preload)
+            {
+                AppendPolicyIssue(builder, assetPath, "preloadAudioData", policy.Preload, importer.preloadAudioData);
+                compliant = false;
+            }
+
+            if (importer.loadInBackground != policy.BackgroundLoad)
+            {
+                AppendPolicyIssue(builder, assetPath, "loadInBackground", policy.BackgroundLoad, importer.loadInBackground);
+                compliant = false;
+            }
+
+            if (settings.loadType != policy.LoadType)
+            {
+                AppendPolicyIssue(builder, assetPath, "loadType", policy.LoadType.ToString(), settings.loadType.ToString());
+                compliant = false;
+            }
+
+            if (settings.compressionFormat != policy.CompressionFormat)
+            {
+                AppendPolicyIssue(builder, assetPath, "compressionFormat", policy.CompressionFormat.ToString(), settings.compressionFormat.ToString());
+                compliant = false;
+            }
+
+            if (settings.sampleRateSetting != AudioSampleRateSetting.OverrideSampleRate)
+            {
+                AppendPolicyIssue(builder, assetPath, "sampleRateSetting", AudioSampleRateSetting.OverrideSampleRate.ToString(), settings.sampleRateSetting.ToString());
+                compliant = false;
+            }
+
+            if (settings.sampleRateOverride != policy.SampleRate)
+            {
+                AppendPolicyIssue(builder, assetPath, "sampleRateOverride", policy.SampleRate, settings.sampleRateOverride);
+                compliant = false;
+            }
+
+            if (policy.CompressionFormat == AudioCompressionFormat.Vorbis &&
+                Math.Abs(settings.quality - policy.Quality) > 0.001f)
+            {
+                AppendPolicyIssue(builder, assetPath, "quality", policy.Quality, settings.quality);
+                compliant = false;
+            }
+
+            return compliant;
+        }
+
+        private static void AppendPolicyIssue(StringBuilder builder, string assetPath, string field, bool expected, bool actual)
+        {
+            AppendPolicyIssue(builder, assetPath, field, expected ? "true" : "false", actual ? "true" : "false");
+        }
+
+        private static void AppendPolicyIssue(StringBuilder builder, string assetPath, string field, int expected, int actual)
+        {
+            builder.Append(" - ");
+            builder.Append(assetPath);
+            builder.Append(" | ");
+            builder.Append(field);
+            builder.Append(" expected=");
+            builder.Append(expected);
+            builder.Append(" actual=");
+            builder.Append(actual);
+            builder.AppendLine();
+        }
+
+        private static void AppendPolicyIssue(StringBuilder builder, string assetPath, string field, float expected, float actual)
+        {
+            builder.Append(" - ");
+            builder.Append(assetPath);
+            builder.Append(" | ");
+            builder.Append(field);
+            builder.Append(" expected=");
+            builder.Append(expected);
+            builder.Append(" actual=");
+            builder.Append(actual);
+            builder.AppendLine();
+        }
+
+        private static void AppendPolicyIssue(StringBuilder builder, string assetPath, string field, string expected, string actual)
+        {
+            builder.Append(" - ");
+            builder.Append(assetPath);
+            builder.Append(" | ");
+            builder.Append(field);
+            builder.Append(" expected=");
+            builder.Append(expected);
+            builder.Append(" actual=");
+            builder.Append(actual);
+            builder.AppendLine();
         }
 
         internal static List<string> CollectProjectAudioClipPaths()
@@ -303,6 +437,10 @@ namespace Hecton8.Audio.Editor
             float clipLengthSeconds,
             AudioClipLoadType loadType)
         {
+            // Task 2 is absolute: every sub-2s one-shot stays ADPCM, including VO stubs.
+            if (clipLengthSeconds >= 0f && clipLengthSeconds < ShortClipSeconds)
+                return AudioCompressionFormat.ADPCM;
+
             if (dialogue || domain == AudioResidencyDomain.Music || domain == AudioResidencyDomain.Environment)
                 return AudioCompressionFormat.Vorbis;
 
@@ -407,8 +545,46 @@ namespace Hecton8.Audio.Editor
 
         public void OnPreprocessBuild(BuildReport report)
         {
+            ValidateImportPolicyDrift(true);
             ValidatePreloadedAudioBudget(true);
             EnvironmentAudioSourcePurgeGate.ValidateEnvironmentPrefabsNoAudioSources(true);
+        }
+
+        [MenuItem("Hecton/Validation/Audio/Validate Import Policy Drift", priority = 409)]
+        internal static void ValidateImportPolicyDriftMenu()
+        {
+            ValidateImportPolicyDrift(false);
+        }
+
+        internal static void ValidateImportPolicyDrift(bool failBuild)
+        {
+            List<string> paths = AudioImportDictator.CollectProjectAudioClipPaths();
+            StringBuilder builder = new StringBuilder(8192);
+            int offenderCount = 0;
+
+            for (int i = 0; i < paths.Count; i++)
+            {
+                string path = paths[i];
+                AudioImporter importer = AssetImporter.GetAtPath(path) as AudioImporter;
+                AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+                if (importer == null || clip == null)
+                    continue;
+
+                int beforeLength = builder.Length;
+                if (AudioImportDictator.IsPolicyCompliant(importer, path, clip.length, builder))
+                    continue;
+
+                if (builder.Length > beforeLength)
+                    offenderCount++;
+            }
+
+            if (offenderCount <= 0)
+                return;
+
+            string reportText = BuildPolicyDriftReport(offenderCount, builder);
+            Debug.LogError(reportText);
+            if (failBuild)
+                throw new BuildFailedException(reportText);
         }
 
         [MenuItem("Hecton/Validation/Audio/Validate Preloaded Audio Budget", priority = 410)]
@@ -476,6 +652,17 @@ namespace Hecton8.Audio.Editor
                 builder.AppendLine(item.Path);
             }
 
+            return builder.ToString();
+        }
+
+        private static string BuildPolicyDriftReport(int offenderCount, StringBuilder issues)
+        {
+            StringBuilder builder = new StringBuilder(issues.Length + 256);
+            builder.AppendLine("[AudioImportPolicyDriftGate:0xA1D10006] First-party audio import settings drifted from AudioImportDictator. Build aborted.");
+            builder.Append("Offending audio assets: ");
+            builder.Append(offenderCount);
+            builder.AppendLine();
+            builder.Append(issues);
             return builder.ToString();
         }
     }

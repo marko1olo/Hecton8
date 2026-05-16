@@ -10,10 +10,12 @@ using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Scripting;
-using Debug = UnityEngine.Debug;
+using DebugSignal = Hecton8.Core.Contracts.Signals.DebugSignal;
+using DebugSignalKind = Hecton8.Core.Contracts.Signals.DebugSignalKind;
 
 namespace Hecton8.Core.Diagnostics.Visuals
 {
@@ -74,7 +76,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
     [Preserve]
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5800)]
-    public sealed class ArchitectEyeVisualizer : MonoBehaviour, ISlowTickable, IRenderable
+    public sealed class ArchitectEyeVisualizer : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable
     {
         private const int BlackBoxFrameCount = 300;
         private const int SignalLaneCapacity = 256;
@@ -85,10 +87,14 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private const int GlyphAtlasPixels = GlyphCellPixels * GlyphAtlasColumns * GlyphCellPixels * GlyphAtlasRows;
         private const int DefaultMaxQuads = 8192;
         private const float ScreenDepth = 0.25f;
+        private const float HashToUnit = 1f / 65535f;
         private const uint StateFlagRawStp = 1u << 0;
         private const uint StateFlagNonFinite = 1u << 1;
         private static readonly int InstancesId = Shader.PropertyToID("_H8EyeQuads");
         private static readonly int GlyphAtlasId = Shader.PropertyToID("_H8EyeGlyphAtlas");
+        private static readonly int VisualTierId = Shader.PropertyToID("_H8EyeVisualTier");
+        private static readonly ProfilerMarker SlowTickMarker = new ProfilerMarker("H8.Diagnostics.ArchitectEye.SlowTick");
+        private static readonly ProfilerMarker UploadMarker = new ProfilerMarker("H8.Diagnostics.ArchitectEye.Upload");
 
         [SerializeField] private bool _enabled = true;
         [SerializeField] private int _maxQuads = DefaultMaxQuads;
@@ -101,43 +107,71 @@ namespace Hecton8.Core.Diagnostics.Visuals
         [SerializeField] private float _lineThicknessMeters = 0.025f;
 
         private readonly Bounds _drawBounds = new Bounds(Vector3.zero, new Vector3(20000f, 20000f, 20000f));
-        private readonly uint[] _argsScratch = new uint[5];
-        private readonly char[] _labelScratch = new char[128];
-        private readonly byte[] _glyphPixels = new byte[GlyphAtlasPixels];
+        private readonly char[] _labelScratch = new char[128]; // COLD ALLOC: char[128] - fixed label formatting buffer - owner: ArchitectEyeVisualizer
+        private readonly byte[] _glyphPixels = new byte[GlyphAtlasPixels]; // COLD ALLOC: byte[8192] - bitmap glyph atlas staging buffer - owner: ArchitectEyeVisualizer
         private Mesh _quadMesh;
         private Material _material;
         private Texture2D _glyphAtlas;
+        private GraphicsBuffer _instanceBufferA;
+        private GraphicsBuffer _instanceBufferB;
+        private GraphicsBuffer _argsBufferA;
+        private GraphicsBuffer _argsBufferB;
         private GraphicsBuffer _instanceBuffer;
         private GraphicsBuffer _argsBuffer;
+        private int _gpuWriteBufferIndex;
         private int _frontCount;
-        private bool _registered;
+        private bool _updatableRegistered;
+        private bool _slowRegistered;
+        private bool _renderRegistered;
         private bool _rawStpDebug;
         private bool _dumpWrittenThisFault;
 
         private void Awake()
         {
+            if (!IsDiagnosticsRuntimeAllowed())
+            {
+                enabled = false;
+                return;
+            }
+
+            ValidatePackedStructSizes();
             EnsureResources();
         }
 
         private void OnEnable()
         {
+            if (!IsDiagnosticsRuntimeAllowed())
+                return;
+
             EnsureResources();
 
             if (!Application.isPlaying)
                 return;
 
-            GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
-            GlobalRegistry.Renderables.TryRegister(this);
-            _registered = true;
+            ArchitectEyeDebugBus.EnsureInitialized();
+            _updatableRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _slowRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            _renderRegistered = GlobalRegistry.Renderables.TryRegister(this);
         }
 
         private void OnDisable()
         {
-            if (_registered)
+            if (_updatableRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _updatableRegistered = false;
+            }
+
+            if (_slowRegistered)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _slowRegistered = false;
+            }
+
+            if (_renderRegistered)
+            {
                 GlobalRegistry.Renderables.TryUnregister(this);
-                _registered = false;
+                _renderRegistered = false;
             }
         }
 
@@ -146,7 +180,26 @@ namespace Hecton8.Core.Diagnostics.Visuals
             ReleaseResources();
         }
 
+        private static void ValidatePackedStructSizes()
+        {
+            if (UnsafeUtility.SizeOf<ArchitectEyeQuadInstance>() != 80 ||
+                UnsafeUtility.SizeOf<ArchitectEyeBlackBoxEntry>() != 64 ||
+                UnsafeUtility.SizeOf<ArchitectEyeRuntimeState>() != 64 ||
+                UnsafeUtility.SizeOf<DebugSignal>() != 64)
+            {
+                FatalMemoryException.ThrowAbiLayoutMismatch();
+            }
+        }
+
         public void SlowTick()
+        {
+            using (SlowTickMarker.Auto())
+            {
+                SlowTickInternal();
+            }
+        }
+
+        private void SlowTickInternal()
         {
             if (!_enabled)
                 return;
@@ -199,7 +252,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
             int count = 0;
             int nonFiniteCount = 0;
-            float3 lastFaultPosition = default;
+            float3 lastFaultPosition = ResolveFallbackProbePosition(vault);
             float signalPressure = 0f;
             float health01 = ResolveSystemHealth01(out float frameTimeMs, out uint killSwitchMask);
             float stpScale01 = ResolveStpScale01(out float stpStress01);
@@ -208,12 +261,16 @@ namespace Hecton8.Core.Diagnostics.Visuals
             BuildSdfWireframe(vault, quads, ref count, quadCapacity);
             int laneCount = SignalBusRegistry.CopyTelemetry(telemetry);
             signalPressure = BuildSignalFlow(quads, ref count, quadCapacity, telemetry, laneCount, blackBox, in state);
+            BuildDebugSignalOverlay(quads, ref count, quadCapacity, ref signalPressure, ref health01, ref nonFiniteCount, ref lastFaultPosition);
             BuildSectorMap(vault, quads, ref count, quadCapacity, sectorHashes);
             BuildKineticVectorTrails(vault, quads, ref count, quadCapacity, ref nonFiniteCount, ref lastFaultPosition);
             BuildGasHeatmap(quads, ref count, quadCapacity, out float gasCo201, out float gasO201, ref nonFiniteCount);
             float fragmentation01 = BuildMemoryMap(vault, quads, ref count, quadCapacity);
+            BuildVaultRelocationLinks(vault, quads, ref count, quadCapacity);
             BuildHeartbeat(quads, ref count, quadCapacity, blackBox, in state, health01, frameTimeMs);
+            BuildGhostReplayOverlay(quads, ref count, quadCapacity, blackBox, in state);
             BuildStpPanel(quads, ref count, quadCapacity, stpScale01, stpStress01);
+            BuildVisualOverkillDiagnostics(quads, ref count, quadCapacity, in state, signalPressure, gasCo201, stpStress01);
 
             if (nonFiniteCount > 0)
                 BuildNanWarning(quads, ref count, quadCapacity, lastFaultPosition);
@@ -246,8 +303,20 @@ namespace Hecton8.Core.Diagnostics.Visuals
             }
         }
 
+        public void Tick(float deltaTime)
+        {
+            if (!IsDiagnosticsRuntimeAllowed())
+                return;
+
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F12))
+                _enabled = !_enabled;
+        }
+
         public void Render(float deltaTime)
         {
+            if (!IsDiagnosticsRuntimeAllowed())
+                return;
+
             if (!_enabled || _frontCount <= 0 || _quadMesh == null || _material == null || _argsBuffer == null)
                 return;
 
@@ -321,6 +390,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (!vault.TryGetBuffer<AbsoluteUniversePosition>(BufferID.EntityAUPs, out NativeArray<AbsoluteUniversePosition> aups) || !aups.IsCreated)
                 return;
 
+            uint generation = 0u;
+            vault.TryGetBufferGeneration(BufferID.EntityAUPs, out generation);
             int budget = math.min(ResolveEntityBudget(), aups.Length);
             int step = budget > 0 ? math.max(1, aups.Length / budget) : 1;
             int emitted = 0;
@@ -341,10 +412,14 @@ namespace Hecton8.Core.Diagnostics.Visuals
                     continue;
                 }
 
+                if (emitted == 0)
+                    lastFaultPosition = position;
+
                 int length = 0;
                 AppendLiteral(_labelScratch, ref length, "E");
                 AppendInt(_labelScratch, ref length, i);
-                AppendLiteral(_labelScratch, ref length, " AUP");
+                AppendLiteral(_labelScratch, ref length, " G");
+                AppendHex8(_labelScratch, ref length, generation);
                 EmitWorldText(quads, ref count, capacity, position + new float3(0f, 1.2f, 0f), _labelScratch, length, _labelMeters, new float4(0.55f, 0.95f, 1f, 0.9f));
                 emitted++;
             }
@@ -353,12 +428,12 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private void BuildSdfWireframe(IDataVault vault, NativeArray<ArchitectEyeQuadInstance> quads, ref int count, int capacity)
         {
             float density = 0.15f;
-            if (vault.TryGetBuffer<float>(BufferID.VoxelSdfTexture3D, out NativeArray<float> sdf) && sdf.IsCreated && sdf.Length > 0)
+            if (vault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> sdf) && sdf.IsCreated && sdf.Length > 0)
             {
                 int samples = math.min(sdf.Length, 64);
                 int positive = 0;
                 for (int i = 0; i < samples; i++)
-                    positive += sdf[i] > 0f && math.isfinite(sdf[i]) ? 1 : 0;
+                    positive += sdf[i] > 127 ? 1 : 0;
                 density = samples > 0 ? positive * SafeRcp(samples) : density;
             }
 
@@ -406,6 +481,111 @@ namespace Hecton8.Core.Diagnostics.Visuals
             }
 
             return pressure;
+        }
+
+        private void BuildDebugSignalOverlay(
+            NativeArray<ArchitectEyeQuadInstance> quads,
+            ref int count,
+            int capacity,
+            ref float signalPressure01,
+            ref float health01,
+            ref int nonFiniteCount,
+            ref float3 lastFaultPosition)
+        {
+            ReadOnlySpan<DebugSignal> signals = SignalBus<DebugSignal>.GetFrameSnapshot();
+            int limit = math.min(signals.Length, ResolveEntityBudget());
+            for (int i = 0; i < limit; i++)
+            {
+                DebugSignal signal = signals[i];
+                if (!IsFiniteSignal(in signal))
+                {
+                    nonFiniteCount++;
+                    lastFaultPosition = signal.Position;
+                    continue;
+                }
+
+                switch ((DebugSignalKind)signal.Kind)
+                {
+                    case DebugSignalKind.PointerLink:
+                    {
+                        float4 color = (signal.Flags & VaultRelocationRecord.FlagAddressChanged) != 0
+                            ? new float4(1f, 0.92f, 0.05f, 0.95f)
+                            : new float4(0.12f, 0.72f, 1f, 0.55f);
+                        EmitWorldLine(quads, ref count, capacity, signal.Position, signal.Vector, _lineThicknessMeters, color);
+                        break;
+                    }
+                    case DebugSignalKind.GenerationId:
+                    {
+                        int length = 0;
+                        AppendLiteral(_labelScratch, ref length, "G");
+                        AppendHex8(_labelScratch, ref length, signal.Aux0);
+                        EmitWorldText(quads, ref count, capacity, signal.Position, _labelScratch, length, _labelMeters, new float4(0.7f, 0.95f, 1f, 0.9f));
+                        break;
+                    }
+                    case DebugSignalKind.CollisionNormal:
+                    {
+                        float4 color = signal.Value0 > 0.5f ? new float4(1f, 0.08f, 0.02f, 0.9f) : new float4(0.08f, 1f, 0.22f, 0.82f);
+                        EmitWorldLine(quads, ref count, capacity, signal.Position, signal.Position + signal.Vector * math.max(0.1f, signal.Value1), _lineThicknessMeters, color);
+                        break;
+                    }
+                    case DebugSignalKind.BreadcrumbSegment:
+                        EmitWorldLine(quads, ref count, capacity, signal.Position, signal.Vector, _lineThicknessMeters, new float4(0.05f, 0.9f, 1f, 0.82f));
+                        break;
+                    case DebugSignalKind.GasRoom:
+                    {
+                        float o2 = math.saturate(signal.Value0);
+                        float co2 = math.saturate(signal.Value1);
+                        float4 color = math.select(new float4(0.05f, 1f, 0.25f, 0.4f), new float4(1f, 0.06f, 0.02f, 0.62f), co2 > o2);
+                        EmitBillboardQuad(quads, ref count, capacity, signal.Position, new float2(0.35f, 0.35f), color, new float4(0f, 0f, 1f, 1f));
+                        break;
+                    }
+                    case DebugSignalKind.PressureVector:
+                        EmitWorldLine(quads, ref count, capacity, signal.Position, signal.Position + signal.Vector * math.max(0.1f, signal.Value0), _lineThicknessMeters, new float4(1f, 0.58f, 0.1f, 0.85f));
+                        break;
+                    case DebugSignalKind.FluidVelocity:
+                        EmitWorldLine(quads, ref count, capacity, signal.Position, signal.Position + signal.Vector * math.max(0.1f, signal.Value0), _lineThicknessMeters, new float4(0.14f, 0.72f, 1f, 0.75f));
+                        break;
+                    case DebugSignalKind.AcousticRay:
+                        EmitWorldLine(quads, ref count, capacity, signal.Position, signal.Vector, _lineThicknessMeters, new float4(0.72f, 0.9f, 1f, 0.72f));
+                        break;
+                    case DebugSignalKind.SignalEvent:
+                    {
+                        signalPressure01 = math.max(signalPressure01, math.saturate(signal.Value0));
+                        float x = -0.9f + ((signal.Aux0 & 63u) * 0.0125f);
+                        EmitScreenQuad(quads, ref count, capacity, new float2(x, 0.73f + signalPressure01 * 0.08f), new float2(0.004f, 0.02f), new float4(0.1f, 0.75f, 1f, 0.62f), 0f, new float4(0f, 0f, 1f, 1f));
+                        break;
+                    }
+                    case DebugSignalKind.LaneSaturation:
+                    {
+                        float saturation = math.saturate(signal.Value0);
+                        float4 color = math.select(new float4(0.15f, 0.75f, 1f, 0.68f), new float4(1f, 0.08f, 0.02f, 0.85f), saturation >= 0.9f);
+                        EmitScreenQuad(quads, ref count, capacity, new float2(-0.84f + saturation * 0.18f, 0.62f - (signal.Aux0 & 15u) * 0.018f), new float2(math.max(0.004f, saturation * 0.18f), 0.006f), color, 0f, new float4(0f, 0f, 1f, 1f));
+                        break;
+                    }
+                    case DebugSignalKind.EventResonance:
+                        EmitWorldLine(quads, ref count, capacity, signal.Position, signal.Vector, _lineThicknessMeters, new float4(0.82f, 0.42f, 1f, 0.76f));
+                        break;
+                    case DebugSignalKind.NanGeyser:
+                        nonFiniteCount++;
+                        lastFaultPosition = signal.Position;
+                        BuildNanPillar(quads, ref count, capacity, signal.Position);
+                        break;
+                    case DebugSignalKind.Homeostasis:
+                        health01 = math.saturate(signal.Value0);
+                        BuildHomeostasisDial(quads, ref count, capacity, health01);
+                        break;
+                    case DebugSignalKind.GhostPose:
+                        EmitBillboardQuad(quads, ref count, capacity, signal.Position, new float2(0.18f, 0.42f), new float4(0.4f, 0.85f, 1f, 0.18f), new float4(0f, 0f, 1f, 1f));
+                        break;
+                    case DebugSignalKind.VramBudgetSlice:
+                        BuildVramSlice(quads, ref count, capacity, signal.Aux0, math.saturate(signal.Value0));
+                        break;
+                    case DebugSignalKind.AupTeleportPreview:
+                        EmitWorldLine(quads, ref count, capacity, signal.Position + new float3(-1f, 0f, 0f), signal.Position + new float3(1f, 0f, 0f), _lineThicknessMeters, new float4(0.1f, 1f, 0.8f, 0.9f));
+                        EmitWorldLine(quads, ref count, capacity, signal.Position + new float3(0f, 0f, -1f), signal.Position + new float3(0f, 0f, 1f), _lineThicknessMeters, new float4(0.1f, 1f, 0.8f, 0.9f));
+                        break;
+                }
+            }
         }
 
         private void BuildSectorMap(
@@ -547,8 +727,10 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 bool free = descriptor.State == (byte)H8BlockState.Free;
                 float w = math.clamp((float)(descriptor.Bytes / 1048576.0), 0.004f, 0.035f);
                 float4 color = free
-                    ? new float4(1f, 0.9f, 0.05f, 0.62f)
+                    ? new float4(0.35f, 0.37f, 0.39f, 0.58f)
                     : new float4(0.1f, 0.45f, 1f, 0.5f);
+                if (free && descriptor.Bytes < largest && fragmentation01 > 0.35f)
+                    color = new float4(1f, 0.08f, 0.02f, 0.72f);
                 EmitScreenQuad(quads, ref count, capacity, new float2(x + w, -0.94f), new float2(w, 0.012f), color, 0f, new float4(0f, 0f, 1f, 1f));
                 x += w * 2f + 0.004f;
                 if (x > 0.95f)
@@ -558,6 +740,33 @@ namespace Hecton8.Core.Diagnostics.Visuals
             EmitScreenQuad(quads, ref count, capacity, new float2(-0.95f + vault.CapacityPressure01 * 0.18f, -0.89f), new float2(math.max(0.004f, vault.CapacityPressure01 * 0.18f), 0.009f), new float4(0.15f, 0.8f, 1f, 0.55f), 0f, new float4(0f, 0f, 1f, 1f));
             EmitScreenQuad(quads, ref count, capacity, new float2(-0.95f + fragmentation01 * 0.18f, -0.865f), new float2(math.max(0.004f, fragmentation01 * 0.18f), 0.009f), new float4(1f, 0.92f, 0.08f, 0.7f), 0f, new float4(0f, 0f, 1f, 1f));
             return fragmentation01;
+        }
+
+        private void BuildVaultRelocationLinks(IDataVault vault, NativeArray<ArchitectEyeQuadInstance> quads, ref int count, int capacity)
+        {
+            int relocationCount = math.min(vault.LastRelocationRecordCount, 16);
+            for (int i = 0; i < relocationCount; i++)
+            {
+                if (!vault.TryGetLastRelocationRecord(i, out VaultRelocationRecord record))
+                    continue;
+
+                float row = i * 0.16f;
+                float systemX = -5f + (record.SystemId & 7) * 0.35f;
+                float bufferX = 2f + (math.abs(record.BufferId) & 15) * 0.2f;
+                float3 start = new float3(systemX, 1.1f + row, -3f);
+                float3 end = new float3(bufferX, 1.1f + row, -3f);
+                float4 color = (record.Flags & VaultRelocationRecord.FlagAddressChanged) != 0
+                    ? new float4(1f, 0.92f, 0.05f, 0.95f)
+                    : new float4(0.12f, 0.72f, 1f, 0.55f);
+                EmitWorldLine(quads, ref count, capacity, start, end, _lineThicknessMeters, color);
+
+                int length = 0;
+                AppendLiteral(_labelScratch, ref length, "B");
+                AppendInt(_labelScratch, ref length, record.BufferId);
+                AppendLiteral(_labelScratch, ref length, " G");
+                AppendHex8(_labelScratch, ref length, record.Generation);
+                EmitWorldText(quads, ref count, capacity, end + new float3(0f, 0.18f, 0f), _labelScratch, length, _labelMeters * 0.6f, color);
+            }
         }
 
         private void BuildHeartbeat(
@@ -591,6 +800,31 @@ namespace Hecton8.Core.Diagnostics.Visuals
             EmitScreenText(quads, ref count, capacity, new float2(0.1f, 0.94f), _labelScratch, length, 0.018f, new float4(0.7f, 1f, 0.8f, 0.8f));
         }
 
+        private void BuildGhostReplayOverlay(
+            NativeArray<ArchitectEyeQuadInstance> quads,
+            ref int count,
+            int capacity,
+            NativeArray<ArchitectEyeBlackBoxEntry> blackBox,
+            in ArchitectEyeRuntimeState state)
+        {
+            int history = math.min(blackBox.Length, 300);
+            int step = GlobalRegistry.ScalabilityTier == HectonQualityTier.Ultra ? 2 : 8;
+            for (int i = 0; i < history; i += step)
+            {
+                int index = state.BlackBoxCursor - 1 - i;
+                while (index < 0)
+                    index += blackBox.Length;
+
+                ArchitectEyeBlackBoxEntry entry = blackBox[index % blackBox.Length];
+                float3 position = entry.LastFaultPosition;
+                if (!math.all(math.isfinite(position)))
+                    continue;
+
+                float alpha = math.saturate(0.28f - i * (0.24f / history));
+                EmitBillboardQuad(quads, ref count, capacity, position, new float2(0.12f, 0.32f), new float4(0.35f, 0.82f, 1f, alpha), new float4(0f, 0f, 1f, 1f));
+            }
+        }
+
         private void BuildStpPanel(NativeArray<ArchitectEyeQuadInstance> quads, ref int count, int capacity, float stpScale01, float stress01)
         {
             float4 color = _rawStpDebug
@@ -600,12 +834,86 @@ namespace Hecton8.Core.Diagnostics.Visuals
             EmitScreenQuad(quads, ref count, capacity, new float2(0.72f + stress01 * 0.18f, 0.64f), new float2(math.max(0.004f, stress01 * 0.18f), 0.012f), new float4(1f, 0.65f, 0.12f, 0.55f), 0f, new float4(0f, 0f, 1f, 1f));
         }
 
+        private void BuildVisualOverkillDiagnostics(
+            NativeArray<ArchitectEyeQuadInstance> quads,
+            ref int count,
+            int capacity,
+            in ArchitectEyeRuntimeState state,
+            float signalPressure01,
+            float gasCo201,
+            float stpStress01)
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            if (tier != HectonQualityTier.High && tier != HectonQualityTier.Ultra)
+                return;
+
+            int saltCount = tier == HectonQualityTier.Ultra ? 1024 : 256;
+            int siltCount = tier == HectonQualityTier.Ultra ? 1536 : 384;
+            int dentCount = tier == HectonQualityTier.Ultra ? 768 : 192;
+            uint frameSeed = state.LastFrame + 0xA3C59AC3u;
+
+            for (int i = 0; i < saltCount && count < capacity; i++)
+            {
+                float h0 = Hash01(frameSeed, (uint)i, 0x53414C54u);
+                float h1 = Hash01(frameSeed, (uint)i, 0x43525953u);
+                float growth = Triangle01(h0 + signalPressure01 + gasCo201);
+                float2 center = new float2(-0.96f + h0 * 0.42f, 0.44f + h1 * 0.48f);
+                float size = math.lerp(0.0025f, 0.015f, growth);
+                float alpha = math.lerp(0.035f, 0.22f, growth);
+                EmitScreenQuad(quads, ref count, capacity, center, new float2(size * 0.45f, size), new float4(0.86f, 1f, 0.95f, alpha), 0f, new float4(0f, 0f, 1f, 1f));
+            }
+
+            for (int i = 0; i < siltCount && count < capacity; i++)
+            {
+                float h0 = Hash01(frameSeed, (uint)i, 0x53494C54u);
+                float h1 = Hash01(frameSeed, (uint)i, 0x57414B45u);
+                float orbit = Triangle01(h0 + stpStress01);
+                float2 center = new float2(0.18f + (h0 - 0.5f) * 1.65f, -0.22f + (h1 - 0.5f) * 0.58f + orbit * 0.12f);
+                float size = math.lerp(0.002f, 0.010f, h1);
+                float alpha = math.lerp(0.025f, 0.18f, orbit);
+                EmitScreenQuad(quads, ref count, capacity, center, new float2(size, size * 0.42f), new float4(0.28f, 0.72f, 0.9f, alpha), 0f, new float4(0f, 0f, 1f, 1f));
+            }
+
+            for (int i = 0; i < dentCount && count < capacity; i++)
+            {
+                float h0 = Hash01(frameSeed, (uint)i, 0x44454E54u);
+                float h1 = Hash01(frameSeed, (uint)i, 0x48554C4Cu);
+                float stress = math.saturate(stpStress01 + signalPressure01 * 0.5f);
+                float2 center = new float2(0.45f + h0 * 0.5f, -0.82f + h1 * 0.28f);
+                float2 size = new float2(math.lerp(0.006f, 0.038f, h0), math.lerp(0.002f, 0.012f, h1));
+                EmitScreenQuad(quads, ref count, capacity, center, size, new float4(1f, 0.48f, 0.16f, 0.055f + stress * 0.20f), 0f, new float4(0f, 0f, 1f, 1f));
+            }
+        }
+
         private void BuildNanWarning(NativeArray<ArchitectEyeQuadInstance> quads, ref int count, int capacity, float3 faultPosition)
         {
             int length = 0;
             AppendLiteral(_labelScratch, ref length, "NON FINITE VAULT");
             EmitWorldText(quads, ref count, capacity, faultPosition + new float3(0f, 2.2f, 0f), _labelScratch, length, _labelMeters * 2.5f, new float4(1f, 0f, 0f, 1f));
             EmitScreenQuad(quads, ref count, capacity, new float2(0f, 0f), new float2(0.72f, 0.12f), new float4(1f, 0f, 0f, 0.18f), 0f, new float4(0f, 0f, 1f, 1f));
+            BuildNanPillar(quads, ref count, capacity, faultPosition);
+        }
+
+        private void BuildNanPillar(NativeArray<ArchitectEyeQuadInstance> quads, ref int count, int capacity, float3 position)
+        {
+            EmitWorldLine(quads, ref count, capacity, position, position + new float3(0f, 30f, 0f), 0.18f, new float4(1f, 0f, 0f, 0.92f));
+        }
+
+        private void BuildHomeostasisDial(NativeArray<ArchitectEyeQuadInstance> quads, ref int count, int capacity, float health01)
+        {
+            float x = 0.68f;
+            float y = 0.52f;
+            EmitScreenQuad(quads, ref count, capacity, new float2(x, y), new float2(0.09f, 0.006f), new float4(0.15f, 0.65f, 1f, 0.35f), 0f, new float4(0f, 0f, 1f, 1f));
+            EmitScreenQuad(quads, ref count, capacity, new float2(x - 0.08f + health01 * 0.16f, y + 0.02f), new float2(0.004f, 0.035f), new float4(1f - health01, health01, 0.12f, 0.86f), 0f, new float4(0f, 0f, 1f, 1f));
+        }
+
+        private void BuildVramSlice(NativeArray<ArchitectEyeQuadInstance> quads, ref int count, int capacity, uint sliceId, float fraction01)
+        {
+            float angle = (sliceId & 15u) * 0.3926991f;
+            math.sincos(angle, out float s, out float c);
+            float2 center = new float2(0.76f + c * 0.05f, -0.58f + s * 0.05f);
+            float4 color = new float4(0.15f + ((sliceId * 53u) & 127u) * (1f / 255f), 0.45f + ((sliceId * 97u) & 127u) * (1f / 255f), 0.95f, 0.42f + fraction01 * 0.4f);
+            EmitScreenQuad(quads, ref count, capacity, center, new float2(math.max(0.006f, fraction01 * 0.04f), 0.012f), color, 0f, new float4(0f, 0f, 1f, 1f));
         }
 
         private void RecordBlackBox(
@@ -656,21 +964,50 @@ namespace Hecton8.Core.Diagnostics.Visuals
             state.WaterfallCursor = (state.WaterfallCursor + 1) & 63;
         }
 
-        private void Upload(NativeArray<ArchitectEyeQuadInstance> quads, int count)
+        private unsafe void Upload(NativeArray<ArchitectEyeQuadInstance> quads, int count)
+        {
+            using (UploadMarker.Auto())
+            {
+                UploadInternal(quads, count);
+            }
+        }
+
+        private unsafe void UploadInternal(NativeArray<ArchitectEyeQuadInstance> quads, int count)
         {
             if (_instanceBuffer == null || _argsBuffer == null || _quadMesh == null || !quads.IsCreated)
                 return;
 
             int uploadCount = math.min(count, math.min(quads.Length, _maxQuads));
-            if (uploadCount > 0)
-                _instanceBuffer.SetData(quads, 0, 0, uploadCount);
+            _gpuWriteBufferIndex ^= 1;
+            GraphicsBuffer instanceWriteBuffer = _gpuWriteBufferIndex == 0 ? _instanceBufferA : _instanceBufferB;
+            GraphicsBuffer argsWriteBuffer = _gpuWriteBufferIndex == 0 ? _argsBufferA : _argsBufferB;
+            if (instanceWriteBuffer == null || argsWriteBuffer == null)
+                return;
 
-            _argsScratch[0] = _quadMesh.GetIndexCount(0);
-            _argsScratch[1] = (uint)uploadCount;
-            _argsScratch[2] = _quadMesh.GetIndexStart(0);
-            _argsScratch[3] = _quadMesh.GetBaseVertex(0);
-            _argsScratch[4] = 0u;
-            _argsBuffer.SetData(_argsScratch);
+            if (uploadCount > 0)
+            {
+                NativeArray<ArchitectEyeQuadInstance> mappedInstances = instanceWriteBuffer.LockBufferForWrite<ArchitectEyeQuadInstance>(0, uploadCount);
+                UnsafeUtility.MemCpy(
+                    NativeArrayUnsafeUtility.GetUnsafePtr(mappedInstances),
+                    NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(quads),
+                    uploadCount * UnsafeUtility.SizeOf<ArchitectEyeQuadInstance>());
+                instanceWriteBuffer.UnlockBufferAfterWrite<ArchitectEyeQuadInstance>(uploadCount);
+            }
+
+            NativeArray<uint> mappedArgs = argsWriteBuffer.LockBufferForWrite<uint>(0, 5);
+            mappedArgs[0] = _quadMesh.GetIndexCount(0);
+            mappedArgs[1] = (uint)uploadCount;
+            mappedArgs[2] = _quadMesh.GetIndexStart(0);
+            mappedArgs[3] = _quadMesh.GetBaseVertex(0);
+            mappedArgs[4] = 0u;
+            argsWriteBuffer.UnlockBufferAfterWrite<uint>(5);
+            _instanceBuffer = instanceWriteBuffer;
+            _argsBuffer = argsWriteBuffer;
+            if (_material != null)
+            {
+                _material.SetBuffer(InstancesId, _instanceBuffer);
+                _material.SetFloat(VisualTierId, ResolveVisualTierScalar());
+            }
             _frontCount = uploadCount;
         }
 
@@ -684,7 +1021,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 string root = Directory.GetCurrentDirectory();
                 string directory = Path.Combine(root, "Docs", "AgentLogs");
                 Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_ARCHITECT_EYE_VISUALIZER.bin");
+                string path = Path.Combine(directory, "Dump_ARCHITECT_SPATIAL_PROBE.bin");
                 using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
                 unsafe
                 {
@@ -693,10 +1030,38 @@ namespace Hecton8.Core.Diagnostics.Visuals
                     stream.Write(new ReadOnlySpan<byte>(source, bytes));
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogError(ex.Message);
+                _dumpWrittenThisFault = true;
             }
+        }
+
+        private float3 ResolveFallbackProbePosition(IDataVault vault)
+        {
+            if (vault != null &&
+                vault.TryGetBuffer<AbsoluteUniversePosition>(BufferID.EntityAUPs, out NativeArray<AbsoluteUniversePosition> aups) &&
+                aups.IsCreated &&
+                aups.Length > 0)
+            {
+                AbsoluteUniversePosition aup = aups[0];
+                if (VaultProbeUtility.IsFinite(in aup))
+                {
+                    float3 position = aup.ToRuntimeFloat3();
+                    if (math.all(math.isfinite(position)))
+                        return position;
+                }
+            }
+
+            return float3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFiniteSignal(in Hecton8.Core.Contracts.Signals.DebugSignal signal)
+        {
+            return math.all(math.isfinite(signal.Position)) &&
+                   math.all(math.isfinite(signal.Vector)) &&
+                   math.isfinite(signal.Value0) &&
+                   math.isfinite(signal.Value1);
         }
 
         private float ResolveSystemHealth01(out float frameTimeMs, out uint killSwitchMask)
@@ -862,14 +1227,15 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (lenSq <= 0.000001f || !math.isfinite(lenSq))
                 return;
 
-            float invLen = math.rsqrt(math.max(lenSq, 0.000001f));
-            if (!math.isfinite(invLen))
+            float invLen = SafeRsqrt(lenSq);
+            if (invLen <= 0f)
                 return;
 
             float3 axisX = delta * invLen;
             float3 axisY = math.cross(axisX, new float3(0f, 1f, 0f));
             float axisYSq = math.lengthsq(axisY);
-            axisY = math.select(new float3(1f, 0f, 0f), axisY * math.rsqrt(math.max(axisYSq, 0.000001f)), axisYSq > 0.000001f);
+            float invAxisY = SafeRsqrt(axisYSq);
+            axisY = math.select(new float3(1f, 0f, 0f), axisY * invAxisY, invAxisY > 0f);
             float halfLength = math.sqrt(math.max(lenSq, 0.000001f)) * 0.5f;
             EmitOrientedQuad(quads, ref count, capacity, (start + end) * 0.5f, axisX, axisY, new float2(halfLength, thickness), color, new float4(0f, 0f, 1f, 1f));
         }
@@ -955,7 +1321,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 CreateGlyphAtlas();
             if (_material == null)
                 CreateMaterial();
-            if (_instanceBuffer == null || _argsBuffer == null)
+            if (_instanceBufferA == null || _instanceBufferB == null || _argsBufferA == null || _argsBufferB == null)
                 CreateBuffers();
 
             if (_material != null)
@@ -984,10 +1350,18 @@ namespace Hecton8.Core.Diagnostics.Visuals
         {
             ReleaseBuffersOnly();
             int stride = UnsafeUtility.SizeOf<ArchitectEyeQuadInstance>();
-            _instanceBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, _maxQuads, stride);
-            _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, sizeof(uint) * 5);
+            _instanceBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, _maxQuads, stride);
+            _instanceBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, _maxQuads, stride);
+            _argsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, sizeof(uint) * 5);
+            _argsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, sizeof(uint) * 5);
+            _gpuWriteBufferIndex = 0;
+            _instanceBuffer = _instanceBufferA;
+            _argsBuffer = _argsBufferA;
             if (_material != null)
+            {
                 _material.SetBuffer(InstancesId, _instanceBuffer);
+                _material.SetFloat(VisualTierId, ResolveVisualTierScalar());
+            }
         }
 
         private void CreateGlyphAtlas()
@@ -1054,10 +1428,17 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private void ReleaseBuffersOnly()
         {
-            _instanceBuffer?.Dispose();
-            _argsBuffer?.Dispose();
+            _instanceBufferA?.Dispose();
+            _instanceBufferB?.Dispose();
+            _argsBufferA?.Dispose();
+            _argsBufferB?.Dispose();
+            _instanceBufferA = null;
+            _instanceBufferB = null;
+            _argsBufferA = null;
+            _argsBufferB = null;
             _instanceBuffer = null;
             _argsBuffer = null;
+            _gpuWriteBufferIndex = 0;
             _frontCount = 0;
         }
 
@@ -1065,6 +1446,53 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private static float SafeRcp(float value)
         {
             return math.abs(value) > 0.000001f && math.isfinite(value) ? 1f / value : 0f;
+        }
+
+        private static float ResolveVisualTierScalar()
+        {
+            switch (GlobalRegistry.ScalabilityTier)
+            {
+                case HectonQualityTier.Ultra:
+                    return 3f;
+                case HectonQualityTier.High:
+                    return 2f;
+                case HectonQualityTier.Mid:
+                    return 1f;
+                default:
+                    return 0f;
+            }
+        }
+
+        private static bool IsDiagnosticsRuntimeAllowed()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return true;
+#else
+            return false;
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SafeRsqrt(float value)
+        {
+            return value > 0.000001f && math.isfinite(value) ? math.rsqrt(value) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Hash01(uint a, uint b, uint c)
+        {
+            uint h = a ^ 2166136261u;
+            h = (h ^ b) * 16777619u;
+            h = (h ^ c) * 16777619u;
+            h ^= h >> 16;
+            return (h & 0xFFFFu) * HashToUnit;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Triangle01(float value)
+        {
+            float f = value - math.floor(value);
+            return 1f - math.abs(f * 2f - 1f);
         }
 
         private static float ElapsedMicroseconds(long beginTicks)
@@ -1107,6 +1535,15 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
             for (int i = n - 1; i >= 0 && length < buffer.Length; i--)
                 buffer[length++] = tmp[i];
+        }
+
+        private static void AppendHex8(char[] buffer, ref int length, uint value)
+        {
+            for (int shift = 28; shift >= 0 && length < buffer.Length; shift -= 4)
+            {
+                int digit = (int)((value >> shift) & 0xFu);
+                buffer[length++] = (char)(digit < 10 ? '0' + digit : 'A' + digit - 10);
+            }
         }
 
         private static void AppendFixed1(char[] buffer, ref int length, float value)

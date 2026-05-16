@@ -2294,7 +2294,7 @@ namespace Hecton8.Core
             }
 
             if (ToolHapticsRuntime.TryGetRuntime(out ToolHapticsRuntime runtime) &&
-                runtime.TryGetFrontBufferSnapshot(out NativeArray<ToolHapticsRuntime.HapticCommand>.ReadOnly commandBuffer, out int commandCount))
+                runtime.TryGetFrontBufferSnapshot(out ReadOnlySpan<ToolHapticsRuntime.HapticCommand> commandBuffer, out int commandCount))
             {
                 for (int i = 0; i < commandCount; i++)
                 {

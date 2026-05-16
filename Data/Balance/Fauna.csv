@@ -1,0 +1,4 @@
+Id,version_id,Name,Description,SwimSpeed,TurnRate,Aggression01,FleeDistanceM,BiolumIntensity,AccessFrequency
+lantern_fry,1.2,Lantern Fry,Small schooling bioluminescent fish,2.4,5.5,0.05,5.0,0.80,85
+reef_stalker,1.2,Reef Stalker,Ambush predator tuned for reef silhouettes,6.8,3.1,0.72,18.0,0.35,70
+abyss_manta,1.2,Abyss Manta,Wide glider used as distant noir silhouette,4.1,1.6,0.20,28.0,0.55,48

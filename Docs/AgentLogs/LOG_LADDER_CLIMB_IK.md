@@ -125,6 +125,99 @@ What was wrong:
 What was done:
 - Replaced `TeleportToExit` with `RequestClimbToExit`.
 - Replaced `TeleportToEntry` with `RequestClimbToEntry`.
+
+## Loop 10 - Adapter Bloat Cleanup + Core Build Green
+What was wrong:
+- `ClimbableLadder` still contained corrupted non-ASCII banner comments, empty hover comments, and an unused `Hecton8.Audio` namespace after the teleport/delegate purge.
+- A platform-layout scan of touched signal infrastructure still found two `[StructLayout(LayoutKind.Sequential)]` declarations without `Pack = 1`.
+- First `--no-restore` Core build attempt failed with NETSDK1004 because `Temp/obj/Hecton8.Core/project.assets.json` was missing.
+
+What was done:
+- Rewrote `Assets/_Project/Scripts/Gameplay/ClimbableLadder.cs` as a compact ASCII-only adapter with the same procedural climb request, localization cache, collider setup, audio call, editor gizmos, and request API.
+- Added `Pack = 1` to `SpscSignalRingBuffer<T>` and `CombatDamageSignalAupShiftTransformer` in `GlobalSignals.cs`.
+- Re-ran debt, ASCII, layout, and diff whitespace scans. Debt/layout/ASCII scans returned no hits; `git diff --check` reported only LF-to-CRLF warnings.
+- Ran `dotnet restore Hecton8.Core.csproj`, then `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:minimal`.
+
+Cinematic Cheats used:
+- No new visual fake was added. Existing ladder tiering remains: low-tier camera slide + midpoint elbow Dear Lie; high-tier exact rung hand lock and VR grip pull.
+
+Exact Microseconds saved:
+- Runtime: 0 us from the adapter cleanup and layout annotation.
+- Existing low-tier IK saving remains the prior estimate: roughly 7 us saved versus the high-tier two-elbow `math.acos` path. No profiler capture was run, so this remains an estimate, not measured proof.
+
+Validation:
+- `Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll`
+- Build succeeded: 0 warnings, 0 errors, 4.21 s.
+- Runtime status remains pending Unity/editor/profiler verification.
+
+## Loop 11 - Owner Sentinel + Reentry Hardening
+What was wrong:
+- Ladder DataVault buffers and the scheduled IK job used `SystemID.GameplayPlayer`, which made memory/job attribution less precise than the Animation/Locomotion ownership implied by the task.
+- Active climb requests could re-enter `TryBeginClimbInstance` and reset state while a climb or solve job was in progress.
+- Low-tier camera slide was not applied when the player movement force sink existed, even though the stricter XML requires linear camera interpolation along the ladder vector.
+
+What was done:
+- Added `SystemID.AnimationLocomotion = 150`.
+- Routed ladder DataVault handles and `H8Memory.RegisterActiveJob` through `OwnerSystemId = SystemID.AnimationLocomotion`.
+- Added an active/pending/scheduled reject guard before mutating a climb request.
+- Applied the low-tier camera slide after queueing movement-sink velocity, preserving FastNlerp stabilization.
+- Re-ran ladder debt scans, `Pack = 1` layout scan, shader/compute/IO scan, diff whitespace check, and filtered Core build output.
+
+Cinematic Cheats used:
+- Preserved the existing low-tier camera-slide Dear Lie and midpoint elbow fake; no expensive visual-system ownership was added from Animation/Locomotion.
+
+Exact Microseconds saved:
+- Owner sentinel and reentry guard: 0 us steady-state.
+- Low-tier slide branch: same prior estimated cost, roughly 2 us/frame only while low-tier slide is active. No measured profiler evidence.
+
+Validation:
+- Ladder debt/layout scans: no forbidden `Update`, coroutine, `string.Format`, `Debug.Log`, `UnityEvent`, `EventBus`, private/native persistent allocation, teleport marker, or missing `Pack = 1` marker in the ladder-owned path.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` is blocked by external `World/EcosystemDirector.cs` CS1612 errors. Filtered output contains no `LadderClimb`, `ProceduralLadder`, `ClimbableLadder`, `AnimationLocomotion`, or `OwnerSystemId` errors.
+
+## Loop 12 - Explicit Registry Slot
+What was wrong:
+- `ProceduralLadderClimbRuntime` registered into `GlobalRegistry`, but its type still resolved to `GlobalRegistryServiceSlot.Unknown`.
+- Unknown service-slot ownership undermined the `SystemID.AnimationLocomotion` owner attribution added in Loop 11.
+
+What was done:
+- Added `GlobalRegistryServiceSlot.ProceduralLadderClimbRuntime = 172`.
+- Appended the service slot name in `GlobalRegistry`.
+- Mapped that slot to `SystemID.AnimationLocomotion` in `ResolveMemoryOwner`.
+- Added `ProceduralLadderClimbRuntime` to `ResolveServiceSlotCold`.
+
+Cinematic Cheats used:
+- None added in this registry patch. Existing low-tier camera slide and midpoint elbow fake remain the ladder Dear Lie path.
+
+Exact Microseconds saved:
+- 0 us runtime. This is cold registry diagnostics/leak-attribution correctness.
+
+Validation:
+- Debt/layout scans remain clean for ladder-owned files.
+- `dotnet restore Hecton8.Core.csproj` succeeded.
+- Latest filtered Core build wall is external `SubmarineFluidDynamics.cs` syntax errors; no ladder/runtime/registry-owner symbols are present.
+
+## Loop 13 - Runtime NativeArray View Eviction
+What was wrong:
+- `ProceduralLadderClimbRuntime` did not own native arrays, but its helper signatures still exposed `out NativeArray<T>` views.
+- That made static audit output ambiguous under the DataVault sovereignty mandate.
+
+What was done:
+- Added packed `LadderClimbIkVaultViews` in `LadderClimbIkJobs.cs`.
+- Refactored output read, ladder AUP write/read, solve scheduling, and blackbox dump to use the vault-view packet.
+- Removed all `NativeArray<T>` declarations from `ProceduralLadderClimbRuntime.cs`.
+- Re-ran debt/layout/build-wall scans.
+
+Cinematic Cheats used:
+- No new visual fake. The existing low-tier midpoint elbow and absolute camera slide remain the toaster path.
+
+Exact Microseconds saved:
+- 0 us intended; this is data-ownership clarity over the same DataVault views.
+
+Validation:
+- `ProceduralLadderClimbRuntime.cs` has zero `NativeArray<T>` matches.
+- `NativeArray<T>` remains only in `LadderClimbIkJobs.cs` vault-view and Burst job fields.
+- Missing `Pack = 1` scan returned no hits for the ladder/touched signal path.
+- Latest filtered Core build wall is external UI compass and World ecosystem debt; no ladder/runtime/registry-owner symbols are present.
 - Confirmed there are no live source references to the old method names outside a deprecated external description bundle.
 - Re-ran source scans for teleport, UnityEvent, DDOL, string formatting, Debug logging, coroutine, Animator, EventBus, private/native allocations, and H8Memory allocation markers in the ladder-owned path.
 
@@ -135,3 +228,118 @@ Exact microseconds saved:
 - Runtime: 0 us. Method rename does not change the execution path.
 - Maintenance/debug savings only: prevents future agents from binding against a teleport-named climb API.
 - Build validation: latest Core build fails on unrelated `Assets/_Project/Scripts/Ecosystem/EcosystemRuntimeInstaller.cs(1,18): CS0234` missing `Hecton8.AI.Ecosystem`; no ladder symbols reported.
+
+## Loop 14 - Signal Semantics and Ordered Blackbox
+What was wrong:
+- Finished ladder climbs published an inactive packet with `StateClimbing`, which made latest-state consumers cache a climb state after the climb ended.
+- Stationary ladder frames published neutral `PlayerStressSignal`/`PhysiologyStateSignal` packets, which could overwrite a more meaningful latest stress producer.
+- Blackbox dump order followed raw ring indices instead of cursor-ordered oldest-to-newest telemetry after wrap.
+
+What was done:
+- Added `PlayerStateSignal.StateNone = 0` and changed finished climb shutdown packets to publish `StateNone`.
+- Kept slip terminal packets as `StateClimbing + FlagClimbing + FlagLadderSlip` so downstream systems can distinguish a drop from a clean finish.
+- Added active/climbing flags to non-neutral climb physiology and stress packets.
+- Suppressed neutral climb stress spam unless a slip is pending.
+- Changed telemetry cursor wrap and dump export to use the actual capped ring capacity and write oldest-to-newest entries.
+
+Cinematic Cheats used:
+- Existing low-tier Dear Lie remains: camera slide plus midpoint elbow fake instead of full `math.acos`.
+- No new physical simulation was added. Saved lane traffic is reserved for richer high-tier haptics/heartbeat response, not extra gameplay truth.
+
+Exact Microseconds saved:
+- Stationary ladder frames avoid up to two neutral typed signal publishes, estimated 2-4 us when the player is hanging without movement.
+- State packet branch cost is estimated 0-1 us on publication only.
+- Ordered blackbox export is cold path only, 0 us hot-path claim.
+
+Validation:
+- Debt scan found no forbidden `Update`, coroutine, `string.Format`, `Debug.Log`, `UnityEvent`, `EventBus`, private/native persistent allocation, teleport marker, DDOL marker, or `position +=` in the ladder-owned path.
+- Missing `Pack = 1` scan returned no hits for ladder-owned files, `ClimbableLadder`, or touched `GlobalSignals`.
+- `ProceduralLadderClimbRuntime.cs` still has zero `NativeArray<T>` declarations; `NativeArray<T>` remains only in `LadderClimbIkJobs.cs` vault-view/job fields.
+- `git diff --check` reports only existing LF-to-CRLF warnings on touched files.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` is blocked by external `Core/Determinism/LockstepStateValidator.cs` missing lockstep/glitch constants. Filtered output contains no ladder/runtime/signal-owner symbols.
+
+## Loop 15 - VR Embodiment Sign and Rotation Polish
+What was wrong:
+- VR hand-delta climb semantics were directionally ambiguous. Embodied ladder climbing requires the player to pull hands down to move the body/world up, not feed the controller delta as same-direction player progress.
+- No-grip universal input packets could leave stale pending grip pull until the next resolver pass.
+- Clean VR climb finish still shared the non-VR endpoint root-rotation snap path.
+
+What was done:
+- `SubmitUniversalInputState` now clears pending grip pull and grip mask when `UniversalInputStateSignal(Grip)` is absent.
+- `ResolveProgressDelta` now inverts the consumed grip pull so controller movement along the ladder maps to opposite world/player progress.
+- `StopClimb` now skips endpoint root-rotation snaps for VR grip mode, leaving headset/controller orientation authority intact.
+- Re-ran targeted debt/layout scans and filtered Core build isolation.
+
+Cinematic Cheats used:
+- Low/toaster path remains the Dear Lie: camera slide plus midpoint elbow fake instead of full two-elbow `math.acos`.
+- High/VR path keeps exact rung hand lock and grip-pull embodiment; no new physical simulation was added.
+
+Exact Microseconds saved:
+- 0 us intended steady-state change. This is sign/branch correctness over existing scalar work.
+- Existing low-tier saving remains estimated at roughly 7 us versus high-tier `math.acos` elbows. No profiler capture was run, so this is still estimate, not measured proof.
+
+Validation:
+- Debt scan found no forbidden `Update`, coroutine, `string.Format`, `Debug.Log`, `UnityEvent`, `EventBus`, private/native persistent allocation, teleport marker, DDOL marker, or `position +=` in the ladder-owned path.
+- Missing `Pack = 1` scan returned no hits for ladder-owned files, `ClimbableLadder`, or touched `GlobalSignals`.
+- Latest filtered `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` is blocked by external `UI/Navigation/DiegeticGyroCompassRuntime.cs` DTO drift and `Core/SystemDispatcher.cs` missing dispatcher-blackbox helpers. Filtered output contains no ladder/runtime/signal-owner symbols.
+- Unity editor, Play Mode, profiler, GC monitor, and platform builds were not run.
+
+## Loop 16 - Typed Input Lane Grip Mask Hardening
+What was wrong:
+- The VR grip path still had a stale mask hazard. Core defines `PlayerInputAction.Interact = 1 << 1` and `SecondaryFire = 1 << 3`, while the old ladder default was `1 << 6`.
+- XR grip in `InputDispatcher.ResolveXRToolActionBitsAndPublishSignal` publishes `SecondaryFire | Interact`, so scenes serialized with the old mask could miss real grip packets.
+- Pending external hand deltas needed to be cleared by the authoritative typed input snapshot, not only by callers that explicitly submit hand deltas.
+
+What was done:
+- Added `LegacySerializedGripActionMask = 1u << 6`.
+- Kept the serialized `universalGripActionMask`, but `ResolveGripActionMask()` now maps zero or legacy values to `PlayerInputAction.Interact | PlayerInputAction.SecondaryFire` and ORs custom masks with those Core grip bits.
+- Added `ConsumeInputStateSignals()` on the VR hot tick. It reads `SignalBus<InputStateSignal>.GetFrameSnapshot()` as `ReadOnlySpan<InputStateSignal>`, tracks `InputState.Sequence`, and clears pending grip pull when the latest input packet has no grip.
+- Re-ran source proof against `PlayerInputState.cs` and `InputDispatcher.cs`, ladder debt scans, layout scans, runtime NativeArray scan, diff whitespace check, and filtered Core build.
+
+Cinematic Cheats used:
+- Low/toaster path remains unchanged: camera slide plus midpoint elbow fake instead of full two-elbow `math.acos`.
+- High/VR path now spends a small bounded typed-lane scan to preserve physical pull truth instead of inventing another simulation or signal.
+
+Exact Microseconds saved:
+- No new savings claimed. The typed input scan costs an estimated 1-2 us/frame only in VR grip mode over the bounded 64-entry lane snapshot.
+- Legacy mask normalization is scalar branch work, estimated below 1 us. No profiler capture was run, so these remain estimates.
+
+Validation:
+- Forbidden ladder-domain scan returned no matches for `Update`, coroutine, `string.Format`, `Debug.Log`, `UnityEvent`, `EventBus`, private/native persistent allocation, teleport marker, DDOL marker, or `position +=`.
+- Missing `Pack = 1` scan returned no hits for ladder-owned files, `ClimbableLadder`, or touched `GlobalSignals`.
+- `ProceduralLadderClimbRuntime.cs` still has zero `NativeArray<T>` declarations; `NativeArray<T>` remains only in `LadderClimbIkJobs.cs` vault-view/job fields.
+- `git diff --check` reports only existing LF-to-CRLF warnings on touched files.
+- Latest filtered `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` is blocked by external `Assets/_Project/Scripts/TetherInstance.cs` missing `IsFrameCooldownActive`. Filtered output contains no ladder/runtime/input-lane symbols.
+- Unity editor, Play Mode, profiler, GC monitor, and platform builds were not run.
+
+## Loop 17 - Grip Truth and Blackbox Retained Count
+What was wrong:
+- Grip truth and pull distance were coupled. If `SignalBus<InputStateSignal>` showed grip held but no hand delta was submitted that frame, `_lastResolvedGripMask` became zero and the look-down release-slip branch could fire while the player was still holding grip.
+- Direct `SubmitGripPullDelta` callers could report a grip mask without updating the typed grip-held truth, or pass zero mask without clearing stale pull state.
+- Short-session blackbox dumps wrote the full 300-entry ring even when fewer real samples existed, which could put cleared/uninitialized entries ahead of useful crash evidence.
+
+What was done:
+- Added `_currentInputGripHeld` to track held/released truth separately from `_pendingGripPullMeters`.
+- Updated `SubmitUniversalInputState`, `SubmitGripPullDelta`, and `ConsumeInputStateSignals` so held zero-delta grip blocks release-slip, while zero-mask input clears grip and pull state.
+- Added two vault cursor indices: next-write and retained-count.
+- Changed `LadderClimbIkSolveJob.WriteTelemetry()` to advance both cursor values in DataVault.
+- Changed `DumpBlackBox()` to write only retained samples and preserve oldest-to-newest order after wrap.
+- Hardened `EnsureVaultBuffers()` so an already-created one-int telemetry cursor handle is grown to the two-int lane instead of blocking solve capacity.
+- Re-ran forbidden pattern scans, layout scan, NativeArray placement scan, diff whitespace check, and filtered Core build.
+
+Cinematic Cheats used:
+- Low/toaster path remains unchanged: camera slide plus midpoint elbow fake instead of full two-elbow `math.acos`.
+- High/VR path remains physical: grip-held truth only prevents false slip; climb progress still requires real hand pull delta.
+
+Exact Microseconds saved:
+- No savings claimed. Grip-held truth adds one bool branch in VR mode, estimated below 1 us/frame.
+- Retained blackbox count adds one int read/write in the telemetry job, estimated below 1 us/frame.
+- The existing low-tier midpoint elbow path still avoids the high-tier `math.acos` cost; no profiler capture was run.
+
+Validation:
+- Forbidden ladder-domain scan returned no matches for `Update`, coroutine, `string.Format`, `Debug.Log`, `UnityEvent`, `EventBus`, private/native persistent allocation, teleport marker, DDOL marker, or `position +=`.
+- Missing `Pack = 1` scan returned no hits for ladder-owned files, `ClimbableLadder`, or touched `GlobalSignals`.
+- `ProceduralLadderClimbRuntime.cs` still has zero `NativeArray<T>` declarations; `NativeArray<T>` remains only in `LadderClimbIkJobs.cs` vault-view/job fields.
+- `git diff --check` reports only existing LF-to-CRLF warnings on touched files.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` returned `CORE_BUILD_EXIT:0`.
+- Unity editor, Play Mode, profiler, GC monitor, and platform builds were not run.

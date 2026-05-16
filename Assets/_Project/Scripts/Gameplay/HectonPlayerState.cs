@@ -139,8 +139,6 @@ namespace Hecton8.Gameplay
         public int TelemetryWriteIndex;
         public uint TelemetryFrameSequence;
 
-        private const string NativeMemoryOwner = nameof(PlayerKinematicsNativeState);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int VaultPositionsFlag = 1 << 0;
         private const int VaultVelocitiesFlag = 1 << 1;
         private const int VaultIntendedMovementsFlag = 1 << 2;
@@ -289,20 +287,7 @@ namespace Hecton8.Gameplay
             }
 
             _vaultNativeStateMask &= ~vaultFlag;
-            NativeArray<T> array = H8Memory.Allocate<T>(
-                math.max(1, count),
-                SystemID.GameplayPlayer,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            if (!array.IsCreated)
-                return default;
-
-            NativeMemorySentinel.RegisterNativeArray(
-                array,
-                NativeMemoryOwner,
-                label,
-                NativeMemoryLifetime);
-            return array;
+            return default;
         }
 
         public void Dispose()
@@ -349,8 +334,6 @@ namespace Hecton8.Gameplay
 
         private const int NativeCacheLineBytes = 64;
         private const int NativeCacheLineMask = NativeCacheLineBytes - 1;
-        private const string NativeMemoryOwner = nameof(HectonPlayerMotorNativeState);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int VaultScheduledSweepCommandsFlag = 1 << 0;
         private const int VaultScheduledSweepResultsFlag = 1 << 1;
         private const int VaultKinematicRepairTargetCommandsFlag = 1 << 2;
@@ -379,7 +362,7 @@ namespace Hecton8.Gameplay
                     requiredCommandCount,
                     nameof(ScheduledSweepCommands),
                     VaultScheduledSweepCommandsFlag,
-                    NativeArrayOptions.UninitializedMemory); // COLD FALLBACK: vault-first deferred KCC sweep commands; 64-byte count padding - owner: HectonPlayerMotorNativeState
+                    NativeArrayOptions.UninitializedMemory);
             }
 
             if (!ScheduledSweepResults.IsCreated)
@@ -389,7 +372,7 @@ namespace Hecton8.Gameplay
                     requiredResultCount,
                     nameof(ScheduledSweepResults),
                     VaultScheduledSweepResultsFlag,
-                    NativeArrayOptions.UninitializedMemory); // COLD FALLBACK: vault-first deferred KCC sweep results; 64-byte count padding - owner: HectonPlayerMotorNativeState
+                    NativeArrayOptions.UninitializedMemory);
             }
         }
 
@@ -411,7 +394,7 @@ namespace Hecton8.Gameplay
                     math.max(1, commandCount),
                     nameof(KinematicRepairTargetCommands),
                     VaultKinematicRepairTargetCommandsFlag,
-                    NativeArrayOptions.ClearMemory); // COLD FALLBACK: vault-first KCC hand IK repair target ray commands - owner: HectonPlayerMotorNativeState
+                    NativeArrayOptions.ClearMemory);
             }
 
             if (!KinematicRepairTargetResults.IsCreated)
@@ -421,7 +404,7 @@ namespace Hecton8.Gameplay
                     math.max(1, resultCount),
                     nameof(KinematicRepairTargetResults),
                     VaultKinematicRepairTargetResultsFlag,
-                    NativeArrayOptions.ClearMemory); // COLD FALLBACK: vault-first KCC hand IK repair target ray results - owner: HectonPlayerMotorNativeState
+                    NativeArrayOptions.ClearMemory);
             }
         }
 
@@ -449,21 +432,7 @@ namespace Hecton8.Gameplay
             }
 
             _vaultNativeStateMask &= ~vaultFlag;
-            NativeArray<T> array = H8Memory.Allocate<T>(
-                safeCount,
-                SystemID.GameplayPlayer,
-                Allocator.Persistent,
-                options);
-            if (array.IsCreated)
-            {
-                NativeMemorySentinel.RegisterNativeArray(
-                    array,
-                    NativeMemoryOwner,
-                    label,
-                    NativeMemoryLifetime);
-            }
-
-            return array;
+            return default;
         }
 
         private void ReleaseMotorArray<T>(ref NativeArray<T> array, int vaultFlag) where T : struct

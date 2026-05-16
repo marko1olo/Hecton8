@@ -126,3 +126,186 @@ Exact microseconds saved / budget estimates:
 Validation:
 - `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt11_after_external_edits.log`: Build FAILED with 3 external AI ecosystem errors and zero scheduler/bucketer/bootstrap/H8Memory/job-admission hits.
 - Current status is blocked by external dependency, not build-green.
+
+## 2026-05-16 - Lane Constant Repair Pass
+What was wrong:
+- `BurstTokenBucketJobAdmissionService.ResolveDefaultRefillBudgetMs` referenced stale `JobAdmissionLanes.Lane2AI` and `Lane3Physics` constants.
+- The public contract exposes `Lane2Voxel` and `Lane3AI`; the stale names would fail compilation once external walls stopped masking scheduler files.
+
+What was done:
+- Replaced stale lane names with `Lane2Voxel` and `Lane3AI`.
+- Preserved the fixed admission budgets: 1.40 ms for voxel, 0.80 ms for AI.
+- Re-ran dotnet validation as attempt12.
+
+Cinematic cheats used:
+- Low tier remains fixed token-bucket math.
+- High tier still uses the same admission lanes for downstream voxel/AI/visual load control.
+
+Exact microseconds saved / budget estimates:
+- Compile correctness only; no runtime microsecond gain claimed.
+- No loop count, allocation, or disk-I/O change.
+
+Validation:
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt12_lane_constants.log`: Build FAILED outside scheduler in `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs`.
+- Current attempt12 has zero scheduler/bucketer/bootstrap/H8Memory/job-admission hits.
+
+## 2026-05-16 - Admission Bootstrap Vault Repair Pass
+What was wrong:
+- `GameBootstrapper` was calling the interface-only job-admission `Initialize` overload after admission state moved to GlobalDataVault.
+- That path left `BurstTokenBucketJobAdmissionService` uninitialized and fail-open, defeating the vault-owned token buckets.
+- Direct `IDataVault` overload calls hit generated-project type identity conflicts between source `GlobalDataVault.cs` and `Hecton8.Core.Memory.dll`.
+
+What was done:
+- Added a boxed DataVault overload to `BurstTokenBucketJobAdmissionService`.
+- Rewired `GameBootstrapper` to pass `GlobalRegistry.DataVault` for concrete `BurstTokenBucketJobAdmissionService` instances.
+- Preserved the legacy interface overload for non-concrete test services.
+- Re-ran validation through attempt15.
+
+Cinematic cheats used:
+- Low tier now actually receives fixed vault-backed token budgets instead of silent pass-through.
+- High tier can use EWMA admission to gate downstream visual workload instead of scheduling every admitted wrapper job.
+
+Exact microseconds saved / budget estimates:
+- Hot-path loop count unchanged; no measured microsecond gain claimed.
+- Correctness gain: admission no longer fails open when the bootstrap-owned concrete service is used.
+- Normal-path disk I/O remains 0 us.
+
+Validation:
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt15_bootstrap_object_vault.log`: Build FAILED outside scheduler in `TetherManager.cs` / `Physics/TetherSignals.cs` with missing `TetherFireRequest`.
+- Current attempt15 has zero scheduler/bucketer/bootstrap/H8Memory/job-admission hits.
+
+## 2026-05-16 - Vault Overload and Dispatcher Fallback Eviction Pass
+What was wrong:
+- The generated Core project could not see the boxed admission overload and previously rejected `object` calls in `GameBootstrapper`.
+- Reverting to interface-only admission initialization compiled, but it left `BurstTokenBucketJobAdmissionService` uninitialized because no DataVault was supplied.
+- `SystemDispatcher` still had fallback private `NativeArray` storage for H8 time and deferred raycast hits.
+
+What was done:
+- Routed concrete `BurstTokenBucketJobAdmissionService` initialization through the compile-visible `IDataVault` overload with `GlobalRegistry.DataVault`.
+- Preserved the interface-only initialization path for non-concrete test services.
+- Removed SystemDispatcher H8 time and raycast-hit `NativeArray` fields.
+- Removed the H8Memory fallback allocations for those two dispatcher SOA buffers.
+- Dispatcher now keeps DataVault handles and resolves temporary NativeArray views only at use sites.
+
+Cinematic cheats used:
+- Low tier keeps fixed bucket and token-budget math: cheap, predictable, no continuous sorting.
+- High/Ultra still receive budget signals/admission control instead of scheduler-owned visual systems.
+- Fault evidence remains fixed-size memory rings and fault-only binary dumps; no normal-frame disk writes.
+
+Exact microseconds saved / budget estimates:
+- Measured microseconds saved: 0 us. No benchmark harness was run in this pass.
+- Cold fallback allocator paths removed: 2.
+- Normal-path disk I/O remains 0 us.
+- Hot-path loop counts unchanged; this is ownership and crash-proofing work, not a claimed FPS gain.
+
+Validation:
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt17_vault_overload.log`: Build FAILED only in external `PhysicsApplySystem.cs`; zero scheduler/bootstrap/bucketer/job-admission hits.
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt18_dispatcher_vault_views.log`: Build FAILED only in external `UI/Navigation/DiegeticGyroCompassRuntime.cs` and `World/EcosystemDirector.cs`; zero scheduler/bootstrap/SystemDispatcher/H8Memory/job-admission hits.
+- Static scan: no private `NativeArray` fields or H8Memory fallback allocations remain in `SystemDispatcher` for H8 time or dispatcher raycast hits.
+
+## 2026-05-16 - PlayerLoop Authority and Raycast Command Vault Pass
+What was wrong:
+- `SystemDispatcher` still used standard MonoBehaviour `Update()` and `LateUpdate()` method names.
+- Dispatcher dev-fault paths still emitted `Debug.LogError`.
+- Deferred raycast pending/scheduled command storage still lived in dispatcher-owned native command containers before a concurrent vault-handle repair landed.
+
+What was done:
+- Replaced MonoBehaviour update entrypoints with explicit PlayerLoop nodes installed during dispatcher initialization.
+- Moved the update bodies to `RunDispatcherUpdate` and `RunDispatcherLateFrame`.
+- Replaced heap-lock and AUP NaN console error paths with typed `ComplianceViolationSignal` plus numeric telemetry.
+- Preserved fail-fast heap-lock behavior by throwing after typed telemetry in editor guard builds.
+- Verified deferred raycast command staging now uses `BufferID.SystemDispatcherRaycastPendingCommands` and `BufferID.SystemDispatcherRaycastScheduledCommands` through GlobalDataVault handles.
+- Preserved command/hit vault locks so scheduled raycast job buffers cannot move while the job is in flight.
+
+Cinematic cheats used:
+- Low tier remains static bucket distribution plus fixed command-buffer capacity.
+- High/Ultra still spend recovered budget downstream through typed bucket/admission flags, not scheduler-owned VFX edits.
+- Diagnostics are typed-lane and black-box first; normal frames do not allocate console strings or write disk.
+
+Exact microseconds saved / budget estimates:
+- Measured microseconds saved: 0 us. No benchmark harness was run.
+- Removed two standard Unity message entrypoints from the time authority.
+- Removed two `Debug.LogError` call sites from scheduler-owned runtime code.
+- Deferred raycast command storage is vault-backed fixed-buffer staging; no private command-container allocation remains in the dispatcher.
+
+Validation:
+- Static scan: no `Update()`, `LateUpdate()`, `Debug.Log*`, `string.Format`, private `NativeArray` fields, private `NativeQueue<RaycastCommand>`, private `NativeList<RaycastCommand>`, or H8Memory SystemDispatcher fallback allocations in the scheduler/SystemDispatcher sweep.
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt22_current_playerloop_vault_commands.log`: Build FAILED outside scheduler in `UI/Navigation/DiegeticGyroCompassRuntime.cs`, `Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs`, and `Core/GlobalSignals.cs` debug-signal debt.
+- attempt22 has zero scheduler/bootstrap/SystemDispatcher/H8Memory/job-admission errors.
+
+## 2026-05-16 - Dispatcher Black Box and Build Green Pass
+What was wrong:
+- Dispatcher black-box IDs, fields, and call sites existed, but the ensure/dispose/write/dump methods were missing.
+- The missing methods broke `SystemDispatcher` compilation after external compile walls moved.
+- Without the implementation, the time authority had no local 300-frame heartbeat ring.
+
+What was done:
+- Added DataVault-backed `SystemDispatcherBlackBox` and `SystemDispatcherBlackBoxCursor` resolution.
+- Wrote a packed 64-byte `DispatcherBlackBoxEntry` every dispatcher heartbeat.
+- Captured frame, sequence, dilated/unscaled time, delta, time dilation, frame milliseconds, flags, raycast backlog, homeostasis pressure, AUP sequence, state hash, and kill-switch mask.
+- Added non-finite detection that emits typed compliance telemetry and writes `Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin` once on fault.
+- Re-ran final validation as attempt25.
+
+Cinematic cheats used:
+- Toaster path remains fixed-size memory writes only; normal frames do not write disk.
+- High/Ultra path gets the same heartbeat data to correlate frame pacing, homeostasis, and downstream visual-overkill budget.
+
+Exact microseconds saved / budget estimates:
+- Measured microseconds saved: 0 us. No benchmark harness was run.
+- Normal disk I/O: 0 us.
+- Fault-path binary dump: one cold write only on non-finite dispatcher state.
+- Dispatcher black-box normal path: one fixed DataVault entry write per frame; exact cost not measured.
+
+Validation:
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt25_dispatcher_blackbox.log`: Build succeeded, 0 Warning(s), 0 Error(s).
+- Static scan: no `Update()`, `LateUpdate()`, `Debug.Log*`, `string.Format`, private `NativeArray` fields, private `NativeQueue<RaycastCommand>`, private `NativeList<RaycastCommand>`, or H8Memory SystemDispatcher fallback allocations in the scheduler/SystemDispatcher sweep.
+
+## 2026-05-16 - Current Revalidation Pass
+What was wrong:
+- The disk report still pointed at attempt25 after the latest inquisition commands.
+- Concurrent builds and agents make stale compile reports unacceptable.
+
+What was done:
+- Re-read the original `SIMULATION_BUCKET_DISTRIBUTOR` XML block from `CURRENT_BATCH.md`.
+- Re-ran static debt scan over `SystemDispatcher`, `Core/Scheduling`, and `Core/Bucketing`.
+- Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` as attempt26.
+- Updated status and rationale to point at the current build artifact.
+
+Cinematic cheats used:
+- No new runtime cheats were added in this validation-only pass.
+- Existing toaster path remains fixed bucket math, typed signals, DataVault storage, and fault-only dumps.
+- Existing high/ultra path still exposes visual-overkill budget through bucket/admission signals without scheduler-owned VFX code.
+
+Exact microseconds saved / budget estimates:
+- Measured microseconds saved: 0 us. No benchmark harness was run.
+- Compile revalidation only; no runtime timing claim.
+
+Validation:
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt26_current_revalidation.log`: Build succeeded, 0 Warning(s), 0 Error(s).
+- Static scan: remaining `NativeArray<T>` matches are DataVault resolver return views, not private owned storage.
+
+## 2026-05-16 - Dispatcher Tier Snapshot and Dump Path Pass
+What was wrong:
+- `SystemDispatcher` dispatcher black-box faults still wrote to `Docs/AgentLogs/Dump_CORE_TICK_DILATION.bin`, which breaks owner-specific post-mortem lookup.
+- The dispatcher cadence used `GlobalRegistry.ScalabilityTierProfileByte` in multiple hot-path helpers instead of one frame snapshot.
+
+What was done:
+- Changed the dispatcher black-box fault artifact to `Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin`.
+- Added `_scalabilityTierProfileByte` as the dispatcher-owned frame snapshot.
+- Refreshed that byte once at the start of PRE_SIMULATION.
+- Routed time-dilation visual quality tier, memory-defrag cadence, dispatcher black-box low-tier flag, job-admission refill, and simulation-bucket advancement through the snapshot.
+
+Cinematic cheats used:
+- Low tier still buys frame stability through static bucket distribution, reduced cadence, and fixed fault-only telemetry.
+- High/Ultra still use the same cached tier to unlock dynamic bucket rebalancing and downstream visual-overkill budget flags.
+
+Exact microseconds saved / budget estimates:
+- Measured microseconds saved: 0 us. No benchmark harness was run.
+- Static impact: four repeated registry property reads collapsed into one PRE_SIMULATION snapshot.
+- No new native storage, no new managed allocation, no public API change.
+
+Validation:
+- Static scan: no stale `Dump_CORE_TICK_DILATION` path remains in `SystemDispatcher`.
+- Static scan: only one `GlobalRegistry.ScalabilityTierProfileByte` read remains in `SystemDispatcher`, at the PRE_SIMULATION frame snapshot.
+- Static scan: no `Update()`, `LateUpdate()`, `Debug.Log*`, `string.Format`, private raycast command `NativeQueue`/`NativeList`, or SystemDispatcher H8Memory fallback allocation in the scheduler sweep.
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt27_tier_snapshot_dump_path.log`: Build failed outside scheduler in `Assets/_Project/Scripts/World/EcosystemDirector.cs` duplicate method definitions; scheduler/touched-path filter returned zero hits.

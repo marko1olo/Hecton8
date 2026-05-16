@@ -174,3 +174,115 @@ Solution: Added a first-party source scan to the content editor validator that f
 Rejected Alternatives: Relying on manual `rg` reports was rejected because a future first-party regression would bypass the build gate. Keeping task 20 blocked was rejected after the current build commands succeeded.
 Scalability potential: Low/Quest/MX350 stay protected from accidental Resources-path loads and Overkill bundle pulls. High/Ultra keep explicit Addressables-tier ownership and can spend budget only through validated registries.
 Hardware Impact: Build-time gate is 0 runtime us. Runtime benefit is avoiding accidental synchronous Resources path loads and their uncontrolled RAM residency.
+
+## Phase 8 Refcount Integrity and Platform I/O
+Problem: The content-owned Addressables handle bridge could remove a hash ledger entry after a failed handle-track attempt even when earlier references still existed. The lore provider assumed direct file access to StreamingAssets/dataPath, which is not portable for Android compressed package paths and is weak for Steam Deck microSD pressure. Build validation still sorted content hash maps while validating. Bundle refs lived in GlobalDataVault but teardown released handles without clearing the vault state.
+Solution: Changed the failed handle-track rollback to release only the just-acquired ref and remove the hash only if that release made it unused. Changed lore path resolution to prefer `Application.persistentDataPath`, skip URI/jar package paths, and use a 64 KB fallback FileStream buffer aligned to `MaxSynchronousLoreReadBytes`. Added a build gate rejecting empty, absolute, URI, or jar lore dictionary paths. Removed `ForceSort()` from validator discovery. Added `ContentBundleReferenceCounter.Clear()` and teardown logic that releases content-owned handles, clears vault ref records, and unregisters the content VRAM owner.
+Rejected Alternatives: Unconditional ledger removal was rejected because it can delete live residency state. Direct StreamingAssets File/MMF reads on Android were rejected because jar/compressed paths are not normal filesystem paths. Validator-side sorting was rejected because a build check must not repair authored data silently. Registering a zero-byte VRAM owner was rejected after confirming `VRAMBudgetTracker.Unregister()` exists.
+Scalability potential: Low/Quest gets portable lore path behavior and no accidental deletion of live bundle refs under handle-table exhaustion. Steam Deck gets a larger bounded stream buffer for 64 KB lore blocks. High/Ultra keeps the same validated content hash route without changing overkill tier logic.
+Hardware Impact: No new per-frame work. Refcount rollback runs only on a failed content-owned handle-track path. Lore fallback uses a 64 KB stream buffer to reduce repeated small reads; exact microseconds require platform I/O trace. Bundle vault clearing is teardown-only.
+
+## Phase 8 Compile Wall
+Problem: Current core compile is green after phase 8 patches, but current editor compile fails outside CORE/ASSETS.
+Solution: Logged attempt 24 core green, attempt 25 interrupted tooling with empty log during concurrent dotnet build, attempt 26 editor fail in `ArchitectEyeVisualizer.cs`, attempt 27 core green, attempt 28 transient external `EcosystemDirector.cs` core fail, attempt 29 core green, and attempt 30 editor fail in external Diagnostics/Audio/World files. No error references `Assets/_Project/Scripts/Core/Content`.
+Rejected Alternatives: Editing `Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs`, `Audio/PlayerCriticalProceduralAudioRenderer.cs`, or `World/AbyssalThermalManager.cs` was rejected because they are outside the content authority surface and have active external ownership.
+Scalability potential: Not applicable.
+Hardware Impact: Not applicable until external editor diagnostics wall is cleared.
+
+## Phase 9 Object Batch and Resources Gate Hardening
+Problem: `ObjectBatchBase` exposed BRG payload arrays but the build gate did not prove mesh/material tables, instance indices, chunk ranges, hashes, LOD levels, transforms, or bounds. The Resources purge validator matched only exact dotted calls and could miss spaced or fully qualified first-party API variants.
+Solution: Added mesh/material count accessors to `ObjectBatchBase` and a build validator pass over first-party `ObjectBatchBase` assets. The validator fails malformed static debris payloads before runtime BRG binding. Replaced exact Resources substring matching with token scanning that catches `Resources`, fully qualified `UnityEngine.Resources`, whitespace around the dot, `Load`, `LoadAll`, and `LoadAsync` calls.
+Rejected Alternatives: Reflection into serialized fields was rejected because public count accessors keep the validator simple and type-safe. Runtime null guards in BRG binding were rejected because malformed authored batches must fail before build. Exact substring matching was rejected because it is too easy to bypass with whitespace or a full namespace qualifier.
+Scalability potential: Low/Quest/MX350 avoid malformed batch payloads that would waste draw setup or crash static debris rendering. Middle keeps validated chunked debris. High/Ultra can safely spend saved CPU/GPU submission budget on denser wreck dressing, salt crystals, volumetric silt, and procedural hull dents through the existing Overkill tier.
+Hardware Impact: Build-time only, 0 runtime us added. Runtime benefit is avoided bad BRG payloads, avoided missing mesh/material null paths, and stronger prevention of synchronous Resources asset access.
+
+## Phase 9 Compile Wall
+Problem: Editor validator code now compiles, but current core compile is blocked by active external edits outside CORE/ASSETS.
+Solution: Logged attempt 31 core failure in `Fauna/PredatorCognitionDomain.cs`, attempt 32 editor green after phase 9 validator changes, and attempt 33 core failure in `Bootstrap/GameBootstrapper.cs` due to `IDataVault` assembly identity mismatch. Static scans after the patch found no banned content-domain patterns and no first-party Resources load calls.
+Rejected Alternatives: Editing Fauna, Bootstrap, or Core Memory assembly ownership from the content pass was rejected because those files are outside the assigned CORE/ASSETS domain and are not required cross-domain interfaces for the object-batch/resource validator change.
+Scalability potential: Not applicable to compile wall.
+Hardware Impact: Not applicable until the external core build wall is cleared.
+
+## Phase 10 Lore Path Sovereignty and Short-Read Hardening
+Problem: Lore dictionary validation rejected absolute/URI/jar paths, but it still allowed `..` traversal and runtime rooted paths. The fallback stream read used one `Read` call, which can return partial data under slow or contended storage even when more bytes remain.
+Solution: Added `ContentLoreBinaryProvider.IsPortableDictionaryRelativePath()` and routed both runtime resolution and editor validation through it. Runtime resolution now accepts only portable relative dictionary paths, resolves full paths under known Unity roots, rejects candidates outside the chosen root, and loops fallback `FileStream.Read(Span<byte>)` until the requested block is complete or EOF is reached.
+Rejected Alternatives: Leaving runtime absolute-path acceptance was rejected because build gates and runtime behavior must agree. Raw `Path.Combine` without root containment was rejected because traversal breaks data sovereignty. A managed byte-array staging buffer was rejected because the caller already supplies a `Span<byte>`.
+Scalability potential: Low/Quest gets deterministic packaged/persistent lore behavior without bad jar/URI/rooted paths. Steam Deck gets safer partial-read handling for microSD or contended disk reads. High/Ultra uses the same hash-routed lore interface without divergent asset paths.
+Hardware Impact: No new per-frame work. Path validation and full-path containment are cold open only. Read-loop overhead occurs only for fallback lore reads and prevents partial block failure; exact microseconds require platform I/O trace.
+
+## Phase 10 Compile Wall
+Problem: Phase 10 code verification is blocked by external compile failures after the lore path patch.
+Solution: Static scans after the patch returned clean for content banned patterns and first-party Resources load calls. Attempt 34 timed out under concurrent dotnet activity and was treated as interrupted tooling. Attempt 35 editor recheck failed in external `World/EcosystemDirector.cs` and third-party project restore assets. Attempt 36 core recheck failed in external `World/EcosystemDirector.cs`. No failure referenced `Assets/_Project/Scripts/Core/Content`.
+Rejected Alternatives: Editing World, Tether, GPUInstancer, Den.Tools, Crest, or EasySave3 project state was rejected because those areas are outside the assigned CORE/ASSETS domain.
+Scalability potential: Not applicable to compile wall.
+Hardware Impact: Not applicable until external world/vendor build walls are cleared.
+
+## Phase 11 Hologram Pool and Prefab Binding Gate
+Problem: The 100 ms hologram fallback pool reused active proxies by round-robin index. That can alias two pending loads to one proxy; when the first load completes, it can hide the visible proxy for the second target. Prefab validation also did not fail missing `ContentAuthorityRuntime` hash-map or hologram proxy bindings.
+Solution: Changed `ShowHologram()` to search the fixed pool for an inactive proxy and return `-1` when all proxies are active, avoiding alias corruption. Added public read-only binding/capacity accessors and a build validator pass that rejects content runtime prefabs missing the asset hash map, hologram mesh/material, or a pool capacity outside `1..MaxPendingLoadCount`.
+Rejected Alternatives: Growing the pool at runtime was rejected because the pool must stay fixed and allocation-free. Reusing active proxies was rejected because it corrupts pending-load ownership. Relying on development logs was rejected because missing content authority bindings must fail before build.
+Scalability potential: Low/Quest keeps a fixed proxy pool and avoids invisible blockers without runtime instantiation. High/Ultra keeps the same deterministic proxy ownership while richer assets stream in.
+Hardware Impact: No allocation added. The only runtime cost is a bounded pool scan when a load has already exceeded the 100 ms proxy threshold; no normal-frame microseconds are claimed without profiler data.
+
+## Phase 11 Compile Wall
+Problem: Phase 11 core build cannot prove full compile because an external syntax wall stops compilation.
+Solution: Static scans stayed clean after the hologram pool change. Attempt 37 failed in `SubmarineFluidDynamics.cs(4923,10)` with `CS1513 } expected`, outside CORE/ASSETS.
+Rejected Alternatives: Editing SubmarineFluidDynamics from the content pass was rejected because it is outside the assigned content authority boundary.
+Scalability potential: Not applicable to compile wall.
+Hardware Impact: Not applicable until external syntax wall is cleared.
+
+## Phase 12 Refcount Fail-Loud and Compile Recovery
+Problem: `ContentBundleReferenceCounter.Release()` silently clamped negative ref counts to zero. That hides a double-release and can make Addressables/VRAM residency appear sane while ownership is already broken. The vault count guard also reset a local count to zero without clearing stale records, leaving later calls able to observe old bundle rows.
+Solution: `Release()` now refuses zero hashes, unknown hashes, and zero or negative ref counts before returning failure; `Acquire()` refuses negative or `int.MaxValue` ref counts before increment; all public ledger access routes through normalized vault-count resolution. If the vault count exceeds the fixed capacity, the counter clears the fixed ledger in-place and emits a development-build diagnostic rather than walking invalid memory. Verification reached green core/editor checkpoints, then a follow-up core build failed in external `PhysicsApplySystem.cs` with no CORE/ASSETS errors.
+Rejected Alternatives: Silent clamp was rejected because double-release is a crash vector under Addressables ownership. Throwing exceptions in gameplay was rejected by AGENTS. Keeping stale rows after count corruption was rejected because it preserves false VRAM residency state.
+Scalability potential: Low/Quest/MX350 get deterministic residency failure behavior under handle misuse instead of hidden refcount drift. Middle/High/Ultra keep explicit Addressables ownership while Overkill content remains tied to valid ref counts and tier-gated handles.
+Hardware Impact: No new per-frame work. Changes run only on acquire/release/ledger-read paths and add scalar guards over existing GlobalDataVault buffers. Exact microseconds are not claimed without profiler data.
+
+## Phase 12 Compile Wall
+Problem: Latest post-patch core recheck cannot hold PLATINUM_COMPILE because `PhysicsApplySystem.cs` now fails outside CORE/ASSETS.
+Solution: Logged attempt 41. Errors are missing physics vault helpers, missing force packet queues/validation buffers, and missing `BufferID.Physics*` members. No errors reference `Assets/_Project/Scripts/Core/Content`.
+Rejected Alternatives: Editing `PhysicsApplySystem.cs` or core physics buffer IDs was rejected because those are outside the content authority surface and not required cross-domain interfaces for the refcount patch.
+Scalability potential: Not applicable to compile wall.
+Hardware Impact: Not applicable until the external physics compile wall is cleared.
+
+## Phase 13 Lore Block Metadata Gate
+Problem: Lore providers could pass build validation with zero block indices, zero hashes, duplicate hashes, negative offsets, zero-length blocks, overflowed ranges, or overlapping byte ranges. Runtime `TryReadBlock()` would reject some of these, but that is too late for a content authority gate.
+Solution: `ValidateLoreBlockIoBudgets()` now rejects malformed lore block metadata before build and sorts a local editor-only copy by byte offset to detect overlaps. `ContentLoreBinaryProvider.Open()` now catches IO/MMF path failures, disposes partial state, and returns false with a development-build diagnostic instead of letting a cold-open exception escape.
+Rejected Alternatives: Relying on runtime false returns was rejected because UI text assets use the same hash route as textures and must fail before player builds. Letting MMF/FileStream exceptions propagate was rejected because content open failure needs controlled diagnostics, not an unknown crash.
+Scalability potential: Low/Quest and Steam Deck get deterministic 64 KB bounded lore reads with valid non-overlapping ranges. High/Ultra keep the same hash-routed lore interface without divergent text asset plumbing.
+Hardware Impact: Validator checks are build-time only, 0 runtime us. Runtime change affects cold dictionary open only; no profiler-backed microseconds are claimed.
+
+## Phase 13 Compile Wall
+Problem: Phase 13 verification cannot hold PLATINUM_COMPILE because current builds fail outside CORE/ASSETS.
+Solution: Logged attempt 42 and attempt 43. Core fails in external `Core/Memory/H8Memory.cs` duplicate `BufferID.Physics*` entries and `World/SargassumMicroFaunaBoids.cs` duplicate `SaturateFinite01`. Editor fails through external `Core/Determinism/LockstepStateValidator.cs` missing lockstep/system-glitch lane constants. No failure references content runtime or content editor validators.
+Rejected Alternatives: Editing Core Memory, World, or Determinism files was rejected because those are outside the content authority surface and not required cross-domain interfaces for the lore metadata gate.
+Scalability potential: Not applicable to compile wall.
+Hardware Impact: Not applicable until the external compile walls are cleared.
+
+## Phase 14 Registry Shape Gate
+Problem: `ContentAssetEntry.ToBinaryRecord()` can only represent dependency counts as `ushort` and records a compact enum/tier/LOD shape, but validation did not fail malformed enum values, negative VRAM estimates, unsupported LOD values, zero dependency hashes, self-dependencies, duplicate dependencies, or dependency lists above the binary count capacity.
+Solution: Added `ValidateEntryShape()` inside hash-map validation. It rejects invalid asset kinds, invalid tiers, negative VRAM estimates, LOD levels above 2, dependency lists above `ushort.MaxValue`, zero dependencies, self-dependencies, and duplicate dependency hashes before the binary bridge can export a bad record.
+Rejected Alternatives: Letting `ToBinaryRecord()` clamp dependency count was rejected because it silently drops graph edges. Treating `Unknown` kind or invalid tier as fallback was rejected because the registry is the authority bridge from binary hashes to Unity assets.
+Scalability potential: Low/Quest/MX350 avoid loading malformed or oversized registry entries. High/Ultra keep Overkill asset residency behind valid tier and dependency metadata, not accidental enum drift.
+Hardware Impact: Build-time only, 0 runtime us. No runtime hash lookup path changed.
+
+## Phase 14 Compile Wall
+Problem: Phase 14 verification cannot hold PLATINUM_COMPILE because current builds fail outside CORE/ASSETS after the registry shape gate.
+Solution: Logged attempt 44 and attempt 45. Core now fails in external `UI/Navigation/DiegeticGyroCompassRuntime.cs`, `Core/SystemDispatcher.cs`, and `Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs`. Editor fails through external `DiegeticGyroCompassRuntime.cs`, `ArchitectEyeVisualizer.cs`, and `GlobalSignals.cs`. No failure references content validators or content runtime.
+Rejected Alternatives: Editing UI Navigation, SystemDispatcher, Diagnostics, or GlobalSignals was rejected because those are outside the content authority surface and not required cross-domain interfaces for the registry validator change.
+Scalability potential: Not applicable to compile wall.
+Hardware Impact: Not applicable until external UI/dispatcher/diagnostics walls are cleared.
+
+## Phase 15 Pending Vault and Blackbox Fault Containment
+Problem: Pending-load metadata lives in `GlobalDataVault`, but the runtime read the shared count directly in several paths. If that count is corrupted above the 64-slot ceiling, the system could stop processing without clearing stale pending records, target bridges, or active hologram proxies. The NaN-triggered blackbox dump also used raw file/path calls and marked the dump complete before proving the write succeeded.
+Solution: Added `TryResolvePendingLoadsNormalized()` so Track/Complete/Tick/Clear/Telemetry all share the same capacity guard. A corrupted pending count now clears the fixed vault records, clears the managed renderer bridge, hides all holograms, and emits a development-build diagnostic. Reworked blackbox writing into a contained `TryWriteBlackBox()` path that catches recoverable IO/path failures, creates the directory when allowed, retries the persistent-data fallback, and sets `_blackBoxDumpedThisSession` only after a successful write. Dump path resolution now catches recoverable failures and falls back to `Dump_CONTENT_AUTHORITY_DICTATOR.bin`.
+Rejected Alternatives: Returning false on a corrupted pending count was rejected because it leaves visible proxy state disconnected from the authority ledger. Letting `File.Open`, `Directory.GetCurrentDirectory`, `Path.GetDirectoryName`, or `persistentDataPath` exceptions escape was rejected because the dump path executes during a fault report. Marking the dump one-shot before write success was rejected because it can lose the last 300-frame crash record.
+Scalability potential: Low/Quest/MX350 keep a fixed 64-entry pending-load/hologram ceiling and recover from corrupted shared vault counts without dynamic allocation or invisible blockers. Middle/High/Ultra keep deterministic crash telemetry for Overkill asset failures and the same tiered visual budget routing.
+Hardware Impact: No new normal-frame allocation path. Pending normalization is scalar work on existing Track/Complete/Tick/Telemetry calls. Blackbox IO changes are fault-path only after non-finite telemetry detection; no profiler-backed microseconds are claimed.
+
+## Phase 15 Compile Wall
+Problem: Phase 15 reached fresh green core/editor checkpoints after the content patch, but latest rechecks cannot hold PLATINUM_COMPILE because external code drifted again.
+Solution: Logged attempts 46-51. Attempt 48 editor minimal build exited 0 with 0 warnings and 0 errors. Attempt 49 core recheck exited 0 with 0 warnings and 0 errors. Latest core/editor rechecks fail outside CORE/ASSETS in `VFX/Bioluminescence/BiolumPulseSyncRuntime.cs` missing `ResolveDataVault` and vendor `Temp/obj` restore assets. No failure references content runtime or content editor validators.
+Rejected Alternatives: Editing VFX or vendor project restore state was rejected because those files are outside the content authority surface and not required cross-domain interfaces for pending-load vault normalization or blackbox fault containment.
+Scalability potential: Not applicable to compile wall.
+Hardware Impact: Not applicable until external VFX/vendor restore walls are cleared.

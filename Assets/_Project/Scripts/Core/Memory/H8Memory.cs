@@ -31,6 +31,7 @@ namespace Hecton8.Core.Memory
         HabitatAtmosphere = 68,
         GameplayPlayer = 69,
         GameplayTools = 70,
+        Construction = 71,
         WorldStreaming = 128,
         TerrainSeams = 129,
         WorldSargassum = 130,
@@ -40,6 +41,7 @@ namespace Hecton8.Core.Memory
         AIEcology = 147,
         AISensory = 148,
         JobAdmission = 149,
+        AnimationLocomotion = 150,
         SimulationBucketer = 161,
         AmbientBiota = 162,
         Vfx = 192,
@@ -48,6 +50,9 @@ namespace Hecton8.Core.Memory
         CoreDiagnostics = 195,
         UI = 224,
         Audio = 258,
+        AudioVocalWarning = 259,
+        AudioFrameRing = 260,
+        AudioPlayerCritical = 261,
         External = 65534
     }
 
@@ -431,7 +436,107 @@ namespace Hecton8.Core.Memory
         SpatialAudioPortalCosts = 372,
         SpatialAudioPortalCameFrom = 373,
         SpatialAudioPortalStates = 374,
-        SpatialAudioPortalBlackBox = 375
+        SpatialAudioPortalBlackBox = 375,
+        AudioVocalWarningQueue = 376,
+        AudioVocalWarningFlags = 377,
+        AudioVocalWarningCooldowns = 378,
+        AudioVocalWarningSeverity = 379,
+        AudioVocalWarningSourceIds = 380,
+        AudioVocalWarningTelemetry = 381,
+        FloraScatterVisualPayload = 382,
+        AudioFrameRingFrames = 383,
+        AudioFrameRingSharedState = 384,
+        InteractionRaycastScheduledCommands = 385,
+        InteractionRaycastScheduledHits = 386,
+        InteractionRaycastStagingCommands = 387,
+        PredatorCognitionSpeciesTargetIds = 389,
+        PredatorCognitionSpeciesTargetPositions = 390,
+        PredatorCognitionSpeciesTargetCount = 391,
+        PredatorCognitionSpeciesTuningIds = 392,
+        PredatorCognitionSpeciesTuningValues = 393,
+        PredatorCognitionSpeciesTuningCount = 394,
+        EcosystemSectorFoodHeatmapR8 = 395,
+        PlayerCriticalHullScratch = 396,
+        PlayerCriticalSonarScratch = 397,
+        PlayerCriticalImpactEchoScratch = 398,
+        PlayerCriticalThrusterScratch = 399,
+        PlayerCriticalHeartbeatScratch = 400,
+        PlayerCriticalHeartbeatDuckScratch = 401,
+        PlayerCriticalBubbleScratch = 402,
+        PlayerCriticalMixScratch = 403,
+        PlayerCriticalStereoMixScratch = 404,
+        PlayerCriticalSonarEchoDelay = 405,
+        PlayerCriticalPendingSonarEchoTapsA = 406,
+        PlayerCriticalPendingSonarEchoTapsB = 407,
+        PlayerCriticalWorkerSonarEchoTaps = 408,
+        PlayerCriticalSonarEchoReadCursors = 409,
+        PlayerCriticalSonarEchoFilterInput1 = 410,
+        PlayerCriticalSonarEchoFilterInput2 = 411,
+        PlayerCriticalSonarEchoFilterOutput1 = 412,
+        PlayerCriticalSonarEchoFilterOutput2 = 413,
+        PlayerCriticalSonarEchoCompositeCandidatesA = 414,
+        PlayerCriticalSonarEchoCompositeCandidatesB = 415,
+        PlayerCriticalSonarEchoCompositeGroups = 416,
+        PlayerCriticalSonarEchoCompositeGroupCount = 417,
+        PlayerCriticalSonarEcholocationHits = 418,
+        PlayerCriticalImpactClangDelay = 419,
+        PlayerCriticalThrusterCombDelay = 420,
+        PlayerCriticalSabineReverbDelay = 421,
+        PlayerCriticalCaveConvolutionImpulse = 422,
+        PlayerCriticalCaveConvolutionDelay = 423,
+        PlayerCriticalInteriorFdnDelay = 424,
+        PlayerCriticalBinauralDelayRing = 425,
+        PlayerCriticalBinauralShadowHistory = 426,
+        PlayerCriticalLowPassInputHistory1 = 427,
+        PlayerCriticalLowPassInputHistory2 = 428,
+        PlayerCriticalLowPassOutputHistory1 = 429,
+        PlayerCriticalLowPassOutputHistory2 = 430,
+        PlayerCriticalMetallicGrainBank = 431,
+        PlayerCriticalGranularVoiceActive = 432,
+        PlayerCriticalGranularVoiceElapsed = 433,
+        PlayerCriticalGranularVoiceLength = 434,
+        PlayerCriticalGranularVoiceStart = 435,
+        PlayerCriticalGranularVoiceSeed = 436,
+        PlayerCriticalGranularVoiceCursor = 437,
+        PlayerCriticalGranularVoicePlaybackRate = 438,
+        PlayerCriticalGranularVoiceGain = 439,
+        PlayerCriticalGranularTelemetryRing = 440,
+        PlayerCriticalPrologueTransitionTelemetryRing = 441,
+        PlayerCriticalVwsClipSamplesA = 442,
+        PlayerCriticalVwsClipSamplesB = 443,
+        SubmarineFluidCompartmentStates = 444,
+        DroneFleetCullingStates = 445,
+        LeviathanTentaclePositions = 446,
+        LeviathanTentaclePreviousPositions = 447,
+        LeviathanTentacleRadius = 448,
+        LeviathanTentacleSegmentMatrices = 449,
+        LeviathanTentacleStretchFractions = 450,
+        LeviathanTentacleConstraintCorrections = 451,
+        LeviathanTentacleConstraintCorrectionCounts = 452,
+        LeviathanTentacleRootPositions = 453,
+        LeviathanTentacleTargetPositions = 454,
+        LeviathanTentacleRootAups = 455,
+        LeviathanTentacleTargetAups = 456,
+        LeviathanTentacleStates = 457,
+        LeviathanTentacleTelemetryRing = 458,
+        PhysicsForceCommandFront = 459,
+        PhysicsForceCommandBack = 460,
+        PhysicsForceValidationPackets = 461,
+        PhysicsForceValidationMask = 462,
+        SystemDispatcherRaycastPendingCommands = 463,
+        SystemDispatcherRaycastScheduledCommands = 464,
+        SystemDispatcherBlackBox = 465,
+        SystemDispatcherBlackBoxCursor = 466,
+        CompassPresentationState = 467,
+        RigidbodyLastValidPositions = 468,
+        PhysicsImpactEvents = 469,
+        StaticDataTelemetryRing = 470,
+        StaticDataTelemetryCursor = 471,
+        EcosystemSectorIndexEntries = 472,
+        EcosystemBiomassIndexEntries = 473,
+        FloatingOriginDriftRuntimePositions = 474,
+        FloatingOriginDriftAbsolutePositions = 475,
+        FloatingOriginDriftInvalidMask = 476
     }
 
     [Flags]
@@ -602,6 +707,10 @@ namespace Hecton8.Core.Memory
         private const int BlockDescriptorSizeBytes = 40;
         private const int H8AllocationRecordSizeBytes = 48;
         private const int H8MemoryTelemetryEntrySizeBytes = 64;
+        private const ulong FatalLeakDumpMagic = 0x3130444D454D3848UL; // H8MEMD01
+        private const int FatalLeakDumpVersion = 3;
+        private const byte BlackBoxRingKindHeartbeat = 1;
+        private const byte BlackBoxRingKindLifecycleEvent = 2;
         private const string AgentDumpFileName = "Dump_SENTINEL_DISPOSAL_GUARD.bin";
 
         private static NativeParallelHashMap<long, SystemID> _allocationOwners;
@@ -631,7 +740,9 @@ namespace Hecton8.Core.Memory
         private static int _lastTransitionReleasedCount;
         private static long _lastTransitionReleasedBytes;
         private static long _transitionBaselineBytes;
+        private static long _transitionExpectedBytes;
         private static bool _lastTransitionBaselineVerified = true;
+        private static bool _deferSceneUnloadedVerificationToRuntime;
         private static bool _sceneHooksRegistered;
         private static bool _initialized;
 
@@ -661,7 +772,7 @@ namespace Hecton8.Core.Memory
         /// <summary>True while a scene transition generation cutoff is awaiting verification.</summary>
         public static bool HasPendingSceneTransition => _transitionCutoffGeneration != NoTransitionCutoffGeneration;
 
-        /// <summary>True when the last scene transition purge reached the exact computed baseline.</summary>
+        /// <summary>True when the last scene transition purge removed pre-cutoff scene allocations.</summary>
         public static bool LastTransitionBaselineVerified => _lastTransitionBaselineVerified;
 
         /// <summary>Bytes released by the last scene transition leak purge.</summary>
@@ -669,6 +780,9 @@ namespace Hecton8.Core.Memory
 
         /// <summary>Allocation records released by the last scene transition leak purge.</summary>
         public static int LastTransitionReleasedCount => _lastTransitionReleasedCount;
+
+        /// <summary>Expected tracked bytes after old-scene purge while post-cutoff scene allocations remain live.</summary>
+        public static long LastTransitionExpectedBytes => _transitionExpectedBytes;
 
         /// <summary>
         /// Records the per-frame memory sentinel heartbeat into the fixed 300-entry blackbox ring.
@@ -760,7 +874,9 @@ namespace Hecton8.Core.Memory
             _lastTransitionReleasedCount = 0;
             _lastTransitionReleasedBytes = 0L;
             _transitionBaselineBytes = 0L;
+            _transitionExpectedBytes = 0L;
             _lastTransitionBaselineVerified = true;
+            _deferSceneUnloadedVerificationToRuntime = false;
             _initialized = true;
             RegisterSceneHooks();
             RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.Initialized);
@@ -883,6 +999,7 @@ namespace Hecton8.Core.Memory
             void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(array);
             UnregisterPointer(pointer, owner);
             JobHandle disposeHandle = array.Dispose(dependency);
+            RegisterActiveJob(owner, disposeHandle);
             array = default;
             return disposeHandle;
         }
@@ -916,6 +1033,14 @@ namespace Hecton8.Core.Memory
         }
 
         /// <summary>
+        /// Defers Unity scene-unload verification so SceneRuntimeService can evict vault buffers first.
+        /// </summary>
+        public static void SetSceneUnloadedVerificationDeferred(bool deferred)
+        {
+            _deferSceneUnloadedVerificationToRuntime = deferred;
+        }
+
+        /// <summary>
         /// Captures a generation cutoff before scene loading can allocate new Ocean memory.
         /// </summary>
         public static void BeginSceneTransitionPurge()
@@ -927,6 +1052,7 @@ namespace Hecton8.Core.Memory
             _allocationGeneration = AdvanceDescriptorGeneration(_allocationGeneration);
             _transitionCutoffGeneration = cutoffGeneration;
             _transitionBaselineBytes = ComputeSceneTransitionBaselineBytes(cutoffGeneration);
+            _transitionExpectedBytes = _transitionBaselineBytes;
             _lastTransitionReleasedCount = 0;
             _lastTransitionReleasedBytes = 0L;
             _lastTransitionBaselineVerified = false;
@@ -935,9 +1061,9 @@ namespace Hecton8.Core.Memory
         }
 
         /// <summary>
-        /// Completes scene-transition leak purging and validates that tracked bytes reached the captured baseline.
+        /// Completes scene-transition leak purging and validates that no pre-cutoff scene-owned allocations remain.
         /// </summary>
-        /// <returns>True when the exact transition baseline was reached.</returns>
+        /// <returns>True when the transition baseline plus post-cutoff allocations matches total tracked bytes.</returns>
         public static bool CompleteSceneTransitionVerification()
         {
             if (!_initialized)
@@ -946,15 +1072,18 @@ namespace Hecton8.Core.Memory
             if (_transitionCutoffGeneration == NoTransitionCutoffGeneration)
                 return _lastTransitionBaselineVerified;
 
+            int cutoffGeneration = _transitionCutoffGeneration;
             ReleaseSceneTransitionLeaks();
-            bool verified = _totalBytes == _transitionBaselineBytes;
+            _transitionExpectedBytes = ComputeSceneTransitionExpectedBytes(cutoffGeneration);
+            bool verified = _totalBytes == _transitionExpectedBytes;
             _lastTransitionBaselineVerified = verified;
             if (!verified)
-                WriteFatalLeakBlackBox(SystemID.Unknown, 0, _totalBytes - _transitionBaselineBytes, baselineMismatch: true);
+                WriteFatalLeakBlackBox(SystemID.Unknown, 0, _totalBytes - _transitionExpectedBytes, baselineMismatch: true);
             else
+            {
                 RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.SceneTransition);
-
-            _transitionCutoffGeneration = NoTransitionCutoffGeneration;
+                _transitionCutoffGeneration = NoTransitionCutoffGeneration;
+            }
             return verified;
         }
 
@@ -1269,7 +1398,9 @@ namespace Hecton8.Core.Memory
             _lastTransitionReleasedCount = 0;
             _lastTransitionReleasedBytes = 0L;
             _transitionBaselineBytes = 0L;
+            _transitionExpectedBytes = 0L;
             _lastTransitionBaselineVerified = true;
+            _deferSceneUnloadedVerificationToRuntime = false;
             _blackBoxCursor = 0;
             _eventBlackBoxCursor = 0;
             _blackBoxRecordedCount = 0;
@@ -1300,6 +1431,9 @@ namespace Hecton8.Core.Memory
 
         private static void HandleSceneUnloaded(Scene scene)
         {
+            if (_deferSceneUnloadedVerificationToRuntime)
+                return;
+
             CompleteSceneTransitionVerification();
         }
 
@@ -1447,12 +1581,22 @@ namespace Hecton8.Core.Memory
 
         private static void CompleteSceneTransitionOwnerJobs()
         {
-            if (!_ownerPointerKeys.IsCreated)
+            if (_ownerPointerKeys.IsCreated)
+            {
+                for (int i = 0; i < _ownerPointerKeys.Length; i++)
+                {
+                    SystemID owner = (SystemID)_ownerPointerKeys[i];
+                    if (IsSceneTransitionOwner(owner))
+                        CompleteOwnerJobs(owner);
+                }
+            }
+
+            if (!_ownerJobKeys.IsCreated)
                 return;
 
-            for (int i = 0; i < _ownerPointerKeys.Length; i++)
+            for (int i = _ownerJobKeys.Length - 1; i >= 0; i--)
             {
-                SystemID owner = (SystemID)_ownerPointerKeys[i];
+                SystemID owner = (SystemID)_ownerJobKeys[i];
                 if (IsSceneTransitionOwner(owner))
                     CompleteOwnerJobs(owner);
             }
@@ -1470,6 +1614,20 @@ namespace Hecton8.Core.Memory
 
             long baseline = _totalBytes - releasableBytes;
             return baseline > 0L ? baseline : 0L;
+        }
+
+        private static long ComputeSceneTransitionExpectedBytes(int cutoffGeneration)
+        {
+            long postCutoffBytes = 0L;
+            for (int i = 0; i < _recordCount; i++)
+            {
+                H8AllocationRecord record = _records[i];
+                if (record.Pointer != IntPtr.Zero && record.Generation > cutoffGeneration)
+                    postCutoffBytes += record.Bytes;
+            }
+
+            long expectedBytes = _transitionBaselineBytes + postCutoffBytes;
+            return expectedBytes > 0L ? expectedBytes : 0L;
         }
 
         private static bool IsSceneTransitionRecord(in H8AllocationRecord record, int cutoffGeneration)
@@ -1639,12 +1797,18 @@ namespace Hecton8.Core.Memory
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write("[FATAL LEAK: SystemID]");
+                    writer.Write(FatalLeakDumpMagic);
+                    writer.Write(FatalLeakDumpVersion);
+                    writer.Write(H8MemoryTelemetryEntrySizeBytes);
+                    writer.Write(H8AllocationRecordSizeBytes);
+                    writer.Write(BlackBoxFrameCount);
                     writer.Write((ushort)owner);
                     writer.Write(_transitionSequence);
                     writer.Write(releaseCount);
                     writer.Write(releasedBytes);
                     writer.Write(_totalBytes);
                     writer.Write(_transitionBaselineBytes);
+                    writer.Write(_transitionExpectedBytes);
                     writer.Write(baselineMismatch ? 1 : 0);
                     WriteBlackBoxEntries(writer);
                     writer.Write(_recordCount);
@@ -1744,16 +1908,21 @@ namespace Hecton8.Core.Memory
 
         private static void WriteBlackBoxEntries(BinaryWriter writer)
         {
-            WriteBlackBoxRing(writer, _blackBox, _blackBoxRecordedCount, _blackBoxCursor);
-            WriteBlackBoxRing(writer, _eventBlackBox, _eventBlackBoxRecordedCount, _eventBlackBoxCursor);
+            WriteBlackBoxRing(writer, BlackBoxRingKindHeartbeat, _blackBox, _blackBoxRecordedCount, _blackBoxCursor);
+            WriteBlackBoxRing(writer, BlackBoxRingKindLifecycleEvent, _eventBlackBox, _eventBlackBoxRecordedCount, _eventBlackBoxCursor);
         }
 
         private static void WriteBlackBoxRing(
             BinaryWriter writer,
+            byte ringKind,
             NativeArray<H8MemoryTelemetryEntry> ring,
             int recordedCount,
             int cursor)
         {
+            writer.Write(ringKind);
+            writer.Write(ring.IsCreated ? ring.Length : 0);
+            writer.Write(H8MemoryTelemetryEntrySizeBytes);
+
             if (!ring.IsCreated || ring.Length == 0)
             {
                 writer.Write(0);

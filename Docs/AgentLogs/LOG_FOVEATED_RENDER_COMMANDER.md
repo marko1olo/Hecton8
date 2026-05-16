@@ -462,3 +462,149 @@ Validation:
 - Duplicate `BufferID` audit returned `NO_BUFFERID_DUPLICATES`.
 - Filtered build diagnostics after scene-service rebind hardening produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, `Graphics/VR`, or `GlobalRegistryServiceSlot.Scene` diagnostics.
 - Latest `dotnet build Hecton8.Core.csproj -m:1 /nr:false /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors.
+
+## 2026-05-16 - Escalation Polish / ARM64 Telemetry Layout Sentinel
+
+What was wrong:
+- `FoveatedRenderTelemetryEntry` had `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]`, but the commander did not verify the unmanaged size before resolving a DataVault pointer.
+- If a future ABI or source edit broke the 64-byte contract, the blackbox path could write records with a different binary shape than the dump header declares.
+
+What was done:
+- Added a cold `UnsafeUtility.SizeOf<FoveatedRenderTelemetryEntry>() == TelemetryRecordSizeBytes` sentinel.
+- `EnsureTelemetry()` now refuses to resolve or allocate the vault blackbox when the layout check fails.
+- A failed layout check publishes `GlobalTelemetryBus.PublishMathGuardInvalidNumber(SourceHash)` instead of writing questionable data.
+
+Cinematic Cheats used:
+- None. This is Quest/ARM64 binary safety for the existing foveated rendering blackbox.
+
+Exact microseconds saved:
+- Exact measured GPU microseconds saved: 0. No headset capture was run.
+- Runtime frame-time saved: 0 us measured.
+- Estimated cost: one cold `UnsafeUtility.SizeOf` check per domain lifetime; 0 us steady-state after the static bool is set.
+
+Validation:
+- Static forbidden-pattern scan remains clean for the VR commander and legacy foveation shim.
+- ASCII scan reports `ASCII_OK` for `FoveatedRenderCommander.cs`.
+- Filtered build diagnostics after the layout sentinel produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, `Graphics/VR`, or `UnsafeUtility.SizeOf` diagnostics.
+- Latest full build is blocked outside domain: `Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs` is missing `ValidatePackedStructSizes` and `BuildVisualOverkillDiagnostics`; evidence is in `Docs/AgentLogs/BuildErrors_FOVEATED_RENDER_COMMANDER.latest.txt`.
+
+Latest current-disk build wall:
+- A repeated full build shifted to 7 external errors.
+- `ArchitectEyeVisualizer.cs` now has duplicate `ValidatePackedStructSizes`.
+- `PlayerCriticalProceduralAudioRenderer.cs` and `AbyssalThermalManager.cs` have ambiguous `LaserCutterEventPayload` references and missing `ILaserCutterEventListener` implementation signatures.
+- A repeated filtered build scan still produced no VR-domain or foveation-symbol diagnostics.
+
+## 2026-05-16 - Escalation Polish / Lifecycle Teardown Symmetry
+
+What was wrong:
+- `TryRegisterTick()` had bucket-divergence repair, but unregister paths still trusted `_registeredTick`, `_registeredHotSwap`, and `_registeredRenderable`.
+- A stale false local flag could leave this commander in a global bucket after registry churn.
+- A duplicate component destroyed during `Awake()` could still run `OnDisable()`/`OnDestroy()` and clear hardware foveation state owned by the authoritative commander.
+
+What was done:
+- `TryUnregisterTick()` now scans `GlobalRegistry.Updatables` and `SystemDispatcher.GetLane(PriorityLayer.Core)` before returning.
+- `TryRegisterHotSwap()` now checks `GlobalRegistry.HotSwapListeners.Contains(this)` before trying a new registration.
+- `TryUnregisterHotSwap()` and `TryUnregisterRenderable()` now scan their authoritative buckets before trusting local flags.
+- `OnGlobalRegistryServiceReplaced()` now unregisters tick ownership when `GlobalRegistryServiceSlot.Dispatcher` is replaced with null.
+- `OnGlobalRegistryServiceReplaced()` now unregisters render ownership when `GlobalRegistryServiceSlot.RenderDispatcher` is replaced with null.
+- `OnDisable()` and `Dispose()` now only call `ClearHardwareFoveation()` when `ReferenceEquals(s_activeCommander, this)` is true; duplicate components can clean their own registrations but cannot clear the active commander's XR state.
+
+Cinematic Cheats used:
+- None in this patch. The rendering cheat remains hardware VRS/FFR: Quest 2-class fixed-high foveation, pressure-tiered fixed FFR, and gaze-allowed VRS on capable PC VR.
+
+Exact microseconds saved:
+- Exact measured GPU microseconds saved: 0. No headset profiling capture was run.
+- Estimated steady-state cost: 0 us. These checks run on lifecycle/service-rebind paths only.
+- Estimated lifecycle CPU cost: under 1 us for fixed-capacity bucket scans in normal bucket sizes.
+
+Validation:
+- Static forbidden-pattern scan found no `Update()`, `LateUpdate()`, `FixedUpdate()`, `foreach`, LINQ, `string.Format`, `VRSManager.Instance`, direct `RenderPipelineManager`, `new NativeArray`, `Marshal.SizeOf`, legacy `EventBus`, managed delegate fields, object find calls, `Camera.main`, `Resources.Load`, or `StartCoroutine` in the VR commander or legacy foveation shim.
+- ASCII scan reports `ASCII_OK` for `FoveatedRenderCommander.cs`.
+- Duplicate `BufferID` audit returned `NO_BUFFERID_DUPLICATES`.
+- Filtered build scans after lifecycle hardening and service-null unregister hardening produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, `Graphics/VR`, `GlobalRegistryServiceSlot.Dispatcher`, `GlobalRegistryServiceSlot.RenderDispatcher`, `TryUnregisterTick`, `TryUnregisterHotSwap`, `TryUnregisterRenderable`, or `ownsRuntimeState` diagnostics.
+- `git diff --check` reports no whitespace errors; only existing CRLF normalization warnings for touched files.
+- Latest full `dotnet build Hecton8.Core.csproj -m:1 /nr:false /clp:ErrorsOnly` is blocked outside domain by `Assets/_Project/Scripts/World/EcosystemDirector.cs`: 127 CS1612 return-value mutation errors against vault/SoA accessors. Evidence is stored in `Docs/AgentLogs/BuildErrors_FOVEATED_RENDER_COMMANDER.latest.txt`.
+
+## 2026-05-16 - Escalation Polish / Stale Owner Quarantine
+
+What was wrong:
+- `Render()` already rejected non-authoritative commanders, but `Tick()` and hot-swap callbacks could still execute if a duplicate, disposed, or stale commander survived in dispatcher/hot-swap buckets.
+- That stale owner could consume signals, write telemetry, or dump blackbox evidence even though it did not own XR foveation state.
+
+What was done:
+- Added `TryDetachIfInactiveCommander()`.
+- `Tick()` now exits through that guard before consuming `SignalBus` snapshots, applying policy, or writing telemetry.
+- `OnGlobalRegistryServiceReplaced()` now exits through the same guard before handling service replacement.
+- `RequestBlackBoxDump()` refuses non-authoritative or disposed commanders.
+- The guard unregisters render, hot-swap, and tick ownership and clears cached thermal service without clearing active XR hardware foveation for a non-owner.
+
+Cinematic Cheats used:
+- None in this patch. The visual cheat remains hardware foveation, not a render-target edge blit.
+
+Exact microseconds saved:
+- Exact measured GPU microseconds saved: 0. No headset profiling capture was run.
+- Valid hot-path cost added: one `ReferenceEquals` plus one bool check per commander tick.
+- Stale cleanup cost: fixed-capacity bucket scans only on the error path.
+
+Validation:
+- Static forbidden-pattern scan found no `Update()`, `LateUpdate()`, `FixedUpdate()`, `foreach`, LINQ, `string.Format`, `VRSManager.Instance`, direct `RenderPipelineManager`, `new NativeArray`, `NativeArray<`, `Marshal.SizeOf`, legacy `EventBus`, managed delegate fields, object find calls, `Camera.main`, `Resources.Load`, or `StartCoroutine` in the VR commander or legacy foveation shim.
+- ASCII scan reports `ASCII_OK` for `FoveatedRenderCommander.cs`.
+- Duplicate `BufferID` audit returned `NO_BUFFERID_DUPLICATES`.
+- Filtered build scan after stale-owner quarantine produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, `Graphics/VR`, `TryDetachIfInactiveCommander`, `RequestBlackBoxDump`, or `OnGlobalRegistryServiceReplaced` diagnostics.
+- Latest full `dotnet build Hecton8.Core.csproj -m:1 /nr:false /clp:ErrorsOnly` is blocked outside domain by `Assets/_Project/Scripts/SubmarineFluidDynamics.cs`: 187 syntax/identifier errors around lines 2051-2095 plus a final `}` expected at line 4926. Evidence is stored in `Docs/AgentLogs/BuildErrors_FOVEATED_RENDER_COMMANDER.latest.txt`.
+
+## 2026-05-16 - Escalation Polish / Cached Service-Lane Policy
+
+What was wrong:
+- `ApplyPolicy()` still read `GlobalRegistry.ScalabilityTier` from a tick-driven policy sample.
+- `EnsureTelemetry()` could fall back to `GlobalRegistry.DataVault` during telemetry writes if `_dataVault` was null.
+
+What was done:
+- Implemented `IScalabilityChangedEventListener`.
+- Seeded `_qualityTier` during cold `OnEnable()` and update it through `ScalabilityEvents`.
+- Unregisters from `ScalabilityEvents` during disable, dispose, and stale-owner quarantine.
+- `ApplyPolicy()` now uses cached `_qualityTier`.
+- `EnsureTelemetry()` now uses only cached `_dataVault`; DataVault replacement still arrives through `IGlobalRegistryHotSwapListener`.
+
+Cinematic Cheats used:
+- None in this patch. The domain cheat remains hardware foveation: fixed high on Quest 2-class devices, pressure-tiered FFR, and gaze-allowed VRS on capable PC VR.
+
+Exact microseconds saved:
+- Exact measured GPU microseconds saved: 0. No Quest/PC VR headset profile capture was run.
+- Estimated CPU saving: below 1 us per policy sample by removing hot-path service-locator reads.
+- Static hot-path GC: 0 B/frame by source audit.
+
+Validation:
+- Static forbidden-pattern scan found no `Update()`, `LateUpdate()`, `FixedUpdate()`, `foreach`, LINQ, `string.Format`, `VRSManager.Instance`, direct `RenderPipelineManager`, `new NativeArray`, `NativeArray<`, `Marshal.SizeOf`, legacy `EventBus`, managed delegate fields, object find calls, `Camera.main`, `Resources.Load`, or `StartCoroutine` in the VR commander or legacy foveation shim.
+- ASCII scan reports `ASCII_OK` for `FoveatedRenderCommander.cs`.
+- Duplicate `BufferID` audit returned `NO_BUFFERID_DUPLICATES`.
+- Filtered build scan after cached service-lane cleanup produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, `Graphics/VR`, `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, or `_qualityTier` diagnostics.
+- Latest full `dotnet build Hecton8.Core.csproj -m:1 /nr:false /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors. Evidence is stored in `Docs/AgentLogs/BuildErrors_FOVEATED_RENDER_COMMANDER.latest.txt`.
+
+## 2026-05-16 - Escalation Polish / Foveation Downgrade Hysteresis
+
+What was wrong:
+- Low/Med/High foveation levels could downgrade on the next policy sample after pressure cleared.
+- That created threshold-churn risk in VR: edge quality could pulse if `SystemStress01`, pressure tier, or thermal pressure crossed the boundary repeatedly.
+- The behavior violated the state-hysteresis mandate for LOD/scalability switches.
+
+What was done:
+- Added a 2.5-second scalar downgrade hold in `FoveatedRenderCommander`.
+- Pressure, thermal, and Quest 2-class upgrades still apply immediately.
+- Downgrades keep the previous level while the hold is active.
+- Telemetry now marks the hold with `FlagHysteresisHold`.
+- Disabled/caps-missing paths clear the hold.
+- High/Ultra no-pressure PC VR still clears fixed foveation so top hardware is not forced into mobile-style edge loss.
+
+Cinematic Cheats used:
+- Hardware foveation remains the cheat: Quest 2-class fixed-high FFR, Middle stress-tiered FFR, and High/Ultra gaze-allowed VRS.
+- The hysteresis band is a perceptual stability cheat: it spends a few extra edge pixels for 2.5 seconds to prevent visible edge-quality flicker.
+
+Exact microseconds saved:
+- Exact measured GPU microseconds saved: 0. No Quest/PC VR headset profile capture was run.
+- Estimated CPU cost: below 1 us per tick while a hold is active; no allocation and no new native buffer.
+- Static hot-path GC: 0 B/frame by source audit.
+
+Validation:
+- Static forbidden-pattern scan found no `Update()`, `LateUpdate()`, `FixedUpdate()`, `foreach`, LINQ, `string.Format`, `VRSManager.Instance`, direct `RenderPipelineManager`, `new NativeArray`, `NativeArray<`, `Marshal.SizeOf`, legacy `EventBus`, managed delegate fields, object find calls, `Camera.main`, `Resources.Load`, or `StartCoroutine` in the VR commander or legacy foveation shim.
+- Full `dotnet build Hecton8.Core.csproj -m:1 /nr:false /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors.

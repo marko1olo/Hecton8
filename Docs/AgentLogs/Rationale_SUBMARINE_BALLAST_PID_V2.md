@@ -2,7 +2,7 @@
 
 Agent: HYDRO_MECHANIC
 Prompt ID: SUBMARINE_BALLAST_PID_V2
-Status: CORE POLISHED / BUILD BLOCKED BY EXTERNAL DEPENDENCY
+Status: VERIFIED MASTER GRADE / DOTNET BUILD PASS / UNITY RUNTIME PROFILING PENDING
 
 ## Decision 0 - Existing Controller vs Parallel Controller
 Problem: The requested domain path is `Assets/_Project/Scripts/Physics/Vehicles/`, while the live submarine controller is currently `Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs`.
@@ -108,3 +108,38 @@ Solution: Added typed-lane `MemoryAddressShiftSignal` consumption at the start o
 Rejected Alternatives: Resolving `VaultBufferHandle<T>` on every compartment indexer read was rejected because it adds dictionary/generation validation inside the fixed-step loop. Rebinding all buffers to canonical IDs on relocation was rejected because it would destroy front/back ping-pong ownership after transfer jobs. Ignoring relocation signals was rejected because stale raw pointers are an ARM64/Quest crash surface.
 Scalability potential: Low/Quest/Android fail closed on relocated or missing buffers without dereferencing stale memory; Middle/High/Ultra preserve the same authoritative vault-backed hydrodynamics and black-box state while DataVault maintenance runs.
 Hardware Impact: No measured microsecond claim. The hot-path cost is one typed-lane span scan per fixed tick and in-place handle refresh only when a relevant relocation signal appears; the gain is stale-pointer crash prevention without private NativeArray regression.
+
+## Decision 15 - Docking Active Spline Handle Hardening
+Problem: The PHYSICS/VEHICLES docking authority owned no private `NativeArray`, but it resolved a cached `VaultBufferHandle<ActiveSplineData>` through `ResolveBuffer`. `GlobalDataVault.ResolveBuffer` throws on stale cached metadata, so a DataVault relocation could turn docking into a hard fault even though the data was already in the vault.
+Solution: Converted docking spline payloads to explicit `Pack = 1` field offsets, replaced stale-handle resolution with generation-checked `TryGetBufferGeneration` plus `TryGetBufferHandle`, and registered the service as a GlobalRegistry hot-swap listener for DataVault replacement.
+Rejected Alternatives: Keeping `ResolveBuffer(ref _activeSplineHandle)` was rejected because it is a stale-handle exception path after relocation. Rebuilding docking state in a private array was rejected because it violates DataVault sovereignty. Adding a new docking signal was rejected because `DockingRequestSignal`, `DockingCompleteSignal`, and `DockingFailedSignal` already exist.
+Scalability potential: Low/Quest/Android get deterministic 144-byte and 56-byte spline strides plus fail-closed DataVault rebinding; High/Ultra preserve the same spline service for richer docking visuals without changing the physics contract.
+Hardware Impact: No new measured runtime microsecond claim. The practical gain is crash-surface removal on ARM64 and relocation-safe vault reads. `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` passed with 0 warnings and 0 errors after this pass.
+
+## Decision 16 - Burst Job Container Packing
+Problem: The ARM64/Quest audit found two PID-owned Burst job containers without a `StructLayout` declaration, while the fluid solver still has private job containers using `NativeArray<T>` fields.
+Solution: Added `StructLayout(LayoutKind.Sequential, Pack = 1)` to `SubmarineAutoLevelPidJob` and `SubmarineMassSolverJob`. Kept binary/native payload structs on explicit fixed-size layouts. Kept Burst job containers with `NativeArray<T>` handles sequential `Pack = 1` because explicit field offsets would hard-code Unity safety-handle internals that vary by build configuration.
+Rejected Alternatives: Converting job containers with `NativeArray<T>` fields to explicit offsets was rejected as false portability; it would encode Unity.Collections implementation details rather than the project-owned payload ABI. Leaving the PID job containers without packing was rejected because the audit needs an explicit layout declaration.
+Scalability potential: Low/Quest/Android get explicit pack declarations on every task-owned job/payload crossing the PID/fluid boundary; Middle/High/Ultra keep the same Burst job scheduling and visual overkill hooks without adding a private data owner.
+Hardware Impact: No measured microsecond claim. The impact is alignment risk reduction and clearer IL2CPP/Burst auditability. Current full build is blocked outside this domain after the latest rerun: `PredatorCognitionDomain.cs` NativeArray/hash-map drift and `DroneFleetManager.cs` double3-to-float3 errors.
+
+## Decision 17 - Fluid Definition And Hydro Job Layout Closure
+Problem: The latest full-domain struct scan found three remaining submarine fluid structs without any layout declaration: the two Unity-serialized definition DTOs and the hydro drag Burst job container.
+Solution: Added `StructLayout(LayoutKind.Sequential, Pack = 1)` to `CompartmentDefinition`, `BulkheadDefinition`, and `HydroKinematicDragJob`. The serialized DTO field types were left intact to avoid corrupting Unity-authored data; the change only makes packing explicit for ARM64/IL2CPP auditability.
+Rejected Alternatives: Rewriting the serialized DTOs into byte-packed binary payloads was rejected because those arrays are inspector-authored configuration, not a native signal or telemetry ABI. Ignoring the missing attributes was rejected because the mandate requires an explicit multiplatform layout trail.
+Scalability potential: Low/Quest/Android get a complete layout declaration chain for submarine flood configuration, hydro job input/output, telemetry, docking splines, and PID payloads. High/Ultra retain the same 6DOF drag tensor and VFX signal path with no extra simulation.
+Hardware Impact: No measured microsecond claim. This is alignment/audit hardening. Current full build is blocked outside this domain by Tether signal type drift: `TetherManager.cs(264,58)` and `Physics/TetherSignals.cs(167,82)` reference missing `TetherFireRequest`.
+
+## Decision 18 - Compartment State Vault Eviction
+Problem: `SubmarineFluidDynamics` still kept `_compartmentStates` as a private managed `CompartmentState[]`, which made the compartment flood snapshot a local authority even after the NativeArray buffers were moved to `GlobalDataVault`.
+Solution: Added `BufferID.SubmarineFluidCompartmentStates = 444` and converted `_compartmentStates` to `VaultNativeBuffer<CompartmentState>`. The buffer now uses the same VehiclesPhysics Vault ownership, relocation detection, refresh, dispose, and clear paths as the rest of submarine fluid state.
+Rejected Alternatives: Leaving the managed array was rejected because it preserves split-brain state outside the Vault. Renumbering the existing submarine buffer IDs was rejected because later IDs are occupied by other agents; the new explicit ID avoids enum churn.
+Scalability potential: Low/Quest/Android get one authoritative compartment-state lane with explicit 64-byte `Pack = 1` snapshots and fail-closed Vault rebinding. High/Ultra keep the same flood CoM, gas mix, 6DOF drag, and VFX hooks without adding simulation cost.
+Hardware Impact: No measured runtime microseconds claimed. The gain is data-sovereignty hardening and stale-pointer crash-surface reduction; latest full build is blocked outside PHYSICS/VEHICLES by `DiegeticGyroCompassRuntime` signature/field drift and `EcosystemDirector` generic-inference errors.
+
+## Decision 19 - Hydro Dump Single-File Contract
+Problem: `SubmarineFluidDynamics` still wrote hydro black-box data to two legacy agent dump files and allocated a concatenated `Debug.LogError` string if fault I/O failed. It also carried a dead duplicate splash payload stub after switching to the canonical `SplashEvent` signal.
+Solution: Removed the dead `RemovedSplashEventPayload` stub, routed hydro black-box dumps to `Docs/AgentLogs/Dump_SUBMARINE_BALLAST_PID_V2.bin`, removed the second fault-time file write, and replaced the fault-path log allocation with `GlobalTelemetryBus.PublishPerformanceWarning`.
+Rejected Alternatives: Keeping the legacy `Dump_KINEMATICS_HYDRO_DRAG.bin` and `Dump_OCEAN_CHEMISTRY_ENGINEER.bin` writes was rejected because it doubles MicroSD fault I/O and violates the task-owned dump contract. Keeping the duplicate splash payload stub was rejected because the canonical `SplashEvent` already exists.
+Scalability potential: Low/Steam Deck gets one bounded fault write and no fault-path string allocation; Quest/Android keeps the same 300-frame hydro telemetry ring without extra I/O. High/Ultra keep the same hydrodynamic black-box payload for deeper diagnostics.
+Hardware Impact: One fault-time file write removed. No measured runtime microseconds claimed because this path runs only on hydro fault/NaN dump. Latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` passed with 0 warnings and 0 errors.

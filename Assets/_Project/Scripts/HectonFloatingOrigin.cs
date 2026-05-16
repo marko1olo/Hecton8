@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Hecton8.Bootstrap;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
@@ -78,12 +80,13 @@ namespace Hecton8.Core
         private static readonly RegistryBucket<IOriginShiftListener> _originShiftListeners = new RegistryBucket<IOriginShiftListener>(OriginShiftListenerCapacity);
         private const int PrecisionWatchdogIntervalFrames = 300;
         private const int ShiftStabilityWatchdogFrames = 1200;
-        private const float PrecisionWatchdogSafeRadiusMeters = 5000f;
+        private const float PrecisionWatchdogSafeRadiusMeters = HectonPhysicsContract.AupSectorSizeMetersFloat;
         private const float PrecisionWatchdogSafeRadiusSq = PrecisionWatchdogSafeRadiusMeters * PrecisionWatchdogSafeRadiusMeters;
-        private const float MinimumShiftThresholdMeters = 5000f;
+        private const float MinimumShiftThresholdMeters = HectonPhysicsContract.AupSectorSizeMetersFloat;
         private const float ShiftDeadzoneReleaseMeters = 4500f;
         private const float OutwardMotionSpeedEpsilon = 0.05f;
         private const int DriftCheckEntityCapacity = 2;
+        private const SystemID DriftCheckOwnerSystemId = SystemID.CoreDeterminism;
         private const int OriginShiftParticleBufferCapacity = 16384;
         private const int ShiftSceneRootCapacity = 1024;
         private const int ShiftParticleSystemCapacity = 4096;
@@ -133,9 +136,10 @@ namespace Hecton8.Core
         private Rigidbody _anchorRigidbody;
         private CriticalAupTracker _playerDriftTracker;
         private CriticalAupTracker _submarineDriftTracker;
-        private NativeArray<double3> _driftCheckRuntimePositions;
-        private NativeArray<double3> _driftCheckAbsolutePositions;
-        private NativeArray<byte> _driftCheckInvalidMask;
+        private IDataVault _dataVault;
+        private VaultBufferHandle<double3> _driftCheckRuntimePositionsHandle;
+        private VaultBufferHandle<double3> _driftCheckAbsolutePositionsHandle;
+        private VaultBufferHandle<byte> _driftCheckInvalidMaskHandle;
         private JobHandle _driftCheckHandle;
         private int _precisionWatchdogCountdown;
         private int _precisionWatchdogCachedFrame = -1;
@@ -489,6 +493,7 @@ namespace Hecton8.Core
             }
 
             GlobalRegistry.RegisterFloatingOriginRuntime(this);
+            _dataVault = GlobalRegistry.DataVault;
             RefreshThresholdCache();
             TryResolveAnchor(force: true);
             EnsureDriftCheckBuffers();
@@ -546,6 +551,7 @@ namespace Hecton8.Core
             if (GlobalRegistry.FloatingOrigin != this)
                 GlobalRegistry.RegisterFloatingOriginRuntime(this);
 
+            _dataVault = GlobalRegistry.DataVault;
             RefreshThresholdCache();
             TryResolveAnchor(force: true);
             EnsureDriftCheckBuffers();
@@ -1244,26 +1250,45 @@ namespace Hecton8.Core
 
         private void ScheduleAupDriftCheck()
         {
-            EnsureDriftCheckBuffers();
+            if (!EnsureDriftCheckBuffers(
+                    out NativeArray<double3> runtimePositions,
+                    out NativeArray<double3> absolutePositions,
+                    out NativeArray<byte> invalidMask))
+            {
+                return;
+            }
+
             int writeIndex = 0;
-            writeIndex = StageCriticalEntityForDriftCheck(_playerDriftTracker, writeIndex);
-            writeIndex = StageCriticalEntityForDriftCheck(_submarineDriftTracker, writeIndex);
+            writeIndex = StageCriticalEntityForDriftCheck(
+                _playerDriftTracker,
+                runtimePositions,
+                absolutePositions,
+                writeIndex);
+            writeIndex = StageCriticalEntityForDriftCheck(
+                _submarineDriftTracker,
+                runtimePositions,
+                absolutePositions,
+                writeIndex);
             if (writeIndex <= 0)
                 return;
 
             _driftCheckCount = writeIndex;
             _driftCheckHandle = new AupDriftCheckJob
             {
-                RuntimePositions = _driftCheckRuntimePositions,
-                TrackedAbsolutePositions = _driftCheckAbsolutePositions,
+                RuntimePositions = runtimePositions,
+                TrackedAbsolutePositions = absolutePositions,
                 CommittedTotalOffset = _totalOffsetDouble,
                 MaxDeltaSq = DriftCheckThresholdSq,
-                InvalidMask = _driftCheckInvalidMask
+                InvalidMask = invalidMask
             }.Schedule(writeIndex, 1);
             _driftCheckScheduled = true;
         }
 
-        private int StageCriticalEntityForDriftCheck(in CriticalAupTracker tracker, int writeIndex)
+        private static int StageCriticalEntityForDriftCheck(
+            in CriticalAupTracker tracker,
+            NativeArray<double3> runtimePositions,
+            NativeArray<double3> absolutePositions,
+            int writeIndex)
         {
             if (!tracker.Initialized || tracker.Transform == null || writeIndex >= DriftCheckEntityCapacity)
                 return writeIndex;
@@ -1272,8 +1297,8 @@ namespace Hecton8.Core
             if (!IsFiniteVector(runtimePosition) || !math.all(math.isfinite(tracker.AbsolutePosition)))
                 return writeIndex;
 
-            _driftCheckRuntimePositions[writeIndex] = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
-            _driftCheckAbsolutePositions[writeIndex] = tracker.AbsolutePosition;
+            runtimePositions[writeIndex] = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            absolutePositions[writeIndex] = tracker.AbsolutePosition;
             return writeIndex + 1;
         }
 
@@ -1283,15 +1308,23 @@ namespace Hecton8.Core
                 return false;
 
             _driftCheckScheduled = false;
+            if (!TryResolveDriftCheckBuffers(
+                    out NativeArray<double3> runtimePositions,
+                    out NativeArray<double3> absolutePositions,
+                    out NativeArray<byte> invalidMask))
+            {
+                _driftCheckCount = 0;
+                return false;
+            }
 
-            double maxDriftErrorSq = ResolveMaxDriftErrorSq();
+            double maxDriftErrorSq = ResolveMaxDriftErrorSq(runtimePositions, absolutePositions);
             Vector3 telemetryPosition = _anchor != null ? _anchor.position : Vector3.zero;
             CrashTelemetryBuffer.ReportAupMaxDriftError(telemetryPosition, ResolveDriftErrorMeters(maxDriftErrorSq));
 
             bool hasInvalidEntity = false;
             for (int i = 0; i < _driftCheckCount; i++)
             {
-                if (_driftCheckInvalidMask[i] != 0)
+                if (invalidMask[i] != 0)
                 {
                     hasInvalidEntity = true;
                     break;
@@ -1302,7 +1335,7 @@ namespace Hecton8.Core
             if (!hasInvalidEntity || _anchor == null)
                 return false;
 
-            Vector3 forcedShiftOffset = ResolveForcedDriftShiftOffset();
+            Vector3 forcedShiftOffset = ResolveForcedDriftShiftOffset(invalidMask);
             if (VectorLengthSq(forcedShiftOffset) <= 0.0001f)
                 forcedShiftOffset = _anchor.position;
 
@@ -1318,12 +1351,14 @@ namespace Hecton8.Core
             return true;
         }
 
-        private double ResolveMaxDriftErrorSq()
+        private double ResolveMaxDriftErrorSq(
+            NativeArray<double3> runtimePositions,
+            NativeArray<double3> absolutePositions)
         {
             double maxDriftErrorSq = 0d;
             for (int i = 0; i < _driftCheckCount; i++)
             {
-                double driftErrorSq = ResolveDriftErrorSq(i);
+                double driftErrorSq = ResolveDriftErrorSq(runtimePositions, absolutePositions, i);
                 if (!math.isfinite(driftErrorSq))
                     return double.PositiveInfinity;
 
@@ -1333,10 +1368,13 @@ namespace Hecton8.Core
             return maxDriftErrorSq;
         }
 
-        private double ResolveDriftErrorSq(int index)
+        private double ResolveDriftErrorSq(
+            NativeArray<double3> runtimePositions,
+            NativeArray<double3> absolutePositions,
+            int index)
         {
-            double3 expectedRuntime = _driftCheckAbsolutePositions[index] - _totalOffsetDouble;
-            double3 delta = expectedRuntime - _driftCheckRuntimePositions[index];
+            double3 expectedRuntime = absolutePositions[index] - _totalOffsetDouble;
+            double3 delta = expectedRuntime - runtimePositions[index];
             double driftErrorSq = math.lengthsq(delta);
             return math.all(math.isfinite(delta)) && math.isfinite(driftErrorSq) ? driftErrorSq : double.PositiveInfinity;
         }
@@ -1349,31 +1387,36 @@ namespace Hecton8.Core
             if (!math.isfinite(driftErrorSq))
                 return float.MaxValue;
 
-            double driftErrorMeters = driftErrorSq * math.rsqrt(driftErrorSq);
+            double driftErrorMeters = driftErrorSq * math.rsqrt(math.max(driftErrorSq, 0.000001d));
             if (!math.isfinite(driftErrorMeters))
                 return float.MaxValue;
 
             return driftErrorMeters >= float.MaxValue ? float.MaxValue : (float)driftErrorMeters;
         }
 
-        private Vector3 ResolveForcedDriftShiftOffset()
+        private Vector3 ResolveForcedDriftShiftOffset(NativeArray<byte> invalidMask)
         {
-            if (TryResolveForcedDriftShiftOffset(in _playerDriftTracker, 0, out Vector3 shiftOffset))
+            if (TryResolveForcedDriftShiftOffset(in _playerDriftTracker, invalidMask, 0, out Vector3 shiftOffset))
                 return shiftOffset;
 
-            if (TryResolveForcedDriftShiftOffset(in _submarineDriftTracker, 1, out shiftOffset))
+            if (TryResolveForcedDriftShiftOffset(in _submarineDriftTracker, invalidMask, 1, out shiftOffset))
                 return shiftOffset;
 
             return Vector3.zero;
         }
 
-        private bool TryResolveForcedDriftShiftOffset(in CriticalAupTracker tracker, int maskIndex, out Vector3 shiftOffset)
+        private bool TryResolveForcedDriftShiftOffset(
+            in CriticalAupTracker tracker,
+            NativeArray<byte> invalidMask,
+            int maskIndex,
+            out Vector3 shiftOffset)
         {
             shiftOffset = Vector3.zero;
             if (maskIndex < 0 ||
                 maskIndex >= DriftCheckEntityCapacity ||
-                maskIndex >= _driftCheckInvalidMask.Length ||
-                _driftCheckInvalidMask[maskIndex] == 0 ||
+                !invalidMask.IsCreated ||
+                maskIndex >= invalidMask.Length ||
+                invalidMask[maskIndex] == 0 ||
                 !tracker.Initialized ||
                 tracker.Transform == null)
             {
@@ -1408,54 +1451,89 @@ namespace Hecton8.Core
 
         private void EnsureDriftCheckBuffers()
         {
-            if (_driftCheckRuntimePositions.IsCreated && _driftCheckRuntimePositions.Length == DriftCheckEntityCapacity)
-                return;
+            _ = EnsureDriftCheckBuffers(out _, out _, out _);
+        }
 
-            DisposeDriftCheckState();
-            _driftCheckRuntimePositions = new NativeArray<double3>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _driftCheckAbsolutePositions = new NativeArray<double3>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _driftCheckInvalidMask = new NativeArray<byte>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _driftCheckRuntimePositions,
-                nameof(HectonFloatingOrigin),
-                nameof(_driftCheckRuntimePositions),
-                NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(
-                _driftCheckAbsolutePositions,
-                nameof(HectonFloatingOrigin),
-                nameof(_driftCheckAbsolutePositions),
-                NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(
-                _driftCheckInvalidMask,
-                nameof(HectonFloatingOrigin),
-                nameof(_driftCheckInvalidMask),
-                NativeAllocationLifetime.Session);
+        private bool EnsureDriftCheckBuffers(
+            out NativeArray<double3> runtimePositions,
+            out NativeArray<double3> absolutePositions,
+            out NativeArray<byte> invalidMask)
+        {
+            runtimePositions = default;
+            absolutePositions = default;
+            invalidMask = default;
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            _dataVault = vault;
+            if (!_driftCheckRuntimePositionsHandle.IsCreated ||
+                _driftCheckRuntimePositionsHandle.Length < DriftCheckEntityCapacity)
+            {
+                _driftCheckRuntimePositionsHandle = vault.GetBufferHandle<double3>(
+                    BufferID.FloatingOriginDriftRuntimePositions,
+                    DriftCheckEntityCapacity,
+                    DriftCheckOwnerSystemId,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_driftCheckAbsolutePositionsHandle.IsCreated ||
+                _driftCheckAbsolutePositionsHandle.Length < DriftCheckEntityCapacity)
+            {
+                _driftCheckAbsolutePositionsHandle = vault.GetBufferHandle<double3>(
+                    BufferID.FloatingOriginDriftAbsolutePositions,
+                    DriftCheckEntityCapacity,
+                    DriftCheckOwnerSystemId,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_driftCheckInvalidMaskHandle.IsCreated ||
+                _driftCheckInvalidMaskHandle.Length < DriftCheckEntityCapacity)
+            {
+                _driftCheckInvalidMaskHandle = vault.GetBufferHandle<byte>(
+                    BufferID.FloatingOriginDriftInvalidMask,
+                    DriftCheckEntityCapacity,
+                    DriftCheckOwnerSystemId,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            return TryResolveDriftCheckBuffers(out runtimePositions, out absolutePositions, out invalidMask);
+        }
+
+        private bool TryResolveDriftCheckBuffers(
+            out NativeArray<double3> runtimePositions,
+            out NativeArray<double3> absolutePositions,
+            out NativeArray<byte> invalidMask)
+        {
+            runtimePositions = default;
+            absolutePositions = default;
+            invalidMask = default;
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null ||
+                !_driftCheckRuntimePositionsHandle.IsCreated ||
+                !_driftCheckAbsolutePositionsHandle.IsCreated ||
+                !_driftCheckInvalidMaskHandle.IsCreated)
+            {
+                return false;
+            }
+
+            _dataVault = vault;
+            runtimePositions = _driftCheckRuntimePositionsHandle.Resolve(vault);
+            absolutePositions = _driftCheckAbsolutePositionsHandle.Resolve(vault);
+            invalidMask = _driftCheckInvalidMaskHandle.Resolve(vault);
+            return runtimePositions.IsCreated &&
+                   absolutePositions.IsCreated &&
+                   invalidMask.IsCreated &&
+                   runtimePositions.Length >= DriftCheckEntityCapacity &&
+                   absolutePositions.Length >= DriftCheckEntityCapacity &&
+                   invalidMask.Length >= DriftCheckEntityCapacity;
         }
 
         private void DisposeDriftCheckState()
         {
-            JobHandle dependency = _driftCheckScheduled ? _driftCheckHandle : default;
-            if (_driftCheckRuntimePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_driftCheckRuntimePositions);
-                _driftCheckRuntimePositions.Dispose(dependency);
-                _driftCheckRuntimePositions = default;
-            }
-
-            if (_driftCheckAbsolutePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_driftCheckAbsolutePositions);
-                _driftCheckAbsolutePositions.Dispose(dependency);
-                _driftCheckAbsolutePositions = default;
-            }
-
-            if (_driftCheckInvalidMask.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_driftCheckInvalidMask);
-                _driftCheckInvalidMask.Dispose(dependency);
-                _driftCheckInvalidMask = default;
-            }
-
+            _driftCheckRuntimePositionsHandle = default;
+            _driftCheckAbsolutePositionsHandle = default;
+            _driftCheckInvalidMaskHandle = default;
             _driftCheckHandle = default;
             _driftCheckScheduled = false;
             _driftCheckCount = 0;
@@ -1558,7 +1636,11 @@ namespace Hecton8.Core
 
             float3 anchorPosition3 = new float3(anchorPosition.x, anchorPosition.y, anchorPosition.z);
             float3 anchorVelocity3 = new float3(anchorVelocity.x, anchorVelocity.y, anchorVelocity.z);
-            float3 radialDirection = anchorPosition3 * math.rsqrt(math.lengthsq(anchorPosition3));
+            float anchorPositionSq = math.lengthsq(anchorPosition3);
+            if (!math.isfinite(anchorPositionSq) || anchorPositionSq <= 0.0001f)
+                return false;
+
+            float3 radialDirection = anchorPosition3 * math.rsqrt(math.max(anchorPositionSq, 0.0001f));
             float radialVelocity = math.dot(radialDirection, anchorVelocity3);
             return radialVelocity > OutwardMotionSpeedEpsilon;
         }

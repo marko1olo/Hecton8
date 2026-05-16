@@ -1,8 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -51,7 +54,7 @@ namespace Hecton8.Physics
     /// <summary>
     /// Deferred main-thread force application payload.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     public struct ForcePacket
     {
         /// <summary>World-space force vector.</summary>
@@ -82,7 +85,7 @@ namespace Hecton8.Physics
     /// <summary>
     /// Pressure blowout payload emitted when a bulkhead opens across a large pressure differential.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
     public readonly struct PressureImpulseEvent
     {
         /// <summary>
@@ -145,7 +148,7 @@ namespace Hecton8.Physics
     /// <summary>
     /// Electromagnetic pulse payload emitted by fauna or environmental hazards.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public readonly struct ElectromagneticPulseEvent
     {
         public ElectromagneticPulseEvent(
@@ -175,7 +178,7 @@ namespace Hecton8.Physics
     /// <summary>
     /// False or authored acoustic ping payload consumed by sonar and PDA signal systems.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     public readonly struct AcousticPingEvent
     {
         /// <summary>
@@ -237,7 +240,7 @@ namespace Hecton8.Physics
     /// <summary>
     /// Kinetic acoustic impulse payload emitted by physics and consumed by audio, HUD, haptics, and passive radar.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     public readonly struct AcousticImpulseEvent
     {
         public AcousticImpulseEvent(
@@ -297,7 +300,7 @@ namespace Hecton8.Physics
     /// <summary>
     /// Active-sonar danger payload routed through the acoustic impulse lane with the Large flag forced on.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     public readonly struct LargeAcousticImpulseEvent
     {
         public LargeAcousticImpulseEvent(
@@ -350,7 +353,7 @@ namespace Hecton8.Physics
     /// <summary>
     /// Physics event discriminator for <see cref="PhysicsEventPayload"/>.
     /// </summary>
-    public enum PhysicsEventType : ushort
+    internal enum RemovedPhysicsEventType : ushort
     {
         PressureImpulse = 1,
         ElectromagneticPulse = 2,
@@ -361,8 +364,8 @@ namespace Hecton8.Physics
     /// <summary>
     /// Unmanaged event payload carried by the deferred physics event lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct PhysicsEventPayload
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
+    internal struct RemovedPhysicsEventPayload
     {
         public Vector3 RuntimePosition;
         public Vector3 Direction;
@@ -412,7 +415,7 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
-    /// NativeQueue-backed physics-domain event surface for transient physics signals.
+    /// Typed signal-lane physics-domain event surface for transient physics signals.
     /// </summary>
     public static class PhysicsEventBus
     {
@@ -421,7 +424,7 @@ namespace Hecton8.Physics
         private const ushort EventCircuitBreakerDepthLimit = 5;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("PhysicsEventBus.Overflow"));
         private static readonly uint _circuitBreakerWarningHash = unchecked((uint)LocHash.Compute("PhysicsEventBus.CircuitBreaker"));
-        private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("PhysicsEventBus"));
+        private static readonly uint _queueHash = unchecked((uint)LocHash.Compute(nameof(PhysicsEventPayload)));
 
         // COLD ALLOC: RegistryBucket<IPressureImpulseEventListener>[32] - pressure impulse listeners drained by SystemDispatcher LateUpdate - owner: PhysicsEventBus
         private static readonly RegistryBucket<IPressureImpulseEventListener> _pressureListeners = new RegistryBucket<IPressureImpulseEventListener>(ListenerCapacity);
@@ -431,17 +434,25 @@ namespace Hecton8.Physics
         private static readonly RegistryBucket<IAcousticPingEventListener> _acousticListeners = new RegistryBucket<IAcousticPingEventListener>(ListenerCapacity);
         // COLD ALLOC: RegistryBucket<IPhysicsAcousticImpulseEventListener>[32] - kinetic acoustic impulse listeners drained by SystemDispatcher LateUpdate - owner: PhysicsEventBus
         private static readonly RegistryBucket<IPhysicsAcousticImpulseEventListener> _acousticImpulseListeners = new RegistryBucket<IPhysicsAcousticImpulseEventListener>(ListenerCapacity);
-        private static NativeQueue<PhysicsEventPayload> _pendingEvents;
-        private static NativeQueue<PhysicsEventPayload> _nextFrameEvents;
-        private static int _pendingEventCount;
-        private static int _nextFrameEventCount;
+        private static int _snapshotReadFrame = -1;
+        private static int _snapshotReadCursor;
         private static int _lastOverflowWarningFrame = -1;
         private static int _lastCircuitBreakerWarningFrame = -1;
         private static int _activeDispatchDepth;
-        private static bool _isDispatching;
+        private static bool _initialized;
 
         /// <summary>Number of deferred physics event payloads waiting for late-frame dispatch.</summary>
-        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int PendingCount
+        {
+            get
+            {
+                int snapshotCount = SignalBus<PhysicsEventPayload>.SnapshotCount;
+                if (snapshotCount <= 0)
+                    return 0;
+
+                return Math.Max(0, snapshotCount - _snapshotReadCursor);
+            }
+        }
 
         /// <summary>Prewarms native event queues from runtime initialization paths before gameplay producers emit.</summary>
         public static void EnsureReady()
@@ -461,30 +472,16 @@ namespace Hecton8.Physics
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PhysicsEventBus), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PhysicsEventBus), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
-
             _pressureListeners.Clear();
             _empListeners.Clear();
             _acousticListeners.Clear();
             _acousticImpulseListeners.Clear();
-            _pendingEventCount = 0;
-            _nextFrameEventCount = 0;
+            _snapshotReadFrame = -1;
+            _snapshotReadCursor = 0;
             _lastOverflowWarningFrame = -1;
             _lastCircuitBreakerWarningFrame = -1;
             _activeDispatchDepth = 0;
-            _isDispatching = false;
+            _initialized = false;
         }
 
         /// <summary>Registers a pressure impulse listener.</summary>
@@ -589,8 +586,9 @@ namespace Hecton8.Physics
         /// </summary>
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated)
-                return;
+            EnsureInitialized();
+            if (SignalBus<PhysicsEventPayload>.DroppedLastFlush > 0)
+                ReportOverflowOncePerFrame();
 
             if (!HasAnyListener())
             {
@@ -598,34 +596,28 @@ namespace Hecton8.Physics
                 return;
             }
 
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            _isDispatching = true;
-            try
+            int currentFrame = Time.frameCount;
+            if (_snapshotReadFrame != currentFrame)
             {
-                while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+                _snapshotReadFrame = currentFrame;
+                _snapshotReadCursor = 0;
+            }
+
+            ReadOnlySpan<PhysicsEventPayload> snapshot = SignalBus<PhysicsEventPayload>.GetFrameSnapshot();
+            while (_snapshotReadCursor < snapshot.Length)
+            {
+                int signalIndex = _snapshotReadCursor;
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                 {
-                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                        return;
-
-                    if (!_pendingEvents.TryDequeue(out PhysicsEventPayload payload))
-                        break;
-
-                    if (_pendingEventCount > 0)
-                        _pendingEventCount--;
-
-                    Dispatch(in payload);
+                    RequeueRemainingSnapshot(snapshot, signalIndex);
+                    _snapshotReadCursor = snapshot.Length;
+                    return;
                 }
-            }
-            finally
-            {
-                _isDispatching = false;
-            }
 
-            if (!_pendingEvents.IsEmpty())
-                return;
-
-            _pendingEventCount = 0;
-            PromoteNextFrameEvents();
+                PhysicsEventPayload payload = snapshot[signalIndex];
+                _snapshotReadCursor = signalIndex + 1;
+                Dispatch(in payload);
+            }
         }
 
         /// <summary>Broadcasts one pressure-impulse payload.</summary>
@@ -703,9 +695,6 @@ namespace Hecton8.Physics
         /// <summary>Broadcasts one kinetic acoustic impulse payload.</summary>
         public static void NotifyAcousticImpulse(in AcousticImpulseEvent impulseEvent)
         {
-            if (_acousticImpulseListeners.Count <= 0)
-                return;
-
             Enqueue(new PhysicsEventPayload
             {
                 RuntimePosition = impulseEvent.RuntimePosition,
@@ -727,131 +716,34 @@ namespace Hecton8.Physics
         /// <summary>Broadcasts one large acoustic impulse payload through the deferred acoustic impulse lane.</summary>
         public static void NotifyLargeAcousticImpulse(in LargeAcousticImpulseEvent impulseEvent)
         {
-            if (_acousticImpulseListeners.Count <= 0)
-                return;
-
             AcousticImpulseEvent acousticImpulseEvent = impulseEvent.ToAcousticImpulseEvent();
             NotifyAcousticImpulse(in acousticImpulseEvent);
         }
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
-            {
-                _pendingEvents = new NativeQueue<PhysicsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PhysicsEventPayload>[128] - deferred physics signal event lane flushed by SystemDispatcher LateUpdate - owner: PhysicsEventBus
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(PhysicsEventBus),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
-
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<PhysicsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PhysicsEventPayload>[128] - next-frame physics events raised by listeners - owner: PhysicsEventBus
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(PhysicsEventBus),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
-            }
-        }
-
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
+            if (_initialized)
                 return;
 
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<PhysicsEventPayload>.EnsureInitialized();
+            _initialized = true;
         }
 
         private static bool Enqueue(in PhysicsEventPayload payload)
         {
-            int queuedDepth = _isDispatching ? _activeDispatchDepth + 1 : 1;
+            int queuedDepth = _activeDispatchDepth > 0 ? _activeDispatchDepth + 1 : 1;
             if (queuedDepth >= EventCircuitBreakerDepthLimit)
             {
                 ReportCircuitBreakerOncePerFrame(queuedDepth);
                 return false;
             }
 
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-            {
-                ReportOverflowOncePerFrame();
-                return false;
-            }
-
             EnsureInitialized();
             PhysicsEventPayload queuedPayload = payload;
             queuedPayload.Reserved = (ushort)math.max(1, queuedDepth);
-            if (_isDispatching)
-            {
-                _nextFrameEvents.Enqueue(queuedPayload);
-                _nextFrameEventCount++;
-            }
-            else
-            {
-                _pendingEvents.Enqueue(queuedPayload);
-                _pendingEventCount++;
-            }
-
+            SignalBus<PhysicsEventPayload>.Push(in queuedPayload);
             return true;
-        }
-
-        private static void PromoteNextFrameEvents()
-        {
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEventCount = 0;
-                return;
-            }
-
-            if (_nextFrameEventCount <= 0)
-            {
-                while (_nextFrameEvents.TryDequeue(out _))
-                {
-                }
-
-                _nextFrameEventCount = 0;
-                return;
-            }
-
-            if (!_pendingEvents.IsCreated)
-            {
-                while (_nextFrameEvents.TryDequeue(out _))
-                {
-                }
-
-                _nextFrameEventCount = 0;
-                return;
-            }
-
-            int room = math.max(0, PendingEventCapacity - _pendingEventCount);
-            while (_nextFrameEventCount > 0 && room > 0 && _nextFrameEvents.TryDequeue(out PhysicsEventPayload payload))
-            {
-                _nextFrameEventCount--;
-                room--;
-                _pendingEvents.Enqueue(payload);
-                _pendingEventCount++;
-            }
-
-            while (_nextFrameEventCount > 0 && _nextFrameEvents.TryDequeue(out _))
-                _nextFrameEventCount--;
-
-            if (_nextFrameEvents.IsEmpty())
-                _nextFrameEventCount = 0;
-
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
         }
 
         private static bool HasAnyListener()
@@ -872,56 +764,20 @@ namespace Hecton8.Physics
                 DropQueuedPayloads();
                 return;
             }
-
-            DropQueuedPayloadsForType(eventType);
         }
 
         private static void DropQueuedPayloads()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                while (_pendingEvents.TryDequeue(out _))
-                {
-                }
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                while (_nextFrameEvents.TryDequeue(out _))
-                {
-                }
-            }
-
-            _pendingEventCount = 0;
-            _nextFrameEventCount = 0;
+            _snapshotReadCursor = SignalBus<PhysicsEventPayload>.SnapshotCount;
         }
 
-        private static void DropQueuedPayloadsForType(PhysicsEventType eventType)
+        private static void RequeueRemainingSnapshot(ReadOnlySpan<PhysicsEventPayload> snapshot, int startIndex)
         {
-            DropQueuedPayloadsForType(ref _pendingEvents, ref _pendingEventCount, eventType);
-            DropQueuedPayloadsForType(ref _nextFrameEvents, ref _nextFrameEventCount, eventType);
-        }
-
-        private static void DropQueuedPayloadsForType(
-            ref NativeQueue<PhysicsEventPayload> queue,
-            ref int queuedCount,
-            PhysicsEventType eventType)
-        {
-            if (!queue.IsCreated)
-                return;
-
-            int scanBudget = queuedCount > 0 ? queuedCount : PendingEventCapacity;
-            int retainedCount = 0;
-            while (scanBudget-- > 0 && queue.TryDequeue(out PhysicsEventPayload payload))
+            for (int i = startIndex; i < snapshot.Length; i++)
             {
-                if ((PhysicsEventType)payload.EventType == eventType)
-                    continue;
-
-                queue.Enqueue(payload);
-                retainedCount++;
+                PhysicsEventPayload payload = snapshot[i];
+                SignalBus<PhysicsEventPayload>.Push(in payload);
             }
-
-            queuedCount = retainedCount;
         }
 
         private static void Dispatch(in PhysicsEventPayload payload)
@@ -1135,6 +991,7 @@ namespace Hecton8.Physics
         private const int MaxActiveImpactProxyLights = 4;
         private const int DepressurizationVortexContactCapacity = 32;
         private const int ImplosionOverlapCapacity = 64;
+        private const SystemID OwnerSystemId = SystemID.Physics;
         private const float MinMagnitudeSq = 0.000001f;
         private const float DepressurizationVortexDistanceFloorMeters = 0.5f;
         private const float HullYieldThresholdJoules = 225000f;
@@ -1153,8 +1010,6 @@ namespace Hecton8.Physics
         private const double FlushBudgetWarningMilliseconds = 0.2d;
         private const int FlushBudgetWarningCooldownFrames = 30;
         private const int ForcePacketWarningCooldownFrames = 30;
-        private const string FrontPacketSnapshotCapacityWarning =
-            "[PhysicsApplySystem] Native front packet queue exceeded validation snapshot capacity.";
         private static readonly uint ForcePacketClipWarningHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.ForcePacketClip"));
         private static readonly uint ForcePacketQueueHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.ForcePacketQueue"));
         private static readonly uint PhysicsFlushBudgetWarningHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.FlushBudget"));
@@ -1166,8 +1021,8 @@ namespace Hecton8.Physics
         // COLD ALLOC: Collider[64] - static implosion overlap query buffer for zero-GC radius impulse dispatch - owner: PhysicsApplySystem
         private static readonly Collider[] s_implosionOverlapBuffer = new Collider[ImplosionOverlapCapacity];
 
-        [StructLayout(LayoutKind.Sequential, Size = 48)]
-        private struct DeferredSubmarineImpactSignal
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+        private struct RemovedDeferredSubmarineImpactSignal
         {
             public float3 LocalPoint;
             public float Magnitude;
@@ -1190,14 +1045,12 @@ namespace Hecton8.Physics
             public float RemainingSeconds;
         }
 
-        // COLD ALLOC: ForcePacket[64] - end-of-step flush buffer - owner: PhysicsApplySystem
         private struct TransientProxyLightHandle
         {
             public int Key;
             public float ExpireAtUnscaledTime;
         }
 
-        private ForcePacket[] _frontPackets = new ForcePacket[MaxQueuedPackets];
         // COLD ALLOC: Rigidbody[64] - active rigidbody slot map for deferred packet application - owner: PhysicsApplySystem
         private readonly Rigidbody[] _bodySlots = new Rigidbody[MaxTrackedBodies];
         // COLD ALLOC: AbsoluteUniversePosition[64] - last finite Rigidbody AUP for NaN recovery - owner: PhysicsApplySystem
@@ -1214,14 +1067,16 @@ namespace Hecton8.Physics
         private readonly TransientProxyLightHandle[] _impactProxyLights = new TransientProxyLightHandle[MaxActiveImpactProxyLights];
         // COLD ALLOC: List<Collider>[8] - submarine hull collider discovery for contact-modification enablement - owner: PhysicsApplySystem
         private readonly List<Collider> _submarineColliderScratch = new List<Collider>(8);
-        private NativeArray<ForcePacket> _validationPackets;
-        private NativeArray<byte> _validationMask;
-        private NativeQueue<ForcePacket> _frontPacketQueue;
-        private NativeQueue<ForcePacket> _backPacketQueue;
-        private NativeQueue<DeferredSubmarineImpactSignal> _submarineImpactSignals;
-        private int _submarineImpactSignalCount;
+        private VaultBufferHandle<ForcePacket> _frontPacketBufferHandle;
+        private VaultBufferHandle<ForcePacket> _backPacketBufferHandle;
+        private VaultBufferHandle<ForcePacket> _validationPacketBufferHandle;
+        private VaultBufferHandle<byte> _validationMaskBufferHandle;
+        private int _submarineImpactSnapshotReadFrame = -1;
+        private int _submarineImpactSnapshotReadCursor;
+        private bool _submarineImpactSignalLaneInitialized;
 
         private int _frontCount;
+        private int _backCount;
         private bool _isInitialized;
         private bool _fixedTickRegistered;
         private bool _postFixedTickRegistered;
@@ -1286,24 +1141,6 @@ namespace Hecton8.Physics
             PhysicsApplySystem system = Instance;
             if (system != null)
                 system.ClearQueuedPackets();
-        }
-
-        internal static bool TryGetForcePacketBackWriter(out NativeQueue<ForcePacket>.ParallelWriter writer)
-        {
-            writer = default;
-            if (!Application.isPlaying)
-                return false;
-
-            PhysicsApplySystem system = EnsureRuntimeInstance();
-            if (system == null)
-                return false;
-
-            system.EnsureForcePacketQueues();
-            if (!system._backPacketQueue.IsCreated)
-                return false;
-
-            writer = system._backPacketQueue.AsParallelWriter();
-            return true;
         }
 
         internal static bool QueueSharedRaycast(
@@ -1571,14 +1408,18 @@ namespace Hecton8.Physics
 
         private bool TryEnqueueBackPacket(in ForcePacket packet, string saturationMessage)
         {
-            EnsureForcePacketQueues();
-            if (!_backPacketQueue.IsCreated || _backPacketQueue.Count >= MaxQueuedPackets)
+            if (!TryResolveVaultBuffer(
+                    ref _backPacketBufferHandle,
+                    BufferID.PhysicsForceCommandBack,
+                    MaxQueuedPackets,
+                    out NativeArray<ForcePacket> backPackets) ||
+                _backCount >= MaxQueuedPackets)
             {
                 ReportForcePacketSaturationWarningIfNeeded(saturationMessage);
                 return false;
             }
 
-            _backPacketQueue.Enqueue(packet);
+            backPackets[_backCount++] = packet;
             return true;
         }
 
@@ -1655,16 +1496,22 @@ namespace Hecton8.Physics
                 JobHandle.ScheduleBatchedJobs();
             }
 
-            System.Array.Clear(_frontPackets, 0, _frontCount);
+            ClearForcePacketBuffer(ref _frontPacketBufferHandle, BufferID.PhysicsForceCommandFront);
+            ClearForcePacketBuffer(ref _backPacketBufferHandle, BufferID.PhysicsForceCommandBack);
+            if (!_packetValidationScheduled)
+            {
+                ClearForcePacketBuffer(ref _validationPacketBufferHandle, BufferID.PhysicsForceValidationPackets);
+                ClearByteBuffer(ref _validationMaskBufferHandle, BufferID.PhysicsForceValidationMask);
+            }
+
             System.Array.Clear(_bodySlots, 0, _bodySlots.Length);
             System.Array.Clear(_lastFiniteBodyAups, 0, _lastFiniteBodyAups.Length);
             System.Array.Clear(_lastFiniteBodyAupValid, 0, _lastFiniteBodyAupValid.Length);
             System.Array.Clear(_depressurizationVortices, 0, _depressurizationVortices.Length);
             System.Array.Clear(_depressurizationVortexBodies, 0, _depressurizationVortexBodies.Length);
             ClearTransientImpactProxyLights();
-            DrainForcePacketQueue(ref _frontPacketQueue);
-            DrainForcePacketQueue(ref _backPacketQueue);
             _frontCount = 0;
+            _backCount = 0;
             _frontBufferValidationReady = false;
         }
 
@@ -1696,7 +1543,7 @@ namespace Hecton8.Physics
 
             if (GlobalRegistry.Dispatcher != null && !_postFixedTickRegistered)
             {
-                // Swap native packet queues only after all fixed-step producers have written to the back queue.
+                // Swap vault packet buffers only after all fixed-step producers have written to the back buffer.
                 GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.UI);
                 _postFixedTickRegistered = SystemDispatcher.GetPostFixedLane(PriorityLayer.UI).Contains(this);
             }
@@ -1721,27 +1568,22 @@ namespace Hecton8.Physics
                 return;
 
             PhysicsEventBus.EnsureReady();
-            EnsureForcePacketQueues();
+            EnsureForcePacketBuffers();
             EnsureValidationBuffers();
-            EnsureSubmarineImpactSignalQueue();
+            EnsureSubmarineImpactSignalLane();
         }
 
-        private void EnsureSubmarineImpactSignalQueue()
+        private void EnsureSubmarineImpactSignalLane()
         {
             if (!Application.isPlaying)
                 return;
 
-            if (_submarineImpactSignals.IsCreated)
+            if (_submarineImpactSignalLaneInitialized)
                 return;
 
-            _submarineImpactSignals = new NativeQueue<DeferredSubmarineImpactSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DeferredSubmarineImpactSignal>[32] - deferred submarine trauma queue flushed after contact modification - owner: PhysicsApplySystem
-            NativeMemorySentinel.RegisterNativeQueue(
-                _submarineImpactSignals,
-                MaxQueuedSubmarineImpactSignals,
-                nameof(PhysicsApplySystem),
-                nameof(_submarineImpactSignals),
-                NativeAllocationLifetime.Session);
-            PrewarmQueue(ref _submarineImpactSignals, MaxQueuedSubmarineImpactSignals);
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<DeferredSubmarineImpactSignal>.EnsureInitialized();
+            _submarineImpactSignalLaneInitialized = true;
         }
 
         private void OnDisable()
@@ -1774,17 +1616,13 @@ namespace Hecton8.Physics
             }
 
             ClearQueuedPackets();
-            DisposeValidationBuffers();
-            DisposeForcePacketQueues();
+            ReleaseValidationBufferViews();
+            ReleaseForcePacketBufferViews();
             ClearTransientImpactProxyLights();
 
-            if (_submarineImpactSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PhysicsApplySystem), nameof(_submarineImpactSignals));
-                _submarineImpactSignals.Dispose();
-                _submarineImpactSignals = default;
-                _submarineImpactSignalCount = 0;
-            }
+            _submarineImpactSnapshotReadFrame = -1;
+            _submarineImpactSnapshotReadCursor = 0;
+            _submarineImpactSignalLaneInitialized = false;
 
             PhysicsEventBus.Shutdown();
         }
@@ -1834,8 +1672,8 @@ namespace Hecton8.Physics
             if (_packetValidationScheduled)
                 return;
 
-            SwapForcePacketQueues();
-            DrainFrontQueueToValidationSnapshot();
+            SwapForcePacketBuffers();
+            ClampFrontBufferCountToCapacity();
             ScheduleFrontPacketValidation();
         }
 
@@ -1852,6 +1690,22 @@ namespace Hecton8.Physics
             if (!_frontBufferValidationReady)
                 return;
 
+            if (!TryResolveVaultBuffer(
+                    ref _frontPacketBufferHandle,
+                    BufferID.PhysicsForceCommandFront,
+                    MaxQueuedPackets,
+                    out NativeArray<ForcePacket> frontPackets) ||
+                !TryResolveVaultBuffer(
+                    ref _validationMaskBufferHandle,
+                    BufferID.PhysicsForceValidationMask,
+                    MaxQueuedPackets,
+                    out NativeArray<byte> validationMask))
+            {
+                _frontBufferValidationReady = false;
+                _frontCount = 0;
+                return;
+            }
+
             long startTimestamp = Stopwatch.GetTimestamp();
             try
             {
@@ -1863,13 +1717,13 @@ namespace Hecton8.Physics
 
                     for (int i = 0; i < applyCount; i++)
                     {
-                        if (_validationMask.IsCreated && _validationMask[i] == 0)
+                        if (validationMask[i] == 0)
                         {
                             ReportNonFinitePacket(InvalidForcePacketLog);
                             continue;
                         }
 
-                        ForcePacket packet = _frontPackets[i];
+                        ForcePacket packet = frontPackets[i];
                         Rigidbody body = ResolveBody(packet.RigidbodyIndex);
                         if (body == null)
                             continue;
@@ -1943,7 +1797,8 @@ namespace Hecton8.Physics
                                 preApplyVelocity);
                     }
 
-                    System.Array.Clear(_frontPackets, 0, _frontCount);
+                    ClearForcePacketRange(frontPackets, _frontCount);
+                    ClearByteRange(validationMask, _frontCount);
                     _frontCount = 0;
                     _frontBufferValidationReady = false;
                 }
@@ -2461,86 +2316,115 @@ namespace Hecton8.Physics
             return true;
         }
 
-        private void SwapForcePacketQueues()
+        private void SwapForcePacketBuffers()
         {
-            EnsureForcePacketQueues();
-            NativeQueue<ForcePacket> swap = _frontPacketQueue;
-            _frontPacketQueue = _backPacketQueue;
-            _backPacketQueue = swap;
+            EnsureForcePacketBuffers();
+            VaultBufferHandle<ForcePacket> swapHandle = _frontPacketBufferHandle;
+            _frontPacketBufferHandle = _backPacketBufferHandle;
+            _backPacketBufferHandle = swapHandle;
+
+            _frontCount = _backCount;
+            _backCount = 0;
         }
 
-        private void DrainFrontQueueToValidationSnapshot()
+        private void ClampFrontBufferCountToCapacity()
         {
-            System.Array.Clear(_frontPackets, 0, _frontCount);
-            _frontCount = 0;
+            if (_frontCount <= MaxQueuedPackets)
+                return;
 
-            while (_frontPacketQueue.IsCreated &&
-                   _frontPacketQueue.TryDequeue(out ForcePacket packet))
+            PublishForcePacketClipWarningIfNeeded(_frontCount);
+            if (TryResolveVaultBuffer(
+                    ref _frontPacketBufferHandle,
+                    BufferID.PhysicsForceCommandFront,
+                    MaxQueuedPackets,
+                    out NativeArray<ForcePacket> frontPackets))
             {
-                if (_frontCount >= _frontPackets.Length)
-                {
-                    ReportForcePacketSaturationWarningIfNeeded(FrontPacketSnapshotCapacityWarning);
-                    continue;
-                }
-
-                _frontPackets[_frontCount++] = packet;
+                ClearForcePacketRange(frontPackets, _frontCount, MaxQueuedPackets);
             }
+
+            _frontCount = MaxQueuedPackets;
         }
 
-        private void EnsureForcePacketQueues()
+        private void EnsureForcePacketBuffers()
         {
             if (!Application.isPlaying)
                 return;
 
-            if (!_frontPacketQueue.IsCreated)
-            {
-                // COLD ALLOC: NativeQueue<ForcePacket>[64] - read-side force packet buffer drained only after post-fixed swap - owner: PhysicsApplySystem
-                _frontPacketQueue = new NativeQueue<ForcePacket>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _frontPacketQueue,
-                    MaxQueuedPackets,
-                    nameof(PhysicsApplySystem),
-                    nameof(_frontPacketQueue),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _frontPacketQueue, MaxQueuedPackets);
-            }
-
-            if (!_backPacketQueue.IsCreated)
-            {
-                // COLD ALLOC: NativeQueue<ForcePacket>[64] - write-side force packet buffer used by fixed-step producers - owner: PhysicsApplySystem
-                _backPacketQueue = new NativeQueue<ForcePacket>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _backPacketQueue,
-                    MaxQueuedPackets,
-                    nameof(PhysicsApplySystem),
-                    nameof(_backPacketQueue),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _backPacketQueue, MaxQueuedPackets);
-            }
+            TryResolveVaultBuffer(
+                ref _frontPacketBufferHandle,
+                BufferID.PhysicsForceCommandFront,
+                MaxQueuedPackets,
+                out NativeArray<ForcePacket> _);
+            TryResolveVaultBuffer(
+                ref _backPacketBufferHandle,
+                BufferID.PhysicsForceCommandBack,
+                MaxQueuedPackets,
+                out NativeArray<ForcePacket> _);
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
+        private bool TryResolveVaultBuffer<T>(
+            ref VaultBufferHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
         {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
+            buffer = default;
+            if (requiredLength <= 0)
+                return false;
 
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            if (dataVault == null)
+                return false;
 
-            while (queue.TryDequeue(out _))
+            if (!handle.IsCreated || handle.Length < requiredLength)
             {
+                handle = dataVault.GetBufferHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    OwnerSystemId,
+                    NativeArrayOptions.ClearMemory);
+                if (!handle.IsCreated)
+                    return false;
             }
+
+            buffer = handle.Resolve(dataVault);
+            return buffer.IsCreated && buffer.Length >= requiredLength;
         }
 
-        private static void DrainForcePacketQueue(ref NativeQueue<ForcePacket> queue)
+        private void ClearForcePacketBuffer(ref VaultBufferHandle<ForcePacket> handle, BufferID bufferId)
         {
-            if (!queue.IsCreated)
+            if (!TryResolveVaultBuffer(ref handle, bufferId, MaxQueuedPackets, out NativeArray<ForcePacket> buffer))
                 return;
 
-            while (queue.TryDequeue(out _))
-            {
-            }
+            ClearForcePacketRange(buffer, MaxQueuedPackets);
+        }
+
+        private void ClearByteBuffer(ref VaultBufferHandle<byte> handle, BufferID bufferId)
+        {
+            if (!TryResolveVaultBuffer(ref handle, bufferId, MaxQueuedPackets, out NativeArray<byte> buffer))
+                return;
+
+            ClearByteRange(buffer, MaxQueuedPackets);
+        }
+
+        private static void ClearForcePacketRange(NativeArray<ForcePacket> buffer, int count, int startIndex = 0)
+        {
+            if (!buffer.IsCreated || count <= 0 || startIndex >= buffer.Length)
+                return;
+
+            int clampedCount = math.min(count, buffer.Length - startIndex);
+            for (int i = 0; i < clampedCount; i++)
+                buffer[startIndex + i] = default;
+        }
+
+        private static void ClearByteRange(NativeArray<byte> buffer, int count, int startIndex = 0)
+        {
+            if (!buffer.IsCreated || count <= 0 || startIndex >= buffer.Length)
+                return;
+
+            int clampedCount = math.min(count, buffer.Length - startIndex);
+            for (int i = 0; i < clampedCount; i++)
+                buffer[startIndex + i] = 0;
         }
 
         private void EnsureValidationBuffers()
@@ -2548,27 +2432,16 @@ namespace Hecton8.Physics
             if (!Application.isPlaying)
                 return;
 
-            if (!_validationPackets.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<ForcePacket>[64] - Burst packet validation staging buffer - owner: PhysicsApplySystem
-                _validationPackets = new NativeArray<ForcePacket>(MaxQueuedPackets, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _validationPackets,
-                    nameof(PhysicsApplySystem),
-                    nameof(_validationPackets),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_validationMask.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<byte>[64] - Burst packet validation mask - owner: PhysicsApplySystem
-                _validationMask = new NativeArray<byte>(MaxQueuedPackets, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _validationMask,
-                    nameof(PhysicsApplySystem),
-                    nameof(_validationMask),
-                    NativeAllocationLifetime.Session);
-            }
+            TryResolveVaultBuffer(
+                ref _validationPacketBufferHandle,
+                BufferID.PhysicsForceValidationPackets,
+                MaxQueuedPackets,
+                out NativeArray<ForcePacket> _);
+            TryResolveVaultBuffer(
+                ref _validationMaskBufferHandle,
+                BufferID.PhysicsForceValidationMask,
+                MaxQueuedPackets,
+                out NativeArray<byte> _);
         }
 
         private void EnsureSubmarineModifiableContacts()
@@ -2681,10 +2554,11 @@ namespace Hecton8.Physics
             byte integrityDelta,
             float depthMeters)
         {
-            if (!_submarineImpactSignals.IsCreated || _submarineImpactSignalCount >= MaxQueuedSubmarineImpactSignals)
+            if (!Application.isPlaying)
                 return;
 
-            _submarineImpactSignals.Enqueue(new DeferredSubmarineImpactSignal
+            EnsureSubmarineImpactSignalLane();
+            DeferredSubmarineImpactSignal signal = new DeferredSubmarineImpactSignal
             {
                 LocalPoint = localPoint,
                 Magnitude = math.max(0f, impactSpeedMetersPerSecond),
@@ -2694,33 +2568,44 @@ namespace Hecton8.Physics
                 NextIntegrityNormalized = math.saturate(1f - severity01),
                 SourceId = DamageSourceIds.SubmarineImpact,
                 IntegrityDelta = integrityDelta,
-                TraumaLevel = ResolveSubmarineTraumaLevel(severity01)
-            });
-            _submarineImpactSignalCount++;
+                TraumaLevel = (byte)ResolveSubmarineTraumaLevel(severity01)
+            };
+            SignalBus<DeferredSubmarineImpactSignal>.Push(in signal);
         }
 
         private void FlushDeferredSubmarineImpactSignals()
         {
-            if (!_submarineImpactSignals.IsCreated)
+            EnsureSubmarineImpactSignalLane();
+            int currentFrame = Time.frameCount;
+            if (_submarineImpactSnapshotReadFrame != currentFrame)
+            {
+                _submarineImpactSnapshotReadFrame = currentFrame;
+                _submarineImpactSnapshotReadCursor = 0;
+            }
+
+            ReadOnlySpan<DeferredSubmarineImpactSignal> snapshot = SignalBus<DeferredSubmarineImpactSignal>.GetFrameSnapshot();
+            if (_submarineImpactSnapshotReadCursor >= snapshot.Length)
                 return;
 
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             TraumaDispatcher traumaDispatcher = playerContext != null ? playerContext.TraumaDispatcher : null;
             if (traumaDispatcher == null)
+            {
+                RequeueRemainingSubmarineImpactSignals(snapshot, _submarineImpactSnapshotReadCursor);
+                _submarineImpactSnapshotReadCursor = snapshot.Length;
                 return;
+            }
 
-            int scanBudget = _submarineImpactSignalCount > 0 ? _submarineImpactSignalCount : MaxQueuedSubmarineImpactSignals;
-            while (scanBudget > 0 && !_submarineImpactSignals.IsEmpty())
+            while (_submarineImpactSnapshotReadCursor < snapshot.Length)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                {
+                    RequeueRemainingSubmarineImpactSignals(snapshot, _submarineImpactSnapshotReadCursor);
+                    _submarineImpactSnapshotReadCursor = snapshot.Length;
                     return;
+                }
 
-                if (!_submarineImpactSignals.TryDequeue(out DeferredSubmarineImpactSignal queuedSignal))
-                    break;
-
-                if (_submarineImpactSignalCount > 0)
-                    _submarineImpactSignalCount--;
-                scanBudget--;
+                DeferredSubmarineImpactSignal queuedSignal = snapshot[_submarineImpactSnapshotReadCursor++];
 
                 Hecton8.Gameplay.HabitatDamageSignal signal = default;
                 signal.magnitude = queuedSignal.Magnitude;
@@ -2734,11 +2619,17 @@ namespace Hecton8.Physics
                     queuedSignal.PreviousIntegrityNormalized,
                     queuedSignal.NextIntegrityNormalized,
                     signal);
-                traumaDispatcher.OnTraumaThresholdCrossed(queuedSignal.TraumaLevel);
+                traumaDispatcher.OnTraumaThresholdCrossed((TraumaLevel)queuedSignal.TraumaLevel);
             }
+        }
 
-            if (_submarineImpactSignals.IsEmpty())
-                _submarineImpactSignalCount = 0;
+        private static void RequeueRemainingSubmarineImpactSignals(ReadOnlySpan<DeferredSubmarineImpactSignal> snapshot, int startIndex)
+        {
+            for (int i = startIndex; i < snapshot.Length; i++)
+            {
+                DeferredSubmarineImpactSignal signal = snapshot[i];
+                SignalBus<DeferredSubmarineImpactSignal>.Push(in signal);
+            }
         }
 
         private static TraumaLevel ResolveSubmarineTraumaLevel(float severity01)
@@ -2764,13 +2655,37 @@ namespace Hecton8.Physics
             }
 
             EnsureValidationBuffers();
+            if (!TryResolveVaultBuffer(
+                    ref _frontPacketBufferHandle,
+                    BufferID.PhysicsForceCommandFront,
+                    MaxQueuedPackets,
+                    out NativeArray<ForcePacket> frontPackets) ||
+                !TryResolveVaultBuffer(
+                    ref _validationPacketBufferHandle,
+                    BufferID.PhysicsForceValidationPackets,
+                    MaxQueuedPackets,
+                    out NativeArray<ForcePacket> validationPackets) ||
+                !TryResolveVaultBuffer(
+                    ref _validationMaskBufferHandle,
+                    BufferID.PhysicsForceValidationMask,
+                    MaxQueuedPackets,
+                    out NativeArray<byte> validationMask))
+            {
+                _frontBufferValidationReady = false;
+                _frontCount = 0;
+                return;
+            }
+
             for (int i = 0; i < _frontCount; i++)
-                _validationPackets[i] = _frontPackets[i];
+            {
+                validationPackets[i] = frontPackets[i];
+                validationMask[i] = 0;
+            }
 
             ValidateForcePacketsJob validateJob = new ValidateForcePacketsJob
             {
-                Packets = _validationPackets,
-                ValidityMask = _validationMask,
+                Packets = validationPackets,
+                ValidityMask = validationMask,
                 MaxTrackedBodies = _bodySlots.Length
             };
 
@@ -3006,42 +2921,23 @@ namespace Hecton8.Physics
 #endif
         }
 
-        private void DisposeValidationBuffers()
+        private void ReleaseValidationBufferViews()
         {
-            JobHandle dependency = _packetValidationScheduled ? _packetValidationHandle : default;
-            if (_validationPackets.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_validationPackets);
-                dependency = _validationPackets.Dispose(dependency);
-                _validationPackets = default;
-            }
+            if (_packetValidationScheduled)
+                JobHandle.ScheduleBatchedJobs();
 
-            if (_validationMask.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_validationMask);
-                dependency = _validationMask.Dispose(dependency);
-                _validationMask = default;
-            }
-
-            _packetValidationHandle = dependency;
+            _validationPacketBufferHandle = default;
+            _validationMaskBufferHandle = default;
+            _packetValidationHandle = default;
             _packetValidationScheduled = false;
         }
 
-        private void DisposeForcePacketQueues()
+        private void ReleaseForcePacketBufferViews()
         {
-            if (_frontPacketQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PhysicsApplySystem), nameof(_frontPacketQueue));
-                _frontPacketQueue.Dispose();
-                _frontPacketQueue = default;
-            }
-
-            if (_backPacketQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PhysicsApplySystem), nameof(_backPacketQueue));
-                _backPacketQueue.Dispose();
-                _backPacketQueue = default;
-            }
+            _frontPacketBufferHandle = default;
+            _backPacketBufferHandle = default;
+            _frontCount = 0;
+            _backCount = 0;
         }
     }
 

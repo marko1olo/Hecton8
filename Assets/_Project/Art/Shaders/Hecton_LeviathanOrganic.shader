@@ -262,7 +262,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             int boneCount = min(max((int)_H8LeviathanBoneCount, 2), 20);
             float segmentLength = max(_H8LeviathanSegmentLength, 0.001);
             float bodyLength = segmentLength * max((float)(boneCount - 1), 1.0);
-            float bodyT = saturate(-sourcePositionOS.z * rcp(bodyLength));
+            float bodyT = saturate(-sourcePositionOS.z * rcp(max(bodyLength, 0.001)));
             float segment = bodyT * (float)(boneCount - 1);
             int boneAIndex = clamp((int)floor(segment), 0, boneCount - 1);
             int boneBIndex = min(boneAIndex + 1, boneCount - 1);
@@ -318,8 +318,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
                     continue;
 
                 float coreRadius = max(woundRadius * 0.45, 0.001);
-                float invWoundRadiusSq = rcp(woundRadiusSq);
-                float invCoreRadiusSq = rcp(coreRadius * coreRadius);
+                float invWoundRadiusSq = rcp(max(woundRadiusSq, 0.0001));
+                float invCoreRadiusSq = rcp(max(coreRadius * coreRadius, 0.0001));
                 half woundContribution = saturate(1.0h - (half)(woundDistanceSq * invWoundRadiusSq));
                 half coreContribution = saturate(1.0h - (half)(woundDistanceSq * invCoreRadiusSq));
                 woundMask = max(woundMask, woundContribution * woundContribution);
@@ -354,12 +354,22 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             if (secondaryIndex >= activeCount)
                 secondaryIndex = 0;
             float4 secondaryState = _GlobalBiolumStates[secondaryIndex];
-            half overPulse = (half)(1.0 - abs(frac(_GlobalBiolumClock.x * 0.07 + selector * 3.0) * 2.0 - 1.0));
-            half overdrive = highTier * overPulse * 0.35h;
+            half overdrive = 0.0h;
+            half godSpark = 0.0h;
+            half godHaze = 0.0h;
+            if (highTier > 0.5h)
+            {
+                half overPulse = (half)(1.0 - abs(frac(_GlobalBiolumClock.x * 0.07 + selector * 3.0) * 2.0 - 1.0));
+                half filament = (half)(1.0 - abs(frac(positionWS.x * 0.109 + positionWS.y * 0.151 + positionWS.z * 0.089 + _GlobalBiolumClock.x * 0.17) * 2.0 - 1.0));
+                godHaze = smoothstep(0.48h, 0.94h, overPulse) * (0.48h + filament * 0.52h);
+                godSpark = smoothstep(0.84h, 0.99h, filament) * overPulse;
+                overdrive = saturate(overPulse * 0.35h + godSpark * 0.18h);
+            }
             half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
             half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
             color = lerp(color, (half3)secondaryState.rgb, overdrive);
-            intensity = clamp(intensity + (half)secondaryState.w * overdrive, 0.0h, 10.0h);
+            color = saturate(color + godHaze * half3(0.03h, 0.13h, 0.18h));
+            intensity = clamp(intensity + (half)secondaryState.w * overdrive + godSpark * 0.45h + godHaze * 0.22h, 0.0h, 10.0h);
             return half4(color, intensity);
         }
 

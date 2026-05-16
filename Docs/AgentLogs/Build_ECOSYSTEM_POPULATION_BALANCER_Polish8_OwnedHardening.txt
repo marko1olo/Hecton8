@@ -1,0 +1,12 @@
+C:\hades\Hecton8\Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs(1003,13): error CS0103: The name 'CacheKernelThreadGroupSizes' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs(1778,52): error CS0103: The name 'ThreadGroupSize' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs(1778,76): error CS0103: The name 'ThreadGroupShift' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs(1783,53): error CS0103: The name 'ThreadGroupShift' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs(1806,40): error CS0103: The name 'ClearKernelTileSize' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs(1807,40): error CS0103: The name 'ClearKernelTileSize' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+
+Build FAILED.
+    0 Warning(s)
+    6 Error(s)
+
+Time Elapsed 00:01:43.87

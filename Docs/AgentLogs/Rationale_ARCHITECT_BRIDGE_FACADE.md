@@ -111,3 +111,129 @@ Solution: `SyncDesignData` records a `BridgeHeartbeat` entry into the existing 3
 Rejected Alternatives: A local NativeArray heartbeat store, MonoBehaviour `Update()`, or managed list log was rejected as private data and steady-frame overhead.
 Scalability potential: High. Low tier pays only on edits; high tier gets enough forensic context to explain designer-value crashes.
 Hardware Impact: One packed ring write per explicit sync; 0 us on frames with no designer changes.
+
+## Decision 017 - Vault Handles Instead Of Bridge NativeArray Aliases
+Problem: The Bridge did not own native memory, but its setter/binder methods still declared local `NativeArray<T>` aliases, which made the data-sovereignty audit ambiguous.
+Solution: Switched design, prefab, input, MacroDB header, and blackbox paths to `VaultBufferHandle<T>` with resolved raw pointers. The Vault remains the owner and generation gate.
+Rejected Alternatives: Keeping `NativeArray<T>` aliases was rejected because the audit rule is explicit: Bridge logic should not look like it owns native arrays.
+Scalability potential: High. Low tier gets the same cold setter path with clearer ownership; High/Ultra consumers still read packed Vault buffers and visual hashes.
+Hardware Impact: 0 us steady-state. Explicit sync adds a generation resolve only during designer edits or boot binding.
+
+## Decision 018 - Boot Binder Start-Phase Registry Read
+Problem: `H8PrefabRegistryBootBinder` read `GlobalRegistry.DataVault` in `Awake`, which violates the self-init-only init rule and can race bootstrap service registration.
+Solution: Moved the optional bind trigger to `Start`, leaving `Awake` absent in Bridge runtime code.
+Rejected Alternatives: Forcing DefaultExecutionOrder or polling for the DataVault was rejected as more brittle and more expensive.
+Scalability potential: High. Low-end devices avoid init-order retries; high-end devices keep the same bind result.
+Hardware Impact: 0 us steady-state; boot-only behavior.
+
+## Decision 019 - Bounded VRAM Estimation
+Problem: Designer-entered texture dimensions could be absurd and inflate VRAM math even though the path is cold.
+Solution: Clamped estimator width/height/BPP before multiplication.
+Rejected Alternatives: Letting inspector values pass through was rejected because bad authoring data must fail safe before hitting budgets.
+Scalability potential: Low tier keeps budget math conservative; High/Ultra still expose visual-overkill controls without corrupting ledgers.
+Hardware Impact: Cold path only; no frame cost.
+
+## Decision 020 - Interrupted Build Recovery
+Problem: The interrupted run left stale MSBuild/Roslyn processes locking `Temp/obj/Hecton8.Core/Hecton8.Core.dll`, causing a false compile failure.
+Solution: Identified and terminated only stale project-build worker processes, restored project dependencies, and reran Core/Editor builds with node reuse and shared compilation disabled.
+Rejected Alternatives: Reporting the lock as a Bridge compile failure or killing Unity's own Roslyn process were rejected.
+Scalability potential: Middle. Deterministic verification prevents stale build workers from hiding real architecture regressions.
+Hardware Impact: 0 us runtime; build hygiene only.
+
+## Decision 021 - Post-Resume Verification Ledger
+Problem: Context compaction can make prior build and static-audit claims unreliable unless the current shell session rechecks them.
+Solution: Re-ran the Bridge grep inquisition, Unity `.meta` coverage check, `git diff --check`, and both Core/Editor builds with node reuse/shared compilation disabled, then recorded the result on disk.
+Rejected Alternatives: Reporting only the pre-compaction result was rejected because the project protocol treats chat memory as lossy.
+Scalability potential: High. The Bridge remains cold-setter-only for low tier, while High/Ultra visual metadata stays present as hashes and LUT IDs without adding frame work.
+Hardware Impact: 0 us runtime; verification-only pass. Fresh compile outputs show 0 warnings and 0 errors for both checked projects.
+
+## Decision 022 - Stale Vault Row Tombstones
+Problem: DataVault buffers grow to satisfy prior registry/input sizes and do not shrink just because a designer removes rows. Without clearing, raw consumers could read stale prefab, lore, or input rows past the active count.
+Solution: Clear the full resolved Vault span before writing active prefab, lore, and input rows; clear existing prefab/lore spans when a registry is empty. Active rows still use packed hashes and typed signals.
+Rejected Alternatives: Adding managed count dictionaries or relying on future GPU/input consumers to know editor asset sizes was rejected because consumers read raw buffers and should see zero-hash tombstones for inactive rows.
+Scalability potential: High. Low tier avoids stale draw/input work; High/Ultra still get dense packed rows for visual-overkill metadata without frame polling.
+Hardware Impact: 0 us steady-state. Cold bind/sync adds one `MemClear` over existing Bridge-owned Vault spans, paid only when designers bind or live-sync data.
+
+## Decision 023 - Editor Guard Rails For Human Control
+Problem: Contract generation could produce duplicate or keyword constants, and the AUP visualizer could convert extreme 64-bit sectors into non-finite SceneView coordinates.
+Solution: Contract identifiers now include asset hash, field hash, and binding index suffixes, with keyword prefixing. AUP editor pivots are clamped to finite SceneView coordinates.
+Rejected Alternatives: Asking designers to avoid duplicate labels or small sector coordinates was rejected because the facade exists to absorb human error.
+Scalability potential: Middle. The low-tier path is unchanged; High/Ultra authoring can add more facade assets and visual controls without generated-code collisions.
+Hardware Impact: 0 us runtime; editor-only resilience.
+
+## Decision 024 - Non-Bridge Compile Wall
+Problem: After the Bridge stale-row patch passed Core once, concurrent non-Bridge edits introduced compile errors in Bootstrap, Lockstep, Fluid, Tether, PlayerTool, PlayerNoise, and GlobalSignals.
+Solution: Logged the dependency wall and kept Bridge changes isolated. Static Bridge audit and diff hygiene remain clean.
+Rejected Alternatives: Fixing seven outside domains from the Bridge pass was rejected as architectural overreach and likely conflict with active agents.
+Scalability potential: High for integration discipline; Bridge remains independently clean while the integrator resolves the unrelated compile wall.
+Hardware Impact: 0 us runtime.
+
+## Decision 025 - Empty Input Tombstone
+Problem: Input facade sync cleared stale rows only when the active binding count was positive. If a designer emptied the list, previous button masks could remain readable in `BridgeInputFacadeBindings`.
+Solution: Added an empty-list tombstone path that resolves the existing Vault handle and clears the full span.
+Rejected Alternatives: Treating count zero as a no-op was rejected because raw consumers cannot infer asset state from a managed list.
+Scalability potential: High. Low tier avoids stale input actions; High/Ultra keep the same packed input lane.
+Hardware Impact: 0 us steady-state. Explicit empty sync pays one existing-span `MemClear` only when designers push the input facade.
+
+## Decision 026 - Header And Telemetry Fence Consistency
+Problem: Design value writes had memory fences, but MacroDB header and telemetry ring writes were still unfenced raw pointer writes.
+Solution: Added `Thread.MemoryBarrier()` around header and blackbox ring writes.
+Rejected Alternatives: Relying on cold-path timing was rejected because the Bridge promise is deterministic setter behavior.
+Scalability potential: High. Same packed header/telemetry data stays stable across Quest, Android, Steam Deck, Mac, and PC.
+Hardware Impact: 0 us steady-state. Two fences are paid only during explicit facade sync or telemetry write.
+
+## Decision 027 - Current Non-Bridge Compile Wall
+Problem: A fresh Core build after the fence pass fails, but the errors are now in `UI/Navigation/DiegeticGyroCompassRuntime.cs` and `World/EcosystemDirector.cs`, not Bridge.
+Solution: Preserve the failure in the Bridge log and do not edit outside the assigned domain without a critical cross-domain Bridge reason.
+Rejected Alternatives: Blindly repairing UI navigation and ecosystem systems from a Bridge-control prompt was rejected as cross-domain interference.
+Scalability potential: High for concurrent-agent discipline. Bridge remains clean while UI/World owners fix their contracts.
+Hardware Impact: 0 us runtime.
+
+## Decision 028 - ARM-Safe Facade Float Offsets
+Problem: The design facade accepted arbitrary byte offsets and the setter cast `byte* + offset` to `float*`. An odd offset is survivable on some PC paths but is invalid architecture for Quest/ARM64 and can also corrupt adjacent packed values.
+Solution: Clamp the Bridge design-value buffer to 64 KiB and align every facade float offset to a 4-byte lane in both authoring validation and the runtime setter backstop. Hash/offset changes now count as live-sync changes, not just value changes.
+Rejected Alternatives: Trusting designers to type multiples of four or silently writing unaligned floats was rejected. Writing through byte copies was also rejected because consumers expect raw float lanes and aligned offsets are the correct contract.
+Scalability potential: Low/Middle/High/Ultra all read the same packed raw float lanes. Low keeps the setter cold; High/Ultra can add more visual-overkill controls without creating unbounded Vault buffers.
+Hardware Impact: 0 us steady-state. Explicit edits pay one integer align/clamp operation; avoids ARM alignment faults and prevents accidental large DataVault growth on i3/MX350.
+
+## Decision 029 - Editor IMGUI Window Purge
+Problem: The Bridge had two editor windows using `OnGUI()`, and the current project checklist explicitly rejects `OnGUI` usage during self-review even when editor-only.
+Solution: Replaced the Prefab Binder and AUP Visualizer window bodies with UI Toolkit `CreateGUI()` controls. Removed the redundant SceneView IMGUI Zero Camera overlay because the UI Toolkit window and menu item still expose the command.
+Rejected Alternatives: Leaving IMGUI in place as "editor-only" was rejected because the Bridge domain is supposed to be the human-control surface and should meet the stricter authoring standard.
+Scalability potential: Editor-only. Runtime profiles are unchanged; the authoring surface remains drag/drop and slider driven.
+Hardware Impact: 0 us runtime on all tiers. Editor repaint allocations are outside gameplay, but the forbidden `OnGUI()` method is gone from Bridge.
+
+## Decision 030 - Prefab VRAM Meter Texture Deduplication
+Problem: The prefab registry VRAM meter only inspected `mainTexture` and could double-count the same texture when shared by multiple materials/renderers. That gives designers false budget pressure and can push unnecessary down-tiering.
+Solution: Editor estimation now scans all material texture slots and counts each texture instance once per prefab.
+Rejected Alternatives: Keeping a narrow `mainTexture` estimate was rejected because the facade's job is to make asset cost visible without forcing designers to inspect shader internals.
+Scalability potential: Low tier gets more accurate MX350 budget pressure; High/Ultra can bind richer material sets without the registry exaggerating shared texture cost.
+Hardware Impact: 0 us runtime. Editor-only estimate avoids false VRAM debt; no Unity profiler measurement was run in this CLI session.
+
+## Decision 031 - Current Compile Wall Refresh
+Problem: After the ARM/editor pass, Core and Editor builds still fail, but the failures are outside Bridge: compass presentation DTO drift and ArchitectEye diagnostics.
+Solution: Preserve the dependency wall and keep Bridge changes isolated. Static Bridge inquisition and diff hygiene pass.
+Rejected Alternatives: Editing UI Navigation or Core Diagnostics from the Bridge facade prompt was rejected as cross-domain interference.
+Scalability potential: High for integration discipline. Bridge is not adding new frame work while other owners repair their contracts.
+Hardware Impact: 0 us runtime.
+
+## Decision 032 - Prefab Registry Tombstones For Cleared Assets
+Problem: A prefab registry entry could keep stale hash, lore, acoustic, LUT, high-tier visual, VRAM, and flag data after a designer cleared the prefab reference. The runtime binder would then republish old identity data into `BridgePrefabMapping` and the typed acoustic/lore lanes.
+Solution: Treat entries with neither a direct prefab nor an Addressables reference as tombstones. `RebuildHashes()` clears runtime hashes/flags/cost, runtime bind skips unbound rows, and signal publishing refuses unbound entries. Addressable-only rows remain valid under `UNITY_ADDRESSABLES_EXIST` by deriving their source hash from the asset GUID.
+Rejected Alternatives: Preserving stale manually typed values was rejected because raw GPU/PDA/SONAR consumers cannot distinguish intentional metadata from a removed prefab. Adding a managed active-count side table was rejected because zero-hash tombstones are simpler and stay in the Vault lane.
+Scalability potential: Low tier avoids drawing or acoustically registering deleted assets. Middle/High/Ultra still bind direct-prefab or addressable rows with the same packed visual-overkill hashes and 1D LUT IDs.
+Hardware Impact: 0 us steady-state. Cold validation/bind pays simple branch/hash work only when designers edit or registries bind.
+
+## Decision 033 - `in` SignalBus Pushes And Contract Offset Backstop
+Problem: Bridge signals were already packed but were published by value, and generated facade contracts could emit an unaligned offset if the asset had not passed through `OnValidate()`.
+Solution: Changed all Bridge `SignalBus<T>.Push` calls to `Push(in signal)` and made the contract generator emit offsets through `H8BridgeFacadeRuntime.AlignFloatOffsetBytes`.
+Rejected Alternatives: Relying on the compiler to elide struct copies or on designers to force asset validation was rejected. The typed lane API already defines the copy-minimized call shape, and ARM/Quest alignment must be enforced at every Bridge boundary.
+Scalability potential: Low/Middle/High/Ultra receive the same aligned raw float lanes. High/Ultra can add more visual-overkill controls without generated constants drifting from runtime setter alignment.
+Hardware Impact: 0 us steady-state. Explicit signal pushes and contract generation are cold/editor paths; no Unity profiler microseconds were claimed.
+
+## Decision 034 - Current Core Contracts Compile Wall
+Problem: Fresh Core build now fails before Bridge verification completes because non-Bridge consumers cannot resolve `HectonPhysicsContract`, `HectonEcologyContract`, and `ScalabilityContract`.
+Solution: Verified the contract source files exist under `Assets/_Project/Scripts/Core/Contracts` and that the CLI project lacks a generated `Hecton8.Core.Contracts.csproj`; recorded the wall instead of editing a separate contract assembly from the Bridge facade pass.
+Rejected Alternatives: Creating or rewriting the Core Contracts project from the Bridge domain was rejected as cross-domain project-generation ownership. Editing dozens of non-Bridge consumers to inline constants was rejected as destructive and non-DOD.
+Scalability potential: High for integration discipline. Bridge remains independently cold-setter-only while the contract assembly owner restores the missing generated project/reference.
+Hardware Impact: 0 us runtime.

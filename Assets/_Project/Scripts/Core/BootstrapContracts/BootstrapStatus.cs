@@ -245,7 +245,7 @@ namespace Hecton8.Core
                 return false;
 
             SafeHaltTriggered = true;
-            Time.timeScale = 0f;
+            Time.timeScale = 1f;
             Physics.simulationMode = SimulationMode.Script;
             BuildRecentStepMasks(out uint recentStepMaskLow, out uint recentStepMaskHigh);
             BuildRecentStepHashes(

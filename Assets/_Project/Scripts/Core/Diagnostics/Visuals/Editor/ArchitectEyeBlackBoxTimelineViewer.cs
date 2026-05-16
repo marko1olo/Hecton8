@@ -2,8 +2,12 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Data;
 using Hecton8.World;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
@@ -12,9 +16,12 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
 {
     public sealed class ArchitectEyeBlackBoxTimelineViewer : EditorWindow
     {
-        private const string DefaultDumpPath = "Docs/AgentLogs/Dump_ARCHITECT_EYE_VISUALIZER.bin";
+        private const string DefaultDumpPath = "Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin";
         private const string PoiPath = "Data/Balance/POIs.csv";
+        private const float SectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersFloat;
+        private const int MaxTimelineFrames = 300;
         private static bool _capturePois;
+        private static bool _teleportAup;
         private ArchitectEyeBlackBoxEntry[] _frames;
         private string _loadedPath = DefaultDumpPath;
         private int _selectedFrame;
@@ -53,6 +60,7 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
                 LoadDump(Path.Combine(Directory.GetCurrentDirectory(), DefaultDumpPath));
             GUILayout.FlexibleSpace();
             _capturePois = GUILayout.Toggle(_capturePois, "POI Capture", EditorStyles.toolbarButton, GUILayout.Width(100f));
+            _teleportAup = GUILayout.Toggle(_teleportAup, "Click to Teleport AUP", EditorStyles.toolbarButton, GUILayout.Width(150f));
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.LabelField("Path", _loadedPath);
@@ -109,9 +117,26 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return;
 
-            byte[] bytes = File.ReadAllBytes(path);
-            int stride = Marshal.SizeOf<ArchitectEyeBlackBoxEntry>();
-            int count = bytes.Length / stride;
+            int stride = UnsafeUtility.SizeOf<ArchitectEyeBlackBoxEntry>();
+            int maxBytes = stride * MaxTimelineFrames;
+            long fileLength = new FileInfo(path).Length;
+            long cappedLength = math.min((long)maxBytes, math.max(0L, fileLength));
+            int readableBytes = (int)cappedLength;
+            byte[] bytes = new byte[readableBytes];
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan))
+            {
+                int read = 0;
+                while (read < readableBytes)
+                {
+                    int chunk = stream.Read(bytes, read, readableBytes - read);
+                    if (chunk <= 0)
+                        break;
+
+                    read += chunk;
+                }
+            }
+
+            int count = readableBytes / stride;
             if (count <= 0)
                 return;
 
@@ -126,6 +151,10 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
 
         private void OnSceneGui(SceneView sceneView)
         {
+            DrawAupSectorGrid(sceneView);
+            if (_teleportAup)
+                HandleAupTeleportClick();
+
             if (_capturePois)
                 HandleBreadcrumbClick();
 
@@ -144,6 +173,90 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
             Handles.DrawWireDisc(position, Vector3.up, 2f);
             Handles.DrawLine(position + Vector3.down * 2f, position + Vector3.up * 2f);
             Handles.Label(position + Vector3.up * 2.2f, "ARCHITECT EYE NON-FINITE");
+        }
+
+        private static void DrawAupSectorGrid(SceneView sceneView)
+        {
+            Camera camera = sceneView != null ? sceneView.camera : null;
+            Vector3 anchor = camera != null ? camera.transform.position : Vector3.zero;
+            float baseX = Mathf.Floor(anchor.x / SectorSizeMeters) * SectorSizeMeters;
+            float baseZ = Mathf.Floor(anchor.z / SectorSizeMeters) * SectorSizeMeters;
+            float y = anchor.y;
+
+            Handles.color = new Color(0.1f, 0.45f, 0.7f, 0.18f);
+            for (int x = -2; x <= 2; x++)
+            {
+                float lineX = baseX + x * SectorSizeMeters;
+                Handles.DrawLine(new Vector3(lineX, y, baseZ - SectorSizeMeters * 2f), new Vector3(lineX, y, baseZ + SectorSizeMeters * 2f));
+            }
+
+            for (int z = -2; z <= 2; z++)
+            {
+                float lineZ = baseZ + z * SectorSizeMeters;
+                Handles.DrawLine(new Vector3(baseX - SectorSizeMeters * 2f, y, lineZ), new Vector3(baseX + SectorSizeMeters * 2f, y, lineZ));
+            }
+
+            Handles.color = new Color(0.0f, 0.9f, 1f, 0.25f);
+            for (int sx = -1; sx <= 1; sx++)
+            {
+                for (int sz = -1; sz <= 1; sz++)
+                {
+                    Vector3 center = new Vector3(baseX + sx * SectorSizeMeters, y, baseZ + sz * SectorSizeMeters);
+                    Vector3 a = center + new Vector3(-SectorSizeMeters * 0.5f, 0f, -SectorSizeMeters * 0.5f);
+                    Vector3 b = center + new Vector3(SectorSizeMeters * 0.5f, 0f, -SectorSizeMeters * 0.5f);
+                    Vector3 c = center + new Vector3(SectorSizeMeters * 0.5f, 0f, SectorSizeMeters * 0.5f);
+                    Vector3 d = center + new Vector3(-SectorSizeMeters * 0.5f, 0f, SectorSizeMeters * 0.5f);
+                    Handles.DrawLine(a, b);
+                    Handles.DrawLine(b, c);
+                    Handles.DrawLine(c, d);
+                    Handles.DrawLine(d, a);
+                }
+            }
+        }
+
+        private static void HandleAupTeleportClick()
+        {
+            Event current = Event.current;
+            if (current == null || current.type != EventType.MouseDown || current.button != 0 || !current.control)
+                return;
+
+            Ray ray = HandleUtility.GUIPointToWorldRay(current.mousePosition);
+            Vector3 point = UnityEngine.Physics.Raycast(ray, out RaycastHit hit, 10000f)
+                ? hit.point
+                : ray.origin + ray.direction * 20f;
+            TryTeleportPlayer(point);
+            PublishTeleportPreview(point);
+            current.Use();
+        }
+
+        private static void TryTeleportPlayer(Vector3 point)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            Transform playerTransform = player != null ? player.PlayerTransform : null;
+            if (playerTransform == null)
+                return;
+
+            Rigidbody body = player.PlayerRigidbody;
+            if (body != null)
+            {
+                body.position = point;
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+            }
+
+            playerTransform.position = point;
+        }
+
+        private static void PublishTeleportPreview(Vector3 point)
+        {
+            DebugSignal signal = default;
+            signal.Kind = (uint)DebugSignalKind.AupTeleportPreview;
+            signal.Position = (float3)point;
+            signal.Frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            SignalBus<DebugSignal>.Push(in signal);
         }
 
         private static void HandleBreadcrumbClick()

@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -12,12 +13,16 @@ namespace Hecton8.Audio
         internal const int AudioBufferCapacity = 65536;
         private const int MinimumCapacityFrames = 256;
         private const int MaximumCapacityFrames = 1 << 30;
+        private const SystemID VaultOwner = SystemID.AudioFrameRing;
         private const int AudioBufferCapacityPowerOfTwoGuard =
             1 / ((AudioBufferCapacity > 1 &&
                   (AudioBufferCapacity & (AudioBufferCapacity - 1)) == 0) ? 1 : 0);
 
-        private NativeArray<float> _frames;
-        private NativeArray<int> _sharedState;
+        private NativeArray<float> _frames; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<int> _sharedState; // Vault alias; GlobalDataVault owns backing memory.
+        private IDataVault _dataVault;
+        private VaultBufferHandle<float> _framesHandle;
+        private VaultBufferHandle<int> _sharedStateHandle;
         private int _capacityFrames;
         private int _capacityMask;
         private int _sourceChannels = 1;
@@ -84,10 +89,29 @@ namespace Hecton8.Audio
             }
 
             Dispose();
-            _frames = new NativeArray<float>(resolvedCapacity * resolvedChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[capacityFrames*channels] - lock-free procedural audio frame ring buffer storage - owner: AudioFrameSpscRingBuffer
-            _sharedState = new NativeArray<int>(NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[6] - shared SPSC read/write state and native bridge guards - owner: AudioFrameSpscRingBuffer
-            NativeMemorySentinel.RegisterNativeArray(_frames, nameof(AudioFrameSpscRingBuffer), nameof(_frames), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sharedState, nameof(AudioFrameSpscRingBuffer), nameof(_sharedState), NativeAllocationLifetime.Session);
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return;
+
+            _dataVault = vault;
+            _framesHandle = vault.GetBufferHandle<float>(
+                BufferID.AudioFrameRingFrames,
+                resolvedCapacity * resolvedChannels,
+                VaultOwner,
+                NativeArrayOptions.ClearMemory);
+            _sharedStateHandle = vault.GetBufferHandle<int>(
+                BufferID.AudioFrameRingSharedState,
+                NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount,
+                VaultOwner,
+                NativeArrayOptions.ClearMemory);
+            _frames = _framesHandle.Resolve(vault);
+            _sharedState = _sharedStateHandle.Resolve(vault);
+            if (!_frames.IsCreated || !_sharedState.IsCreated)
+            {
+                Dispose();
+                return;
+            }
+
             _capacityFrames = resolvedCapacity;
             _capacityMask = resolvedCapacity - 1;
             AssertPowerOfTwoCapacity(_capacityFrames, _capacityMask);
@@ -225,20 +249,15 @@ namespace Hecton8.Audio
 
         public void Dispose()
         {
-            if (_frames.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_frames);
-                _frames.Dispose();
-            }
-
-            if (_sharedState.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_sharedState);
-                _sharedState.Dispose();
-            }
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.ReleaseOwnerBuffers(VaultOwner, out _);
 
             _frames = default;
             _sharedState = default;
+            _framesHandle = default;
+            _sharedStateHandle = default;
+            _dataVault = null;
             _capacityFrames = 0;
             _capacityMask = 0;
             _sourceChannels = 1;

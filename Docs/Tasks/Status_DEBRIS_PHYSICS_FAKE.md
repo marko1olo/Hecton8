@@ -26,7 +26,7 @@ Remaining checklist:
 - [x] 15. [HOMEOSTASIS_ADAPTATION] Stress-based lifetime reduction. Justification: `SignalBusRegistry.SystemStress01` and `SystemHealthIndexSignal` now drive a 4x lifetime decay when stress > 0.9, equivalent to 75% shorter lifetime. DOD practice: homeostasis load shedding. Alternative rejected: dropping producer signals globally. Static estimate: recycles slots 4x faster during pressure.
 - [x] 16. [INDIRECT_DRAW_CALL] Single rock-chip indirect draw validation. Justification: render path uses `Graphics.RenderMeshIndirect` with the fallback octahedron rock chip mesh and compute-written indirect args. DOD practice: one indirect draw, no shard GameObjects. Alternative rejected: DrawMesh per shard. Static estimate: saves thousands of CPU draw submissions.
 - [x] 17. [AUP_REBASE] Atomic `_AupShiftOffset` handling. Justification: `AupShiftSignal` is consumed from typed lanes, accumulated as `_CarveDebrisAupShiftDelta`, and applied inside the compute advection pass before integration. DOD practice: GPU-side rebasing. Alternative rejected: CPU rewriting all live shard positions on origin shift. Static estimate: 50-250 us avoided on origin shift frames.
-- [BLOCKED BY DEPENDENCY] 18. [FINAL_VALIDATION] `dotnet build` exits 0. Evidence: one clean compile was captured after the debris handle pass, but a later compile now fails in external Bootstrap/Tools domains after concurrent worktree movement. DOD practice: preserve latest compiler truth and do not report stale success. Alternative rejected: patching the full tool durability domain from the debris prompt. Static estimate: 0 us runtime gain; current blocker is outside VFX/debris ownership.
+- [BLOCKED BY DEPENDENCY] 18. [FINAL_VALIDATION] `dotnet build` exits 0. Evidence: a prior non-shared `Hecton8.Core.csproj` pass existed, but the latest compiler runs now fail outside debris in Core/Contracts and World/Ecosystem code; Unity batch import also fails before debris/shader import validation because Audio and Editor assemblies cannot resolve external references. DOD practice: current validation evidence, not stale success. Alternative rejected: claiming runtime/shader/platform proof from an obsolete core-only C# compile. Static estimate: 0 us runtime gain; final Unity validation gate is externally blocked.
 
 Compile:
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`
@@ -52,17 +52,34 @@ Compile:
   - `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`: `Initialize` call arity mismatch.
   - `Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs`: missing `_itemStates`, `_pendingDecayDt`, `_wearMultipliers`, `_slotActive`, `_breakdownEvents`, `_disposeHandle`, and missing `DurabilityDecayJob.BreakdownWriter`.
   - Earlier `InputDispatcher.cs` preprocessor syntax error is no longer the reported blocker.
+- Result 7: PASSED, 0 warnings, 0 errors, elapsed 00:00:04.22.
+- Result 8: PASSED, 0 warnings, 0 errors, elapsed 00:00:58.78.
+- Result 9: PASSED after shader Omega polish, 0 warnings, 0 errors, elapsed 00:00:05.61.
+- Result 10: PASSED, non-shared `Hecton8.Core.csproj`, 0 warnings, 0 errors, elapsed 00:01:17.83.
+- Result 11: FAILED/BLOCKED, `Assembly-CSharp.csproj` cannot compile because external `Assets/RealtimeCSG/...` source files are missing. No debris-domain source error was reached.
+- Result 12: BLOCKED, direct Bee debris compile could not be used as proof because generated refs are stale/missing: `Hecton8.Core.ref.dll` and later `Hecton8.Audio.Virtualization.ref.dll`. Replacing refs with incompatible core dlls was rejected after duplicate memory-contract types appeared.
+- Result 13: FAILED/BLOCKED, Unity batch import log `Docs/AgentLogs/UnityImport_DEBRIS_PHYSICS_FAKE.log` reports external Audio/Editor asmdef/reference errors, including `AudioVirtualizationJobs.cs`, `HectonDevToolsMenu.cs`, `HectonRenderPipelineValidator.cs`, `SaveSlotManagerWindow.cs`, and `RockDataBakerWindow.cs`; no debris-specific C# compiler or shader import error was proven.
+- Result 14: FAILED/BLOCKED, `Hecton8.Core.csproj` failed outside debris in `Assets/_Project/Scripts/Core/Contracts/HectonContractValidator.cs` on missing `HectonPlatformContract`, `HectonDataSovereigntyContract`, and `HectonVisualOverkillContract` symbols.
+- Result 15: FAILED/BLOCKED, latest `Hecton8.Core.csproj` failed outside debris in `Assets/_Project/Scripts/World/EcosystemDirector.cs` on missing index helper symbols (`ClearIndexEntries`, `TryUpsertIndexEntry`, `TryFindIndexEntry`, `ResolveVaultIndexCapacity`) and duplicate contract source warnings. No debris-domain compiler error was reported.
 - Targeted debris `git diff --check` result: no whitespace errors; only line-ending warnings from existing worktree settings.
-- Targeted debris static scan result: no `ForceNoMotion`, no `Update()`, no `string.Format`, no `Instantiate`, no `GraphicsBuffer.SetData`, no legacy `EventBus`, no managed delegate lane, and no `new NativeArray`.
+- Targeted debris static scan result 2: no `ForceNoMotion`, no `Update()`, no `string.Format`, no `Instantiate`, no `Object.Instantiate`, no `DebrisManager.Instance`, no `GraphicsBuffer.SetData`, no legacy `EventBus`, no managed delegate lane, no `UnityEvent`, no `Action<`, no private `NativeArray<T>` storage field, and no local `new NativeArray`.
+- Shader thread-group audit: carve debris compute kernels use `HECTON_FLUID_ADVECTION_THREADS` = 64 or `numthreads(1,1,1)`, below the Metal/Quest 1024 thread-group ceiling.
+- Unity API audit: Unity 6000.4.1f1 `UnityEngine.CoreModule.xml` exposes `RenderParams.motionVectorMode`, `RenderParams.receiveShadows`, and `RenderParams.shadowCastingMode`, so the high-tier shadow/motion render params use documented engine properties.
 
 Omega polish:
 - Original XML `POLISH_MANDATE` re-read after all core tasks were checked/blocked.
 - Carve debris velocity clamp uses `rcp(max(dt, 0.0001))`, `rsqrt(max(speedSq, 0.000001))`, `step`, and `lerp`; no speed-clamp branch remains.
+- Shader normalization/basis polish: carve debris render and fluid helpers now use `step`/`lerp`/`rsqrt(max())` for safe normalization and basis-up selection where this does not force low-tier wake/SDF evaluation.
+- Dynamic wake slot limit now uses `step`/`lerp` for low-tier cap selection; capacity was preserved from the current shader source state.
 - Carve debris cull distance and visible increment use masks; resource bounds, SDF skip, and overflow rollback branches remain intentionally for correctness and MX350/Quest cost control.
 - Low-tier carve debris now bypasses both `SampleAbyssalFlow` and `ApplyDynamicWakes`; previous source zeroed flow but still called the wake helper.
 - Active dispatch groups are resolved from active tier capacity, avoiding a high-tier 16,384-thread sweep on the 4096 middle tier.
+- Global wake params are now explicitly mirrored into the carve debris compute dispatch from `_GlobalWakeParams`, clamped to the 16-slot shader capacity, while low tier forces a zero-wake parameter block.
+- Blackbox telemetry now records a wake-active flag and resets `_blackBoxDumped` when the DataVault-backed telemetry ring is cleared.
+- High-tier debris material now adds procedural crystal/strata mask and normal perturbation in the high-tier branch only; low and middle tiers keep the cheaper baseline shard shading.
+- High-tier render params now enable receive shadows and force shadow casting on if the serialized debris shadow mode was Off, preserving low-tier shadow cost.
 - Blackbox dump path is `Docs/AgentLogs/Dump_DEBRIS_PHYSICS_FAKE.bin`.
 - H-Phi note: renderer persistent buffer state is now stored as `VaultBufferHandle<T>` fields and resolved into method-local `NativeArray<T>` views only for the active tick. No debris-domain private `NativeArray<T>` storage fields or local `new NativeArray` allocations remain.
 
 State:
-- VERIFIED MASTER GRADE - SHARDS ACTIVE for debris source/static validation. Task 18 is currently `[BLOCKED BY DEPENDENCY]` by external Bootstrap/Tools compile drift after one prior clean compile.
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by debris source/static validation. Task 18 is `[BLOCKED BY DEPENDENCY]` for current C# compile, Unity import, player build, and shader validation until the external Core/Contracts, World/Ecosystem, Audio/Editor, and RealtimeCSG dependency walls are repaired.

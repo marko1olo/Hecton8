@@ -370,9 +370,9 @@ namespace Hecton8.Audio
     /// Runtime audio service accessed through the core audio registry.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
-    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IServiceHeartbeat, IServiceShutdown
     {
-        private const float SoundSpeedWaterMetersPerSecond = 1480f;
+        private const float SoundSpeedWaterMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         private const float MassiveDistanceFixedAudioDelayMeters = 740f;
         private const float MassiveDistanceFixedAudioDelaySeconds = 0.5f;
         private const float ThermalShimmerMaximumPitchRatio = 0.018f;
@@ -860,6 +860,7 @@ namespace Hecton8.Audio
         private float _brownoutTarget01;
         private float _lastAppliedBrownoutPitchRatio = 1f;
         private int _lastCreatureFrozenBankEvictFrame = -4096;
+        private int _lastAcousticImpulseSignalFrame = -4096;
         private int _lastAudioOutputSampleRate = -1;
         private float _listenerWaterDensityMul;
         private float _radarDecayAccumulator;
@@ -1225,7 +1226,6 @@ namespace Hecton8.Audio
                 return;
 
             PhysicsEvents.Register(this);
-            PhysicsEventBus.Register(this);
             FatalPressureImplosionEvents.Register(this);
             RepairDroneTorchAcousticEvents.Register(this);
             _eventsSubscribed = true;
@@ -1237,7 +1237,6 @@ namespace Hecton8.Audio
                 return;
 
             PhysicsEvents.Unregister(this);
-            PhysicsEventBus.Unregister(this);
             FatalPressureImplosionEvents.Unregister(this);
             RepairDroneTorchAcousticEvents.Unregister(this);
             _eventsSubscribed = false;
@@ -1486,6 +1485,7 @@ namespace Hecton8.Audio
         public void LateFrameTick()
         {
             AcousticOcclusionUtility.LateFrameTick();
+            ConsumeAcousticImpulseSignals();
             CompleteVirtualVoiceSort();
             InjectVirtualVoiceSelections();
             DrainAudioEventQueue();
@@ -4114,11 +4114,6 @@ namespace Hecton8.Audio
             HandlePhysicsImpact(in impactSignal);
         }
 
-        void IPhysicsAcousticImpulseEventListener.OnAcousticImpulse(in AcousticImpulseEvent impulseEvent)
-        {
-            HandleAcousticImpulse(in impulseEvent);
-        }
-
         private void HandlePhysicsImpact(in PhysicsImpactSignal impactSignal)
         {
             // Mirrors impact positions for passive radar/UI consumers only.
@@ -4133,6 +4128,34 @@ namespace Hecton8.Audio
                 in impactAup,
                 amplitude,
                 math.saturate(impactSignal.Intensity));
+        }
+
+        private void ConsumeAcousticImpulseSignals()
+        {
+            int frame = Time.frameCount;
+            if (_lastAcousticImpulseSignalFrame == frame)
+                return;
+
+            _lastAcousticImpulseSignalFrame = frame;
+            ReadOnlySpan<PhysicsEventPayload> signals = SignalBus<PhysicsEventPayload>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PhysicsEventPayload payload = signals[i];
+                if (payload.EventType != (ushort)PhysicsEventType.AcousticImpulse)
+                    continue;
+
+                AcousticImpulseEvent impulseEvent = new AcousticImpulseEvent(
+                    payload.RuntimePosition,
+                    payload.Direction,
+                    payload.Scalar0,
+                    payload.Scalar1,
+                    payload.Scalar2,
+                    payload.RadiusMeters,
+                    payload.PrimaryId,
+                    unchecked((byte)payload.DataHash),
+                    (AcousticImpulseFlags)payload.StatusBits);
+                HandleAcousticImpulse(in impulseEvent);
+            }
         }
 
         private void HandleAcousticImpulse(in AcousticImpulseEvent impulseEvent)

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.World;
@@ -16,27 +17,35 @@ namespace Hecton8.AI.Ecosystem
     /// <summary>
     /// Data-only ecology population governor. Storage is DataVault-owned; this component only schedules and publishes.
     /// </summary>
-    public sealed class EcosystemPopulationBalancer : MonoBehaviour, IColdTickable, ILateFrameTickable
+    public sealed class EcosystemPopulationBalancer : MonoBehaviour, IColdTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        private const int TelemetryCapacity = 300;
-        private const int CounterCapacity = 16;
-        private const int CoefficientCapacity = 1;
-        private const int DefaultMaxEntities = 8192;
-        private const int DefaultMaxSectors = 256;
-        private const int DefaultCullEventCapacity = 256;
-        private const int DefaultFreeRingCapacity = 1024;
-        private const float ColdTickDeltaSeconds = 1f;
-        private const float DefaultBiomassPerEntity = 128f;
-        private const int DefaultMaxActivePreyPerSector = 64;
-        private const float StressCullThreshold01 = 0.8f;
-        private const float DefaultStressCullFraction01 = 0.25f;
+        private const int TelemetryCapacity = HectonEcologyContract.PopulationTelemetryCapacity;
+        private const int CounterCapacity = HectonEcologyContract.PopulationCounterCapacity;
+        private const int CoefficientCapacity = HectonEcologyContract.PopulationCoefficientCapacity;
+        private const int DefaultMaxEntities = HectonEcologyContract.DefaultMaxEntities;
+        private const int DefaultMaxSectors = HectonEcologyContract.DefaultMaxSectors;
+        private const int EntityDeathSignalLaneCapacity = HectonEcologyContract.EntityDeathSignalLaneCapacity;
+        private const int DefaultCullEventCapacity = EntityDeathSignalLaneCapacity;
+        private const int DefaultFreeRingCapacity = HectonEcologyContract.DefaultFreeRingCapacity;
+        private const int MaxCoefficientJsonBytes = HectonEcologyContract.MaxCoefficientJsonBytes;
+        private const int CoefficientFileReadBufferBytes = HectonEcologyContract.CoefficientFileReadBufferBytes;
+        private const float ColdTickDeltaSeconds = HectonEcologyContract.ColdTickDeltaSeconds;
+        private const float DefaultBiomassPerEntity = HectonEcologyContract.DefaultBiomassPerEntity;
+        private const int DefaultMaxActivePreyPerSector = HectonEcologyContract.DefaultMaxActivePreyPerSector;
+        private const float StressCullThreshold01 = HectonEcologyContract.StressCullThreshold01;
+        private const float DefaultStressCullFraction01 = HectonEcologyContract.DefaultStressCullFraction01;
         private const uint EcologySourceHash = 0x45434F4Cu; // ECOL
         private const byte EcologyDeathSignalFlag = 1;
         private const uint TelemetryInvalidMathFlag = 1u << 0;
         private const uint TelemetryFallbackCoefficientsFlag = 1u << 1;
         private const uint TelemetryVaultMissingFlag = 1u << 2;
         private const uint TelemetryDirectorMissingFlag = 1u << 3;
+        private const uint TelemetryCullEventOverflowFlag = 1u << 4;
+        private const uint TelemetryFreeRingOverflowFlag = 1u << 5;
+        private const uint BlackBoxDumpIoFaultHash = 0x444D5046u; // DMPF
+        private const uint BlackBoxMissingTelemetryHash = 0x444D504Du; // DMPM
         private const ulong DumpMagic = 0x504F504543544548UL;
+        private const int DumpFormatVersion = 2;
         private const string CoefficientsRelativePath = "Data/Precomputed/ecosystem_coefficients.json";
         private const string LegacyCoefficientsRelativePath = "Data/Precomputed/Ecosystem_Coefficients.json";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_ECOSYSTEM_POPULATION_BALANCER.bin";
@@ -58,12 +67,15 @@ namespace Hecton8.AI.Ecosystem
         private VaultBufferHandle<int> _counterHandle;
         private VaultBufferHandle<AbsoluteUniversePosition> _entityAupHandle;
         private VaultBufferHandle<uint> _entityFlagHandle;
+        private IDataVault _dataVault;
+        private IEcosystemDirectorService _ecosystemDirector;
         private JobHandle _balancerHandle;
         private int _sectorCount;
         private int _telemetryCursor;
         private bool _coefficientsLoaded;
         private bool _registeredColdTick;
         private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
         private bool _jobScheduled;
         private bool _dumpedFault;
         private uint _runtimeFlags;
@@ -73,6 +85,7 @@ namespace Hecton8.AI.Ecosystem
             if (!Application.isPlaying)
                 return;
 
+            TryRegisterHotSwapListener();
             if (!EnsureVaultState())
                 return;
 
@@ -83,7 +96,52 @@ namespace Hecton8.AI.Ecosystem
         {
             CompleteScheduledJob(forceComplete: true);
             TryUnregisterTicks();
+            TryUnregisterHotSwapListener();
             _jobScheduled = false;
+            ClearCachedDependencies();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                CompleteScheduledJob(forceComplete: true);
+                _dataVault = currentService as IDataVault;
+                ResetVaultHandles();
+                _coefficientsLoaded = false;
+                _sectorCount = 0;
+                _telemetryCursor = 0;
+                _dumpedFault = false;
+
+                if (_dataVault == null)
+                {
+                    _runtimeFlags |= TelemetryVaultMissingFlag;
+                    TryUnregisterTicks();
+                    return;
+                }
+
+                _runtimeFlags &= ~TelemetryVaultMissingFlag;
+                if (!EnsureVaultState())
+                {
+                    TryUnregisterTicks();
+                    return;
+                }
+
+                TryRegisterTicks();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.EcosystemDirector)
+            {
+                _ecosystemDirector = currentService as IEcosystemDirectorService;
+                if (_ecosystemDirector == null || !_ecosystemDirector.IsInitialized)
+                    _runtimeFlags |= TelemetryDirectorMissingFlag;
+                else
+                    _runtimeFlags &= ~TelemetryDirectorMissingFlag;
+            }
         }
 
         public void ColdTick()
@@ -94,7 +152,7 @@ namespace Hecton8.AI.Ecosystem
             if (!EnsureVaultState())
                 return;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return;
 
@@ -124,16 +182,17 @@ namespace Hecton8.AI.Ecosystem
 
         private bool EnsureVaultState()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = ResolveDataVaultDependency();
             if (vault == null)
             {
                 _runtimeFlags |= TelemetryVaultMissingFlag;
                 return false;
             }
+            _runtimeFlags &= ~TelemetryVaultMissingFlag;
 
             maxEntities = math.max(1, maxEntities);
             maxSectors = math.max(1, maxSectors);
-            cullEventCapacity = math.max(1, cullEventCapacity);
+            cullEventCapacity = math.clamp(cullEventCapacity, 1, EntityDeathSignalLaneCapacity);
             freeRingCapacity = math.max(1, freeRingCapacity);
             biomassPerEntity = math.max(1f, biomassPerEntity);
             maxActivePreyPerSector = math.max(1, maxActivePreyPerSector);
@@ -188,15 +247,38 @@ namespace Hecton8.AI.Ecosystem
             if (!_coefficientsLoaded)
                 LoadCoefficientsIntoVault(vault);
 
+            ResolveDirectorDependency();
             return _coefficientsLoaded;
+        }
+
+        private IDataVault ResolveDataVaultDependency()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                return vault;
+
+            vault = GlobalRegistry.DataVault;
+            _dataVault = vault;
+            return vault;
+        }
+
+        private IEcosystemDirectorService ResolveDirectorDependency()
+        {
+            IEcosystemDirectorService director = _ecosystemDirector;
+            if (director != null && director.IsInitialized)
+                return director;
+
+            director = GlobalRegistry.EcosystemDirector;
+            _ecosystemDirector = director;
+            return director;
         }
 
         private void EnsureEntityHandles(IDataVault vault)
         {
-            bool hasAups = vault.TryGetBuffer<AbsoluteUniversePosition>(BufferID.EntityAUPs, out NativeArray<AbsoluteUniversePosition> entityAups) &&
+            bool hasAups = vault.TryGetBuffer<AbsoluteUniversePosition>(BufferID.EntityAUPs, out var entityAups) &&
                            entityAups.IsCreated &&
                            entityAups.Length > 0;
-            bool hasFlags = vault.TryGetBuffer<uint>(BufferID.EntityFlags, out NativeArray<uint> entityFlags) &&
+            bool hasFlags = vault.TryGetBuffer<uint>(BufferID.EntityFlags, out var entityFlags) &&
                             entityFlags.IsCreated &&
                             entityFlags.Length > 0;
 
@@ -231,7 +313,7 @@ namespace Hecton8.AI.Ecosystem
 
         private void LoadCoefficientsIntoVault(IDataVault vault)
         {
-            NativeArray<EcosystemPopulationCoefficient> coefficients = _coefficientHandle.Resolve(vault);
+            var coefficients = _coefficientHandle.Resolve(vault);
             if (!coefficients.IsCreated || coefficients.Length <= 0)
                 return;
 
@@ -239,6 +321,7 @@ namespace Hecton8.AI.Ecosystem
             if (TryReadCoefficientJson(out EcosystemCoefficientJson json))
             {
                 coefficient = EcosystemPopulationCoefficient.FromJson(in json);
+                _runtimeFlags &= ~TelemetryFallbackCoefficientsFlag;
             }
             else
             {
@@ -253,33 +336,64 @@ namespace Hecton8.AI.Ecosystem
         private static bool TryReadCoefficientJson(out EcosystemCoefficientJson coefficient)
         {
             coefficient = default;
-            string path = ResolveProjectRelativePath(CoefficientsRelativePath);
-            if (!File.Exists(path))
-                path = ResolveProjectRelativePath(LegacyCoefficientsRelativePath);
-            if (!File.Exists(path))
-                return false;
+#if UNITY_EDITOR
+            try
+            {
+                string path = ResolveProjectRelativePath(CoefficientsRelativePath);
+                if (!File.Exists(path))
+                    path = ResolveProjectRelativePath(LegacyCoefficientsRelativePath);
+                if (!File.Exists(path))
+                    return false;
 
-            string json = File.ReadAllText(path);
-            if (string.IsNullOrWhiteSpace(json))
-                return false;
+                FileInfo fileInfo = new FileInfo(path);
+                if (fileInfo.Length <= 0L || fileInfo.Length > MaxCoefficientJsonBytes)
+                    return false;
 
-            coefficient = JsonUtility.FromJson<EcosystemCoefficientJson>(json);
+                string json;
+                using (FileStream stream = new FileStream(
+                           path,
+                           FileMode.Open,
+                           FileAccess.Read,
+                           FileShare.Read,
+                           CoefficientFileReadBufferBytes,
+                           FileOptions.SequentialScan))
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    json = reader.ReadToEnd();
+                }
+
+                if (string.IsNullOrWhiteSpace(json))
+                    return false;
+
+                coefficient = JsonUtility.FromJson<EcosystemCoefficientJson>(json);
+            }
+            catch (Exception)
+            {
+                coefficient = default;
+                return false;
+            }
+
             return coefficient.PreyCarryingCapacity > 0f;
+#else
+            return false;
+#endif
         }
 
         private bool TryBuildSectorState(IDataVault vault, out int entityCount, out int totalActiveEntities)
         {
             entityCount = 0;
             totalActiveEntities = 0;
-            NativeArray<AbsoluteUniversePosition> entityAups = _entityAupHandle.Resolve(vault);
-            NativeArray<uint> entityFlags = _entityFlagHandle.Resolve(vault);
-            NativeArray<EcosystemPopulationSectorState> sectorStates = _sectorStateHandle.Resolve(vault);
-            NativeArray<EcosystemPopulationCoefficient> coefficients = _coefficientHandle.Resolve(vault);
-            NativeArray<int> counters = _counterHandle.Resolve(vault);
+            var entityAups = _entityAupHandle.Resolve(vault);
+            var entityFlags = _entityFlagHandle.Resolve(vault);
+            var sectorStates = _sectorStateHandle.Resolve(vault);
+            var coefficients = _coefficientHandle.Resolve(vault);
+            var freeRing = _freeRingHandle.Resolve(vault);
+            var counters = _counterHandle.Resolve(vault);
             if (!entityAups.IsCreated ||
                 !entityFlags.IsCreated ||
                 !sectorStates.IsCreated ||
                 !coefficients.IsCreated ||
+                !freeRing.IsCreated ||
                 !counters.IsCreated)
             {
                 return false;
@@ -290,18 +404,15 @@ namespace Hecton8.AI.Ecosystem
                 sectorStates[i] = default;
 
             int counterCount = math.min(CounterCapacity, counters.Length);
-            int retainedFreeCursor = counterCount > EcosystemPopulationCounters.FreeRingWriteCursor
-                ? counters[EcosystemPopulationCounters.FreeRingWriteCursor]
-                : 0;
-            int retainedFreeCount = counterCount > EcosystemPopulationCounters.FreeRingCount
-                ? counters[EcosystemPopulationCounters.FreeRingCount]
-                : 0;
             for (int i = 0; i < counterCount; i++)
                 counters[i] = 0;
-            if (counterCount > EcosystemPopulationCounters.FreeRingWriteCursor)
-                counters[EcosystemPopulationCounters.FreeRingWriteCursor] = math.max(0, retainedFreeCursor);
-            if (counterCount > EcosystemPopulationCounters.FreeRingCount)
-                counters[EcosystemPopulationCounters.FreeRingCount] = math.max(0, retainedFreeCount);
+
+            int freeRingLength = freeRing.Length;
+            for (int i = 0; i < freeRingLength; i++)
+                freeRing[i] = default;
+            int rebuiltFreeCount = 0;
+            uint frame = unchecked((uint)Time.frameCount);
+            _runtimeFlags &= ~TelemetryFreeRingOverflowFlag;
 
             int scanCount = math.min(maxEntities, math.min(entityAups.Length, entityFlags.Length));
             int sectorCount = 0;
@@ -327,9 +438,28 @@ namespace Hecton8.AI.Ecosystem
                 if ((flags & EcosystemPopulationFlags.Flag_IsPrey) != 0u)
                 {
                     if ((flags & EcosystemPopulationFlags.Flag_IsActive) != 0u)
+                    {
                         state.ActivePreyCount++;
+                    }
                     else if ((flags & EcosystemPopulationFlags.Flag_FreeList) != 0u)
+                    {
                         state.FreePreyCount++;
+                        if (rebuiltFreeCount < freeRingLength)
+                        {
+                            freeRing[rebuiltFreeCount] = new EcosystemPopulationFreeSlot
+                            {
+                                SectorHash = sectorHash,
+                                EntityIndex = index,
+                                Frame = frame,
+                                Flags = EcosystemPopulationFreeSlotFlags.Valid | EcosystemPopulationFreeSlotFlags.Prey
+                            };
+                            rebuiltFreeCount++;
+                        }
+                        else
+                        {
+                            _runtimeFlags |= TelemetryFreeRingOverflowFlag;
+                        }
+                    }
                 }
 
                 if ((flags & EcosystemPopulationFlags.Flag_IsPredator) != 0u &&
@@ -342,7 +472,7 @@ namespace Hecton8.AI.Ecosystem
             }
 
             EcosystemPopulationCoefficient coefficient = EcosystemPopulationMath.SanitizeCoefficient(coefficients[0]);
-            IEcosystemDirectorService director = GlobalRegistry.EcosystemDirector;
+            IEcosystemDirectorService director = _ecosystemDirector;
             if (director == null || !director.IsInitialized)
                 _runtimeFlags |= TelemetryDirectorMissingFlag;
             else
@@ -375,20 +505,26 @@ namespace Hecton8.AI.Ecosystem
                 counters[EcosystemPopulationCounters.SectorCount] = sectorCount;
             if (counterCount > EcosystemPopulationCounters.TotalActiveEntities)
                 counters[EcosystemPopulationCounters.TotalActiveEntities] = totalActiveEntities;
+            if (counterCount > EcosystemPopulationCounters.FreeRingWriteCursor)
+                counters[EcosystemPopulationCounters.FreeRingWriteCursor] = freeRingLength > 0 && rebuiltFreeCount < freeRingLength
+                    ? rebuiltFreeCount
+                    : 0;
+            if (counterCount > EcosystemPopulationCounters.FreeRingCount)
+                counters[EcosystemPopulationCounters.FreeRingCount] = rebuiltFreeCount;
 
             return true;
         }
 
         private void ScheduleBalancerJob(IDataVault vault, int entityCount, int totalActiveEntities)
         {
-            NativeArray<EcosystemPopulationCoefficient> coefficients = _coefficientHandle.Resolve(vault);
-            NativeArray<EcosystemPopulationSectorState> sectorStates = _sectorStateHandle.Resolve(vault);
-            NativeArray<EcosystemPopulationCullEvent> cullEvents = _cullEventHandle.Resolve(vault);
-            NativeArray<EcosystemPopulationTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            NativeArray<EcosystemPopulationFreeSlot> freeRing = _freeRingHandle.Resolve(vault);
-            NativeArray<int> counters = _counterHandle.Resolve(vault);
-            NativeArray<AbsoluteUniversePosition> entityAups = _entityAupHandle.Resolve(vault);
-            NativeArray<uint> entityFlags = _entityFlagHandle.Resolve(vault);
+            var coefficients = _coefficientHandle.Resolve(vault);
+            var sectorStates = _sectorStateHandle.Resolve(vault);
+            var cullEvents = _cullEventHandle.Resolve(vault);
+            var telemetry = _telemetryHandle.Resolve(vault);
+            var freeRing = _freeRingHandle.Resolve(vault);
+            var counters = _counterHandle.Resolve(vault);
+            var entityAups = _entityAupHandle.Resolve(vault);
+            var entityFlags = _entityFlagHandle.Resolve(vault);
             if (!coefficients.IsCreated ||
                 !sectorStates.IsCreated ||
                 !cullEvents.IsCreated ||
@@ -413,6 +549,7 @@ namespace Hecton8.AI.Ecosystem
                 FreeRing = freeRing,
                 TelemetryRing = telemetry,
                 Counters = counters,
+                CullEventLimit = math.min(EntityDeathSignalLaneCapacity, cullEvents.Length),
                 SectorCount = _sectorCount,
                 EntityCount = entityCount,
                 TotalActiveEntities = totalActiveEntities,
@@ -433,18 +570,24 @@ namespace Hecton8.AI.Ecosystem
 
         private void RecordEmptyTelemetry(IDataVault vault, int totalActiveEntities)
         {
-            NativeArray<EcosystemPopulationTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            NativeArray<int> counters = _counterHandle.Resolve(vault);
+            var telemetry = _telemetryHandle.Resolve(vault);
+            var counters = _counterHandle.Resolve(vault);
             if (!telemetry.IsCreated || telemetry.Length <= 0 || !counters.IsCreated)
                 return;
 
             int telemetryIndex = _telemetryCursor % telemetry.Length;
             _telemetryCursor++;
+            int freeRingCount = counters.Length > EcosystemPopulationCounters.FreeRingCount
+                ? math.max(0, counters[EcosystemPopulationCounters.FreeRingCount])
+                : 0;
+            float systemStress01 = math.saturate(SignalBusRegistry.SystemStress01);
             telemetry[telemetryIndex] = new EcosystemPopulationTelemetryEntry
             {
                 Frame = unchecked((uint)Time.frameCount),
                 TotalActiveEntities = totalActiveEntities,
                 SectorCount = 0,
+                FreeRingCount = freeRingCount,
+                SystemStress01 = systemStress01,
                 Flags = _runtimeFlags,
                 StateHash = EcosystemPopulationMath.MixTelemetryHash(totalActiveEntities, 0, 0, 0)
             };
@@ -455,13 +598,13 @@ namespace Hecton8.AI.Ecosystem
 
         private void PublishCompletedCullSignals()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return;
 
-            NativeArray<EcosystemPopulationCullEvent> cullEvents = _cullEventHandle.Resolve(vault);
-            NativeArray<int> counters = _counterHandle.Resolve(vault);
-            NativeArray<EcosystemPopulationTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
+            var cullEvents = _cullEventHandle.Resolve(vault);
+            var counters = _counterHandle.Resolve(vault);
+            var telemetry = _telemetryHandle.Resolve(vault);
             if (!cullEvents.IsCreated || !counters.IsCreated)
                 return;
 
@@ -491,7 +634,7 @@ namespace Hecton8.AI.Ecosystem
             if (invalidMath && !_dumpedFault)
             {
                 _dumpedFault = true;
-                DumpBlackBox(telemetry);
+                DumpBlackBox(telemetry, _telemetryCursor);
             }
         }
 
@@ -514,6 +657,16 @@ namespace Hecton8.AI.Ecosystem
                 _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (!_registeredColdTick || !_registeredLateFrame)
+                TryUnregisterTicks();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterTicks()
@@ -529,6 +682,38 @@ namespace Hecton8.AI.Ecosystem
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
             }
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        private void ClearCachedDependencies()
+        {
+            _dataVault = null;
+            _ecosystemDirector = null;
+            _coefficientsLoaded = false;
+            _sectorCount = 0;
+            _telemetryCursor = 0;
+            _dumpedFault = false;
+            ResetVaultHandles();
+        }
+
+        private void ResetVaultHandles()
+        {
+            _coefficientHandle = default;
+            _sectorStateHandle = default;
+            _cullEventHandle = default;
+            _telemetryHandle = default;
+            _freeRingHandle = default;
+            _counterHandle = default;
+            _entityAupHandle = default;
+            _entityFlagHandle = default;
         }
 
         private static int ResolveOrCreateSectorSlot(
@@ -573,38 +758,69 @@ namespace Hecton8.AI.Ecosystem
             return Path.Combine(root, relativePath);
         }
 
-        private static void DumpBlackBox(NativeArray<EcosystemPopulationTelemetryEntry> telemetry)
+        private static void DumpBlackBox(NativeArray<EcosystemPopulationTelemetryEntry> telemetry, int telemetryCursor)
         {
             if (!telemetry.IsCreated)
-                return;
-
-            string path = ResolveProjectRelativePath(DumpRelativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
             {
-                writer.Write(DumpMagic);
-                writer.Write(telemetry.Length);
-                for (int i = 0; i < telemetry.Length; i++)
+                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxMissingTelemetryHash, EcologySourceHash, 0f);
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)EcologySourceHash));
+                return;
+            }
+
+            try
+            {
+                string path = ResolveProjectRelativePath(DumpRelativePath);
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    EcosystemPopulationTelemetryEntry entry = telemetry[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.TotalActiveEntities);
-                    writer.Write(entry.CulledByEcology);
-                    writer.Write(entry.SpawnedByEcology);
-                    writer.Write(entry.FleeDownRequests);
-                    writer.Write(entry.SectorCount);
-                    writer.Write(entry.FreeRingCount);
-                    writer.Write(entry.SystemStress01);
-                    writer.Write(entry.Flags);
+                    int capacity = telemetry.Length;
+                    int writtenCount = math.max(0, telemetryCursor);
+                    int dumpCount = math.min(writtenCount, capacity);
+                    int startIndex = writtenCount < capacity ? 0 : PositiveModulo(telemetryCursor, capacity);
+                    writer.Write(DumpMagic);
+                    writer.Write(DumpFormatVersion);
+                    writer.Write(capacity);
+                    writer.Write(dumpCount);
+                    writer.Write(telemetryCursor);
+                    writer.Write(startIndex);
+                    for (int offset = 0; offset < dumpCount; offset++)
+                    {
+                        int index = startIndex + offset;
+                        if (index >= capacity)
+                            index -= capacity;
+                        EcosystemPopulationTelemetryEntry entry = telemetry[index];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.StateHash);
+                        writer.Write(entry.TotalActiveEntities);
+                        writer.Write(entry.CulledByEcology);
+                        writer.Write(entry.SpawnedByEcology);
+                        writer.Write(entry.FleeDownRequests);
+                        writer.Write(entry.SectorCount);
+                        writer.Write(entry.FreeRingCount);
+                        writer.Write(entry.SystemStress01);
+                        writer.Write(entry.Flags);
+                    }
                 }
+            }
+            catch (Exception)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpIoFaultHash, EcologySourceHash, telemetry.Length);
             }
 
             GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)EcologySourceHash));
+        }
+
+        private static int PositiveModulo(int value, int length)
+        {
+            if (length <= 0)
+                return 0;
+
+            int result = value % length;
+            return result < 0 ? result + length : result;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -618,6 +834,7 @@ namespace Hecton8.AI.Ecosystem
             public NativeArray<EcosystemPopulationFreeSlot> FreeRing;
             public NativeArray<EcosystemPopulationTelemetryEntry> TelemetryRing;
             public NativeArray<int> Counters;
+            public int CullEventLimit;
             public int SectorCount;
             public int EntityCount;
             public int TotalActiveEntities;
@@ -639,12 +856,18 @@ namespace Hecton8.AI.Ecosystem
                 int spawned = 0;
                 int fleeDown = 0;
                 int invalidMath = 0;
+                int eventOverflow = 0;
+                int eventLimit = math.clamp(CullEventLimit, 0, CullEvents.Length);
                 int freeWriteCursor = Counters.Length > EcosystemPopulationCounters.FreeRingWriteCursor
                     ? math.max(0, Counters[EcosystemPopulationCounters.FreeRingWriteCursor])
                     : 0;
                 int freeCount = Counters.Length > EcosystemPopulationCounters.FreeRingCount
                     ? math.clamp(Counters[EcosystemPopulationCounters.FreeRingCount], 0, FreeRing.Length)
                     : 0;
+                if (FreeRing.Length <= 0)
+                    freeWriteCursor = 0;
+                else if (freeWriteCursor >= FreeRing.Length)
+                    freeWriteCursor %= FreeRing.Length;
 
                 EcosystemPopulationCoefficient coefficient = Coefficients.Length > 0
                     ? EcosystemPopulationMath.SanitizeCoefficient(Coefficients[0])
@@ -699,7 +922,9 @@ namespace Hecton8.AI.Ecosystem
                         allowFreeListForNonPrey: false,
                         freeWriteCursor: ref freeWriteCursor,
                         freeCount: ref freeCount,
-                        culledTotal: ref culled);
+                        culledTotal: ref culled,
+                        eventLimit: eventLimit,
+                        eventOverflow: ref eventOverflow);
                     int stressCull = stressCullTarget > preyCull
                         ? CullTier2EntitiesInSector(
                             state.SectorHash,
@@ -710,7 +935,9 @@ namespace Hecton8.AI.Ecosystem
                             allowFreeListForNonPrey: true,
                             freeWriteCursor: ref freeWriteCursor,
                             freeCount: ref freeCount,
-                            culledTotal: ref culled)
+                            culledTotal: ref culled,
+                            eventLimit: eventLimit,
+                            eventOverflow: ref eventOverflow)
                         : 0;
                     int sectorCull = preyCull + stressCull;
                     int remainingCull = cullNeeded - preyCull;
@@ -731,7 +958,8 @@ namespace Hecton8.AI.Ecosystem
                     state.LastCulled = sectorCull;
                     state.LastSpawned = sectorSpawned;
                     state.LastFleeDown = sectorFleeDown;
-                    state.Flags = invalidMath != 0 ? TelemetryInvalidMathFlag : 0u;
+                    state.Flags = (invalidMath != 0 ? TelemetryInvalidMathFlag : 0u) |
+                                  (eventOverflow != 0 ? TelemetryCullEventOverflowFlag : 0u);
                     SectorStates[sectorIndex] = state;
                 }
 
@@ -748,7 +976,9 @@ namespace Hecton8.AI.Ecosystem
                 if (Counters.Length > EcosystemPopulationCounters.InvalidMathRecovered)
                     Counters[EcosystemPopulationCounters.InvalidMathRecovered] = invalidMath;
 
-                uint flags = RuntimeFlags | (invalidMath != 0 ? TelemetryInvalidMathFlag : 0u);
+                uint flags = RuntimeFlags |
+                             (invalidMath != 0 ? TelemetryInvalidMathFlag : 0u) |
+                             (eventOverflow != 0 ? TelemetryCullEventOverflowFlag : 0u);
                 if (TelemetryRing.IsCreated && TelemetryRing.Length > 0)
                 {
                     int telemetryIndex = math.clamp(TelemetryIndex, 0, TelemetryRing.Length - 1);
@@ -777,17 +1007,25 @@ namespace Hecton8.AI.Ecosystem
                 bool allowFreeListForNonPrey,
                 ref int freeWriteCursor,
                 ref int freeCount,
-                ref int culledTotal)
+                ref int culledTotal,
+                int eventLimit,
+                ref int eventOverflow)
             {
                 if (cullNeeded <= 0)
                     return 0;
 
                 int culled = 0;
                 int eventCount = Counters.Length > EcosystemPopulationCounters.CullEventCount
-                    ? math.clamp(Counters[EcosystemPopulationCounters.CullEventCount], 0, CullEvents.Length)
+                    ? math.clamp(Counters[EcosystemPopulationCounters.CullEventCount], 0, eventLimit)
                     : 0;
                 for (int entityIndex = 0; entityIndex < entityCount && culled < cullNeeded; entityIndex++)
                 {
+                    if (eventCount >= eventLimit)
+                    {
+                        eventOverflow = 1;
+                        break;
+                    }
+
                     uint flags = EntityFlags[entityIndex];
                     uint required = EcosystemPopulationFlags.Flag_IsActive |
                                     EcosystemPopulationFlags.Flag_Tier2Frozen;
@@ -808,7 +1046,7 @@ namespace Hecton8.AI.Ecosystem
                     EntityFlags[entityIndex] = (flags & ~EcosystemPopulationFlags.Flag_IsActive) |
                                                EcosystemPopulationFlags.Flag_CulledByEcology |
                                                EcosystemPopulationFlags.Flag_FreeList;
-                    if (eventCount < CullEvents.Length)
+                    if (eventCount < eventLimit)
                     {
                         CullEvents[eventCount] = new EcosystemPopulationCullEvent
                         {
@@ -825,7 +1063,9 @@ namespace Hecton8.AI.Ecosystem
                     bool canEnterFreeRing = (flags & EcosystemPopulationFlags.Flag_IsPrey) != 0u || allowFreeListForNonPrey;
                     if (FreeRing.Length > 0 && canEnterFreeRing)
                     {
-                        int ringIndex = freeWriteCursor % FreeRing.Length;
+                        int ringIndex = freeWriteCursor;
+                        if (ringIndex < 0 || ringIndex >= FreeRing.Length)
+                            ringIndex = 0;
                         uint freeSlotFlags = EcosystemPopulationFreeSlotFlags.Valid;
                         if ((flags & EcosystemPopulationFlags.Flag_IsPrey) != 0u)
                             freeSlotFlags |= EcosystemPopulationFreeSlotFlags.Prey;
@@ -836,7 +1076,9 @@ namespace Hecton8.AI.Ecosystem
                             Frame = Frame,
                             Flags = freeSlotFlags
                         };
-                        freeWriteCursor++;
+                        freeWriteCursor = ringIndex + 1;
+                        if (freeWriteCursor >= FreeRing.Length)
+                            freeWriteCursor = 0;
                         freeCount = math.min(FreeRing.Length, freeCount + 1);
                     }
 
@@ -1005,17 +1247,17 @@ namespace Hecton8.AI.Ecosystem
 
         public static EcosystemPopulationCoefficient Default => new EcosystemPopulationCoefficient
         {
-            BirthRate = 0.03f,
-            DeathRate = 0.018f,
-            DeltaTimeSeconds = 0.02f,
-            FeedRate = 0.000006f,
-            PredatorConversion = 0.35f,
-            PreyCarryingCapacity = 10000f,
-            StablePredatorBiomass = 714.2857f,
-            StablePreyBiomass = 8571.4287f,
-            ObservedPredatorMax = 714.2857f,
-            ObservedPreyMax = 9020.165f,
-            IntegrationSteps = 1000000
+            BirthRate = HectonEcologyContract.LotkaBirthRate,
+            DeathRate = HectonEcologyContract.LotkaDeathRate,
+            DeltaTimeSeconds = HectonEcologyContract.LotkaDeltaTimeSeconds,
+            FeedRate = HectonEcologyContract.LotkaFeedRate,
+            PredatorConversion = HectonEcologyContract.LotkaPredatorConversion,
+            PreyCarryingCapacity = HectonEcologyContract.LotkaPreyCarryingCapacity,
+            StablePredatorBiomass = HectonEcologyContract.LotkaStablePredatorBiomass,
+            StablePreyBiomass = HectonEcologyContract.LotkaStablePreyBiomass,
+            ObservedPredatorMax = HectonEcologyContract.LotkaObservedPredatorMax,
+            ObservedPreyMax = HectonEcologyContract.LotkaObservedPreyMax,
+            IntegrationSteps = HectonEcologyContract.LotkaIntegrationSteps
         };
 
         public static EcosystemPopulationCoefficient FromJson(in EcosystemCoefficientJson json)
@@ -1070,6 +1312,8 @@ namespace Hecton8.AI.Ecosystem
         public uint Reserved0;
         [FieldOffset(104)]
         public uint Reserved1;
+        [FieldOffset(108)]
+        public uint Reserved2;
     }
 
     [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 88)]
@@ -1091,6 +1335,10 @@ namespace Hecton8.AI.Ecosystem
         public uint Reserved0;
         [FieldOffset(76)]
         public uint Reserved1;
+        [FieldOffset(80)]
+        public uint Reserved2;
+        [FieldOffset(84)]
+        public uint Reserved3;
     }
 
     [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 24)]

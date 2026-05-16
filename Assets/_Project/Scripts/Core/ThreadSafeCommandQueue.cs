@@ -28,7 +28,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable structural command payload authored by jobs and drained in the dispatcher late-frame window.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct EntityCommand
     {
         public EntityCommandType CommandType;
@@ -181,7 +181,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Storage reservation commit acknowledgement payload emitted after the command has been applied or rejected.
         /// </summary>
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct StorageReservationCommitResolvedPayload
         {
             public int RequesterId;

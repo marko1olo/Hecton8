@@ -266,7 +266,7 @@ namespace Hecton8.World
         [Tooltip("Visor glitch multiplier registered alongside brine toxicity hazards.")]
         private float brinePoolHazardVisorBias = DefaultBrinePoolHazardVisorBias;
 
-        [SerializeField, Min(1025f)]
+        [SerializeField, Min(HectonPhysicsContract.WaterDensityKgPerCubicMeterConst)]
         [Tooltip("Fluid density in kg/m3 used by buoyancy overrides inside deterministic brine pools.")]
         private float brinePoolFluidDensityKgPerCubicMeter = DefaultBrinePoolFluidDensityKgPerCubicMeter;
 
@@ -2193,7 +2193,7 @@ namespace Hecton8.World
             brinePoolFluidDensityKgPerCubicMeter = ResolveFiniteAtLeast(
                 brinePoolFluidDensityKgPerCubicMeter,
                 DefaultBrinePoolFluidDensityKgPerCubicMeter,
-                1025f);
+                HectonPhysicsContract.WaterDensityKgPerCubicMeterConst);
         }
 
         private static float ResolveFiniteAtLeast(float value, float fallback, float minimum)

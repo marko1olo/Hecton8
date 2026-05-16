@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
@@ -1390,7 +1391,7 @@ namespace Hecton8.Physics
         private float ResolveAmbientPressureKPa()
         {
             float depthMeters = fluidDynamics != null ? math.max(0f, fluidDynamics.ExternalDepthMeters) : 0f;
-            return (depthMeters * 1025f * 9.80665f * 0.001f) + 101.325f;
+            return (depthMeters * HectonPhysicsContract.HydrostaticPressureKPaPerMeter) + HectonSurvivalContract.KPaPerAtmosphere;
         }
 
         private void PublishLeakImpactSignal(float severitySum, float ambientPressureKPa)
@@ -1893,9 +1894,9 @@ namespace Hecton8.Physics
             }
 
             float hydrostaticPressureKPa =
-                (depthMeters * 1025f * 9.80665f * 0.001f) + 101.325f;
+                (depthMeters * HectonPhysicsContract.HydrostaticPressureKPaPerMeter) + HectonSurvivalContract.KPaPerAtmosphere;
             float startPressureKPa =
-                (math.max(0f, compressionDepthThresholdMeters) * 1025f * 9.80665f * 0.001f) + 101.325f;
+                (math.max(0f, compressionDepthThresholdMeters) * HectonPhysicsContract.HydrostaticPressureKPaPerMeter) + HectonSurvivalContract.KPaPerAtmosphere;
             float pressureRangeKPa = math.max(1f, compressionFullPressureKPa - startPressureKPa);
             float compression01 = math.saturate((hydrostaticPressureKPa - startPressureKPa) / pressureRangeKPa);
             float compressionScale = 1f - (compression01 * math.saturate(maximumVolumeCompressionNormalized));

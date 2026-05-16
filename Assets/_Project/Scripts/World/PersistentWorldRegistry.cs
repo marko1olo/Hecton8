@@ -6,6 +6,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 using System.Threading;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory.Layout;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -26,7 +27,7 @@ namespace Hecton8.World
     [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
     public struct AbsoluteUniversePosition
     {
-        internal const int CellSizeMeters = 5000;
+        public const int CellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
 
         [FieldOffset(0)]
         public long GridX;

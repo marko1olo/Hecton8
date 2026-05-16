@@ -169,3 +169,93 @@ Solution: Reran `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`; cur
 Rejected Alternatives: Rejected claiming Unity runtime verification from dotnet. Unity Editor import, scene transition run, and profiler capture remain pending without MCP/editor access.
 Scalability potential: Compile green reopens real platform profiling for MX350, Quest/Android, Steam Deck, and high-end PC.
 Hardware Impact: None measured; this is compile validation, not runtime profiling.
+
+Problem: H8Memory and GlobalDataVault dumps were ordered and counted, but the binary headers still forced postmortem tools to infer dump version, ring type, capacity, and record sizes from positional knowledge.
+Solution: Added fixed H8Memory fatal-dump magic/version metadata, telemetry entry size, allocation record size, and blackbox capacity. Each H8Memory ring section now writes ring kind, ring capacity, entry size, recorded count, then oldest-to-newest entries. GlobalDataVault defrag/PhiVOD dumps now write dump version and ring capacity beside the existing magic/count/entry-size header.
+Rejected Alternatives: Rejected anonymous ring streams and magic-only versioning because they are brittle under long-lived save/runtime telemetry changes. Rejected JSON/text dumps because crash forensics must remain fixed-size binary and cold-path only.
+Scalability potential: Low/Quest/Steam Deck get deterministic postmortem decoding without per-frame disk writes. High/Ultra keep the same bounded telemetry while tools can distinguish heartbeat, lifecycle event, and vault defrag streams without layout guesses.
+Hardware Impact: 0 B/frame and no gameplay hot-path work. Added bytes are written only on fatal leak/defrag/PhiVOD cold dump paths; exact dump microseconds are unmeasured.
+
+Problem: A validation rerun briefly exposed Fauna/Construction compile drift from parallel work, then settled after those external files changed again.
+Solution: Reran `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`; current result succeeds with 0 warnings and 0 errors in 00:01:39.53. Static CORE/MEMORY scans remain clean.
+Rejected Alternatives: Rejected editing Fauna/Construction from the Sentinel memory domain after the second pass showed the compile bridge was no longer needed. Rejected preserving the stale 00:03.24 validation line after a newer build.
+Scalability potential: Compile green reopens Unity/runtime transition profiling across MX350, Quest/Android, Steam Deck, and high-end PC, but does not replace those captures.
+Hardware Impact: None measured; build validation is a compile gate, not runtime profiling.
+
+Problem: The current repository compile gate drifted red again after the prior green checkpoint, now in external UI/Navigation and World domains.
+Solution: Rechecked the previously reported Submarine syntax gate and found it already repaired by parallel work. Reran CORE/MEMORY static scans successfully. Reran `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`; first pass timed out after 254.9s without errors, second pass completed in 00:03:03.97 and failed with 23 errors in `DiegeticGyroCompassRuntime` and `EcosystemDirector`. Marked validation blocked by dependency because no CORE/MEMORY errors were reported.
+Rejected Alternatives: Rejected patching UI compass state fields, World native upload generics, or unrelated navigation blackbox signatures from the Sentinel memory assignment after multiple external compile drifts. Rejected preserving the stale green status after objective red output.
+Scalability potential: None in CORE/MEMORY from this dependency block; external domain owners must restore their contracts before Unity scene-transition profiling can be authoritative.
+Hardware Impact: None from the block. The Sentinel dump-header and memory lifecycle hot-path impact remains 0 B/frame; exact CPU microseconds remain unmeasured.
+
+Problem: The prior blocker needed revalidation because the external UI/World files changed again under parallel work.
+Solution: Re-extracted the exact Sentinel XML assignment, inspected the previously failing external code regions, and found the reported overload/generic errors no longer present. Reran CORE/MEMORY static scans successfully. Reran `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`; current result succeeds with 0 warnings and 0 errors in 00:01:16.17.
+Rejected Alternatives: Rejected making unnecessary external UI/World edits after source inspection showed the parallel work had already settled the compile drift. Rejected leaving status blocked after objective green validation.
+Scalability potential: Compile green reopens Unity scene-transition profiling across MX350, Quest/Android, Steam Deck, and high-end PC, but it still does not replace runtime capture.
+Hardware Impact: None measured; build validation is a compile gate. Sentinel memory lifecycle hot-path cost remains 0 B/frame, with heartbeat/native-ring costs still exact-microsecond unmeasured.
+
+Problem: The H-Phi audit needed another full-domain pass after compile green to separate legal memory-authority native state from illegal system-private containers.
+Solution: Enumerated every CORE/MEMORY file and scanned native collections, ownership APIs, scene hooks, disposal guards, pointer guards, and job fences. Remaining native containers are H8Memory registries/rings, GlobalDataVault arena/metadata/cache lanes, relocation scratch, or API views backed by the central vault/sentinel ownership layer.
+Rejected Alternatives: Rejected moving H8Memory and GlobalDataVault authority data into another abstraction, because these classes are the GlobalDataVault/H8Memory lifecycle boundary. Rejected changing cold-path binary dump I/O into managed logging or per-frame disk writes.
+Scalability potential: Low/Quest/Steam Deck keep centralized ownership, cold dumps, and no MicroSD-style per-frame writes. High/Ultra keep the same deterministic release boundary while recovered memory budget remains available for visual domains.
+Hardware Impact: Audit-only pass added no runtime work. Current verified hot-path delta remains 0 B/frame; exact heartbeat/native-ring CPU microseconds are still unmeasured and therefore not claimed.
+
+Problem: Fresh validation exposed three compile-gate issues after parallel edits: PhysicsApplySystem referenced GlobalDataVault packet lane IDs missing from `BufferID`, ArchitectEye double-buffer fields were read but never assigned, and Sargassum signal consumers called a missing finite clamp helper.
+Solution: Added the physics force/validation buffer IDs in the central memory enum, initialized/released ArchitectEye's A/B GPU buffers, and added `SaturateFinite01` that returns 0 for non-finite inputs and saturates finite values. Reran `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`; final result succeeds with 0 warnings and 0 errors in 00:00:01.29.
+Rejected Alternatives: Rejected suppressing CS0649 warnings, rejected local/private physics buffer identifiers, and rejected raw saturation on NaN-bearing signal values. Rejected claiming Unity runtime verification from a dotnet build.
+Scalability potential: Low devices keep deterministic vault IDs and NaN-safe signal ingestion; diagnostics GPU buffers now upload predictably. High/Ultra diagnostics can render without null double-buffer lanes while Sentinel memory state stays centralized.
+Hardware Impact: Sentinel hot path remains unchanged. External compile bridges affect diagnostics/physics/sargassum paths only; exact runtime microseconds are unmeasured and not claimed.
+
+Problem: The deferred `H8Memory.Release(ref NativeArray<T>, JobHandle, SystemID)` path retired ownership immediately, scheduled `NativeArray.Dispose(dependency)`, and returned the handle without recording it in the owner fence table. That creates a scene-transition blind spot: `TotalAllocatedBytes` can reach the baseline while the actual scheduled native free is still pending, and owners with no active pointer list can be skipped by transition job draining.
+Solution: Register the returned dispose `JobHandle` through the existing owner fence table and expand `CompleteSceneTransitionOwnerJobs()` to drain scene-owned `_ownerJobKeys`, not only owners still present in `_ownerPointerKeys`.
+Rejected Alternatives: Rejected leaving deferred frees as caller-only responsibility because the Sentinel owns transition proof. Rejected keeping retired pointers counted until disposal completion because it would make the baseline depend on a pending C++ disposal job rather than a drained transition gate. Rejected per-frame polling of disposal handles.
+Scalability potential: Low/Quest/Steam Deck get deterministic teardown before Ocean activation without per-frame polling or disk writes. High/Ultra get the same exact release barrier before visual domains spend recovered memory.
+Hardware Impact: 0 B/frame. Deferred release now adds one owner-fence native hash update only on the release call path; scene transition blocks on outstanding scene-owned dispose handles. Exact CPU microseconds are unmeasured.
+
+Problem: The local dotnet compile list did not include the existing `ArchitectEyeDebugSignal.cs` typed-lane source, so enabling diagnostics compilation exposed `DebugSignal` as missing even though the source file existed.
+Solution: Added the existing source file to `Hecton8.Core.csproj` for dotnet validation and kept the single `DebugSignal` definition in the typed signal namespace.
+Rejected Alternatives: Rejected duplicating `DebugSignal` inside `GlobalSignals` or `ArchitectEyeVisualizer`. Rejected replacing the typed lane with legacy EventBus or managed delegates.
+Scalability potential: Low devices keep typed diagnostics lanes compile-valid without runtime fallback. High/Ultra diagnostics can use the same lane without signal duplication.
+Hardware Impact: 0.0 us runtime; project metadata compile bridge only.
+
+Problem: The compile gate then drifted into external UI navigation presentation-state errors while Sentinel memory code was already compiling.
+Solution: Re-read `DiegeticGyroCompassRuntime` and `InertialNavigationContracts`; the presentation DTO mismatch settled under parallel work before a Sentinel-owned patch was needed. Reran static CORE/MEMORY scans and the full dotnet gate.
+Rejected Alternatives: Rejected copying UI presentation fields into `CompassStateDTO`, which would pollute the core navigation contract with render-only state. Rejected preserving a red build after the dependency settled.
+Scalability potential: Sentinel remains cleanly scoped; UI presentation state stays separate from core navigation state while compile validation is green.
+Hardware Impact: No Sentinel runtime change. Latest `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors in 00:00:26.13.
+
+Problem: The local project file carried redundant direct includes for contract sources that are already owned by the generated `Directory.Build.targets` remove/include bridge.
+Solution: Removed only the direct `HectonContractValidator.cs` and `HectonSurvivalContract.cs` entries from `Hecton8.Core.csproj`, then reran the full dotnet gate.
+Rejected Alternatives: Rejected leaving duplicate compile metadata because it increases future merge drift in a 20-agent workspace. Rejected changing `Directory.Build.targets` because that file is active integration territory and already supplies the bridge.
+Scalability potential: Low/Middle/High/Ultra are unaffected at runtime; this is compile metadata hygiene that keeps validation deterministic.
+Hardware Impact: 0.0 us runtime. Latest build after removal and report update succeeded with 0 warnings and 0 errors in 00:00:38.31.
+
+Problem: Fresh validation exposed an external compile gate in `H8DataBaker`: `SignalBusRegistry` was referenced without the existing Core namespace, and the local project rejected the bool `FileStream` overload on the cold CSV read path.
+Solution: Added the existing `Hecton8.Core` import and changed the CSV read stream to use `FileOptions.SequentialScan`, preserving cold-path sequential I/O intent.
+Rejected Alternatives: Rejected duplicating `SignalBusRegistry`, inventing a new signal lane, or changing static-data bake semantics. Rejected reverting to small/default stream reads because Steam Deck/MicroSD pressure is explicitly part of the inquisition.
+Scalability potential: Low/MX350 and Steam Deck get predictable cold CSV reads without managed registry duplication. High/Ultra keep the same static-data path while Sentinel memory lifecycle remains unchanged.
+Hardware Impact: No Sentinel gameplay hot-path work. CSV impact is cold data-bake I/O only; exact microseconds are unmeasured.
+
+Problem: The Sentinel domain needed another post-cleanup static proof after metadata and external compile-gate fixes.
+Solution: Re-extracted the XML prompt, reran CORE/MEMORY scans for unpacked structs, Update-style Unity hooks, `string.Format`, legacy `EventBus`, managed delegate patterns, and hidden `.Complete()` sync points. Only the intentional H8Memory owner teardown/shutdown fences remain.
+Rejected Alternatives: Rejected claiming runtime scene-transition proof from dotnet/static analysis. Rejected editing visual/shader domains from the CORE/MEMORY assignment.
+Scalability potential: Low/Quest/Steam Deck keep deterministic memory lifecycle evidence with no per-frame disk I/O. High/Ultra keep the same release barrier before recovered memory is spent by Ocean/VFX systems.
+Hardware Impact: Static pass added no runtime work. Verified Sentinel hot-path allocation impact remains 0 B/frame by source inspection; exact CPU microseconds remain unmeasured.
+
+Problem: H8Memory's own Unity `sceneUnloaded` hook could complete transition verification before `SceneRuntimeService` released scene-owned GlobalDataVault buffers, so the H-Phi vault eviction proof was ordered after the H8Memory proof. Additive and post-cutoff Ocean allocations could also make an otherwise correct transition look like a leak because verification compared total bytes to the pre-load baseline only.
+Solution: Added a cold coordination flag through `H8Memory.SetSceneUnloadedVerificationDeferred(bool)`. `SceneRuntimeService` sets it after capturing the transition purge cutoff, then its `sceneUnloaded` callback clears runtime state when appropriate, releases scene-owned vault buffers, and calls `H8Memory.CompleteSceneTransitionVerification()`. H8Memory now computes `LastTransitionExpectedBytes` as captured baseline plus post-cutoff allocations, and fatal dump version 3 writes that expected total beside the baseline.
+Rejected Alternatives: Rejected leaving H8Memory and SceneRuntimeService as racing scene-unload owners. Rejected freeing memory before Unity unloads the old scene because old-scene scripts/renderers can still touch buffers until unload. Rejected treating post-cutoff Ocean allocations as leaks because the assignment also requires memory to be freed and reallocated for Ocean.
+Scalability potential: Low/MX350/Quest get deterministic old-scene eviction without per-frame polling or disk writes. Steam Deck avoids MicroSD churn because only cold fatal dumps touch disk. High/Ultra keep legitimate post-cutoff Ocean/VFX allocations while still proving pre-cutoff scene data is gone.
+Hardware Impact: 0 B/frame. Transition verification adds one cold allocation-table scan to compute post-cutoff bytes; exact CPU microseconds are unmeasured and therefore not claimed.
+
+Problem: A failed transition verification previously cleared the cutoff generation immediately, which could turn a transient external job/vault timing failure into an unrecoverable loss of the leak boundary.
+Solution: H8Memory now clears `_transitionCutoffGeneration` only when verification succeeds. Failed verification writes the fatal blackbox and keeps the cutoff alive for a later retry.
+Rejected Alternatives: Rejected one-shot failure semantics. Rejected per-frame retry polling; retries remain driven by scene lifecycle or explicit lifecycle calls.
+Scalability potential: Low-end devices get a recoverable transition gate without hot-path cost. High/Ultra get the same deterministic boundary before visual domains spend memory.
+Hardware Impact: Cold failure path only; exact microseconds are unmeasured.
+
+Problem: Validation drifted red twice in external Tether and World files while Sentinel code was static-clean.
+Solution: Rechecked the external contexts and reran the compile gate. The third build settled after parallel edits with `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` succeeding in 00:03:23.66 with 0 warnings and 0 errors.
+Rejected Alternatives: Rejected editing `TetherInstance` or `EcosystemDirector` from the Sentinel memory domain once source inspection showed the compile drift was external and unstable.
+Scalability potential: Compile green reopens Unity scene-transition profiling across MX350, Quest/Android, Steam Deck, and high-end PC, but does not replace runtime capture.
+Hardware Impact: None measured; build validation is a compile gate, not runtime profiling.

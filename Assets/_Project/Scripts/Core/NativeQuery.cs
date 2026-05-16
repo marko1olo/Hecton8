@@ -11,7 +11,7 @@ namespace Hecton8.Core
         where TSource : unmanaged
         where TResult : unmanaged;
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct NativeQuery<T> where T : unmanaged
     {
         internal readonly NativeArray<T> Source;
@@ -37,7 +37,7 @@ namespace Hecton8.Core
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct NativeSelectQuery<TSource, TResult>
         where TSource : unmanaged
         where TResult : unmanaged

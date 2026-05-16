@@ -7,6 +7,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.XR;
@@ -16,7 +17,7 @@ namespace Hecton8.Graphics.VR
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9946)]
     [AddComponentMenu("Hecton8/Graphics/VR/Foveated Render Commander")]
-    internal sealed unsafe class FoveatedRenderCommander : MonoBehaviour, IUpdatable, IRenderable, IGlobalRegistryHotSwapListener, IDisposable
+    internal sealed unsafe class FoveatedRenderCommander : MonoBehaviour, IUpdatable, IRenderable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener, IDisposable
     {
         private const int TelemetryCapacity = 300;
         private const int TelemetryRecordSizeBytes = 64;
@@ -29,6 +30,8 @@ namespace Hecton8.Graphics.VR
         private const float StressHighThreshold = 0.70f;
         private const float GpuPressureHighThreshold = 0.78f;
         private const float GpuTimeHighPressureMs = 10.75f;
+        private const float LevelDowngradeHoldSeconds = 2.5f;
+        private const float MaxHysteresisDeltaSeconds = 0.25f;
         private const float ApplyEpsilon = 0.0001f;
         private const uint BlackBoxMagic = 0x46565243u; // FVRC
         private const uint BlackBoxVersion = 2u;
@@ -45,6 +48,7 @@ namespace Hecton8.Graphics.VR
         private const ushort FlagApplied = 1 << 8;
         private const ushort FlagNonFinite = 1 << 9;
         private const ushort FlagHighEndFixedDisabled = 1 << 10;
+        private const ushort FlagHysteresisHold = 1 << 11;
         private const string RuntimeObjectName = "[FoveatedRenderCommander]";
         private const string DumpFileName = "Dump_FOVEATED_RENDER_COMMANDER.bin";
 
@@ -53,6 +57,8 @@ namespace Hecton8.Graphics.VR
         private static FoveatedRenderCommander s_activeCommander;
         private static bool s_questRuntimeClassified;
         private static bool s_quest2ClassRuntime;
+        private static bool s_telemetryLayoutChecked;
+        private static bool s_telemetryLayoutValid;
 
         [Header("Policy")]
         [SerializeField, Range(1, 240)]
@@ -92,6 +98,8 @@ namespace Hecton8.Graphics.VR
         private float _systemStress01;
         private float _gpuUtil01;
         private float _latestGpuTimeMs;
+        private float _downgradeHoldSecondsRemaining;
+        private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private float _targetLevel01;
         private float _appliedLevel01 = -1f;
         private byte _pressureLevel;
@@ -152,6 +160,8 @@ namespace Hecton8.Graphics.VR
             s_activeCommander = null;
             s_questRuntimeClassified = false;
             s_quest2ClassRuntime = false;
+            s_telemetryLayoutChecked = false;
+            s_telemetryLayoutValid = false;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -185,6 +195,8 @@ namespace Hecton8.Graphics.VR
 
             _disposed = false;
             _dataVault = GlobalRegistry.DataVault;
+            _qualityTier = GlobalRegistry.ScalabilityTier;
+            ScalabilityEvents.Register(this);
             EnsureTelemetry();
             _hardwareThermal = GlobalRegistry.HardwareThermal;
             TryRegisterTick();
@@ -206,10 +218,13 @@ namespace Hecton8.Graphics.VR
 
         private void OnDisable()
         {
+            bool ownsRuntimeState = ReferenceEquals(s_activeCommander, this);
             TryUnregisterRenderable();
             TryUnregisterHotSwap();
             TryUnregisterTick();
-            ClearHardwareFoveation();
+            ScalabilityEvents.Unregister(this);
+            if (ownsRuntimeState)
+                ClearHardwareFoveation();
             _hardwareThermal = null;
         }
 
@@ -226,10 +241,13 @@ namespace Hecton8.Graphics.VR
                 return;
 
             _disposed = true;
+            bool ownsRuntimeState = ReferenceEquals(s_activeCommander, this);
             TryUnregisterRenderable();
             TryUnregisterHotSwap();
             TryUnregisterTick();
-            ClearHardwareFoveation();
+            ScalabilityEvents.Unregister(this);
+            if (ownsRuntimeState)
+                ClearHardwareFoveation();
             _telemetryHandle = default;
             _telemetryVaultGeneration = 0u;
             _dataVault = null;
@@ -237,6 +255,10 @@ namespace Hecton8.Graphics.VR
 
         public void Tick(float deltaTime)
         {
+            if (TryDetachIfInactiveCommander())
+                return;
+
+            DecayFoveationHysteresis(deltaTime);
             ConsumeSignals();
 
             _framesUntilSample--;
@@ -293,10 +315,13 @@ namespace Hecton8.Graphics.VR
             object previousService,
             object currentService)
         {
+            if (TryDetachIfInactiveCommander())
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 if (currentService == null)
-                    _registeredTick = false;
+                    TryUnregisterTick();
                 else
                     TryRegisterTick();
                 return;
@@ -336,11 +361,24 @@ namespace Hecton8.Graphics.VR
             {
                 if (currentService != null)
                     TryRegisterRenderable();
+                else
+                    TryUnregisterRenderable();
             }
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            if (TryDetachIfInactiveCommander())
+                return;
+
+            _qualityTier = payload.CurrentQualityTier;
         }
 
         internal void RequestBlackBoxDump()
         {
+            if (!ReferenceEquals(s_activeCommander, this) || _disposed)
+                return;
+
             DumpBlackBoxOnce();
         }
 
@@ -402,7 +440,7 @@ namespace Hecton8.Graphics.VR
             FoveatedRenderingCaps caps = SystemInfo.foveatedRenderingCaps;
             bool capsSupported = caps != FoveatedRenderingCaps.None;
             bool quest2Runtime = IsQuest2Runtime();
-            HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier qualityTier = _qualityTier;
             bool thermalPressure =
                 _thermalSeverity >= (byte)HardwareThermalSeverity.Throttling ||
                 _gpuUtil01 >= GpuPressureHighThreshold ||
@@ -448,12 +486,18 @@ namespace Hecton8.Graphics.VR
                 return;
             }
 
-            byte levelCode = ResolveTargetLevelCode(
+            byte requestedLevelCode = ResolveTargetLevelCode(
                 _systemStress01,
                 _pressureLevel,
                 _foveatedPressureTier,
                 quest2Runtime,
                 thermalPressure);
+            byte levelCode = ApplyTargetLevelHysteresis(
+                requestedLevelCode,
+                thermalPressure || systemPressure || (quest2Runtime && lockQuest2HighFoveation),
+                out bool hysteresisHeld);
+            if (hysteresisHeld)
+                flags |= FlagHysteresisHold;
             float targetLevel = ResolveLevel01(levelCode);
             bool gazeTracked = ShouldUseGazeTrackedVrs(xrActive, caps, quest2Runtime);
             XRDisplaySubsystem.FoveatedRenderingFlags targetFlags = gazeTracked
@@ -472,6 +516,8 @@ namespace Hecton8.Graphics.VR
                 levelCode = 0;
                 targetLevel = 0f;
                 mode = FoveatedRenderMode.Disabled;
+                _downgradeHoldSecondsRemaining = 0f;
+                flags = (ushort)(flags & ~FlagHysteresisHold);
                 flags |= FlagHighEndFixedDisabled;
             }
 
@@ -587,6 +633,45 @@ namespace Hecton8.Graphics.VR
             _targetLevel01 = 0f;
             _targetMode = FoveatedRenderMode.Disabled;
             _targetFlags = XRDisplaySubsystem.FoveatedRenderingFlags.None;
+            _downgradeHoldSecondsRemaining = 0f;
+        }
+
+        private void DecayFoveationHysteresis(float deltaTime)
+        {
+            if (_downgradeHoldSecondsRemaining <= 0f)
+                return;
+
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+                return;
+
+            float cappedDelta = math.min(deltaTime, MaxHysteresisDeltaSeconds);
+            _downgradeHoldSecondsRemaining = math.max(0f, _downgradeHoldSecondsRemaining - cappedDelta);
+        }
+
+        private byte ApplyTargetLevelHysteresis(byte requestedLevelCode, bool pressureActive, out bool held)
+        {
+            held = false;
+            byte previousLevelCode = _targetLevelCode;
+            if (requestedLevelCode > previousLevelCode)
+            {
+                _downgradeHoldSecondsRemaining = LevelDowngradeHoldSeconds;
+                return requestedLevelCode;
+            }
+
+            if (requestedLevelCode == previousLevelCode)
+            {
+                if (pressureActive && requestedLevelCode > 0)
+                    _downgradeHoldSecondsRemaining = LevelDowngradeHoldSeconds;
+                return requestedLevelCode;
+            }
+
+            if (previousLevelCode > requestedLevelCode && _downgradeHoldSecondsRemaining > 0f)
+            {
+                held = true;
+                return previousLevelCode;
+            }
+
+            return requestedLevelCode;
         }
 
         private void ReportHardwareState(bool applied, float appliedLevel, RenderTextureDescriptor eyeDescriptor)
@@ -596,6 +681,19 @@ namespace Hecton8.Graphics.VR
                 applied ? appliedLevel : 0f,
                 eyeDescriptor.width,
                 eyeDescriptor.height);
+        }
+
+        private bool TryDetachIfInactiveCommander()
+        {
+            if (ReferenceEquals(s_activeCommander, this) && !_disposed)
+                return false;
+
+            TryUnregisterRenderable();
+            TryUnregisterHotSwap();
+            TryUnregisterTick();
+            ScalabilityEvents.Unregister(this);
+            _hardwareThermal = null;
+            return true;
         }
 
         private void TryRegisterTick()
@@ -624,8 +722,13 @@ namespace Hecton8.Graphics.VR
 
         private void TryUnregisterTick()
         {
-            if (!_registeredTick)
+            RegistryBucket<IUpdatable> updatables = GlobalRegistry.Updatables;
+            RegistryBucket<IUpdatable> dispatcherLane = SystemDispatcher.GetLane(PriorityLayer.Core);
+            if (!_registeredTick && !updatables.Contains(this) && !dispatcherLane.Contains(this))
+            {
+                _registeredTick = false;
                 return;
+            }
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredTick = false;
@@ -633,16 +736,30 @@ namespace Hecton8.Graphics.VR
 
         private void TryRegisterHotSwap()
         {
-            if (_registeredHotSwap || !Application.isPlaying)
+            if (!Application.isPlaying)
+            {
+                _registeredHotSwap = false;
                 return;
+            }
+
+            RegistryBucket<IGlobalRegistryHotSwapListener> listeners = GlobalRegistry.HotSwapListeners;
+            if (listeners.Contains(this))
+            {
+                _registeredHotSwap = true;
+                return;
+            }
 
             _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterHotSwap()
         {
-            if (!_registeredHotSwap)
+            RegistryBucket<IGlobalRegistryHotSwapListener> listeners = GlobalRegistry.HotSwapListeners;
+            if (!_registeredHotSwap && !listeners.Contains(this))
+            {
+                _registeredHotSwap = false;
                 return;
+            }
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
@@ -665,10 +782,14 @@ namespace Hecton8.Graphics.VR
 
         private void TryUnregisterRenderable()
         {
-            if (!_registeredRenderable)
+            RegistryBucket<IRenderable> renderables = GlobalRegistry.Renderables;
+            if (!_registeredRenderable && !renderables.Contains(this))
+            {
+                _registeredRenderable = false;
                 return;
+            }
 
-            GlobalRegistry.Renderables.TryUnregister(this);
+            renderables.TryUnregister(this);
             _registeredRenderable = false;
             _uiSuppressionActive = false;
             _lastFlags = (ushort)(_lastFlags & ~FlagUiSuppressed);
@@ -676,7 +797,10 @@ namespace Hecton8.Graphics.VR
 
         private bool EnsureTelemetry()
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (!VerifyTelemetryLayout())
+                return false;
+
+            IDataVault vault = _dataVault;
             if (vault == null)
             {
                 _telemetryHandle = default;
@@ -704,6 +828,19 @@ namespace Hecton8.Graphics.VR
 
             vault.TryGetBufferGeneration(BufferID.FoveatedRenderBlackBox, out _telemetryVaultGeneration);
             return _telemetryHandle.Length >= TelemetryCapacity;
+        }
+
+        private static bool VerifyTelemetryLayout()
+        {
+            if (s_telemetryLayoutChecked)
+                return s_telemetryLayoutValid;
+
+            s_telemetryLayoutValid = UnsafeUtility.SizeOf<FoveatedRenderTelemetryEntry>() == TelemetryRecordSizeBytes;
+            s_telemetryLayoutChecked = true;
+            if (!s_telemetryLayoutValid)
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+
+            return s_telemetryLayoutValid;
         }
 
         private void WriteTelemetry(ushort flags)

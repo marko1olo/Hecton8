@@ -66,6 +66,7 @@ namespace Hecton8.World
 
         internal static SargassumMicroFaunaBoids ActiveRuntimeInstance => GlobalRegistry.SargassumMicroFauna;
 
+        // GPU StructuredBuffer interop: Pack=4 matches HLSL scalar packing; ValidateGpuStructLayouts gates stride and offsets.
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         internal struct BoidData
         {
@@ -358,6 +359,7 @@ namespace Hecton8.World
             }
         }
 
+        // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         private struct GrazingAnchorData
         {
@@ -368,6 +370,7 @@ namespace Hecton8.World
             public Vector2 Padding;
         }
 
+        // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
         private struct MassiveThreatData
         {
@@ -380,6 +383,7 @@ namespace Hecton8.World
             public uint ThreatFlags;
         }
 
+        // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         private struct FormationBeaconData
         {
@@ -390,6 +394,7 @@ namespace Hecton8.World
             public Vector2 Padding;
         }
 
+        // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         private struct FormationObstacleData
         {
@@ -414,6 +419,7 @@ namespace Hecton8.World
             }
         }
 
+        // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         private struct LeviathanNodeData
         {
@@ -535,6 +541,7 @@ namespace Hecton8.World
             }
         }
 
+        // GPU frame packet interop: Pack=4 preserves int4/float4 HLSL stride.
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 768)]
         private struct SimulationFrameConstants
         {
@@ -1574,7 +1581,12 @@ namespace Hecton8.World
         private GraphicsBuffer _spatialGridCellBuffer;
         private GraphicsBuffer _simulationFrameBuffer;
         private GraphicsBuffer _predatorAupFallbackBuffer;
-        private GraphicsBuffer _boidSensoryThreatBuffer;
+        private GraphicsBuffer _boidSensoryThreatBufferA;
+        private GraphicsBuffer _boidSensoryThreatBufferB;
+        private uint _boidSensoryThreatUploadHashA;
+        private uint _boidSensoryThreatUploadHashB;
+        private bool _boidSensoryThreatUploadValidA;
+        private bool _boidSensoryThreatUploadValidB;
         private bool _latchStatsBufferRawTarget;
         private bool _pbdCorrectionBufferRawTarget;
         private bool _spatialGridCountBufferRawTarget;
@@ -2476,7 +2488,12 @@ namespace Hecton8.World
             buffersChanged |= EnsureBuffer(ref _spatialGridCellBuffer, SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell, SpatialGridCellEntryStride);
             buffersChanged |= EnsureBuffer(ref _simulationFrameBuffer, 1, SimulationFrameConstantsStride);
             buffersChanged |= EnsurePredatorAupFallbackBuffer();
-            buffersChanged |= EnsureBuffer(ref _boidSensoryThreatBuffer, PredatorAupBufferCapacity, PredatorAupStride);
+            bool sensoryBuffersChanged = false;
+            sensoryBuffersChanged |= EnsureBuffer(ref _boidSensoryThreatBufferA, PredatorAupBufferCapacity, PredatorAupStride);
+            sensoryBuffersChanged |= EnsureBuffer(ref _boidSensoryThreatBufferB, PredatorAupBufferCapacity, PredatorAupStride);
+            if (sensoryBuffersChanged)
+                ResetBoidSensoryThreatUploadCache();
+            buffersChanged |= sensoryBuffersChanged;
             EnsureFallbackAbyssalFlowTexture();
             if (buffersChanged)
                 _computeStaticBuffersBound = false;
@@ -3995,7 +4012,8 @@ namespace Hecton8.World
                 _leviathanNodeBuffer == null ||
                 _massiveThreatBuffer == null ||
                 _predatorAupFallbackBuffer == null ||
-                _boidSensoryThreatBuffer == null ||
+                _boidSensoryThreatBufferA == null ||
+                _boidSensoryThreatBufferB == null ||
                 _threatGridBuffer == null ||
                 _threatVoxelBuffer == null)
             {
@@ -4013,7 +4031,7 @@ namespace Hecton8.World
                 boidCompute.SetBuffer(_kernelIndex, _FormationObstaclesId, _formationObstacleBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _LeviathanNodesId, _leviathanNodeBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _MassiveThreatsId, _massiveThreatBuffer);
-                boidCompute.SetBuffer(_kernelIndex, _PredatorAUPBufferId, _boidSensoryThreatBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _PredatorAUPBufferId, _boidSensoryThreatBufferA);
                 boidCompute.SetBuffer(_kernelIndex, _EncounterPredatorAUPBufferId, _predatorAupFallbackBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _ThreatGridId, _threatGridBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _ThreatVoxelGridId, _threatVoxelBuffer);
@@ -4103,7 +4121,8 @@ namespace Hecton8.World
             SimulationLodTier simulationLodTier)
         {
             NativeArray<float4> boidSensoryThreats = ResolveBoidSensoryThreats();
-            if (!boidSensoryThreats.IsCreated || _boidSensoryThreatBuffer == null)
+            GraphicsBuffer sensoryThreatWriteBuffer = ResolveBoidSensoryThreatWriteBuffer();
+            if (!boidSensoryThreats.IsCreated || sensoryThreatWriteBuffer == null)
             {
                 _activeBoidSensoryThreatCount = 0;
                 return 0;
@@ -4120,18 +4139,25 @@ namespace Hecton8.World
             ConsumeSubmarineLightSignals(playerAupPosition, playerForward);
             UpdateFlashlightSensoryThreat(boidSensoryThreats, simulationDt, playerAupPosition, playerForward, simulationLodTier);
             ConsumeBoidSensoryAcousticPingSignals(boidSensoryThreats);
+            uint sensoryAnomalyHash = SanitizeBoidSensoryThreatSlots(boidSensoryThreats);
 
             int activeThreatCount = ResolveActiveBoidSensoryThreatCount(boidSensoryThreats);
             _activeBoidSensoryThreatCount = activeThreatCount;
-            GraphicsBufferUploadUtility.UploadNativeArray(
-                _boidSensoryThreatBuffer,
-                boidSensoryThreats,
-                PredatorAupBufferCapacity);
+            uint uploadHash = HashBoidSensoryThreatUpload(boidSensoryThreats);
+            if (MarkBoidSensoryThreatUploadDirty(uploadHash))
+            {
+                GraphicsBufferUploadUtility.UploadNativeArray(
+                    sensoryThreatWriteBuffer,
+                    boidSensoryThreats,
+                    PredatorAupBufferCapacity);
+            }
+
             RecordBoidSensoryBlackBox(
                 boidSensoryThreats,
                 activeThreatCount,
                 simulationLodTier,
-                ResolveBoidSensoryThreatFlags(simulationLodTier));
+                ResolveBoidSensoryThreatFlags(simulationLodTier),
+                sensoryAnomalyHash);
             return activeThreatCount;
         }
 
@@ -4185,7 +4211,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                float intensity01 = math.saturate(signal.Intensity);
+                float intensity01 = SaturateFinite01(signal.Intensity);
                 if (intensity01 <= 0.001f)
                     continue;
 
@@ -4296,7 +4322,7 @@ namespace Hecton8.World
             for (int i = signalStart; i < pingSignals.Length; i++)
             {
                 AcousticPingSignal signal = pingSignals[i];
-                float intensity01 = math.saturate(signal.Intensity01);
+                float intensity01 = SaturateFinite01(signal.Intensity01);
                 if (intensity01 <= 0.001f)
                     continue;
 
@@ -4329,12 +4355,47 @@ namespace Hecton8.World
             return math.max(0, lastActiveSlot + 1);
         }
 
+        private static uint SanitizeBoidSensoryThreatSlots(NativeArray<float4> boidSensoryThreats)
+        {
+            if (!boidSensoryThreats.IsCreated)
+                return 0u;
+
+            uint anomalyHash = 0u;
+            int slotCount = math.min(boidSensoryThreats.Length, PredatorAupBufferCapacity);
+            for (int slot = 0; slot < slotCount; slot++)
+            {
+                float4 threat = boidSensoryThreats[slot];
+                if (!math.all(math.isfinite(threat)))
+                {
+                    anomalyHash = math.hash(new uint4(
+                        anomalyHash,
+                        HashThreatFloat4(threat),
+                        unchecked((uint)slot),
+                        BoidSensoryBlackBoxAnomalyNonFinite));
+                    boidSensoryThreats[slot] = float4.zero;
+                    continue;
+                }
+
+                if (threat.w > 0f && threat.w < SensoryThreatMinRadiusMeters)
+                {
+                    threat.w = SensoryThreatMinRadiusMeters;
+                    boidSensoryThreats[slot] = threat;
+                    continue;
+                }
+
+                if (threat.w <= 0f)
+                    boidSensoryThreats[slot] = float4.zero;
+            }
+
+            return anomalyHash;
+        }
+
         private bool WriteBoidSensoryThreatSlot(NativeArray<float4> boidSensoryThreats, int slot, Vector3 runtimePosition, float radius)
         {
             if ((uint)slot >= (uint)PredatorAupBufferCapacity)
                 return false;
 
-            if (!IsFiniteVector3(runtimePosition) || !float.IsFinite(radius))
+            if (!IsFiniteVector3(runtimePosition) || !float.IsFinite(radius) || radius <= 0f)
             {
                 boidSensoryThreats[slot] = float4.zero;
                 return false;
@@ -4708,6 +4769,7 @@ namespace Hecton8.World
 
                 boidCompute.SetBuffer(_kernelIndex, _BoidsBufferReadId, readBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _BoidsBufferWriteId, writeBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _PredatorAUPBufferId, ResolveBoidSensoryThreatReadBuffer());
                 if (predatorAupBuffer != null && predatorAupThreatLoopCap > 0)
                     boidCompute.SetBuffer(_kernelIndex, _EncounterPredatorAUPBufferId, predatorAupBuffer);
                 else
@@ -4882,8 +4944,17 @@ namespace Hecton8.World
 
         private void HandleMassiveDisplacement(in SargassumGlobalDragManager.MassiveDisplacementSignal signal)
         {
-            if (_massiveThreats == null || _massiveThreats.Length == 0)
+            if (_massiveThreats == null ||
+                _massiveThreats.Length == 0 ||
+                !IsFiniteVector3(signal.PositionWS) ||
+                !float.IsFinite(signal.RadiusWS) ||
+                !float.IsFinite(signal.ExtremePanicRadiusWS) ||
+                !float.IsFinite(signal.Duration) ||
+                signal.RadiusWS <= 0.001f ||
+                signal.Duration <= 0.001f)
+            {
                 return;
+            }
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
             float panicRadius = math.max(massiveThreatPanicRadius, math.max(signal.ExtremePanicRadiusWS, signal.RadiusWS * 3f));
@@ -4954,7 +5025,7 @@ namespace Hecton8.World
             AbyssalFluidDecalManager fluidDecals = _abyssalFluidDecals;
             if ((_deepModeActive || _parasiteModeActive || _formationModeActive || _leviathanModeActive) && fluidDecals != null)
             {
-                float ruptureScale = math.saturate(signal.RadiusWS / math.max(1f, deepBaitBallRadius * 2f));
+                float ruptureScale = SaturateFinite01(signal.RadiusWS * math.rcp(math.max(1f, deepBaitBallRadius * 2f)));
                 fluidDecals.RegisterRuptureFluid(signal.PositionWS, ruptureScale);
             }
 
@@ -5037,7 +5108,18 @@ namespace Hecton8.World
             float durationSeconds,
             float strength01)
         {
-            if (_massiveThreats == null || _massiveThreats.Length == 0)
+            if (_massiveThreats == null ||
+                _massiveThreats.Length == 0 ||
+                !IsFiniteVector3(positionWS) ||
+                !float.IsFinite(panicRadiusWS) ||
+                !float.IsFinite(durationSeconds) ||
+                !float.IsFinite(strength01))
+            {
+                return;
+            }
+
+            float clampedStrength01 = SaturateFinite01(strength01);
+            if (panicRadiusWS <= 0.001f || durationSeconds <= 0.001f || clampedStrength01 <= 0.0001f)
                 return;
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
@@ -5078,7 +5160,7 @@ namespace Hecton8.World
                 Position = positionWS,
                 InnerRadius = math.max(0.5f, boidBodyRadius * 1.5f),
                 PanicRadius = math.max(3f, panicRadiusWS),
-                Strength = math.saturate(strength01),
+                Strength = clampedStrength01,
                 EndTime = absoluteSimulationTime + math.max(SwarmAcousticShockDurationSeconds, durationSeconds),
                 DirectionWS = resolvedDirection,
                 ThreatFlags = 0u
@@ -5499,7 +5581,8 @@ namespace Hecton8.World
             NativeArray<float4> boidSensoryThreats,
             int activeThreatCount,
             SimulationLodTier simulationLodTier,
-            int sensoryThreatFlags)
+            int sensoryThreatFlags,
+            uint preUploadAnomalyHash)
         {
             NativeArray<BoidSensoryBlackBoxEntry> boidSensoryBlackBox = ResolveBoidSensoryBlackBox();
             if (!boidSensoryBlackBox.IsCreated || boidSensoryBlackBox.Length <= 0)
@@ -5529,18 +5612,28 @@ namespace Hecton8.World
             if ((sensoryThreatFlags & unchecked((int)SensoryThreatFlagFlashlightCapsule)) != 0)
                 flags |= BoidSensoryBlackBoxFlagCapsule;
 
-            uint anomalyHash = 0u;
-            if (!IsFiniteFloat4(submarineThreat) ||
+            bool hasInvalidBlackBoxState =
+                !IsFiniteFloat4(submarineThreat) ||
                 !IsFiniteFloat4(flashlightThreat) ||
                 !IsFiniteFloat4(pingThreatA) ||
                 !IsFiniteFloat4(pingThreatB) ||
                 !IsFiniteFloat4(pingThreatC) ||
                 activeThreatCount < 0 ||
-                activeThreatCount > PredatorAupBufferCapacity)
+                activeThreatCount > PredatorAupBufferCapacity;
+
+            uint anomalyHash = preUploadAnomalyHash;
+            if (hasInvalidBlackBoxState)
             {
-                anomalyHash = BoidSensoryBlackBoxAnomalyNonFinite;
-                flags |= BoidSensoryBlackBoxFlagNonFinite;
+                uint invalidHash = math.hash(new uint4(
+                    anomalyHash,
+                    HashThreatFloat4(submarineThreat) ^ HashThreatFloat4(flashlightThreat),
+                    HashThreatFloat4(pingThreatA) ^ HashThreatFloat4(pingThreatB) ^ HashThreatFloat4(pingThreatC),
+                    BoidSensoryBlackBoxAnomalyNonFinite ^ unchecked((uint)activeThreatCount)));
+                anomalyHash = invalidHash != 0u ? invalidHash : BoidSensoryBlackBoxAnomalyNonFinite;
             }
+
+            if (anomalyHash != 0u)
+                flags |= BoidSensoryBlackBoxFlagNonFinite;
 
             int ringLength = math.min(boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);
             int writeIndex = _boidSensoryBlackBoxCursor;
@@ -5602,29 +5695,41 @@ namespace Hecton8.World
                 return;
 
             _boidSensoryBlackBoxDumped = true;
-            string dumpPath = Path.Combine(
-                Application.dataPath,
-                "..",
-                "Docs",
-                "AgentLogs",
-                "Dump_BOID_SENSORY_INPUT_PUMP.bin");
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            int ringLength = math.min(boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            try
             {
-                writer.Write(BoidSensoryBlackBoxMagicLow);
-                writer.Write(BoidSensoryBlackBoxMagicHigh);
-                writer.Write((uint)BoidSensoryBlackBoxCapacity);
-                writer.Write((uint)BoidSensoryBlackBoxEntrySizeBytes);
-                writer.Write((uint)_boidSensoryBlackBoxCursor);
-                writer.Write(anomalyHash);
+                string dumpPath = Path.Combine(
+                    Application.dataPath,
+                    "..",
+                    "Docs",
+                    "AgentLogs",
+                    "Dump_BOID_SENSORY_INPUT_PUMP.bin");
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
 
-                for (int i = 0; i < ringLength; i++)
-                    WriteBoidSensoryBlackBoxEntry(writer, boidSensoryBlackBox[i]);
+                int ringLength = math.min(boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(BoidSensoryBlackBoxMagicLow);
+                    writer.Write(BoidSensoryBlackBoxMagicHigh);
+                    writer.Write((uint)BoidSensoryBlackBoxCapacity);
+                    writer.Write((uint)BoidSensoryBlackBoxEntrySizeBytes);
+                    writer.Write((uint)_boidSensoryBlackBoxCursor);
+                    writer.Write(anomalyHash);
+
+                    for (int i = 0; i < ringLength; i++)
+                    {
+                        int index = (_boidSensoryBlackBoxCursor + i) % ringLength;
+                        WriteBoidSensoryBlackBoxEntry(writer, boidSensoryBlackBox[index]);
+                    }
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
             }
         }
 
@@ -5652,11 +5757,10 @@ namespace Hecton8.World
         /// </summary>
         internal void RegisterVatHitReaction(Vector3 originWS, float radiusMeters, float intensity01)
         {
-            float clampedIntensity = math.saturate(intensity01) * math.saturate(hitFlashIntensity);
+            float clampedIntensity = SaturateFinite01(intensity01) * SaturateFinite01(hitFlashIntensity);
             if (clampedIntensity <= 0.0001f ||
-                !float.IsFinite(originWS.x) ||
-                !float.IsFinite(originWS.y) ||
-                !float.IsFinite(originWS.z))
+                !IsFiniteVector3(originWS) ||
+                !float.IsFinite(radiusMeters))
             {
                 return;
             }
@@ -5777,7 +5881,7 @@ namespace Hecton8.World
 
         private void HandleSonarPingSent(float intensity)
         {
-            float clampedIntensity = math.saturate(intensity);
+            float clampedIntensity = SaturateFinite01(intensity);
             if (clampedIntensity <= 0f)
             {
                 _sonarScatterStrength01 = 0f;
@@ -5809,7 +5913,15 @@ namespace Hecton8.World
             float strength01,
             uint seed)
         {
-            float clampedStrength = math.saturate(strength01);
+            if (!IsFiniteVector3(originWS) ||
+                !math.isfinite(radiusWS) ||
+                !math.isfinite(durationSeconds) ||
+                !math.isfinite(strength01))
+            {
+                return;
+            }
+
+            float clampedStrength = SaturateFinite01(strength01);
             if (radiusWS <= 0.001f || durationSeconds <= 0.001f || clampedStrength <= 0.0001f)
                 return;
 
@@ -5902,11 +6014,11 @@ namespace Hecton8.World
         private void ConsumeMovementAcousticSignals()
         {
             ReadOnlySpan<MovementAcousticSignal> movementSignals = SignalBus<MovementAcousticSignal>.GetFrameSnapshot();
-            int signalCount = math.min(movementSignals.Length, SwarmMovementSignalConsumeLimit);
-            for (int i = 0; i < signalCount; i++)
+            int signalStart = math.max(0, movementSignals.Length - SwarmMovementSignalConsumeLimit);
+            for (int i = signalStart; i < movementSignals.Length; i++)
             {
                 MovementAcousticSignal signal = movementSignals[i];
-                float volume01 = math.saturate(signal.Volume);
+                float volume01 = SaturateFinite01(signal.Volume);
                 if (volume01 <= 0.01f)
                     continue;
 
@@ -5914,7 +6026,8 @@ namespace Hecton8.World
                 if (!math.all(math.isfinite(runtimePosition)))
                     continue;
 
-                float velocityGate = math.saturate(signal.VelocitySq * (1f / 144f));
+                float velocitySq = math.isfinite(signal.VelocitySq) ? signal.VelocitySq : 0f;
+                float velocityGate = SaturateFinite01(velocitySq * (1f / 144f));
                 float radius = math.lerp(10f, 42f, velocityGate);
                 RegisterAcousticPanicBurst(
                     ToVector3(runtimePosition),
@@ -5928,12 +6041,12 @@ namespace Hecton8.World
         private void ConsumeAcousticPingSignals(float simulationDt)
         {
             ReadOnlySpan<AcousticPingSignal> pingSignals = SignalBus<AcousticPingSignal>.GetFrameSnapshot();
-            int signalCount = math.min(pingSignals.Length, SwarmAcousticSignalConsumeLimit);
+            int signalStart = math.max(0, pingSignals.Length - SwarmAcousticSignalConsumeLimit);
             float shockDuration = math.max(SwarmAcousticShockDurationSeconds, simulationDt);
-            for (int i = 0; i < signalCount; i++)
+            for (int i = signalStart; i < pingSignals.Length; i++)
             {
                 AcousticPingSignal signal = pingSignals[i];
-                float intensity01 = math.saturate(signal.Intensity01);
+                float intensity01 = SaturateFinite01(signal.Intensity01);
                 if (intensity01 <= 0.001f)
                     continue;
 
@@ -5951,6 +6064,13 @@ namespace Hecton8.World
 
         private void TryPublishSwarmDispersedSignal(Vector3 originWS, float radiusWS, float intensity01, uint sourceId)
         {
+            if (!IsFiniteVector3(originWS) ||
+                !float.IsFinite(radiusWS) ||
+                !float.IsFinite(intensity01))
+            {
+                return;
+            }
+
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
             if (intensity01 < SwarmDispersedMinimumIntensity ||
                 absoluteSimulationTime < _lastSwarmDispersedSignalTime + SwarmDispersedSignalCooldownSeconds)
@@ -5965,7 +6085,7 @@ namespace Hecton8.World
             {
                 PositionAup = AbsoluteUniversePosition.FromRuntimePosition(originWS),
                 RadiusMeters = math.max(1f, radiusWS),
-                Intensity01 = math.saturate(intensity01),
+                Intensity01 = SaturateFinite01(intensity01),
                 SourceId = resolvedSourceId,
                 EstimatedBoidCount = (ushort)math.clamp(_activeBoidCount, 0, (int)ushort.MaxValue),
                 Flags = 1,
@@ -6754,7 +6874,9 @@ namespace Hecton8.World
             ReleaseBuffer(ref _spatialGridCellBuffer);
             ReleaseBuffer(ref _simulationFrameBuffer);
             ReleaseBuffer(ref _predatorAupFallbackBuffer);
-            ReleaseBuffer(ref _boidSensoryThreatBuffer);
+            ReleaseBuffer(ref _boidSensoryThreatBufferA);
+            ReleaseBuffer(ref _boidSensoryThreatBufferB);
+            ResetBoidSensoryThreatUploadCache();
             _latchStatsBufferRawTarget = false;
             _pbdCorrectionBufferRawTarget = false;
             _spatialGridCountBufferRawTarget = false;
@@ -6956,9 +7078,28 @@ namespace Hecton8.World
         private static Vector3 FastNormalizeVector3(Vector3 value, Vector3 fallback)
         {
             float lengthL1 = math.abs(value.x) + math.abs(value.y) + math.abs(value.z);
-            return lengthL1 > 0.0001f
-                ? new Vector3(value.x / lengthL1, value.y / lengthL1, value.z / lengthL1)
-                : fallback;
+            if (math.isfinite(lengthL1) && lengthL1 > 0.0001f)
+            {
+                float invLength = math.rcp(lengthL1);
+                return new Vector3(value.x * invLength, value.y * invLength, value.z * invLength);
+            }
+
+            float fallbackLengthL1 = math.abs(fallback.x) + math.abs(fallback.y) + math.abs(fallback.z);
+            if (math.isfinite(fallbackLengthL1) && fallbackLengthL1 > 0.0001f)
+            {
+                float invFallbackLength = math.rcp(fallbackLengthL1);
+                return new Vector3(
+                    fallback.x * invFallbackLength,
+                    fallback.y * invFallbackLength,
+                    fallback.z * invFallbackLength);
+            }
+
+            return Vector3.zero;
+        }
+
+        private static float SaturateFinite01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
         }
 
         private static float ResolveLodDitherKeep01(float hibernation01)
@@ -6985,7 +7126,13 @@ namespace Hecton8.World
         private static float3 CheapNormalizeL1(float3 value, float3 fallback)
         {
             float lengthL1 = math.abs(value.x) + math.abs(value.y) + math.abs(value.z);
-            return lengthL1 > 0.0001f ? value / lengthL1 : fallback;
+            if (math.isfinite(lengthL1) && lengthL1 > 0.0001f)
+                return value * math.rcp(lengthL1);
+
+            float fallbackLengthL1 = math.abs(fallback.x) + math.abs(fallback.y) + math.abs(fallback.z);
+            return math.isfinite(fallbackLengthL1) && fallbackLengthL1 > 0.0001f
+                ? fallback * math.rcp(fallbackLengthL1)
+                : float3.zero;
         }
 
         private static float CheapSinSigned(float radians)
@@ -7116,6 +7263,62 @@ namespace Hecton8.World
         NativeArray<BoidSensoryBlackBoxEntry> ResolveBoidSensoryBlackBox()
         {
             return ResolveVaultBuffer(ref _boidSensoryBlackBoxHandle);
+        }
+
+        private GraphicsBuffer ResolveBoidSensoryThreatWriteBuffer()
+        {
+            return (_frameParity & 1) == 0
+                ? _boidSensoryThreatBufferA
+                : _boidSensoryThreatBufferB;
+        }
+
+        private GraphicsBuffer ResolveBoidSensoryThreatReadBuffer()
+        {
+            return ResolveBoidSensoryThreatWriteBuffer();
+        }
+
+        private static uint HashBoidSensoryThreatUpload(NativeArray<float4> boidSensoryThreats)
+        {
+            uint hash = 0xB01D5EEDu;
+            if (!boidSensoryThreats.IsCreated)
+                return hash;
+
+            int count = math.min(boidSensoryThreats.Length, PredatorAupBufferCapacity);
+            for (int i = 0; i < count; i++)
+            {
+                uint slotHash = math.hash(math.asuint(boidSensoryThreats[i]));
+                hash = math.hash(new uint4(hash, slotHash, unchecked((uint)i), 0x9E3779B9u));
+            }
+
+            return hash;
+        }
+
+        private bool MarkBoidSensoryThreatUploadDirty(uint uploadHash)
+        {
+            if ((_frameParity & 1) == 0)
+            {
+                if (_boidSensoryThreatUploadValidA && _boidSensoryThreatUploadHashA == uploadHash)
+                    return false;
+
+                _boidSensoryThreatUploadHashA = uploadHash;
+                _boidSensoryThreatUploadValidA = true;
+                return true;
+            }
+
+            if (_boidSensoryThreatUploadValidB && _boidSensoryThreatUploadHashB == uploadHash)
+                return false;
+
+            _boidSensoryThreatUploadHashB = uploadHash;
+            _boidSensoryThreatUploadValidB = true;
+            return true;
+        }
+
+        private void ResetBoidSensoryThreatUploadCache()
+        {
+            _boidSensoryThreatUploadHashA = 0u;
+            _boidSensoryThreatUploadHashB = 0u;
+            _boidSensoryThreatUploadValidA = false;
+            _boidSensoryThreatUploadValidB = false;
         }
 
         NativeArray<T> ResolveVaultBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct

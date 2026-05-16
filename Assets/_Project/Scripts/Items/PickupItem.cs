@@ -4,6 +4,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -38,7 +39,7 @@ namespace Hecton8.Interaction
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;
         private const float OverflowScatterTorqueImpulse = 0.35f;
-        private const float DeepSeaSeawaterDensityKgPerM3 = 1025f;
+        private const float DeepSeaSeawaterDensityKgPerM3 = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
         private const float LooseItemUnderwaterLinearDamping = 1.6f;
         private const float LooseItemUnderwaterAngularDamping = 6.5f;
         private const float LooseItemBuoyancyAngularDragMultiplier = 2.75f;
@@ -104,6 +105,12 @@ namespace Hecton8.Interaction
         /// <summary>Applies deterministic loot magnet presentation without Unity trigger callbacks.</summary>
         public void ApplyLootMagnetPose(Vector3 runtimePosition, float3 velocity, float motionVectorThresholdSq)
         {
+            if (!IsFiniteVector(runtimePosition))
+            {
+                RestoreLootMagnetRuntimeState();
+                return;
+            }
+
             SuppressLootMagnetPhysics();
             transform.position = runtimePosition;
 
@@ -129,8 +136,14 @@ namespace Hecton8.Interaction
         public void RestoreLootMagnetRuntimeState()
         {
             RestoreLootMagnetMotionVectorMode();
-            if (!_lootMagnetPhysicsSuppressed || _rigidbody == null)
+            if (!_lootMagnetPhysicsSuppressed)
                 return;
+
+            if (_rigidbody == null)
+            {
+                _lootMagnetPhysicsSuppressed = false;
+                return;
+            }
 
             _rigidbody.linearVelocity = Vector3.zero;
             _rigidbody.angularVelocity = Vector3.zero;
@@ -311,6 +324,9 @@ namespace Hecton8.Interaction
                 return;
 
             Vector3 currentPosition = transform.position;
+            if (!IsFiniteVector(currentPosition))
+                return;
+
             WorldSpatialHashGrid.UpdateGridPosition(_spatialHandle, _lastSpatialPosition, currentPosition);
             if (_faunaSpatialHandle != 0)
                 FaunaSpatialHashRegistry.Refresh(_faunaSpatialHandle);
@@ -334,6 +350,9 @@ namespace Hecton8.Interaction
             ApplyUnderwaterDamping();
 
             Vector3 sampledCurrent = CurrentVolume.SampleCombinedCurrent(_rigidbody.worldCenterOfMass);
+            if (!IsFiniteVector(sampledCurrent))
+                return;
+
             if (sampledCurrent.sqrMagnitude <= 0.0001f)
                 return;
 
@@ -502,15 +521,12 @@ namespace Hecton8.Interaction
             if (addedQuantity <= 0 || _cachedItemHashId == 0)
                 return;
 
-            Vector3 signalPosition = transform.position;
-            if (interactor != null && IsFiniteVector(interactor.position))
-                signalPosition = interactor.position;
+            if (!TryResolveSignalAup(interactor, out AbsoluteUniversePosition positionAup))
+                return;
 
             ItemAcquiredSignal signal = new ItemAcquiredSignal
             {
-                PositionAup = IsFiniteVector(signalPosition)
-                    ? AbsoluteUniversePosition.FromRuntimePosition(signalPosition)
-                    : default,
+                PositionAup = positionAup,
                 ItemHash = unchecked((uint)_cachedItemHashId),
                 OreHash = unchecked((uint)_cachedItemHashId),
                 Quantity = (ushort)math.min(addedQuantity, (int)ushort.MaxValue),
@@ -519,6 +535,25 @@ namespace Hecton8.Interaction
                 Frame = unchecked((uint)Time.frameCount)
             };
             GlobalSignals.Publish(in signal);
+        }
+
+        private bool TryResolveSignalAup(Transform interactor, out AbsoluteUniversePosition positionAup)
+        {
+            if (interactor != null && IsFiniteVector(interactor.position))
+            {
+                positionAup = AbsoluteUniversePosition.FromRuntimePosition(interactor.position);
+                return true;
+            }
+
+            Vector3 signalPosition = transform.position;
+            if (IsFiniteVector(signalPosition))
+            {
+                positionAup = AbsoluteUniversePosition.FromRuntimePosition(signalPosition);
+                return true;
+            }
+
+            positionAup = default;
+            return false;
         }
 
         private static ushort NormalizeQualityMilli(ushort qualityMilli)

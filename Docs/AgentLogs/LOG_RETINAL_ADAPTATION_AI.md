@@ -204,3 +204,121 @@ Verification:
 - `git diff --check` reported no whitespace errors, only CRLF normalization warnings.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` succeeded with `0 Warning(s)` and `0 Error(s)`.
 - Unity Editor import, Play Mode, GCMonitor, profiler, and player build verification were not executed in this shell-only pass.
+
+## 2026-05-16 - Native HashMap Vault Eviction / Code Build Green
+What was wrong:
+- `PredatorCognitionDomain` still owned two local persistent `NativeParallelHashMap` containers after the DataVault `NativeArray` and active-slot passes.
+- Species pack target sharing and species tuning lookup therefore still had private native state outside `GlobalDataVault`.
+- `SpeciesCognitionTuning` had no explicit Pack=1 ABI contract while becoming a DataVault value payload.
+
+What was done:
+- Added DataVault lanes for species target ids, species target positions, target count, species tuning ids, species tuning values, and tuning count.
+- Replaced local `NativeParallelHashMap<int, float3>` and `NativeParallelHashMap<int, SpeciesCognitionTuning>` fields with vault-backed SoA aliases.
+- Replaced `SwarmAnalysisJob` hash writes with bounded atomic append into species target arrays.
+- Replaced job hash lookups with bounded count-window scans for species targets and tuning data.
+- Added `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]` to `SpeciesCognitionTuning` and validated its stride through `UnsafeUtility.SizeOf`.
+
+Cinematic Cheats used:
+- No physical light simulation was added.
+- No raycast, cone collider, Unity `Light` polling, or managed lookup path was introduced.
+- Low/toaster path remains bounded dot-product glare, four cached light records, stress cadence, and simple turn-away/flee.
+- High/Ultra still spend saved simulation cost on deterministic retinal thrash and typed-lane biolum strobe.
+
+Exact Microseconds saved:
+- Measured exact savings: unavailable; Unity profiler was not run.
+- Runtime ownership cost after cold DataVault resolve: 0 us/frame.
+- Hash lookup changed to cache-linear bounded scans over <=256 active species records; exact CPU delta was not measured.
+- Disk I/O remains fault-only black-box dump; no per-frame status or telemetry file write was added.
+
+Verification:
+- `rg` found no `NativeParallelHashMap`, no `NativeHashMap`, no `NativeList`, no `new NativeArray<`, no `new NativeList`, no `new NativeParallelHashMap`, no retinal raycasts/casts/overlaps, no `string.Format`, no standard `Update()`, no legacy headlight queue use, and no managed delegate usage in `PredatorCognitionDomain` or `AI/Perception`.
+- PowerShell enum parsing reported `NO_BUFFERID_DUPLICATE_VALUES` and `NO_SYSTEMID_DUPLICATE_VALUES`.
+- `git diff --check` reported no whitespace errors, only CRLF normalization warnings.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` succeeded with `0 Warning(s)` and `0 Error(s)`.
+- Unity Editor import, Play Mode, GCMonitor, profiler, and player build verification were not executed in this shell-only pass.
+
+## 2026-05-16 - Shared Workspace Build Wall Recheck
+What was wrong:
+- A fresh project build after the native hash-map eviction report no longer matches the earlier green build state.
+- The new failures are outside the retinal/cognition domain and do not cite `PredatorCognitionDomain`, `RetinalExposureMath`, `RetinalAdaptationVault`, `FaunaDataTemplate`, `H8Memory`, or `GlobalDataVault`.
+- Reporting the earlier green build as current would be false.
+
+What was done:
+- Re-read `Status_RETINAL_ADAPTATION_AI.md`, `Rationale_RETINAL_ADAPTATION_AI.md`, and the original XML prompt before continuing.
+- Re-ran the retinal static debt audit.
+- Re-ran whitespace checks on touched code/docs.
+- Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary`.
+- Updated status and rationale to mark the latest build as blocked by external compile errors.
+
+Cinematic Cheats used:
+- No extra simulation was added while responding to the build wall.
+- The retinal implementation remains the cheap gameplay fake: typed headlight signal, four-slot light cache, dot-product cone exposure, exponential decay, and tier-gated presentation overkill.
+
+Exact Microseconds saved:
+- Measured exact savings: unavailable; Unity profiler was not run.
+- Runtime delta from this recheck: 0 us/frame because no runtime code changed.
+
+Verification:
+- Static debt audit returned `NO_RETINAL_DOMAIN_DEBT_MATCHES`.
+- Narrowed enum parsing returned `NO_SystemID_DUPLICATE_VALUES` and `NO_BufferID_DUPLICATE_VALUES`.
+- `git diff --check` reported no whitespace errors, only CRLF normalization warnings.
+- Latest build exits with 11 external errors: `GameBootstrapper` object-to-`IDataVault` calls, `FluidFeedbackListener` missing `_queueHash`/`PendingEventCapacity`, and `PlayerTool`/`PlayerToolManager`/`PlayerNoiseEmitter` missing tool event members.
+- No latest build errors cite the retinal/cognition files.
+
+## 2026-05-16 - Pack=1 Descriptor Polish / Build Green
+What was wrong:
+- `FaunaDataTemplate.RuntimeDescriptor` was explicit-size 64 bytes but still used `StructLayout(Pack = 4)`.
+- The current ARM64/Quest ABI mandate requires Pack=1 native payloads in the retinal/fauna cognition scope.
+- The previous external compile wall shifted while the shared workspace changed; current source needed a fresh build, not stale-error reporting.
+
+What was done:
+- Changed `RuntimeDescriptor` to `StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)`.
+- Re-ran Pack audit across `PredatorCognitionDomain`, `AI/Perception`, and `FaunaDataTemplate`.
+- Re-ran static retinal debt audit and enum duplicate checks.
+- Re-ran `dotnet build` from the current tree.
+
+Cinematic Cheats used:
+- No new simulation or physics truth was added.
+- Retinal response remains a deterministic visual/gameplay fake: typed headlight signal, four-light cache, dot-product glare, exponential decay, simple low-tier turn-away/flee, and high-tier deterministic thrash/biolum strobe.
+
+Exact Microseconds saved:
+- Measured exact savings: unavailable; Unity profiler was not run.
+- Runtime cost of this Pack=1 descriptor closure: 0 us/frame.
+- Build validation cost is compile-time only.
+
+Verification:
+- Pack audit returned `NO_NON_PACK1_STRUCTLAYOUT_IN_RETINAL_SCOPE`.
+- Static debt audit returned `NO_RETINAL_DOMAIN_DEBT_MATCHES`.
+- Enum parsing returned `NO_SystemID_DUPLICATE_VALUES` and `NO_BufferID_DUPLICATE_VALUES`.
+- `git diff --check` reported no whitespace errors, only CRLF normalization warnings.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` succeeded with `0 Warning(s)` and `0 Error(s)`.
+- Unity Editor import, Play Mode, GCMonitor, profiler, and player build verification were not executed.
+
+## 2026-05-16 - Volatile Shared Build Wall Recheck / Current Build Green
+What was wrong:
+- Parallel workspace edits caused successive external compile walls in `PhysicsApplySystem`, `TetherInstance`, `SargassumMicroFaunaBoids`, and `LockstepStateValidator`.
+- Several compiler errors were stale against the source snapshot visible after the build completed.
+- Final reporting needed a current-state build, not an earlier green pass or an obsolete failure.
+
+What was done:
+- Re-ran retinal static debt audit.
+- Re-ran Pack=1 ABI audit.
+- Re-ran `SystemID`/`BufferID` duplicate checks.
+- Re-ran whitespace validation on touched retinal/code/doc files.
+- Re-ran the project build from the current tree.
+
+Cinematic Cheats used:
+- No new physical simulation was added.
+- Retinal behavior remains the same deterministic fake: typed headlight lane, four cached light records, dot-product retinal exposure, exponential darkness decay, low-tier flee/turn-away, high-tier deterministic thrash and biolum strobe.
+
+Exact Microseconds saved:
+- Measured exact savings: unavailable; Unity profiler was not run.
+- Runtime delta from this recheck: 0 us/frame.
+
+Verification:
+- Static debt audit returned `NO_RETINAL_DOMAIN_DEBT_MATCHES`.
+- Pack audit returned `NO_NON_PACK1_STRUCTLAYOUT_IN_RETINAL_SCOPE`.
+- Enum parsing returned `NO_SystemID_DUPLICATE_VALUES` and `NO_BufferID_DUPLICATE_VALUES`.
+- `git diff --check` reported no whitespace errors, only CRLF normalization warnings.
+- Final current-state `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:ErrorsOnly` succeeded with `0 Warning(s)` and `0 Error(s)`.
+- Unity Editor import, Play Mode, GCMonitor, profiler, and player build verification were not executed.

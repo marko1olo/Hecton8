@@ -19,18 +19,39 @@ float HectonFinite01(float value)
     return isfinite(value) ? saturate(value) : 0.0;
 }
 
+float HectonFiniteValue(float value, float fallback)
+{
+    return isfinite(value) ? value : fallback;
+}
+
+float HectonFiniteNonNegative(float value, float fallback)
+{
+    return max(0.0, HectonFiniteValue(value, fallback));
+}
+
+float4 HectonFinite4(float4 value, float4 fallback)
+{
+    return all(isfinite(value)) ? value : fallback;
+}
+
+float HectonSnellSafeRcp(float value)
+{
+    return rcp(max(abs(isfinite(value) ? value : 1.0), 1.0001));
+}
+
 float HectonSnellBend01(float nDotV, float waterDensity01, float4 rawIorLut)
 {
     float4 iorLut = HectonSanitizeIorLut(rawIorLut);
     float safeNdotV = HectonFinite01(nDotV);
     float density01 = HectonFinite01(waterDensity01);
     float mediumIor = lerp(iorLut.y, iorLut.z, density01);
-    float eta = iorLut.x * rcp(max(iorLut.w, 1.0001));
+    float invGlassIor = HectonSnellSafeRcp(iorLut.w);
+    float eta = iorLut.x * invGlassIor;
     float sin2Incident = saturate(1.0 - safeNdotV * safeNdotV);
     float sin2Transmitted = saturate(eta * eta * sin2Incident);
     float cosTransmittedApprox = saturate(1.0 - sin2Transmitted * (0.5 + sin2Transmitted * 0.125));
     float glassBend = saturate(1.0 - cosTransmittedApprox);
-    float exitContrast = abs(iorLut.w - mediumIor) * rcp(max(iorLut.w, 1.0001));
+    float exitContrast = abs(iorLut.w - mediumIor) * invGlassIor;
     return saturate(glassBend * (0.35 + exitContrast * 1.35));
 }
 

@@ -9,7 +9,7 @@ namespace Hecton8.Core.Contracts
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct AcousticAup
     {
-        public const int CellSizeMeters = 5000;
+        public const int CellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
 
         public long GridX;
         public long GridY;
@@ -26,7 +26,7 @@ namespace Hecton8.Core.Contracts
 
         public static float3 RelativeFloat3(in AcousticAup position, in AcousticAup origin)
         {
-            const double maxFloatSafe = 1000000000000.0;
+            const double maxFloatSafe = HectonPhysicsContract.AupMaxFloatSafeMeters;
             double cellSize = CellSizeMeters;
             double x = ((position.GridX - origin.GridX) * cellSize) + (double)position.Local.x - origin.Local.x;
             double y = ((position.GridY - origin.GridY) * cellSize) + (double)position.Local.y - origin.Local.y;
@@ -47,7 +47,7 @@ namespace Hecton8.Core.Contracts
             if (distanceSq <= 0.0 || !math.isfinite(distanceSq))
                 return 0f;
 
-            return (float)math.min(1000000000.0, math.sqrt(distanceSq));
+            return (float)math.min(HectonPhysicsContract.AupMaxDistanceReturnMeters, math.sqrt(distanceSq));
         }
 
         public static bool IsFinite(in AcousticAup aup)

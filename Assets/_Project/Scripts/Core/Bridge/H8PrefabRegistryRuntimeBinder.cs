@@ -2,11 +2,12 @@ using System.Threading;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace Hecton8.Core.Bridge
 {
-    public static class H8PrefabRegistryRuntimeBinder
+    public static unsafe class H8PrefabRegistryRuntimeBinder
     {
         public static bool Bind(H8PrefabRegistry registry, IDataVault vault)
         {
@@ -16,16 +17,17 @@ namespace Hecton8.Core.Bridge
             int count = registry.EntryCount;
             if (count <= 0)
             {
+                ClearExistingBuffers(vault);
                 VRAMBudgetTracker.Unregister(registry.RegistryHash);
                 return true;
             }
 
-            NativeArray<H8PrefabMappingEntry> mapping = vault.GetBuffer<H8PrefabMappingEntry>(
+            VaultBufferHandle<H8PrefabMappingEntry> mapping = vault.GetBufferHandle<H8PrefabMappingEntry>(
                 BufferID.BridgePrefabMapping,
                 count,
                 SystemID.CoreBridge,
                 NativeArrayOptions.ClearMemory);
-            NativeArray<H8PrefabLoreLinkEntry> loreLinks = vault.GetBuffer<H8PrefabLoreLinkEntry>(
+            VaultBufferHandle<H8PrefabLoreLinkEntry> loreLinks = vault.GetBufferHandle<H8PrefabLoreLinkEntry>(
                 BufferID.BridgePrefabLoreLinks,
                 count,
                 SystemID.CoreBridge,
@@ -35,6 +37,14 @@ namespace Hecton8.Core.Bridge
                 return false;
 
             Thread.MemoryBarrier();
+            H8PrefabMappingEntry* mappingPtr = (H8PrefabMappingEntry*)mapping.ResolvePointer(vault);
+            H8PrefabLoreLinkEntry* loreLinkPtr = (H8PrefabLoreLinkEntry*)loreLinks.ResolvePointer(vault);
+            if (mappingPtr == null || loreLinkPtr == null)
+                return false;
+
+            ClearBuffer(mappingPtr, mapping.Length);
+            ClearBuffer(loreLinkPtr, loreLinks.Length);
+
             long totalVramBytes = 0L;
             PrefabRegistry runtimeRegistry = GlobalRegistry.PrefabRegistryRuntime;
             uint frame = unchecked((uint)Time.frameCount);
@@ -42,15 +52,15 @@ namespace Hecton8.Core.Bridge
             for (int i = 0; i < count; i++)
             {
                 H8PrefabRegistry.Entry entry = registry.GetEntry(i);
-                if (entry == null)
+                if (entry == null || !entry.IsRuntimeBindable)
                     continue;
 
                 uint runtimePrefabId = 0u;
                 if (runtimeRegistry != null && entry.Prefab != null)
                     runtimePrefabId = unchecked((uint)runtimeRegistry.GetOrRegisterPrefab(entry.Prefab));
 
-                mapping[i] = entry.ToMappingEntry(runtimePrefabId);
-                loreLinks[i] = entry.ToLoreLinkEntry();
+                mappingPtr[i] = entry.ToMappingEntry(runtimePrefabId);
+                loreLinkPtr[i] = entry.ToLoreLinkEntry();
                 totalVramBytes += entry.EstimatedVramBytes > 0L ? entry.EstimatedVramBytes : 0L;
 
                 PrefabAcousticSignatureSignal acoustic = new PrefabAcousticSignatureSignal
@@ -63,7 +73,7 @@ namespace Hecton8.Core.Bridge
                     OneDimensionalLutHash = entry.OneDimensionalLutHash,
                     Flags = entry.Flags
                 };
-                SignalBus<PrefabAcousticSignatureSignal>.Push(acoustic);
+                SignalBus<PrefabAcousticSignatureSignal>.Push(in acoustic);
 
                 PrefabLoreLinkSignal lore = new PrefabLoreLinkSignal
                 {
@@ -74,13 +84,42 @@ namespace Hecton8.Core.Bridge
                     HighTierVisualHash = entry.HighTierVisualHash,
                     Flags = entry.Flags
                 };
-                SignalBus<PrefabLoreLinkSignal>.Push(lore);
+                SignalBus<PrefabLoreLinkSignal>.Push(in lore);
             }
 
             Thread.MemoryBarrier();
             VRAMBudgetTracker.RegisterOrUpdate(registry.RegistryHash, totalVramBytes);
             GlobalTelemetryBus.PublishModTelemetry(H8BridgeHashes.PrefabRegistry, registry.RegistryHash, count);
             return true;
+        }
+
+        private static void ClearExistingBuffers(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            if (vault.TryGetBufferHandle(BufferID.BridgePrefabMapping, out VaultBufferHandle<H8PrefabMappingEntry> mapping) &&
+                mapping.IsCreated)
+            {
+                H8PrefabMappingEntry* mappingPtr = (H8PrefabMappingEntry*)mapping.ResolvePointer(vault);
+                ClearBuffer(mappingPtr, mapping.Length);
+            }
+
+            if (vault.TryGetBufferHandle(BufferID.BridgePrefabLoreLinks, out VaultBufferHandle<H8PrefabLoreLinkEntry> loreLinks) &&
+                loreLinks.IsCreated)
+            {
+                H8PrefabLoreLinkEntry* loreLinkPtr = (H8PrefabLoreLinkEntry*)loreLinks.ResolvePointer(vault);
+                ClearBuffer(loreLinkPtr, loreLinks.Length);
+            }
+        }
+
+        private static void ClearBuffer<T>(T* ptr, int length)
+            where T : unmanaged
+        {
+            if (ptr == null || length <= 0)
+                return;
+
+            UnsafeUtility.MemClear(ptr, length * UnsafeUtility.SizeOf<T>());
         }
     }
 
@@ -91,7 +130,7 @@ namespace Hecton8.Core.Bridge
 
         public H8PrefabRegistry Registry => registry;
 
-        private void Awake()
+        private void Start()
         {
             if (bindOnAwake)
                 BindNow();

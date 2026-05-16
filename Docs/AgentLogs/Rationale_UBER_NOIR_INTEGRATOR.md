@@ -179,8 +179,183 @@ Scalability potential: Low/MX350/Quest variants carry base/mask texture bindings
 Hardware Impact: Expected static effect is fewer low-tier shader resource bindings and less mobile descriptor pressure. No GPU microseconds are claimed without Unity/RenderDoc validation.
 
 ## Decision 026 - Touched Cold Allocation Comment Canonicalization
-Problem: The touched UberNoir runtime bridge fallback GameObject allocation lacked the mandated owner/capacity comment form. The LUT scratch allocation needed audit because it sits in the same cold rendering loader path.
-Solution: Updated the fallback runtime GameObject comment to canonical `COLD ALLOC: Type[capacity] - reason - owner` form and verified the LUT scratch byte-array comment already matched that shape with ASCII separators.
+Problem: The touched UberNoir runtime bridge fallback GameObject allocation lacked the exact mandated owner/capacity comment form. The LUT resolver scratch allocation needed an audit because it sits in the same cold rendering loader path.
+Solution: Updated the runtime bridge comment to canonical `COLD ALLOC: Type[capacity] - reason - owner` form using ASCII separators and verified the LUT scratch byte-array comment already matched that shape.
 Rejected Alternatives: Broadly changing GpuScatter comments was rejected because that file maps to the separate GPU scatter prompt slice and comment churn risks conflict with another running agent. Ignoring the touched-file violations was rejected because these files are inside the active Rendering/URP audit path.
 Scalability potential: No visual or runtime scalability impact; this preserves auditability for startup allocations.
 Hardware Impact: 0 us codegen/runtime impact; comment-only documentation fix.
+
+## Decision 027 - Partial Core C# Revalidation
+Problem: The full Unity/DX12/Vulkan validation path remains blocked, but the touched C# rendering files still need the strongest available non-Unity compile proof after the fault-latch and comment edits.
+Solution: Ran `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`, captured `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_latest.log`, then re-ran after the shared-include patch and captured `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop20_shared_include.log` with `EXIT=0`.
+Rejected Alternatives: Re-running full Unity batch validation was rejected for this loop because the last Unity validation stalled at AssetDatabase script compilation and prior full project `dotnet build` is blocked by unrelated RealtimeCSG missing-source references. Claiming shader/player readiness from a C# project build was rejected.
+Scalability potential: No direct visual scalability change; this validates the C# bridge/LUT side of the low/high shader-control path.
+Hardware Impact: 0 runtime change; build proof only.
+
+## Decision 028 - Shared Include Reciprocal Guard
+Problem: `Hecton_WaterExtinction.hlsl` and `Hecton_SnellRefractionCore.hlsl` still had raw `rcp` calls. The denominators were clamped, but the NaN audit surface for the UberNoir include chain still exposed ad hoc reciprocal use outside named safe helpers.
+Solution: Added `H8WaterExtinctionSafeRcp` and `HectonSnellSafeRcp`, then routed turbidity/depth normalization and Snell IOR ratios through those helpers.
+Rejected Alternatives: Leaving locally clamped raw reciprocals was rejected because future shader audits need a single obvious safe-math surface. Moving these helpers into `Hecton8_UberNoir.hlsl` was rejected because the includes are shared and are included before the Uber helper definitions.
+Scalability potential: Low tier keeps the same Beer-Lambert fake and salt-crust path; High/Ultra keep Snell refraction and LUT extinction with clearer NaN guard boundaries.
+Hardware Impact: Expected runtime delta is measurement noise; this is mobile-GPU survival and auditability work, not a measured performance gain.
+
+## Decision 029 - Low-Memory Extinction LUT I/O Shed
+Problem: `LutArrayResolver` always tried to resolve and stream `Water_Extinction_Matrix.bin` before scene load. The packed matrix is 32 MB, and low-memory/portable devices can use the analytical Beer-Lambert fallback already present in UberNoir instead of paying startup I/O and texture residency.
+Solution: Added a player-only low graphics-memory gate (`SystemInfo.graphicsMemorySize <= 2048 MB`) that returns after publishing fallback globals. This skips path probing, StreamingAssets URI staging, cache writes, texture allocation, and sequential matrix reads on low-memory devices.
+Rejected Alternatives: Always streaming the 32 MB LUT was rejected for MX350/Quest-class targets because the shader fallback is already an accepted Dear Lie. Disabling the LUT in the Editor was rejected because artists still need to validate the high-fidelity path. Raising the threshold without device-specific profiler proof was rejected to avoid stealing fidelity from mid/high machines.
+Scalability potential: Low/MX350/Quest uses analytical Beer-Lambert fallback and avoids LUT residency. High/Ultra still load the packed extinction matrix for richer water-color response.
+Hardware Impact: On gated devices, expected static saving is one 32 MB file stream plus one 4096x4096 RHalf texture allocation. No frame microseconds are claimed without device profiling.
+
+## Decision 030 - Mobile StreamingAssets LUT Bypass
+Problem: The low-memory LUT gate still allowed Android/Quest-style players with reported graphics memory above 2048 MB to enter the synchronous StreamingAssets URI staging path, which uses `UnityWebRequest` plus a blocking wait before scene load.
+Solution: Added a player-only `UNITY_ANDROID || UNITY_VISIONOS` analytical-fallback gate before any path probing or URI staging. Editor remains on the high-fidelity path, and desktop/high-memory players can still load the packed matrix.
+Rejected Alternatives: Keeping mobile on the URI staging path was rejected because a startup-blocking 32 MB matrix load is wrong for Quest/Android portability. Removing the high-memory desktop LUT path was rejected because High/Ultra needs the richer extinction response. Rewriting the loader into an async Addressables pipeline was rejected in this prompt because it would change bootstrap architecture outside the UberNoir shader-consolidation slice.
+Scalability potential: Android/Quest use the Dear Lie Beer-Lambert fallback and avoid blocking asset reads. High/Ultra desktop keeps the LUT path for stronger water color response.
+Hardware Impact: On Android/Quest-style players, expected static saving is the avoided `UnityWebRequest` staging wait, temporary cache file write, 32 MB file stream, and 4096x4096 texture allocation. No microseconds are claimed without device profiling.
+
+## Decision 031 - Explicit Texture Work-Shed Branch Intent
+Problem: The Omega mandate asks for fragment branch removal, but the POM disable early-out and extinction-LUT inactive early-out are there to avoid hidden `_RustDetailMap` and `_ExtinctionLUT` texture work. They were not all marked with explicit compiler branch intent.
+Solution: Added `[branch]` to the POM-disabled return and the extinction-LUT inactive return. The existing branch count is still not Omega-compliant, but each retained fragment branch now maps to a real texture-work shed.
+Rejected Alternatives: Converting these sites to branchless `lerp` was rejected because disabled POM would still execute 16 height taps and disabled LUT fog would still execute three LUT loads. Removing the features was rejected because High/Ultra needs rust POM and LUT extinction.
+Scalability potential: Low/stress paths keep the cheap salt-crust and analytical Beer-Lambert fakes; High/Ultra keep 16-tap POM and packed extinction only when gates permit them.
+Hardware Impact: No measured microseconds. Static avoided work remains up to 16 POM taps per rusted fragment and three packed extinction LUT loads per fogged sample when disabled.
+
+## Decision 032 - Unity Batch Validation Wall Refresh
+Problem: The required Vulkan/DX12/Unity shader validation still cannot be claimed from source scans or `dotnet build`; a fresh Unity batch was needed after the C# core slice turned green.
+Solution: Ran Unity 6000.4.1f1 in batch mode with the UberNoir material consolidation executeMethod and captured `Docs/AgentLogs/Unity_UBER_NOIR_INTEGRATOR_loop23.log`. Unity exited with unrelated compile errors before executeMethod/material conversion/shader validation. No lingering Unity process remained.
+Rejected Alternatives: Editing Core Bucketing/Scheduling, Audio Virtualization, Save/MapMagic legacy editor tools, or other non-rendering dependencies was rejected as a domain violation. Claiming shader/player success from the partial `Hecton8.Core` build was rejected.
+Scalability potential: Source-side low/mobile/high-tier shader work remains in place, but material consolidation and player shader import proof are blocked until the external compile wall clears.
+Hardware Impact: 0 runtime change. Validation remains blocked; no microsecond or frame-time claim.
+
+## Decision 033 - Single-Owner Blackbox Dump
+Problem: The UberNoir runtime bridge fault path contained a second dump filename for `EXTINCTION_LUT_SAMPLER`. This violates the prompt-local blackbox ownership contract: faults for this agent must write `Dump_UBER_NOIR_INTEGRATOR.bin`, not another agent's artifact.
+Solution: Removed the cross-agent dump constant and duplicate file writes. Full and empty fault dumps now target only `Docs/AgentLogs/Dump_UBER_NOIR_INTEGRATOR.bin`.
+Rejected Alternatives: Keeping both files was rejected because it creates false evidence for another domain. Renaming the second file was rejected because one telemetry ring already belongs to this agent and duplicate fault I/O has no runtime value.
+Scalability potential: Low devices avoid one duplicate fault-path file write. High/Ultra retain the same 300-frame DataVault ring and feature-mask postmortem.
+Hardware Impact: Hot path unchanged. Fault path writes one binary file instead of two; no frame microseconds claimed.
+
+## Decision 034 - Dead URP SSAO Variant Removal
+Problem: The material-facing UberNoir shader compiled `_SCREEN_SPACE_OCCLUSION` variants even though the shader does not call URP screen-space AO helpers and project render policy forbids URP SSAO. That was variant debt, not visual capability.
+Solution: Removed the `_SCREEN_SPACE_OCCLUSION` `multi_compile` line and added the keyword to `skip_variants` as a guard against global URP keyword bleed.
+Rejected Alternatives: Keeping the keyword was rejected because it doubles ForwardLit variants for a feature path that is not consumed. Wiring URP SSAO into UberNoir was rejected because the rendering mandate requires baked AO or custom half-res SSDO, not URP SSAO.
+Scalability potential: Low/MX350 avoids a dead binary shader keyword; High/Ultra still keep the intended custom noir fog, caustics, refraction, and lighting variants.
+Hardware Impact: Static variant product for the ForwardLit pass is halved for this dead keyword dimension. Exact shader import time, disk size, and runtime microseconds remain pending Unity shader compilation.
+
+## Decision 035 - Low-Tier Extinction LUT Compile-Out
+Problem: Even after Android/low-memory player builds skipped the 32 MB LUT load, the shader include still declared `_ExtinctionLUT` and contained packed LUT load sites in `_MATH_LOD_LOW` and mobile variants. The runtime branch skipped the loads, but the low/mobile descriptor surface still carried the resource.
+Solution: Added `H8_WATER_EXTINCTION_LUT_ENABLED` only when `_MATH_LOD_LOW` and `SHADER_API_MOBILE` are both absent. Low/mobile variants now return the analytical Beer-Lambert result and compile out `_ExtinctionLUT` declaration/loads; non-mobile, non-low variants keep the packed LUT path.
+Rejected Alternatives: Leaving the descriptor alive was rejected because MX350/Quest descriptor pressure matters even when texture work is branch-skipped. Removing the LUT globally was rejected because High/Ultra desktop still needs the richer packed extinction response.
+Scalability potential: Low and mobile use the Dear Lie analytical extinction path with no LUT descriptor. Non-mobile Middle/High/Ultra keep packed water-color response and noir fog tinting.
+Hardware Impact: Low/mobile static saving is one texture binding surface and three packed LUT load sites per fog sample path. No GPU microseconds claimed without Unity/RenderDoc validation.
+
+## Decision 036 - Loop 24 Validation Wall
+Problem: After the blackbox and shader-variant patches, the C# slice needed revalidation, but the shared project compile state changed under parallel agents.
+Solution: Ran `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` into `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop24.log`. The command timed out at the tool ceiling after the compiler produced 18 unrelated errors; no running `dotnet` process remained afterward.
+Rejected Alternatives: Editing Physics, Tether, Bootstrap, PlayerTool, Determinism, or Core signal failures was rejected as outside the Rendering/URP prompt. Treating the timeout as an UberNoir compile failure was rejected because the diagnostics do not reference touched rendering files.
+Scalability potential: Source-side shader scalability changes remain intact. Runtime proof is blocked until the external compile wall clears.
+Hardware Impact: 0 runtime change. Validation blocked; no microsecond claim.
+
+## Decision 037 - Fixed-Size UberNoir Blackbox Export
+Problem: `HectonUberNoirRuntimeBridge.WriteBlackBoxFile` wrote `ring.Length` entries. The active cursor only wraps over the 300-entry telemetry contract, so an oversized vault buffer would create a non-contract dump and an undersized resolve could produce partial evidence.
+Solution: Treat resolved rings smaller than `TelemetryCapacity` as unavailable and write the reason-coded empty fault header. For full dumps, cap `entryCount` to `TelemetryCapacity`, wrap the cursor inside that active window, and write only that fixed 300-frame window.
+Rejected Alternatives: Writing the whole vault allocation was rejected because DataVault capacity is an ownership detail, not the blackbox contract. Allocating a private export snapshot was rejected because telemetry storage belongs to GlobalDataVault.
+Scalability potential: Low/Steam Deck/Quest keep bounded fault I/O; High/Ultra keep the same 300-frame forensic signal without dumping unrelated spare capacity.
+Hardware Impact: Hot path unchanged. Fault-path binary size remains bounded to one 300-entry UberNoir dump; no frame microseconds claimed.
+
+## Decision 038 - Steam Deck Extinction LUT Bypass by Hardware Profile
+Problem: The existing low-memory gate skipped the 32 MB extinction matrix only when reported graphics memory was `<=2048 MB`. Steam Deck-like UMA hardware can report more, which still allows path probing, URI staging, texture allocation, and MicroSD-sensitive file reads.
+Solution: Reused `HardwareTierDetector.IsSteamDeckLike` inside `LutArrayResolver.ShouldUseAnalyticalFallbackOnly()`. Steam Deck-like players now keep the analytical Beer-Lambert fallback and skip the packed LUT loader regardless of reported graphics-memory size.
+Rejected Alternatives: Adding a new Deck string detector in the resolver was rejected because the project already owns profile detection in `HardwareTierDetector`. Forcing all Linux players to analytical fallback was rejected because high-end Linux desktops should retain the richer LUT path.
+Scalability potential: Steam Deck gets the cheap Dear Lie fog path and avoids startup storage pressure; high-memory desktop PC still loads the packed LUT for richer extinction.
+Hardware Impact: On Steam Deck-like players, expected static saving is avoided path probing, possible StreamingAssets URI staging, one 32 MB matrix stream, one texture allocation, and temporary cache writes. Exact microseconds require device storage trace.
+
+## Decision 039 - Inactive LUT Branch Intent Completion
+Problem: Two `H8WaterExtinctionResolveRgb*` inactive-LUT early-outs still lacked explicit branch intent even though they protect against three packed LUT loads when the fallback is active.
+Solution: Added `[branch]` before both inactive-LUT returns so the compiler sees the same texture-work-shed intent already used by `H8WaterExtinctionSamplePacked`.
+Rejected Alternatives: Branchless `lerp` was rejected because it would still execute the three packed LUT loads. Removing the LUT path was rejected because High/Ultra desktop keeps the packed extinction response.
+Scalability potential: Low/mobile/Steam Deck preserve analytical fallback; High/Ultra non-mobile can still pay the packed LUT path only when active.
+Hardware Impact: Static avoided work remains three packed LUT loads per fog sample path when the LUT is inactive. No measured GPU microseconds claimed.
+
+## Decision 040 - Loop 25 Compile Wall Refresh
+Problem: The C# bridge changed again, so the core assembly needed another compile attempt even though prior validation was blocked by external agents.
+Solution: Ran `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` into `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop25.log`. The build failed with 40 errors in `UI/Navigation/DiegeticGyroCompassRuntime.cs` and `World/EcosystemDirector.cs`; log search found no UberNoir, `HectonUberNoirRuntimeBridge`, `LutArrayResolver`, or Rendering diagnostics.
+Rejected Alternatives: Fixing UI Navigation or Ecosystem compile breaks was rejected as a domain violation. Claiming green from static scans was rejected because AGENTS.md requires compile proof when available.
+Scalability potential: Rendering source changes remain platform-scaled, but runtime proof remains blocked until external UI/Ecosystem compile failures clear.
+Hardware Impact: 0 runtime change. Validation blocked; no microsecond claim.
+
+## Decision 041 - Construction Sheen and Wet Glass Projection
+Problem: The material consolidation tool only converted `Hecton_DryZoneLit`. `Mat_RuinSeepSheen` and `Mat_LeakWetSheen` remained on separate construction shader families, with wet glass coming from a third-party Amplify shader that carries five passes and DirectX-era syntax debt.
+Solution: Expanded `HectonUberNoirMaterialConsolidator` to recognize DryZone, RuinSeep, and Triplebrick glass sources. The tool now snapshots source textures, opacity, tint, normal strength, wetness, and refraction, then projects them into the UberNoir CBUFFER plus `H8_UBERNOIR_CAUSTICS_TEXTURED` / `H8_UBERNOIR_SCREEN_REFRACTION` local keywords.
+Rejected Alternatives: Raw `.mat` YAML editing was rejected because AGENTS requires Unity API mutation for material assets. Keeping the wet-glass source shader was rejected because it preserves separate material logic and multi-pass debt in the construction set. Converting terrain/flora/celestial materials was rejected because their deformation and domain semantics belong to other agents.
+Scalability potential: Low tier uses the existing UberNoir dither/cutout and analytical fog path. High/Ultra can use the Snell screen-refraction fake, caustic texture keyword, wet smoothness, rust/salt projection, and chromatic taps on converted wet-glass/seep surfaces.
+Hardware Impact: Static target is one construction shader family instead of DryZone plus RuinSeep plus third-party glass. Exact SetPass, shader import, and GPU microsecond changes require Unity material conversion and frame-debugger proof after the external compile wall clears.
+
+## Decision 042 - Loop 26 Validation Boundary
+Problem: The touched Editor consolidator needed direct proof, but the project-level editor build remains blocked by missing RealtimeCSG files and the core C# build now fails in unrelated `PhysicsApplySystem.cs` edits from parallel work.
+Solution: Ran a direct Roslyn syntax compile of `HectonUberNoirMaterialConsolidator.cs` against Unity 6000.4.1f1 `UnityEditor.dll`, `UnityEngine.dll`, `UnityEngine.CoreModule.dll`, and .NET facade references. It passed with `EXIT=0` in `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_material_consolidator_roslyn_refs2_loop26.log`. Full `Assembly-CSharp-Editor.csproj` and `Hecton8.Core.csproj` logs were captured as blocked evidence.
+Rejected Alternatives: Fixing RealtimeCSG missing sources or PhysicsApplySystem buffer failures was rejected as a domain violation. Treating the direct Roslyn compile as Unity shader/player validation was rejected because it does not import the shader or execute the material converter.
+Scalability potential: Source-side converter now preserves low/high material scalability, but runtime validation still waits on external compile repairs.
+Hardware Impact: 0 runtime change from validation. No microseconds claimed.
+
+## Decision 043 - ToolDecay Hard-Surface Projection
+Problem: Twelve tool placeholder materials still use `Hecton8/Tools/DecayLit`, which duplicates dynamic wear/rust shading outside UberNoir. The shader has only two passes, so the issue is shader-family fragmentation and duplicated rust logic, not SetPass count alone.
+Solution: Added `ToolDecayShaderName` and `ProjectionKind.ToolDecaySurface` to the Editor consolidator, plus `Assets/_Project/Art/Materials/Tools` as a conversion root. Tool projection keeps POM/rust and caustic feature vectors, disables hull bending/refraction, avoids dither for opaque tools, and maps tool mask/normal/base properties into UberNoir.
+Rejected Alternatives: Editing or deleting `Hecton_ToolDecayLit.shader` was rejected because it is outside the core shader source slice and may still be needed by unconverted assets until Unity validation runs. Raw tool material YAML edits were rejected. Converting gameplay/tool scripts was rejected as a domain violation.
+Scalability potential: Low-tier tool materials inherit UberNoir's salt-crust and analytical fog path. High/Ultra tool materials inherit the 16-tap rust POM and caustic response without carrying a second rust shader implementation.
+Hardware Impact: Static target is 12 fewer tool materials on the separate ToolDecay shader family after the converter can run. Exact import/SetPass/GPU savings require Unity material conversion and Frame Debugger proof.
+
+## Decision 044 - URP Lit Construction Placeholder Projection
+Problem: The material inventory resolved the common GUID `933532a4fcc9baf4fa0491de14d08ed7` to package `Universal Render Pipeline/Lit`. Inside the converter roots, it covers 9 construction materials: 7 opaque `Mat_ToolTrial_*` hard-surface placeholders and 2 transparent build ghosts. Leaving the 7 opaque placeholders on package Lit preserves another shader family outside UberNoir.
+Solution: Added `UrpLitShaderName` and `ProjectionKind.UrpLitOpaqueConstructionSurface` to `HectonUberNoirMaterialConsolidator`. The projection maps opaque URP Lit construction placeholders into UberNoir rust/POM/caustic parameters, disables refraction and hull bending, and reports transparent preview materials as skipped through an opacity/render-queue guard.
+Rejected Alternatives: Bulk-converting all 64 project URP Lit materials was rejected because terrain, flora, VFX, world-support, and water placeholders have separate ownership and semantics. Converting transparent build ghosts was rejected because UberNoir is an opaque/dithered geometry shader and would not preserve their alpha-blended preview contract. Raw `.mat` YAML editing was rejected.
+Scalability potential: Low tier gets the same UberNoir salt-crust and analytical fog path for the 7 opaque construction placeholders. High/Ultra gets the shared rust POM and caustic response without a separate package Lit material family.
+Hardware Impact: Static target is 7 fewer opaque construction placeholders on package URP Lit after Unity can execute the converter. Exact SetPass, import, and GPU microsecond savings require Unity material conversion and Frame Debugger proof.
+
+## Decision 045 - URP Lit Alpha Guard
+Problem: The first URP Lit conversion gate used render queue, `_Surface`, `_Blend`, and RenderType. A future material could still be semitransparent through `_BaseColor.a` while staying on opaque queue, which would let the converter turn preview alpha into UberNoir dither behavior.
+Solution: Added `HasOpaqueColorAlpha()` to require `_BaseColor`/`_Color` alpha >= 0.995 before URP Lit materials are eligible for UberNoir conversion. Static YAML audit confirms all 7 `Mat_ToolTrial_*` candidates have alpha 1 and both build ghosts have alpha 0.32 with transparent queue.
+Rejected Alternatives: Relying only on render queue and shader tags was rejected because serialized color alpha is part of the source material contract. Converting semitransparent URP Lit materials with UberNoir dither was rejected unless they are explicitly handled by a wet-glass/seep projection.
+Scalability potential: Low/MX350 gets deterministic opaque conversion only; High/Ultra keeps wet/refraction features reserved for explicit wet-glass/seep sources rather than accidental alpha transfer.
+Hardware Impact: 0 runtime change. The guard prevents wrong material migration; direct SetPass/GPU savings are unchanged and remain pending Unity conversion proof.
+
+## Decision 046 - Visor Shader Boundary Exception
+Problem: Task 09 requires visor-glass refraction, while the Phase 1 purge pushes material families toward UberNoir. `Mat_Visor_Glass` is bound to `NASAPunk/SuitVisor`, not UberNoir, so it needed a boundary decision instead of silent conversion or silent neglect.
+Solution: Audited `SuitVisor.shader` and `Mat_Visor_Glass`. The shader has 2 passes, no `GrabPass`, includes `Hecton_SnellRefractionCore.hlsl`, and samples `_CameraOpaqueTexture` for Snell-style screen refraction. The material is the only user of the shader GUID. It remains outside the UberNoir material converter because it owns visor/HUD stencil, lens, and transparent overlay semantics.
+Rejected Alternatives: Converting the visor material into UberNoir was rejected because UberNoir is an opaque/dithered hard-surface shader and does not preserve visor stencil/HUD behavior. Editing `SuitVisor.shader` reciprocal guards was rejected as outside this UberNoir consolidation slice; the raw `rcp` hits are locally guarded with `max(...)` and belong to the Visor domain.
+Scalability potential: Low tier keeps the visor's existing scalable refraction/dither controls. High/Ultra keeps Snell screen refraction without requiring a `GrabPass` or a hard-surface material conversion.
+Hardware Impact: 0 runtime change from this audit. It prevents a wrong consolidation edit; exact visor GPU cost remains pending Visor-domain profiling.
+
+## Decision 047 - Multiplatform and Data Sovereignty Static Audit
+Problem: The inquisition pass demanded explicit evidence for ARM64/Quest alignment, Metal portability, Steam Deck I/O pressure, DataVault ownership, and hard-surface material coverage after the converter expansion.
+Solution: Re-ran source scans over the UberNoir shader include chain and `Assets/_Project/Scripts/Rendering`. No `GrabPass`, legacy `tex2D`/`sampler2D`, DirectX-only macros, UAVs, or compute `numthreads` were found in the UberNoir chain. Rendering C# hot-path scan found no `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, or local `new NativeArray`; all Rendering `StructLayout` hits are `Pack=1`. The shader global and blackbox buffers are resolved through `GlobalDataVault` as `ShaderGlobalState` and `ShaderFeatureTelemetryRing` with `SystemID.GraphicsScalability`. The construction/tool material inventory is fully covered by converter rules, with transparent build ghosts intentionally skipped.
+Rejected Alternatives: Lowering `#pragma target 4.5` was rejected because the BRG/instance-buffer variant uses `StructuredBuffer` and Unity/Metal/Vulkan import proof is currently blocked, so changing shader model without compiler evidence risks breaking the indirect path. Removing light-layer or cookie variants was rejected because project assets and URP policy still expose rendering-layer and additional-light contracts. Editing `GpuScatterLodManager` MPB/NativeArray views was rejected because that file belongs to the scatter domain; its visible NativeArray uses are DataVault-resolved views and job parameters, not this UberNoir bridge's private storage.
+Scalability potential: Low/Quest/Steam Deck keep analytical extinction, texture-work shed branches, no extinction LUT descriptor on mobile/low variants, and no 32 MB matrix load on portable/player gates. High/Ultra retain rust POM, caustic texture keyword, Snell refraction, BRG instance data, and overkill surface fakes inside the same UberNoir family.
+Hardware Impact: 0 runtime change from this audit. Static proof supports bounded memory layout and avoided Deck/mobile I/O; no microseconds are claimed without device profiling.
+
+## Decision 048 - Loop 32 Core Compile Wall Refresh
+Problem: After the source audit, the core assembly needed a current compile-wall check to avoid relying on stale blocked evidence.
+Solution: Ran `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` into `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop31_refresh.log`. The build failed with six errors in `Assets/_Project/Scripts/Core/Contracts/HectonContractValidator.cs` for missing `HectonPlatformContract`, `HectonDataSovereigntyContract`, and `HectonVisualOverkillContract` symbols. Log search found no UberNoir, `LutArrayResolver`, `HectonShaderGlobalDataVaultBridge`, or Rendering diagnostics.
+Rejected Alternatives: Editing Core contract authority files was rejected as a domain violation for this shader/material prompt. Treating the build as a Rendering failure was rejected because the failing file is in Core/Contracts and the log has no touched-file diagnostics. Terminating other live `dotnet` processes was rejected because their command lines are separate concurrent agent build commands.
+Scalability potential: Source-side Rendering scalability work remains intact, but Unity shader import, material conversion, Vulkan, and DX12 proof stay blocked until Core contract symbols are repaired by their owner.
+Hardware Impact: 0 runtime change. Validation is blocked; no microseconds claimed.
+
+## Decision 049 - Blackbox Single-Owner Repair and Allocation-Lock Guard
+Problem: The runtime bridge still contained `ExtinctionDumpFileName` and duplicate writes to `Dump_EXTINCTION_LUT_SAMPLER.bin`, contradicting the single-owner blackbox rationale and creating false evidence for another agent. `EnsureTelemetryBuffer()` also called `GetBufferHandle` directly when the cached telemetry handle was missing or undersized, which can try to allocate during a DataVault allocation lock.
+Solution: Removed the cross-agent dump constant and duplicate full/empty blackbox writes. The bridge now writes only `Docs/AgentLogs/Dump_UBER_NOIR_INTEGRATOR.bin`. `EnsureTelemetryBuffer()` now first adopts an existing `ShaderFeatureTelemetryRing` through `TryGetBufferHandle`; if no valid ring exists and `GlobalDataVault.IsAllocationLocked` is true, it returns false instead of forcing a new allocation.
+Rejected Alternatives: Keeping the duplicate dump was rejected because it pollutes another agent's crash artifact. Allocating a private fallback ring was rejected because telemetry storage belongs to GlobalDataVault. Forcing `GetBufferHandle` through allocation lock was rejected because AUP/compaction fences must control allocation timing.
+Scalability potential: Low/Quest/Steam Deck avoid duplicate fault-path file writes and avoid new vault allocations during memory maintenance. High/Ultra retain the same 300-frame telemetry ring once the vault provides it.
+Hardware Impact: Hot path is unchanged except one cheap existing-handle probe when the cached handle is invalid. Fault path writes one binary dump instead of two; no frame microseconds claimed.
+
+## Decision 050 - Loop 34 Compile Wall Refresh After Blackbox Repair
+Problem: The blackbox repair touched runtime C#, so the core assembly needed a fresh compile attempt even though project validation has been blocked by external domains.
+Solution: Ran `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` into `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop33_blackbox.log`. The build failed with 14 errors in `Assets/_Project/Scripts/World/EcosystemDirector.cs` for missing `ClearIndexEntries`, `TryFindIndexEntry`, `TryUpsertIndexEntry`, and `ResolveVaultIndexCapacity` symbols, plus three duplicate Core contract-file warnings. Log search found no UberNoir, `LutArrayResolver`, `HectonShaderGlobalDataVaultBridge`, or Rendering diagnostics.
+Rejected Alternatives: Editing `EcosystemDirector.cs` or project-file contract duplication was rejected as outside the Rendering/URP prompt. Claiming green from source scans was rejected because the build still fails before Unity shader import/player validation.
+Scalability potential: Source-side Rendering scalability and blackbox sovereignty repairs remain in place, but Vulkan/DX12/material conversion proof remains blocked until Ecosystem/Core compile failures clear.
+Hardware Impact: 0 runtime change. Validation blocked; no microseconds claimed.
+
+## Decision 051 - Extinction Active-Flag Hoist
+Problem: `H8WaterExtinctionResolveRgbByWorld` and the depth resolve already checked whether the packed extinction LUT was active, but the RGB path then called `H8WaterExtinctionSamplePacked` three times, rechecking the same active flag once per channel before loading red, green, and blue.
+Solution: Split the packed LUT helpers into active-gated and direct active variants. Resolve functions now call `H8WaterExtinctionSampleRgbActive()` after the single active early-out, while public direct sample helpers keep one inactive branch for future callers. This preserves the texture-load shed when the LUT is inactive and removes redundant active checks on the active High/Ultra path.
+Rejected Alternatives: Removing all inactive branches was rejected because it would reintroduce packed LUT loads during analytical fallback. Leaving the repeated per-channel checks was rejected because the resolve path already owns the active decision.
+Scalability potential: Low/mobile/Deck remain analytical and descriptor-stripped. High/Ultra keep packed LUT extinction with fewer redundant control checks around the three channel loads.
+Hardware Impact: Active packed-LUT resolves remove three repeated active checks per RGB resolve. No device microseconds claimed without shader compiler/profiler proof.

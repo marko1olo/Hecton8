@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Hecton8.Cartography;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.SaveSystem;
@@ -32,7 +33,7 @@ namespace Hecton8.PDA
         private const int MaskWordCount = ExplorationMapDTO.MortonMaskWordCount;
         private const int MaskByteCount = ExplorationMapDTO.MortonMaskByteCount;
         private const int LocalMask = MaskAxisLength - 1;
-        private const int AupCellSizeMeters = 5000;
+        private const int AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
         private const string NativeMemoryOwner = nameof(PlayerExplorationTracker);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const string CartographyDumpPath = "Docs/AgentLogs/Dump_CARTOGRAPHY_UX_LEAD.bin";

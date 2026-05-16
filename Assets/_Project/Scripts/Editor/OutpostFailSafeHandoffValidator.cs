@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Hecton.Localization;
+using Hecton8.Core.Contracts;
 using UnityEditor;
 using UnityEngine;
 
@@ -36,11 +37,11 @@ namespace Hecton8.Editor.Validation
         private const int ExpectedTooltipCount = 10;
         private const int ExpectedLogCount = 5;
         private const int ExpectedFallbackCount = 3;
-        private const float ExpectedOxygenStandardKpa = 21.22f;
-        private const float ExpectedPlayerOxygenDrainKpaPerSecond = 0.012f;
-        private const float ExpectedPlayerCo2ProductionKpaPerSecond = 0.010f;
-        private const float ExpectedFireOxygenDrainKpaPerSecond = 0.080f;
-        private const float ExpectedScrubberCo2RemovalKpaPerSecond = 0.055f;
+        private const float ExpectedOxygenStandardKpa = HectonSurvivalContract.StandardOxygenKPa;
+        private const float ExpectedPlayerOxygenDrainKpaPerSecond = HectonSurvivalContract.DefaultPlayerOxygenKPaPerSecond;
+        private const float ExpectedPlayerCo2ProductionKpaPerSecond = HectonSurvivalContract.DefaultPlayerCarbonDioxideKPaPerSecond;
+        private const float ExpectedFireOxygenDrainKpaPerSecond = HectonSurvivalContract.DefaultFireOxygenKPaPerSecond;
+        private const float ExpectedScrubberCo2RemovalKpaPerSecond = HectonSurvivalContract.DefaultScrubberKPaPerSecond;
         private const float MaxUnpoweredCriticalReadSeconds = 90f;
         private const float GasConstraintEpsilon = 0.0001f;
 

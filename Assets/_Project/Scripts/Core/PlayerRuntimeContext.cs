@@ -32,7 +32,7 @@ namespace Hecton8.Core
         Underwater = 1u << 12,
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct PlayerMovementRuntimeState
     {
         public float3 WorldPosition;
@@ -50,7 +50,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Headless-safe player gaze snapshot. Presentation cameras may seed it, but gameplay reads only this data.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct PlayerLookState
     {
         public float3 EyePosition;
@@ -58,7 +58,7 @@ namespace Hecton8.Core
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct PlayerSurvivalRuntimeState
     {
         public float OxygenNormalized;
@@ -84,7 +84,7 @@ namespace Hecton8.Core
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct PlayerInteractionRuntimeState
     {
         public int ActiveToolSlot;

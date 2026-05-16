@@ -13,7 +13,7 @@ namespace Hecton8.Audio
     internal static class PlayerCriticalBufferJobs
     {
         [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct DopplerShiftBatchJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> SourceFrequencies;
@@ -55,7 +55,7 @@ namespace Hecton8.Audio
         }
 
         [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct BinauralVoxelAcousticsOutputJob : IJob
         {
             [ReadOnly] public NativeArray<float> MonoInput;
@@ -176,7 +176,7 @@ namespace Hecton8.Audio
         }
 
         [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct GranularSynthesisBlockJob : IJob
         {
             [ReadOnly] public NativeArray<float> GrainBank;
@@ -410,7 +410,7 @@ namespace Hecton8.Audio
         }
 
         [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct VwsCooldownDecayJob : IJob
         {
             public NativeArray<float> Cooldowns;
@@ -432,7 +432,7 @@ namespace Hecton8.Audio
         }
 
         [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct VwsPrioritySortJob : IJob
         {
             public NativeArray<byte> Queue;

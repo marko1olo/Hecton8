@@ -119,3 +119,109 @@ Validation:
 - Broad AUP/player/physics scan returns no matches for `Vector3.Distance`, `math.sqrt`, `math.length`, unguarded `math.rsqrt`, `string.Format`, standard `Update()`, `GameObject.Find`, `FindObjectOfType`, or non-`Pack = 1` `StructLayout`.
 - `PhysicsDeterminismSignals.cs` returns no matches for `NativeQueue<`, `new NativeQueue<`, `DisposeAllQueues`, `EnqueueBounded`, or `TryDequeue(ref`.
 - Compile after three attempts is `[BLOCKED BY DEPENDENCY]` in external `World/SargassumMicroFaunaBoids.cs` and `RepairTool.cs`; no new AUP/player/physics compile error appears in the reported build output.
+
+## 2026-05-16 Typed-Lane Event Inquisition
+
+What was wrong:
+- `FluidFeedbackEvents` still owned two private `NativeQueue<SplashEvent>` lanes.
+- `PhysicsEventBus` still owned private `NativeQueue<PhysicsEventPayload>` lanes despite being a physics-domain deferred event bridge.
+- Deferred submarine impact trauma dispatch used a local private native queue.
+- Several `PhysicsApplySystem` event/force packets relied on default packing.
+
+What was done:
+- Converted `SplashEvent` to a packed `ISignal` and moved `FluidFeedbackEvents` onto `SignalBus<SplashEvent>`.
+- Converted `PhysicsEventPayload` to a packed `ISignal` and moved `PhysicsEventBus` onto `SignalBus<PhysicsEventPayload>` while preserving the public API surface.
+- Moved deferred submarine impact trauma payloads onto `SignalBus<DeferredSubmarineImpactSignal>`.
+- Added requeue-on-budget-exhaustion for converted late-frame bridges so unconsumed snapshot tails survive to the next frame.
+- Added `Pack = 1` to `PhysicsApplySystem` force/acoustic/pressure/impact packets.
+
+Cinematic cheats used:
+- No new simulation. Presentation splash/acoustic/trauma events remain bounded payloads; high-end visual work is bought by keeping authority/event plumbing compact.
+
+Exact microseconds saved / spent:
+- SignalBus migration: 0.0 us direct frame gain; removes duplicate native event queues and centralizes memory sentinel accounting.
+- ARM64 packet packing: 0.0 us runtime; removes implicit padding drift risk.
+- Late-frame requeue: only runs when the dispatcher budget is exhausted and is capped by existing lane capacities.
+
+Validation:
+- `rg --pcre2 -n "\[StructLayout\((?![^\)]*Pack\s*=\s*1)"` over AUP/player/physics patch scope returns no matches.
+- `rg --pcre2 -n "Vector3\.Distance|math\.distance\(|math\.sqrt\(|math\.length\(|math\.rsqrt\((?!math\.max)|string\.Format|void\s+Update\s*\("` over the same scope returns no matches.
+- `rg -n "NativeQueue<PhysicsEventPayload>|new NativeQueue<PhysicsEventPayload>|NativeQueue<SplashEvent>|new NativeQueue<SplashEvent>"` returns no matches.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` passes with 0 warnings and 0 errors.
+
+## 2026-05-16 Force Command Vault Migration
+
+What was wrong:
+- `PhysicsApplySystem` still owned private fixed-step `NativeQueue<ForcePacket>` front/back command buffers.
+- Packet validation staging still used private persistent `NativeArray` fields.
+- The dead `TryGetForcePacketBackWriter` API preserved a parallel-writer contract with no repo producer.
+
+What was done:
+- Audited repo producers; all live force requests route through `PhysicsForceRouter` methods, and `TryGetForcePacketBackWriter` had no external usage.
+- Removed the private force `NativeQueue` command buffers and the unused parallel-writer accessor.
+- Added DataVault buffer IDs for `PhysicsForceCommandFront`, `PhysicsForceCommandBack`, `PhysicsForceValidationPackets`, and `PhysicsForceValidationMask`.
+- Rebuilt the fixed-step front/back swap with vault-backed buffers and `_frontCount`/`_backCount`.
+- Kept `ValidateForcePacketsJob` intact, but its packet/mask storage now resolves from `GlobalDataVault`.
+- Restored missing lockstep typed-lane constants and fixed the diagnostics `DebugSignal` namespace compile gap encountered during compile attempts.
+
+Cinematic cheats used:
+- No new physical simulation. The change preserves the cheap bounded force-command path so high-tier visual/audio impact overkill can spend cycles outside the physics authority loop.
+
+Exact microseconds saved:
+- Direct force-buffer migration: 0.0 us measured, static estimate only.
+- Removed duplicate native queue ownership: 0.0 us frame-time; memory accounting is centralized under `SystemID.Physics`.
+- Enqueue remains O(1) bounded write; validation remains capped at 64 packets.
+
+Validation:
+- Force queue scan returns no matches for `TryGetForcePacketBackWriter`, `NativeQueue<ForcePacket>`, `new NativeQueue<ForcePacket>`, `_frontPacketQueue`, `_backPacketQueue`, `_validationPackets`, `_validationMask`, or `_frontPackets`.
+- Private native field scan on `PhysicsApplySystem.cs` returns no `private NativeArray`, `private NativeQueue`, `private NativeList`, or `private NativeHashMap`.
+- Struct packing and math scans on the touched AUP/physics scope return no matches for non-`Pack = 1` `StructLayout`, `Vector3.Distance`, `math.sqrt`, `math.length`, unguarded `math.rsqrt`, `string.Format`, or standard `Update()`.
+- `git diff --check` reports LF-to-CRLF warnings only.
+- Compile attempts 11-13 are recorded. Attempt 13 is `[BLOCKED BY DEPENDENCY]` on external `DiegeticGyroCompassRuntime` DTO drift and `SystemDispatcher` blackbox/raycast-lock drift; no force-buffer compile error remains.
+
+## 2026-05-16 Global Physics Vault Migration
+
+What was wrong:
+- `GlobalPhysicsStateManager` still owned private persistent native culling/result arrays and a private impact `NativeQueue`.
+- Several global physics structs relied on non-`Pack = 1` layout.
+- Remaining global physics scalar paths still had branch-only `rsqrt` guards.
+
+What was done:
+- Replaced private native culling, last-valid-position, telemetry, and impact storage with `GlobalDataVault` handles.
+- Converted deferred collision impacts to a vault-backed bounded ring while preserving late-frame flush timing.
+- Added `BufferID.RigidbodyLastValidPositions` and `BufferID.PhysicsImpactEvents`.
+- Enforced `Pack = 1` on global physics runtime packets and clamped remaining global physics `rsqrt` paths.
+
+Cinematic cheats used:
+- Kept impact/wake radii as scalar approximations and bounded rings; no expensive collision replay or heap event layer.
+- Preserved squared-distance culling and cheap wakeups, saving budget for visual feedback outside the authority path.
+
+Exact microseconds saved:
+- 0.0 us direct frame-time gain.
+- Impact enqueue remains O(1); culling job remains contiguous SoA via resolved `NativeArray` views.
+- Memory/sentinel gain: removed duplicate private native ownership and moved accounting to DataVault.
+
+Validation:
+- Global physics scan returns no matches for private native container ownership, non-`Pack = 1` `StructLayout`, `Vector3.Distance`, direct `math.sqrt`, `math.length`, unguarded `math.rsqrt`, `string.Format`, or standard `Update()`.
+- Compile attempt 14 is `[BLOCKED BY DEPENDENCY]` on external save/data-baker drift: `HectonContractVersion`, `CsvReadBufferBytes`, and `SignalBusRegistry`. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt14.txt`.
+
+## 2026-05-16 Player Blackbox Vault Closure
+
+What was wrong:
+- `HectonPlayerMovement` still held the cinematic focus blackbox as a private `NativeArray<CinematicFocusTelemetryEntry>` field.
+
+What was done:
+- Replaced the cached native field with `VaultBufferHandle<CinematicFocusTelemetryEntry>`.
+- Resolved the DataVault-backed telemetry view only inside write and dump paths.
+- Preserved the 300-entry ring, binary dump format, and dump cooldown.
+
+Cinematic Cheats used:
+- Kept the blackbox compact and fault/cinematic-focus gated. No per-frame managed diagnostics or expanded camera simulation.
+
+Exact Microseconds saved:
+- 0.0 us direct frame-time gain.
+- Removed the final scanned private native field in the AUP/player/physics patch scope.
+
+Validation:
+- Broad AUP/player/physics/vehicle scan returns no matches for private native container ownership, private native allocations, non-`Pack = 1` `StructLayout`, `Vector3.Distance`, direct `math.sqrt`, `math.length`, unguarded `math.rsqrt`, `string.Format`, or standard `Update()`.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` passes with 0 warnings and 0 errors. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt15.txt`.

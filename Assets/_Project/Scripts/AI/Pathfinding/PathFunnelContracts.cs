@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts;
 using Unity.Mathematics;
 
 namespace Hecton8.AI.Pathfinding
@@ -21,12 +22,12 @@ namespace Hecton8.AI.Pathfinding
     public static class PathFunnelConstants
     {
         public const int TelemetryFrames = 300;
-        public const int WfcOutpostCellCount = 500;
-        public const int WfcCellMaskWordCount = 8;
+        public const int WfcOutpostCellCount = WfcOutpostPersistenceConstants.CellCount;
+        public const int WfcCellMaskWordCount = (WfcOutpostCellCount + 63) / 64;
         public const float Epsilon = 0.00001f;
         public const byte PortalFlagWfcDoor = 1 << 0;
         public const byte PortalFlagNoRadiusShrink = 1 << 1;
-        public const byte WfcDoorOpenFlag = 1 << 0;
+        public const byte WfcDoorOpenFlag = (byte)WfcOutpostCellStateFlags.DoorOpen;
         public const uint SourceHash = 0x50464E4Cu; // PFNL
     }
 
@@ -75,6 +76,7 @@ namespace Hecton8.AI.Pathfinding
         public const uint AupFallback = 1u << 6;
         public const uint PartialLookAhead = 1u << 7;
         public const uint SdfClearanceClamped = 1u << 8;
+        public const uint InvalidMathLod = 1u << 9;
     }
 
     /// <summary>
@@ -92,6 +94,7 @@ namespace Hecton8.AI.Pathfinding
         [FieldOffset(18)] public ushort BlockedCellIndex;
         [FieldOffset(20)] public uint CorridorHash;
         [FieldOffset(24)] public uint Frame;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
     /// <summary>
@@ -107,6 +110,7 @@ namespace Hecton8.AI.Pathfinding
         [FieldOffset(18)] public ushort Flags;
         [FieldOffset(20)] public uint LastTouchedFrame;
         [FieldOffset(24)] public uint InvalidatedFrame;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
     /// <summary>
@@ -132,6 +136,8 @@ namespace Hecton8.AI.Pathfinding
         [FieldOffset(22)] public ushort Flags;
         [FieldOffset(24)] public byte PreviousCellFlags;
         [FieldOffset(25)] public byte CurrentCellFlags;
+        [FieldOffset(26)] public ushort Reserved0;
+        [FieldOffset(28)] public uint Reserved1;
     }
 
     /// <summary>

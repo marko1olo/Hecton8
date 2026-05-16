@@ -41,6 +41,19 @@ namespace Hecton8.Core.Bridge
             public uint HighTierVisualHash => highTierVisualHash;
             public long EstimatedVramBytes => estimatedVramBytes;
             public ushort Flags => flags;
+            public bool IsRuntimeBindable
+            {
+                get
+                {
+                    if (prefab != null)
+                        return true;
+#if UNITY_ADDRESSABLES_EXIST
+                    return HasAddressableReference();
+#else
+                    return false;
+#endif
+                }
+            }
 
             public void AssignPrefab(GameObject value)
             {
@@ -76,29 +89,26 @@ namespace Hecton8.Core.Bridge
 
             public void RebuildHashes()
             {
-                if (prefab == null)
+                if (prefab == null && !HasAddressableReference())
                 {
-                    hashID = hashID == 0u ? H8BridgeHashes.FnvOffset : hashID;
-                    acousticSignatureHash = acousticSignatureHash == 0u
-                        ? H8BridgeHashes.Mix(H8BridgeHashes.AcousticSeed, hashID)
-                        : acousticSignatureHash;
+                    ClearRuntimeBinding();
                     return;
                 }
 
-                string prefabName = prefab.name;
-                hashID = H8BridgeHashes.ComputeFnv1A(prefabName);
-                addressHash = H8BridgeHashes.ComputeFnv1A(prefabName, H8BridgeHashes.AddressSeed);
+                string sourceName = ResolveSourceName();
+                hashID = H8BridgeHashes.ComputeFnv1A(sourceName);
+                addressHash = H8BridgeHashes.ComputeFnv1A(sourceName, H8BridgeHashes.AddressSeed);
                 if (loreHash == 0u)
-                    loreHash = H8BridgeHashes.ComputeFnv1A(prefabName, H8BridgeHashes.LoreSeed);
+                    loreHash = H8BridgeHashes.ComputeFnv1A(sourceName, H8BridgeHashes.LoreSeed);
 
                 if (acousticSignatureHash == 0u)
-                    acousticSignatureHash = H8BridgeHashes.ComputeFnv1A(prefabName, H8BridgeHashes.AcousticSeed);
+                    acousticSignatureHash = H8BridgeHashes.ComputeFnv1A(sourceName, H8BridgeHashes.AcousticSeed);
 
                 if (oneDimensionalLutHash == 0u)
-                    oneDimensionalLutHash = H8BridgeHashes.ComputeFnv1A(prefabName, H8BridgeHashes.LutSeed);
+                    oneDimensionalLutHash = H8BridgeHashes.ComputeFnv1A(sourceName, H8BridgeHashes.LutSeed);
 
                 if (highTierVisualHash == 0u)
-                    highTierVisualHash = H8BridgeHashes.ComputeFnv1A(prefabName, H8BridgeHashes.VisualOverkillSeed);
+                    highTierVisualHash = H8BridgeHashes.ComputeFnv1A(sourceName, H8BridgeHashes.VisualOverkillSeed);
 
                 H8PrefabMappingFlags nextFlags = H8PrefabMappingFlags.None;
 #if UNITY_ADDRESSABLES_EXIST
@@ -114,6 +124,40 @@ namespace Hecton8.Core.Bridge
                 if (highTierVisualHash != 0u)
                     nextFlags |= H8PrefabMappingFlags.HighTierVisualOverkill;
                 flags = (ushort)nextFlags;
+            }
+
+            private string ResolveSourceName()
+            {
+                if (prefab != null)
+                    return prefab.name;
+
+#if UNITY_ADDRESSABLES_EXIST
+                if (HasAddressableReference())
+                    return addressablePrefab.AssetGUID;
+#endif
+
+                return string.Empty;
+            }
+
+            private bool HasAddressableReference()
+            {
+#if UNITY_ADDRESSABLES_EXIST
+                return addressablePrefab != null && !string.IsNullOrEmpty(addressablePrefab.AssetGUID);
+#else
+                return false;
+#endif
+            }
+
+            private void ClearRuntimeBinding()
+            {
+                hashID = 0u;
+                addressHash = 0u;
+                loreHash = 0u;
+                acousticSignatureHash = 0u;
+                oneDimensionalLutHash = 0u;
+                highTierVisualHash = 0u;
+                estimatedVramBytes = 0L;
+                flags = (ushort)H8PrefabMappingFlags.None;
             }
 
             public H8PrefabMappingEntry ToMappingEntry(uint runtimePrefabId)
@@ -281,6 +325,9 @@ namespace Hecton8.Core.Bridge
             if (entry == null)
                 return;
 
+            if (!entry.IsRuntimeBindable)
+                return;
+
             if (!Application.isPlaying)
                 return;
 
@@ -295,7 +342,7 @@ namespace Hecton8.Core.Bridge
                 OneDimensionalLutHash = entry.OneDimensionalLutHash,
                 Flags = entry.Flags
             };
-            SignalBus<PrefabAcousticSignatureSignal>.Push(acoustic);
+            SignalBus<PrefabAcousticSignatureSignal>.Push(in acoustic);
 
             PrefabLoreLinkSignal lore = new PrefabLoreLinkSignal
             {
@@ -306,7 +353,7 @@ namespace Hecton8.Core.Bridge
                 HighTierVisualHash = entry.HighTierVisualHash,
                 Flags = entry.Flags
             };
-            SignalBus<PrefabLoreLinkSignal>.Push(lore);
+            SignalBus<PrefabLoreLinkSignal>.Push(in lore);
         }
     }
 
@@ -319,6 +366,7 @@ namespace Hecton8.Core.Bridge
                 return 0L;
 
             long total = 0L;
+            HashSet<int> countedTextures = new HashSet<int>();
             Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
             for (int i = 0; i < renderers.Length; i++)
             {
@@ -330,10 +378,22 @@ namespace Hecton8.Core.Bridge
                 for (int j = 0; j < materials.Length; j++)
                 {
                     Material material = materials[j];
-                    if (material == null || material.mainTexture == null)
+                    if (material == null)
                         continue;
 
-                    total += EstimateTextureBytes(material.mainTexture);
+                    string[] textureNames = material.GetTexturePropertyNames();
+                    for (int k = 0; k < textureNames.Length; k++)
+                    {
+                        Texture texture = material.GetTexture(textureNames[k]);
+                        if (texture == null)
+                            continue;
+
+                        int textureId = texture.GetInstanceID();
+                        if (!countedTextures.Add(textureId))
+                            continue;
+
+                        total += EstimateTextureBytes(texture);
+                    }
                 }
             }
 

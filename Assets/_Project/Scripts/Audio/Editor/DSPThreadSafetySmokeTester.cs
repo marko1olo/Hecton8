@@ -61,13 +61,13 @@ namespace Hecton8.Audio.Editor
                 string onDestroy = ExtractMethodBody(renderer, "private void OnDestroy()");
 
                 AssertContains(renderer, "private struct AudioParameterSnapshot", "AudioParameterSnapshot value struct exists", builder, ref failureCount);
-                AssertContains(renderer, "StructLayout(LayoutKind.Explicit, Size = 128)", "Audio parameter snapshot slots include 128-byte cache-line padding", builder, ref failureCount);
+                AssertContains(renderer, "StructLayout(LayoutKind.Explicit, Pack = 1, Size = 320)", "Audio parameter snapshot slots include explicit ARM64-safe cache-line padding", builder, ref failureCount);
                 AssertContains(renderer, "internal struct AudioThreadDiagnostics", "Audio thread diagnostic snapshot exists", builder, ref failureCount);
                 AssertContains(renderer, "TryGetAudioThreadDiagnostics(out AudioThreadDiagnostics diagnostics)", "Audio diagnostics expose SPSC counters through native bridge state", builder, ref failureCount);
                 AssertContains(renderer, "diagnostics.OverflowDropCount = sampleRingBuffer.OverflowDropCount", "Audio diagnostics include overflow drop count", builder, ref failureCount);
                 AssertOccurrenceCount(produceAudioBlock, "Volatile.Read(ref _audioParameterSnapshotReadIndex)", 1, "Snapshot read occurs once per produced DSP block", builder, ref failureCount);
                 AssertContains(publishSnapshot, "Interlocked.Exchange(ref _audioParameterSnapshotReadIndex", "Main thread publishes inactive snapshot with Interlocked.Exchange", builder, ref failureCount);
-                AssertContains(renderer, "_workerSonarEchoTaps = new NativeArray<SonarEchoTap>", "Sonar echo taps have a worker-owned snapshot buffer", builder, ref failureCount);
+                AssertContains(renderer, "_workerSonarEchoTaps = ResolveVaultBuffer<SonarEchoTap>(vault, BufferID.PlayerCriticalWorkerSonarEchoTaps", "Sonar echo taps resolve from the player-critical DataVault slab", builder, ref failureCount);
                 AssertContains(tryConsumePendingSonarTrigger, "_workerSonarEchoTaps[tapIndex] = sourceTapBuffer[tapIndex]", "Sonar tap payload is copied once before block rendering", builder, ref failureCount);
                 AssertContains(renderSonarBlock, "NativeArray<SonarEchoTap> activeTapBuffer = _workerSonarEchoTaps", "Sonar render reads the worker tap snapshot, not the publish buffer", builder, ref failureCount);
 
@@ -124,10 +124,10 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "BinauralMaximumMicroDelaySeconds = 0.0007f", "Binaural fake ITD caps micro-delay at 0.7 ms", builder, ref failureCount);
                 AssertContains(renderer, "math.abs(rightDot) * maxDelaySamples", "Renderer derives fake ITD delay from head-right dot", builder, ref failureCount);
 
-                AssertContains(renderer, "_sabineReverbDelay = new NativeArray<float>(SabineReverbDelayCapacity, Allocator.AudioKernel", "Sabine delay cache is persistent native audio memory", builder, ref failureCount);
+                AssertContains(renderer, "_sabineReverbDelay = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalSabineReverbDelay", "Sabine delay cache is player-critical DataVault audio memory", builder, ref failureCount);
                 AssertNotContains(onDisable, "DisposeBuffers", "OnDisable does not dispose Sabine cache", builder, ref failureCount);
                 AssertContains(onDestroy, "DisposeBuffers(disposeSabineReverbDelay: true)", "OnDestroy owns final Sabine cache disposal", builder, ref failureCount);
-                AssertContains(disposeBuffers, "disposeSabineReverbDelay && _sabineReverbDelay.IsCreated", "Sabine dispose is gated to destroy path", builder, ref failureCount);
+                AssertContains(disposeBuffers, "disposeSabineReverbDelay && _dataVault != null", "Player-critical DataVault release is gated to destroy path", builder, ref failureCount);
                 AssertNotContains(renderer, "UnityEngine.Random", "Critical renderer has no UnityEngine.Random call", builder, ref failureCount);
             }
 

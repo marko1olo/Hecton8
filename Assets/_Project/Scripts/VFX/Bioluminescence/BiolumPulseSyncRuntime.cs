@@ -19,7 +19,12 @@ namespace Hecton8.VFX.Bioluminescence
     [DefaultExecutionOrder(-2520)]
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/VFX/Bioluminescence/Pulse Sync Runtime")]
-    public sealed class BiolumPulseSyncRuntime : MonoBehaviour, IUpdatable, IScalabilityChangedEventListener, IDisposable
+    public sealed class BiolumPulseSyncRuntime : MonoBehaviour,
+        IUpdatable,
+        IScalabilityChangedEventListener,
+        IGlobalRegistryHotSwapListener,
+        IGlobalRegistryHotSwapRefListener,
+        IDisposable
     {
         public const int MaxGlobalBiolumStates = 16;
 
@@ -36,11 +41,13 @@ namespace Hecton8.VFX.Bioluminescence
         private const int JobOverrunDumpFrameThreshold = BlackBoxFrameCount;
         private const byte TelemetryFlagNonFinite = 1;
         private const byte TelemetryFlagJobOverrun = 2;
-        private const ushort BlackBoxEntrySizeBytes = 40;
+        private const byte TelemetryFlagAupInvalid = 4;
+        private const ushort BlackBoxEntrySizeBytes = 32;
         private const uint BlackBoxMagic = 0x42505359u; // BPSY
         private const uint ProfileFallbackHash = 0x424C4642u; // BLFB
         private const uint ProfileBinaryHash = 0x424C554Du; // BLUM
         private const string ProfileFileName = "Biolum_Profiles.bin";
+        private const string ProfileH8BinFileName = "Biolum_Profiles.h8bin";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_BIOLUM_PULSE_SYNC.bin";
 
         private static readonly ProfilerMarker _tickMarker = new ProfilerMarker("H8.VFX.BiolumPulseSync.Tick");
@@ -68,6 +75,7 @@ namespace Hecton8.VFX.Bioluminescence
         private float _strobePeak01;
         private uint _frameCounter;
         private uint _profileSourceHash = ProfileFallbackHash;
+        private uint _vaultGenerationId;
         private int _activeStateCount = 1;
         private int _activeBiolumProfileId;
         private int _blackBoxCursor;
@@ -75,6 +83,7 @@ namespace Hecton8.VFX.Bioluminescence
         private byte _pendingTelemetryFlags;
         private bool _registeredUpdate;
         private bool _registeredScalability;
+        private bool _registeredHotSwap;
         private bool _stateJobScheduled;
         private bool _jobLocksHeld;
         private bool _disposed;
@@ -85,8 +94,7 @@ namespace Hecton8.VFX.Bioluminescence
         private void OnEnable()
         {
             _disposed = false;
-            ResolveDispatcher();
-            ResolveDataVault();
+            TryRegisterHotSwapListener();
             RefreshQualityTier(GlobalRegistry.ScalabilityTier);
             EnsureVaultBuffers();
             if (!_profilesLoaded)
@@ -112,10 +120,11 @@ namespace Hecton8.VFX.Bioluminescence
                 _registeredScalability = false;
             }
 
+            TryUnregisterHotSwapListener();
             CompleteScheduledJob();
             ClearShaderGlobals();
+            ReleaseVaultHandlesOnly(invalidateProfiles: false);
             _tickDispatcher = null;
-            _dataVault = null;
         }
 
         private void OnDestroy()
@@ -128,7 +137,8 @@ namespace Hecton8.VFX.Bioluminescence
         {
             using (_tickMarker.Auto())
             {
-                EnsureVaultBuffers();
+                if (!HasVaultBuffers() && !TryRefreshExistingVaultHandlesNoAllocate())
+                    return;
 
                 CompleteScheduledJobAndPublish();
 
@@ -164,6 +174,10 @@ namespace Hecton8.VFX.Bioluminescence
         public void Dispose()
         {
             CompleteScheduledJob();
+            TryUnregisterHotSwapListener();
+            ReleaseVaultHandlesOnly(invalidateProfiles: true);
+            _dataVault = null;
+            _tickDispatcher = null;
             _disposed = true;
         }
 
@@ -172,7 +186,7 @@ namespace Hecton8.VFX.Bioluminescence
         private void ReloadProfilesFromDiskEditor()
         {
             CompleteScheduledJob();
-            ResolveDataVault();
+            RefreshCachedRegistryServices();
             EnsureVaultBuffers();
             _profilesLoaded = false;
             LoadProfilesFromDiskOrDefaults();
@@ -187,7 +201,7 @@ namespace Hecton8.VFX.Bioluminescence
             if (_registeredUpdate)
                 return;
 
-            ResolveDispatcher();
+            RefreshCachedRegistryServices();
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
@@ -200,9 +214,55 @@ namespace Hecton8.VFX.Bioluminescence
             _registeredScalability = true;
         }
 
-        private void ResolveDispatcher()
+        private void TryRegisterHotSwapListener()
         {
-            _tickDispatcher = GlobalRegistry.TickDispatcher;
+            if (!_registeredHotSwap)
+                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+            RefreshCachedRegistryServices();
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        private void RefreshCachedRegistryServices()
+        {
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Dispatcher, GlobalRegistry.TickDispatcher);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
+        }
+
+        private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _tickDispatcher = currentService as ITickDispatcher;
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    BindDataVault(currentService as IDataVault);
+                    break;
+            }
         }
 
         private void RefreshQualityTier(HectonQualityTier tier)
@@ -211,29 +271,42 @@ namespace Hecton8.VFX.Bioluminescence
             _activeStateCount = ResolveStateCount(tier);
         }
 
-        private IDataVault ResolveDataVault()
+        private void BindDataVault(IDataVault currentVault)
         {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
-
-            return _dataVault;
+            if (!ReferenceEquals(_dataVault, currentVault))
+            {
+                _dataVault = currentVault;
+                ReleaseVaultHandlesOnly(invalidateProfiles: true);
+            }
         }
 
         private bool EnsureVaultBuffers()
         {
             IDataVault vault = _dataVault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
+
+            if (_vaultGenerationId != 0u && _vaultGenerationId != vault.VaultGenerationID)
+                ReleaseVaultHandlesOnly(invalidateProfiles: false);
 
             if (!_profileFloatsHandle.IsCreated ||
                 _profileFloatsHandle.BufferId != BufferID.BiolumProfileFloats ||
                 _profileFloatsHandle.Length < ProfileFloatCount)
             {
-                _profileFloatsHandle = vault.GetBufferHandle<float>(
-                    BufferID.BiolumProfileFloats,
-                    ProfileFloatCount,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
+                if (vault.TryGetBufferHandle(BufferID.BiolumProfileFloats, out VaultBufferHandle<float> existingProfileHandle) &&
+                    existingProfileHandle.Length >= ProfileFloatCount)
+                {
+                    _profileFloatsHandle = existingProfileHandle;
+                }
+                else
+                {
+                    _profilesLoaded = false;
+                    _profileFloatsHandle = vault.GetBufferHandle<float>(
+                        BufferID.BiolumProfileFloats,
+                        ProfileFloatCount,
+                        SystemID.Vfx,
+                        NativeArrayOptions.ClearMemory);
+                }
             }
 
             if (!_jobStatesHandle.IsCreated ||
@@ -258,12 +331,75 @@ namespace Hecton8.VFX.Bioluminescence
                     NativeArrayOptions.ClearMemory);
             }
 
-            return _profileFloatsHandle.IsCreated && _jobStatesHandle.IsCreated && _blackBoxHandle.IsCreated;
+            bool ready = _profileFloatsHandle.IsCreated && _jobStatesHandle.IsCreated && _blackBoxHandle.IsCreated;
+            if (ready)
+                _vaultGenerationId = vault.VaultGenerationID;
+
+            return ready;
+        }
+
+        private bool HasVaultBuffers()
+        {
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   _vaultGenerationId != 0u &&
+                   _vaultGenerationId == vault.VaultGenerationID &&
+                   _profileFloatsHandle.IsCreated &&
+                   _profileFloatsHandle.BufferId == BufferID.BiolumProfileFloats &&
+                   _profileFloatsHandle.Length >= ProfileFloatCount &&
+                   _jobStatesHandle.IsCreated &&
+                   _jobStatesHandle.BufferId == BufferID.BiolumGlobalStates &&
+                   _jobStatesHandle.Length >= MaxGlobalBiolumStates &&
+                   _blackBoxHandle.IsCreated &&
+                   _blackBoxHandle.BufferId == BufferID.BiolumBlackBox &&
+                   _blackBoxHandle.Length >= BlackBoxFrameCount;
+        }
+
+        private bool TryRefreshExistingVaultHandlesNoAllocate()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryGetBufferHandle(BufferID.BiolumProfileFloats, out VaultBufferHandle<float> profileHandle) ||
+                profileHandle.Length < ProfileFloatCount)
+            {
+                return false;
+            }
+
+            if (!vault.TryGetBufferHandle(BufferID.BiolumGlobalStates, out VaultBufferHandle<float4> statesHandle) ||
+                statesHandle.Length < MaxGlobalBiolumStates)
+            {
+                return false;
+            }
+
+            if (!vault.TryGetBufferHandle(BufferID.BiolumBlackBox, out VaultBufferHandle<BiolumPulseTelemetryEntry> blackBoxHandle) ||
+                blackBoxHandle.Length < BlackBoxFrameCount)
+            {
+                return false;
+            }
+
+            _profileFloatsHandle = profileHandle;
+            _jobStatesHandle = statesHandle;
+            _blackBoxHandle = blackBoxHandle;
+            _vaultGenerationId = vault.VaultGenerationID;
+            return true;
+        }
+
+        private void ReleaseVaultHandlesOnly(bool invalidateProfiles)
+        {
+            _profileFloatsHandle = default;
+            _jobStatesHandle = default;
+            _blackBoxHandle = default;
+            _vaultGenerationId = 0u;
+            if (invalidateProfiles)
+                _profilesLoaded = false;
         }
 
         private void LoadProfilesFromDiskOrDefaults()
         {
-            if (!TryLockProfileBuffer(out IDataVault vault, out NativeArray<float> profileFloats))
+            if (!TryLockProfileBuffer(out IDataVault vault, out NativeArray<float> profileFloats, allowEnsure: true))
                 return;
 
             try
@@ -316,24 +452,40 @@ namespace Hecton8.VFX.Bioluminescence
 
         private static string ResolveProfilePath()
         {
-            string streaming = Path.Combine(Application.streamingAssetsPath, ProfileFileName);
-            if (File.Exists(streaming))
-                return streaming;
+            if (TryResolveProfilePath(Application.streamingAssetsPath, out string profilePath))
+                return profilePath;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string docsGenerated = Path.Combine(projectRoot, "Docs", "Generated", ProfileFileName);
-            if (File.Exists(docsGenerated))
-                return docsGenerated;
+            if (TryResolveProfilePath(Path.Combine(projectRoot, "Docs", "Generated"), out profilePath))
+                return profilePath;
 
-            string docsRoot = Path.Combine(projectRoot, "Docs", ProfileFileName);
-            return File.Exists(docsRoot) ? docsRoot : null;
+            return TryResolveProfilePath(Path.Combine(projectRoot, "Docs"), out profilePath) ? profilePath : null;
+#else
+            return null;
+#endif
         }
 
-        private bool TryLockProfileBuffer(out IDataVault vault, out NativeArray<float> profileFloats)
+        private static bool TryResolveProfilePath(string directory, out string path)
+        {
+            path = Path.Combine(directory, ProfileFileName);
+            if (File.Exists(path))
+                return true;
+
+            path = Path.Combine(directory, ProfileH8BinFileName);
+            if (File.Exists(path))
+                return true;
+
+            path = null;
+            return false;
+        }
+
+        private bool TryLockProfileBuffer(out IDataVault vault, out NativeArray<float> profileFloats, bool allowEnsure = false)
         {
             profileFloats = default;
             vault = _dataVault;
-            if (vault == null || !EnsureVaultBuffers())
+            bool ready = allowEnsure ? EnsureVaultBuffers() : HasVaultBuffers();
+            if (vault == null || !ready)
                 return false;
 
             if (!vault.TryLockBuffer(BufferID.BiolumProfileFloats))
@@ -352,7 +504,7 @@ namespace Hecton8.VFX.Bioluminescence
         {
             blackBox = default;
             vault = _dataVault;
-            if (vault == null || !EnsureVaultBuffers())
+            if (vault == null || !HasVaultBuffers())
                 return false;
 
             if (!vault.TryLockBuffer(BufferID.BiolumBlackBox))
@@ -432,6 +584,13 @@ namespace Hecton8.VFX.Bioluminescence
                 if (math.all(math.isfinite(delta)))
                     _aupOriginOffset += delta;
             }
+
+            if (!math.all(math.isfinite(_aupOriginOffset)))
+            {
+                _aupOriginOffset = float3.zero;
+                _pendingTelemetryFlags |= TelemetryFlagAupInvalid;
+                DumpBlackBox(TelemetryFlagAupInvalid);
+            }
         }
 
         private void ConsumeFrameTimeSignals(float dt)
@@ -509,7 +668,7 @@ namespace Hecton8.VFX.Bioluminescence
         private void ScheduleStateJob(float cadenceSeconds)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !EnsureVaultBuffers())
+            if (vault == null || !HasVaultBuffers())
                 return;
 
             if (!vault.TryLockBuffer(BufferID.BiolumProfileFloats))
@@ -733,9 +892,7 @@ namespace Hecton8.VFX.Bioluminescence
                     PrimaryIntensityHdr = math.clamp(primaryState.w, 0f, MaxHdrIntensity),
                     TimeSeconds = (float)(_localTimeSeconds % 65536d),
                     AupOffsetX = _aupOriginOffset.x,
-                    AupOffsetY = _aupOriginOffset.y,
-                    AupOffsetZ = _aupOriginOffset.z,
-                    ProfileSourceHash = _profileSourceHash
+                    AupOffsetZ = _aupOriginOffset.z
                 };
 
                 _blackBoxCursor = (_blackBoxCursor + 1) % blackBox.Length;
@@ -872,7 +1029,7 @@ namespace Hecton8.VFX.Bioluminescence
             }
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 40)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
         private struct BiolumPulseTelemetryEntry
         {
             [FieldOffset(0)]
@@ -898,11 +1055,7 @@ namespace Hecton8.VFX.Bioluminescence
             [FieldOffset(24)]
             public float AupOffsetX;
             [FieldOffset(28)]
-            public float AupOffsetY;
-            [FieldOffset(32)]
             public float AupOffsetZ;
-            [FieldOffset(36)]
-            public uint ProfileSourceHash;
         }
 
         [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]

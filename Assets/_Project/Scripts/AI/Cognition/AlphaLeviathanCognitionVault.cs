@@ -168,6 +168,44 @@ namespace Hecton8.AI.Cognition
         }
 
         /// <summary>
+        /// Computes the safe row count for scheduling <see cref="LeviathanStalkJob"/> from resolved DataVault views.
+        /// </summary>
+        /// <param name="buffers">Resolved DataVault buffer views.</param>
+        /// <returns>Maximum safe schedule length across state, sensory, output, and telemetry views.</returns>
+        public static int GetScheduleLength(in AlphaLeviathanVaultBuffers buffers)
+        {
+            if (!buffers.IsCreated)
+                return 0;
+
+            int telemetrySlots = buffers.TelemetryRing.Length / AlphaLeviathanStalkConstants.TelemetryFrames;
+            int length = math.min(buffers.States.Length, buffers.SensoryStimuli.Length);
+            length = math.min(length, buffers.SteeringOutputs.Length);
+            length = math.min(length, telemetrySlots);
+            length = math.min(length, AlphaLeviathanStalkConstants.MaxLeviathanSlots);
+            return math.max(0, length);
+        }
+
+        /// <summary>
+        /// Resolves handles and computes the safe schedule row count without exposing long-lived raw views.
+        /// </summary>
+        /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
+        /// <param name="handles">Cached handles. Generations are refreshed on success.</param>
+        /// <param name="scheduleLength">Maximum safe schedule length across required views.</param>
+        /// <returns>True when views resolve and at least one row can be scheduled.</returns>
+        public static bool TryGetScheduleLength(
+            IDataVault vault,
+            ref AlphaLeviathanVaultHandles handles,
+            out int scheduleLength)
+        {
+            scheduleLength = 0;
+            if (!TryResolveViews(vault, ref handles, out AlphaLeviathanVaultBuffers buffers))
+                return false;
+
+            scheduleLength = GetScheduleLength(in buffers);
+            return scheduleLength > 0;
+        }
+
+        /// <summary>
         /// Creates the canonical stalk job from DataVault-owned buffer views.
         /// </summary>
         /// <param name="buffers">Resolved DataVault buffer views.</param>
@@ -186,6 +224,104 @@ namespace Hecton8.AI.Cognition
         }
 
         /// <summary>
+        /// Creates the canonical stalk job and safe schedule length from DataVault-owned buffer views.
+        /// </summary>
+        /// <param name="buffers">Resolved DataVault buffer views.</param>
+        /// <param name="frame">Global simulation frame written into telemetry.</param>
+        /// <param name="job">Configured job when the views can schedule at least one row.</param>
+        /// <param name="scheduleLength">Maximum safe row count for the owner-side job schedule call.</param>
+        /// <returns>True when the job and schedule length were configured from current DataVault views.</returns>
+        public static bool TryCreateStalkJob(
+            in AlphaLeviathanVaultBuffers buffers,
+            uint frame,
+            out LeviathanStalkJob job,
+            out int scheduleLength)
+        {
+            job = default;
+            scheduleLength = GetScheduleLength(in buffers);
+            if (scheduleLength <= 0)
+                return false;
+
+            job = CreateStalkJob(in buffers, frame);
+            return true;
+        }
+
+        /// <summary>
+        /// Creates the canonical stalk job from generation-checked DataVault handles.
+        /// </summary>
+        /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
+        /// <param name="handles">Cached handles. Generations are refreshed on success.</param>
+        /// <param name="frame">Global simulation frame written into telemetry.</param>
+        /// <param name="job">Configured job when every handle resolved to a current view.</param>
+        /// <returns>True when the job was configured from current DataVault views.</returns>
+        public static bool TryCreateStalkJob(
+            IDataVault vault,
+            ref AlphaLeviathanVaultHandles handles,
+            uint frame,
+            out LeviathanStalkJob job)
+        {
+            int scheduleLength;
+            return TryCreateStalkJob(vault, ref handles, frame, out job, out scheduleLength);
+        }
+
+        /// <summary>
+        /// Creates the canonical stalk job and safe schedule length from generation-checked DataVault handles.
+        /// </summary>
+        /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
+        /// <param name="handles">Cached handles. Generations are refreshed on success.</param>
+        /// <param name="frame">Global simulation frame written into telemetry.</param>
+        /// <param name="job">Configured job when every handle resolved to a current view.</param>
+        /// <param name="scheduleLength">Maximum safe row count for the owner-side job schedule call.</param>
+        /// <returns>True when the job and schedule length were configured from current DataVault views.</returns>
+        public static bool TryCreateStalkJob(
+            IDataVault vault,
+            ref AlphaLeviathanVaultHandles handles,
+            uint frame,
+            out LeviathanStalkJob job,
+            out int scheduleLength)
+        {
+            job = default;
+            scheduleLength = 0;
+            if (!TryResolveViews(vault, ref handles, out AlphaLeviathanVaultBuffers buffers))
+                return false;
+
+            return TryCreateStalkJob(in buffers, frame, out job, out scheduleLength);
+        }
+
+        /// <summary>
+        /// Records the latest telemetry frame cursor after the stalk job completes.
+        /// </summary>
+        /// <param name="buffers">Resolved DataVault buffer views.</param>
+        /// <param name="frame">Global simulation frame that was written into telemetry.</param>
+        /// <returns>True when the cursor was recorded.</returns>
+        public static bool TryRecordTelemetryHeartbeat(AlphaLeviathanVaultBuffers buffers, uint frame)
+        {
+            if (GetScheduleLength(in buffers) <= 0 || buffers.TelemetryCursor.Length <= 0)
+                return false;
+
+            buffers.TelemetryCursor[0] = (int)(frame % AlphaLeviathanStalkConstants.TelemetryFrames);
+            return true;
+        }
+
+        /// <summary>
+        /// Records the latest telemetry frame cursor through generation-checked handles.
+        /// </summary>
+        /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
+        /// <param name="handles">Cached handles. Generations are refreshed on success.</param>
+        /// <param name="frame">Global simulation frame that was written into telemetry.</param>
+        /// <returns>True when the cursor was recorded.</returns>
+        public static bool TryRecordTelemetryHeartbeat(
+            IDataVault vault,
+            ref AlphaLeviathanVaultHandles handles,
+            uint frame)
+        {
+            if (!TryResolveViews(vault, ref handles, out AlphaLeviathanVaultBuffers buffers))
+                return false;
+
+            return TryRecordTelemetryHeartbeat(buffers, frame);
+        }
+
+        /// <summary>
         /// Cold crash-path dump of the Alpha Leviathan telemetry ring.
         /// </summary>
         /// <param name="buffers">Resolved DataVault buffer views.</param>
@@ -198,6 +334,7 @@ namespace Hecton8.AI.Cognition
 
             string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
             string path = Path.Combine(root, "Docs", "AgentLogs", AgentDumpFileName);
+            string tempPath = path + ".tmp";
 
             try
             {
@@ -205,7 +342,9 @@ namespace Hecton8.AI.Cognition
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                TryDeleteFile(tempPath);
+
+                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(DumpMagic);
@@ -240,14 +379,26 @@ namespace Hecton8.AI.Cognition
                     }
                 }
 
-                return true;
+                return TryPromoteDump(tempPath, path);
             }
             catch (IOException)
             {
+                TryDeleteFile(tempPath);
                 return false;
             }
             catch (UnauthorizedAccessException)
             {
+                TryDeleteFile(tempPath);
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                TryDeleteFile(tempPath);
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                TryDeleteFile(tempPath);
                 return false;
             }
         }
@@ -273,6 +424,72 @@ namespace Hecton8.AI.Cognition
             return false;
         }
 
+        /// <summary>
+        /// Cold fault path that scans only the frame written by the most recent stalk job.
+        /// </summary>
+        /// <param name="buffers">Resolved DataVault buffer views.</param>
+        /// <param name="frame">Global simulation frame that was written into telemetry.</param>
+        /// <param name="projectRoot">Project root path. Pass `C:\hades\Hecton8` from the owner.</param>
+        /// <returns>True when the current frame contains a fault and a binary dump was written.</returns>
+        public static bool TryDumpBlackBoxOnFrameFault(in AlphaLeviathanVaultBuffers buffers, uint frame, string projectRoot)
+        {
+            if (!buffers.TelemetryRing.IsCreated || buffers.TelemetryRing.Length <= 0)
+                return false;
+
+            int telemetryFrame = (int)(frame % AlphaLeviathanStalkConstants.TelemetryFrames);
+            int frameStart = telemetryFrame * AlphaLeviathanStalkConstants.MaxLeviathanSlots;
+            if ((uint)frameStart >= (uint)buffers.TelemetryRing.Length)
+                return false;
+
+            int frameEnd = math.min(frameStart + AlphaLeviathanStalkConstants.MaxLeviathanSlots, buffers.TelemetryRing.Length);
+            for (int i = frameStart; i < frameEnd; i++)
+            {
+                AlphaLeviathanTelemetryEntry entry = buffers.TelemetryRing[i];
+                if (entry.Frame == frame && (entry.Flags & AlphaLeviathanTelemetryFlags.Fault) != 0)
+                    return TryDumpBlackBox(in buffers, projectRoot);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Cold fault path that resolves handles and scans only the frame written by the most recent stalk job.
+        /// </summary>
+        /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
+        /// <param name="handles">Cached handles. Generations are refreshed on success.</param>
+        /// <param name="frame">Global simulation frame that was written into telemetry.</param>
+        /// <param name="projectRoot">Project root path. Pass `C:\hades\Hecton8` from the owner.</param>
+        /// <returns>True when the current frame contains a fault and a binary dump was written.</returns>
+        public static bool TryDumpBlackBoxOnFrameFault(
+            IDataVault vault,
+            ref AlphaLeviathanVaultHandles handles,
+            uint frame,
+            string projectRoot)
+        {
+            if (!TryResolveViews(vault, ref handles, out AlphaLeviathanVaultBuffers buffers))
+                return false;
+
+            return TryDumpBlackBoxOnFrameFault(in buffers, frame, projectRoot);
+        }
+
+        /// <summary>
+        /// Cold fault path using generation-checked DataVault handles instead of cached raw views.
+        /// </summary>
+        /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
+        /// <param name="handles">Cached handles. Generations are refreshed on success.</param>
+        /// <param name="projectRoot">Project root path. Pass `C:\hades\Hecton8` from the owner.</param>
+        /// <returns>True when a fault was detected and a binary dump was written.</returns>
+        public static bool TryDumpBlackBoxOnFault(
+            IDataVault vault,
+            ref AlphaLeviathanVaultHandles handles,
+            string projectRoot)
+        {
+            if (!TryResolveViews(vault, ref handles, out AlphaLeviathanVaultBuffers buffers))
+                return false;
+
+            return TryDumpBlackBoxOnFault(in buffers, projectRoot);
+        }
+
         private static int ResolveTelemetryCursor(in AlphaLeviathanVaultBuffers buffers)
         {
             int cursor = 0;
@@ -291,6 +508,60 @@ namespace Hecton8.AI.Cognition
             }
 
             return cursor;
+        }
+
+        private static bool TryPromoteDump(string tempPath, string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Replace(tempPath, path, null);
+                else
+                    File.Move(tempPath, path);
+
+                return true;
+            }
+            catch (IOException)
+            {
+                TryDeleteFile(tempPath);
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                TryDeleteFile(tempPath);
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                TryDeleteFile(tempPath);
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                TryDeleteFile(tempPath);
+                return false;
+            }
+        }
+
+        private static void TryDeleteFile(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
         }
     }
 }

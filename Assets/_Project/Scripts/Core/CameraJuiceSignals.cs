@@ -10,7 +10,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Camera-owned impact signal payload. Wraps the core impact signal with an optional directional bias.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
     public struct CameraJuiceImpactSignal
     {
         [FieldOffset(0)] public ImpactSignal Impact;

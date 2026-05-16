@@ -1,0 +1,4 @@
+Id,version_id,Name,Description,BasePrice,Scarcity01,Demand01,SupplyRefreshSeconds,AccessFrequency
+surface_trade_index,1.2,Surface Trade Index,Global merchant pressure for imported goods,1.00,0.25,0.55,1800,95
+abyss_salvage_markup,1.2,Abyss Salvage Markup,Risk premium applied to deep salvage,1.75,0.80,0.70,3600,88
+station_repair_discount,1.2,Station Repair Discount,Faction rebate for certified repair materials,0.85,0.15,0.40,2400,61

@@ -6,7 +6,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Aggregate storage snapshot published by the global power runtime.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BatteryRuntimeSnapshot
     {
         /// <summary>Total committed stored energy across all runtime banks.</summary>

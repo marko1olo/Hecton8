@@ -99,7 +99,7 @@ namespace Hecton8.Core
         private static readonly long[] _requestedServiceSlotMask = new long[ServiceSlotMaskWordCount];
         // COLD ALLOC: long[4] - registered service-slot bitset for ghost-service detection - owner: GlobalRegistry
         private static readonly long[] _registeredServiceSlotMask = new long[ServiceSlotMaskWordCount];
-        // COLD ALLOC: string[172] - allocation-free ghost-service slot names; index matches GlobalRegistryServiceSlot numeric value - owner: GlobalRegistry
+        // COLD ALLOC: string[173] - allocation-free ghost-service slot names; index matches GlobalRegistryServiceSlot numeric value - owner: GlobalRegistry
         private static readonly string[] _serviceSlotNames =
         {
             nameof(GlobalRegistryServiceSlot.Input),
@@ -273,7 +273,8 @@ namespace Hecton8.Core
             nameof(GlobalRegistryServiceSlot.DebrisComputeRuntime),
             nameof(GlobalRegistryServiceSlot.ResolutionScalerService),
             nameof(GlobalRegistryServiceSlot.AmbientBiotaRuntime),
-            nameof(GlobalRegistryServiceSlot.DockingAutopilotRuntime)
+            nameof(GlobalRegistryServiceSlot.DockingAutopilotRuntime),
+            nameof(GlobalRegistryServiceSlot.ProceduralLadderClimbRuntime)
         };
         private static int _registryPhase = (int)RegistryPhase.Uninitialized;
         private static int _systemKillSwitchMask;
@@ -326,7 +327,7 @@ namespace Hecton8.Core
         private static int _currentDomain = (int)Domain.Unknown;
         private static object _currentDomainOwner;
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public readonly struct ForceOverrideToken
         {
             internal readonly uint Value;
@@ -6586,6 +6587,8 @@ namespace Hecton8.Core
                     return SystemID.AmbientBiota;
                 case GlobalRegistryServiceSlot.ResolutionScalerService:
                     return SystemID.GraphicsScalability;
+                case GlobalRegistryServiceSlot.ProceduralLadderClimbRuntime:
+                    return SystemID.AnimationLocomotion;
                 default:
                     if (serviceSlot == GlobalRegistryServiceSlot.Unknown)
                         return SystemID.Unknown;
@@ -7186,6 +7189,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(ISubmarineHullBreachReadModel)) return GlobalRegistryServiceSlot.SubmarineHullBreach;
             if (serviceType == typeof(IInertialNavigationService)) return GlobalRegistryServiceSlot.InertialNavigationRuntime;
             if (serviceType == typeof(IDockingAutopilotService)) return GlobalRegistryServiceSlot.DockingAutopilotRuntime;
+            if (serviceType == typeof(ProceduralLadderClimbRuntime)) return GlobalRegistryServiceSlot.ProceduralLadderClimbRuntime;
             if (serviceType == typeof(IInteractionSignalService)) return GlobalRegistryServiceSlot.InteractionSignals;
             if (serviceType == typeof(IDebrisService)) return GlobalRegistryServiceSlot.Debris;
             if (serviceType == typeof(IDebrisComputeService)) return GlobalRegistryServiceSlot.DebrisComputeRuntime;

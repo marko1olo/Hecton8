@@ -29,9 +29,7 @@ namespace Hecton8.AI
         private const int TelemetryCapacity = 300;
         private const uint TentacleStateActive = 1u << 0;
         private const uint TentacleStateGrabbing = 1u << 1;
-        private const string NativeMemoryOwner = nameof(LeviathanTentacleVerletSolver);
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LEVIATHAN_TENTACLE_IK.bin";
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const ulong TelemetryDumpMagic = 0x484543544F4E3800UL;
         private const int TelemetryEntryPayloadBytes = 64;
         private const float FlowGridIntegerEpsilon = 0.01f;
@@ -429,29 +427,47 @@ namespace Hecton8.AI
         private GraphicsBuffer _indirectArgsBuffer;
         private Mesh _argsUploadMesh;
         private JobHandle _pendingSolverHandle;
-        private JobHandle _disposeHandle;
+        private IDataVault _dataVault;
 
         // COLD ALLOC: Vector3[8] - deterministic missing-socket local anchors - owner: LeviathanTentacleVerletSolver
         private readonly Vector3[] _fallbackRootOffsets = new Vector3[MaxTentacles];
 
-        private NativeArray<float3> _positions;
-        private NativeArray<float3> _previousPositions;
-        private NativeArray<float> _radius;
-        private NativeArray<float4x4> _segmentMatrices;
-        private NativeArray<float> _stretchFractions;
-        private NativeArray<float3> _constraintCorrections;
-        private NativeArray<int> _constraintCorrectionCounts;
-        private NativeArray<float3> _rootPositions;
-        private NativeArray<float3> _targetPositions;
-        private NativeArray<AbsoluteUniversePosition> _rootAups;
-        private NativeArray<AbsoluteUniversePosition> _targetAups;
-        private NativeArray<uint> _tentacleStates;
-        private NativeArray<LeviathanTentacleTelemetryEntry> _telemetryRing;
+        private VaultBufferHandle<float3> _positionsHandle;
+        private VaultBufferHandle<float3> _previousPositionsHandle;
+        private VaultBufferHandle<float> _radiusHandle;
+        private VaultBufferHandle<float4x4> _segmentMatricesHandle;
+        private VaultBufferHandle<float> _stretchFractionsHandle;
+        private VaultBufferHandle<float3> _constraintCorrectionsHandle;
+        private VaultBufferHandle<int> _constraintCorrectionCountsHandle;
+        private VaultBufferHandle<float3> _rootPositionsHandle;
+        private VaultBufferHandle<float3> _targetPositionsHandle;
+        private VaultBufferHandle<AbsoluteUniversePosition> _rootAupsHandle;
+        private VaultBufferHandle<AbsoluteUniversePosition> _targetAupsHandle;
+        private VaultBufferHandle<uint> _tentacleStatesHandle;
+        private VaultBufferHandle<LeviathanTentacleTelemetryEntry> _telemetryRingHandle;
+
+        private struct TentacleVaultBuffers
+        {
+            public NativeArray<float3> Positions;
+            public NativeArray<float3> PreviousPositions;
+            public NativeArray<float> Radius;
+            public NativeArray<float4x4> SegmentMatrices;
+            public NativeArray<float> StretchFractions;
+            public NativeArray<float3> ConstraintCorrections;
+            public NativeArray<int> ConstraintCorrectionCounts;
+            public NativeArray<float3> RootPositions;
+            public NativeArray<float3> TargetPositions;
+            public NativeArray<AbsoluteUniversePosition> RootAups;
+            public NativeArray<AbsoluteUniversePosition> TargetAups;
+            public NativeArray<uint> TentacleStates;
+            public NativeArray<LeviathanTentacleTelemetryEntry> TelemetryRing;
+        }
 
         private void Awake()
         {
             _cachedTransform = transform;
             BuildFallbackRootOffsets();
+            RefreshColdDependencies();
             EnsurePersistentBuffers();
             SeedAllTentaclesFromSockets();
         }
@@ -462,6 +478,7 @@ namespace Hecton8.AI
                 return;
 
             CompletePendingJob(force: true);
+            RefreshColdDependencies();
             EnsurePersistentBuffers();
             SeedAllTentaclesFromSockets();
             ResetConstraintIterationHysteresis();
@@ -502,8 +519,7 @@ namespace Hecton8.AI
             _disposed = true;
             TryUnregisterOriginShiftListener();
             TryUnregister();
-            JobHandle dependency = _solverScheduled ? _pendingSolverHandle : default;
-            DisposePersistentBuffers(dependency);
+            DisposePersistentBuffers();
             ReleaseGraphicsBuffers();
         }
 
@@ -580,13 +596,13 @@ namespace Hecton8.AI
         /// <param name="deltaTime">Scaled dispatcher delta time in seconds.</param>
         public void Tick(float deltaTime)
         {
-            if (_disposed || !HasPersistentBuffers() || _solverScheduled || deltaTime <= 0f)
+            if (_disposed || _solverScheduled || deltaTime <= 0f || !TryResolvePersistentBuffers(out TentacleVaultBuffers buffers))
                 return;
 
             ApplyPendingOriginShiftRebase();
-            CaptureTentacleInputs();
+            CaptureTentacleInputs(in buffers);
             ResolveFlowInput();
-            TryQueueGrabDamage(deltaTime);
+            TryQueueGrabDamage(deltaTime, in buffers);
             float safeDeltaTime = math.isfinite(deltaTime) ? math.min(math.max(0f, deltaTime), 0.05f) : 0f;
             float safeRestLength = SanitizeFiniteMinInput(restLength, DefaultRestLength, 0.01f);
             float safeMaxStretchLength = SanitizeFiniteMinInput(
@@ -602,16 +618,16 @@ namespace Hecton8.AI
 
             VerletSolveJob job = new VerletSolveJob
             {
-                Positions = _positions,
-                PreviousPositions = _previousPositions,
-                Radius = _radius,
-                SegmentMatrices = _segmentMatrices,
-                StretchFractions = _stretchFractions,
-                ConstraintCorrections = _constraintCorrections,
-                ConstraintCorrectionCounts = _constraintCorrectionCounts,
-                RootPositions = _rootPositions,
-                TargetPositions = _targetPositions,
-                TentacleStates = _tentacleStates,
+                Positions = buffers.Positions,
+                PreviousPositions = buffers.PreviousPositions,
+                Radius = buffers.Radius,
+                SegmentMatrices = buffers.SegmentMatrices,
+                StretchFractions = buffers.StretchFractions,
+                ConstraintCorrections = buffers.ConstraintCorrections,
+                ConstraintCorrectionCounts = buffers.ConstraintCorrectionCounts,
+                RootPositions = buffers.RootPositions,
+                TargetPositions = buffers.TargetPositions,
+                TentacleStates = buffers.TentacleStates,
                 DeltaTime = safeDeltaTime,
                 Damping = SanitizeFiniteRangeInput(damping, DefaultDamping, 0f, 1f),
                 RestLength = safeRestLength,
@@ -735,89 +751,119 @@ namespace Hecton8.AI
             return true;
         }
 
+        private void RefreshColdDependencies()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+        }
+
         private void EnsurePersistentBuffers()
         {
             if (_disposed)
                 return;
 
-            if (HasPersistentBuffers())
+            if (TryResolvePersistentBuffers(out _))
                 return;
 
-            JobHandle dependency = _solverScheduled ? _pendingSolverHandle : default;
-            DisposePersistentBuffers(dependency);
+            ClearVaultHandles();
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            _dataVault = vault;
+            if (vault == null)
+                return;
 
-            _positions = AllocatePersistentArray<float3>(TotalSegments, nameof(_positions)); // COLD ALLOC: NativeArray<float3>[160] - tentacle Verlet positions - owner: LeviathanTentacleVerletSolver
-            _previousPositions = AllocatePersistentArray<float3>(TotalSegments, nameof(_previousPositions)); // COLD ALLOC: NativeArray<float3>[160] - tentacle Verlet previous positions - owner: LeviathanTentacleVerletSolver
-            _radius = AllocatePersistentArray<float>(TotalSegments, nameof(_radius)); // COLD ALLOC: NativeArray<float>[160] - tentacle per-node radius lane - owner: LeviathanTentacleVerletSolver
-            _segmentMatrices = AllocatePersistentArray<float4x4>(TotalSegments, nameof(_segmentMatrices)); // COLD ALLOC: NativeArray<float4x4>[160] - tentacle GPU matrix upload lane - owner: LeviathanTentacleVerletSolver
-            _stretchFractions = AllocatePersistentArray<float>(MaxTentacles, nameof(_stretchFractions)); // COLD ALLOC: NativeArray<float>[8] - max stretch clamp telemetry - owner: LeviathanTentacleVerletSolver
-            _constraintCorrections = AllocatePersistentArray<float3>(TotalSegments, nameof(_constraintCorrections)); // COLD ALLOC: NativeArray<float3>[160] - Jacobi constraint correction lane - owner: LeviathanTentacleVerletSolver
-            _constraintCorrectionCounts = AllocatePersistentArray<int>(TotalSegments, nameof(_constraintCorrectionCounts)); // COLD ALLOC: NativeArray<int>[160] - Jacobi constraint correction counts - owner: LeviathanTentacleVerletSolver
-            _rootPositions = AllocatePersistentArray<float3>(MaxTentacles, nameof(_rootPositions)); // COLD ALLOC: NativeArray<float3>[8] - root socket runtime positions - owner: LeviathanTentacleVerletSolver
-            _targetPositions = AllocatePersistentArray<float3>(MaxTentacles, nameof(_targetPositions)); // COLD ALLOC: NativeArray<float3>[8] - tentacle target runtime positions - owner: LeviathanTentacleVerletSolver
-            _rootAups = AllocatePersistentArray<AbsoluteUniversePosition>(MaxTentacles, nameof(_rootAups)); // COLD ALLOC: NativeArray<AbsoluteUniversePosition>[8] - root socket AUP cache - owner: LeviathanTentacleVerletSolver
-            _targetAups = AllocatePersistentArray<AbsoluteUniversePosition>(MaxTentacles, nameof(_targetAups)); // COLD ALLOC: NativeArray<AbsoluteUniversePosition>[8] - target AUP cache - owner: LeviathanTentacleVerletSolver
-            _tentacleStates = AllocatePersistentArray<uint>(MaxTentacles, nameof(_tentacleStates)); // COLD ALLOC: NativeArray<uint>[8] - tentacle active/grab state bits - owner: LeviathanTentacleVerletSolver
-            _telemetryRing = AllocatePersistentArray<LeviathanTentacleTelemetryEntry>(TelemetryCapacity, nameof(_telemetryRing)); // COLD ALLOC: NativeArray<LeviathanTentacleTelemetryEntry>[300] - tentacle black box ring - owner: LeviathanTentacleVerletSolver
+            _positionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentaclePositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _previousPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentaclePreviousPositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _radiusHandle = vault.GetBufferHandle<float>(BufferID.LeviathanTentacleRadius, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _segmentMatricesHandle = vault.GetBufferHandle<float4x4>(BufferID.LeviathanTentacleSegmentMatrices, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _stretchFractionsHandle = vault.GetBufferHandle<float>(BufferID.LeviathanTentacleStretchFractions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _constraintCorrectionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentacleConstraintCorrections, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _constraintCorrectionCountsHandle = vault.GetBufferHandle<int>(BufferID.LeviathanTentacleConstraintCorrectionCounts, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _rootPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentacleRootPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _targetPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentacleTargetPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _rootAupsHandle = vault.GetBufferHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleRootAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _targetAupsHandle = vault.GetBufferHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleTargetAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _tentacleStatesHandle = vault.GetBufferHandle<uint>(BufferID.LeviathanTentacleStates, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _telemetryRingHandle = vault.GetBufferHandle<LeviathanTentacleTelemetryEntry>(BufferID.LeviathanTentacleTelemetryRing, TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
 
-            if (!HasPersistentBuffers())
-                DisposePersistentBuffers(default);
+            if (!TryResolvePersistentBuffers(out _))
+                ClearVaultHandles();
         }
 
-        private void DisposePersistentBuffers(JobHandle dependency)
+        private void DisposePersistentBuffers()
         {
-            DisposeNativeArray(ref _positions, dependency);
-            DisposeNativeArray(ref _previousPositions, dependency);
-            DisposeNativeArray(ref _radius, dependency);
-            DisposeNativeArray(ref _segmentMatrices, dependency);
-            DisposeNativeArray(ref _stretchFractions, dependency);
-            DisposeNativeArray(ref _constraintCorrections, dependency);
-            DisposeNativeArray(ref _constraintCorrectionCounts, dependency);
-            DisposeNativeArray(ref _rootPositions, dependency);
-            DisposeNativeArray(ref _targetPositions, dependency);
-            DisposeNativeArray(ref _rootAups, dependency);
-            DisposeNativeArray(ref _targetAups, dependency);
-            DisposeNativeArray(ref _tentacleStates, dependency);
-            DisposeNativeArray(ref _telemetryRing, dependency);
-            DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
+            ClearVaultHandles();
             _pendingSolverHandle = default;
             _solverScheduled = false;
         }
 
-        private void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        private void ClearVaultHandles()
         {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            JobHandle releaseHandle = H8Memory.Release(ref array, dependency, SystemID.External);
-            _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, releaseHandle);
-            array = default;
-        }
-
-        private static NativeArray<T> AllocatePersistentArray<T>(int length, string label) where T : struct
-        {
-            NativeArray<T> array = H8Memory.Allocate<T>(length, SystemID.External, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            if (array.IsCreated)
-                NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
-            return array;
+            _positionsHandle = default;
+            _previousPositionsHandle = default;
+            _radiusHandle = default;
+            _segmentMatricesHandle = default;
+            _stretchFractionsHandle = default;
+            _constraintCorrectionsHandle = default;
+            _constraintCorrectionCountsHandle = default;
+            _rootPositionsHandle = default;
+            _targetPositionsHandle = default;
+            _rootAupsHandle = default;
+            _targetAupsHandle = default;
+            _tentacleStatesHandle = default;
+            _telemetryRingHandle = default;
         }
 
         private bool HasPersistentBuffers()
         {
-            return _positions.IsCreated &&
-                _previousPositions.IsCreated &&
-                _radius.IsCreated &&
-                _segmentMatrices.IsCreated &&
-                _stretchFractions.IsCreated &&
-                _constraintCorrections.IsCreated &&
-                _constraintCorrectionCounts.IsCreated &&
-                _rootPositions.IsCreated &&
-                _targetPositions.IsCreated &&
-                _rootAups.IsCreated &&
-                _targetAups.IsCreated &&
-                _tentacleStates.IsCreated &&
-                _telemetryRing.IsCreated;
+            return TryResolvePersistentBuffers(out _);
+        }
+
+        private bool TryResolvePersistentBuffers(out TentacleVaultBuffers buffers)
+        {
+            buffers = default;
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            _dataVault = vault;
+            if (vault == null)
+                return false;
+
+            buffers.Positions = _positionsHandle.Resolve(vault);
+            buffers.PreviousPositions = _previousPositionsHandle.Resolve(vault);
+            buffers.Radius = _radiusHandle.Resolve(vault);
+            buffers.SegmentMatrices = _segmentMatricesHandle.Resolve(vault);
+            buffers.StretchFractions = _stretchFractionsHandle.Resolve(vault);
+            buffers.ConstraintCorrections = _constraintCorrectionsHandle.Resolve(vault);
+            buffers.ConstraintCorrectionCounts = _constraintCorrectionCountsHandle.Resolve(vault);
+            buffers.RootPositions = _rootPositionsHandle.Resolve(vault);
+            buffers.TargetPositions = _targetPositionsHandle.Resolve(vault);
+            buffers.RootAups = _rootAupsHandle.Resolve(vault);
+            buffers.TargetAups = _targetAupsHandle.Resolve(vault);
+            buffers.TentacleStates = _tentacleStatesHandle.Resolve(vault);
+            buffers.TelemetryRing = _telemetryRingHandle.Resolve(vault);
+            return buffers.Positions.IsCreated &&
+                buffers.PreviousPositions.IsCreated &&
+                buffers.Radius.IsCreated &&
+                buffers.SegmentMatrices.IsCreated &&
+                buffers.StretchFractions.IsCreated &&
+                buffers.ConstraintCorrections.IsCreated &&
+                buffers.ConstraintCorrectionCounts.IsCreated &&
+                buffers.RootPositions.IsCreated &&
+                buffers.TargetPositions.IsCreated &&
+                buffers.RootAups.IsCreated &&
+                buffers.TargetAups.IsCreated &&
+                buffers.TentacleStates.IsCreated &&
+                buffers.TelemetryRing.IsCreated &&
+                buffers.Positions.Length >= TotalSegments &&
+                buffers.PreviousPositions.Length >= TotalSegments &&
+                buffers.Radius.Length >= TotalSegments &&
+                buffers.SegmentMatrices.Length >= TotalSegments &&
+                buffers.StretchFractions.Length >= MaxTentacles &&
+                buffers.ConstraintCorrections.Length >= TotalSegments &&
+                buffers.ConstraintCorrectionCounts.Length >= TotalSegments &&
+                buffers.RootPositions.Length >= MaxTentacles &&
+                buffers.TargetPositions.Length >= MaxTentacles &&
+                buffers.RootAups.Length >= MaxTentacles &&
+                buffers.TargetAups.Length >= MaxTentacles &&
+                buffers.TentacleStates.Length >= MaxTentacles &&
+                buffers.TelemetryRing.Length >= TelemetryCapacity;
         }
 
         private void BuildFallbackRootOffsets()
@@ -831,7 +877,7 @@ namespace Hecton8.AI
 
         private void SeedAllTentaclesFromSockets()
         {
-            if (!_positions.IsCreated || _cachedTransform == null)
+            if (!TryResolvePersistentBuffers(out TentacleVaultBuffers buffers) || _cachedTransform == null)
                 return;
 
             float3 ownerFallback = ResolveOwnerRuntimePosition();
@@ -844,29 +890,29 @@ namespace Hecton8.AI
             {
                 float3 root = SanitizeFiniteFloat3(ResolveRootRuntimePosition(tentacleIndex), ownerFallback);
                 uint state = tentacleIndex < safeTentacleCount ? TentacleStateActive : 0u;
-                _rootPositions[tentacleIndex] = root;
-                _targetPositions[tentacleIndex] = root;
-                _rootAups[tentacleIndex] = ToAbsoluteUniversePosition(root);
-                _targetAups[tentacleIndex] = _rootAups[tentacleIndex];
-                _tentacleStates[tentacleIndex] = state;
-                _stretchFractions[tentacleIndex] = 0f;
+                buffers.RootPositions[tentacleIndex] = root;
+                buffers.TargetPositions[tentacleIndex] = root;
+                buffers.RootAups[tentacleIndex] = ToAbsoluteUniversePosition(root);
+                buffers.TargetAups[tentacleIndex] = buffers.RootAups[tentacleIndex];
+                buffers.TentacleStates[tentacleIndex] = state;
+                buffers.StretchFractions[tentacleIndex] = 0f;
 
                 int baseIndex = FlatIndex(tentacleIndex, 0);
                 for (int segmentIndex = 0; segmentIndex < SegmentsPerTentacle; segmentIndex++)
                 {
                     int nodeIndex = baseIndex + segmentIndex;
                     float3 position = SanitizeFiniteFloat3(root + (back * safeRestLength * segmentIndex), root);
-                    _positions[nodeIndex] = position;
-                    _previousPositions[nodeIndex] = position;
+                    buffers.Positions[nodeIndex] = position;
+                    buffers.PreviousPositions[nodeIndex] = position;
                     float t = segmentIndex * math.rcp(SegmentLastIndex);
                     float solvedRadius = math.max(0.001f, math.lerp(safeBaseRadius, safeTipRadius, t));
-                    _radius[nodeIndex] = solvedRadius;
-                    _segmentMatrices[nodeIndex] = float4x4.TRS(position, quaternion.identity, new float3(solvedRadius, solvedRadius, safeRestLength));
+                    buffers.Radius[nodeIndex] = solvedRadius;
+                    buffers.SegmentMatrices[nodeIndex] = float4x4.TRS(position, quaternion.identity, new float3(solvedRadius, solvedRadius, safeRestLength));
                 }
             }
         }
 
-        private void CaptureTentacleInputs()
+        private void CaptureTentacleInputs(in TentacleVaultBuffers buffers)
         {
             int safeTentacleCount = math.clamp(activeTentacleCount, 0, MaxTentacles);
             Transform target = _grabTarget != null ? _grabTarget : defaultGrabTarget;
@@ -880,15 +926,15 @@ namespace Hecton8.AI
             {
                 float3 root = SanitizeFiniteFloat3(ResolveRootRuntimePosition(tentacleIndex), ownerFallback);
                 float3 resolvedTarget = SanitizeFiniteFloat3(grabbing ? targetPosition : root, root);
-                _rootPositions[tentacleIndex] = root;
-                _targetPositions[tentacleIndex] = resolvedTarget;
-                _rootAups[tentacleIndex] = ToAbsoluteUniversePosition(root);
-                _targetAups[tentacleIndex] = ToAbsoluteUniversePosition(resolvedTarget);
+                buffers.RootPositions[tentacleIndex] = root;
+                buffers.TargetPositions[tentacleIndex] = resolvedTarget;
+                buffers.RootAups[tentacleIndex] = ToAbsoluteUniversePosition(root);
+                buffers.TargetAups[tentacleIndex] = ToAbsoluteUniversePosition(resolvedTarget);
 
                 uint state = tentacleIndex < safeTentacleCount ? TentacleStateActive : 0u;
                 if (grabbing)
                     state |= TentacleStateGrabbing;
-                _tentacleStates[tentacleIndex] = state;
+                buffers.TentacleStates[tentacleIndex] = state;
             }
         }
 
@@ -932,7 +978,7 @@ namespace Hecton8.AI
             }
         }
 
-        private bool TryQueueGrabDamage(float deltaTime)
+        private bool TryQueueGrabDamage(float deltaTime, in TentacleVaultBuffers buffers)
         {
             Transform target = _grabTarget != null ? _grabTarget : defaultGrabTarget;
             if (target == null)
@@ -963,11 +1009,11 @@ namespace Hecton8.AI
             if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
                 return false;
 
-            float3 root = _rootPositions.IsCreated ? SanitizeFiniteInputFloat3(_rootPositions[0], float3.zero) : float3.zero;
-            float3 tip = _targetPositions.IsCreated ? SanitizeFiniteInputFloat3(_targetPositions[0], root) : root;
+            float3 root = SanitizeFiniteInputFloat3(buffers.RootPositions[0], float3.zero);
+            float3 tip = SanitizeFiniteInputFloat3(buffers.TargetPositions[0], root);
             Vector3 tipRuntimePosition = new Vector3(tip.x, tip.y, tip.z);
             float3 direction;
-            if (!TryResolveHighTierAupGrabContact(out direction, out tipRuntimePosition))
+            if (!TryResolveHighTierAupGrabContact(in buffers, out direction, out tipRuntimePosition))
             {
                 float3 directionDelta = tip - root;
                 float directionSq = math.lengthsq(directionDelta);
@@ -1003,21 +1049,19 @@ namespace Hecton8.AI
             return CombatDamageRuntime.TryQueueDamage(in signal, in detail);
         }
 
-        private bool TryResolveHighTierAupGrabContact(out float3 direction, out Vector3 tipRuntimePosition)
+        private bool TryResolveHighTierAupGrabContact(in TentacleVaultBuffers buffers, out float3 direction, out Vector3 tipRuntimePosition)
         {
             direction = new float3(0f, 0f, 1f);
             tipRuntimePosition = Vector3.zero;
             if (!IsHighEndCollisionTier(_qualityTier) ||
-                !_rootAups.IsCreated ||
-                !_targetAups.IsCreated ||
-                _rootAups.Length <= 0 ||
-                _targetAups.Length <= 0)
+                buffers.RootAups.Length <= 0 ||
+                buffers.TargetAups.Length <= 0)
             {
                 return false;
             }
 
-            double3 rootAbsolute = _rootAups[0].ToAbsoluteDouble3();
-            double3 tipAbsolute = _targetAups[0].ToAbsoluteDouble3();
+            double3 rootAbsolute = buffers.RootAups[0].ToAbsoluteDouble3();
+            double3 tipAbsolute = buffers.TargetAups[0].ToAbsoluteDouble3();
             double3 delta = tipAbsolute - rootAbsolute;
             double distanceSq = math.lengthsq(delta);
             if (!math.all(math.isfinite(delta)) || !math.isfinite(distanceSq) || distanceSq <= double.Epsilon)
@@ -1041,7 +1085,7 @@ namespace Hecton8.AI
             if (!renderIndirect || instanceCount <= 0 || tentacleSegmentMesh == null || tentacleMaterial == null)
                 return;
 
-            if (!_segmentMatrices.IsCreated || !_radius.IsCreated)
+            if (!TryResolvePersistentBuffers(out TentacleVaultBuffers buffers))
                 return;
 
             EnsureGraphicsBuffers();
@@ -1054,8 +1098,8 @@ namespace Hecton8.AI
                 return;
             }
 
-            GraphicsBufferUploadUtility.UploadNativeArray(matrixBuffer, _segmentMatrices, instanceCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(radiusBuffer, _radius, instanceCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(matrixBuffer, buffers.SegmentMatrices, instanceCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(radiusBuffer, buffers.Radius, instanceCount);
             tentacleMaterial.SetBuffer(_MatrixBufferId, matrixBuffer);
             tentacleMaterial.SetBuffer(_RadiusBufferId, radiusBuffer);
             BindRadiusReferenceToMaterial();
@@ -1217,7 +1261,7 @@ namespace Hecton8.AI
 
         private void ApplyOriginShiftRebase(float3 offset)
         {
-            if (!_positions.IsCreated || !_previousPositions.IsCreated || !_rootPositions.IsCreated || !_targetPositions.IsCreated)
+            if (!TryResolvePersistentBuffers(out TentacleVaultBuffers buffers))
                 return;
 
             if (!math.all(math.isfinite(offset)))
@@ -1228,44 +1272,39 @@ namespace Hecton8.AI
 
             for (int i = 0; i < TotalSegments; i++)
             {
-                _positions[i] = SanitizeFiniteInputFloat3(_positions[i] - offset, float3.zero);
-                _previousPositions[i] = SanitizeFiniteInputFloat3(_previousPositions[i] - offset, _positions[i]);
-                if (!_segmentMatrices.IsCreated)
-                    continue;
-
-                float4x4 matrix = _segmentMatrices[i];
+                buffers.Positions[i] = SanitizeFiniteInputFloat3(buffers.Positions[i] - offset, float3.zero);
+                buffers.PreviousPositions[i] = SanitizeFiniteInputFloat3(buffers.PreviousPositions[i] - offset, buffers.Positions[i]);
+                float4x4 matrix = buffers.SegmentMatrices[i];
                 float4 c3 = matrix.c3;
-                float3 matrixPosition = SanitizeFiniteInputFloat3(new float3(c3.x - offset.x, c3.y - offset.y, c3.z - offset.z), _positions[i]);
+                float3 matrixPosition = SanitizeFiniteInputFloat3(new float3(c3.x - offset.x, c3.y - offset.y, c3.z - offset.z), buffers.Positions[i]);
                 matrix.c3 = new float4(matrixPosition.x, matrixPosition.y, matrixPosition.z, c3.w);
-                _segmentMatrices[i] = matrix;
+                buffers.SegmentMatrices[i] = matrix;
             }
 
             for (int tentacleIndex = 0; tentacleIndex < MaxTentacles; tentacleIndex++)
             {
-                _rootPositions[tentacleIndex] = SanitizeFiniteInputFloat3(_rootPositions[tentacleIndex] - offset, float3.zero);
-                _targetPositions[tentacleIndex] = SanitizeFiniteInputFloat3(_targetPositions[tentacleIndex] - offset, _rootPositions[tentacleIndex]);
-                if (_rootAups.IsCreated)
-                    _rootAups[tentacleIndex] = ToAbsoluteUniversePosition(_rootPositions[tentacleIndex]);
-                if (_targetAups.IsCreated)
-                    _targetAups[tentacleIndex] = ToAbsoluteUniversePosition(_targetPositions[tentacleIndex]);
+                buffers.RootPositions[tentacleIndex] = SanitizeFiniteInputFloat3(buffers.RootPositions[tentacleIndex] - offset, float3.zero);
+                buffers.TargetPositions[tentacleIndex] = SanitizeFiniteInputFloat3(buffers.TargetPositions[tentacleIndex] - offset, buffers.RootPositions[tentacleIndex]);
+                buffers.RootAups[tentacleIndex] = ToAbsoluteUniversePosition(buffers.RootPositions[tentacleIndex]);
+                buffers.TargetAups[tentacleIndex] = ToAbsoluteUniversePosition(buffers.TargetPositions[tentacleIndex]);
             }
         }
 
         private void WriteTelemetryFrame()
         {
-            if (!_telemetryRing.IsCreated || !_positions.IsCreated)
+            if (!TryResolvePersistentBuffers(out TentacleVaultBuffers buffers))
                 return;
 
             int safeTentacleCount = math.clamp(activeTentacleCount, 0, MaxTentacles);
             int firstTipIndex = SegmentLastIndex;
-            float3 root = _positions[0];
-            float3 tip = _positions[firstTipIndex];
+            float3 root = buffers.Positions[0];
+            float3 tip = buffers.Positions[firstTipIndex];
             bool invalid = _invalidInputDetected ||
                 !math.all(math.isfinite(root)) ||
                 !math.all(math.isfinite(tip)) ||
                 !math.all(math.isfinite(_lastFlowVector));
             uint flags = safeTentacleCount > 0 ? 0x01u : 0u;
-            if ((_tentacleStates.IsCreated && (_tentacleStates[0] & TentacleStateGrabbing) != 0u))
+            if ((buffers.TentacleStates[0] & TentacleStateGrabbing) != 0u)
                 flags |= 0x02u;
             if (_pendingOriginShiftRebase)
                 flags |= 0x04u;
@@ -1284,13 +1323,13 @@ namespace Hecton8.AI
                 Root0 = safeRoot,
                 Tip0 = safeTip,
                 FlowVector = safeFlow,
-                MaxStretchFraction = ResolveMaxStretchFraction()
+                MaxStretchFraction = ResolveMaxStretchFraction(buffers.StretchFractions)
             };
 
             int telemetryWriteIndex = _telemetryCursor % TelemetryCapacity;
             if (telemetryWriteIndex < 0)
                 telemetryWriteIndex += TelemetryCapacity;
-            _telemetryRing[telemetryWriteIndex] = entry;
+            buffers.TelemetryRing[telemetryWriteIndex] = entry;
             if (_telemetryCursor == int.MaxValue)
             {
                 int nextIndex = telemetryWriteIndex + 1;
@@ -1308,21 +1347,21 @@ namespace Hecton8.AI
             _invalidInputDetected = false;
         }
 
-        private float ResolveMaxStretchFraction()
+        private static float ResolveMaxStretchFraction(NativeArray<float> stretchFractions)
         {
-            if (!_stretchFractions.IsCreated)
+            if (!stretchFractions.IsCreated)
                 return 0f;
 
             float maxStretch = 0f;
             for (int i = 0; i < MaxTentacles; i++)
-                maxStretch = math.max(maxStretch, _stretchFractions[i]);
+                maxStretch = math.max(maxStretch, stretchFractions[i]);
 
             return maxStretch;
         }
 
         private void DumpTelemetryBlackBox()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolvePersistentBuffers(out TentacleVaultBuffers buffers))
                 return;
 
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -1333,7 +1372,7 @@ namespace Hecton8.AI
 
             using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
             using BinaryWriter writer = new BinaryWriter(stream);
-            int ringLength = math.min(TelemetryCapacity, _telemetryRing.Length);
+            int ringLength = math.min(TelemetryCapacity, buffers.TelemetryRing.Length);
             int entryCount = _telemetryCursor >= ringLength ? ringLength : math.max(0, _telemetryCursor);
             int firstEntryIndex = entryCount == ringLength && ringLength > 0 ? _telemetryCursor % ringLength : 0;
 
@@ -1344,7 +1383,7 @@ namespace Hecton8.AI
             for (int i = 0; i < entryCount; i++)
             {
                 int sourceIndex = (firstEntryIndex + i) % ringLength;
-                LeviathanTentacleTelemetryEntry entry = _telemetryRing[sourceIndex];
+                LeviathanTentacleTelemetryEntry entry = buffers.TelemetryRing[sourceIndex];
                 writer.Write(entry.FrameIndex);
                 writer.Write(entry.ActiveTentacleCount);
                 writer.Write(entry.Flags);
@@ -1366,7 +1405,7 @@ namespace Hecton8.AI
 
         private void DumpTelemetryBlackBoxOnce()
         {
-            if (_telemetryDumped || !_telemetryRing.IsCreated)
+            if (_telemetryDumped || !HasPersistentBuffers())
                 return;
 
             DumpTelemetryBlackBox();

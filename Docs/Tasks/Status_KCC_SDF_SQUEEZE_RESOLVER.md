@@ -4,7 +4,7 @@ PROMPT IDENTIFIED: KCC_SDF_SQUEEZE_RESOLVER
 ROLE: LOCOMOTION_ENGINEER
 DOMAIN: PHYSICS/LOCOMOTION
 TASK COUNT: 18
-STATUS: KCC SDF SQUEEZE IMPLEMENTED / NAN POLISH APPLIED / CURRENT BUILD BLOCKED BY FOREIGN COMPILE ERRORS
+STATUS: VERIFIED MASTER GRADE / KCC SDF SQUEEZE IMPLEMENTED / BUILD GREEN WITH 4 FOREIGN CS0649 WARNINGS
 
 ## Mandates Read
 - PHYS_Physics_Integrity_Determinism_ForceMode.txt
@@ -24,7 +24,7 @@ STATUS: KCC SDF SQUEEZE IMPLEMENTED / NAN POLISH APPLIED / CURRENT BUILD BLOCKED
 ## Primary Objectives
 - [x] 1. PURGE_SINGLETONS | DOD: `rg` found no `KCCManager.Instance` or `class KCCManager` in Gameplay/Physics KCC scope; alternative rejected: inventing a new manager to remove; microseconds estimate: 20000 us.
 - [x] 2. DEBT_CLEANUP | DOD: `rg` found no player `OnCollisionStay`; existing solid-overlap teleport path is bypassed only after valid SDF squeeze; alternative rejected: Unity collision callback repair; microseconds estimate: 40000 us.
-- [x] 3. DATA_EVICTION | DOD: resolver runtime state now vault-first for positions, velocities, intended movement, flow velocity, last-valid position, sync read/write state, hand targets, telemetry ring/cursor, fault flags, ray batches, SDF squeeze results, and player motor sweep/repair command-result caches through `BufferID.PlayerKinematic*` and `BufferID.PlayerMotor*` lanes; H8Memory remains only a cold bootstrap fallback when `GlobalDataVault` is unavailable; alternative rejected: private persistent NativeArray ownership as the normal path; microseconds estimate: 90000 us plus 4000-12000 us saved from reduced duplicate cache churn.
+- [x] 3. DATA_EVICTION | DOD: resolver runtime state now vault-only for positions, velocities, intended movement, flow velocity, last-valid position, sync read/write state, hand targets, telemetry ring/cursor, fault flags, ray batches, SDF squeeze results, and player motor sweep/repair command-result caches through `BufferID.PlayerKinematic*` and `BufferID.PlayerMotor*` lanes; private H8Memory fallback allocation was removed and vault-unavailable paths now fail closed until DataVault returns; alternative rejected: private persistent NativeArray ownership as a bootstrap crutch; microseconds estimate: 90000 us plus 4000-12000 us saved from reduced duplicate cache churn.
 - [x] 4. BURST_ALGORITHM | DOD: `SdfSqueezeJob` added under Physics/KCC with 6-axis gradient when density > 0; alternative rejected: main-thread sampling; microseconds estimate: 65000 us.
 - [x] 5. AUP_INTEGRITY | DOD: job receives AUP absolute `double3` and floating-origin offset before texture query; motor-side SDF fallback now also converts runtime position through `AbsoluteUniversePosition.ToAbsoluteDouble3()` before sampling; alternative rejected: float-only world coordinate sampling; microseconds estimate: 25000 us.
 - [x] 6. DOD_SOA_LAYOUT | DOD: runtime reads/writes `BufferID.PlayerKinematicState` as `LockstepPlayerKinematicState`; alternative rejected: MonoBehaviour field coupling; microseconds estimate: 45000 us.
@@ -39,7 +39,7 @@ STATUS: KCC SDF SQUEEZE IMPLEMENTED / NAN POLISH APPLIED / CURRENT BUILD BLOCKED
 - [x] 15. HOMEOSTASIS_ADAPTATION | DOD: `SignalBusRegistry.SystemStress01 > 0.8` routes to 5-frame/10Hz-equivalent sampling with cached interpolation; alternative rejected: disable squeeze under stress; microseconds estimate: 25000-60000 us saved during sustained squeeze.
 - [x] 16. OXYGEN_PENALTY | DOD: stress publishes physiology O2 multiplier and pushes CO2-equivalent load to `IGasDynamicsSolver`; alternative rejected: direct survival stat mutation; microseconds estimate: 8000 us.
 - [x] 17. SPEED_PENALTY | DOD: forward velocity component is reduced by 60% while squeezing; alternative rejected: global speed scalar outside KCC; microseconds estimate: 3000 us.
-- [x] 18. FINAL_VALIDATION | BLOCKED BY DEPENDENCY: latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` exits 1 with 130 foreign errors in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_nan_polish.exit.txt`; no diagnostic names `SdfSqueezeJob`, `HectonPlayerMotor`, `PlayerKinematicsRuntime`, or `HectonPlayerState`; alternative rejected: editing RepairTool/UnderwaterVisuals/Sargassum from a locomotion prompt; measured failed validation time: 105250000 us.
+- [x] 18. FINAL_VALIDATION | DOD: latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` exits 0 in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop11.exit.txt`; 0 errors, 4 unrelated CS0649 warnings in `Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs`; alternative rejected: trusting stale `vault_polish8` blocker after source had moved; measured validation time: 93277423 us.
 
 ## Iteration Loop 1 - Scope And Kernel
 - [x] Verified no KCC singleton/collision callback debt in assigned scope.
@@ -95,12 +95,31 @@ STATUS: KCC SDF SQUEEZE IMPLEMENTED / NAN POLISH APPLIED / CURRENT BUILD BLOCKED
 - [x] `rg --pcre2 "math\.rsqrt\((?!math\.max)"` now finds no remaining unguarded rsqrt in the KCC/player locomotion files scanned.
 - [x] Latest build captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_nan_polish.exit.txt`; current wall is 130 foreign errors in RepairTool, HectonUnderwaterVisuals, and SargassumMicroFaunaBoids, with no KCC/player diagnostics.
 
+## Iteration Loop 10 - Vault Sovereignty And Tether Compile Shim
+- [x] Re-read status/rationale, AGENTS.md, the exact KCC XML assignment, the domain map, and the 8 task-relevant mandates before code.
+- [x] Removed private H8Memory fallback allocation from `PlayerKinematicsRuntime`, `PlayerKinematicsNativeState`, and `HectonPlayerMotorNativeState`; DataVault absence now returns default buffers and hot paths fail closed instead of owning private NativeArrays.
+- [x] Added DataVault service replacement recovery in `PlayerKinematicsRuntime`: outstanding hand environment jobs are pumped, native aliases are disposed, and buffers are reacquired when the vault returns.
+- [x] Guarded player motor scheduled sweep and kinematic repair target scheduling so default vault buffers cannot be indexed when DataVault is unavailable.
+- [x] Repaired a PHYSICS/LOCOMOTION-adjacent tether compile wall by keeping `TetherFiredSignal` as the typed telemetry lane while executing the owner-local tow attach through `TetherManager.ExecuteFireRequest`; the first rerun advanced past tether diagnostics without reviving the managed fire-request sidecar.
+- [x] Static scan found no local persistent `H8Memory.Allocate`, `Allocator.Persistent`, `NativeMemorySentinel.RegisterNativeArray`, `COLD FALLBACK`, or `AllocateLocalArray` in the scanned KCC/player/tether surface.
+- [x] Static scan found all `StructLayout` entries in the scanned KCC/player/tether surface use `Pack = 1`.
+- [x] Static scan found no unguarded `math.rsqrt`, `Update(`, `string.Format`, legacy `EventBus`, managed delegate, `GameObject.Find`, `FindObjectOfType`, `Physics.CapsuleCast`, `OnCollisionStay`, or `KCCManager.Instance` in the scanned surface.
+- [x] Roslyn reruns advanced past tether diagnostics; checkpoint captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_vault_polish8.exit.txt` had 24 foreign `UI/Navigation/DiegeticGyroCompassRuntime.cs` and `World/EcosystemDirector.cs` errors and no KCC/player/tether diagnostics; Loop 11 supersedes this stale wall with a green current build.
+
+## Iteration Loop 11 - Current Tree Reconciliation
+- [x] Re-read status/rationale and re-extracted the exact KCC XML prompt after memory recovery.
+- [x] Rechecked current tow attach flow: `HeavyTowWinch.TryAttach` publishes `TetherFiredSignal` for typed observability, then calls `TetherManager.ExecuteFireRequest` directly; no `TryConsumeFireForManager`, `TetherFireRequest`, or managed request sidecar remains.
+- [x] Corrected stale status/rationale text that still described the removed sidecar-drain implementation.
+- [x] Reran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false`; `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop11.exit.txt` exits 0 with 0 errors and 4 unrelated CS0649 warnings in `ArchitectEyeVisualizer`.
+- [x] Re-scanned the KCC/player/tether surface: no private persistent NativeArray fallback, unguarded `math.rsqrt`, legacy `EventBus`, managed delegates, `Update(`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, `KCCManager.Instance`, `TryConsumeFireForManager`, or `TetherFireRequest`.
+- [x] `git diff --check` on touched KCC/player/tether/status/rationale/log paths produced no whitespace errors; whole-tree `git diff --check` still reports pre-existing `Docs/Tasks/CURRENT_BATCH.md:2312` trailing whitespace outside this edit.
+
 ## Omega Polish
 - [x] Anti-bloat inquisition read after core checklist completion.
 - [x] `rg` found no `GameObject.Find`, `FindObjectOfType`, `KCCManager`, `Physics.CapsuleCast`, `OnCollisionStay`, `Update(`, `string.Format`, legacy `EventBus`, or managed delegate in the resolver runtime/KCC path.
 - [x] `rg` found all `StructLayout` attributes in the KCC/player locomotion surface use `Pack = 1`.
 - [x] Circular dependency check: KCC job is standalone under `Hecton8.Physics.KCC`; gameplay runtime depends on KCC job, not vice versa.
-- [x] Build green was achieved earlier in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_xr_validation.exit.txt`; current tree is no longer green due to foreign compile errors recorded in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_nan_polish.exit.txt`.
+- [x] Current build green captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop11.exit.txt`: exit 0, 0 errors, 4 unrelated CS0649 warnings in `Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs`, measured 93277423 us.
 
 ## Loop Plan
 - Loop 1: inspect KCC/Vault/SDF/signal contracts, then implement tasks 1-5 if APIs exist.
@@ -112,3 +131,5 @@ STATUS: KCC SDF SQUEEZE IMPLEMENTED / NAN POLISH APPLIED / CURRENT BUILD BLOCKED
 - Loop 7: duplicate signal collapse, motor AUP hardening, high-tier fluid impulse, compile/report refresh.
 - Loop 8: final prompt re-extraction, XR wall revalidation, build green report refresh.
 - Loop 9: NaN denominator clamp pass, foreign compile-wall revalidation, report refresh.
+- Loop 10: vault-only state hardening, PHYSICS/LOCOMOTION-adjacent tether compile shim, foreign compile-wall revalidation, report refresh.
+- Loop 11: reconcile current tow signal documentation with the actual sidecar-free implementation, then revalidate compile and scans.

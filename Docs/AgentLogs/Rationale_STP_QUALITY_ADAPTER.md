@@ -1,6 +1,6 @@
 # STP_QUALITY_ADAPTER Rationale
 
-Status: CORE COMPLETE - DOTNET COMPILE PASS - UNITY RUNTIME VALIDATION PENDING
+Status: CORE COMPLETE - LOOP 11 POLISHED - DOTNET SOURCE GATE 15 PASSED 0 WARNINGS 0 ERRORS - UNITY RUNTIME VALIDATION PENDING
 
 ## Session Start
 
@@ -247,3 +247,93 @@ Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -maxcpuc
 Rejected Alternatives: Declaring runtime readiness from a local C# build. Unity import, Play Mode, player build, profiler, GCMonitor, and visual captures still require fresh Unity evidence.
 Scalability potential: The adapter source now passes the local C# project compile gate with all STP contracts present.
 Hardware Impact: Compile gate only. Result: Build succeeded in 4.30s with 0 warnings and 0 errors; no measured frame-time or microsecond data was produced.
+
+## Loop 9 Multiplatform Fault-Path Polish
+
+Problem: Explicit `Pack=1` declarations existed, but the adapter did not fail closed if a Unity/IL2CPP/ARM64 build produced an unexpected native size for STP telemetry or shared render-scale contracts.
+Solution: Added `ValidateAbiLayout()` at adapter startup using `UnsafeUtility.SizeOf<T>()` for `DrsTelemetryEntry` 48B, `ResolutionScaleState` 64B, `HardwareThermalSnapshot` 20B, and `DynamicResolutionRuntimeSnapshot` 24B. On mismatch, the adapter publishes the math-guard telemetry fault, disables itself, and refuses to write render scale.
+Rejected Alternatives: Trusting attributes alone, or moving the check into a broad global manifest from the STP prompt. The local adapter owns these buffers and can fail closed immediately without claiming another domain.
+Scalability potential: Quest/Android/ARM64 and Steam Deck consume the same binary telemetry and scale lane as PC; High/Ultra can layer richer effects over the same ABI without format forks.
+Hardware Impact: One cold startup size check. No per-frame cost and no measured microseconds.
+
+Problem: The NaN/fault blackbox dump wrote each field with `BinaryWriter`, which creates unnecessary fault-path call chatter and made the packed layout less direct than the DataVault ring format.
+Solution: Replaced `BinaryWriter` serialization with a 20B little-endian header and fixed 48B little-endian telemetry records staged through a stackalloc span.
+Rejected Alternatives: Keeping `BinaryWriter` field writes, or adding JSON/debug text. JSON would add allocation and I/O weight exactly when the system is already faulting.
+Scalability potential: Steam Deck/MicroSD writes one compact binary block only on NaN/fault; toaster and God-mode paths share the same crash artifact.
+Hardware Impact: Fault-path I/O is reduced by source inspection only. No runtime profiler was run, so no exact microseconds are claimed.
+
+Problem: Escalation demanded signal and data-sovereignty proof after prior loops.
+Solution: Re-ran adapter-domain scans. `ThermalDynamicResolutionAdapter.cs` has no `NativeArray<T>` declarations, no `new NativeArray`, no `Allocator.Persistent`, no `EventBus`, no managed delegate/event surface, no `string.Format`, and no `Update()`. Adapter signal consumption uses typed `SignalBus<T>.GetFrameSnapshot()` into `ReadOnlySpan<T>` for frame time, health, thermal, and AUP lanes; publications use typed `SignalBus<T>.Push`.
+Rejected Alternatives: Creating new visual-overkill signals. Existing `ResolutionScaleState`, shader globals, and typed STP/HUD lanes already cover the communication need.
+Scalability potential: Low/MX350/Quest uses `DearLie01=1` and cheap scale/sharpen; High/Ultra use visual budget flags for visor salt, volumetric silt, hull dents, 16-tap POM, SSS, and raymarched fog consumers.
+Hardware Impact: No new allocation or render pass. Epsilon-gated global updates remain source-estimated inside the existing 1 us/frame reactive-VFX estimate except on threshold changes.
+
+Problem: Duplicate signal or shader-platform hazards would create hidden integration cost.
+Solution: Static scan found one definition each for `AupShiftSignal`, `ResolutionChangedSignal`, `HUDNotificationSignal`, `ThermalStateChangedSignal`, `SystemHealthSignal`, and `FrameTimeSignal`. The STP adapter owns no compute shader and no `numthreads` path, so it adds no Metal 1024-thread-group risk and no DirectX-only shader shortcut.
+Rejected Alternatives: Adding a custom STP compute/blit pass to chase visual quality. Unity dynamic-resolution APIs already solve the policy side without new GPU bandwidth.
+Scalability potential: All tiers keep one policy path; high-tier visual overkill remains delegated to rendering consumers rather than this adapter owning a pass.
+Hardware Impact: Static validation only; no measured frame time.
+
+Problem: Compile gate 7 failed outside STP in `ArchitectEyeVisualizer.cs` on a missing `ValidatePackedStructSizes` call; the file already had a diagnostics visual-overkill method call path from another agent.
+Solution: Added the missing packed-struct size validator in the diagnostics visualizer so the compile gate could advance. This was a narrow cross-domain repair tied to diagnostics ABI validation; no ownership of the diagnostics renderer or its NativeArrays was taken.
+Rejected Alternatives: Refactoring the diagnostics renderer from the STP domain, or ignoring a compile wall that prevented source validation.
+Scalability potential: Diagnostics can continue drawing high-tier visual-overkill instrumentation while the STP adapter publishes the budget state.
+Hardware Impact: Cold `Awake()` ABI check only. No measured runtime effect.
+
+Problem: Compile gate 8 failed before C# analysis because `Temp/obj/Hecton8.Core/project.assets.json` was missing.
+Solution: Ran `dotnet restore Hecton8.Core.csproj -v:minimal`, stored the restore log, and repeated the single-worker no-restore compile gate.
+Rejected Alternatives: Reporting a missing assets file as a source failure.
+Scalability potential: None; validation infrastructure only.
+Hardware Impact: No runtime impact.
+
+Problem: Compile gate 9 fails in Construction after restore.
+Solution: Logged the failure in `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt9_no_restore.txt`. Current errors are `double3`/`float3` mismatches in `DroneFleetManager.cs`/`DroneCognitionJob.cs` and missing `ToDouble3`/`ToFloat3`; no STP adapter or scalability contract errors appeared in the log.
+Rejected Alternatives: Editing Construction drone cognition/fleet code from the render scalability prompt. That would violate the domain boundary after the adapter already has a previous clean source compile.
+Scalability potential: STP remains source-complete, but latest project-wide compile evidence is blocked by Construction.
+Hardware Impact: No runtime data. Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain pending.
+
+## Loop 10 Pointer-Lifetime and Telemetry Fence Polish
+
+Problem: The adapter locked `ResolutionScaleState` while the one-frame Burst EWMA job owned a raw DataVault pointer, but `Tick()` could still resolve and write the same pointer if the previous job was not complete. That is a real race on low-end CPU pressure, exactly when the scaler is most active.
+Solution: `Tick()` now resolves `ResolutionScaleState*` only when `_stressEwmaScheduled` is false after the non-blocking completion check. If the EWMA job is still in flight, the adapter continues using managed scalar state for policy and skips DataVault scale-state writes for that frame. `TryGetScaleState()` now fails closed during an in-flight job instead of returning a possibly torn state.
+Rejected Alternatives: Forcing `JobHandle.Complete()` in the middle of `Tick()` would remove the race by adding the stall the native-memory mandate forbids. Removing the Burst EWMA job would weaken temporal stability. Keeping the old path was rejected as unsafe.
+Scalability potential: Low/i3/MX350 avoids worker-main pointer contention under pressure; High/Ultra still receives the same DataVault state when the job completes and keeps the same visual-overkill budget path.
+Hardware Impact: No measured microseconds. Source impact is stall avoidance and data-race removal; one delayed DataVault state write can occur when the worker job slips.
+
+Problem: The telemetry ring now uses a raw pointer for the 300-frame blackbox, but write/dump methods did not hold a DataVault buffer lock while writing raw bytes.
+Solution: Added `TryLockTelemetryPointer()` and fenced `WriteTelemetry()` / `DumpBlackBoxOnce()` with `TryLockBuffer(BufferID.ResolutionScaleTelemetry)` and `TryUnlockBuffer(...)`. The no-arg dump path delegates to a locked writer, and NaN recovery dumps while the ring is already locked.
+Rejected Alternatives: Reintroducing `NativeArray<T>` borrowed views, or leaving telemetry writes unlocked because they are short. The escalated DataVault sovereignty rule requires pointer lifetime to be explicit.
+Scalability potential: Steam Deck/MicroSD crash capture remains one compact binary write; Quest/Android and PC share the same packed 48B telemetry ring without format divergence.
+Hardware Impact: One DataVault lock/unlock around the telemetry heartbeat and fault dump. No profiler data; no exact microsecond claim.
+
+Problem: Loop 10 needed a full domain re-audit after code changes.
+Solution: Re-ran scans for `NativeArray<T>`, local persistent allocation, `EventBus`, managed delegates/events, `string.Format`, `Update/LateUpdate/FixedUpdate`, non-finite layout hazards, duplicate STP signals, and shader compute thread groups. The adapter scan is clean. Shared STP structs remain explicit `Pack=1`: 48B telemetry, 64B scale state, 20B thermal snapshot, and 24B DRS snapshot. Shader `numthreads` hits are outside `Graphics/Scalability`; the STP adapter owns no compute shader or DirectX-only path.
+Rejected Alternatives: Treating the previous loop-9 audit as current evidence after pointer code changed.
+Scalability potential: Low path still uses dear-lie render scale and sharpen; high path still publishes visual-overkill flags without new render passes.
+Hardware Impact: Static audit only; runtime verification remains pending.
+
+Problem: Compile validation changed again after other agents edited the shared project.
+Solution: Gate 10 produced an empty log and exit `-1`, so it was classified as a process/tool abort. Gate 11 used no node reuse, one worker, no analyzers, and no restore; it reached C# and failed only in `PhysicsApplySystem.cs` on missing `_queueHash` and `PendingEventCapacity`.
+Rejected Alternatives: Editing physics apply code from the render/scalability prompt. That is outside the STP authoritative domain.
+Scalability potential: STP remains source-complete; final project-wide validation waits on the physics owner/integrator.
+Hardware Impact: No runtime data. Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain pending.
+
+## Loop 11 Blackbox Retry and Current Gate Evidence
+
+Problem: The blackbox writer could mark `_blackBoxDumped` before proving that the header and telemetry-record writes completed. A transient file-system failure would suppress a later retry and erase the last-300-frame evidence required by the blackbox rule.
+Solution: Moved `_blackBoxDumped = true` to the end of `DumpBlackBoxOnceLocked()` after the 20B header and one contiguous stack-staged telemetry body have been written successfully.
+Rejected Alternatives: Leaving the flag before the file write, or swallowing the write failure as a one-shot fault. Both make crash evidence disappear under exactly the failure mode the blackbox exists to diagnose.
+Scalability potential: Low/i3/MX350, Quest/Android, Steam Deck, and High/Ultra all keep the same retryable crash artifact. Cheap devices pay no normal-frame cost; high-tier visual-overkill paths keep the same telemetry record format.
+Hardware Impact: Fault-path only. No measured microseconds. Normal-frame hot path is unchanged; NaN/fault dump I/O is now two stream writes, not one write per telemetry record.
+
+Problem: Current validation evidence changed again while other agents edited the shared project and after the blackbox two-write patch changed source.
+Solution: Attempt 12 was run with one worker, node reuse off, analyzers off, and a separate output directory; it passed with 0 errors and 4 warnings in `Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs`. Attempt 13 failed in `World/EcosystemDirector.cs` while other domains were still moving. Attempt 14 did not reach C# because `Temp/obj/Hecton8.Core/project.assets.json` was missing. Restore attempt 15 regenerated the assets file, and compile attempt 15 passed with 0 warnings and 0 errors in 4.51s.
+Rejected Alternatives: Editing `World/EcosystemDirector.cs` from the STP render/scalability prompt, or claiming Unity runtime readiness from a C# source gate.
+Scalability potential: STP is source-green on the current disk state. Unity import, Play Mode, player build, profiler, GC, memory, and visual captures still require Unity evidence.
+Hardware Impact: Compile gate only. No Unity profiler, player build, GC capture, memory capture, or microsecond measurement exists for this loop.
+
+Problem: Escalation asked for another H-Phi/data-sovereignty audit after the blackbox retry patch.
+Solution: Re-ran adapter scans. `ThermalDynamicResolutionAdapter.cs` still has no `NativeArray<T>` declaration, no `new NativeArray`, no `Allocator.Persistent`, no `EventBus`, no managed delegate/event surface, no `string.Format`, no `Update/LateUpdate/FixedUpdate`, and no `.normalized` or `math.normalize` debt. STP structs remain explicit `Pack=1`: 48B telemetry, 64B scale state, 20B thermal snapshot, and 24B runtime snapshot.
+Rejected Alternatives: Treating loop 10 scans as current evidence after touching the fault path.
+Scalability potential: Toaster path remains 0.5/0.35 with dear-lie reconstruction and sharpen; High/Ultra remain full-scale with visual-overkill budget flags for visor salt, volumetric silt, hull dents, 16-tap POM, SSS, and raymarched fog consumers.
+Hardware Impact: Static audit only. No measured runtime data.

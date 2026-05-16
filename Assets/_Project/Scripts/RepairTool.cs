@@ -41,6 +41,7 @@ using Hecton8.Tools;
 using Hecton8.UI;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -72,6 +73,7 @@ namespace Hecton8.Gameplay
         private const float MinimumStoredHullDentDepthMeters = 0.001f;
         private const float HullRepairEpsilon = 0.0001f;
         private const int RepairBlackBoxFrameCount = 300;
+        private const int RepairBlackBoxEntrySizeBytes = 64;
         private const string RepairBlackBoxDumpPath = "Docs/AgentLogs/Dump_WELDING_REPAIR_LOGIC.bin";
         private const byte RepairBlackBoxFlagEquipped = 1 << 0;
         private const byte RepairBlackBoxFlagRepairing = 1 << 1;
@@ -79,20 +81,31 @@ namespace Hecton8.Gameplay
         private const byte RepairBlackBoxFlagDentRepaired = 1 << 3;
         private const byte RepairBlackBoxFlagVaultChanged = 1 << 4;
         private const byte RepairBlackBoxFlagInvalidMath = 1 << 5;
+        private const float PowerIndicatorLowChargeThreshold01 = 0.2f;
         private static readonly char[] s_integrityDiagnosticPrefixChars = "INTEGRITY ".ToCharArray();
         private static FixedCharBuffer s_hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - repair tool HUD staging buffer - owner: RepairTool
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = RepairBlackBoxEntrySizeBytes)]
         private struct RepairToolBlackBoxEntry
         {
+            [FieldOffset(0)]
             public AbsoluteUniversePosition HitAup;
+            [FieldOffset(48)]
             public uint Frame;
+            [FieldOffset(52)]
             public uint StateHash;
+            [FieldOffset(56)]
             public ushort ActiveDentCount;
+            [FieldOffset(58)]
             public ushort TouchedDentCount;
+            [FieldOffset(60)]
             public byte RepairedDentCount;
+            [FieldOffset(61)]
             public byte Battery255;
+            [FieldOffset(62)]
             public byte Flags;
+            [FieldOffset(63)]
+            public byte Reserved0;
         }
 
         private struct ServiceDiagnosis
@@ -107,6 +120,14 @@ namespace Hecton8.Gameplay
             public string priority;
             public int integrityPercent;
             public bool hasIntegrityPercent;
+        }
+
+        private enum PowerIndicatorVisualState : byte
+        {
+            Unknown = 0,
+            Off = 1,
+            Low = 2,
+            On = 3
         }
 
         // ══════════════════════════════════════════════════════════
@@ -178,16 +199,23 @@ namespace Hecton8.Gameplay
         [Tooltip("Renderer for power indicator light.")]
         [SerializeField] private Renderer _powerIndicatorRenderer;
 
-        [Tooltip("Emission color when powered.")]
-        [SerializeField] private Color _powerOnColor = new Color(0f, 0.9f, 1f);
+        [Tooltip("Shared material for the power indicator when no battery power is available.")]
+        [SerializeField] private Material _powerIndicatorOffMaterial;
+
+        [Tooltip("Shared material for the power indicator when battery charge is low.")]
+        [SerializeField] private Material _powerIndicatorLowMaterial;
+
+        [Tooltip("Shared material for the power indicator when battery charge is serviceable.")]
+        [SerializeField] private Material _powerIndicatorOnMaterial;
 
         private ItemData _installedBattery;
         private float _batteryCharge;
         private ServiceDiagnosis _cachedDiagnosis;
 
-        // MaterialPropertyBlock for power indicator
-        private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: RepairTool
-        private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
+        private Material _powerIndicatorDefaultMaterial;
+        private Material _powerIndicatorAppliedMaterial;
+        private PowerIndicatorVisualState _powerIndicatorVisualState = PowerIndicatorVisualState.Unknown;
+        private bool _powerIndicatorAppliedVisible = true;
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool IMPLEMENTATION
@@ -250,26 +278,65 @@ namespace Hecton8.Gameplay
             if (_powerIndicatorRenderer == null)
                 return;
 
-            _powerIndicatorRenderer.GetPropertyBlock(_mpb);
+            CachePowerIndicatorDefaultMaterial();
+            PowerIndicatorVisualState nextState = ResolvePowerIndicatorVisualState();
+            Material nextMaterial = ResolvePowerIndicatorMaterial(nextState);
+            bool nextVisible = nextState != PowerIndicatorVisualState.Off || nextMaterial != null;
+            if (nextMaterial == null)
+                nextMaterial = _powerIndicatorDefaultMaterial;
+
+            if (_powerIndicatorVisualState == nextState &&
+                ReferenceEquals(_powerIndicatorAppliedMaterial, nextMaterial) &&
+                _powerIndicatorAppliedVisible == nextVisible)
+            {
+                return;
+            }
+
+            if (_powerIndicatorRenderer.enabled != nextVisible)
+                _powerIndicatorRenderer.enabled = nextVisible;
+
+            if (nextVisible &&
+                nextMaterial != null &&
+                !ReferenceEquals(_powerIndicatorRenderer.sharedMaterial, nextMaterial))
+            {
+                _powerIndicatorRenderer.sharedMaterial = nextMaterial;
+            }
+
+            _powerIndicatorVisualState = nextState;
+            _powerIndicatorAppliedMaterial = nextMaterial;
+            _powerIndicatorAppliedVisible = nextVisible;
+        }
+
+        private void CachePowerIndicatorDefaultMaterial()
+        {
+            if (_powerIndicatorDefaultMaterial == null && _powerIndicatorRenderer != null)
+                _powerIndicatorDefaultMaterial = _powerIndicatorRenderer.sharedMaterial;
+        }
+
+        private PowerIndicatorVisualState ResolvePowerIndicatorVisualState()
+        {
             float currentCharge = BatteryCharge;
-            float flickerScalar = 1f;
-            if (TryGetToolBrownoutFlicker(out float brownoutFlicker))
-                flickerScalar = math.saturate(brownoutFlicker);
-
             if (_installedBattery == null || currentCharge <= 0f)
-            {
-                _mpb.SetColor(_EmissionColorID, Color.black);
-            }
-            else if (currentCharge <= 0.2f)
-            {
-                _mpb.SetColor(_EmissionColorID, new Color(1f, 0.3f, 0f) * flickerScalar);
-            }
-            else
-            {
-                _mpb.SetColor(_EmissionColorID, _powerOnColor * flickerScalar);
-            }
+                return PowerIndicatorVisualState.Off;
 
-            _powerIndicatorRenderer.SetPropertyBlock(_mpb);
+            return currentCharge <= PowerIndicatorLowChargeThreshold01
+                ? PowerIndicatorVisualState.Low
+                : PowerIndicatorVisualState.On;
+        }
+
+        private Material ResolvePowerIndicatorMaterial(PowerIndicatorVisualState visualState)
+        {
+            switch (visualState)
+            {
+                case PowerIndicatorVisualState.Off:
+                    return _powerIndicatorOffMaterial;
+                case PowerIndicatorVisualState.Low:
+                    return _powerIndicatorLowMaterial != null ? _powerIndicatorLowMaterial : _powerIndicatorDefaultMaterial;
+                case PowerIndicatorVisualState.On:
+                    return _powerIndicatorOnMaterial != null ? _powerIndicatorOnMaterial : _powerIndicatorDefaultMaterial;
+                default:
+                    return _powerIndicatorDefaultMaterial;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -278,8 +345,8 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: RepairTool
             _cachedTransform = transform;
+            CachePowerIndicatorDefaultMaterial();
             TryAssignRepairAudioMixerRoute();
             SetRepairVisuals(false);
         }
@@ -1021,11 +1088,12 @@ namespace Hecton8.Gameplay
 
             bool changed = false;
             bool invalidMathDetected = false;
+            ushort repairedDentMask = 0;
             int activeDentCount = 0;
             try
             {
                 var dents = _hullDentsHandle.Resolve(vault);
-                if (!dents.IsCreated)
+                if (!dents.IsCreated || dents.Length < HullDentVaultCapacity)
                     return false;
 
                 int count = math.min(HullDentVaultCapacity, dents.Length);
@@ -1076,7 +1144,7 @@ namespace Hecton8.Gameplay
                     {
                         repairedDentCount++;
                         activeDentCount = math.max(0, activeDentCount - 1);
-                        PublishHullRepairedSignal(worldPoint, roomId, dentIndex, repairedDentCount);
+                        repairedDentMask |= (ushort)(1 << dentIndex);
                     }
                 }
             }
@@ -1084,6 +1152,9 @@ namespace Hecton8.Gameplay
             {
                 vault.TryUnlockBuffer(BufferID.HullDents);
             }
+
+            if (repairedDentMask != 0)
+                PublishHullRepairedSignals(worldPoint, roomId, repairedDentMask);
 
             if (changed || repairedDentCount > 0)
                 CrashTelemetryBuffer.ReportHullDentState(HullRepairTelemetryHash, activeDentCount, BuildHullRepairTelemetryFlags(touchedDentCount, repairedDentCount));
@@ -1115,7 +1186,8 @@ namespace Hecton8.Gameplay
 
             if (!_hullDentsHandle.IsCreated ||
                 _hullDentsHandle.BufferId != BufferID.HullDents ||
-                _hullDentsHandle.Length < HullDentVaultCapacity)
+                _hullDentsHandle.Length < HullDentVaultCapacity ||
+                !vault.ResolveBuffer(ref _hullDentsHandle))
             {
                 _hullDentsHandle = vault.GetBufferHandle<float4>(
                     BufferID.HullDents,
@@ -1124,7 +1196,7 @@ namespace Hecton8.Gameplay
                     NativeArrayOptions.ClearMemory);
             }
 
-            return _hullDentsHandle.IsCreated;
+            return _hullDentsHandle.IsCreated && _hullDentsHandle.Length >= HullDentVaultCapacity;
         }
 
         private bool EnsureRepairBlackBoxHandle(IDataVault vault)
@@ -1205,7 +1277,8 @@ namespace Hecton8.Gameplay
                     TouchedDentCount = (ushort)math.clamp(touchedDentCount, 0, ushort.MaxValue),
                     RepairedDentCount = (byte)math.clamp(repairedDentCount, 0, byte.MaxValue),
                     Battery255 = battery255,
-                    Flags = flags
+                    Flags = flags,
+                    Reserved0 = 0
                 };
             }
             finally
@@ -1241,6 +1314,9 @@ namespace Hecton8.Gameplay
                 RepairToolBlackBoxEntry* blackBox = (RepairToolBlackBoxEntry*)_repairBlackBoxHandle.ptr;
                 if (blackBox == null || _repairBlackBoxHandle.Length < RepairBlackBoxFrameCount)
                     return;
+                int entrySize = UnsafeUtility.SizeOf<RepairToolBlackBoxEntry>();
+                if (entrySize != RepairBlackBoxEntrySizeBytes)
+                    return;
 
                 string path = Path.Combine(Application.dataPath, "..", RepairBlackBoxDumpPath);
                 string directory = Path.GetDirectoryName(path);
@@ -1251,6 +1327,7 @@ namespace Hecton8.Gameplay
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(RepairBlackBoxFrameCount);
+                    writer.Write(entrySize);
                     writer.Write(unchecked((uint)Time.frameCount));
                     for (int i = 0; i < RepairBlackBoxFrameCount; i++)
                     {
@@ -1261,6 +1338,8 @@ namespace Hecton8.Gameplay
                         writer.Write(entry.HitAup.LocalX);
                         writer.Write(entry.HitAup.LocalY);
                         writer.Write(entry.HitAup.LocalZ);
+                        writer.Write(0f);
+                        writer.Write(0UL);
                         writer.Write(entry.Frame);
                         writer.Write(entry.StateHash);
                         writer.Write(entry.ActiveDentCount);
@@ -1268,6 +1347,7 @@ namespace Hecton8.Gameplay
                         writer.Write(entry.RepairedDentCount);
                         writer.Write(entry.Battery255);
                         writer.Write(entry.Flags);
+                        writer.Write(entry.Reserved0);
                     }
                 }
             }
@@ -1384,6 +1464,23 @@ namespace Hecton8.Gameplay
                 Flags = flags
             };
             SignalBus<HullRepairedSignal>.Push(in signal);
+        }
+
+        private static void PublishHullRepairedSignals(Vector3 worldPoint, int roomId, ushort repairedDentMask)
+        {
+            if (repairedDentMask == 0)
+                return;
+
+            int repairedCount = 0;
+            for (int dentIndex = 0; dentIndex < HullDentVaultCapacity; dentIndex++)
+            {
+                int bit = 1 << dentIndex;
+                if ((repairedDentMask & bit) == 0)
+                    continue;
+
+                repairedCount++;
+                PublishHullRepairedSignal(worldPoint, roomId, dentIndex, repairedCount);
+            }
         }
 
         private static uint BuildHullRepairTelemetryFlags(int touchedDentCount, int repairedDentCount)

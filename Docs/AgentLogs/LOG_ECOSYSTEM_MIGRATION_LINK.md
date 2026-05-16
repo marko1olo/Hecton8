@@ -162,3 +162,133 @@ Validation:
 - Latest command: `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false`.
 - Latest result: failed with 45 CS0103 errors in `Assets/_Project/Scripts/LaserCutter.cs`, all missing `LaserCutterEvents` queue/state fields.
 - Edited ecology bridge files still have clean static scans for `Schedule().Complete`, Unity `Update` methods, `string.Format`, prefab spawning, local native array/list allocation, sequential/Pack=4 ABI structs, and active legacy EventBus/delegate usage.
+
+## 2026-05-16 - Current-Disk Green Revalidation
+
+What was wrong:
+- The previous ECOSYSTEM_MIGRATION_LINK status was stale after integration repaired the external `LaserCutterEvents` compile wall.
+- Without a fresh build, the agent record would still claim dependency-blocked even though current disk could compile.
+
+What was done:
+- Re-read `Status_ECOSYSTEM_MIGRATION_LINK.md`, `Rationale_ECOSYSTEM_MIGRATION_LINK.md`, and the exact XML prompt from `CURRENT_BATCH.md`.
+- Ran `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` on current disk.
+- Re-ran focused ecology bridge scans for synchronous job fences, standard Unity update loops, managed formatting, prefab spawning, local native allocation calls, sequential/Pack=4 DTOs, and legacy EventBus/delegate usage.
+- Updated status and rationale from dependency-blocked to build-green evidence while preserving the platform runtime gap.
+
+Cinematic Cheats used:
+- Toaster: vault-cached macro import, border-ring hydration, stress-halved visual biomass, no prefab path, no per-fish SDF reads.
+- Middle: deterministic SOA visual hydration and dehydration back into `MacroSwarm`.
+- High/Ultra: SDF emergence and `FlagHighTierOverkill` remain available for downstream volumetric silt, visor salt/material response, cave exits, and richer ambient presentation without direct ecology-to-VFX coupling.
+
+Exact Microseconds saved / estimated:
+- Latest desktop C# build validation time: 59,970,000 us.
+- Low-tier border offsets remain estimated at 7 us for 64 offsets.
+- Stress cull remains estimated at 21 us and 32 visual slots saved for a 64-fish swarm when `SystemStress01 > 0.7`.
+- SDF gate remains one center sample, estimated at 3 us, replacing 64+ per-fish SDF samples.
+- No new runtime microsecond claim was added in this pass.
+
+Validation:
+- Build: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, elapsed 00:00:59.97.
+- Focused ecology scan found no `Schedule().Complete`, `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, `Instantiate`, `new GameObject`, or `StartCoroutine` in `EcosystemDirector`, `AmbientBiotaDirector`, `EcosystemPopulationBalancer`, or `MacroSwarm`.
+- Focused ecology scan found no `StructLayout(LayoutKind.Sequential)` or `Pack = 4` in those ecology bridge files.
+- Focused ecology scan found no local `new NativeArray`, `new NativeList`, `H8Memory.Allocate`, or native-array/list sentinel ownership calls in those ecology bridge files.
+- Focused legacy-signal scan found no active `EventBus`, `Action<>`, `Func<>`, or delegate usage; the only hit was the word "event" inside a comment.
+- Unity PlayMode, profiler, GC monitor, Quest/Android player build, Metal/Mac player build, Steam Deck runtime pass, and IL2CPP strip build were not executed.
+
+## 2026-05-16 - Macro Blackbox Heartbeat And Signal Dedup Pass
+
+What was wrong:
+- Macro-swarm blackbox evidence was event-driven. The mandate asks for the last 300 frames of high-level state, so event-only telemetry was insufficient.
+- A duplicate `LaserCutterEventPayload` signal definition existed across gameplay/core in the current integration tail, creating ambiguous listener signatures and violating typed-lane uniqueness.
+- After those issues were addressed, the current build wall moved to unrelated Construction/Fauna files.
+
+What was done:
+- Added `MacroSwarmBlackBoxFlagHeartbeat`.
+- Added cached macro swarm biomass/hash state fields.
+- Added `PushMacroSwarmHeartbeatBlackBox()` and called it from the existing `ILateFrameTickable` path after scheduled macro travel completion.
+- Kept full `PushMacroSwarmBlackBox()` event writes as the validation/dump path; those still scan active swarms and dump `Docs/AgentLogs/Dump_ECOSYSTEM_MIGRATION_LINK.bin` on invalid state.
+- Hardened the canonical core `LaserCutterEventPayload` to explicit `Pack=1` field offsets after current disk removed the gameplay duplicate.
+
+Cinematic Cheats used:
+- Toaster: heartbeat is one cached ring write per frame, not a 256-swarm scan.
+- Middle: full macro hydration/dehydration still records event snapshots.
+- High/Ultra: SDF emergence and high-tier overkill flags remain available for downstream silt, visor salt/material response, cave exits, and richer ambient presentation without ecology taking VFX ownership.
+
+Exact Microseconds saved / estimated:
+- O(1) heartbeat write: estimated 1-2 us per frame.
+- Rejected full per-frame 256-swarm telemetry scan: estimated 8-20 us avoided per frame on low-end CPU, measured proof absent.
+- Latest failed build validation wall time: 65,970,000 us.
+
+Validation:
+- Static ecology scans found no `Schedule().Complete`, standard Unity update loop, prefab spawn, `string.Format`, local native allocation call, sequential/Pack=4 ecology DTO, or active legacy EventBus/delegate usage in the ecology bridge files.
+- Duplicate laser-cutter signal scan found only the canonical core `LaserCutterEventPayload` struct and `LaserCutterEventType` enum; `LaserCutter.cs` now only references that typed lane.
+- `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` failed with 17 errors outside ecology: `DroneFleetManager.cs` double3/float3 conversion errors and `PredatorCognitionDomain.cs` NativeArray/NativeParallelHashMap ownership/type mismatches plus missing `_speciesTuningById`.
+- Unity PlayMode, profiler, GC monitor, Quest/Android player build, Metal/Mac player build, Steam Deck runtime pass, and IL2CPP strip build were not executed.
+
+## 2026-05-16 - Vault-Handle Eviction And Physics Wall
+
+What was wrong:
+- `EcosystemDirector` still retained long-lived `NativeArray<T>` field aliases after earlier vault migration.
+- The sector food heatmap bind path retained an external `NativeArray<byte>` alias instead of copying into an ecology-owned DataVault lane.
+- Current validation no longer fails in Construction/Fauna; it now fails outside ecology in `PhysicsApplySystem.cs` with force-packet helper, queue, validation-buffer, and BufferID references missing.
+
+What was done:
+- Added a local `VaultNativeArray<T>` wrapper in `EcosystemDirector` that stores `IDataVault` plus `VaultBufferHandle<T>` and resolves live views at use sites.
+- Converted the long-lived ecology arrays and `HeadlessEntitySoA` lanes from raw `NativeArray<T>` fields to vault-handle wrappers.
+- Added `BufferID.EcosystemSectorFoodHeatmapR8` and copied sector food heatmaps into that vault lane instead of retaining an external alias.
+- Re-ran static scans for private NativeArray owner fields, local NativeArray/List/Queue allocation calls, synchronous `Schedule().Complete`, Unity update loops, managed formatting/spawn paths, ABI pack drift, and legacy bus/delegate usage.
+- Re-ran `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false`.
+
+Cinematic Cheats used:
+- Toaster: copied heatmap data stays vault-local, no MicroSD/runtime file read, no prefab path, no per-fish SDF, stress-halved visual hydration.
+- Middle: deterministic SOA hydration/dehydration continues through vault-resolved buffers.
+- High/Ultra: SDF emergence and high-tier overkill signal flags still buy downstream silt, salt/visor material response, cave exits, and richer ambient presentation without ecology owning VFX.
+
+Exact Microseconds saved / estimated:
+- Wrapper resolution cost is expected to be micro-scale and cold-path dominated; profiler proof was not executed.
+- Avoided external heatmap alias and runtime I/O pressure; estimated benefit is hitch-risk removal rather than a measured frame-time number.
+- Existing heartbeat estimate remains 1-2 us per frame; rejected full 256-swarm scan remains 8-20 us avoided per frame.
+- Latest build-wall evidence: 31.47 s = 31,470,000 us. This is compile wall time, not runtime performance.
+
+Validation:
+- Build: failed with 67 errors in `Assets/_Project/Scripts/PhysicsApplySystem.cs`, outside AI/ecology.
+- Focused ecology scan found no `Schedule().Complete`, `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, `Instantiate`, `new GameObject`, or `StartCoroutine` in the ecology bridge files; only core signal diagnostics still use `Debug.LogWarning/Error`.
+- Focused native ownership scan found no private `NativeArray<T>` fields and no local `new NativeArray`, `new NativeList`, `new NativeQueue`, `H8Memory.Allocate`, or native sentinel registration calls in the ecology bridge files.
+- Remaining local native ownership: `_biomassIndexByKey` and `_sectorIndexByKey` NativeHashMap lookup indices in `EcosystemDirector`; documented because DataVault has no hash-map lane contract.
+- ABI scan found no sequential or Pack=4/8 ecology DTOs in `EcosystemDirector`, `AmbientBiotaDirector`, ecosystem files, or `MacroSwarm`; broader `GlobalSignals.cs` still contains unrelated sequential Pack=1 signal structs outside this ecology pass.
+- Legacy signal scan found no active `EventBus`, `Action<>`, `Func<>`, or delegate usage in the ecology bridge files; hits were comments/documentation terms only.
+- Unity PlayMode, profiler, GC monitor, Quest/Android player build, Metal/Mac player build, Steam Deck runtime pass, and IL2CPP strip build were not executed.
+
+## 2026-05-16 - Vault Index Sovereignty Closure
+
+What was wrong:
+- `EcosystemDirector` still owned two persistent `NativeHashMap<long,int>` lookup tables for sector and biomass key resolution.
+- The previous status was blocked by external physics errors, but current source state could be rebuilt after restore.
+
+What was done:
+- Added explicit Pack=1 `EcosystemIndexEntry` records.
+- Added `BufferID.EcosystemSectorIndexEntries` and `BufferID.EcosystemBiomassIndexEntries`.
+- Replaced `_sectorIndexByKey` and `_biomassIndexByKey` with vault-backed open-addressed tables.
+- Updated biomass diffusion, macro-swarm predator attraction, sector apex lookup, restore, clear, and slot creation paths to use bounded vault index probes.
+- Removed native hash-map allocation, disposal, and sentinel registration from the ecology director.
+- Ran restore, static scans, and final desktop C# build validation.
+
+Cinematic Cheats used:
+- Toaster: fixed 16-byte index entries, no native hash-map allocator ownership, no linear 512-cell diffusion scan, no prefab path, no per-fish SDF.
+- Middle: deterministic SOA hydration/dehydration and biomass diffusion stay bounded by configured capacities.
+- High/Ultra: SDF emergence and high-tier overkill signal flags remain available for downstream volumetric silt, visor salt/material response, cave exits, and richer ambient presentation without ecology owning VFX.
+
+Exact Microseconds saved / estimated:
+- Removed local native hash-map allocator ownership: init/teardown stall risk removed; steady-state savings unprofiled.
+- Rejected linear biomass lookup: avoids up to 512 comparisons per neighbor probe at default capacity. Open-address table is expected O(1), unprofiled.
+- Index memory cost: default 512 biomass slots -> 1024 entries * 16 bytes = 16,384 bytes; default 128 sector slots -> 256 entries * 16 bytes = 4,096 bytes.
+- Final build validation: 75.17 s = 75,170,000 us. This is compile wall time, not runtime performance.
+
+Validation:
+- Restore: `dotnet restore Hecton8.Core.csproj /p:UseSharedCompilation=false` reported all projects up to date.
+- Build: `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` succeeded with 0 warnings / 0 errors in 00:01:15.17.
+- Native ownership scan found no `NativeHashMap`, private native owner field, local `new NativeArray/List/Queue/HashMap`, `H8Memory.Allocate`, or native sentinel collection registration in ecology bridge files.
+- Anti-bloat scan found no `Schedule().Complete`, standard Unity update loop, `string.Format`, `Instantiate`, `new GameObject`, or `StartCoroutine` in ecology bridge files.
+- ABI scan found no sequential or Pack=4/8 ecology DTOs in ecology bridge files.
+- Legacy signal scan found no active `EventBus`, `Action<>`, `Func<>`, or delegate usage in ecology bridge files; hits were documentation/comment wording only.
+- Unity PlayMode, profiler, GC monitor, Quest/Android player build, Metal/Mac player build, Steam Deck runtime pass, and IL2CPP strip build were not executed.

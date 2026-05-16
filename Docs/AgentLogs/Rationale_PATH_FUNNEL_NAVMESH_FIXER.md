@@ -66,9 +66,9 @@ Hardware Impact: One struct write per late frame is estimated below 1 microsecon
 
 ## Decision 009 - Build Wall
 
-Problem: Validation could not initially reach a clean project build because upstream project files failed before pathfinding diagnostics mattered.
-Solution: Restored project assets, ran `Assembly-CSharp.csproj`, then isolated `Hecton8.Core.csproj` with errors-only logging. Current `Hecton8.Core.csproj` exits 1 with 137 non-pathfinding errors in World/VFX/RepairTool files and 0 `PathFunnel`/`AI\Pathfinding`/`AIPathfinding` matches. Current `Assembly-CSharp.csproj` exits 1 because `Unity.RenderPipelines.Universal.Runtime.dll` is locked by another process and has 0 pathfinding matches; an earlier Assembly-CSharp run also exposed missing RealtimeCSG source files.
-Rejected Alternatives: Editing RealtimeCSG package project files, URP package outputs, XR, Submarine, VFX, Audio, Fauna, Voxel, Bootstrap, GlobalSignals, Core assembly references, World flora/fauna, VFX dependencies, or killing other agents' processes was rejected as cross-domain or unsafe parallel-workspace behavior outside AI/PATHING. Reporting full green build was rejected because the objective logs still fail.
+Problem: Validation could not reach a clean project build because upstream project files failed before pathfinding diagnostics mattered.
+Solution: Restored project assets, ran `Assembly-CSharp.csproj`, then isolated `Hecton8.Core.csproj` with errors-only logging. At that pass, `Hecton8.Core.csproj` exited 1 with 49 non-pathing missing contract symbol errors and 0 pathfinding matches. `Assembly-CSharp.csproj` exited nonzero with 216 missing RealtimeCSG source-file errors and 0 pathfinding matches.
+Rejected Alternatives: Editing RealtimeCSG package project files, ecology/physics/survival contract owners, URP package outputs, XR, Submarine, VFX, Audio, Fauna, Voxel, Bootstrap, GlobalSignals, Core diagnostics, World systems, Core assembly references, World flora/fauna, VFX dependencies, or killing other agents' processes was rejected as cross-domain or unsafe parallel-workspace behavior outside AI/PATHING. Reporting full green build was rejected because Core and Assembly-CSharp still fail upstream with zero owned pathfinding diagnostics.
 Scalability potential: The new `Hecton8.AI.Pathfinding.asmdef` keeps pathfinding isolated and prevents owned AI/PATHING code from bloating Core.
 Hardware Impact: No runtime hardware impact. Build blockage is integration debt, not a frame-time choice.
 
@@ -95,3 +95,75 @@ Solution: Converted the dump path to `TryDumpBlackBox`, returned false for inval
 Rejected Alternatives: Letting the exception escape was rejected because the blackbox must not be the source of a second crash. Managed text logging was rejected because the prompt requires binary blackbox evidence and hot-path log spam is forbidden. Moving dump I/O into FastTick was rejected because Steam Deck/MicroSD pressure must stay out of gameplay cadence.
 Scalability potential: Low/Toaster = no hot-path disk I/O; dump only on request. Middle = failure bit gives deterministic telemetry for recovery tooling. High/Ultra = richer crash tools can consume the same flag without changing the pathing runtime.
 Hardware Impact: Normal frame cost remains unchanged. Dump failure handling has no measured microsecond claim; it is an exception-survival guard on a non-hot crash path.
+
+## Decision 013 - ABI Tail Padding Elimination
+
+Problem: `PathFunnelResult`, `PathFunnelActivePath`, and `PathFunnelInvalidation` had explicit `Pack = 1` sizes, but their final unused bytes were not named fields. The CLR layout size was fixed, yet unnamed tails are weak evidence for Quest/ARM64 binary review and future unsafe copies.
+Solution: Added explicit `Reserved*` tail fields at the final byte ranges of those structs so every byte in the owned fixed-size pathing payloads is intentionally covered.
+Rejected Alternatives: Leaving implicit tail bytes was rejected because the platform audit asked for no padding ambiguity. Reordering fields was rejected because the current offsets already keep 64-bit values aligned and preserve the existing ABI.
+Scalability potential: Low/Toaster = same compact payloads with no extra allocation. Middle = deterministic dump/telemetry decoding. High/Ultra = tooling can extend reserved bytes deliberately later without guessing stale padding.
+Hardware Impact: No measured microsecond saving is claimed. This is ABI safety and postmortem determinism work, not a frame-time optimization.
+
+## Decision 014 - Extreme-Value And Ring Capacity Survival
+
+Problem: AUP conversion sanitized NaN/Infinity but still allowed finite coordinates large enough to overflow deterministic double-to-long grid casts. The invalidation ring also allowed a serialized capacity of 1, which makes a read/write cursor ring permanently ambiguous because empty and full both map to cursor 0.
+Solution: Added explicit AUP grid range checks before casting and fallback to zero AUP with `AupFallback` when grid coordinates exceed safe `long` bounds. Clamped invalidation ring capacity to at least 2 and capped path/invalidation capacities at 4096 to prevent inspector-driven native memory spikes.
+Rejected Alternatives: Trusting sector origins was rejected because AUP is a critical deterministic contract. Keeping a one-slot ring was rejected because it silently drops every queued invalidation under the existing empty-ring encoding. Unbounded serialized capacities were rejected because low-end hardware should not be able to allocate pathological vault buffers from one inspector value.
+Scalability potential: Low/Toaster = fixed small vault buffers and deterministic fallback on impossible AUP coordinates. Middle = same ring semantics with larger caller capacity. High/Ultra = capacity can scale to 4096 without changing payload ABI, while presentation-domain overkill remains outside this prompt.
+Hardware Impact: Range checks add only a few scalar comparisons during AUP conversion; no measured microsecond saving is claimed. The memory cap prevents worst-case native allocation pressure on i3/MX350 and Steam Deck-class devices.
+
+## Decision 015 - Direct Signal Assembly Reference
+
+Problem: `PathFunnelNavmeshRuntime` imports `Hecton8.Core.Contracts.Signals`, but the new pathfinding asmdef did not directly reference `Hecton8.Core.Contracts`. Relying on `Hecton8.Core` to expose that dependency is fragile and can fail Unity asmdef compilation.
+Solution: Added `Hecton8.Core.Contracts` as a direct reference in `Hecton8.AI.Pathfinding.asmdef`.
+Rejected Alternatives: Moving signal use behind managed reflection or a duplicate local signal was rejected because typed lanes must stay authoritative. Depending on transitive visibility was rejected because Unity assembly definition references should be explicit.
+Scalability potential: Low/Toaster = no runtime cost; compile graph is explicit. Middle/High/Ultra = future pathing signal lanes can use contracts without assembly churn.
+Hardware Impact: No runtime hardware impact and no microsecond claim. This is compile-boundary correctness.
+
+## Decision 016 - Focused Bee Response Probe
+
+Problem: Root `dotnet build` is blocked outside AI/PATHING, so the owned asmdef needed a narrower compile-surface check.
+Solution: Located Unity Bee response file `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Pathfinding.rsp`; confirmed it lists `FunnelSmoothingJob.cs`, `PathFunnelContracts.cs`, `PathFunnelNavmeshRuntime.cs`, and `PathFunnelSchedule.cs` plus direct Core/Core.Contracts/Core.Memory references. Ran Unity Roslyn csc against that response file with temp output.
+Rejected Alternatives: Editing generated `.csproj` files or generated Bee response files was rejected. Claiming a green focused compile was rejected because `Hecton8.Core.ref.dll` is missing upstream.
+Scalability potential: Low/Toaster = no runtime cost; this only improves evidence quality. Middle/High/Ultra = same focused probe can validate pathing once Core ref generation recovers.
+Hardware Impact: No runtime hardware impact. The probe exits 1 on missing upstream metadata only; no microsecond claim.
+
+## Decision 017 - WFC Contract Constant Aliasing
+
+Problem: `PathFunnelConstants` duplicated WFC cell count, mask word count, and door-open bit values that already exist in Core contracts. Duplicate constants are an interface drift risk on the same typed signal/data lane.
+Solution: `PathFunnelConstants.WfcOutpostCellCount` now aliases `WfcOutpostPersistenceConstants.CellCount`, the mask word count derives from that contract value, and `WfcDoorOpenFlag` aliases `WfcOutpostCellStateFlags.DoorOpen`.
+Rejected Alternatives: Keeping local magic numbers was rejected because WFC persistence and path invalidation must agree on cell count and door state semantics. Creating a new pathfinding signal was rejected because `WfcOutpostStateChangedSignal` already exists.
+Scalability potential: Low/Toaster = no runtime cost and no silent mismatch when WFC grid size changes. Middle/High/Ultra = the same typed lane remains authoritative for larger pathing budgets.
+Hardware Impact: No measured microsecond change. This is interface sovereignty, not a frame-time optimization.
+
+## Decision 018 - Effective LOD Truth In Result Payload
+
+Problem: `FunnelSmoothingJob` already executed one-portal smoothing when `Stressed != 0`, but `PathFunnelResult.MathLod` still reported the caller-requested tier. That makes blackbox/result consumers believe High or Ultra smoothing ran when the homeostasis path actually used the stressed kernel.
+Solution: Added `ResolveEffectiveMathLod`, stored the effective byte in `PathFunnelResult.MathLod`, and passed the same byte into `ResolveLookAhead`. Stressed execution and result telemetry now share one source of truth.
+Rejected Alternatives: Leaving requested LOD in the result was rejected because it is a telemetry lie under frame pressure. Adding another result field was rejected because the 32-byte result ABI is already compact and the effective tier is the value consumers need for postmortem analysis.
+Scalability potential: Low/Toaster = stressed mode is explicitly visible to recovery logic and blackbox decoding. Middle = exact result payload helps tune frame-pressure thresholds. High/Ultra = overkill smoothing remains reported only when it actually ran.
+Hardware Impact: No measured microsecond saving is claimed. This is observability and blackbox correctness; it prevents wasted investigation time when stressed frames degrade path quality intentionally.
+
+## Decision 019 - Current Compile Wall Refresh
+
+Problem: The previous compile snapshot became stale under concurrent workspace changes. At that refresh, `Hecton8.Core.csproj` no longer passed; it failed on missing `HectonEcologyContract`, `ScalabilityContract`, `HectonPhysicsContract`, and `HectonSurvivalContract` references outside AI/PATHING.
+Solution: Reran Core and Assembly-CSharp validation, rewrote the build logs, and rescanned both logs for owned pathfinding symbols. Both logs contain 0 pathfinding matches.
+Rejected Alternatives: Editing contract owners or RealtimeCSG was rejected because the XML domain is `Assets/_Project/Scripts/AI/Pathfinding/`. Claiming the previous Core pass was still current was rejected as stale evidence.
+Scalability potential: Low/Middle/High/Ultra pathfinding behavior is unchanged; this is validation evidence only.
+Hardware Impact: No runtime hardware impact and no microsecond claim. The compile wall is integration debt outside this agent's domain.
+
+## Decision 020 - Burst-Safe AUP Contract Constant
+
+Problem: The AUP converter should obey the shared Core contract sector size, but a Burst job should not touch `HectonPhysicsContract` static ref properties or static constructor paths for the inverse sector size.
+Solution: Kept `HectonPhysicsContract.AupSectorSizeMetersDouble` as the authoritative sector-size constant and derived `inverseCellSize` as `const double 1.0d / HectonPhysicsContract.AupSectorSizeMetersDouble` inside the Burst job.
+Rejected Alternatives: Calling `HectonPhysicsContract.OneOverAupSectorSizeMeters` from the Burst job was rejected because it is a static ref property backed by static readonly data. Reverting to an unlabelled local 5000.0 constant was rejected because contract drift is the original interface risk.
+Scalability potential: Low/Middle/High/Ultra all share identical AUP sector math with no runtime property call.
+Hardware Impact: No measured microsecond saving is claimed. The value is compile/Burst safety and interface correctness.
+
+## Decision 021 - Source Truth Reconciliation
+
+Problem: The status/rationale files recorded the Burst-safe AUP inverse before `FunnelSmoothingJob.cs` actually matched that decision. `RegisterActivePath` and `UnregisterActivePath` also resolved the invalidation ring even though they only mutate active-path records and cell masks.
+Solution: Re-read the source as the authority, changed the Burst job to the compile-time inverse expression, normalized invalid `MathLod` bytes to Low with `PathFunnelResultFlags.InvalidMathLod`, and split active-path mutation resolution away from invalidation-ring resolution.
+Rejected Alternatives: Leaving docs ahead of source was rejected because the anti-amnesia protocol requires disk truth. Resolving the invalidation buffer for register/unregister was rejected because it widens the mutation view without need. Passing unknown Math LOD bytes through to result telemetry was rejected because blackbox consumers need executed-tier truth.
+Scalability potential: Low/Toaster = malformed LOD input falls back to cheap two-portal smoothing with an explicit flag. Middle = active-path registration touches fewer vault buffers. High/Ultra = overkill smoothing remains available only for known High/Ultra requests, preserving telemetry truth.
+Hardware Impact: No measured microsecond saving is claimed for this pass. The expected runtime effect is reduced vault handle traffic during register/unregister and deterministic fallback for invalid LOD input; compile validation remains blocked upstream with zero owned pathfinding diagnostics.

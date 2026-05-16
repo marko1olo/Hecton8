@@ -67,6 +67,16 @@ namespace Hecton8.Core.Scheduling
         }
 
         /// <summary>
+        /// Initializes through a boxed vault reference for generated-project compatibility when asmdef and source identities diverge.
+        /// </summary>
+        /// <param name="telemetrySink">Telemetry sink for denied and non-finite admission state.</param>
+        /// <param name="dataVault">Global data vault boxed by bootstrap.</param>
+        public void Initialize(IJobAdmissionTelemetrySink telemetrySink, object dataVault)
+        {
+            Initialize(telemetrySink, dataVault as IDataVault);
+        }
+
+        /// <summary>
         /// Initializes the admission gate against bootstrap-owned vault buffers.
         /// </summary>
         /// <param name="telemetrySink">Telemetry sink for denied and non-finite admission state.</param>
@@ -411,9 +421,9 @@ namespace Hecton8.Core.Scheduling
                     return 1.20f;
                 case JobAdmissionLanes.Lane1World:
                     return 0.90f;
-                case JobAdmissionLanes.Lane2AI:
+                case JobAdmissionLanes.Lane2Voxel:
                     return 1.40f;
-                case JobAdmissionLanes.Lane3Physics:
+                case JobAdmissionLanes.Lane3AI:
                     return 0.80f;
                 case JobAdmissionLanes.Lane4VFX:
                     return 0.45f;

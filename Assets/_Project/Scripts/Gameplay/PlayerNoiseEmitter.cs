@@ -1,4 +1,3 @@
-using System;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.World;
@@ -25,11 +24,11 @@ namespace Hecton8.Gameplay
         private PlayerToolManager _playerToolManager;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private PlayerTool _observedTool;
-        private Action<bool> _cachedToolUsedHandler;
         private bool _registered;
         private float _toolUsePulseTimer;
         private float _toolUsePulseAmplitude;
         private float _referenceRefreshTimer;
+        private float _lastObservedToolUseTime = float.NegativeInfinity;
 
         /// <summary>
         /// Ensures the centralized player-noise emitter exists on the provided player root.
@@ -48,21 +47,21 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
-            _cachedToolUsedHandler = HandleToolUsed;
             ResolveReferences();
         }
 
         private void OnEnable()
         {
             ResolveReferences();
-            RefreshObservedToolSubscription();
+            RefreshObservedToolReference();
+            ConsumeObservedToolUsePulse();
             TryRegister();
         }
 
         private void Start()
         {
             ResolveReferences();
-            RefreshObservedToolSubscription();
+            RefreshObservedToolReference();
             TryRegister();
         }
 
@@ -72,7 +71,7 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
 
             _registered = false;
-            ClearObservedToolSubscription();
+            ClearObservedToolReference();
             NoiseSystem.ClearPlayerSignal();
         }
 
@@ -93,7 +92,8 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            RefreshObservedToolSubscription();
+            RefreshObservedToolReference();
+            ConsumeObservedToolUsePulse();
 
             if (_toolUsePulseTimer > 0f)
             {
@@ -198,25 +198,35 @@ namespace Hecton8.Gameplay
             return false;
         }
 
-        private void RefreshObservedToolSubscription()
+        private void RefreshObservedToolReference()
         {
             PlayerTool currentTool = _playerToolManager != null ? _playerToolManager.CurrentTool : null;
             if (ReferenceEquals(currentTool, _observedTool))
                 return;
 
-            ClearObservedToolSubscription();
             _observedTool = currentTool;
-
-            if (_observedTool != null)
-                _observedTool.OnToolUsed += _cachedToolUsedHandler;
+            _lastObservedToolUseTime = _observedTool != null
+                ? _observedTool.LastUseTime
+                : float.NegativeInfinity;
         }
 
-        private void ClearObservedToolSubscription()
+        private void ClearObservedToolReference()
         {
-            if (_observedTool != null)
-                _observedTool.OnToolUsed -= _cachedToolUsedHandler;
-
             _observedTool = null;
+            _lastObservedToolUseTime = float.NegativeInfinity;
+        }
+
+        private void ConsumeObservedToolUsePulse()
+        {
+            if (_observedTool == null)
+                return;
+
+            float lastUseTime = _observedTool.LastUseTime;
+            if (!math.isfinite(lastUseTime) || lastUseTime <= _lastObservedToolUseTime)
+                return;
+
+            _lastObservedToolUseTime = lastUseTime;
+            HandleToolUsed(_observedTool.LastUseWasPrimary);
         }
 
         private void HandleToolUsed(bool isPrimary)

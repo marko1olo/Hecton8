@@ -1,11 +1,12 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts;
 using Unity.Mathematics;
 
 namespace Hecton8.Vehicles.Physics.Contracts
 {
     public static class DynamicFloodMassConstants
     {
-        public const float SeawaterDensityKgPerM3 = 1025f;
+        public const float SeawaterDensityKgPerM3 = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
         public const float CriticalFloodMassBaseRatio = 0.4f;
     }
 

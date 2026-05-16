@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
@@ -80,6 +81,7 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct SubmarineAutoLevelPidJob : IJob
         {
             public quaternion CurrentRotation;
@@ -219,6 +221,7 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct SubmarineMassSolverJob : IJob
         {
             [ReadOnly] public NativeArray<float> RoomWaterLevels;
@@ -337,7 +340,7 @@ namespace Hecton8.Gameplay
         private const uint PidTelemetryFlagDataVaultMissing = 1u << 10;
         private const uint PidTelemetryFlagFluidImpulseSignal = 1u << 11;
         private const string BallastPidDumpRelativePath = "Docs/AgentLogs/Dump_SUBMARINE_BALLAST_PID_V2.bin";
-        private const float WaterDensityKgPerCubicMeter = 1025f;
+        private const float WaterDensityKgPerCubicMeter = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
         private const float MaelstromAccelerationClamp = 12f;
         private const float CriticalFloodMassBaseRatio = 0.4f;
         private const float LowTierFloodSolveCadenceSeconds = 1f;

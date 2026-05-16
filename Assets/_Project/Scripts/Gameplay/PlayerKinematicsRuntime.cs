@@ -326,7 +326,7 @@ namespace Hecton8.Gameplay
             density = 0.0f;
             if (!encodedSdf.IsCreated ||
                 !TryResolveSdfVoxelCount(gridDimensions, out int voxelCount) ||
-                encodedSdf.Length != voxelCount ||
+                encodedSdf.Length < voxelCount ||
                 sdfRange <= 0.0f ||
                 !math.all(math.isfinite(runtimePosition)) ||
                 !math.all(math.isfinite(volumeOrigin)) ||
@@ -774,8 +774,6 @@ namespace Hecton8.Gameplay
         private const uint SdfSqueezeDumpMagic = 0x5344464Bu;
         private const string AupWatchdogDumpFileName = "Dump_AUP_DETERMINISM_WATCHDOG.bin";
         private const string SdfSqueezeDumpFileName = "Dump_KCC_SDF_SQUEEZE_RESOLVER.bin";
-        private const string NativeMemoryOwner = nameof(PlayerKinematicsRuntime);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int VaultPositionsFlag = 1 << 0;
         private const int VaultVelocitiesFlag = 1 << 1;
         private const int VaultIntendedMovementFlag = 1 << 2;
@@ -1218,6 +1216,17 @@ namespace Hecton8.Gameplay
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                PumpHandEnvironmentJobs(forceComplete: true, allowFinalizeOutsideSwap: false);
+                DisposeNativeState();
+                if (currentService != null)
+                {
+                    AllocateNativeState();
+                    WarmRuntimeStateOnEnable();
+                }
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime ||
                 serviceSlot == GlobalRegistryServiceSlot.VoxelEngineRuntime ||
                 serviceSlot == GlobalRegistryServiceSlot.Player ||
@@ -1694,7 +1703,7 @@ namespace Hecton8.Gameplay
 
             int3 resolvedDimensions = new int3(publishedDimensions.x, publishedDimensions.y, publishedDimensions.z);
             if (!PlayerKinematicsBodyJob.TryResolveSdfVoxelCount(resolvedDimensions, out int expectedLength) ||
-                publishedSdf.Length != expectedLength)
+                publishedSdf.Length < expectedLength)
             {
                 return;
             }
@@ -1704,7 +1713,7 @@ namespace Hecton8.Gameplay
             if (dataVault != null &&
                 dataVault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> vaultSdf) &&
                 vaultSdf.IsCreated &&
-                vaultSdf.Length == expectedLength)
+                vaultSdf.Length >= expectedLength)
             {
                 resolvedSdf = vaultSdf;
             }
@@ -3749,26 +3758,7 @@ namespace Hecton8.Gameplay
             }
 
             _vaultNativeStateMask &= ~vaultFlag;
-            return AllocateLocalArray<T>(safeCount, label);
-        }
-
-        private static NativeArray<T> AllocateLocalArray<T>(int count, string label) where T : struct
-        {
-            NativeArray<T> array = H8Memory.Allocate<T>(
-                math.max(1, count),
-                SystemID.GameplayPlayer,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            if (!array.IsCreated)
-                return default;
-
-            RegisterArray(array, label);
-            return array;
-        }
-
-        private static void RegisterArray<T>(NativeArray<T> array, string label) where T : struct
-        {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            return default;
         }
 
         private void DisposeArray<T>(ref NativeArray<T> array, int vaultFlag = 0) where T : struct

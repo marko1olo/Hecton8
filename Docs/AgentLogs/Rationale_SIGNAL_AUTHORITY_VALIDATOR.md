@@ -162,3 +162,107 @@ Solution: Increased the payload sizes to 80 and 48 bytes, added reserved padding
 Rejected Alternatives: Leaving only `StructLayout(Size=...)` without visible reserved fields would hide the ABI intent; changing tether physics logic or moving the feature file would violate the signal-only domain boundary; mechanically converting legacy explicit union layouts remains unsafe.
 Scalability potential: Low/Quest/Android get stable packed payload alignment for mobile native/Burst lanes; Middle keeps the same bounded tether traffic; High/Ultra can consume the same event stream for richer tether snap sparks, cable recoil, visor warnings, and audio without changing gameplay truth.
 Hardware Impact: Runtime gain is 0 us. The value is ABI stability and preventing misaligned payload reads on stricter ARM64/mobile targets.
+
+## Decision - Signal Telemetry ABI Hardening
+
+Problem: `SignalLaneTelemetry` is not an `ISignal`, but it crosses the `GlobalSignals` to Architect Eye/DataVault boundary through `NativeArray<SignalLaneTelemetry>` and previously relied on implicit sequential padding.
+Solution: Changed the telemetry packet to `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]` and added explicit reserved fields to make the 32-byte ABI visible.
+Rejected Alternatives: Leaving CLR-selected padding would be platform-sensitive on ARM64/Quest/Android; expanding telemetry semantics would mix ABI hardening with feature work.
+Scalability potential: Low/MX350 and mobile keep stable compact telemetry lanes; Middle/High/Ultra keep the same signal pressure surface for richer Architect Eye diagnostics and visual overkill without changing gameplay lane cost.
+Hardware Impact: Runtime gain is 0 us. The value is preventing implicit-padding drift and making telemetry copy size stable across IL2CPP/Burst/native readers.
+
+## Decision - Recurrent Lane Configure Drift Reclosure
+
+Problem: Fresh scans found `SignalBus<T>.Configure` calls had returned outside `GlobalSignals` in lockstep/glitch, laser cutter, and compass/anomaly code.
+Solution: Removed the local Configure calls and reduced those feature surfaces to `GlobalSignals.InitializeAllQueues()` plus typed `EnsureInitialized()`/Push/snapshot operations.
+Rejected Alternatives: Keeping feature-owned Configure calls would leave capacity/hash authority mutable and order-dependent; moving gameplay/UI code beyond signal initialization would violate domain boundaries.
+Scalability potential: Low gets deterministic lane caps and stable hashes; Middle/High/Ultra can consume the same clean lanes for richer compass glass effects, cutter heat shimmer, glitch presentation, visor salt, and wake/silt overkill without increasing authority cost.
+Hardware Impact: Estimated 2-6 us saved during cold bootstrap/reinitialization by avoiding repeated lane policy mutation. Runtime hot path is unchanged.
+
+## Decision - Current Dependency Compile Wall
+
+Problem: After signal scans were clean, `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` failed with 41 errors in `EcosystemDirector.cs`, `DiegeticGyroCompassRuntime.cs`, and `InputDispatcher.cs`.
+Solution: Classified the failure as outside CORE/SIGNALS. The current errors are World generic native utility inference, UI compass missing-field/missing-method drift, and InputDispatcher haptic span/read-only mismatch; no SignalBus registry or signal contract namespace errors were emitted.
+Rejected Alternatives: Editing World/UI/Input implementation from the signal authority pass would violate the domain boundary and risk overwriting concurrent agents; reverting unrelated dirty files is prohibited.
+Scalability potential: SignalBus remains clean and bounded; owning World/UI/Input agents can repair their native utility, compass state, and haptic bridge changes without signal contract churn.
+Hardware Impact: 0 us runtime gain. This preserves ownership isolation and avoids a false green report.
+
+## Decision - Splash And Physics Event Contract Eviction
+
+Problem: Fresh registry scans found `SplashEvent`, `PhysicsEventPayload`, and `DeferredSubmarineImpactSignal` as feature-owned `ISignal` payloads with local lane Configure calls.
+Solution: Moved the active payload contracts into `Hecton8.Core.Contracts.Signals`, added central lane policy, fixed-size validators, and Push-time finite guards in `GlobalSignals`, and reduced `FluidFeedbackEvents`/`PhysicsEventBus`/`PhysicsApplySystem` to central init plus typed Push/snapshot calls.
+Rejected Alternatives: Leaving private feature-owned signal structs would keep hidden queue policy and namespace drift; rewriting the physics or UI dispatch logic would exceed the signal authority boundary.
+Scalability potential: Low/MX350 gets bounded splash and physics-event lanes with low-tier caps; Middle/High/Ultra can spend the same clean packets on richer splash, pressure, EMP, acoustic, trauma, visor, silt, and hull feedback without increasing simulation truth cost.
+Hardware Impact: Estimated 2-6 us saved during cold lane bootstrap/reinitialization. Runtime guard overhead is expected below 1-4 us per normal burst and buys NaN containment.
+
+## Decision - ARM64 ABI Polish On Adjacent Event DTOs
+
+Problem: The signal namespace and Configure scans were clean, but adjacent physics event DTOs and one flood mass result still relied on implicit final stride or a 44-byte explicit stride, which is poor ARM64/Quest hygiene around the newly centralized physics event lane.
+Solution: Added explicit Pack=1 sizes for `PressureImpulseEvent` 80 bytes, `ElectromagneticPulseEvent` 32 bytes, `AcousticPingEvent` 48 bytes, `AcousticImpulseEvent` 48 bytes, and `LargeAcousticImpulseEvent` 48 bytes; added Size=16 to the AUP snapshot transformer; padded `FloodMassPropertiesResult` from 44 to 48 bytes with a reserved field.
+Rejected Alternatives: Rewriting these DTOs into new signal payloads would exceed the current authority pass; leaving implicit final stride would keep platform layout behavior harder to audit.
+Scalability potential: Low/Quest/Android get predictable event packet strides near the signal bridge; Middle keeps the same dispatch behavior; High/Ultra can consume the same stable physics events for denser acoustic, pressure, silt, hull, and visor presentation without changing simulation truth.
+Hardware Impact: Runtime gain is 0 us. This is stability work: it prevents stride ambiguity and avoids stricter mobile/Burst/native read hazards.
+
+## Decision - Current Sargassum Compile Wall
+
+Problem: After re-closing concurrent local Configure drift, the current `Hecton8.Core.csproj` build fails only in `World/SargassumMicroFaunaBoids.cs` because `SaturateFinite01` is referenced nine times without a visible definition.
+Solution: Classified the failure as outside CORE/SIGNALS. The signal authority scans are clean and the build emitted no SignalBus registry or signal payload namespace errors.
+Rejected Alternatives: Adding a guessed World helper from the signal authority pass would violate the domain boundary and risk overwriting the World owner; reverting unrelated concurrent edits is prohibited.
+Scalability potential: SignalBus remains bounded and clean for low-tier devices; World/Sargassum can repair its finite clamp helper independently without mutating signal contracts.
+Hardware Impact: 0 us runtime gain. This preserves ownership isolation and avoids a false green report.
+
+## Decision - Architect Eye Debug Signal Eviction
+
+Problem: A new `DebugSignal : ISignal` appeared under `Hecton8.Core.Diagnostics.Visuals`, outside the contract namespace and without central lane policy.
+Solution: Moved `DebugSignal` and `DebugSignalKind` into `Hecton8.Core.Contracts.Signals`, added a central `DebugSignal` lane policy and 64-byte validator in `GlobalSignals`, marked the lane non-critical VFX for stress shedding, and routed `ArchitectEyeDebugBus.EnsureInitialized()` through `GlobalSignals.InitializeAllQueues()`.
+Rejected Alternatives: Keeping diagnostics-owned signal contracts would leave a hidden visual lane authority; pushing diagnostics through managed callbacks would violate the zero-GC lane mandate.
+Scalability potential: Low/Quest/Android can shed debug visual packets under stress; Middle keeps bounded diagnostics; High/Ultra can spend the clean lane on dense Architect Eye overlays without changing gameplay truth.
+Hardware Impact: Estimated 1-3 us saved during diagnostic bootstrap by avoiding unmanaged default-lane reinitialization. Runtime hot path is unchanged except stress shedding for debug visuals.
+
+## Decision - Current UI/SystemDispatcher Compile Wall
+
+Problem: After debug signal eviction, the current `Hecton8.Core.csproj` build fails with 46 out-of-domain errors in `DiegeticGyroCompassRuntime.cs` and `SystemDispatcher.cs`; the errors are missing presentation DTO fields, compass method signature mismatch, and missing dispatcher blackbox/raycast members.
+Solution: Classified the failure as outside CORE/SIGNALS. Signal scans are clean and the build emitted no SignalBus registry or signal payload namespace errors.
+Rejected Alternatives: Guessing UI presentation fields or dispatcher blackbox/raycast buffers from the signal authority pass would violate ownership boundaries and risk corrupting concurrent UI/dispatcher work.
+Scalability potential: SignalBus remains bounded and clean; UI and dispatcher owners can repair their DTO/state fields without mutating signal contracts.
+Hardware Impact: 0 us runtime gain. This preserves ownership isolation and avoids a false green report.
+
+## Decision - Final Core Build Recovery
+
+Problem: A final build attempt initially failed because `Temp/obj/Hecton8.Core/Hecton8.Core.csproj.nuget.g.targets` was missing after concurrent workspace cleanup.
+Solution: Ran `dotnet restore Hecton8.Core.csproj /nr:false` to regenerate the project target, then reran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`; the core signal project passed at that point with 0 warnings and 0 errors.
+Rejected Alternatives: Treating the missing generated target as a code failure would be false; claiming full Unity graph health from a core-project build would also be false.
+Scalability potential: Clean core signal assembly gives low-tier and high-tier consumers the same stable typed-lane contract; full Unity graph validation remains a separate integrator concern.
+Hardware Impact: Runtime gain is 0 us. This is verification recovery and proves the signal authority changes compile in the core project.
+
+## Decision - Final Build Warning Recheck
+
+Problem: One intermediate build emitted 2 `CS2002` duplicate-source warnings while Unity-generated project files were changing under concurrent agent work.
+Solution: Forced a clean project rebuild with `dotnet build Hecton8.Core.csproj -t:Rebuild --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`; the current core rebuild passes with 0 warnings and 0 errors. Fresh signal scans remain clean: `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`, `OLD_SIGNAL_NAMESPACE_HITS=0`, `ISIGNAL_NAMESPACE_VIOLATIONS=0`, and `ISIGNAL_LAYOUT_VIOLATIONS=0`.
+Rejected Alternatives: Editing root `Directory.Build.targets` or generated Unity `.csproj` entries after a transient warning would exceed the domain boundary and risk conflicting with concurrent integrator/build agents.
+Scalability potential: Runtime signal behavior is unchanged; low-tier bounded lanes and high-tier visual overkill consumers retain the same typed contracts. Build-plumbing cleanup should be owned by the integration/build authority.
+Hardware Impact: Runtime gain is 0 us. This was verification recovery, not a frame-time or GC change.
+
+## Decision - SPSC Memory Ownership Closure
+
+Problem: The generic `SpscSignalRingBuffer<T>` fallback in `GlobalSignals.cs` allocated a backing `NativeArray<T>` directly, which violated the current H-Phi/Data Sovereignty re-inquisition even though no live call sites use the type.
+Solution: Replaced the direct `new NativeArray<T>` path with `H8Memory.Allocate<T>(..., SystemID, ...)` and paired disposal with `H8Memory.Release`. The legacy constructor remains as an audio-default compatibility path, and an owner-explicit constructor exists for future non-audio use.
+Rejected Alternatives: Deleting the public generic ring buffer would be an API break; leaving direct allocation would make the memory sentinel blind; inventing a new GlobalDataVault queue/ring API inside the signal pass would create unreviewed ownership semantics.
+Scalability potential: Low/MX350 and Quest get tracked native ownership if the fallback is activated; Middle/High/Ultra keep the same SPSC semantics without managed callbacks or queue boxing.
+Hardware Impact: Runtime gain is 0 us while unused. If activated, leak attribution improves and shutdown cleanup avoids untracked native memory; no frame-time cost is added.
+
+## Decision - Recurrent Compass And Lockstep Lane Drift Closure
+
+Problem: Fresh scans again found four local `SignalBus<T>.Configure` calls in `DiegeticGyroCompassRuntime.cs` and `LockstepStateValidator.cs`, reintroducing feature-owned lane authority after prior closure.
+Solution: Removed those local Configure calls and stale local capacity/hash constants. Both surfaces now enter through `GlobalSignals.InitializeAllQueues()` and then only call typed `EnsureInitialized()`.
+Rejected Alternatives: Keeping feature-local Configure calls would leave lane capacity/hash authority order-dependent; editing compass or lockstep gameplay logic beyond signal initialization would exceed the signal authority boundary.
+Scalability potential: Low keeps deterministic small anomaly/compass/glitch caps from the central registry; Middle/High/Ultra can spend stable packets on richer compass glass, glitch feedback, visor cues, and replay diagnostics without local lane policy drift.
+Hardware Impact: Estimated 2-6 us saved during cold bootstrap/reinitialization by removing repeated local policy mutation. Runtime hot path is unchanged.
+
+## Decision - Current Ecosystem Compile Wall
+
+Problem: After signal scans were clean, the current `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` fails outside CORE/SIGNALS in `World/EcosystemDirector.cs` with duplicate definitions for `ResolveVaultIndexCapacity` and `TryFindIndexEntry`.
+Solution: Classified this as a dependency wall after repeated build attempts moved through unrelated contract/tether/world errors under concurrent agent churn. No SignalBus registry, signal namespace, signal layout, or managed signal-format errors are emitted.
+Rejected Alternatives: Editing `World/EcosystemDirector.cs` from the signal authority pass would violate the domain boundary and risk overwriting the ecosystem owner; claiming a current green build would be false.
+Scalability potential: Signal lanes remain clean and bounded for low-tier devices and retain high-tier propagation semantics. The World/Ecosystem owner must repair the duplicate helper merge before a current core build can be marked green again.
+Hardware Impact: 0 us runtime gain. This is ownership isolation and compile-wall truth maintenance.

@@ -82,6 +82,7 @@ namespace Hecton8.AI
         public bool forceRetreat;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public readonly struct SpeciesCognitionTuning
     {
         public SpeciesCognitionTuning(
@@ -144,7 +145,7 @@ namespace Hecton8.AI
     [CreateAssetMenu(fileName = "FaunaDataTemplate_", menuName = "Hecton8/Fauna/Data Template")]
     public sealed class FaunaDataTemplate : ScriptableObject
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
         public struct RuntimeDescriptor
         {
             public int SpeciesId;

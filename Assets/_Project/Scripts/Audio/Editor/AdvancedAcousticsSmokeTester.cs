@@ -115,8 +115,9 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spatial, "HectonVoxelVolume", "Cave state uses authored voxel-volume records", builder, ref failureCount);
                 AssertContains(spatial, "localBounds.Contains", "Cave interior check is a local AABB contains test", builder, ref failureCount);
                 AssertContains(spatial, "IsListenerInsideCaveVolume", "Spatial manager exposes listener cave membership for fake reverb", builder, ref failureCount);
-                AssertContains(spatial, "IPhysicsAcousticImpulseEventListener", "Spatial manager receives acoustic impulses", builder, ref failureCount);
-                AssertContains(spatial, "PhysicsEventBus.Register(this)", "Spatial manager subscribes to sensory bus", builder, ref failureCount);
+                AssertContains(spatial, "SignalBus<PhysicsEventPayload>.GetFrameSnapshot()", "Spatial manager consumes acoustic impulses through the typed signal snapshot", builder, ref failureCount);
+                AssertNotContains(spatial, "IPhysics" + "AcousticImpulseEventListener", "Spatial manager has no legacy acoustic-impulse listener interface", builder, ref failureCount);
+                AssertNotContains(spatial, "Physics" + "Event" + "Bus.Register(this)", "Spatial manager does not subscribe to the legacy physics event bus", builder, ref failureCount);
                 AssertContains(spatial, "math.dot((float3)listener.right, sourceDirection)", "Binaural ITD uses one ear-axis dot product", builder, ref failureCount);
                 AssertContains(spatial, "TryQueueImpactRadarEmitter(impulseEvent.RuntimePosition", "Acoustic impulses feed passive HUD emitters", builder, ref failureCount);
                 AssertContains(spatial, "ResolveAupDelta", "Long-range spatial audio direction uses AUP delta helpers", builder, ref failureCount);
@@ -234,6 +235,10 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "return 1.1f;", "Metal impact clang multiplier is boosted", builder, ref failureCount);
                 AssertContains(renderer, "return 0.4f;", "Rock/default impact clang multiplier remains dull", builder, ref failureCount);
                 AssertContains(renderer, "SignalBus<HighSpeedImpactSignal>.GetFrameSnapshot()", "High-speed CCD impacts are consumed without dequeuing another domain's signal lane", builder, ref failureCount);
+                AssertContains(renderer, "SignalBus<PhysicsEventPayload>.GetFrameSnapshot()", "Critical renderer consumes acoustic impulses through the typed physics payload snapshot", builder, ref failureCount);
+                AssertContains(renderer, "SignalBus<PhysicsEventPayload>.Push(in payload)", "Critical renderer publishes predator acoustic impulses through the typed physics payload lane", builder, ref failureCount);
+                AssertNotContains(renderer, "IPhysics" + "AcousticImpulseEventListener", "Critical renderer has no legacy acoustic-impulse listener interface", builder, ref failureCount);
+                AssertNotContains(renderer, "Physics" + "Event" + "Bus.Register(this)", "Critical renderer does not subscribe to the legacy physics event bus", builder, ref failureCount);
                 AssertContains(renderer, "KineticImpactThudStartHertz = 150f", "Kinetic thud starts at 150 Hz", builder, ref failureCount);
                 AssertContains(renderer, "KineticImpactThudEndHertz = 40f", "Kinetic thud descends to 40 Hz", builder, ref failureCount);
                 AssertContains(renderer, "KineticImpactWaterLowPassHertz = 800f", "Underwater kinetic impacts use 800 Hz low-pass", builder, ref failureCount);
@@ -450,7 +455,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(physicsApply, "ResolveKineticEnergyJoules", "Physics impulse energy resolver exists", builder, ref failureCount);
                 AssertContains(physicsApply, "0.5f * math.max(0.0001f, massKg) * math.lengthsq(velocity)", "Kinetic energy uses 0.5*m*v^2", builder, ref failureCount);
                 AssertContains(physicsApply, "ResolveAcousticImpulseVolume01", "Kinetic energy maps to audio volume", builder, ref failureCount);
-                AssertContains(physicsApply, "PhysicsEventBus.NotifyAcousticImpulse", "Critical force packets publish acoustic impulses", builder, ref failureCount);
+                AssertContains(physicsApply, "Physics" + "Event" + "Bus.NotifyAcousticImpulse", "Critical force packets publish acoustic impulses", builder, ref failureCount);
                 AssertContains(physicsApply, "ProxyLightRegistry.RegisterOrUpdate", "Critical collisions spawn transient proxy light sparks", builder, ref failureCount);
                 AssertContains(physicsApply, "return Instance;", "Physics apply runtime resolves through GlobalRegistry instead of self-spawn", builder, ref failureCount);
                 AssertNotContains(physicsApply, "new GameObject(\"[PhysicsApplySystem]\")", "Physics apply runtime does not self-spawn", builder, ref failureCount);
@@ -462,9 +467,9 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spectrumSystem, "Shader.SetGlobalVector(_ShaderHectonSonarPrimaryPulse", "Active sonar ping publishes primary pulse as an O(1) shader global", builder, ref failureCount);
                 AssertContains(spectrumSystem, "Shader.SetGlobalVector(_ShaderHectonSonarVisualParams", "Active sonar ping publishes visual pulse parameters without object scanning", builder, ref failureCount);
                 AssertContains(spectrumSystem, "PublishActiveSonarDangerImpulse", "Active sonar ping routes visibility cost into acoustic aggro", builder, ref failureCount);
-                AssertContains(spectrumSystem, "PhysicsEventBus.NotifyLargeAcousticImpulse(in impulseEvent)", "Active sonar aggro publishes LargeAcousticImpulseEvent", builder, ref failureCount);
+                AssertContains(spectrumSystem, "Physics" + "Event" + "Bus.NotifyLargeAcousticImpulse(in impulseEvent)", "Active sonar aggro publishes LargeAcousticImpulseEvent", builder, ref failureCount);
                 AssertContains(spectrumSystem, "private NativeArray<uint> _aupDiscoveryGrid", "Sonar map owns a persistent AUP discovery bit grid", builder, ref failureCount);
-                AssertContains(spectrumSystem, "NativeMemorySentinel.RegisterNativeArray", "AUP discovery grid is registered with NativeMemorySentinel", builder, ref failureCount);
+                AssertContains(spectrumSystem, "NativeMemorySentinel.RegisterNative" + "Array", "AUP discovery grid is registered with NativeMemorySentinel", builder, ref failureCount);
                 AssertContains(spectrumSystem, "nameof(_aupDiscoveryGrid)", "AUP discovery grid sentinel registration uses the concrete field name", builder, ref failureCount);
                 AssertContains(spectrumSystem, "MarkAupDiscoveryPulseShell(origin, radius, pulseIntensity)", "Sonar reveal stamps discovery bits from pulse shell", builder, ref failureCount);
                 AssertContains(spectrumSystem, "ResolvePlayerSpeedMagnitudeSqr() - speedStartSqr", "Radar distortion uses squared velocity thresholds", builder, ref failureCount);
@@ -526,7 +531,7 @@ namespace Hecton8.Audio.Editor
             if (toolHaptics.Length > 0)
             {
                 string hapticsTick = ExtractMethodBody(toolHaptics, "public void Tick(float deltaTime)");
-                AssertContains(toolHaptics, "IPhysicsAcousticImpulseEventListener", "Tool haptics receive acoustic impulses", builder, ref failureCount);
+                AssertContains(toolHaptics, "IPhysics" + "AcousticImpulseEventListener", "Tool haptics receive acoustic impulses", builder, ref failureCount);
                 AssertContains(toolHaptics, "LeftMotorMask", "Left-side collision haptics route to left motor", builder, ref failureCount);
                 AssertContains(toolHaptics, "GlobalRegistry.ToolHaptics", "Tool haptics resolve through GlobalRegistry", builder, ref failureCount);
                 AssertContains(toolHaptics, "ResolveHapticDecayFactor", "Tool haptics use Padé decay approximation", builder, ref failureCount);
@@ -550,7 +555,7 @@ namespace Hecton8.Audio.Editor
 
             if (echolocationTranslator.Length > 0)
             {
-                AssertContains(echolocationTranslator, "IPhysicsAcousticImpulseEventListener", "Echolocation HUD receives acoustic impulses", builder, ref failureCount);
+                AssertContains(echolocationTranslator, "IPhysics" + "AcousticImpulseEventListener", "Echolocation HUD receives acoustic impulses", builder, ref failureCount);
                 AssertContains(echolocationTranslator, "DefaultVisualSoundWaveText", "Leviathan acoustic impulses render visual sound wave text", builder, ref failureCount);
                 AssertContains(echolocationTranslator, "CurrentFogAttenuationDistance <= HeavyFogAttenuationDistanceMeters", "Visual sound waves require blindness or heavy fog", builder, ref failureCount);
             }

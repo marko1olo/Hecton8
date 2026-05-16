@@ -1,5 +1,4 @@
-using System;
-using System.Reflection;
+using Hecton8.AI.Ecosystem;
 using Hecton8.World;
 using UnityEngine;
 
@@ -11,7 +10,7 @@ namespace Hecton8.Ecosystem
     public static class EcosystemRuntimeInstaller
     {
         private const string RuntimeRootName = "__HECTON_ECOSYSTEM_RUNTIME";
-        private const string EcosystemPopulationBalancerTypeName = "Hecton8.AI.Ecosystem.EcosystemPopulationBalancer";
+
         /// <summary>
         /// Ensures genetics, infection, and migration ecosystem owners exist in the active gameplay scene.
         /// </summary>
@@ -31,30 +30,8 @@ namespace Hecton8.Ecosystem
             if (runtimeRoot.GetComponent<MigrationDirector>() == null)
                 runtimeRoot.AddComponent<MigrationDirector>();
 
-            AddComponentIfAvailable(runtimeRoot, EcosystemPopulationBalancerTypeName);
-        }
-
-        private static void AddComponentIfAvailable(GameObject runtimeRoot, string typeName)
-        {
-            Type componentType = ResolveType(typeName);
-            if (componentType == null || !typeof(Component).IsAssignableFrom(componentType))
-                return;
-
-            if (runtimeRoot.GetComponent(componentType) == null)
-                runtimeRoot.AddComponent(componentType);
-        }
-
-        private static Type ResolveType(string typeName)
-        {
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            for (int i = 0; i < assemblies.Length; i++)
-            {
-                Type type = assemblies[i].GetType(typeName, false);
-                if (type != null)
-                    return type;
-            }
-
-            return null;
+            if (runtimeRoot.GetComponent<EcosystemPopulationBalancer>() == null)
+                runtimeRoot.AddComponent<EcosystemPopulationBalancer>();
         }
     }
 }

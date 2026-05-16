@@ -3,7 +3,7 @@
 Prompt: `RETINAL_ADAPTATION_AI`
 Domain: AI/COGNITION
 Source prompt task count: 18
-Current status: CODE BUILD VERIFIED - retinal/adjacent alpha telemetry scope static-verified after DataVault/ABI/typed-lane/core-native-array/active-slot inquisition; Unity runtime/profiler verification still not executed.
+Current status: CODE BUILD VERIFIED - retinal/adjacent fauna ABI scope static-verified after DataVault/ABI/typed-lane/core-native-array/active-slot/hash-map eviction and Pack=1 descriptor polish. Unity runtime/profiler verification still not executed.
 
 Relevant mandates read before coding:
 - AI_Creature_Cognition_States.txt
@@ -112,3 +112,40 @@ Verification after Loop 3:
 - [x] Re-ran static debt audit: no `NativeList`, no `new NativeArray<`, no `new NativeList`, no retinal raycasts/casts/overlaps, no `string.Format`, no standard `Update()`, no legacy headlight queue use, and no managed delegate usage were found in `PredatorCognitionDomain` or `AI/Perception`. `H8Memory` still owns allocator-internal `NativeList` registries by design.
 - [x] Re-ran `git diff --check` on touched code/docs: no whitespace errors; only CRLF normalization warnings.
 - [x] Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, output `Temp\bin\Debug\Hecton8.Core.dll`. Unity Editor import, Play Mode, GCMonitor, and profiler captures were not executed in this shell-only pass.
+
+## Loop 12 - Native HashMap Vault Eviction
+- [x] Re-read status/rationale and original XML prompt before continuing. DOD practice: disk-backed assignment recovery. Estimate: 0 us/frame.
+- [x] Removed local persistent `NativeParallelHashMap<int, float3>` and `NativeParallelHashMap<int, SpeciesCognitionTuning>` from `PredatorCognitionDomain`. Species pack targets now use vault lanes `PredatorCognitionSpeciesTargetIds/Positions/Count`; species tuning now uses `PredatorCognitionSpeciesTuningIds/Values/Count`. Alternative rejected: keeping private hash-map owners after active-slot eviction. Estimate: runtime ownership cost 0 us/frame after cold DataVault resolve; no profiler microseconds measured.
+- [x] Replaced hash-map `TryAdd` in `SwarmAnalysisJob` with bounded atomic append into species target arrays and replaced job `TryGetValue` lookups with bounded linear scans over the count window. Alternative rejected: changing the DataVault public interface to add hash-map handles mid-batch. Estimate: bounded by active species target count <= 256; exact CPU delta not measured.
+- [x] Added `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]` to `SpeciesCognitionTuning` and included `UnsafeUtility.SizeOf<SpeciesCognitionTuning>()` in the ABI validator. Alternative rejected: implicit backing-field layout for a DataVault value. Estimate: 0 us/frame.
+- [x] Re-ran static debt audit: no `NativeParallelHashMap`, no `NativeHashMap`, no `NativeList`, no `new NativeArray<`, no `new NativeList`, no `new NativeParallelHashMap`, no retinal raycasts/casts/overlaps, no `string.Format`, no standard `Update()`, no legacy headlight queue use, and no managed delegate usage were found in `PredatorCognitionDomain` or `AI/Perception`.
+- [x] Re-ran DataVault/ABI enum checks: `NO_BUFFERID_DUPLICATE_VALUES` and `NO_SYSTEMID_DUPLICATE_VALUES`.
+- [x] Re-ran `git diff --check` on touched code/docs: no whitespace errors; only CRLF normalization warnings.
+- [x] Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, output `Temp\bin\Debug\Hecton8.Core.dll`. Unity Editor import, Play Mode, GCMonitor, and profiler captures were not executed in this shell-only pass.
+
+## Loop 13 - Shared Workspace Build Wall Recheck
+- [x] Re-read status/rationale and original XML prompt before continuing. DOD practice: file-backed recovery after context compaction. Estimate: 0 us/frame.
+- [x] Appended the missing `LOG_RETINAL_ADAPTATION_AI.md` entry for the native hash-map eviction. Alternative rejected: chat-only completion report. Estimate: 0 us/frame.
+- [x] Re-ran static debt audit on `PredatorCognitionDomain` and `AI/Perception`: `NO_RETINAL_DOMAIN_DEBT_MATCHES` for local native container creation/ownership, local hash/list containers, retinal raycasts/casts/overlaps, legacy headlight queue use, delegates, `string.Format`, and standard `Update()`.
+- [x] Re-ran narrowed `SystemID`/`BufferID` duplicate parser: `NO_SystemID_DUPLICATE_VALUES` and `NO_BufferID_DUPLICATE_VALUES`.
+- [x] Re-ran `git diff --check` on touched retinal/code/doc files: no whitespace errors; CRLF normalization warnings only.
+- [x] Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary`: [BLOCKED BY EXTERNAL DEPENDENCY] 11 errors now occur outside the retinal/cognition scope: `GameBootstrapper` object-to-`IDataVault` calls, `FluidFeedbackListener` missing `_queueHash`/`PendingEventCapacity`, and `PlayerTool`/`PlayerToolManager`/`PlayerNoiseEmitter` missing tool event members. No errors cite `PredatorCognitionDomain`, `RetinalExposureMath`, `RetinalAdaptationVault`, `FaunaDataTemplate`, `H8Memory`, or `GlobalDataVault`.
+
+## Loop 14 - Pack=1 Descriptor Polish / Build Recovery
+- [x] Re-read status/rationale and original XML prompt before continuing. DOD practice: disk-backed recovery before edits. Estimate: 0 us/frame.
+- [x] Re-read relevant mandates: `AI_Creature_Cognition_States`, `ARCH_Signal_Lane_Segregation`, `OPT_Native_Memory_Collections_JobSystem_Protocol`, `ARCH_Global_Registry_ServiceLocator_DI_Init`, `OPT_Zero_GC_Policy_AllocFree_Mandate`, `DBG_Telemetry_Crash_Reporting_PostMortem`, and `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First`. Alternative rejected: chat-memory continuation. Estimate: 0 us/frame.
+- [x] Rechecked active build wall. A transient external syntax wall in `SubmarineFluidDynamics` and stale external errors moved while the shared workspace changed; the current compiler pass is green. No external source edit was needed from this retinal pass.
+- [x] Changed adjacent fauna `RuntimeDescriptor` from `StructLayout(Pack = 4, Size = 64)` to `StructLayout(Pack = 1, Size = 64)`. Alternative rejected: keeping non-Pack=1 native descriptor under ARM64/Quest ABI mandate. Estimate: 0 us/frame.
+- [x] Re-ran Pack audit across `PredatorCognitionDomain`, `AI/Perception`, and `FaunaDataTemplate`: `NO_NON_PACK1_STRUCTLAYOUT_IN_RETINAL_SCOPE`.
+- [x] Re-ran static retinal debt audit: `NO_RETINAL_DOMAIN_DEBT_MATCHES`.
+- [x] Re-ran `SystemID`/`BufferID` duplicate parser: `NO_SystemID_DUPLICATE_VALUES` and `NO_BufferID_DUPLICATE_VALUES`.
+- [x] Re-ran `git diff --check` on touched retinal/code/doc files: no whitespace errors; CRLF normalization warnings only.
+- [x] Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, output `Temp\bin\Debug\Hecton8.Core.dll`. Unity Editor import, Play Mode, GCMonitor, profiler, and player build verification were not executed.
+
+## Loop 15 - Volatile Shared Build Wall Recheck
+- [x] Re-ran static retinal debt audit after doc updates: `NO_RETINAL_DOMAIN_DEBT_MATCHES`.
+- [x] Re-ran Pack audit: `NO_NON_PACK1_STRUCTLAYOUT_IN_RETINAL_SCOPE`.
+- [x] Re-ran `SystemID`/`BufferID` duplicate parser: `NO_SystemID_DUPLICATE_VALUES` and `NO_BufferID_DUPLICATE_VALUES`.
+- [x] Re-ran `git diff --check` on touched retinal/code/doc files: no whitespace errors; CRLF normalization warnings only.
+- [x] Observed external build walls moving through `PhysicsApplySystem`, `TetherInstance`, `SargassumMicroFaunaBoids`, and `LockstepStateValidator` while parallel workspace edits landed. No source edits were made by this retinal pass in those files.
+- [x] Final current-state compile pass: `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:ErrorsOnly` returned `Build succeeded`, `0 Warning(s)`, `0 Error(s)`. Unity Editor import, Play Mode, GCMonitor, profiler, and player build verification remain unexecuted.

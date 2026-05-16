@@ -177,6 +177,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             StructuredBuffer<HectonVegetationInstanceData> _HectonVegetationInstanceData;
             StructuredBuffer<float> _HectonFloraPhaseSeeds;
             StructuredBuffer<float> _HectonFloraAges01;
+            StructuredBuffer<float4> _HectonFloraScatterVisualPayload;
             StructuredBuffer<uint> _HectonVisibleInstanceIndices;
             StructuredBuffer<uint> _HectonFloraSnapFlags;
             StructuredBuffer<float2> _MarineSnowFlowField;
@@ -201,6 +202,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _HectonOceanSurfaceWave2B;
             float4 _HectonOceanSurfaceWaveMeta;
             float4 _HectonFloatingOriginOffset;
+            float _HectonFloraScatterVisualPayloadEnabled;
             float4 _SargassumGlobalDriftOffset;
             float4 _SargassumCutMaskWorldRect;
             float4 _HectonShallowWaterFieldWorldRect;
@@ -667,6 +669,16 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return approxLen > 0.0001 ? value * rcp(approxLen) : float3(0.0, 1.0, 0.0);
             }
 
+            float SanitizeNonNegativeFinite(float value)
+            {
+                return isfinite(value) ? max(value, 0.0) : 0.0;
+            }
+
+            float SanitizePositiveFinite(float value, float fallbackValue)
+            {
+                return isfinite(value) && value > fallbackValue ? value : fallbackValue;
+            }
+
             void DecodeProceduralWakePacked(float packedRadiusIntensity, out float radius, out float intensity)
             {
                 float packedValue = max(0.0, packedRadiusIntensity);
@@ -957,11 +969,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             float3 ResolveSubmarineWashOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float heightMask, float instanceType)
             {
-                if (bendMask <= 0.0001 || _HectonSubmarineWashSphere.w <= 0.0001 || _HectonSubmarineWashVelocity.w <= 0.0001)
+                float washRadius = SanitizeNonNegativeFinite(_HectonSubmarineWashSphere.w);
+                float washSpeed = SanitizeNonNegativeFinite(_HectonSubmarineWashVelocity.w);
+                if (bendMask <= 0.0001 || washRadius <= 0.0001 || washSpeed <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
 
                 float3 delta = evaluationPositionWS - _HectonSubmarineWashSphere.xyz;
-                float radius = max(_HectonSubmarineWashSphere.w, 0.05);
+                float radius = SanitizePositiveFinite(washRadius, 0.05);
                 float radiusSq = radius * radius;
                 float distSq = dot(delta, delta);
                 if (distSq >= radiusSq)
@@ -973,8 +987,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float3 velocityDirection = _HectonSubmarineWashVelocity.xyz - baseNormalWS * dot(_HectonSubmarineWashVelocity.xyz, baseNormalWS);
                 velocityDirection = SafeNormalize3(velocityDirection);
                 float3 bendDirection = SafeNormalize3(lerp(awayDirection, velocityDirection, 0.65));
-                float speedFactor = saturate(_HectonSubmarineWashVelocity.w * 0.045);
-                float shockwave01 = saturate((_HectonSubmarineWashVelocity.w - 15.0) * 0.10);
+                float speedFactor = saturate(washSpeed * 0.045);
+                float shockwave01 = saturate((washSpeed - 15.0) * 0.10);
                 float typeScale = instanceType < 0.5 ? 0.55 : (instanceType < 1.5 ? 1.25 : 0.72);
                 float flattening = proximity * bendMask * typeScale * (speedFactor * lerp(0.35, 1.0, heightMask) + shockwave01 * lerp(0.55, 1.45, heightMask));
                 float downwardBias = lerp(0.02, 0.12 + shockwave01 * 0.26, heightMask) * flattening;
@@ -983,14 +997,16 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             float ResolveAbyssalFlowSnapMask(float3 rootPositionWS, float3 evaluationPositionWS, float bendMask, float heightMask, float instanceType)
             {
-                if (instanceType < 0.5 || instanceType > 1.5 || bendMask <= 0.0001 || _HectonSubmarineWashSphere.w <= 0.0001)
+                float washRadius = SanitizeNonNegativeFinite(_HectonSubmarineWashSphere.w);
+                float washSpeed = SanitizeNonNegativeFinite(_HectonSubmarineWashVelocity.w);
+                if (instanceType < 0.5 || instanceType > 1.5 || bendMask <= 0.0001 || washRadius <= 0.0001)
                     return 0.0;
 
-                float speedGate = smoothstep(10.0, 12.5, _HectonSubmarineWashVelocity.w);
+                float speedGate = smoothstep(10.0, 12.5, washSpeed);
                 if (speedGate <= 0.0001)
                     return 0.0;
 
-                float radius = max(_HectonSubmarineWashSphere.w, 0.05);
+                float radius = SanitizePositiveFinite(washRadius, 0.05);
                 float3 rootDelta = rootPositionWS - _HectonSubmarineWashSphere.xyz;
                 rootDelta.y *= 0.25;
                 float radiusSq = radius * radius;
@@ -1043,7 +1059,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 {
                     FloraInteractionPointGpuData interactionPoint = _HectonFloraInteractionPoints[i];
                     float3 velocity = interactionPoint.velocitySpeed.xyz;
-                    float speed = interactionPoint.velocitySpeed.w;
+                    float speed = SanitizeNonNegativeFinite(interactionPoint.velocitySpeed.w);
                     float speedFactor = saturate(speed * 0.18);
                     if (speedFactor <= 0.0001)
                         continue;
@@ -1051,7 +1067,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     float3 delta = evaluationPositionWS - interactionPoint.positionRadius.xyz;
                     delta.y *= 0.22;
 
-                    float bendRadius = max(interactionPoint.positionRadius.w, 0.05);
+                    float bendRadius = SanitizePositiveFinite(interactionPoint.positionRadius.w, 0.05);
                     float bendRadiusSq = bendRadius * bendRadius;
                     float distSq = dot(delta, delta);
                     float proximity = 1.0 - smoothstep(0.0, bendRadiusSq, distSq);
@@ -1073,17 +1089,17 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             float3 ResolvePlayerBendOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
             {
-                float playerRadius = _HectonPlayerRuntimePosition.w;
+                float playerRadius = SanitizeNonNegativeFinite(_HectonPlayerRuntimePosition.w);
                 if (bendMask <= 0.0001 ||
-                    _HectonPlayerFloraInteractionParams.w < 0.5 ||
+                    SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.w) < 0.5 ||
                     playerRadius <= 0.0001)
                 {
                     return float3(0.0, 0.0, 0.0);
                 }
 
                 float3 playerRuntimePosition = _HectonPlayerRuntimePosition.xyz;
-                float playerSpeed = _HectonPlayerFloraInteractionParams.x;
-                float playerPush = _HectonPlayerFloraInteractionParams.y;
+                float playerSpeed = SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.x);
+                float playerPush = SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.y);
                 if (playerSpeed <= 0.0001 || playerPush <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
 
@@ -1115,7 +1131,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 for (int i = 0; i < impactCount; i++)
                 {
                     float4 impactSphere = _HectonImpactSpheres[i];
-                    float radius = max(impactSphere.w, 0.05);
+                    float radius = SanitizePositiveFinite(impactSphere.w, 0.05);
                     float radiusSq = radius * radius;
                     float3 delta = evaluationPositionWS - impactSphere.xyz;
                     float distSq = dot(delta, delta);
@@ -1217,11 +1233,15 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             float ResolveOrganicEntropyProgress(float encodedHeightScale, float encodedWidthScale, float timeValue)
             {
+                if (!isfinite(encodedHeightScale))
+                    return 0.0;
+
                 if (encodedHeightScale >= 0.0)
                     return 0.0;
 
-                float entropyDuration = encodedWidthScale < 0.0 ? 600.0 : 0.85;
-                float entropyStartTime = encodedWidthScale < 0.0 ? abs(encodedWidthScale) : max(0.0, encodedWidthScale);
+                float safeWidthScale = isfinite(encodedWidthScale) ? encodedWidthScale : 0.0;
+                float entropyDuration = safeWidthScale < 0.0 ? 600.0 : 0.85;
+                float entropyStartTime = safeWidthScale < 0.0 ? abs(safeWidthScale) : max(0.0, safeWidthScale);
                 return saturate((timeValue - entropyStartTime) / entropyDuration);
             }
 
@@ -1235,24 +1255,28 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             float ResolveParasiteMask(float runtimeFlags)
             {
-                float variationFlags = floor(max(runtimeFlags, 0.0));
+                float variationFlags = floor(SanitizeNonNegativeFinite(runtimeFlags));
                 return step(0.5, fmod(variationFlags, 2.0));
             }
 
             float ResolveBiomeLayer(float runtimeFlags)
             {
-                float variationFlags = floor(max(runtimeFlags, 0.0));
+                float variationFlags = floor(SanitizeNonNegativeFinite(runtimeFlags));
                 return fmod(floor(variationFlags / 16.0), 4.0);
             }
 
             void ResolveRuntimeStateWeights(float runtimeState, out float agitatedWeight, out float dyingWeight)
             {
-                agitatedWeight = saturate(1.0 - abs(runtimeState - 1.0));
-                dyingWeight = saturate(1.0 - abs(runtimeState - 2.0));
+                float safeRuntimeState = isfinite(runtimeState) ? runtimeState : 0.0;
+                agitatedWeight = saturate(1.0 - abs(safeRuntimeState - 1.0));
+                dyingWeight = saturate(1.0 - abs(safeRuntimeState - 2.0));
             }
 
             float ResolveMetadataGrowth01(float encodedGrowth01)
             {
+                if (!isfinite(encodedGrowth01))
+                    return 1.0;
+
                 if (encodedGrowth01 < 0.0)
                     return -1.0;
 
@@ -1262,6 +1286,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float ResolveGrowth01(uint sourceInstanceIndex, float encodedGrowth01)
             {
                 float soaAge01 = _HectonFloraAges01[sourceInstanceIndex];
+                if (!isfinite(soaAge01))
+                    return ResolveMetadataGrowth01(encodedGrowth01);
+
                 if (soaAge01 < 0.0)
                     return -1.0;
 
@@ -1271,17 +1298,31 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return ResolveMetadataGrowth01(encodedGrowth01);
             }
 
+            float4 ResolveScatterVisualPayload(uint sourceInstanceIndex)
+            {
+#if defined(_QUALITY_HIGH)
+                if (_HectonFloraScatterVisualPayloadEnabled > 0.5)
+                {
+                    float4 payload = _HectonFloraScatterVisualPayload[sourceInstanceIndex];
+                    return all(isfinite(payload)) ? saturate(payload) : float4(0.0, 0.0, 0.0, 0.0);
+                }
+#endif
+                return float4(0.0, 0.0, 0.0, 0.0);
+            }
+
             half ResolveBiolumPredatorDim(float3 positionWS)
             {
-                half threatExposure = saturate(_HectonFloraPredatorThreatParams.x);
-                half dimStrength = saturate(_HectonFloraPredatorThreatParams.z);
+                half threatExposure = (half)saturate(SanitizeNonNegativeFinite(_HectonFloraPredatorThreatParams.x));
+                half dimStrength = (half)saturate(SanitizeNonNegativeFinite(_HectonFloraPredatorThreatParams.z));
                 half legacyDim = 1.0h;
                 if (threatExposure > 0.0001h && dimStrength > 0.0001h)
                 {
                     float4 predatorThreat = _HectonFloraPredatorThreatPositionRadius;
-                    float dimRadius = max(max(predatorThreat.w, _HectonFloraPredatorThreatParams.y), 15.0);
+                    float threatRadius = SanitizeNonNegativeFinite(predatorThreat.w);
+                    float paramRadius = SanitizePositiveFinite(_HectonFloraPredatorThreatParams.y, 15.0);
+                    float dimRadius = max(max(threatRadius, paramRadius), 15.0);
                     half predatorProximity = 1.0h;
-                    if (predatorThreat.w > 0.001)
+                    if (threatRadius > 0.001)
                     {
                         float3 predatorDelta = positionWS - predatorThreat.xyz;
                         float dimRadiusSq = dimRadius * dimRadius;
@@ -1304,7 +1345,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 for (int predatorIndex = 0; predatorIndex < predatorCount; predatorIndex++)
                 {
                     float4 predatorAup = _PredatorAUPBuffer[predatorIndex];
-                    float dimRadius = max(max(predatorAup.w, baseRadius), 15.0);
+                    float dimRadius = max(SanitizePositiveFinite(predatorAup.w, baseRadius), 15.0);
                     float3 predatorDelta = positionWS - predatorAup.xyz;
                     float dimRadiusSq = dimRadius * dimRadius;
                     float gate = 1.0 - LinearStep01(dimRadiusSq * 0.3025, dimRadiusSq, dot(predatorDelta, predatorDelta));
@@ -1317,36 +1358,40 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             half ResolveBiolumFlashBangBoost(float3 positionWS)
             {
-                half duration = max(0.001h, (half)_BiolumFlashBangParams.y);
-                half age = (half)(_Time.y - _BiolumFlashBangParams.x);
+                float flashStartTime = isfinite(_BiolumFlashBangParams.x) ? _BiolumFlashBangParams.x : _Time.y;
+                half duration = (half)SanitizePositiveFinite(_BiolumFlashBangParams.y, 0.001);
+                half age = (half)(_Time.y - flashStartTime);
                 if (age < 0.0h || age > duration)
                     return 1.0h;
 
-                float radius = max(0.1, _BiolumFlashBangAUP.w);
+                float radius = SanitizePositiveFinite(_BiolumFlashBangAUP.w, 0.1);
                 float3 flashDelta = positionWS - _BiolumFlashBangAUP.xyz;
                 float radiusSq = radius * radius;
                 half distanceGate = (half)(1.0 - LinearStep01(radiusSq * 0.4225, radiusSq, dot(flashDelta, flashDelta)));
                 half timeGate = (half)(1.0 - LinearStep01(duration * 0.45h, duration, age));
-                half flashStrength = max(0.0h, (half)_BiolumFlashBangParams.z);
+                half flashStrength = (half)SanitizeNonNegativeFinite(_BiolumFlashBangParams.z);
                 return 1.0h + distanceGate * timeGate * flashStrength;
             }
 
             half ResolveSeasonalBloomEmissionScale()
             {
-                half bloomWeight = saturate(_HectonFloraLifecycleParams.x);
-                half bloomScale = max(1.0h, (half)_HectonFloraLifecycleParams.z);
+                half bloomWeight = (half)saturate(SanitizeNonNegativeFinite(_HectonFloraLifecycleParams.x));
+                half bloomScale = (half)max(1.0, SanitizeNonNegativeFinite(_HectonFloraLifecycleParams.z));
                 return lerp(1.0h, bloomScale, bloomWeight);
             }
 
             half ResolveCascadeEmissionScale(half cascadeSeed)
             {
+                if (!isfinite((float)cascadeSeed))
+                    return 0.0h;
+
                 if (cascadeSeed <= -99999.0h)
                     return 0.0h;
 
-                half cascadeTime = (half)_HectonFloraCascadeParams.x;
-                half pulseDuration = max(0.05h, (half)_HectonFloraCascadeParams.y);
-                half emissionBoost = max(0.0h, (half)_HectonFloraCascadeParams.z);
-                half releaseDuration = max(pulseDuration, (half)_HectonFloraCascadeParams.w);
+                half cascadeTime = (half)(isfinite(_HectonFloraCascadeParams.x) ? _HectonFloraCascadeParams.x : 0.0);
+                half pulseDuration = (half)SanitizePositiveFinite(_HectonFloraCascadeParams.y, 0.05);
+                half emissionBoost = (half)SanitizeNonNegativeFinite(_HectonFloraCascadeParams.z);
+                half releaseDuration = (half)max((float)pulseDuration, SanitizePositiveFinite(_HectonFloraCascadeParams.w, pulseDuration));
                 half age = cascadeTime - cascadeSeed;
                 if (age < 0.0h || age > releaseDuration)
                     return 0.0h;
@@ -1445,6 +1490,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float authoredBendAmplitude = max(instanceData.BendAmplitude, 0.0);
                 float normalizedHealth = saturate(min(instanceData.HealthNormalized, 1.0 - packedPresentation.y));
                 float growth01 = ResolveGrowth01(sourceInstanceIndex, instanceData.Reserved0);
+                float4 scatterVisualPayload = ResolveScatterVisualPayload(sourceInstanceIndex);
                 float visibleGrowth01 = saturate(growth01);
                 float timeValue = _Time.y * authoredSwaySpeed;
                 float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale, timeValue);
@@ -1737,14 +1783,14 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
                 output.instanceType = instanceType;
                 output.kelpDepthFade = kelpDepthFade;
-                output.edgeMask = saturate(abs(input.uv.x * 2.0 - 1.0));
-                output.curvatureMask = curvatureMask;
+                output.edgeMask = saturate(abs(input.uv.x * 2.0 - 1.0) + scatterVisualPayload.y * 0.16);
+                output.curvatureMask = saturate(curvatureMask + scatterVisualPayload.x * 0.12);
                 output.entropyProgress = entropyProgress;
                 output.parasiteMask = parasiteMask;
                 output.runtimeState = instanceData.RuntimeState;
                 output.pulseFrequency = max(0.01, instanceData.PulseFrequency);
-                output.biolumColor = half4(instanceData.BioluminescenceColor.rgb, packedPresentation.x);
-                output.flowMagnitude = flowMagnitude;
+                output.biolumColor = half4(instanceData.BioluminescenceColor.rgb, saturate(packedPresentation.x * lerp(1.0, 1.28, scatterVisualPayload.w)));
+                output.flowMagnitude = saturate(flowMagnitude + scatterVisualPayload.z * 0.18);
                 output.biomeLayer = biomeLayer;
                 output.cascadeSeed = _HectonFloraPhaseSeeds[sourceInstanceIndex];
                 output.growth01 = growth01;

@@ -1,5 +1,8 @@
+using System.Globalization;
+using Hecton8.Core.Contracts;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Hecton8.Core.Bridge.EditorTools
 {
@@ -9,7 +12,7 @@ namespace Hecton8.Core.Bridge.EditorTools
         private const string SectorXKey = "H8.Bridge.AUP.SectorX";
         private const string SectorYKey = "H8.Bridge.AUP.SectorY";
         private const string SectorZKey = "H8.Bridge.AUP.SectorZ";
-        internal const int CellSizeMeters = 5000;
+        internal const int CellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
 
         [MenuItem("Hecton-8/Bridge/AUP Visualizer")]
         public static void Open()
@@ -30,19 +33,53 @@ namespace Hecton8.Core.Bridge.EditorTools
             ZeroSceneCamera();
         }
 
-        private void OnGUI()
+        private void CreateGUI()
         {
-            bool enabled = EditorGUILayout.Toggle("Draw Sector Grid", EditorPrefs.GetBool(EnabledKey, true));
-            EditorPrefs.SetBool(EnabledKey, enabled);
-            long x = EditorGUILayout.LongField("Sector X", GetLong(SectorXKey));
-            long y = EditorGUILayout.LongField("Sector Y", GetLong(SectorYKey));
-            long z = EditorGUILayout.LongField("Sector Z", GetLong(SectorZKey));
-            SetLong(SectorXKey, x);
-            SetLong(SectorYKey, y);
-            SetLong(SectorZKey, z);
+            VisualElement root = rootVisualElement;
+            root.Clear();
+            root.style.paddingLeft = 8f;
+            root.style.paddingRight = 8f;
+            root.style.paddingTop = 8f;
+            root.style.paddingBottom = 8f;
 
-            if (GUILayout.Button("Zero Scene Camera"))
-                ZeroSceneCamera();
+            UnityEngine.UIElements.Toggle enabled = new UnityEngine.UIElements.Toggle("Draw Sector Grid")
+            {
+                value = EditorPrefs.GetBool(EnabledKey, true)
+            };
+            enabled.RegisterValueChangedCallback(evt =>
+            {
+                EditorPrefs.SetBool(EnabledKey, evt.newValue);
+                SceneView.RepaintAll();
+            });
+            root.Add(enabled);
+
+            LongField sectorX = new LongField("Sector X")
+            {
+                value = GetLong(SectorXKey)
+            };
+            sectorX.RegisterValueChangedCallback(evt => SetLongAndRepaint(SectorXKey, evt.newValue));
+            root.Add(sectorX);
+
+            LongField sectorY = new LongField("Sector Y")
+            {
+                value = GetLong(SectorYKey)
+            };
+            sectorY.RegisterValueChangedCallback(evt => SetLongAndRepaint(SectorYKey, evt.newValue));
+            root.Add(sectorY);
+
+            LongField sectorZ = new LongField("Sector Z")
+            {
+                value = GetLong(SectorZKey)
+            };
+            sectorZ.RegisterValueChangedCallback(evt => SetLongAndRepaint(SectorZKey, evt.newValue));
+            root.Add(sectorZ);
+
+            Button zeroCameraButton = new Button(ZeroSceneCamera)
+            {
+                text = "Zero Scene Camera"
+            };
+            zeroCameraButton.style.marginTop = 6f;
+            root.Add(zeroCameraButton);
         }
 
         internal static bool Enabled => EditorPrefs.GetBool(EnabledKey, true);
@@ -56,23 +93,55 @@ namespace Hecton8.Core.Bridge.EditorTools
             if (view == null)
                 return;
 
-            const double cellSize = CellSizeMeters;
-            Vector3 pivot = new Vector3(
-                (float)(SectorX * cellSize),
-                (float)(SectorY * cellSize),
-                (float)(SectorZ * cellSize));
+            Vector3 pivot = ResolveScenePivot(SectorX, SectorY, SectorZ);
             view.pivot = pivot;
             view.Repaint();
         }
 
+        internal static Vector3 ResolveScenePivot(long sectorX, long sectorY, long sectorZ)
+        {
+            return new Vector3(
+                ClampSectorToSceneCoordinate(sectorX),
+                ClampSectorToSceneCoordinate(sectorY),
+                ClampSectorToSceneCoordinate(sectorZ));
+        }
+
+        private static float ClampSectorToSceneCoordinate(long sector)
+        {
+            const double cellSize = CellSizeMeters;
+            const double maxSceneCoordinate = 10000000.0;
+            double value = sector * cellSize;
+            if (double.IsNaN(value))
+                return 0f;
+
+            if (value > maxSceneCoordinate)
+                return (float)maxSceneCoordinate;
+            if (value < -maxSceneCoordinate)
+                return (float)-maxSceneCoordinate;
+
+            return (float)value;
+        }
+
+        private static void SetLongAndRepaint(string key, long value)
+        {
+            SetLong(key, value);
+            SceneView.RepaintAll();
+        }
+
         private static long GetLong(string key)
         {
-            return long.TryParse(EditorPrefs.GetString(key, "0"), out long value) ? value : 0L;
+            return long.TryParse(
+                EditorPrefs.GetString(key, "0"),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out long value)
+                ? value
+                : 0L;
         }
 
         private static void SetLong(string key, long value)
         {
-            EditorPrefs.SetString(key, value.ToString());
+            EditorPrefs.SetString(key, value.ToString(CultureInfo.InvariantCulture));
         }
     }
 
@@ -96,7 +165,7 @@ namespace Hecton8.Core.Bridge.EditorTools
             long sectorY = H8AupVisualizerWindow.SectorY;
             long sectorZ = H8AupVisualizerWindow.SectorZ;
 
-            Vector3 center = new Vector3(sectorX * cellSize, sectorY * cellSize, sectorZ * cellSize);
+            Vector3 center = H8AupVisualizerWindow.ResolveScenePivot(sectorX, sectorY, sectorZ);
             Handles.color = new Color(0.2f, 0.85f, 1f, 0.35f);
 
             for (int x = -radius; x <= radius; x++)
@@ -117,13 +186,6 @@ namespace Hecton8.Core.Bridge.EditorTools
 
             Handles.color = new Color(1f, 0.8f, 0.2f, 0.65f);
             Handles.DrawWireCube(center, new Vector3(cellSize, cellSize * 0.1f, cellSize));
-
-            Handles.BeginGUI();
-            GUILayout.BeginArea(new Rect(12f, 72f, 180f, 42f), EditorStyles.helpBox);
-            if (GUILayout.Button("Zero Camera"))
-                H8AupVisualizerWindow.ZeroSceneCamera();
-            GUILayout.EndArea();
-            Handles.EndGUI();
         }
     }
 }

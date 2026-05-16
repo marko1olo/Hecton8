@@ -4,6 +4,7 @@ using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Crafting;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
@@ -630,7 +631,7 @@ namespace Hecton8.Atmosphere
         private const int RoomCapacity = 8;
         private const int DoorCapacity = 7;
         private const float DefaultHighPressureEventThresholdKPa = 150f;
-        private const float DefaultReferencePressureKPa = 101.325f;
+        private const float DefaultReferencePressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
         private const float DefaultDoorConductance = 0.045f;
         private const float DefaultMaxTransferUnitsPerSecond = 1.5f;
         private const float DefaultMinimumGasVolumeCubicMeters = 0.05f;

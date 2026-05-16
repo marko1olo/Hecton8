@@ -146,3 +146,98 @@ Validation:
 Status:
 - TOOL_RESAK_SOLVER signal-lane purge: VERIFIED by static scan and local C# build.
 - Unity import, Play Mode, frame profiler, GCMonitor, Metal/Quest/Steam Deck player builds: PENDING VERIFICATION because no Unity runtime/player logs were available in this session.
+
+## 2026-05-16 - Signal Payload Guard Pass
+
+What was wrong:
+- `LaserCutterEvents.EnsureInitialized()` called `GlobalSignals.InitializeAllQueues()`, cold-initializing the whole signal registry from a cutter bridge.
+- `LaserCutterEventPayload` guard sanitized heat only; invalid event types and illegal flags could pass into audio/world listeners.
+- Latest build evidence became stale after the guard edit.
+
+What was done:
+- Changed `LaserCutterEvents.EnsureInitialized()` to configure and initialize only `SignalBus<LaserCutterEventPayload>`.
+- Added `LaserCutterEventPayload.StateFlagBeamActive` to the canonical packed signal payload.
+- Extended `SanitizeLaserCutterEventPayload` to clamp non-finite heat, reset invalid event types to `HeatChanged`, and mask illegal flags.
+- Re-ran targeted TOOL_RESAK static scans.
+
+Cinematic cheats used:
+- The cutter event path remains a 16-byte typed-lane payload, not a managed event object or local queue.
+- Low tier avoids whole-registry cold allocation from the cutter bridge. High/Ultra keep the same event truth.
+
+Exact microseconds saved:
+- Whole-registry cold-start savings are unmeasured; the concrete avoided work is unrelated signal-lane initialization from the cutter event bridge.
+- Per-frame cutter event cost remains bounded by the 16-payload typed lane.
+- CSG saving remains estimated at 200000+ us per old boolean cut event.
+
+Validation:
+- Static scan found no `NativeQueue`, no `new NativeArray`, no private `NativeArray`, and no `_disposeHandle` in `LaserCutter.cs`, `ToolDurabilitySystem`, `ToolHapticsRuntime`, or `WfcLaserCutRuntime`.
+- Static scan found no standard `Update`/`FixedUpdate`/`LateUpdate`, no `string.Format`, no `Mesh.vertices`, no `LaserCutterManager`, no `RealtimeCSG`, and no CSG references in the TOOL_RESAK surface.
+- Static shader scan found no compute/DX-only patterns.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false` is currently blocked outside TOOL_RESAK by `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs`: missing `_dialMatrixBuffer`/`_dialMatrices` and `ComputeBuffer` to `GraphicsBuffer` mismatch. No compiler errors referenced TOOL_RESAK files.
+
+Status:
+- TOOL_RESAK_SOLVER payload guard pass: STATIC VERIFIED; global compile BLOCKED BY UI/NAVIGATION dependency.
+- Unity import, Play Mode, frame profiler, GCMonitor, Metal/Quest/Steam Deck player builds: PENDING VERIFICATION because no Unity runtime/player logs were available in this session.
+
+## 2026-05-16 - Tool Signal Delegate Purge
+
+What was wrong:
+- `ToolDurabilitySystem` still exposed managed C# events for durability change, break, and repair.
+- `PlayerTool` subscribed to `ToolDurabilitySystem.OnToolBroken` and re-broadcast break/use state through managed events.
+- `PlayerToolManager` still exposed slot/assignment managed events even though `ToolLoadoutChangedSignal` already existed.
+- `PlayerNoiseEmitter` subscribed to `PlayerTool.OnToolUsed` instead of reading a bounded tool-use state snapshot.
+
+What was done:
+- Removed durability managed events and their invocations from `ToolDurabilitySystem`; durability changes continue to publish the existing packed `ItemDurabilityChangedSignal`.
+- Removed `PlayerTool` managed events and the durability-system subscription bridge.
+- Added `PlayerToolManager` consumption of `ReadOnlySpan<ItemDurabilityChangedSignal>` to holster/replace broken equipped tools through the existing typed lane.
+- Replaced `PlayerNoiseEmitter` tool-use subscription with direct cached `LastUseTime`/`LastUseWasPrimary` reads from the current tool.
+- Removed `PlayerToolManager` slot/assignment managed events; `PlayerTransportCoordinator` now consumes `ToolLoadoutChangedSignal` by source id and sequence.
+
+Cinematic cheats used:
+- Break/use/slot truth remains compact state and typed payload snapshots, not delegate fanout.
+- Low tier consumes bounded spans only. High/Ultra do not get heavier gameplay logic; they can spend the saved callback complexity on presentation lanes.
+
+Exact microseconds saved:
+- Managed delegate allocation/invocation risk was removed from the touched tool break/use/slot paths.
+- Exact runtime microseconds are unmeasured without Unity profiler/GCMonitor.
+- Dominant cutter win remains the CSG deletion: estimated 200000+ us avoided per old boolean cut event.
+
+Validation:
+- Static scan found no `OnToolUsed`, `OnDurabilityLow`, `OnToolBroken`, `OnDurabilityChanged`, `OnToolRepaired`, `ActiveSlotChanged`, or `ToolAssignmentsChanged` subscriptions/invocations in the touched tool surface, except `OnToolBrokenWhileUsing` virtual method names that are not events.
+- Static scan found no new `NativeQueue`, no `new NativeArray`, no `Mesh.vertices`, no `string.Format`, no `LaserCutterManager`, no RealtimeCSG/CSG references, and no standard `Update`/`FixedUpdate`/`LateUpdate` in the TOOL_RESAK surface.
+- Filtered `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false` showed no TOOL_RESAK file errors.
+- Full global build is currently blocked outside TOOL_RESAK by `Assets/_Project/Scripts/SubmarineFluidDynamics.cs(4923,10): CS1513 } expected`.
+
+Status:
+- TOOL_RESAK_SOLVER managed-delegate purge: STATIC VERIFIED.
+- Unity import, Play Mode, frame profiler, GCMonitor, Metal/Quest/Steam Deck player builds: PENDING VERIFICATION because no Unity runtime/player logs were available in this session.
+
+## 2026-05-16 - Haptic ReadOnlySpan Bridge
+
+What was wrong:
+- `ToolHapticsRuntime` still exposed `NativeArray<HapticCommand>.ReadOnly` to `InputDispatcher`.
+- Tool durability break filtering used a raw `Flags & 1` test instead of a named payload flag.
+
+What was done:
+- Changed `ToolHapticsRuntime.GetFrontBuffer()` and `TryGetFrontBufferSnapshot(...)` to return `ReadOnlySpan<HapticCommand>`.
+- Updated `InputDispatcher` haptic aggregation to consume the span directly.
+- Added `ItemDurabilityChangedSignal.FlagBroken` and used it in `ToolDurabilitySystem` publishing plus `PlayerToolManager` filtering.
+
+Cinematic cheats used:
+- Haptics remain a 16-command bounded envelope, not a device-specific native container leak.
+- No physical rumble simulation or per-device branch explosion was added.
+
+Exact microseconds saved:
+- No managed copy was introduced; the span is pointer/length over the DataVault-resolved front buffer.
+- Exact microseconds are unmeasured without Unity profiler/GCMonitor.
+
+Validation:
+- `rg` confirmed `InputDispatcher` now consumes `ReadOnlySpan<ToolHapticsRuntime.HapticCommand>`.
+- Static struct-layout scan found no relevant `[StructLayout(...)]` entries without `Pack = 1` in the TOOL_RESAK/Core signal surface.
+- Filtered `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false` showed no TOOL_RESAK file errors.
+- Full global build is currently blocked outside TOOL_RESAK by `DiegeticGyroCompassRuntime` missing blackbox/AUP fields and `EcosystemDirector` generic native pointer/upload inference errors.
+
+Status:
+- TOOL_RESAK_SOLVER haptic span bridge: STATIC VERIFIED.
+- Unity import, Play Mode, frame profiler, GCMonitor, Metal/Quest/Steam Deck player builds: PENDING VERIFICATION because no Unity runtime/player logs were available in this session.

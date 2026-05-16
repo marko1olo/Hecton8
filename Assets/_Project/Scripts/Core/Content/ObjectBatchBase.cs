@@ -37,6 +37,8 @@ namespace Hecton8.Core.Content
         [SerializeField] private ObjectBatchInstance[] instances = Array.Empty<ObjectBatchInstance>();
         [SerializeField] private ObjectBatchChunk[] chunks = Array.Empty<ObjectBatchChunk>();
 
+        public int MeshCount => meshes != null ? meshes.Length : 0;
+        public int MaterialCount => materials != null ? materials.Length : 0;
         public int InstanceCount => instances != null ? instances.Length : 0;
         public int ChunkCount => chunks != null ? chunks.Length : 0;
 

@@ -132,3 +132,186 @@ Validation:
 - After concurrent worktree movement, latest `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:quiet /clp:ErrorsOnly` fails outside compass at `SubmarineFluidDynamics.cs(2004)` for missing `RefreshNativeStateViewsFromVault`.
 - `dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal` fails outside compass: `RealtimeCSG.csproj` references many missing source files under `Assets/RealtimeCSG/...`, then `SubmarineFluidDynamics.cs` reports missing hot-swap/native-state helpers.
 - Final status remains not `VERIFIED MASTER GRADE`; scene binding and full project build are not proven.
+
+## 2026-05-16 - Indirect dial GPU bandwidth repair
+
+What was still wrong:
+- The High/Ultra indirect physical dial used `ComputeBuffer.SetData` to upload one matrix every draw.
+- The dial matrix upload was single-buffered and had no dirty check, so unchanged transforms still paid upload and potential sync cost.
+- The navigation asmdef did not permit the unsafe lock/write path required by the project bandwidth mandate.
+
+What was done:
+- Replaced compass indirect args and dial matrix buffers with `GraphicsBuffer`.
+- Added double-buffered dial matrix storage: buffer A and buffer B alternate on real upload.
+- Removed the managed `Matrix4x4[1]` upload cache.
+- Wrote indirect args and matrix data through `LockBufferForWrite` plus `UnsafeUtility.MemCpy`.
+- Added dirty suppression for heading, position, rotation, and scale so unchanged dial frames reuse the last published GPU buffer.
+- Enabled unsafe code for `Hecton8.UI.Navigation.asmdef` because the MemCpy upload path requires it.
+
+Cinematic cheats used:
+- Low/MX350 still uses snapped cardinal text and triangle-noise drift with no GPU indirect path.
+- Middle still uses authored physical pivot rotation.
+- High/Ultra keeps the indirect diegetic dial and spends saved upload bandwidth on glass chromatic overkill and optional anomaly particle bursts when stress is low.
+
+Exact microseconds saved:
+- Removed per-draw `ComputeBuffer.SetData`: estimated 2-8 us on unchanged dial frames, plus reduced CPU/GPU sync risk.
+- Removed managed `Matrix4x4[1]` upload cache: no hot allocation saving because it was cold, but it removes one managed object from the dial path.
+- Double-buffering: no fixed CPU saving; reduces stall risk on Steam Deck and PC when the renderer consumes the previous matrix buffer.
+
+Validation:
+- Re-read `Status_COMPASS_GYRO_STABILIZER.md`, `Rationale_COMPASS_GYRO_STABILIZER.md`, and the original XML prompt from `CURRENT_BATCH.md`.
+- Navigation scan now finds no `ComputeBuffer`, `.SetData`, or managed matrix array in `Assets/_Project/Scripts/UI/Navigation`.
+- Forbidden-pattern scan remains clean for private `NativeArray`, `new NativeArray`, standard `Update`/`LateUpdate`/`FixedUpdate`, managed formatting, TMP `.text`, `SetText`, camera polling, EventBus, managed delegates, object lookup, coroutine, and direct `H8Memory.Allocate`.
+- `git diff --check -- Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs Assets/_Project/Scripts/UI/Navigation/Hecton8.UI.Navigation.asmdef` reports only LF-to-CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:minimal` is blocked outside compass by construction drone double3/float3 conversion errors in `DroneFleetManager.cs` and `DroneCognitionJob.cs`.
+- `dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal` is blocked outside compass by missing RealtimeCSG source files before compass assembly proof.
+- Unity batchmode compile was attempted with log at `Docs/AgentLogs/Unity_COMPASS_GYRO_STABILIZER_loop10.log`. It stopped outside compass in editor/audio/core dependency errors, and the log contains no `DiegeticGyroCompass` or `Hecton8.UI.Navigation` errors.
+- Final status remains not `VERIFIED MASTER GRADE`; scene binding and full project build are not proven.
+
+## 2026-05-16 - Vault state eviction pass
+
+What was still wrong:
+- The compass runtime still held gameplay authority in private fields after the earlier NativeArray eviction: prior AUP, signal-derived power/anomaly/stress, calibration request, drift clock, frame sequence, blackbox cursor, and snapshot cache.
+- `CompassStateDTO` was vault-owned but not complete enough to be the only gameplay state authority.
+
+What was done:
+- Expanded `CompassStateDTO` to `Pack = 1, Size = 176`.
+- Added vault fields for previous AUP, system stress, noise clock, blackbox cursor, and reserved padding.
+- Moved calibration request into a state flag.
+- Moved frame sequence to `state.Frame`.
+- Moved blackbox write cursor to `state.BlackBoxCursor`.
+- Replaced the private snapshot cache with `BuildSnapshot(in CompassStateDTO)` from vault state.
+- Updated cadence, overkill, particle gating, velocity, and blackbox dump logic to consume vault state.
+
+Cinematic cheats used:
+- Low/MX350 still uses the triangle-noise drift lie and snapped cardinal text.
+- Middle keeps only physical pivot rotation.
+- High/Ultra retains the indirect physical dial, glass chromatic overkill scalar, and optional local anomaly particles, all driven from the same vault state.
+
+Exact microseconds saved:
+- Gameplay state eviction: 0 us direct measured saving; the value is deterministic ownership and fewer hidden cache paths.
+- DTO growth: +40 bytes for one vault record, below measurable frame cost on MX350/i3.
+- Removing private snapshot cache: avoids a duplicate state write in `CommitCompletedState`, estimated below 1 us.
+
+Validation:
+- Re-read `Status_COMPASS_GYRO_STABILIZER.md`, `Rationale_COMPASS_GYRO_STABILIZER.md`, and the original XML prompt from `CURRENT_BATCH.md`.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:minimal` succeeds with 0 warnings and 0 errors after the DTO expansion.
+- Static scan shows no private compass gameplay fields for power, anomaly, stress, calibration, noise clock, frame sequence, prior AUP, or blackbox cursor.
+- Navigation forbidden-pattern scan still finds no `ComputeBuffer`, `.SetData`, standard `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, TMP `.text`, `SetText`, `Camera.main`, euler polling, EventBus, managed delegates, object lookup, coroutine, or direct `H8Memory.Allocate`.
+- `dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal` is blocked before compile by missing `Temp/obj/Assembly-CSharp/project.assets.json`.
+- Unity batchmode compile was attempted with log at `Docs/AgentLogs/Unity_COMPASS_GYRO_STABILIZER_loop11b.log`. It stops outside compass in editor/audio/core dependency errors; the log contains no `DiegeticGyroCompass`, `Hecton8.UI.Navigation`, `InertialNavigationContracts`, or `CompassStateDTO` errors.
+- Serialized GUID scan still finds no prefab/scene binding for the compass runtime or physical binding.
+- Final status remains not `VERIFIED MASTER GRADE`; scene binding and full project build are not proven.
+
+## 2026-05-16 - Evidence alignment and NativeArray audit
+
+What was wrong:
+- Status/log evidence still named loop 11 while the latest Unity proof artifact is `Unity_COMPASS_GYRO_STABILIZER_loop11b.log`.
+- The NativeArray audit needed explicit wording because the remaining hits are required vault/job views, not private ownership.
+
+What was done:
+- Updated task status to loop 12 and pointed latest Unity evidence at `Docs/AgentLogs/Unity_COMPASS_GYRO_STABILIZER_loop11b.log`.
+- Re-ran `rg` over loop 11b for `DiegeticGyroCompass`, `Hecton8.UI.Navigation`, `Assets\\_Project\\Scripts\\UI\\Navigation`, `InertialNavigationContracts`, `CompassStateDTO`, and `error CS`; only external audio/editor/core compile errors are present.
+- Re-ran NativeArray sovereignty scan. Navigation still has no private `NativeArray` fields and no `new NativeArray` allocations. Remaining hits are vault views, blackbox helper parameters, and required Burst job views over vault-owned `CompassStateDTO` and `NativeArray<float>` output.
+- Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:minimal`; it succeeds with 0 warnings and 0 errors.
+- Re-ran `dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal`; it remains blocked outside compass by 216 `RealtimeCSG.csproj` CS2001 missing-source errors.
+- Re-ran `git diff --check` on touched compass/doc files; it reports only LF-to-CRLF warnings.
+- Searched `CURRENT_BATCH.md` for a separate `<POLISH_MANDATE>` tag; none exists. The only polish directive in this batch is the XML section VI requirement to reach `VERIFIED MASTER GRADE`, which remains blocked by scene binding and external build proof.
+
+Cinematic Cheats used:
+- None added in this pass. Existing Low/Middle/High/Ultra math ladder remains unchanged.
+
+Exact Microseconds saved:
+- 0 us runtime. This pass corrected evidence and audit specificity, not frame cost.
+
+## 2026-05-16 - Indirect draw submission and presentation vault eviction
+
+What was wrong:
+- The High/Ultra indirect dial submission was coupled to presentation state changes. `Graphics.DrawMeshInstancedIndirect` must be submitted every rendered frame, so a stable heading could make the physical compass dial disappear.
+- Cardinal, shader, particle-debt, dial-transform, and matrix-buffer cache values still lived as private fields on `DiegeticGyroCompassRuntime`.
+- A quick attempt to enlarge the core gameplay `CompassStateDTO` with presentation cache fields was rejected because it mixed gameplay truth with UI cache state and broke the standalone contract build in the current local assembly graph.
+
+What was done:
+- Added `CompassPresentationStateDTO` as a packed 80-byte navigation-owned vault DTO.
+- Added `BufferID.CompassPresentationState = 467` without shifting existing buffer IDs.
+- Moved presentation cache state into `GlobalDataVault`: last cardinal, shader scalars, particle debt, dial heading, dial transform, dial matrix buffer index, and presentation flags.
+- Changed the High/Ultra path so `Graphics.DrawMeshInstancedIndirect` is submitted every active LateFrame while matrix uploads stay dirty-gated through the existing double-buffered `GraphicsBuffer.LockBufferForWrite` path.
+- Kept `CompassStateDTO` at `Pack = 1, Size = 176` as gameplay authority only.
+- Hardened the AUP velocity reciprocal: non-finite or epsilon-scale `deltaTime` now returns zero velocity before division, and the denominator is clamped with `math.max`.
+
+Cinematic cheats used:
+- Low/MX350 remains the Dear Lie path: SlowTick-compatible drift, snapped cardinal text through `SetCharArray`, and no indirect draw.
+- Middle remains a physical pivot rotation path when authored.
+- High/Ultra now keep the indirect dial visible even at a stable heading, and the saved upload bandwidth remains available for glass chromatic response and optional local anomaly particles.
+
+Exact microseconds saved:
+- Presentation vault eviction: 0 us direct measured saving; this is ownership and deterministic-state hardening.
+- Dirty matrix upload preservation: keeps the previous 2-8 us estimated saving on unchanged High/Ultra dial frames versus per-frame upload.
+- Per-frame indirect draw submission: intentional cost, not a saving. Required for visual correctness; no fake microsecond claim.
+- Velocity reciprocal hardening: 0 us measured saving; one finite check plus one `math.max`, accepted to prevent NaN propagation.
+
+Validation:
+- Re-read `Status_COMPASS_GYRO_STABILIZER.md`, `Rationale_COMPASS_GYRO_STABILIZER.md`, and the original XML prompt from `CURRENT_BATCH.md`.
+- Navigation forbidden-pattern scan found no `ComputeBuffer`, `.SetData`, managed matrix array, private `NativeArray`, `new NativeArray`, standard `Update`/`LateUpdate`/`FixedUpdate`, managed formatting, TMP `.text`, `SetText`, `Camera.main`, `transform.eulerAngles`, EventBus, managed delegates, object lookup, coroutine, or direct `H8Memory.Allocate`.
+- Struct audit: `CompassStateDTO` = 176 bytes, `InertialNavigationSnapshot` = 120 bytes, `CompassBlackBoxEntry` = 40 bytes, `CompassPresentationStateDTO` = 80 bytes, all with `Pack = 1`.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:minimal` succeeds with 0 warnings and 0 errors.
+- `dotnet restore Assembly-CSharp.csproj -v:minimal` succeeds.
+- `dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal` fails outside compass with 216 missing-source `RealtimeCSG.csproj` CS2001 errors.
+- Unity batchmode loop 13 wrote `Docs/AgentLogs/Unity_COMPASS_GYRO_STABILIZER_loop13.log` and requested script compilation without compass/navigation errors. Loop 13b stayed alive for 600 seconds after requesting script compilation and was terminated; `Docs/AgentLogs/Unity_COMPASS_GYRO_STABILIZER_loop13b.log` contains no compass/navigation/compiler errors, but it is not a completed Unity compile proof.
+- Final status remains not `VERIFIED MASTER GRADE`; scene binding and full Unity/project build proof are still blocked.
+
+## 2026-05-16 - Integration typed-lane revalidation
+
+What was wrong:
+- A later integration drift restored `GlobalSignals.InitializeAllQueues()` inside `DiegeticGyroCompassRuntime.ConfigureSignalLanes()`.
+- That was compile-legal but architecture-invalid for the compass domain because it initializes unrelated signal queues from UI/navigation code.
+
+What was done:
+- Replaced the broad global queue initialization with explicit compass-owned lane setup for `AnomalyProximitySignal` and `CompassCalibratedSignal`.
+- Loop 14 now keeps that literal with bounded `SignalBus<T>.Configure(...)` calls for the owned lanes and `EnsureInitialized()` for consumed lanes.
+- Revalidated through the Integration compile/static gate.
+
+Cinematic Cheats used:
+- None added. Existing Low/Middle/High/Ultra compass presentation ladder remains unchanged.
+
+Exact Microseconds saved:
+- 0 us runtime measured.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition31_typed_compass_final.log`: green, 0 warnings, 0 errors.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition32_static_final.txt`: `DIEGETIC_COMPASS_GLOBAL_INIT_HITS=0`.
+
+## 2026-05-16 - Startup/hot-poll/depth repair
+
+What was wrong:
+- `DiegeticGyroCompassPhysicalBinding.Awake()` still resolved and bound another component. That violates the startup rule: `Awake` is self-init only.
+- `DiegeticGyroCompassRuntime.OnEnable()` was still doing cold dependency resolution and potential High-tier GPU buffer setup before `Start()`.
+- Legacy `ShaderCompassRibbon` read `GlobalRegistry.InertialNavigation` inside `LateFrameTick()`.
+- `Hecton_UI_CompassRibbon.shader` used `ZTest Always`, allowing a legacy world-space fallback to draw through geometry.
+
+What was done:
+- `DiegeticGyroCompassPhysicalBinding.Awake()` now only defaults `toolRoot`; runtime resolution, dependency injection, and binding run in `Start()` or post-start re-enable.
+- `DiegeticGyroCompassRuntime.OnEnable()` now configures/ensures signal lanes and registers only; player/vault dependency resolution and indirect buffer creation remain in `Start()`/explicit injection.
+- Compass-owned lanes now explicitly configure bounded capacities and lane hashes before initialization: anomaly = 8 expected / 16 max / 4 low-tier, calibration = 4 expected / 8 max / 2 low-tier.
+- `ShaderCompassRibbon` now caches `IInertialNavigationService` during cold startup and uses the cached field in `LateFrameTick()`.
+- `Hecton_UI_CompassRibbon.shader` now uses `ZTest LEqual`.
+
+Cinematic Cheats used:
+- Low/MX350 remains snapped cardinal text and triangle drift; no extra particles or indirect dial.
+- Middle remains physical pivot rotation.
+- High/Ultra retain indirect dial submission, glass chromatic scalar, and optional local anomaly particles. No new physical simulation was added.
+
+Exact Microseconds saved:
+- 0 us measured.
+- Removed one legacy per-LateFrame registry service read when `ShaderCompassRibbon` is manually present. No quantified microsecond claim.
+- `ZTest LEqual` is a correctness/depth-occlusion repair, not a CPU saving claim.
+
+Verification:
+- Re-read status/rationale, AGENTS, domain map, XML prompt, and relevant mandates from disk.
+- GUID scan found no serialized prefab/scene reference to `DiegeticGyroCompassRuntime`, `DiegeticGyroCompassPhysicalBinding`, or `ShaderCompassRibbon`.
+- Static scan finds no standard `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, `Camera.main`, eulers, `ComputeBuffer`, `.SetData`, `GlobalSignals.InitializeAllQueues`, private/local `NativeArray` allocation, EventBus, managed delegates, object lookup, coroutine, or direct `H8Memory.Allocate` in the compass navigation path.
+- Shader scan found no compute kernels, threadgroups, or DirectX-only path in the compass ribbon shader.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:minimal` succeeds with 0 warnings and 0 errors.
+- `dotnet build Assembly-CSharp.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false -m:1 -v:quiet -clp:ErrorsOnly` fails outside compass with 216 missing-source `RealtimeCSG.csproj` CS2001 errors.
+- `git diff --check` on touched files reports only LF-to-CRLF warnings.
+- Final status remains not `VERIFIED MASTER GRADE`; Unity scene binding and full project build proof are still blocked.

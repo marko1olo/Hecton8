@@ -29,29 +29,29 @@ namespace Hecton8.Atmosphere
         private const double TransitionOverflowAwakeSeconds = 2.0d;
         private const uint DumpMagic = 0x48384744u; // H8GD
         private const int DumpFormatVersion = 2;
-        private const float KPaPerAtmosphere = 101.325f;
-        private const float StandardOxygenKPa = 21.22f;
-        private const float StandardCarbonDioxideKPa = 0.04f;
-        private const float StandardNitrogenKPa = 80.065f;
-        private const float DefaultCo2ToxicityThresholdKPa = 1.0f;
-        private const float DefaultCo2FatalKPa = 7.0f;
-        private const float DefaultNarcosisThresholdAtm = 4.0f;
-        private const float DefaultNarcosisFullAtm = 7.0f;
-        private const float DefaultPlayerO2KPaPerSecond = 0.012f;
-        private const float DefaultPlayerCO2KPaPerSecond = 0.010f;
-        private const float DefaultFireO2KPaPerSecond = 0.080f;
-        private const float DefaultScrubberKPaPerSecond = 0.055f;
-        private const float DefaultRoomTemperatureCelsius = 20f;
-        private const float FreezingScrubberEfficiencyScale = 0.5f;
-        private const float DefaultDiffusionConductancePerSecond = 0.45f;
-        private const float DefaultHibernationDistanceMeters = 500f;
-        private const float DefaultLowTierHibernationDistanceMeters = 150f;
-        private const float DefaultHibernationHysteresisMeters = 25f;
-        private const float DefaultBaseIdleDrawWatts = 45f;
-        private const float DefaultBaseBatteryWattSeconds = 720000f;
-        private const float DefaultHibernationLeakRatePerSecond = 0.00006f;
-        private const float MaxWakeCatchUpSeconds = 86400f;
-        private const float MaxDiffusionFractionPerStep = 0.45f;
+        private const float KPaPerAtmosphere = HectonSurvivalContract.KPaPerAtmosphere;
+        private const float StandardOxygenKPa = HectonSurvivalContract.StandardOxygenKPa;
+        private const float StandardCarbonDioxideKPa = HectonSurvivalContract.StandardCarbonDioxideKPa;
+        private const float StandardNitrogenKPa = HectonSurvivalContract.StandardNitrogenKPa;
+        private const float DefaultCo2ToxicityThresholdKPa = HectonSurvivalContract.DefaultCo2ToxicityThresholdKPa;
+        private const float DefaultCo2FatalKPa = HectonSurvivalContract.DefaultCo2FatalKPa;
+        private const float DefaultNarcosisThresholdAtm = HectonSurvivalContract.DefaultNarcosisThresholdAtm;
+        private const float DefaultNarcosisFullAtm = HectonSurvivalContract.DefaultNarcosisFullAtm;
+        private const float DefaultPlayerO2KPaPerSecond = HectonSurvivalContract.DefaultPlayerOxygenKPaPerSecond;
+        private const float DefaultPlayerCO2KPaPerSecond = HectonSurvivalContract.DefaultPlayerCarbonDioxideKPaPerSecond;
+        private const float DefaultFireO2KPaPerSecond = HectonSurvivalContract.DefaultFireOxygenKPaPerSecond;
+        private const float DefaultScrubberKPaPerSecond = HectonSurvivalContract.DefaultScrubberKPaPerSecond;
+        private const float DefaultRoomTemperatureCelsius = HectonSurvivalContract.DefaultRoomTemperatureCelsius;
+        private const float FreezingScrubberEfficiencyScale = HectonSurvivalContract.FreezingScrubberEfficiencyScale;
+        private const float DefaultDiffusionConductancePerSecond = HectonSurvivalContract.DefaultDiffusionConductancePerSecond;
+        private const float DefaultHibernationDistanceMeters = HectonSurvivalContract.DefaultHibernationDistanceMeters;
+        private const float DefaultLowTierHibernationDistanceMeters = HectonSurvivalContract.DefaultLowTierHibernationDistanceMeters;
+        private const float DefaultHibernationHysteresisMeters = HectonSurvivalContract.DefaultHibernationHysteresisMeters;
+        private const float DefaultBaseIdleDrawWatts = HectonSurvivalContract.DefaultBaseIdleDrawWatts;
+        private const float DefaultBaseBatteryWattSeconds = HectonSurvivalContract.DefaultBaseBatteryWattSeconds;
+        private const float DefaultHibernationLeakRatePerSecond = HectonSurvivalContract.DefaultHibernationLeakRatePerSecond;
+        private const float MaxWakeCatchUpSeconds = HectonSurvivalContract.MaxWakeCatchUpSeconds;
+        private const float MaxDiffusionFractionPerStep = HectonSurvivalContract.MaxDiffusionFractionPerStep;
         private const ushort TelemetryFlagNaN = 1 << 0;
         private const ushort TelemetryFlagBreach = 1 << 1;
         private const ushort TelemetryFlagHibernating = 1 << 2;
@@ -143,6 +143,9 @@ namespace Hecton8.Atmosphere
         private bool _blackBoxDumped;
         private bool _deferredBaseTransitionOverflow;
         private double _transitionOverflowAwakeUntil;
+        // Fixed 128-room bitmask stages repair seals while the gas job owns room lanes.
+        private ulong _pendingHullRepairRoomsLo;
+        private ulong _pendingHullRepairRoomsHi;
         private int _roomCount;
         private int _bulkheadCapacityLimit;
         private int _bulkheadCount;
@@ -1038,20 +1041,103 @@ namespace Hecton8.Atmosphere
 
         private void DrainHullRepairedSignals()
         {
-            if (_stepRunning || _roomCount <= 0 || !AreRoomStateLanesReady(_roomCount))
+            if (_stepRunning)
+            {
+                CaptureHullRepairedSignalsForLater();
                 return;
+            }
+
+            ApplyPendingHullRepairSignals();
+            if (_roomCount <= 0 || !AreRoomStateLanesReady(_roomCount))
+            {
+                CaptureHullRepairedSignalsForLater();
+                return;
+            }
 
             while (SignalBus<HullRepairedSignal>.TryReadFrame(out HullRepairedSignal signal))
             {
-                if ((signal.Flags & HullRepairedSignal.CompletedFlag) == 0)
-                    continue;
-
-                int roomId = signal.RoomId;
-                if ((uint)roomId >= (uint)_roomCount)
-                    continue;
-
-                TrySetRoomFlags(roomId, 0, RoomFlagBreached);
+                ApplyOrDeferHullRepairedSignal(in signal);
             }
+        }
+
+        private void CaptureHullRepairedSignalsForLater()
+        {
+            while (SignalBus<HullRepairedSignal>.TryReadFrame(out HullRepairedSignal signal))
+                QueueHullRepairSignal(in signal);
+        }
+
+        private void ApplyOrDeferHullRepairedSignal(in HullRepairedSignal signal)
+        {
+            if ((signal.Flags & HullRepairedSignal.CompletedFlag) == 0)
+                return;
+
+            int roomId = signal.RoomId;
+            if ((uint)roomId >= MaxRoomCapacity)
+                return;
+
+            if (roomId < _roomCount &&
+                AreRoomStateLanesReady(roomId + 1) &&
+                TrySetRoomFlags(roomId, 0, RoomFlagBreached))
+            {
+                return;
+            }
+
+            SetPendingHullRepairRoom(roomId);
+        }
+
+        private void QueueHullRepairSignal(in HullRepairedSignal signal)
+        {
+            if ((signal.Flags & HullRepairedSignal.CompletedFlag) == 0)
+                return;
+
+            int roomId = signal.RoomId;
+            if ((uint)roomId < MaxRoomCapacity)
+                SetPendingHullRepairRoom(roomId);
+        }
+
+        private void SetPendingHullRepairRoom(int roomId)
+        {
+            if (roomId < 64)
+                _pendingHullRepairRoomsLo |= 1UL << roomId;
+            else
+                _pendingHullRepairRoomsHi |= 1UL << (roomId - 64);
+        }
+
+        private void ApplyPendingHullRepairSignals()
+        {
+            if ((_pendingHullRepairRoomsLo | _pendingHullRepairRoomsHi) == 0UL ||
+                _roomCount <= 0 ||
+                !AreRoomStateLanesReady(_roomCount))
+            {
+                return;
+            }
+
+            ulong lo = _pendingHullRepairRoomsLo;
+            int lowLimit = math.min(_roomCount, 64);
+            for (int roomId = 0; roomId < lowLimit; roomId++)
+            {
+                ulong bit = 1UL << roomId;
+                if ((lo & bit) == 0UL)
+                    continue;
+
+                if (TrySetRoomFlags(roomId, 0, RoomFlagBreached))
+                    lo &= ~bit;
+            }
+
+            ulong hi = _pendingHullRepairRoomsHi;
+            int highLimit = math.min(_roomCount, MaxRoomCapacity) - 64;
+            for (int offset = 0; offset < highLimit; offset++)
+            {
+                ulong bit = 1UL << offset;
+                if ((hi & bit) == 0UL)
+                    continue;
+
+                if (TrySetRoomFlags(offset + 64, 0, RoomFlagBreached))
+                    hi &= ~bit;
+            }
+
+            _pendingHullRepairRoomsLo = lo;
+            _pendingHullRepairRoomsHi = hi;
         }
 
         private void CaptureBaseTransitionSignalsForLater()
@@ -1615,11 +1701,9 @@ namespace Hecton8.Atmosphere
                     }
                 }
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[GasDynamicsSolver] Black box dump failed: " + exception.Message);
-#endif
+                GlobalTelemetryBus.PublishUnityLogFault(DumpMagic, 0u, 1u);
             }
         }
 

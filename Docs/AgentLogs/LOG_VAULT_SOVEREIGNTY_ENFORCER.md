@@ -205,3 +205,35 @@ Verification:
 - `python Tools\DataVaultSovereigntyAudit.py --fail-on-any` fails as expected with `1250 forbidden direct NativeArray constructors remain`.
 - Current audit numbers: 1256 direct constructors total, 6 allowed allocator-internal constructors in `H8Memory.cs`, 1250 forbidden system constructors across 192 files.
 - Current `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` fails with 141 external compile errors in `ProceduralBiteIkJobs`, `GameBootstrapper`, `HectonUnderwaterVisuals`, and `ToolDurabilitySystem`.
+
+## 2026-05-16 - Compile Wall Recovery and No-Regression Enforcement
+
+Status: HECTON8.CORE BUILD GREEN; DATAVAULT NO-REGRESSION GATE GREEN; ZERO-DEBT SOVEREIGNTY STILL PENDING.
+
+What was wrong:
+- Current compiler output was moving because parallel agents were editing the same generated Core assembly surface.
+- `SubmarineFluidDynamics` had a real syntax break in `PublishSplashFluidImpulse`: the finite/NaN guard block was missing its closing brace before impulse construction.
+- The DataVault no-regression gate caught a new forbidden direct constructor in `DroneFleetManager`: `NativeArray<DroneCullingStateGpu>[64]`.
+
+What was done:
+- Revalidated current disk state instead of patching stale compiler messages.
+- Restored the missing `SubmarineFluidDynamics` guard brace.
+- Added `SystemID.Construction` and `BufferID.DroneFleetCullingStates`.
+- Routed `DroneFleetManager` culling upload state through `GlobalDataVault.GetBuffer(...)`, with an `H8Memory.Allocate` fallback only when no vault is registered.
+- Prevented vault aliases from being disposed by the drone manager; fallback allocations release through `H8Memory.Release`.
+
+Cinematic Cheats used:
+- Drone culling uses a compact 16-byte GPU payload instead of uploading the full drone state.
+- The submarine splash impulse keeps the existing early finite guard, so bad inputs drop before signal publication instead of contaminating downstream VFX/audio.
+
+Exact Microseconds saved:
+- Runtime hot path: 0 us claimed. The fixes preserve existing work shape.
+- Removed one persistent direct constructor from `DroneFleetManager`; cold allocator savings are not profiled and are not reported as measured microseconds.
+- DataVault audit and unit tests are tooling-only, 0 us frame cost.
+
+Verification:
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -p:RunAnalyzers=false -v:minimal -clp:Summary` succeeded: `Build succeeded. 0 Warning(s). 0 Error(s).`
+- `python Tools\DataVaultSovereigntyAudit.py --fail-on-regression` passes.
+- `python -m unittest Tools.test_data_vault_sovereignty_audit` passes 3 tests.
+- Current audit numbers: 1173 direct constructors total, 6 allowed allocator-internal constructors in `H8Memory.cs`, 1167 forbidden legacy constructors across 185 files.
+- `git diff --check` is blocked only by shared `Docs/Tasks/CURRENT_BATCH.md:2312` trailing whitespace; that master batch file was not edited by this pass.

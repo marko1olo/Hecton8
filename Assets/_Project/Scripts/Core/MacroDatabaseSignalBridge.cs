@@ -8,7 +8,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Contract-facing bridge that lets the isolated macro database assembly emit only typed native signals.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct MacroDatabaseSignalBridge : IMacroDatabaseSignalSink
     {
         public void PublishSectorHydrated(in MacroDatabaseHydratedSignal signal)

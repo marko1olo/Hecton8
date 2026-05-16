@@ -10,7 +10,7 @@ What was wrong:
 What was done:
 - Added `Assets/_Project/Scripts/Animation/IK/VRPhysicalHandPresenceIkJobs.cs` and `.meta`.
 - Added DataVault buffer IDs for `HandTargetAUP`, `HandActualAUP`, `HandGrabState`, `HandIkTelemetryRing`, and `HandIkTelemetryCursor`.
-- Added an Animation/IK vault resolver, fixed two-hand `IJob`, hand AUP structs, grab state, output pose, and 300-frame black-box telemetry.
+- Added an Animation/IK vault resolver, fixed two-hand `IJob`, hand AUP structs, grab state, output pose, and two-hand 300-frame black-box telemetry.
 - Implemented analytical two-bone IK using law of cosines, `FastAcos`, `math.rsqrt`, pole-plane elbow direction, and joint-limit flagging.
 - Implemented AUP shift rebase on target/actual lanes using `ShiftFrameId` and `AupShiftMeters`.
 - Implemented low-tier/no-VR screen-space fallback, middle-tier plane projection, high-tier/explicit SDF projection, tangent scrape haptic flag/intensity, and ghost hand output when blocked separation exceeds 0.3 m.
@@ -184,7 +184,7 @@ Verification:
 ## 2026-05-16 | GRAB_IK_PROJECTION | BLACKBOX AND BUILD GREEN PASS
 
 What was wrong:
-- Hand IK crash dumps serialized the 300-frame circular telemetry buffer by raw index, so a wrapped ring was not oldest-to-newest.
+- Hand IK crash dumps serialized the circular telemetry buffer by raw index, so a wrapped ring was not oldest-to-newest.
 - Full build then exposed a cross-domain IK bridge compile fault: `ContextualPhysicalIkRuntime` consumed `KccVelocitySignal` but did not import `Hecton8.Core.Contracts.Signals`.
 
 What was done:
@@ -203,4 +203,97 @@ Verification:
 - Targeted Roslyn probe over `VRPhysicalHandPresenceIkJobs.cs`, `LeviathanTerrainIkJobs.cs`, and `LowerBodyPresenceIkJobs.cs` exits 0.
 - Owned IK forbidden-pattern scan returns no hits.
 - `git diff --check` reports CRLF warnings only for touched files.
-- `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /v:minimal` succeeds with 0 warnings and 0 errors.
+- `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /v:minimal` succeeded with 0 warnings and 0 errors at this checkpoint; later Construction drone compile errors superseded this status.
+
+## 2026-05-16 | GRAB_IK_PROJECTION | TWO-HAND BLACKBOX DEPTH FIX
+
+What was wrong:
+- The ring was described as 300 frames, but the job writes one entry for left hand and one entry for right hand every frame.
+- A 300-entry buffer therefore retained only 150 complete two-hand frames after wrap.
+
+What was done:
+- Added `TelemetryFrameCapacity = 300`.
+- Changed `TelemetryCapacity` to `TelemetryFrameCapacity * HandCount`, making the hand ring 600 entries.
+- Kept the per-entry 80-byte ABI and chronological dump ordering unchanged.
+
+Cinematic cheats used:
+- None. This is postmortem correctness for the existing SDF/plane hand presence fake.
+
+Exact microseconds saved:
+- No savings claimed. The change buys crash evidence, not speed.
+- Runtime cost remains two fixed telemetry writes per frame; memory rises from 24 KB to 48 KB.
+
+Verification:
+- Targeted Roslyn probe over `VRPhysicalHandPresenceIkJobs.cs`, `LeviathanTerrainIkJobs.cs`, and `LowerBodyPresenceIkJobs.cs` reports `TARGETED_IK_COMPILE_PROBE_CLEAN`, exit 0.
+- Owned IK forbidden-pattern scan returns no hits.
+- At that checkpoint, full `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /v:minimal` was blocked outside Animation/IK by Construction drone `double3` to `float3` conversion errors in `DroneFleetManager.cs` and `DroneCognitionJob.cs`; this is superseded by the later World wall below.
+
+## 2026-05-16 | GRAB_IK_PROJECTION | BLACKBOX FAIL-CLOSED GUARD
+
+What was wrong:
+- `TryDumpTelemetry` could serialize a partial ring if called outside the vault resolver path.
+
+What was done:
+- Added a cold guard requiring ABI validation, a full 600-entry two-hand ring, and a live cursor lane before writing `Dump_GRAB_IK_PROJECTION.bin`.
+
+Cinematic cheats used:
+- None. This preserves crash evidence integrity for the existing physical-hand projection fake.
+
+Exact microseconds saved:
+- 0 us hot path. The guard runs only during crash/NaN dump.
+
+Verification:
+- Targeted IK Roslyn probe reports `TARGETED_IK_COMPILE_PROBE_CLEAN`, exit 0 after the later ordering patch.
+- Owned IK forbidden-pattern scan returns no hits.
+
+## 2026-05-16 | GRAB_IK_PROJECTION | BLACKBOX EARLY-LIFE ORDERING
+
+What was wrong:
+- Before the 600-entry ring filled, the dump serializer started at `cursor % length`, putting real startup frames after zeroed records.
+- A negative cursor value would write to a sanitized index but keep advancing from the corrupted negative cursor.
+
+What was done:
+- Cold dumps now start at index 0 until the cursor reaches ring length, then switch to wrapped chronological ordering.
+- Negative cursor recovery now advances from the sanitized write index.
+
+Cinematic cheats used:
+- None. This is crash evidence integrity.
+
+Exact microseconds saved:
+- No savings claimed. One cursor comparison was added to the telemetry write path; the two-hand telemetry budget remains about 2 us/frame.
+
+Verification:
+- Targeted Roslyn probe over `VRPhysicalHandPresenceIkJobs.cs`, `LeviathanTerrainIkJobs.cs`, and `LowerBodyPresenceIkJobs.cs` reports `TARGETED_IK_COMPILE_PROBE_CLEAN`, exit 0.
+- Owned IK forbidden-pattern scan returns no hits.
+- `git diff --check` reports CRLF warnings only for touched files.
+- Latest full `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /v:minimal` is blocked outside Animation/IK by `World/EcosystemDirector.cs` read-only property / return-value mutation errors.
+
+## 2026-05-16 | GRAB_IK_PROJECTION | AUP COMMIT HARDENING AND FINAL BUILD GATE
+
+What was wrong:
+- The hand AUP commit path wrote finite local meters but did not quantize them at millimeter commit boundaries.
+- `HandActualAUP` could retain stale grid coordinates after locking against an interactable AUP in another sector.
+
+What was done:
+- Target/actual AUP local meters are now millimeter-quantized on commit and rebase.
+- Actual hand AUP inherits the current target/interactable grid.
+- AUP source hashes include all grid high/low bits.
+
+Cinematic cheats used:
+- Kept physical hand presence as a deterministic SDF/plane projection fake, not rigidbody hands or synchronous casts.
+- The AUP hardening preserves the fake across origin shifts without adding simulation truth.
+
+Exact microseconds saved:
+- No direct savings claimed.
+- Added cost is bounded to two `math.round` operations and six integer hash folds per hand commit, estimated under 1 us for two hands.
+
+Verification:
+- Targeted Roslyn probe over `VRPhysicalHandPresenceIkJobs.cs`, `LeviathanTerrainIkJobs.cs`, and `LowerBodyPresenceIkJobs.cs` reports `TARGETED_IK_COMPILE_PROBE_CLEAN`, exit 0.
+- Full `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /v:minimal` succeeds with 0 warnings / 0 errors in 4.78s.
+- Owned IK forbidden-pattern scan returns no hits.
+- BufferID scan reports `NO_BUFFERID_COLLISIONS`.
+- `git diff --check` reports CRLF normalization warning only.
+
+Status:
+- Compile validation is green for this checkpoint.
+- Unity runtime, Quest IL2CPP, and profiler/GCMonitor proof remain pending because no Unity Editor/MCP runtime logs are exposed in this session.

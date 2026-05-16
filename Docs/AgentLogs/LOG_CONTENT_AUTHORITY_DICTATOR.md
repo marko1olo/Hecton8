@@ -96,3 +96,107 @@ Exact Microseconds saved -> No profiler-backed frame number claimed. Determinist
 Verification -> Post-patch `rg` scan of `Assets/_Project/Scripts/Core/Content` found no `foreach`, local native containers, runtime Resources loads/sweeps, Unity Update hooks, managed delegate/event markers, coroutine calls, scene search, `Camera.main`, `string.Format`, or renderer material allocation markers. Full-project `Resources.Load` scan still reports third-party/vendor/editor package usage outside CORE/ASSETS; first-party `Assets/_Project` scan is clean and now enforced by the content validator. Earlier builds hit an external `Core/BinaryLayoutManifest.cs` wall; after it cleared, `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly` and `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` both exited 0 with 0 warnings and 0 errors.
 
 Status -> CORE/ASSETS Phase 7 pass complete. VERIFIED MASTER GRADE. PLATINUM_COMPILE GREEN.
+
+## Phase 8 Report - Refcount Integrity and Platform I/O
+What was wrong -> The content-owned Addressables handle bridge had a rollback bug: if handle tracking failed after `RegisterBundleAcquire(hash)`, it could remove the entire hash ledger entry even when existing refs still owned that bundle. Lore file resolution was too PC-centric, relying on direct reads from StreamingAssets/dataPath and not rejecting Android-style URI/jar paths. Build validation still used `ForceSort()` while discovering hash maps, which meant validation could mutate the assets it was checking. Bundle teardown released handles but did not clear GlobalDataVault bundle ref records.
+
+What was done -> Changed failed handle tracking rollback to decrement only the just-acquired ref and remove the bundle record only when it became unused. Reworked `ContentLoreBinaryProvider` path resolution to prefer `Application.persistentDataPath`, skip compressed URI/jar roots, and use a 64 KB fallback `FileStream` buffer matching the max synchronous lore block size. Added a validator gate that fails non-portable lore dictionary paths. Removed validator-side `ForceSort()` so registry validation observes authored data instead of repairing it. Added vault bundle ref clearing and `VRAMBudgetTracker.Unregister()` on content runtime teardown.
+
+Cinematic Cheats used -> No new simulation. This pass protects the existing Dear Lie/Overkill routing by keeping bundle residency honest and making lore access platform-portable without adding runtime search or asset-load stalls.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic facts: no new per-frame scans were added; the refcount rollback executes only on handle-track failure; lore reads remain capped at 64 KB; fallback stream buffering is 64 KB to reduce small-read churn on slow storage; bundle vault clearing is teardown-only.
+
+Verification -> Post-patch `rg` scans found no banned content-domain patterns and no first-party `Resources.Load`/`Resources.LoadAll` calls. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly` exits 0 with 0 warnings and 0 errors. `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` currently fails in external Diagnostics/Audio/World files: `ArchitectEyeVisualizer.cs`, `PlayerCriticalProceduralAudioRenderer.cs`, and `AbyssalThermalManager.cs`. No CORE/ASSETS errors appear.
+
+Status -> CORE/ASSETS Phase 8 pass complete. Core compile green. PLATINUM_COMPILE currently BLOCKED BY EXTERNAL EDITOR DIAGNOSTICS/AUDIO/WORLD.
+
+## Phase 9 Report - Batch Payload and Resource Gate Proof
+What was wrong -> Static wreck/debris batches could be authored with null mesh/material bindings, invalid mesh/material indices, zero hashes, non-finite transforms/bounds, impossible chunk ranges, or unsupported LOD levels without the content validator rejecting them. The first-party Resources purge gate caught exact dotted load calls, but not spaced, fully qualified, or async variants.
+
+What was done -> Added `MeshCount` and `MaterialCount` accessors to `ObjectBatchBase`. Added `ValidateObjectBatchPayloads()` to the content build validator so malformed BRG payload assets fail before build. Replaced exact Resources substring matching with a token scanner that catches `Resources` load calls, `UnityEngine.Resources` load calls, whitespace around the dot, `Load`, `LoadAll`, and `LoadAsync`.
+
+Cinematic Cheats used -> No physical simulation added. This protects the existing object batching cheat: validated static debris chunks stay cheap on low hardware and leave high-tier budget for denser wreck dressing, salt crystals, volumetric silt wake, procedural hull dents, raymarch detail, and 16-tap POM through the existing tier policy.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. New checks are build/editor-time only and add 0 runtime us. Runtime benefit is avoided bad BRG bindings and stronger prevention of synchronous Resources asset access.
+
+Verification -> `rg` found no banned patterns under `Assets/_Project/Scripts/Core/Content` and no first-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` calls under `Assets/_Project`. `git diff --check` reported only line-ending warnings. `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` exited 0 with 48 warnings and 0 errors. Core build attempts after the patch failed outside CORE/ASSETS: first `Fauna/PredatorCognitionDomain.cs` missing `IsFinite`, then `Bootstrap/GameBootstrapper.cs` with `IDataVault` assembly identity mismatch.
+
+Status -> CORE/ASSETS Phase 9 pass complete. Editor compile green. PLATINUM_COMPILE currently BLOCKED BY EXTERNAL CORE/BOOTSTRAP/MEMORY.
+
+## Phase 10 Report - Lore Path Sovereignty and I/O Reliability
+What was wrong -> `Babel_Dictionary.h8bin` path validation still allowed traversal-style relative paths and runtime absolute paths. The fallback stream path used a single read, which can return a short block under slow or contended storage even when the file is valid.
+
+What was done -> Added a shared portable-path validator on `ContentLoreBinaryProvider` and used it from both runtime resolution and editor validation. Runtime lore resolution now accepts only relative non-traversing dictionary paths, checks full-path containment under `persistentDataPath`, `streamingAssetsPath`, or `dataPath`, and rejects URI/jar roots. Fallback `FileStream` now loops over the caller-provided `Span<byte>` until the requested lore block is fully read or EOF stops it.
+
+Cinematic Cheats used -> No physical simulation added. This keeps text blocks on the same hash-routed asset path as textures without adding runtime Resources access or managed staging buffers.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. New path checks are cold open only. The fallback read loop adds no allocations and prevents short-read failures; platform I/O timing requires Steam Deck/Android traces.
+
+Verification -> Static scans stayed clean for content-domain banned patterns and first-party Resources load APIs. `git diff --check` reported only line-ending warnings. Phase 10 editor/core build attempts currently fail outside CORE/ASSETS: `World/EcosystemDirector.cs`, `TetherManager.cs`, and third-party project restore assets (`GPUInstancer`, `Den.Tools`, `Crest`, `EasySave3`). No CORE/ASSETS compile errors appear in the logs.
+
+Status -> CORE/ASSETS Phase 10 pass complete. PLATINUM_COMPILE currently BLOCKED BY EXTERNAL WORLD/THIRD-PARTY PROJECTS.
+
+## Phase 11 Report - Hologram Pool and Runtime Prefab Gate
+What was wrong -> The hologram proxy fallback used round-robin slot selection and could reuse an active proxy for a second pending load. That breaks ownership: one completion can hide a proxy still standing in for another unresolved asset. Content runtime prefabs could also ship without an asset hash map or hologram mesh/material binding.
+
+What was done -> `ShowHologram()` now selects only inactive proxy slots and returns no proxy when the fixed pool is exhausted. `ContentAuthorityRuntime` exposes the fixed pending-load capacity and read-only binding state. The content build validator now scans first-party prefabs for `ContentAuthorityRuntime` and fails missing hash maps, missing hologram proxy mesh/materials, and invalid pool capacities.
+
+Cinematic Cheats used -> The translucent proxy remains the cheat: render a cheap visible stand-in after 100 ms instead of blocking the main thread or letting invisible walls exist. Low hardware keeps the fixed pool. High hardware still gets deterministic fallback ownership while richer Addressables finish streaming.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. The runtime change adds only a bounded fixed-pool scan on the timeout path and no allocation. The prefab gate is build-time only.
+
+Verification -> Static scans stayed clean for content-domain banned patterns and first-party Resources load APIs. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly` currently exits 1 in external `SubmarineFluidDynamics.cs(4923,10): CS1513 } expected`; no CORE/ASSETS error was emitted before that syntax wall.
+
+Status -> CORE/ASSETS Phase 11 pass complete. PLATINUM_COMPILE currently BLOCKED BY EXTERNAL SUBMARINE SYNTAX WALL.
+
+## Phase 12 Report - Refcount Fail-Loud and Compile Recovery
+What was wrong -> The bundle reference counter treated a double-release as survivable by decrementing below zero and clamping back to zero. That hides Addressables ownership bugs and can leave the VRAM ledger looking valid after residency state is already corrupt. The vault count guard also handled out-of-range counts locally without clearing stale vault records.
+
+What was done -> `ContentBundleReferenceCounter.Release()` now fails zero hashes, unknown hashes, and zero/negative refcount transitions instead of clamping them. `Acquire()` rejects negative and `int.MaxValue` refcounts before increment. All public ledger reads normalize the GlobalDataVault count before pointer iteration, and a corrupted count clears the fixed ledger in-place with a development-build diagnostic. No local NativeArray ownership was added.
+
+Cinematic Cheats used -> No new simulation. This preserves the existing streaming cheat: low hardware can shed content aggressively without hidden refcount drift, while high-tier Overkill assets remain tied to explicit, validated Addressables ownership.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic facts: no per-frame scan was added; the new work is scalar guard logic on acquire/release/ledger-read paths over existing vault buffers.
+
+Verification -> Post-patch `rg` scans found no banned content-domain patterns and no first-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` calls. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly` exited 0 with 0 warnings and 0 errors. `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` exited 0 with 48 warnings and 0 errors. A follow-up core recheck then exited 1 in external `PhysicsApplySystem.cs` missing physics vault helpers, force packet buffers, and `BufferID.Physics*` members; no CORE/ASSETS errors appeared.
+
+Status -> CORE/ASSETS Phase 12 pass complete. VERIFIED MASTER GRADE for content code. PLATINUM_COMPILE currently BLOCKED BY EXTERNAL PHYSICS APPLY SYSTEM. Unity import, Play Mode, profiler, GCMonitor, and platform player builds remain pending external verification.
+
+## Phase 13 Report - Lore Metadata Fail-Fast
+What was wrong -> The lore block validator only checked the 64 KB length ceiling. A provider could still ship with no blocks, zero hashes, duplicate hashes, negative offsets, zero-length blocks, overflowed ranges, or overlapping byte ranges. Runtime would return false for some reads, but that would leave UI text failures to gameplay.
+
+What was done -> Hardened `ValidateLoreBlockIoBudgets()` to reject malformed lore metadata at build time. It now checks block count, hash uniqueness, offset/length validity, overflow, and range overlap using an editor-only local offset sort. `ContentLoreBinaryProvider.Open()` now catches dictionary open failures, disposes partial MMF/FileStream state, and returns false with a development diagnostic instead of letting IO/MMF exceptions escape.
+
+Cinematic Cheats used -> No new physical simulation. This protects the existing hash-routed text streaming cheat: UI text blocks stay on the same authority path as textures without managed staging assets or Resources loads.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Validator checks are build-time only, 0 runtime us. Runtime change is cold dictionary open only.
+
+Verification -> Post-patch scans found no banned content-domain patterns and no first-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` calls. Core build attempt 42 currently fails outside CORE/ASSETS in `Core/Memory/H8Memory.cs` duplicate `BufferID.Physics*` entries and `World/SargassumMicroFaunaBoids.cs` duplicate `SaturateFinite01`. Editor build attempt 43 fails through external `Core/Determinism/LockstepStateValidator.cs` missing lockstep/system-glitch lane constants. No CORE/ASSETS compile errors appeared.
+
+Status -> CORE/ASSETS Phase 13 pass complete. PLATINUM_COMPILE currently BLOCKED BY EXTERNAL CORE MEMORY/WORLD/DETERMINISM.
+
+## Phase 14 Report - Registry Shape Gate
+What was wrong -> The hash-map validator caught duplicate hashes and missing Addressables bindings, but it did not reject invalid enum/tier/LOD shape, negative VRAM estimates, zero dependency hashes, self-dependencies, duplicate dependency hashes, or dependency lists too large for the binary record's `ushort` count field.
+
+What was done -> Added `ValidateEntryShape()` to the content registry validation path. It fails invalid `ContentAssetKind`, invalid `ContentTier`, negative VRAM estimates, LOD values above 2, dependency lists above `ushort.MaxValue`, zero dependencies, self-dependencies, and repeated dependencies before the binary bridge can serialize malformed registry state.
+
+Cinematic Cheats used -> No simulation added. This protects the existing Dear Lie/Overkill policy by ensuring tier metadata is valid before low hardware rejects Overkill downloads or high hardware spends budget on heavy visuals.
+
+Exact Microseconds saved -> Build-time only, 0 runtime us. No runtime hash-map lookup changed; no profiler-backed frame number claimed.
+
+Verification -> Post-patch scans found no banned content-domain patterns and no first-party Resources load calls. Core build attempt 44 fails outside CORE/ASSETS in `DiegeticGyroCompassRuntime.cs`, `SystemDispatcher.cs`, and `ArchitectEyeVisualizer.cs`. Editor build attempt 45 fails through external `DiegeticGyroCompassRuntime.cs`, `ArchitectEyeVisualizer.cs`, and `GlobalSignals.cs`. No CORE/ASSETS compile errors appeared.
+
+Status -> CORE/ASSETS Phase 14 pass complete. PLATINUM_COMPILE currently BLOCKED BY EXTERNAL UI/DISPATCHER/DIAGNOSTICS.
+
+## Phase 15 Report - Pending Vault and Blackbox Fault Containment
+What was wrong -> Pending-load count lived in GlobalDataVault but was read directly in multiple runtime paths. If another owner or memory fault pushed that count past the 64-slot ceiling, content could leave stale pending records, target renderer bridges, and hologram proxies alive while refusing to process the ledger. The blackbox dump path also used raw IO/path calls and marked itself complete before the file write succeeded, which could erase the only useful fault report during NaN recovery.
+
+What was done -> Added one normalized pending-load resolver and routed Track/Complete/Tick/Clear/Telemetry through it. Corrupt pending counts now clear the fixed vault records, clear the managed renderer bridge, hide all active hologram proxies, and log a guarded development diagnostic. Reworked blackbox dumping into a contained write routine that catches recoverable IO/path failures, creates output directories when allowed, retries persistent-data fallback, and sets the one-shot dump flag only after a successful write. Hardened dump-path resolution against recoverable path failures.
+
+Cinematic Cheats used -> The hologram proxy remains the cheat: a cheap visible stand-in after 100 ms instead of main-thread stalls or invisible walls. Low hardware keeps the fixed 64-entry ceiling. High/Ultra retains deterministic crash dumps for heavy Overkill content failures without adding per-frame work.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic facts: no new normal-frame allocation path was added; pending normalization is scalar guard work on existing fixed buffers; blackbox IO is fault-path only after non-finite telemetry.
+
+Verification -> Post-patch `rg` scans found no content-domain `foreach`, local `NativeArray`, runtime Resources loads/sweeps, Unity Update hooks, coroutine calls, scene search, `Camera.main`, `string.Format`, managed delegate/event markers, or renderer material allocation markers. First-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` scan is clean. `git diff --check` reported only line-ending warnings. After stopping orphaned timed-out MSBuild workers, `dotnet build Hecton8.Editor.csproj -v:minimal /m:1 /nr:false` exited 0 with 0 warnings and 0 errors, and `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 0 warnings and 0 errors. Latest rechecks fail outside CORE/ASSETS in `VFX/Bioluminescence/BiolumPulseSyncRuntime.cs` missing `ResolveDataVault` and vendor `Temp/obj` restore assets; no CORE/ASSETS compile errors appeared.
+
+Status -> CORE/ASSETS Phase 15 pass complete. VERIFIED MASTER GRADE for content code with green core/editor checkpoints. Latest PLATINUM_COMPILE is BLOCKED BY EXTERNAL VFX/VENDOR RESTORE. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.

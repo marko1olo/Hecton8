@@ -13,7 +13,7 @@ namespace Hecton8.Audio.Propagation
         public const int MaxPathNodes = 30;
         public const int MaxPathEdges = MaxPathNodes * 2;
         public const int TelemetryFrameCount = 300;
-        public const float SoundSpeedWaterMetersPerSecond = 1480f;
+        public const float SoundSpeedWaterMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         public const float OpenLowPassCutoffHertz = 22000f;
         public const float MinimumLowPassCutoffHertz = 80f;
         public const float CornerLowPassHertz = 2000f;
@@ -21,7 +21,7 @@ namespace Hecton8.Audio.Propagation
         public const float SealedBulkheadDelaySeconds = 0.010f;
         public const float CornerGain = 0.70794576f;
         public const float MaximumItdSeconds = 0.00065f;
-        public const int AupCellSizeMeters = 5000;
+        public const int AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
     }
 
     [Flags]

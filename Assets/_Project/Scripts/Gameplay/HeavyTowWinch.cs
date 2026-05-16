@@ -255,13 +255,19 @@ namespace Hecton8.Gameplay
                     _playerRigidbody,
                     payloadBody,
                     payloadCollider,
-                    initialDistance))
+                    initialDistance,
+                    _tetherManager.CurrentFixedFrameIndex))
             {
                 return false;
             }
 
-            _tetherManager.DrainTetherFiredSignals();
-            return _activeTether != null && ReferenceEquals(_activeTether.PayloadBody, payloadBody);
+            return _tetherManager.ExecuteFireRequest(
+                this,
+                _playerMotor,
+                _playerRigidbody,
+                payloadBody,
+                payloadCollider,
+                initialDistance);
         }
 
         internal bool CanTowMass(float mass)

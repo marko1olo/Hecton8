@@ -1,5 +1,8 @@
+using System.Globalization;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 using H8PrefabRegistry = global::Hecton8.Core.Bridge.H8PrefabRegistry;
 using H8PrefabRegistryRuntimeBinder = global::Hecton8.Core.Bridge.H8PrefabRegistryRuntimeBinder;
 
@@ -12,7 +15,9 @@ namespace Hecton8.Core.Bridge.EditorTools
     public sealed class H8PrefabRegistryWindow : EditorWindow
     {
         private H8PrefabRegistry registry;
-        private Vector2 scroll;
+        private VisualElement entriesContainer;
+        private Label entriesLabel;
+        private Label vramLabel;
 
         [MenuItem("Hecton-8/Bridge/Prefab Registry Binder")]
         public static void Open()
@@ -20,67 +25,142 @@ namespace Hecton8.Core.Bridge.EditorTools
             GetWindow<H8PrefabRegistryWindow>("Prefab Binder");
         }
 
-        private void OnGUI()
+        private void CreateGUI()
         {
-            registry = (H8PrefabRegistry)EditorGUILayout.ObjectField("Registry", registry, typeof(H8PrefabRegistry), false);
-            DrawDropZone();
+            VisualElement root = rootVisualElement;
+            root.Clear();
+            root.style.paddingLeft = 8f;
+            root.style.paddingRight = 8f;
+            root.style.paddingTop = 8f;
+            root.style.paddingBottom = 8f;
 
-            if (registry == null)
+            ObjectField registryField = new ObjectField("Registry")
+            {
+                objectType = typeof(H8PrefabRegistry),
+                allowSceneObjects = false,
+                value = registry
+            };
+            registryField.RegisterValueChangedCallback(evt =>
+            {
+                registry = evt.newValue as H8PrefabRegistry;
+                RefreshEntries();
+            });
+            root.Add(registryField);
+
+            VisualElement dropZone = new VisualElement();
+            dropZone.style.height = 58f;
+            dropZone.style.marginTop = 6f;
+            dropZone.style.marginBottom = 6f;
+            dropZone.style.borderTopWidth = 1f;
+            dropZone.style.borderBottomWidth = 1f;
+            dropZone.style.borderLeftWidth = 1f;
+            dropZone.style.borderRightWidth = 1f;
+            dropZone.style.alignItems = Align.Center;
+            dropZone.style.justifyContent = Justify.Center;
+            dropZone.Add(new Label("Drop prefabs here"));
+            dropZone.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
+            dropZone.RegisterCallback<DragPerformEvent>(OnDragPerform);
+            root.Add(dropZone);
+
+            VisualElement buttons = new VisualElement();
+            buttons.style.flexDirection = FlexDirection.Row;
+            buttons.style.marginBottom = 6f;
+            root.Add(buttons);
+
+            Button rebuildButton = new Button(RebuildHashes)
+            {
+                text = "Rebuild Hashes"
+            };
+            Button bindButton = new Button(BindRuntimeVault)
+            {
+                text = "Bind Runtime Vault"
+            };
+            buttons.Add(rebuildButton);
+            buttons.Add(bindButton);
+
+            entriesLabel = new Label();
+            vramLabel = new Label();
+            root.Add(entriesLabel);
+            root.Add(vramLabel);
+
+            ScrollView scrollView = new ScrollView();
+            scrollView.style.flexGrow = 1f;
+            entriesContainer = scrollView;
+            root.Add(scrollView);
+            RefreshEntries();
+        }
+
+        private void RefreshEntries()
+        {
+            if (entriesLabel == null || vramLabel == null || entriesContainer == null)
                 return;
 
-            EditorGUILayout.Space(6f);
-            using (new EditorGUILayout.HorizontalScope())
+            entriesContainer.Clear();
+            if (registry == null)
             {
-                if (GUILayout.Button("Rebuild Hashes"))
-                {
-                    Undo.RecordObject(registry, "Rebuild Prefab Registry Hashes");
-                    registry.RebuildAllHashes();
-                    EditorUtility.SetDirty(registry);
-                }
-
-                if (GUILayout.Button("Bind Runtime Vault"))
-                    H8PrefabRegistryRuntimeBinder.Bind(registry, Hecton8.Core.GlobalRegistry.DataVault);
+                entriesLabel.text = "Entries: 0";
+                vramLabel.text = "VRAM Estimate MB: 0";
+                return;
             }
 
-            EditorGUILayout.LabelField("Entries", registry.EntryCount.ToString());
-            EditorGUILayout.LabelField("VRAM Estimate MB", (registry.EstimateTotalVramBytes() >> 20).ToString());
-
-            scroll = EditorGUILayout.BeginScrollView(scroll);
+            entriesLabel.text = "Entries: " + registry.EntryCount.ToString(CultureInfo.InvariantCulture);
+            vramLabel.text = "VRAM Estimate MB: " + (registry.EstimateTotalVramBytes() >> 20).ToString(CultureInfo.InvariantCulture);
             for (int i = 0; i < registry.EntryCount; i++)
             {
                 H8PrefabRegistry.Entry entry = registry.GetEntry(i);
                 if (entry == null)
                     continue;
 
-                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                Box box = new Box();
+                box.style.marginTop = 4f;
+                box.style.marginBottom = 4f;
+                ObjectField prefabField = new ObjectField("Prefab")
                 {
-                    EditorGUILayout.ObjectField("Prefab", entry.Prefab, typeof(GameObject), false);
-                    EditorGUILayout.LabelField("HashID", entry.HashID.ToString());
-                    EditorGUILayout.LabelField("LoreHash", entry.LoreHash.ToString());
-                    EditorGUILayout.LabelField("AcousticHash", entry.AcousticSignatureHash.ToString());
-                    EditorGUILayout.LabelField("1D LUT Hash", entry.OneDimensionalLutHash.ToString());
-                }
+                    objectType = typeof(GameObject),
+                    allowSceneObjects = false,
+                    value = entry.Prefab
+                };
+                prefabField.SetEnabled(false);
+                box.Add(prefabField);
+                box.Add(new Label("HashID: " + entry.HashID.ToString(CultureInfo.InvariantCulture)));
+                box.Add(new Label("LoreHash: " + entry.LoreHash.ToString(CultureInfo.InvariantCulture)));
+                box.Add(new Label("AcousticHash: " + entry.AcousticSignatureHash.ToString(CultureInfo.InvariantCulture)));
+                box.Add(new Label("1D LUT Hash: " + entry.OneDimensionalLutHash.ToString(CultureInfo.InvariantCulture)));
+                entriesContainer.Add(box);
             }
-
-            EditorGUILayout.EndScrollView();
         }
 
-        private void DrawDropZone()
+        private void RebuildHashes()
         {
-            Rect rect = GUILayoutUtility.GetRect(0f, 58f, GUILayout.ExpandWidth(true));
-            GUI.Box(rect, "Drop prefabs here");
-            Event evt = Event.current;
-            if (!rect.Contains(evt.mousePosition))
+            if (registry == null)
                 return;
 
-            if (evt.type == EventType.DragUpdated)
-            {
-                DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-                evt.Use();
-                return;
-            }
+            Undo.RecordObject(registry, "Rebuild Prefab Registry Hashes");
+            registry.RebuildAllHashes();
+            EditorUtility.SetDirty(registry);
+            RefreshEntries();
+        }
 
-            if (evt.type != EventType.DragPerform || registry == null)
+        private void BindRuntimeVault()
+        {
+            if (registry == null)
+                return;
+
+            H8PrefabRegistryRuntimeBinder.Bind(registry, Hecton8.Core.GlobalRegistry.DataVault);
+        }
+
+        private void OnDragUpdated(DragUpdatedEvent evt)
+        {
+            if (registry == null || !HasDraggedPrefab())
+                return;
+
+            DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+            evt.StopPropagation();
+        }
+
+        private void OnDragPerform(DragPerformEvent evt)
+        {
+            if (registry == null || !HasDraggedPrefab())
                 return;
 
             DragAndDrop.AcceptDrag();
@@ -102,7 +182,20 @@ namespace Hecton8.Core.Bridge.EditorTools
             }
 
             EditorUtility.SetDirty(registry);
-            evt.Use();
+            RefreshEntries();
+            evt.StopPropagation();
+        }
+
+        private static bool HasDraggedPrefab()
+        {
+            Object[] references = DragAndDrop.objectReferences;
+            for (int i = 0; i < references.Length; i++)
+            {
+                if (references[i] is GameObject)
+                    return true;
+            }
+
+            return false;
         }
     }
 

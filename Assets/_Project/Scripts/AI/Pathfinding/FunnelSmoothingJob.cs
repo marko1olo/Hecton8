@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Hecton8.Core.Contracts;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -34,20 +35,21 @@ namespace Hecton8.AI.Pathfinding
             PathFunnelResult result = default;
             result.CorridorHash = CorridorHash;
             result.Frame = Frame;
-            result.MathLod = MathLod;
+            uint flags = 0u;
+            result.MathLod = ResolveEffectiveMathLod(ref flags);
 
             if (!Waypoints.IsCreated || Waypoints.Length <= 0)
             {
                 result.Status = PathFunnelStatus.InvalidInput;
+                result.Flags = flags;
                 WriteResult(result);
                 return;
             }
 
-            uint flags = 0u;
             float3 start = SanitizePoint(StartPosition, float3.zero, ref flags);
             float3 goal = SanitizePoint(GoalPosition, start, ref flags);
             int portalCount = ResolvePortalCount();
-            int lookAhead = ResolveLookAhead();
+            int lookAhead = ResolveLookAhead(result.MathLod);
             int portalLimit = math.min(portalCount, lookAhead);
             ushort blockedCell = 0;
 
@@ -189,13 +191,30 @@ namespace Hecton8.AI.Pathfinding
             return math.min(PortalCount, Portals.Length);
         }
 
-        private int ResolveLookAhead()
+        private byte ResolveEffectiveMathLod(ref uint flags)
         {
             if (Stressed != 0 || MathLod == (byte)PathFunnelMathLod.Stressed)
-                return 1;
+                return (byte)PathFunnelMathLod.Stressed;
 
             switch ((PathFunnelMathLod)MathLod)
             {
+                case PathFunnelMathLod.Low:
+                case PathFunnelMathLod.Middle:
+                case PathFunnelMathLod.High:
+                case PathFunnelMathLod.Ultra:
+                    return MathLod;
+                default:
+                    flags |= PathFunnelResultFlags.InvalidMathLod;
+                    return (byte)PathFunnelMathLod.Low;
+            }
+        }
+
+        private static int ResolveLookAhead(byte effectiveMathLod)
+        {
+            switch ((PathFunnelMathLod)effectiveMathLod)
+            {
+                case PathFunnelMathLod.Stressed:
+                    return 1;
                 case PathFunnelMathLod.Low:
                     return 2;
                 case PathFunnelMathLod.Middle:
@@ -381,11 +400,25 @@ namespace Hecton8.AI.Pathfinding
                 absolute = double3.zero;
             }
 
-            const double cellSize = 5000.0d;
-            const double inverseCellSize = 0.0002d;
-            long gridX = (long)math.floor(absolute.x * inverseCellSize);
-            long gridY = (long)math.floor(absolute.y * inverseCellSize);
-            long gridZ = (long)math.floor(absolute.z * inverseCellSize);
+            const double cellSize = HectonPhysicsContract.AupSectorSizeMetersDouble;
+            const double inverseCellSize = 1.0d / HectonPhysicsContract.AupSectorSizeMetersDouble;
+            double gridXDouble = math.floor(absolute.x * inverseCellSize);
+            double gridYDouble = math.floor(absolute.y * inverseCellSize);
+            double gridZDouble = math.floor(absolute.z * inverseCellSize);
+            if (!IsSafeLongGridCoordinate(gridXDouble) ||
+                !IsSafeLongGridCoordinate(gridYDouble) ||
+                !IsSafeLongGridCoordinate(gridZDouble))
+            {
+                flags |= PathFunnelResultFlags.AupFallback;
+                absolute = double3.zero;
+                gridXDouble = 0d;
+                gridYDouble = 0d;
+                gridZDouble = 0d;
+            }
+
+            long gridX = (long)gridXDouble;
+            long gridY = (long)gridYDouble;
+            long gridZ = (long)gridZDouble;
             return new AbsoluteUniversePositionBlit
             {
                 GridX = gridX,
@@ -398,6 +431,16 @@ namespace Hecton8.AI.Pathfinding
                 Reserved0 = 0u,
                 Reserved1 = 0UL
             };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsSafeLongGridCoordinate(double gridCoordinate)
+        {
+            const double minGridCoordinate = -9223372036854775808.0d;
+            const double maxGridCoordinate = 9223372036854774784.0d;
+            return math.isfinite(gridCoordinate) &&
+                   gridCoordinate >= minGridCoordinate &&
+                   gridCoordinate <= maxGridCoordinate;
         }
 
         private void WriteResult(PathFunnelResult result)

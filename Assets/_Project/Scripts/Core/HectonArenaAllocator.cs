@@ -853,7 +853,7 @@ namespace Hecton8.Core
 #endif
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal readonly struct ArenaAllocation
         {
             public readonly void* Ptr;

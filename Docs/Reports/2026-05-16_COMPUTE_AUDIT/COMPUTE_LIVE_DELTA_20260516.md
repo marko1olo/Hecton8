@@ -79,3 +79,113 @@ The burn did not cool down after the full 03:56 audit. The live 05:18-05:19 samp
 This remains a high-concurrency, high-cache-reuse workload. Cache makes it affordable relative to no-cache pricing. It does not make it disciplined.
 
 STATUS: AUDIT COMPLETE.
+
+## Continuation Sample 3 - 2026-05-16T23:14+04:00
+
+Source: `C:\Users\danat\.codex\state_5.sqlite`.
+Boundary: SQLite live-tail only. Costs use the latest full JSONL blended `gpt-5.5` cache-aware/no-cache rates.
+
+| Metric | Value |
+|---|---:|
+| Sample start | 2026-05-16T23:14:21+04:00 |
+| Sample end | 2026-05-16T23:14:51+04:00 |
+| Elapsed | 30.0 sec |
+| Start SQLite tokens | 49,763,778,148 |
+| End SQLite tokens | 49,767,593,348 |
+| Delta | 3,815,200 tokens |
+| Tokens/sec | 127,173.33 |
+| Tokens/min | 7,630,400.00 |
+| Tokens/hour | 457,824,000.00 |
+| Tokens/day equivalent | 10,987,776,000.00 |
+| Cache-aware rate, blended | USD 5.84/min; USD 350.64/hour; USD 8,415.46/day |
+| Active threads | 25 |
+
+Delta since the 14:57 live rebase:
+
+| Metric | Value |
+|---|---:|
+| 14:57 SQLite tokens | 48,761,315,725 |
+| 23:14 SQLite tokens | 49,767,593,348 |
+| Delta | 1,006,277,623 tokens |
+| Cache-aware estimated cost, blended | USD 770.70 |
+
+Top live threads in this sample:
+
+| Rank | Delta tokens | Model | Thread title |
+|---:|---:|---|---|
+| 1 | 236,257 | `gpt-5.5` | Add GPU-only debris chips |
+| 2 | 235,551 | `gpt-5.5` | Add predator headlight reaction |
+| 3 | 233,851 | `gpt-5.5` | Add wake displacement |
+| 4 | 232,932 | `gpt-5.5` | Add VR hand grabbing |
+| 5 | 230,541 | `gpt-5.5` | Build CSV balance pipeline |
+| 6 | 212,146 | `gpt-5.5` | Integrate caustics rust fog shader |
+| 7 | 210,420 | `gpt-5.5` | Add WFC laser clipping |
+| 8 | 197,750 | `gpt-5.5` | CONTENT_AUTHORITY_DICTATOR prompt thread |
+| 9 | 192,565 | `gpt-5.5` | Build loot magnet system |
+| 10 | 185,637 | `gpt-5.5` | Sync flora bioluminescence pulses |
+
+This is the hottest short pulse recorded in this 2026-05-16 continuation set: 127.2K tokens/sec versus 93.2K at 14:57 and 72.6K at 05:19.
+
+STATUS: AUDIT COMPLETE.
+
+## Continuation Sample 2 - 2026-05-16T14:57+04:00
+
+Source: `C:\Users\danat\.codex\state_5.sqlite`.
+Boundary: SQLite live-tail only. Input/cache/output split is inherited from the latest full JSONL scan as a blended `gpt-5.5` rate.
+
+| Metric | Value |
+|---|---:|
+| Sample start | 2026-05-16T14:56:12.600+04:00 |
+| Sample end | 2026-05-16T14:57:12.747+04:00 |
+| Measured interval used for rates | 60.0 sec |
+| Start SQLite tokens | 48,755,724,204 |
+| End SQLite tokens | 48,761,315,725 |
+| Delta | 5,591,521 tokens |
+| Tokens/sec | 93,192.02 |
+| Tokens/min | 5,591,521.00 |
+| Tokens/hour | 335,491,260.00 |
+| Tokens/day equivalent | 8,051,790,240.00 |
+| Cache-aware sample cost | USD 4.28 |
+| No-cache sample equivalent | USD 28.40 |
+| Cache-aware rate | USD 4.28/min; USD 256.95/hour; USD 6,166.81/day |
+| No-cache rate | USD 28.40/min; USD 1,704.18/hour; USD 40,900.39/day |
+| Active threads | 29 |
+
+Delta since previous 05:19 live sample end:
+
+| Metric | Value |
+|---|---:|
+| Previous live sample end tokens | 47,804,795,352 |
+| Current end tokens | 48,761,315,725 |
+| Delta | 956,520,373 tokens |
+| Cache-aware estimated cost | USD 732.59 |
+| No-cache equivalent | USD 4,858.80 |
+
+Delta since 03:56 SQLite snapshot:
+
+| Metric | Value |
+|---|---:|
+| 03:56 SQLite tokens | 47,465,726,066 |
+| Current end tokens | 48,761,315,725 |
+| Delta | 1,295,589,659 tokens |
+| Cache-aware estimated cost | USD 992.28 |
+| No-cache equivalent | USD 6,581.16 |
+
+### Active Thread Deltas, Sample 2
+
+| Rank | Delta tokens | Share | Model | Thread title |
+|---:|---:|---:|---|---|
+| 1 | 445,466 | 7.97% | `gpt-5.5` | Sync flora bioluminescence pulses |
+| 2 | 426,988 | 7.64% | `gpt-5.5` | Implement SDF gap traversal |
+| 3 | 421,393 | 7.54% | `gpt-5.5` | Bridge macro-swarms into simulation |
+| 4 | 398,644 | 7.13% | `gpt-5.5` | Build loot magnet system |
+| 5 | 350,609 | 6.27% | `gpt-5.5` | Add spline docking autopilot |
+| 6 | 317,015 | 5.67% | `gpt-5.5` | Manage biota spawning pool |
+| 7 | 253,946 | 4.54% | `gpt-5.5` | Add Leviathan stalking AI |
+| 8 | 225,480 | 4.03% | `gpt-5.5` | Add visor Snell refraction |
+| 9 | 220,704 | 3.95% | `gpt-5.5` | Move reports to batch006 |
+| 10 | 219,595 | 3.93% | `gpt-5.5` | Implement 300-frame state hashing |
+
+Top 10 threads account for 58.67% of this 60-second live burn. The concurrency widened from 10 active threads at 05:19 to 29 active threads at 14:57.
+
+STATUS: AUDIT COMPLETE.

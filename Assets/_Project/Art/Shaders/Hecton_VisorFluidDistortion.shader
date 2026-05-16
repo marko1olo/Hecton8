@@ -142,26 +142,30 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             {
                 float2 centered = uv * 2.0 - 1.0;
                 float radial = saturate(dot(centered, centered));
-                float rim = FastPowerCurve01(radial, max(0.1, _HectonVisorFluidEdgeFadeExponent));
+                float rim = FastPowerCurve01(radial, max(0.1, HectonFiniteNonNegative(_HectonVisorFluidEdgeFadeExponent, 1.0)));
                 return saturate(0.28 + rim * 0.72);
             }
 
-            float ComputeDropletMask(float2 uv, float2 flowDirection, float wetness, float hullStress)
+            float ComputeDropletMask(float2 uv, float2 flowDirection, float wetness, float hullStress, float4 localVelocity)
             {
-                float lateralStreak = _HectonVisorFluidLocalVelocity.x * _HectonVisorFluidLateralStreakStrength;
-                float forwardStretch = abs(_HectonVisorFluidLocalVelocity.z) * _HectonVisorFluidForwardStretchStrength;
+                float lateralStreakStrength = HectonFiniteValue(_HectonVisorFluidLateralStreakStrength, 0.0);
+                float forwardStretchStrength = HectonFiniteNonNegative(_HectonVisorFluidForwardStretchStrength, 0.0);
+                float dropletScale = HectonFiniteNonNegative(_HectonVisorFluidDropletScale, 0.0);
+                float runoffSpeed = HectonFiniteNonNegative(_HectonVisorFluidRunoffSpeed, 0.0);
+                float lateralStreak = localVelocity.x * lateralStreakStrength;
+                float forwardStretch = abs(localVelocity.z) * forwardStretchStrength;
                 float2 cellScale = float2(
-                    max(2.0, _HectonVisorFluidDropletScale * (1.0 + wetness * 1.6 + forwardStretch * 0.45)),
-                    max(4.0, _HectonVisorFluidDropletScale * (2.35 + wetness * 1.25 + hullStress * 0.9 + forwardStretch)));
+                    max(2.0, dropletScale * (1.0 + wetness * 1.6 + forwardStretch * 0.45)),
+                    max(4.0, dropletScale * (2.35 + wetness * 1.25 + hullStress * 0.9 + forwardStretch)));
                 float2 scaledUV = uv * cellScale;
                 float2 cellId = floor(scaledUV);
                 float2 cellUV = frac(scaledUV) - 0.5;
                 float seed = ResolveInterleavedGradientNoise(
-                    (cellId + 0.5) / max(cellScale, float2(1.0, 1.0)),
+                    (cellId + 0.5) * rcp(max(cellScale, float2(1.0, 1.0))),
                     float2(31.0, 17.0));
                 float activeCell = step(0.34 - wetness * 0.12 - hullStress * 0.08, seed);
 
-                float travel = frac(_Time.y * _HectonVisorFluidRunoffSpeed * (0.22 + seed * 0.48) + seed + scaledUV.x * 0.015);
+                float travel = frac(_Time.y * runoffSpeed * (0.22 + seed * 0.48) + seed + scaledUV.x * 0.015);
                 cellUV.y += (travel - 0.5) * (1.15 + wetness * 0.32 + hullStress * 0.24);
                 cellUV.x += lateralStreak * 0.22 + (seed - 0.5) * 0.25;
 
@@ -223,7 +227,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 return saturate((ridge * 0.78 + ridge * branch * 0.42) * active * growth * crystalDrive);
             }
 
-            float ComputeSuspendedSiltMask(float2 uv, float wetness, float rainIntensity, float inverseDirtRefraction, float depthRefractionMask, float lowTierMode)
+            float ComputeSuspendedSiltMask(float2 uv, float wetness, float rainIntensity, float inverseDirtRefraction, float depthRefractionMask, float lowTierMode, float4 localVelocity)
             {
                 float overkill = HectonFinite01(_HectonVisorFluidVisualOverkill);
                 float activity = max(HectonFinite01(wetness), HectonFinite01(rainIntensity) * 0.45);
@@ -232,8 +236,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     return 0.0;
 
                 float2 flow = float2(
-                    _HectonVisorFluidLocalVelocity.x * 0.038 + 0.017,
-                    -0.023 - abs(_HectonVisorFluidLocalVelocity.z) * 0.016);
+                    localVelocity.x * 0.038 + 0.017,
+                    -0.023 - abs(localVelocity.z) * 0.016);
                 float slowSwirl = ValueNoise(uv * float2(8.0, 13.0) + flow * (_Time.y * 0.37));
                 float2 siltUV = uv * lerp(float2(46.0, 88.0), float2(84.0, 148.0), overkill);
                 siltUV += float2(slowSwirl * 0.21, -slowSwirl * 0.13) + flow * _Time.y;
@@ -243,23 +247,29 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 return saturate((filament * 0.32 + speck * 0.86) * siltDrive);
             }
 
-            float2 ComputeRefractionOffset(float2 uv, float mask, float wetness, float hullStress)
+            float2 ComputeRefractionOffset(float2 uv, float mask, float wetness, float hullStress, float4 localVelocity)
             {
+                float lateralStreakStrength = HectonFiniteValue(_HectonVisorFluidLateralStreakStrength, 0.0);
+                float forwardStretchStrength = HectonFiniteNonNegative(_HectonVisorFluidForwardStretchStrength, 0.0);
+                float runoffSpeed = HectonFiniteNonNegative(_HectonVisorFluidRunoffSpeed, 0.0);
+                float fluidSpeed = HectonFiniteNonNegative(_HectonVisorFluidSpeed, 0.0);
+                float edgeStreakStrength = HectonFiniteNonNegative(_HectonVisorFluidEdgeStreakStrength, 0.0);
+                float distortionStrength = HectonFiniteNonNegative(_HectonVisorFluidDistortionStrength, 0.0);
                 float2 flowDirection = float2(
-                    _HectonVisorFluidLocalVelocity.x * _HectonVisorFluidLateralStreakStrength * 0.6,
-                    -1.0 - abs(_HectonVisorFluidLocalVelocity.z) * _HectonVisorFluidForwardStretchStrength * 0.4);
-                float2 noiseUV = uv * float2(10.0, 16.0) + flowDirection * (_Time.y * _HectonVisorFluidRunoffSpeed * 0.5);
+                    localVelocity.x * lateralStreakStrength * 0.6,
+                    -1.0 - abs(localVelocity.z) * forwardStretchStrength * 0.4);
+                float2 noiseUV = uv * float2(10.0, 16.0) + flowDirection * (_Time.y * runoffSpeed * 0.5);
                 float noiseX = ValueNoise(noiseUV + float2(0.0, 13.1)) - 0.5;
                 float noiseY = ValueNoise(noiseUV + float2(17.3, 4.7)) - 0.5;
-                float downwardPull = saturate(abs(_HectonVisorFluidLocalVelocity.y) * 0.15 + wetness * 0.35 + hullStress * 0.2);
+                float downwardPull = saturate(abs(localVelocity.y) * 0.15 + wetness * 0.35 + hullStress * 0.2);
                 float2 centered = uv * 2.0 - 1.0;
                 float2 centeredAbs = abs(centered);
                 float centeredApprox = max(0.0001, max(centeredAbs.x, centeredAbs.y) + min(centeredAbs.x, centeredAbs.y) * 0.375);
-                float2 edgeDirection = centered / centeredApprox;
-                float edgePush = _HectonVisorFluidSpeed * _HectonVisorFluidEdgeStreakStrength * (0.25 + hullStress * 0.75);
+                float2 edgeDirection = centered * rcp(centeredApprox);
+                float edgePush = fluidSpeed * edgeStreakStrength * (0.25 + hullStress * 0.75);
                 float2 offset = float2(noiseX + flowDirection.x * 0.18, noiseY - downwardPull * 0.2);
                 offset += edgeDirection * edgePush * (0.25 + saturate(centeredApprox) * 0.75);
-                return offset * (_HectonVisorFluidDistortionStrength * mask);
+                return offset * (distortionStrength * mask);
             }
 
             struct RainOverlayResult
@@ -284,14 +294,16 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 RainOverlayResult result;
                 result.mask = 0.0;
                 result.normalOffset = float2(0.0, 0.0);
-                float densityScale = max(0.25, _HectonScreenSpaceRainParams.y);
-                float areaScale = max(0.1, _HectonScreenSpaceRainParams.z);
-                float exposure = saturate(_HectonScreenSpaceRainParams.w);
+                float4 rainParams = HectonFinite4(_HectonScreenSpaceRainParams, float4(0.0, 1.0, 1.0, 0.0));
+                float4 globalWind = HectonFinite4(_GlobalWind, float4(0.0, 0.0, 0.0, 0.0));
+                float densityScale = max(0.25, rainParams.y);
+                float areaScale = max(0.1, rainParams.z);
+                float exposure = HectonFinite01(rainParams.w);
                 if (rainIntensity <= 0.0001 || exposure <= 0.0001)
                     return result;
 
-                float windSpeed = saturate(_GlobalWind.w * 0.08);
-                float2 windXZ = _GlobalWind.xz;
+                float windSpeed = HectonFinite01(globalWind.w * 0.08);
+                float2 windXZ = globalWind.xz;
                 float windLenSq = max(dot(windXZ, windXZ), 0.0001);
                 float2 windDir = windXZ * rsqrt(windLenSq);
                 float slant = 0.16 + windDir.x * (0.22 + windSpeed * 0.28);
@@ -323,6 +335,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float2 screenUV = ResolveXRStereoScreenUV(input.screenUV);
+                float4 localVelocity = HectonFinite4(_HectonVisorFluidLocalVelocity, float4(0.0, 0.0, 0.0, 0.0));
                 float wetness = HectonFinite01(_HectonVisorFluidWetness);
                 float hullStress = HectonFinite01(_HectonVisorFluidHullStress);
                 float intensity = HectonFinite01(_HectonVisorFluidIntensity);
@@ -330,7 +343,10 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float edgeMask = 0.0;
                 float edgeMaskResolved = 0.0;
                 float dustMask = 0.0;
-                float dustReveal = HectonFinite01(_HectonVisorFluidAmbientLight * _HectonVisorFluidDustStrength * _HectonVisorFluidAmbientDustResponse);
+                float ambientLight = HectonFinite01(_HectonVisorFluidAmbientLight);
+                float dustStrength = HectonFinite01(_HectonVisorFluidDustStrength);
+                float ambientDustResponse = HectonFinite01(_HectonVisorFluidAmbientDustResponse);
+                float dustReveal = HectonFinite01(ambientLight * dustStrength * ambientDustResponse);
                 float thermalMotionCull = HectonFinite01(_HectonThermalDistortionMotionCull);
                 float combinedMask = 0.0;
                 float2 refractedUV = screenUV;
@@ -344,7 +360,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float sceneDepthValid = step(rawSceneDepth, 0.9999);
 #endif
                 float linearSceneDepth = LinearEyeDepth(rawSceneDepth, _ZBufferParams);
-                float depthRefractionMask = sceneDepthValid * smoothstep(0.12, max(0.13, _HectonVisorFluidDepthSoftness + 0.12), linearSceneDepth);
+                float depthSoftness = HectonFiniteNonNegative(_HectonVisorFluidDepthSoftness, 0.0);
+                float depthRefractionMask = sceneDepthValid * smoothstep(0.12, max(0.13, depthSoftness + 0.12), linearSceneDepth);
 
                 [branch]
                 if (fluidActivity <= 0.001 &&
@@ -361,10 +378,12 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 {
                     edgeMask = ComputeVisorEdgeMask(screenUV);
                     edgeMaskResolved = 1.0;
+                    float lateralStreakStrength = HectonFiniteValue(_HectonVisorFluidLateralStreakStrength, 0.0);
+                    float forwardStretchStrength = HectonFiniteNonNegative(_HectonVisorFluidForwardStretchStrength, 0.0);
                     float2 flowDirection = float2(
-                        _HectonVisorFluidLocalVelocity.x * _HectonVisorFluidLateralStreakStrength,
-                        -1.0 - abs(_HectonVisorFluidLocalVelocity.z) * _HectonVisorFluidForwardStretchStrength);
-                    float dropletMask = ComputeDropletMask(screenUV, flowDirection, wetness, hullStress);
+                        localVelocity.x * lateralStreakStrength,
+                        -1.0 - abs(localVelocity.z) * forwardStretchStrength);
+                    float dropletMask = ComputeDropletMask(screenUV, flowDirection, wetness, hullStress, localVelocity);
                     combinedMask = saturate(dropletMask * edgeMask * intensity * (1.0 - thermalMotionCull));
                 }
 
@@ -378,19 +397,20 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
 
                 float2 refractionOffset = float2(0.0, 0.0);
                 float inverseDirtRefraction = HectonInverseDirtMask(dustMask + combinedMask * 0.15);
-                float lowTierMode = max(step(0.5, _HectonVisorFluidLowTier), step(0.5, _HectonVisorFluidHomeostasisFallback));
+                float lowTierMode = max(step(0.5, HectonFinite01(_HectonVisorFluidLowTier)), step(0.5, HectonFinite01(_HectonVisorFluidHomeostasisFallback)));
                 [branch]
                 if (combinedMask > 0.0001 && lowTierMode < 0.5)
                 {
-                    float2 baseOffset = ComputeRefractionOffset(screenUV, combinedMask, wetness, hullStress);
+                    float2 baseOffset = ComputeRefractionOffset(screenUV, combinedMask, wetness, hullStress, localVelocity);
+                    baseOffset = all(isfinite(baseOffset)) ? baseOffset : float2(0.0, 0.0);
                     float2 offsetAbs = abs(baseOffset);
-                    float offsetMagnitude = max(offsetAbs.x, offsetAbs.y) + min(offsetAbs.x, offsetAbs.y) * 0.375;
+                    float offsetMagnitude = HectonFiniteNonNegative(max(offsetAbs.x, offsetAbs.y) + min(offsetAbs.x, offsetAbs.y) * 0.375, 0.0);
                     float2 offsetNormal = baseOffset * rcp(max(0.0001, offsetMagnitude));
-                    float snellStrength = _HectonVisorFluidSnellStrength * (0.65 + wetness * 0.25 + hullStress * 0.25);
+                    float snellStrength = HectonFiniteNonNegative(_HectonVisorFluidSnellStrength, 0.0) * (0.65 + wetness * 0.25 + hullStress * 0.25);
                     refractionOffset = baseOffset + HectonSnellUvOffset(
                         offsetNormal,
                         0.72,
-                        _HectonWaterDensitySignal,
+                        HectonFinite01(_HectonWaterDensitySignal),
                         _HectonVisorFluidIorLut,
                         snellStrength,
                         depthRefractionMask,
@@ -443,7 +463,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     half3 crystalTint = half3(0.13h, 0.17h, 0.18h);
                     color.rgb += crystalTint * (half)crystalMask;
                 }
-                float siltMask = ComputeSuspendedSiltMask(screenUV, wetness, rainIntensity, inverseDirtRefraction, depthRefractionMask, lowTierMode);
+                float siltMask = ComputeSuspendedSiltMask(screenUV, wetness, rainIntensity, inverseDirtRefraction, depthRefractionMask, lowTierMode, localVelocity);
                 [branch]
                 if (siltMask > 0.0001)
                 {
@@ -453,7 +473,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 [branch]
                 if (dustMask > 0.0001)
                 {
-                    half3 dustTint = lerp(half3(0.018, 0.022, 0.018), half3(0.11, 0.13, 0.10), HectonFinite01(_HectonVisorFluidAmbientLight));
+                    half3 dustTint = lerp(half3(0.018, 0.022, 0.018), half3(0.11, 0.13, 0.10), ambientLight);
                     color.rgb = lerp(color.rgb, max(color.rgb - dustTint * 0.55h, half3(0.0h, 0.0h, 0.0h)), (half)(dustMask * 0.55));
                     color.rgb += dustTint * (half)(dustMask * 0.18);
                 }

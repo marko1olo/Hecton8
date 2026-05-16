@@ -115,10 +115,6 @@ namespace Hecton8.Gameplay
         //  EVENTS
         // ══════════════════════════════════════════════════════════
 
-        public event Action<bool> OnToolUsed;
-        public event Action OnDurabilityLow;
-        public event Action OnToolBroken;
-
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
@@ -133,6 +129,7 @@ namespace Hecton8.Gameplay
         private uint _runtimeToolId;
         private uint _cachedToolItemHashId;
         private bool _runtimeToolRegistered;
+        private bool _lastUseWasPrimary;
         private Transform _cachedBaseTransform;
         private FixedCharBuffer _legacyOperationalBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - legacy string bridge for non-HUD callers - owner: PlayerTool
 
@@ -147,6 +144,7 @@ namespace Hecton8.Gameplay
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
             _lastUseTime = float.NegativeInfinity;
+            _lastUseWasPrimary = false;
             RefreshQueuedRaycastRequesterId();
             RefreshOperationalToolNameCache();
             CacheToolItemHash();
@@ -174,6 +172,7 @@ namespace Hecton8.Gameplay
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
             _lastUseTime = float.NegativeInfinity;
+            _lastUseWasPrimary = false;
             _cachedOperationalToolName = null;
             _queuedRaycastRequesterId = 0UL;
             _runtimeToolId = 0u;
@@ -220,8 +219,6 @@ namespace Hecton8.Gameplay
         {
             IsEquipped = true;
             _lowDurabilityWarningFired = false;
-            var system = Hecton8.Core.GlobalRegistry.ToolDurability;
-            if (system != null && _toolMetadata != null) system.OnToolBroken += HandleToolBroken;
             EnsureModularRuntimeRegistration();
             SyncModularHeat(ResolveModularHeatNormalized());
             SyncModularDurability();
@@ -230,8 +227,6 @@ namespace Hecton8.Gameplay
         public virtual void OnUnequip()
         {
             IsEquipped = false;
-            var system = Hecton8.Core.GlobalRegistry.ToolDurability;
-            if (system != null && _toolMetadata != null) system.OnToolBroken -= HandleToolBroken;
         }
 
         public virtual void UsePrimary(float deltaTime)
@@ -451,13 +446,7 @@ namespace Hecton8.Gameplay
             if (DurabilityNormalized * 100f <= _toolMetadata.criticalDurabilityThreshold)
             {
                 _lowDurabilityWarningFired = true;
-                OnDurabilityLow?.Invoke();
             }
-        }
-
-        private void HandleToolBroken(string toolID)
-        {
-            if (_toolMetadata != null && _toolMetadata.toolID == toolID) OnToolBroken?.Invoke();
         }
 
         protected virtual void OnToolBrokenWhileUsing() { }
@@ -632,7 +621,7 @@ namespace Hecton8.Gameplay
                 ApplyDurabilityDrain(deltaTime, isPrimary);
 
             _lastUseTime = Time.time;
-            OnToolUsed?.Invoke(isPrimary);
+            _lastUseWasPrimary = isPrimary;
             CheckLowDurability();
             return true;
         }
@@ -715,6 +704,8 @@ namespace Hecton8.Gameplay
 
         internal ToolMetadata RuntimeMetadata => _toolMetadata;
         internal uint RuntimeToolId => _runtimeToolId;
+        internal float LastUseTime => _lastUseTime;
+        internal bool LastUseWasPrimary => _lastUseWasPrimary;
         internal bool WasRecentlyUsed(float maxIdleSeconds) => IsEquipped && (Time.time - _lastUseTime <= math.max(0.05f, maxIdleSeconds));
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void LogLifecycleDebug(string message) { if (lifecycleDebugLogging) Debug.Log("[ToolLifecycle] " + message); }

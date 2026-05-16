@@ -1,6 +1,6 @@
 # Rationale_ECOSYSTEM_MIGRATION_LINK
 
-State: PENDING VERIFICATION / BUILD BLOCKED BY DEPENDENCY
+State: DOTNET BUILD GREEN / PLATFORM RUNTIME NOT EXECUTED
 
 ## Decision 0 - Startup Boundary
 
@@ -145,3 +145,67 @@ Solution: Do not patch gameplay-tool event ownership from the ecology agent afte
 Rejected Alternatives: Recreate LaserCutter queue state from this agent, revert another agent's gameplay-tool refactor, or claim the latest build is green from the earlier snapshot.
 Scalability potential: No ecology runtime change. Macro-swarm low/middle/high/ultra paths remain implemented; final assembly validation is blocked by unrelated gameplay-tool source.
 Hardware Impact: No ecology runtime impact. Latest failed validation wall time was 65.24 s.
+
+## Decision 18 - Current-Disk Green Revalidation
+
+Problem: The previous final state was dependency-blocked, but integration work landed after that record. Leaving the status blocked without a fresh build would be stale evidence.
+Solution: Re-run `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` on current disk and rerun focused ecology scans. Build succeeded with 0 warnings / 0 errors in 59.97 s; ecology bridge scans stayed clean for hot-path stalls, Unity update loops, prefab spawning, managed formatting, local native allocation calls, sequential/Pack=4 ecology DTOs, and active legacy event buses/delegates.
+Rejected Alternatives: Keep the stale dependency-blocked state, or claim Unity/Quest/Android/Metal/Steam Deck runtime verification from a desktop C# compile.
+Scalability potential: Low = fixed vault import and stress-halved border hydration. Middle = full SOA visual hydration. High = SDF emergence flags. Ultra = high-tier overkill flags for downstream silt/salt/material response without AI owning VFX.
+Hardware Impact: Desktop build proof cost 59.97 s. No new runtime cost added; existing microsecond estimates remain estimates, not profiler measurements.
+
+## Decision 19 - Per-Frame Macro Blackbox Heartbeat
+
+Problem: The macro-swarm blackbox had a 300-entry vault ring and event pushes, but the stability mandate requires the last 300 frames of high-level state. Event-only records do not prove frame-by-frame heartbeat continuity.
+Solution: Add `PushMacroSwarmHeartbeatBlackBox()` to the existing `ILateFrameTickable` lane. The heartbeat writes one O(1) record per frame using cached macro state hash, active count, arrival count, biomass sum, and hydration estimates. Full macro event pushes still run the heavier swarm validation scan and dump on invalid state.
+Rejected Alternatives: Add a standard Unity `Update()`, scan all 256 macro swarms every frame, or leave event-only blackbox evidence.
+Scalability potential: Low = one compact heartbeat write while visual biomass is stress-halved. Middle = same O(1) heartbeat with full SOA hydration. High/Ultra = heartbeat remains fixed-cost while downstream visual overkill consumes signal flags.
+Hardware Impact: Estimated 1-2 us per frame for one vault ring write, avoiding an estimated 8-20 us full 256-swarm scan on every frame. Measured profiler proof absent.
+
+## Decision 20 - Duplicate Laser Cutter Signal Cleanup
+
+Problem: Integration introduced or exposed duplicate `LaserCutterEventPayload` definitions in gameplay and core signal namespaces, causing ambiguous listener signatures and violating the no-duplicate typed-lane rule.
+Solution: Current disk already removed the gameplay duplicate; the canonical `Hecton8.Core.Contracts.Signals.LaserCutterEventPayload` was hardened to explicit Pack=1 offsets.
+Rejected Alternatives: Type-alias every listener to preserve duplicate signal definitions, or reintroduce a gameplay-local payload.
+Scalability potential: No ecology runtime change. Signal topology remains single-lane and deterministic.
+Hardware Impact: 0 us runtime for ecology. Compile wall moved past this duplicate-signal issue.
+
+## Decision 21 - Latest External Compile Wall
+
+Problem: After the heartbeat and signal cleanup, latest `dotnet build` fails outside ecology: `DroneFleetManager.cs` has double3-to-float3 conversion errors, and `PredatorCognitionDomain.cs` has NativeArray/NativeParallelHashMap ownership/type mismatches plus a missing `_speciesTuningById` field.
+Solution: Stop at the dependency wall rather than mutating Construction/Fauna ownership from this ecology agent. Record exact errors and keep ecology bridge scans clean.
+Rejected Alternatives: Patch unrelated Construction/Fauna systems, revert other agents' edits, or claim build-green from the prior snapshot.
+Scalability potential: No ecology runtime change. Macro-swarm low/middle/high/ultra behavior remains implemented; final assembly validation is blocked by external domains.
+Hardware Impact: Latest failed validation cost 65.97 s. No ecology runtime cost added by the dependency wall.
+
+## Decision 22 - Vault-Handle NativeArray Field Eviction
+
+Problem: `EcosystemDirector` still carried long-lived `NativeArray<T>` field aliases after earlier vault eviction. That satisfied allocator ownership but still left stale-alias risk under DataVault relocation and failed the stricter data-sovereignty review.
+Solution: Replace those fields with `VaultNativeArray<T>` wrappers that store `IDataVault` plus `VaultBufferHandle<T>` and resolve the live array view at use sites. Convert `HeadlessEntitySoA` to the same wrapper model. Copy bound sector food heatmaps into `BufferID.EcosystemSectorFoodHeatmapR8` so ecology does not retain an external native-array alias. Use explicit generic pointer/GPU upload calls after wrapper resolution.
+Rejected Alternatives: Keep raw long-lived `NativeArray<T>` fields, expose property-returned `NativeArray<T>` views that break indexed assignment, or redesign DataVault hash-map ownership inside the ecology pass.
+Scalability potential: Low = vault-resolved border hydration and copied heatmap avoid external alias/I/O jitter. Middle = full SOA visual hydration over the same handles. High = SDF emergence and richer residency flags without new ownership. Ultra = downstream visual overkill can spend GPU cycles while ecology keeps fixed-capacity vault lanes.
+Hardware Impact: Wrapper resolution adds tiny cold-path pointer lookup cost, but removes stale alias and allocator ownership failure classes. Static scan found no private NativeArray owner fields in ecology bridge files. Remaining local native ownership is `_biomassIndexByKey` and `_sectorIndexByKey` NativeHashMap lookup indices because the current DataVault API has no hash-map buffer contract.
+
+## Decision 23 - Latest Physics Compile Wall
+
+Problem: Current validation now fails outside ecology in `Assets/_Project/Scripts/PhysicsApplySystem.cs`: missing `TryResolveVaultBuffer`, `ClearForcePacketBuffer`, `ClearByteBuffer`, `EnsureForcePacketBuffers`, release/swap/clamp helpers, force packet queue fields, validation buffer fields, and BufferID entries for physics force-command lanes.
+Solution: Record the external dependency wall and stop before editing physics force-packet ownership from the AI/ecology agent. Re-run focused ecology static scans to prove the macro bridge did not reintroduce hot-path stalls, managed spawn/format paths, local NativeArray/List/Queue allocations, private NativeArray owners, bad ABI pack, or legacy bus/delegate usage.
+Rejected Alternatives: Patch `PhysicsApplySystem.cs` from outside the assigned AI/ecology boundary, revert another agent's physics refactor, or claim the earlier build-green result as current.
+Scalability potential: No ecology runtime change. Low/Middle/High/Ultra macro-swarm behavior remains implemented through vault handles, stress-halved hydration, SDF gating, and high-tier overkill flags.
+Hardware Impact: Latest validation wall time was 31.47 s, or 31,470,000 us of build evidence only. No Unity PlayMode, profiler, Quest/Android, Metal/Mac, Steam Deck, or IL2CPP runtime verification was executed.
+
+## Decision 24 - Vault-Backed Open Address Indexes
+
+Problem: After raw `NativeArray<T>` field eviction, `EcosystemDirector` still owned two persistent `NativeHashMap<long,int>` lookup indices. They were cold-path allocations, but they still violated the stricter stateless/data-sovereignty review.
+Solution: Replace both maps with DataVault buffers of explicit Pack=1 `EcosystemIndexEntry` records. Sector and biomass lookups now use bounded open addressing over `EcosystemSectorIndexEntries` and `EcosystemBiomassIndexEntries`; table capacity is power-of-two and twice the configured logical slot count. Burst biomass diffusion consumes the vault index as `NativeArray<EcosystemIndexEntry>` instead of `NativeHashMap`.
+Rejected Alternatives: Keep the `NativeHashMap` exception, use linear scans over 512 biomass cells during diffusion, or introduce managed dictionaries.
+Scalability potential: Low = compact fixed index buffers and no native hash-map allocator ownership. Middle = same O(1)-style lookup for full SOA hydration/dehydration. High = SDF emergence and high-tier signal flags remain unchanged. Ultra = downstream overkill spends saved stability budget while ecology stays vault-resolved.
+Hardware Impact: Expected lookup cost remains micro-scale and bounded; no profiler proof was executed. Memory cost is predictable: 16-byte entries, 2x logical capacity, about 16 KB for default 512 biomass cells and 4 KB for default 128 sectors.
+
+## Decision 25 - Current Build Green Evidence
+
+Problem: The previous validation wall was external, but source and generated obj state changed again. A stale blocked status would now be false.
+Solution: Run `dotnet restore Hecton8.Core.csproj /p:UseSharedCompilation=false`, then `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false`. Build succeeded with 0 warnings and 0 errors in 75.17 s. Focused ecology scans found no local native owner fields/allocations, no `Schedule().Complete`, no Unity update loops, no prefab spawn path, no managed formatting, no sequential/Pack=4 ecology DTOs, and no active legacy bus/delegate usage.
+Rejected Alternatives: Trust the earlier build wall, claim platform runtime validation without running it, or broaden edits outside the AI/ecology boundary after the build was already green.
+Scalability potential: Low/Middle/High/Ultra behavior unchanged from Decision 24; this is validation evidence.
+Hardware Impact: Build wall time was 75.17 s, or 75,170,000 us of compile validation only. Quest/Android, Metal/Mac, Steam Deck, PlayMode, profiler, GC monitor, and IL2CPP strip builds remain unexecuted.

@@ -4,6 +4,7 @@
 // ============================================================================
 
 using Hecton8.Gameplay;
+using Hecton8.Core.Contracts;
 using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -209,7 +210,7 @@ namespace Hecton8.Dev
                 failureMask |= FailureAirPocket;
             }
 
-            brineSinkMultiplier = HectonPlayerMotor.ResolveHeavyBrineSinkMultiplier(1250f, 1025f);
+            brineSinkMultiplier = HectonPlayerMotor.ResolveHeavyBrineSinkMultiplier(1250f, HectonPhysicsContract.WaterDensityKgPerCubicMeterConst);
             Vector3 invertedVelocity = HectonPlayerMotor.ResolveBuoyancyInversionVelocity(
                 new Vector3(0f, -2f, 0f),
                 true,

@@ -81,6 +81,30 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 return (value & 0x00ffffffu) * 0.000000059604644775390625;
             }
 
+            float Triangle01(float value)
+            {
+                return abs(frac(value) * 2.0 - 1.0);
+            }
+
+            half ResolveCrystalMask(float3 positionWS, half edgeMask, half impactMask)
+            {
+                float strataA = Triangle01(dot(positionWS, float3(3.17, 5.83, 7.41)));
+                float strataB = Triangle01(dot(positionWS.zxy, float3(11.13, 2.91, 13.57)));
+                float chipNoise = Triangle01(dot(positionWS.yzx, float3(19.31, 17.17, 6.73)));
+                float crystalField = strataA * 0.42 + strataB * 0.34 + chipNoise * 0.18 + edgeMask * 0.28 + impactMask * 0.22;
+                return (half)step(0.78, crystalField);
+            }
+
+            half3 PerturbHighTierNormal(float3 positionWS, half3 normalWS, half crystalMask)
+            {
+                float3 grain = float3(
+                    Triangle01(dot(positionWS.yz, float2(17.17, 9.31))) - 0.5,
+                    Triangle01(dot(positionWS.zx, float2(13.73, 15.97))) - 0.5,
+                    Triangle01(dot(positionWS.xy, float2(19.91, 7.83))) - 0.5);
+                float strength = lerp(0.12, 0.24, crystalMask);
+                return (half3)HectonCoreLitSafeNormalize((float3)normalWS + grain * strength);
+            }
+
             void BuildDebrisBasis(uint particleIndex, float timeSeconds, out float3 rightWS, out float3 upWS, out float3 forwardWS, out float edgeJitter)
             {
                 edgeJitter = Hash11(particleIndex ^ 0xC2B2AE35u);
@@ -89,7 +113,8 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                     Hash11(particleIndex ^ 0x85EBCA6Bu) * 0.7 - 0.35,
                     edgeJitter * 2.0 - 1.0);
                 forwardWS = HectonCoreLitSafeNormalize(rawForward);
-                float3 basisUp = abs(forwardWS.y) < 0.92 ? float3(0.0, 1.0, 0.0) : float3(1.0, 0.0, 0.0);
+                float basisUpMask = 1.0 - step(0.92, abs(forwardWS.y));
+                float3 basisUp = lerp(float3(1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), basisUpMask);
                 rightWS = HectonCoreLitSafeNormalize(cross(basisUp, forwardWS));
                 upWS = cross(forwardWS, rightWS);
                 float angularSpeed = lerp(-8.0, 8.0, Hash11(particleIndex ^ 0x27D4EB2Du));
@@ -182,8 +207,25 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 half3 normalWS = (half3)HectonCoreLitSafeNormalize(input.normalWS);
                 half3 viewDirWS = (half3)HectonCoreLitSafeNormalize(input.viewDirWS);
                 half edgeMask = saturate(input.edgeMask + input.impactMask * 0.35h);
+                half crystalMask = 0.0h;
+                [branch]
+                if (_CarveDebrisMaterialParams.w > 0.5)
+                {
+                    crystalMask = ResolveCrystalMask(input.positionWS, edgeMask, input.impactMask);
+                    normalWS = PerturbHighTierNormal(input.positionWS, normalWS, crystalMask);
+                    edgeMask = saturate(edgeMask + crystalMask * 0.45h);
+                }
+
                 half3 albedo = lerp(_BaseColor.rgb, _EdgeColor.rgb, edgeMask);
                 half3 lit = EvaluateDebrisLighting(input.positionWS, input.positionCS, normalWS, viewDirWS, albedo);
+                [branch]
+                if (_CarveDebrisMaterialParams.w > 0.5)
+                {
+                    half rim = 1.0h - saturate(dot(normalWS, viewDirWS));
+                    rim *= rim * rim;
+                    lit += half3(0.22h, 0.34h, 0.39h) * crystalMask * saturate(rim + input.impactMask * 0.5h);
+                }
+
                 half3 finalColor = HectonCoreLitApplyNoirFog(lit, input.fogFactor, input.positionWS);
                 return half4(finalColor, 1.0h);
             }
@@ -253,7 +295,8 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
             float3 DebrisSafeNormalize(float3 value, float3 fallback)
             {
                 float lengthSq = dot(value, value);
-                return lengthSq > 0.000001 ? value * rsqrt(lengthSq) : fallback;
+                float validMask = step(0.000001, lengthSq);
+                return lerp(fallback, value * rsqrt(max(lengthSq, 0.000001)), validMask);
             }
 
             void BuildDebrisBasis(uint particleIndex, float timeSeconds, out float3 rightWS, out float3 upWS, out float3 forwardWS)
@@ -264,7 +307,8 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                     Hash11(particleIndex ^ 0x85EBCA6Bu) * 0.7 - 0.35,
                     edgeJitter * 2.0 - 1.0);
                 forwardWS = DebrisSafeNormalize(rawForward, float3(0.0, 1.0, 0.0));
-                float3 basisUp = abs(forwardWS.y) < 0.92 ? float3(0.0, 1.0, 0.0) : float3(1.0, 0.0, 0.0);
+                float basisUpMask = 1.0 - step(0.92, abs(forwardWS.y));
+                float3 basisUp = lerp(float3(1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), basisUpMask);
                 rightWS = DebrisSafeNormalize(cross(basisUp, forwardWS), float3(1.0, 0.0, 0.0));
                 upWS = cross(forwardWS, rightWS);
                 float angularSpeed = lerp(-8.0, 8.0, Hash11(particleIndex ^ 0x27D4EB2Du));

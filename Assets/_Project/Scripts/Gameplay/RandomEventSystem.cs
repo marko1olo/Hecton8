@@ -31,6 +31,8 @@ using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Modding;
 using Hecton8.Physics;
 using Hecton8.UI;
@@ -831,7 +833,7 @@ namespace Hecton8.Gameplay
         private float _meteorSeed = 99173f;
         private int _meteorLastBoomIndex = -1;
         private const float MeteorWaterPlaneY = 0f;
-        private const float MeteorThunderSoundSpeedMetersPerSecond = 343f;
+        private const float MeteorThunderSoundSpeedMetersPerSecond = HectonPhysicsContract.SoundSpeedAirMetersPerSecondConst;
         private const float InvSqrtTwo = 0.70710678118f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string MeteorSplashQuadVfxTypeName = "MeteorSplashQuadVfx";

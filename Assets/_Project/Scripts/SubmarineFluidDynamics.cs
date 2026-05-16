@@ -27,28 +27,6 @@ using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
 namespace Hecton8.Physics
 {
     /// <summary>
-    /// Deferred exterior water-entry payload emitted by sampled hull buoyancy points.
-    /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
-    public struct SplashEvent
-    {
-        /// <summary>Camera-relative world position of the splash contact point.</summary>
-        [FieldOffset(0)] public float3 RuntimePosition;
-        /// <summary>Absolute universe position (AUP) of the splash for persistent VFX anchoring.</summary>
-        [FieldOffset(12)] public float3 AbsoluteUniversePosition;
-        /// <summary>Water surface normal at the splash point.</summary>
-        [FieldOffset(24)] public float3 SurfaceNormal;
-        /// <summary>Vertical impact speed at the moment of water entry.</summary>
-        [FieldOffset(36)] public float ImpactSpeedMetersPerSecond;
-        /// <summary>Kinetic energy of the impact in joules, used to scale splash VFX intensity.</summary>
-        [FieldOffset(40)] public float KineticEnergyJoules;
-        /// <summary>0â€“1 ratio of the sample point submerged below the waterline at impact.</summary>
-        [FieldOffset(44)] public float SubmersionFactor;
-        /// <summary>Index of the exterior buoyancy sample point that detected the splash.</summary>
-        [FieldOffset(48)] public int SampleIndex;
-    }
-
-    /// <summary>
     /// Fixed-step flooded-interior model for submarine rigidbodies.
     /// Tracks compartment fill, bulkhead isolation, flood-mass coupling, center-of-mass shifting,
     /// inertia blending, and delayed slosh torque.
@@ -69,16 +47,16 @@ namespace Hecton8.Physics
         private const int RingBufferMask = RingBufferLength - 1;
         private const int SloshDelayFrames = 3;
         private const int CargoMassFallbackPollFrameMask = 15;
-        private const float WaterDensityKgPerCubicMeter = 1025f;
+        private const float WaterDensityKgPerCubicMeter = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
         private const float MinimumMassForReciprocal = 0.01f;
-        private const float GravityMetersPerSecondSquared = 9.81f;
-        private const float DefaultFixedStepSeconds = 0.02f;
+        private const float GravityMetersPerSecondSquared = HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
+        private const float DefaultFixedStepSeconds = HectonPhysicsContract.FixedDeltaTimeSeconds;
         private const float DefaultDischargeCoefficient = 0.62f;
         private const float DefaultBulkheadFlowCoefficient = 0.4f;
         private const float DefaultBulkheadDoorAreaSquareMeters = 1.6f;
         private const float DefaultMaxTransferPerTick = 0.1f;
         private const float DefaultNearZeroHeadDampingMeters = 0.15f;
-        private const float DefaultExternalReferencePressureKPa = 101.325f;
+        private const float DefaultExternalReferencePressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
         private const float DefaultDepressurizationMinimumPressureDeltaKPa = 5f;
         private const float DefaultDepressurizationReferenceMassKilograms = 80f;
         private const float DefaultDepressurizationMaxAccelerationMetersPerSecondSquared = 45f;
@@ -119,8 +97,7 @@ namespace Hecton8.Physics
         private const uint HydroBlackBoxFlagInvalidBuoyancy = 1u << 6;
         private const uint HydroBlackBoxFlagEmergencyReset = 1u << 7;
         private const uint HydroBlackBoxFlagBrineSubmerged = 1u << 8;
-        private const string HydroBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_KINEMATICS_HYDRO_DRAG.bin";
-        private const string HydroBlackBoxBrineDumpRelativePath = "Docs/AgentLogs/Dump_OCEAN_CHEMISTRY_ENGINEER.bin";
+        private const string HydroBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SUBMARINE_BALLAST_PID_V2.bin";
         private const float DefaultHydraulicLeakRateCubicMetersPerSecond = 0.006f;
         private const float DefaultMaximumHydraulicViscosity = 1f;
         private const float DefaultViscositySloshDampingScale = 0.85f;
@@ -175,6 +152,7 @@ namespace Hecton8.Physics
         private const int VaultHydroInputFlag = 1 << 19;
         private const int VaultHydroOutputFlag = 1 << 20;
         private const int VaultHydroBlackBoxFlag = 1 << 21;
+        private const int VaultCompartmentStatesFlag = 1 << 22;
         private const float ExteriorThermalCellSizeMeters = 8f;
         private const float ExteriorWaterSpecificHeatCapacityJoulesPerKilogramCelsius = 3990f;
         private const float ExteriorWaterReferenceTemperatureCelsius = 6f;
@@ -205,6 +183,7 @@ namespace Hecton8.Physics
         // Inspector-authored DTO. Unity serialization populates these fields outside constructor flow.
 #pragma warning disable CS0649
         [System.Serializable]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct CompartmentDefinition
         {
             [Tooltip("Flood capacity for this compartment in cubic meters.")]
@@ -224,6 +203,7 @@ namespace Hecton8.Physics
         }
 
         [System.Serializable]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct BulkheadDefinition
         {
             [Tooltip("Source compartment index for this transfer gate.")]
@@ -711,7 +691,6 @@ namespace Hecton8.Physics
         private bool _hullImplosionActive;
         private int _hydroBlackBoxCursor;
         private bool _hydroBlackBoxDumped;
-        private CompartmentState[] _compartmentStates;
         private SubmarineAtmosphereSystem _atmosphereSystem;
         private ISubmarineHullBreachReadModel _structuralBreachReadModel;
         private IHectonOceanKinematics _oceanKinematics;
@@ -750,6 +729,7 @@ namespace Hecton8.Physics
         private VaultNativeBuffer<FloodMassPropertiesResult> _massPropertiesBack;
         private VaultNativeBuffer<float3> _angularVelocityHistoryLocal;
         private VaultNativeBuffer<float> _previousExteriorSampleSubmersionFactors;
+        private VaultNativeBuffer<CompartmentState> _compartmentStates;
         private VaultNativeBuffer<float> _jobFloodVolumes;
         private VaultNativeBuffer<uint> _jobCompartmentFlags;
         private VaultNativeBuffer<float> _bulkheadTransferDeltas;
@@ -822,6 +802,7 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct HydroKinematicDragJob : IJob
         {
             [ReadOnly] public NativeArray<HydroKinematicJobInput> Input;
@@ -1085,7 +1066,7 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 44)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
         private struct FloodMassPropertiesResult
         {
             [FieldOffset(0)] public float FloodMassKilograms;
@@ -1093,6 +1074,7 @@ namespace Hecton8.Physics
             [FieldOffset(8)] public float3 FloodCenterLocal;
             [FieldOffset(20)] public float3 TargetCenterLocal;
             [FieldOffset(32)] public float3 InertiaTensor;
+            [FieldOffset(44)] public uint Reserved0;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -1743,7 +1725,7 @@ namespace Hecton8.Physics
             float carbonDioxidePartialPressureKPa,
             float nitrogenPartialPressureKPa)
         {
-            if (!IsCompartmentIndexValid(compartmentIndex) || _compartmentStates == null)
+            if (!IsCompartmentIndexValid(compartmentIndex) || !_compartmentStates.IsCreated)
                 return;
 
             CompartmentState state = _compartmentStates[compartmentIndex];
@@ -2025,6 +2007,7 @@ namespace Hecton8.Physics
                 case BufferID.SubmarineFluidMassPropertiesBack:
                 case BufferID.SubmarineFluidAngularVelocityHistoryLocal:
                 case BufferID.SubmarineFluidPreviousExteriorSampleSubmersionFactors:
+                case BufferID.SubmarineFluidCompartmentStates:
                 case BufferID.SubmarineFluidJobFloodVolumes:
                 case BufferID.SubmarineFluidJobCompartmentFlags:
                 case BufferID.SubmarineFluidBulkheadTransferDeltas:
@@ -2039,12 +2022,6 @@ namespace Hecton8.Physics
 
         private void EnsureNativeState()
         {
-            if (_compartmentStates == null)
-            {
-                // COLD ALLOC: CompartmentState[8] â€” compartment flood snapshots for CoM and telemetry â€” owner: SubmarineFluidDynamics
-                _compartmentStates = new CompartmentState[CompartmentCapacity];
-            }
-
             // COLD ALLOC: NativeArray<float>[8] â€” compartment flood volume storage â€” owner: SubmarineFluidDynamics
             EnsureNativeStateBuffer(ref _compartmentFloodVolumes, BufferID.SubmarineFluidCompartmentFloodVolumes, CompartmentCapacity, nameof(_compartmentFloodVolumes), VaultCompartmentFloodVolumesFlag);
             // COLD ALLOC: NativeArray<float>[8] — per-compartment normalized sludge viscosity state — owner: SubmarineFluidDynamics
@@ -2077,6 +2054,8 @@ namespace Hecton8.Physics
             EnsureNativeStateBuffer(ref _angularVelocityHistoryLocal, BufferID.SubmarineFluidAngularVelocityHistoryLocal, RingBufferLength, nameof(_angularVelocityHistoryLocal), VaultAngularVelocityHistoryFlag);
             // COLD ALLOC: NativeArray<float>[8] â€” previous sampled exterior submersion factors for splash transition detection â€” owner: SubmarineFluidDynamics
             EnsureNativeStateBuffer(ref _previousExteriorSampleSubmersionFactors, BufferID.SubmarineFluidPreviousExteriorSampleSubmersionFactors, ExteriorBuoyancySampleCount, nameof(_previousExteriorSampleSubmersionFactors), VaultExteriorSubmersionHistoryFlag);
+            // COLD ALLOC: NativeArray<CompartmentState>[8] - authoritative compartment flood snapshots for CoM and telemetry - owner: GlobalDataVault/VehiclesPhysics
+            EnsureNativeStateBuffer(ref _compartmentStates, BufferID.SubmarineFluidCompartmentStates, CompartmentCapacity, nameof(_compartmentStates), VaultCompartmentStatesFlag);
             // COLD ALLOC: NativeArray<float>[8] Ã¢â‚¬â€ Burst fluid-transfer output volumes Ã¢â‚¬â€ owner: SubmarineFluidDynamics
             EnsureNativeStateBuffer(ref _jobFloodVolumes, BufferID.SubmarineFluidJobFloodVolumes, CompartmentCapacity, nameof(_jobFloodVolumes), VaultJobFloodVolumesFlag);
             // COLD ALLOC: NativeArray<uint>[8] Ã¢â‚¬â€ Burst fluid-transfer output flags Ã¢â‚¬â€ owner: SubmarineFluidDynamics
@@ -2276,6 +2255,7 @@ namespace Hecton8.Physics
             DisposeNativeStateBuffer(ref _massPropertiesBack, VaultMassPropertiesBackFlag);
             DisposeNativeStateBuffer(ref _angularVelocityHistoryLocal, VaultAngularVelocityHistoryFlag);
             DisposeNativeStateBuffer(ref _previousExteriorSampleSubmersionFactors, VaultExteriorSubmersionHistoryFlag);
+            DisposeNativeStateBuffer(ref _compartmentStates, VaultCompartmentStatesFlag);
             DisposeNativeStateBuffer(ref _jobFloodVolumes, VaultJobFloodVolumesFlag);
             DisposeNativeStateBuffer(ref _jobCompartmentFlags, VaultJobCompartmentFlagsFlag);
             DisposeNativeStateBuffer(ref _bulkheadTransferDeltas, VaultBulkheadTransferDeltasFlag);
@@ -3657,7 +3637,7 @@ namespace Hecton8.Physics
                 _totalFloodVolumeCubicMeters = 0f;
                 _floodFillRatio = 0f;
 
-                if (_compartmentStates != null)
+                if (_compartmentStates.IsCreated)
                 {
                     for (int i = 0; i < CompartmentCapacity; i++)
                         _compartmentStates[i] = default;
@@ -3674,7 +3654,7 @@ namespace Hecton8.Physics
                 {
                     _compartmentFloodVolumes[i] = 0f;
                     _compartmentFlags[i] = 0u;
-                    if (_compartmentStates != null)
+                    if (_compartmentStates.IsCreated)
                         _compartmentStates[i] = default;
                     continue;
                 }
@@ -3711,7 +3691,7 @@ namespace Hecton8.Physics
 
                 _compartmentFloodVolumes[i] = currentVolume;
                 _compartmentFlags[i] = flags;
-                if (_compartmentStates != null)
+                if (_compartmentStates.IsCreated)
                 {
                     CompartmentState previousState = _compartmentStates[i];
                     _compartmentStates[i] = new CompartmentState
@@ -3875,7 +3855,7 @@ namespace Hecton8.Physics
             float3 dryCenter = new float3(safeDryCenter.x, safeDryCenter.y, safeDryCenter.z);
             for (int i = 0; i < _configuredCompartmentCount; i++)
             {
-                CompartmentState state = _compartmentStates != null ? _compartmentStates[i] : default;
+                CompartmentState state = _compartmentStates.IsCreated ? _compartmentStates[i] : default;
                 if ((state.stateFlags & FlagFrozen) != 0 || state.maxVolume <= Epsilon)
                 {
                     if (_comAccumulatorBack.IsCreated && i < _comAccumulatorBack.Length)
@@ -5764,11 +5744,13 @@ namespace Hecton8.Physics
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 WriteHydroBlackBoxDumpFile(projectRoot, HydroBlackBoxDumpRelativePath, reasonFlags);
-                WriteHydroBlackBoxDumpFile(projectRoot, HydroBlackBoxBrineDumpRelativePath, reasonFlags);
             }
-            catch (System.Exception ex)
+            catch (Exception)
             {
-                Debug.LogError("Submarine hydro black box dump failed: " + ex.Message);
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    HydrodynamicsResetWarningHash,
+                    SubmarineFluidDynamicsContextHash,
+                    1f);
             }
         }
 
@@ -5877,6 +5859,7 @@ namespace Hecton8.Physics
             RefreshNativeStateBuffer(ref _massPropertiesBack, VaultMassPropertiesBackFlag);
             RefreshNativeStateBuffer(ref _angularVelocityHistoryLocal, VaultAngularVelocityHistoryFlag);
             RefreshNativeStateBuffer(ref _previousExteriorSampleSubmersionFactors, VaultExteriorSubmersionHistoryFlag);
+            RefreshNativeStateBuffer(ref _compartmentStates, VaultCompartmentStatesFlag);
             RefreshNativeStateBuffer(ref _jobFloodVolumes, VaultJobFloodVolumesFlag);
             RefreshNativeStateBuffer(ref _jobCompartmentFlags, VaultJobCompartmentFlagsFlag);
             RefreshNativeStateBuffer(ref _bulkheadTransferDeltas, VaultBulkheadTransferDeltasFlag);
@@ -5911,6 +5894,7 @@ namespace Hecton8.Physics
             _massPropertiesBack = default;
             _angularVelocityHistoryLocal = default;
             _previousExteriorSampleSubmersionFactors = default;
+            _compartmentStates = default;
             _jobFloodVolumes = default;
             _jobCompartmentFlags = default;
             _bulkheadTransferDeltas = default;

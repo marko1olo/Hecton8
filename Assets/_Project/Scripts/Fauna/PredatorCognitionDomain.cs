@@ -314,6 +314,7 @@ namespace Hecton8.AI
         private const int CognitionInputSizeBytes = 480;
         private const int CognitionOutputSizeBytes = 60;
         private const int PackedCognitionOutputSizeBytes = 48;
+        private const int SpeciesCognitionTuningSizeBytes = 32;
         internal static readonly int CognitionCoreAlignmentBytes = UnsafeUtility.AlignOf<CognitionCore>();
 
         private const float HungerRate = 0.045f;
@@ -488,7 +489,9 @@ namespace Hecton8.AI
         private static NativeArray<float3> _predatorPackSharedPlayerPositions;
         private static NativeArray<AbsoluteUniversePositionBlit128> _predatorPackTargetAups;
         private static NativeArray<byte> _predatorPackRoles;
-        private static NativeParallelHashMap<int, float3> _predatorSpeciesTargetPositions;
+        private static NativeArray<int> _predatorSpeciesTargetIds;
+        private static NativeArray<float3> _predatorSpeciesTargetPositions;
+        private static NativeArray<int> _predatorSpeciesTargetCount;
         private static NativeArray<int> _boidClaimTable;
         private static NativeArray<int> _packBaitClaimTable;
         private static NativeArray<int> _packFlankerClaimTable;
@@ -505,7 +508,9 @@ namespace Hecton8.AI
         private static NativeArray<LightSourceData> _retinalLightSources;
         private static NativeArray<RetinalTelemetryEntry> _retinalTelemetryRing;
         private static NativeArray<AlphaLeviathanTelemetryEntry> _alphaLeviathanTelemetryRing;
-        private static NativeParallelHashMap<int, SpeciesCognitionTuning> _speciesTuningById;
+        private static NativeArray<int> _speciesTuningIds;
+        private static NativeArray<SpeciesCognitionTuning> _speciesTuningValues;
+        private static NativeArray<int> _speciesTuningCount;
         private static NativeArray<byte> _threatVoxelGrid;
         private static int3 _threatVoxelDimensions;
         private static float3 _threatVoxelOrigin;
@@ -591,10 +596,30 @@ namespace Hecton8.AI
                 return;
 
             EnsureInitialized();
-            if (!_speciesTuningById.IsCreated)
+            if (!_speciesTuningIds.IsCreated ||
+                !_speciesTuningValues.IsCreated ||
+                !_speciesTuningCount.IsCreated ||
+                _speciesTuningCount.Length <= 0)
                 return;
 
-            _speciesTuningById[speciesId] = tuning;
+            int count = math.min(
+                math.max(_speciesTuningCount[0], 0),
+                math.min(_speciesTuningIds.Length, _speciesTuningValues.Length));
+            for (int i = 0; i < count; i++)
+            {
+                if (_speciesTuningIds[i] != speciesId)
+                    continue;
+
+                _speciesTuningValues[i] = tuning;
+                return;
+            }
+
+            if (count >= _speciesTuningIds.Length || count >= _speciesTuningValues.Length)
+                return;
+
+            _speciesTuningIds[count] = speciesId;
+            _speciesTuningValues[count] = tuning;
+            _speciesTuningCount[0] = count + 1;
         }
 
         internal static void Unregister(int slot)
@@ -955,8 +980,7 @@ namespace Hecton8.AI
 
             RefreshHabitatSiegeSnapshot();
             ClearBoidClaims();
-            if (_predatorSpeciesTargetPositions.IsCreated)
-                _predatorSpeciesTargetPositions.Clear();
+            ClearPredatorSpeciesTargets();
 
             float3 swarmBoundsMin = ComputeSwarmBoundsMin();
             var swarmJob = new SwarmAnalysisJob
@@ -979,7 +1003,12 @@ namespace Hecton8.AI
                 PredatorPackSharedPlayerPositions = _predatorPackSharedPlayerPositions,
                 PredatorPackTargetAups = _predatorPackTargetAups,
                 PredatorPackRoles = _predatorPackRoles,
-                PredatorSpeciesTargets = _predatorSpeciesTargetPositions.AsParallelWriter(),
+                PredatorSpeciesTargetIds = _predatorSpeciesTargetIds,
+                PredatorSpeciesTargetPositions = _predatorSpeciesTargetPositions,
+                PredatorSpeciesTargetCount = _predatorSpeciesTargetCount.IsCreated && _predatorSpeciesTargetCount.Length > 0
+                    ? (int*)_predatorSpeciesTargetCount.GetUnsafePtr()
+                    : null,
+                PredatorSpeciesTargetCapacity = ResolvePredatorSpeciesTargetCapacity(),
                 PackBaitClaimTable = (int*)_packBaitClaimTable.GetUnsafePtr(),
                 PackFlankerClaimTable = (int*)_packFlankerClaimTable.GetUnsafePtr(),
                 SwarmBoundsMin = swarmBoundsMin
@@ -1018,13 +1047,17 @@ namespace Hecton8.AI
                 PredatorPackSharedPlayerPositions = _predatorPackSharedPlayerPositions,
                 PredatorPackTargetAups = _predatorPackTargetAups,
                 PredatorPackRoles = _predatorPackRoles,
-                PredatorSpeciesTargets = _predatorSpeciesTargetPositions,
+                PredatorSpeciesTargetIds = _predatorSpeciesTargetIds,
+                PredatorSpeciesTargetPositions = _predatorSpeciesTargetPositions,
+                PredatorSpeciesTargetCount = _predatorSpeciesTargetCount,
                 HabitatSiegeTargets = _habitatSiegeTargets,
                 HabitatSiegeTargetCount = _habitatSiegeTargetCount,
                 BaseSiegeRammerClaimTable = (int*)_baseSiegeRammerClaimTable.GetUnsafePtr(),
                 BaseSiegeDistractorClaimTable = (int*)_baseSiegeDistractorClaimTable.GetUnsafePtr(),
                 BaseSiegeLoitererClaimTable = (int*)_baseSiegeLoitererClaimTable.GetUnsafePtr(),
-                SpeciesTuningById = _speciesTuningById,
+                SpeciesTuningIds = _speciesTuningIds,
+                SpeciesTuningValues = _speciesTuningValues,
+                SpeciesTuningCount = _speciesTuningCount,
                 ChosenStates = _chosenStates,
                 StalkingPhases = _stalkingPhases,
                 StalkingPhaseStartTimes = _stalkingPhaseStartTimes,
@@ -1093,6 +1126,9 @@ namespace Hecton8.AI
             ReleaseVaultAliasArray(ref _predatorPackSharedPlayerPositions);
             ReleaseVaultAliasArray(ref _predatorPackTargetAups);
             ReleaseVaultAliasArray(ref _predatorPackRoles);
+            ReleaseVaultAliasArray(ref _predatorSpeciesTargetIds);
+            ReleaseVaultAliasArray(ref _predatorSpeciesTargetPositions);
+            ReleaseVaultAliasArray(ref _predatorSpeciesTargetCount);
             ReleaseVaultAliasArray(ref _boidClaimTable);
             ReleaseVaultAliasArray(ref _packBaitClaimTable);
             ReleaseVaultAliasArray(ref _packFlankerClaimTable);
@@ -1103,14 +1139,15 @@ namespace Hecton8.AI
             ReleaseVaultAliasArray(ref _evaluationDueFlags);
             ReleaseVaultAliasArray(ref _nextEvaluationTimes);
             ReleaseVaultAliasArray(ref _evaluationIntervals);
+            ReleaseVaultAliasArray(ref _speciesTuningIds);
+            ReleaseVaultAliasArray(ref _speciesTuningValues);
+            ReleaseVaultAliasArray(ref _speciesTuningCount);
             ReleaseVaultAliasArray(ref _retinalExposure, disposeDependency, VaultRetinalExposureFlag);
             ReleaseVaultAliasArray(ref _blindnessState, disposeDependency, VaultRetinalBlindnessFlag);
             ReleaseVaultAliasArray(ref _lastPublishedBlindnessState, disposeDependency, VaultRetinalLastPublishedBlindnessFlag);
             ReleaseVaultAliasArray(ref _retinalLightSources, disposeDependency, VaultRetinalLightSourcesFlag);
             ReleaseVaultAliasArray(ref _retinalTelemetryRing, disposeDependency, VaultRetinalTelemetryRingFlag);
             ReleaseVaultAliasArray(ref _alphaLeviathanTelemetryRing, disposeDependency, VaultAlphaLeviathanTelemetryRingFlag);
-            DisposeNativeParallelHashMap(ref _predatorSpeciesTargetPositions, disposeDependency, nameof(_predatorSpeciesTargetPositions));
-            DisposeNativeParallelHashMap(ref _speciesTuningById, disposeDependency, nameof(_speciesTuningById));
 
             _cores = default;
             _controls = default;
@@ -1136,7 +1173,9 @@ namespace Hecton8.AI
             _predatorPackSharedPlayerPositions = default;
             _predatorPackTargetAups = default;
             _predatorPackRoles = default;
+            _predatorSpeciesTargetIds = default;
             _predatorSpeciesTargetPositions = default;
+            _predatorSpeciesTargetCount = default;
             _boidClaimTable = default;
             _packBaitClaimTable = default;
             _packFlankerClaimTable = default;
@@ -1153,7 +1192,9 @@ namespace Hecton8.AI
             _retinalLightSources = default;
             _retinalTelemetryRing = default;
             _alphaLeviathanTelemetryRing = default;
-            _speciesTuningById = default;
+            _speciesTuningIds = default;
+            _speciesTuningValues = default;
+            _speciesTuningCount = default;
             _threatVoxelGrid = default;
             _threatVoxelDimensions = int3.zero;
             _threatVoxelOrigin = float3.zero;
@@ -1193,13 +1234,9 @@ namespace Hecton8.AI
             if (!EnsureCoreCognitionVaultBuffers())
                 return;
 
-            // COLD ALLOC: NativeParallelHashMap<int,float3>[Capacity] - species-wide last known pack target positions for predator sync - owner: PredatorCognitionDomain
-            _predatorSpeciesTargetPositions = new NativeParallelHashMap<int, float3>(Capacity, Allocator.Persistent);
             // VAULT ALIAS: Retinal and Alpha black-box data live in GlobalDataVault.
             EnsureRetinalVaultBuffers();
             EnsureAlphaLeviathanTelemetryVaultBuffer();
-            // COLD ALLOC: NativeParallelHashMap<int,SpeciesCognitionTuning>[Capacity] - species cognition tuning table keyed by stable species id - owner: PredatorCognitionDomain
-            _speciesTuningById = new NativeParallelHashMap<int, SpeciesCognitionTuning>(Capacity, Allocator.Persistent);
             RegisterNativeMemorySentinel();
             ClearBoidClaims();
         }
@@ -1232,6 +1269,9 @@ namespace Hecton8.AI
                 _predatorPackSharedPlayerPositions.IsCreated &&
                 _predatorPackTargetAups.IsCreated &&
                 _predatorPackRoles.IsCreated &&
+                _predatorSpeciesTargetIds.IsCreated &&
+                _predatorSpeciesTargetPositions.IsCreated &&
+                _predatorSpeciesTargetCount.IsCreated &&
                 _boidClaimTable.IsCreated &&
                 _packBaitClaimTable.IsCreated &&
                 _packFlankerClaimTable.IsCreated &&
@@ -1241,7 +1281,10 @@ namespace Hecton8.AI
                 _baseSiegeLoitererClaimTable.IsCreated &&
                 _evaluationDueFlags.IsCreated &&
                 _nextEvaluationTimes.IsCreated &&
-                _evaluationIntervals.IsCreated)
+                _evaluationIntervals.IsCreated &&
+                _speciesTuningIds.IsCreated &&
+                _speciesTuningValues.IsCreated &&
+                _speciesTuningCount.IsCreated)
             {
                 _coreCognitionVaultAliases = true;
                 return true;
@@ -1371,6 +1414,21 @@ namespace Hecton8.AI
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
+            _predatorSpeciesTargetIds = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionSpeciesTargetIds,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _predatorSpeciesTargetPositions = vault.GetBuffer<float3>(
+                BufferID.PredatorCognitionSpeciesTargetPositions,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _predatorSpeciesTargetCount = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionSpeciesTargetCount,
+                1,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
             _boidClaimTable = vault.GetBuffer<int>(
                 BufferID.PredatorCognitionBoidClaimTable,
                 Capacity,
@@ -1421,6 +1479,21 @@ namespace Hecton8.AI
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
+            _speciesTuningIds = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionSpeciesTuningIds,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _speciesTuningValues = vault.GetBuffer<SpeciesCognitionTuning>(
+                BufferID.PredatorCognitionSpeciesTuningValues,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _speciesTuningCount = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionSpeciesTuningCount,
+                1,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
 
             bool resolvedAll =
                 _cores.IsCreated &&
@@ -1447,6 +1520,9 @@ namespace Hecton8.AI
                 _predatorPackSharedPlayerPositions.IsCreated &&
                 _predatorPackTargetAups.IsCreated &&
                 _predatorPackRoles.IsCreated &&
+                _predatorSpeciesTargetIds.IsCreated &&
+                _predatorSpeciesTargetPositions.IsCreated &&
+                _predatorSpeciesTargetCount.IsCreated &&
                 _boidClaimTable.IsCreated &&
                 _packBaitClaimTable.IsCreated &&
                 _packFlankerClaimTable.IsCreated &&
@@ -1456,7 +1532,10 @@ namespace Hecton8.AI
                 _baseSiegeLoitererClaimTable.IsCreated &&
                 _evaluationDueFlags.IsCreated &&
                 _nextEvaluationTimes.IsCreated &&
-                _evaluationIntervals.IsCreated;
+                _evaluationIntervals.IsCreated &&
+                _speciesTuningIds.IsCreated &&
+                _speciesTuningValues.IsCreated &&
+                _speciesTuningCount.IsCreated;
             if (!resolvedAll)
             {
                 ReleaseCoreCognitionVaultAliases();
@@ -1498,6 +1577,9 @@ namespace Hecton8.AI
             ReleaseVaultAliasArray(ref _predatorPackSharedPlayerPositions);
             ReleaseVaultAliasArray(ref _predatorPackTargetAups);
             ReleaseVaultAliasArray(ref _predatorPackRoles);
+            ReleaseVaultAliasArray(ref _predatorSpeciesTargetIds);
+            ReleaseVaultAliasArray(ref _predatorSpeciesTargetPositions);
+            ReleaseVaultAliasArray(ref _predatorSpeciesTargetCount);
             ReleaseVaultAliasArray(ref _boidClaimTable);
             ReleaseVaultAliasArray(ref _packBaitClaimTable);
             ReleaseVaultAliasArray(ref _packFlankerClaimTable);
@@ -1508,6 +1590,9 @@ namespace Hecton8.AI
             ReleaseVaultAliasArray(ref _evaluationDueFlags);
             ReleaseVaultAliasArray(ref _nextEvaluationTimes);
             ReleaseVaultAliasArray(ref _evaluationIntervals);
+            ReleaseVaultAliasArray(ref _speciesTuningIds);
+            ReleaseVaultAliasArray(ref _speciesTuningValues);
+            ReleaseVaultAliasArray(ref _speciesTuningCount);
         }
 
         private static void ClearCoreCognitionVaultBuffers()
@@ -1536,6 +1621,9 @@ namespace Hecton8.AI
             ClearArray(_predatorPackSharedPlayerPositions);
             ClearArray(_predatorPackTargetAups);
             ClearArray(_predatorPackRoles);
+            ClearArray(_predatorSpeciesTargetIds);
+            ClearArray(_predatorSpeciesTargetPositions);
+            ClearArray(_predatorSpeciesTargetCount);
             ClearArray(_boidClaimTable);
             ClearArray(_packBaitClaimTable);
             ClearArray(_packFlankerClaimTable);
@@ -1546,6 +1634,9 @@ namespace Hecton8.AI
             ClearArray(_evaluationDueFlags);
             ClearArray(_nextEvaluationTimes);
             ClearArray(_evaluationIntervals);
+            ClearArray(_speciesTuningIds);
+            ClearArray(_speciesTuningValues);
+            ClearArray(_speciesTuningCount);
         }
 
         private static void ClearArray<T>(NativeArray<T> array) where T : struct
@@ -1565,7 +1656,8 @@ namespace Hecton8.AI
                 UnsafeUtility.SizeOf<CognitionControl>() != CognitionControlSizeBytes ||
                 UnsafeUtility.SizeOf<CognitionInput>() != CognitionInputSizeBytes ||
                 UnsafeUtility.SizeOf<CognitionOutput>() != CognitionOutputSizeBytes ||
-                UnsafeUtility.SizeOf<PackedCognitionOutput>() != PackedCognitionOutputSizeBytes)
+                UnsafeUtility.SizeOf<PackedCognitionOutput>() != PackedCognitionOutputSizeBytes ||
+                UnsafeUtility.SizeOf<SpeciesCognitionTuning>() != SpeciesCognitionTuningSizeBytes)
             {
                 FatalMemoryException.ThrowAbiLayoutMismatch();
             }
@@ -1657,14 +1749,12 @@ namespace Hecton8.AI
                 NativeMemorySentinel.RegisterNativeArray(_evaluationIntervals, NativeMemoryOwner, nameof(_evaluationIntervals), NativeMemoryLifetime);
             }
 
-            NativeMemorySentinel.RegisterNativeParallelHashMap(_predatorSpeciesTargetPositions, NativeMemoryOwner, nameof(_predatorSpeciesTargetPositions), NativeMemoryLifetime);
             RegisterNativeArrayIfDomainOwned(_retinalExposure, nameof(_retinalExposure), VaultRetinalExposureFlag);
             RegisterNativeArrayIfDomainOwned(_blindnessState, nameof(_blindnessState), VaultRetinalBlindnessFlag);
             RegisterNativeArrayIfDomainOwned(_lastPublishedBlindnessState, nameof(_lastPublishedBlindnessState), VaultRetinalLastPublishedBlindnessFlag);
             RegisterNativeArrayIfDomainOwned(_retinalLightSources, nameof(_retinalLightSources), VaultRetinalLightSourcesFlag);
             RegisterNativeArrayIfDomainOwned(_retinalTelemetryRing, nameof(_retinalTelemetryRing), VaultRetinalTelemetryRingFlag);
             RegisterNativeArrayIfDomainOwned(_alphaLeviathanTelemetryRing, nameof(_alphaLeviathanTelemetryRing), VaultAlphaLeviathanTelemetryRingFlag);
-            NativeMemorySentinel.RegisterNativeParallelHashMap(_speciesTuningById, NativeMemoryOwner, nameof(_speciesTuningById), NativeMemoryLifetime);
         }
 
         private static void RegisterNativeArrayIfDomainOwned<T>(NativeArray<T> array, string label, int vaultFlag) where T : struct
@@ -1703,21 +1793,6 @@ namespace Hecton8.AI
             }
 
             DisposeNativeArray(ref array, disposeDependency);
-        }
-
-        private static void DisposeNativeParallelHashMap<TKey, TValue>(
-            ref NativeParallelHashMap<TKey, TValue> map,
-            JobHandle disposeDependency,
-            string label)
-            where TKey : unmanaged, System.IEquatable<TKey>
-            where TValue : unmanaged
-        {
-            if (!map.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, label);
-            map.Dispose(disposeDependency);
-            map = default;
         }
 
         private static bool PrepareEvaluationDueFlags()
@@ -1950,7 +2025,11 @@ namespace Hecton8.AI
 
         private static void UpdateRetinalPostEvaluationTelemetry(int frameId)
         {
-            if (!_activeSlots.IsCreated || !_blindnessState.IsCreated || !_retinalTelemetryRing.IsCreated)
+            if (!_activeSlots.IsCreated ||
+                !_retinalExposure.IsCreated ||
+                !_blindnessState.IsCreated ||
+                !_lastPublishedBlindnessState.IsCreated ||
+                !_retinalTelemetryRing.IsCreated)
                 return;
 
             int totalBlind = 0;
@@ -2035,10 +2114,10 @@ namespace Hecton8.AI
                 return;
 
             CognitionCore core = _cores[slot];
-            Vector3 position = new Vector3(core.Position.x, core.Position.y, core.Position.z);
+            AbsoluteUniversePosition signalPosition = ResolveBlindSignalAup(slot, in core);
             GlobalSignals.Publish(new FaunaStateChangedSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(position),
+                PositionAup = signalPosition,
                 SpeciesHash = unchecked((uint)core.SpeciesId),
                 StateFlags = core.StateFlags,
                 Frame = unchecked((uint)math.max(0, frameId)),
@@ -2046,6 +2125,29 @@ namespace Hecton8.AI
                 StateKind = FaunaStateChangedSignalKinds.Blind,
                 Flags = blind ? FaunaStateChangedSignalFlags.StateActive : (byte)0
             });
+        }
+
+        private static AbsoluteUniversePosition ResolveBlindSignalAup(int slot, in CognitionCore core)
+        {
+            float3 runtimePosition = core.Position;
+            double3 floatingOriginOffset = double3.zero;
+            if (_inputs.IsCreated && slot >= 0 && slot < _inputs.Length)
+            {
+                CognitionInput input = _inputs[slot];
+                if (MathGuard.IsFinite(input.Position))
+                    runtimePosition = input.Position;
+                if (math.all(math.isfinite(input.FloatingOriginOffset)))
+                    floatingOriginOffset = input.FloatingOriginOffset;
+            }
+
+            if (!MathGuard.IsFinite(runtimePosition))
+                runtimePosition = float3.zero;
+
+            double3 absolutePosition = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z) + floatingOriginOffset;
+            if (!math.all(math.isfinite(absolutePosition)))
+                absolutePosition = double3.zero;
+
+            return AbsoluteUniversePosition.FromAbsolutePosition(absolutePosition);
         }
 
         private static void DumpRetinalBlackBoxCold(int frameId)
@@ -2456,6 +2558,20 @@ namespace Hecton8.AI
             }
         }
 
+        private static void ClearPredatorSpeciesTargets()
+        {
+            if (_predatorSpeciesTargetCount.IsCreated && _predatorSpeciesTargetCount.Length > 0)
+                _predatorSpeciesTargetCount[0] = 0;
+        }
+
+        private static int ResolvePredatorSpeciesTargetCapacity()
+        {
+            if (!_predatorSpeciesTargetIds.IsCreated || !_predatorSpeciesTargetPositions.IsCreated)
+                return 0;
+
+            return math.min(_predatorSpeciesTargetIds.Length, _predatorSpeciesTargetPositions.Length);
+        }
+
         private static void RefreshHabitatSiegeSnapshot()
         {
             int previousCount = _habitatSiegeTargetCount;
@@ -2658,7 +2774,10 @@ namespace Hecton8.AI
             public NativeArray<float3> PredatorPackSharedPlayerPositions;
             public NativeArray<AbsoluteUniversePositionBlit128> PredatorPackTargetAups;
             public NativeArray<byte> PredatorPackRoles;
-            public NativeParallelHashMap<int, float3>.ParallelWriter PredatorSpeciesTargets;
+            [NativeDisableParallelForRestriction] public NativeArray<int> PredatorSpeciesTargetIds;
+            [NativeDisableParallelForRestriction] public NativeArray<float3> PredatorSpeciesTargetPositions;
+            [NativeDisableUnsafePtrRestriction] public int* PredatorSpeciesTargetCount;
+            public int PredatorSpeciesTargetCapacity;
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
             // Pack role claim tables are raw int pointers because this swarm analysis job uses Interlocked.CompareExchange
             // on reservation slots. Unity's safety system cannot model pointer atomics, but each pointer comes from a
@@ -2727,7 +2846,7 @@ namespace Hecton8.AI
                     ? ResolveRuntimePosition(in input.PackTargetAup, input.FloatingOriginOffset)
                     : input.PackTargetPosition;
                 if (canCoordinatePack && selfHasPackTarget && selfHasPlayerTarget && input.SpeciesId != 0)
-                    PredatorSpeciesTargets.TryAdd(input.SpeciesId, predatorPackSharedPlayerPosition);
+                    AddPredatorSpeciesTarget(input.SpeciesId, predatorPackSharedPlayerPosition);
 
                 float3 predatorPackTarget = predatorPackSharedPlayerPosition;
                 float predatorPackWeight = 0f;
@@ -2889,6 +3008,30 @@ namespace Hecton8.AI
                 PredatorPackRoles[slot] = (byte)predatorPackRole;
             }
 
+            private void AddPredatorSpeciesTarget(int speciesId, float3 targetPosition)
+            {
+                if (speciesId == 0 ||
+                    !PredatorSpeciesTargetIds.IsCreated ||
+                    !PredatorSpeciesTargetPositions.IsCreated ||
+                    PredatorSpeciesTargetCount == null)
+                {
+                    return;
+                }
+
+                int capacity = math.min(
+                    math.max(PredatorSpeciesTargetCapacity, 0),
+                    math.min(PredatorSpeciesTargetIds.Length, PredatorSpeciesTargetPositions.Length));
+                if (capacity <= 0)
+                    return;
+
+                int writeIndex = System.Threading.Interlocked.Increment(ref *PredatorSpeciesTargetCount) - 1;
+                if ((uint)writeIndex >= (uint)capacity)
+                    return;
+
+                PredatorSpeciesTargetIds[writeIndex] = speciesId;
+                PredatorSpeciesTargetPositions[writeIndex] = targetPosition;
+            }
+
             private static int ResolvePackReservationIndex(int speciesId)
             {
                 return math.abs(speciesId) % Capacity;
@@ -2947,7 +3090,9 @@ namespace Hecton8.AI
             [ReadOnly] public NativeArray<float3> PredatorPackSharedPlayerPositions;
             [ReadOnly] public NativeArray<AbsoluteUniversePositionBlit128> PredatorPackTargetAups;
             [ReadOnly] public NativeArray<byte> PredatorPackRoles;
-            [ReadOnly] public NativeParallelHashMap<int, float3> PredatorSpeciesTargets;
+            [ReadOnly] public NativeArray<int> PredatorSpeciesTargetIds;
+            [ReadOnly] public NativeArray<float3> PredatorSpeciesTargetPositions;
+            [ReadOnly] public NativeArray<int> PredatorSpeciesTargetCount;
             [ReadOnly] public NativeArray<HabitatSiegeTargetSnapshot> HabitatSiegeTargets;
             public int HabitatSiegeTargetCount;
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
@@ -2964,7 +3109,9 @@ namespace Hecton8.AI
             [NativeDisableUnsafePtrRestriction] public int* BaseSiegeRammerClaimTable;
             [NativeDisableUnsafePtrRestriction] public int* BaseSiegeDistractorClaimTable;
             [NativeDisableUnsafePtrRestriction] public int* BaseSiegeLoitererClaimTable;
-            [ReadOnly] public NativeParallelHashMap<int, SpeciesCognitionTuning> SpeciesTuningById;
+            [ReadOnly] public NativeArray<int> SpeciesTuningIds;
+            [ReadOnly] public NativeArray<SpeciesCognitionTuning> SpeciesTuningValues;
+            [ReadOnly] public NativeArray<int> SpeciesTuningCount;
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
             // ChosenStates and BoidClaimTable are intentionally shared output tables indexed by stable fauna slots, not
             // by the job iteration index. NativeDisableParallelForRestriction is required because the valid writer index
@@ -3005,6 +3152,64 @@ namespace Hecton8.AI
             [NativeDisableParallelForRestriction] public NativeArray<float> RetinalExposure;
             [NativeDisableParallelForRestriction] public NativeArray<byte> BlindnessState;
 
+            private bool TryReadSpeciesTuning(int speciesId, out SpeciesCognitionTuning tuning)
+            {
+                tuning = default;
+                if (!SpeciesTuningIds.IsCreated ||
+                    !SpeciesTuningValues.IsCreated ||
+                    !SpeciesTuningCount.IsCreated ||
+                    SpeciesTuningCount.Length <= 0)
+                {
+                    return false;
+                }
+
+                int count = math.clamp(
+                    SpeciesTuningCount[0],
+                    0,
+                    math.min(SpeciesTuningIds.Length, SpeciesTuningValues.Length));
+                for (int i = 0; i < count; i++)
+                {
+                    if (SpeciesTuningIds[i] != speciesId)
+                        continue;
+
+                    tuning = SpeciesTuningValues[i];
+                    return true;
+                }
+
+                return false;
+            }
+
+            private bool TryReadPredatorSpeciesTarget(int speciesId, out float3 targetPosition)
+            {
+                targetPosition = default;
+                if (!PredatorSpeciesTargetIds.IsCreated ||
+                    !PredatorSpeciesTargetPositions.IsCreated ||
+                    !PredatorSpeciesTargetCount.IsCreated ||
+                    PredatorSpeciesTargetCount.Length <= 0)
+                {
+                    return false;
+                }
+
+                int count = math.clamp(
+                    PredatorSpeciesTargetCount[0],
+                    0,
+                    math.min(PredatorSpeciesTargetIds.Length, PredatorSpeciesTargetPositions.Length));
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    if (PredatorSpeciesTargetIds[i] != speciesId)
+                        continue;
+
+                    float3 candidate = PredatorSpeciesTargetPositions[i];
+                    if (!MathGuard.IsFinite(candidate))
+                        continue;
+
+                    targetPosition = candidate;
+                    return true;
+                }
+
+                return false;
+            }
+
             public void Execute(int index)
             {
                 int slot = ActiveSlots[index];
@@ -3025,9 +3230,7 @@ namespace Hecton8.AI
                 if (DueFlags[slot] == 0)
                     return;
 
-                if (input.SpeciesId != 0 &&
-                    SpeciesTuningById.IsCreated &&
-                    SpeciesTuningById.TryGetValue(input.SpeciesId, out SpeciesCognitionTuning tuning))
+                if (TryReadSpeciesTuning(input.SpeciesId, out SpeciesCognitionTuning tuning))
                 {
                     input.HungerWeight = tuning.HungerWeight;
                     input.FearWeight = tuning.FearWeight;
@@ -3145,22 +3348,30 @@ namespace Hecton8.AI
                 return (byte)math.clamp(stateCode, 0, byte.MaxValue);
             }
 
+            [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 20)]
             private struct RetinalLightResult
             {
                 public float Exposure01;
                 public float3 LightPosition;
                 public byte BlindState;
+                public byte Reserved0;
+                public byte Reserved1;
+                public byte Reserved2;
             }
 
+            [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
             private struct AlphaLeviathanDirective
             {
                 public byte Phase;
                 public byte Flags;
-                public bool OverrideActive;
-                public bool FalseChargeStarted;
+                public byte OverrideActive;
+                public byte FalseChargeStarted;
                 public float RingDistanceMeters;
                 public float3 TargetPosition;
                 public PredatorUtilityState StateMask;
+                public byte Reserved0;
+                public byte Reserved1;
+                public byte Reserved2;
             }
 
             private RetinalLightResult ResolveRetinalExposure(int slot, in CognitionInput input, float3 fallbackForward)
@@ -3299,9 +3510,7 @@ namespace Hecton8.AI
                 bool hasPackTarget = (input.Flags & (int)CognitionInputFlags.HasPackTarget) != 0;
                 float3 speciesSharedTarget = sharedPackPlayerPosition;
                 bool hasSpeciesSharedTarget = !hasPackTarget &&
-                                              input.SpeciesId != 0 &&
-                                              PredatorSpeciesTargets.IsCreated &&
-                                              PredatorSpeciesTargets.TryGetValue(input.SpeciesId, out speciesSharedTarget);
+                                              TryReadPredatorSpeciesTarget(input.SpeciesId, out speciesSharedTarget);
                 sharedPackPlayerPosition = math.select(sharedPackPlayerPosition, speciesSharedTarget, hasSpeciesSharedTarget);
                 float3 predictedPackTargetPosition = hasPackTarget
                     ? ResolvePredictedPackTargetIntercept(input)
@@ -3529,7 +3738,7 @@ namespace Hecton8.AI
                         predictedPlayerPosition,
                         retinalBlindActive,
                         useHighTierSmoothSteering);
-                    if (alphaDirective.OverrideActive)
+                    if (alphaDirective.OverrideActive != 0)
                     {
                         alphaOverrideActive = true;
                         targetPosition = alphaDirective.TargetPosition;
@@ -3784,7 +3993,7 @@ namespace Hecton8.AI
                                 output.SpeedMultiplier,
                                 AlphaFalseChargeSpeedMetersPerSecond * math.rcp(math.max(0.1f, input.BaseMaxSpeedMetersPerSecond)));
                             output.TurnMultiplier = math.max(output.TurnMultiplier, 1.35f);
-                            if (alphaDirective.FalseChargeStarted)
+                            if (alphaDirective.FalseChargeStarted != 0)
                                 output.OutputFlags |= (uint)CognitionOutputFlags.EmitThreatPulse;
                             break;
                         case AlphaLeviathanPhase.Hidden:
@@ -3908,9 +4117,9 @@ namespace Hecton8.AI
                 if (playerGazeBreak)
                     flags |= AlphaLeviathanTelemetryFlags.PlayerGazeBreak;
 
-                directive.OverrideActive = true;
+                directive.OverrideActive = 1;
                 directive.Phase = phase;
-                directive.FalseChargeStarted = phaseChanged && phase == AlphaLeviathanPhase.FalseCharge;
+                directive.FalseChargeStarted = (byte)(phaseChanged && phase == AlphaLeviathanPhase.FalseCharge ? 1 : 0);
                 directive.StateMask = PredatorUtilityState.Stalking;
                 switch (phase)
                 {

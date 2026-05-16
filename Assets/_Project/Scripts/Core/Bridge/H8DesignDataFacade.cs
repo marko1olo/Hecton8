@@ -30,6 +30,8 @@ namespace Hecton8.Core.Bridge
             [SerializeField] private uint oneDimensionalLutHash;
             [SerializeField] private uint highTierVisualHash;
             [SerializeField] private float lastAppliedValue;
+            [SerializeField] private uint lastAppliedFieldHash;
+            [SerializeField] private int lastAppliedOffsetBytes;
 
             public bool Enabled => enabled;
             public string DisplayName => displayName;
@@ -62,6 +64,8 @@ namespace Hecton8.Core.Bridge
                 liveTuning = true;
                 RebuildHash();
                 lastAppliedValue = value;
+                lastAppliedFieldHash = fieldHash;
+                lastAppliedOffsetBytes = offsetBytes;
             }
 
             public void ConfigureVisualDefaults(
@@ -91,8 +95,10 @@ namespace Hecton8.Core.Bridge
                 if (string.IsNullOrWhiteSpace(displayName))
                     displayName = "DesignValue";
 
+                uint previousHash = lastAppliedFieldHash;
+                int previousOffset = lastAppliedOffsetBytes;
                 RebuildHash();
-                offsetBytes = math.max(0, offsetBytes);
+                offsetBytes = H8BridgeFacadeRuntime.AlignFloatOffsetBytes(offsetBytes);
                 textureWidth = math.max(1, textureWidth);
                 textureHeight = math.max(1, textureHeight);
                 textureMipCount = math.max(1, textureMipCount);
@@ -113,8 +119,12 @@ namespace Hecton8.Core.Bridge
                     value = safeDefault;
 
                 value = math.clamp(value, minValue, maxValue);
-                bool changed = !Mathf.Approximately(value, lastAppliedValue);
+                bool changed = !Mathf.Approximately(value, lastAppliedValue) ||
+                    fieldHash != previousHash ||
+                    offsetBytes != previousOffset;
                 lastAppliedValue = value;
+                lastAppliedFieldHash = fieldHash;
+                lastAppliedOffsetBytes = offsetBytes;
                 return changed;
             }
 

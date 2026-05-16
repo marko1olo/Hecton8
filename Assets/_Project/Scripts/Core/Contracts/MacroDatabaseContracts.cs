@@ -13,7 +13,7 @@ namespace Hecton8.Core.Contracts
     [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
     public struct MacroDatabaseAup
     {
-        public const int CellSizeMeters = 5000;
+        public const int CellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
 
         [FieldOffset(0)] public long GridX;
         [FieldOffset(8)] public long GridY;
@@ -114,18 +114,18 @@ namespace Hecton8.Core.Contracts
 
         public static MacroDatabaseConfig Default => new MacroDatabaseConfig
         {
-            NodeSizeBytes = 4096,
-            SectorSizeMeters = 512,
-            LowTierRadiusMeters = 1000,
-            MiddleTierRadiusMeters = 2000,
-            HighTierRadiusMeters = 3000,
-            UltraTierRadiusMeters = 4000,
-            DehydrateRadiusMeters = 3000,
-            MaxPayloadBytes = 256 * 1024,
-            NativeCacheCapacity = 2048,
-            MaxQuerySectors = 4096,
-            InitialFileBytes = 8L * 1024L * 1024L,
-            MaxFileBytes = 2L * 1024L * 1024L * 1024L,
+            NodeSizeBytes = HectonMmfPagingContract.BTreePageSizeBytes,
+            SectorSizeMeters = HectonMmfPagingContract.MacroDatabaseSectorSizeMeters,
+            LowTierRadiusMeters = HectonMmfPagingContract.MacroDatabaseLowTierRadiusMeters,
+            MiddleTierRadiusMeters = HectonMmfPagingContract.MacroDatabaseMiddleTierRadiusMeters,
+            HighTierRadiusMeters = HectonMmfPagingContract.MacroDatabaseHighTierRadiusMeters,
+            UltraTierRadiusMeters = HectonMmfPagingContract.MacroDatabaseUltraTierRadiusMeters,
+            DehydrateRadiusMeters = HectonMmfPagingContract.MacroDatabaseDehydrateRadiusMeters,
+            MaxPayloadBytes = HectonMmfPagingContract.MacroDatabaseMaxPayloadBytes,
+            NativeCacheCapacity = HectonMmfPagingContract.MacroDatabaseNativeCacheCapacity,
+            MaxQuerySectors = HectonMmfPagingContract.MacroDatabaseMaxQuerySectors,
+            InitialFileBytes = HectonMmfPagingContract.MacroDatabaseInitialFileBytes,
+            MaxFileBytes = HectonMmfPagingContract.MacroDatabaseMaxFileBytes,
             CreateIfMissing = 1,
             DefaultTier = (byte)MacroDatabaseTier.Middle
         };

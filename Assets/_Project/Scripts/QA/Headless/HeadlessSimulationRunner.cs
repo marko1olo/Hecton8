@@ -37,7 +37,7 @@ namespace Hecton8.QA.Headless
         private const int MaxSignalsDrainedPerFrame = 128;
         private const int MaxDailyAuditsPerFrostTick = 4;
         private const int DefaultTargetDays = 100;
-        private const int AupCellSizeMeters = 5000;
+        private const int AupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
         private const float DefaultDaySeconds = 3600f;
         private const float DefaultStartupTimeoutSeconds = 180f;
         private const float TimeDilationScalar = 100f;

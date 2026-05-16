@@ -130,8 +130,8 @@ Shader "Hidden/Hecton8/NoirDepthFog"
                 _HectonNoirDepthFogShallowColor.rgb,
                 _HectonNoirDepthFogAbyssColor.rgb,
                 saturate(depthSq + depth01 * 0.18h));
-            half3 extinctionColor = H8WaterExtinctionSampleRgbByDepthMeters(linearEyeDepth, (half)_ExtinctionLUTRuntime.y);
-            half extinctionBlend = saturate((half)_ExtinctionLUTRuntime.z * (half)_ExtinctionLUTParams.w);
+            half3 extinctionColor = H8WaterExtinctionResolveRgbByDepthMeters(linearEyeDepth, (half)_ExtinctionLUTRuntime.y);
+            half extinctionBlend = H8WaterExtinctionFogBlend();
             fogColor = H8WaterExtinctionApplyFogTint(fogColor, extinctionColor, extinctionBlend);
             sourceColor.rgb = lerp(sourceColor.rgb, sourceColor.rgb * extinctionColor, fogFactor * extinctionBlend * 0.35h);
             sourceColor.rgb = lerp(sourceColor.rgb, fogColor, (half)fogFactor);

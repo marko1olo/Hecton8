@@ -28,6 +28,16 @@ Shader "Hidden/Hecton8/BiolumSSGIComposite"
             TEXTURE2D_X(_BlitTexture);
             TEXTURE2D_X(_HectonBiolumSSGITexture);
 
+            half3 ResolveFiniteHalf3OrZero(half3 value)
+            {
+                return all(isfinite((float3)value)) ? value : half3(0.0h, 0.0h, 0.0h);
+            }
+
+            half3 ClampBiolumHdr(half3 value)
+            {
+                return min(max(ResolveFiniteHalf3OrZero(value), half3(0.0h, 0.0h, 0.0h)), half3(10.0h, 10.0h, 10.0h));
+            }
+
             struct Attributes
             {
                 uint vertexID : SV_VertexID;
@@ -54,7 +64,10 @@ Shader "Hidden/Hecton8/BiolumSSGIComposite"
             {
                 half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
                 half4 giColor = SAMPLE_TEXTURE2D_X(_HectonBiolumSSGITexture, sampler_LinearClamp, input.screenUV);
-                return half4(sourceColor.rgb + (giColor.rgb * giColor.a), sourceColor.a);
+                half giAlpha = saturate(isfinite((float)giColor.a) ? giColor.a : 0.0h);
+                half3 composed = ClampBiolumHdr(sourceColor.rgb + ClampBiolumHdr(giColor.rgb) * giAlpha);
+                half sourceAlpha = saturate(isfinite((float)sourceColor.a) ? sourceColor.a : 1.0h);
+                return half4(composed, sourceAlpha);
             }
             ENDHLSL
         }

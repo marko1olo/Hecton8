@@ -19,6 +19,38 @@ float4 _HectonBiolumCascadeParams;
 float4 _HectonBiolumVolumeTexelSize;
 uint _HectonBiolumPointCount;
 
+static const uint kMaxBiolumVolumePointCount = 32u;
+
+bool IsFiniteScalar(float value)
+{
+    return isfinite(value);
+}
+
+float ResolveFiniteOrDefault(float value, float fallback)
+{
+    return IsFiniteScalar(value) ? value : fallback;
+}
+
+float3 ResolveFiniteFloat3OrZero(float3 value)
+{
+    return all(isfinite(value)) ? value : float3(0.0, 0.0, 0.0);
+}
+
+float4 ResolveFiniteFloat4OrZero(float4 value)
+{
+    return all(isfinite(value)) ? value : float4(0.0, 0.0, 0.0, 0.0);
+}
+
+float3 ClampBiolumHdr(float3 value)
+{
+    return min(max(ResolveFiniteFloat3OrZero(value), float3(0.0, 0.0, 0.0)), float3(10.0, 10.0, 10.0));
+}
+
+bool IsValidVolume(uint width, uint height, uint depth)
+{
+    return width > 0u && height > 0u && depth > 0u;
+}
+
 float ApproxLength2(float2 value)
 {
     float2 absValue = abs(value);
@@ -34,12 +66,14 @@ float FastTriangle01(float phase)
 
 float3 ResolveVoxelWorldPosition(uint3 dispatchThreadId)
 {
-    float3 uv = (float3(dispatchThreadId) + 0.5) * _HectonBiolumVolumeTexelSize.xyz;
-    float3 localPosition = (uv - 0.5) * (_HectonBiolumVolumeHalfExtents.xyz * 2.0);
-    float3 volumeCenterWS = float3(
+    float3 texelSize = max(ResolveFiniteFloat3OrZero(_HectonBiolumVolumeTexelSize.xyz), float3(0.0, 0.0, 0.0));
+    float3 halfExtents = max(ResolveFiniteFloat3OrZero(_HectonBiolumVolumeHalfExtents.xyz), float3(0.001, 0.001, 0.001));
+    float3 uv = (float3(dispatchThreadId) + 0.5) * texelSize;
+    float3 localPosition = (uv - 0.5) * (halfExtents * 2.0);
+    float3 volumeCenterWS = ResolveFiniteFloat3OrZero(float3(
         -_HectonBiolumVolumeWorldToLocal._m03,
         -_HectonBiolumVolumeWorldToLocal._m13,
-        -_HectonBiolumVolumeWorldToLocal._m23);
+        -_HectonBiolumVolumeWorldToLocal._m23));
     return volumeCenterWS + localPosition;
 }
 
@@ -50,7 +84,7 @@ void ClearBiolumVolume(uint3 dispatchThreadId : SV_DispatchThreadID)
     uint height;
     uint depth;
     _HectonBiolumVolumeOutput.GetDimensions(width, height, depth);
-    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height || dispatchThreadId.z >= depth)
+    if (!IsValidVolume(width, height, depth) || dispatchThreadId.x >= width || dispatchThreadId.y >= height || dispatchThreadId.z >= depth)
         return;
 
     _HectonBiolumVolumeOutput[dispatchThreadId] = 0.0;
@@ -63,39 +97,40 @@ void DiffuseBiolumVolume(uint3 dispatchThreadId : SV_DispatchThreadID)
     uint height;
     uint depth;
     _HectonBiolumVolumeOutput.GetDimensions(width, height, depth);
-    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height || dispatchThreadId.z >= depth)
+    if (!IsValidVolume(width, height, depth) || dispatchThreadId.x >= width || dispatchThreadId.y >= height || dispatchThreadId.z >= depth)
         return;
 
     int3 sampleCoord = int3(dispatchThreadId);
-    float4 center = _HectonBiolumVolumeInput.Load(int4(sampleCoord, 0));
+    int3 maxCoord = int3((int)width - 1, (int)height - 1, (int)depth - 1);
+    float4 center = ResolveFiniteFloat4OrZero(_HectonBiolumVolumeInput.Load(int4(sampleCoord, 0)));
     float4 neighborAverage =
-        _HectonBiolumVolumeInput.Load(int4(clamp(sampleCoord + int3(1, 0, 0), int3(0, 0, 0), int3(width - 1, height - 1, depth - 1)), 0)) +
-        _HectonBiolumVolumeInput.Load(int4(clamp(sampleCoord + int3(-1, 0, 0), int3(0, 0, 0), int3(width - 1, height - 1, depth - 1)), 0)) +
-        _HectonBiolumVolumeInput.Load(int4(clamp(sampleCoord + int3(0, 1, 0), int3(0, 0, 0), int3(width - 1, height - 1, depth - 1)), 0)) +
-        _HectonBiolumVolumeInput.Load(int4(clamp(sampleCoord + int3(0, -1, 0), int3(0, 0, 0), int3(width - 1, height - 1, depth - 1)), 0)) +
-        _HectonBiolumVolumeInput.Load(int4(clamp(sampleCoord + int3(0, 0, 1), int3(0, 0, 0), int3(width - 1, height - 1, depth - 1)), 0)) +
-        _HectonBiolumVolumeInput.Load(int4(clamp(sampleCoord + int3(0, 0, -1), int3(0, 0, 0), int3(width - 1, height - 1, depth - 1)), 0));
-    neighborAverage *= (1.0 / 6.0);
+        ResolveFiniteFloat4OrZero(_HectonBiolumVolumeInput.Load(int4(clamp(sampleCoord + int3(1, 0, 0), int3(0, 0, 0), maxCoord), 0))) +
+        ResolveFiniteFloat4OrZero(_HectonBiolumVolumeInput.Load(int4(clamp(sampleCoord + int3(-1, 0, 0), int3(0, 0, 0), maxCoord), 0))) +
+        ResolveFiniteFloat4OrZero(_HectonBiolumVolumeInput.Load(int4(clamp(sampleCoord + int3(0, 1, 0), int3(0, 0, 0), maxCoord), 0))) +
+        ResolveFiniteFloat4OrZero(_HectonBiolumVolumeInput.Load(int4(clamp(sampleCoord + int3(0, -1, 0), int3(0, 0, 0), maxCoord), 0))) +
+        ResolveFiniteFloat4OrZero(_HectonBiolumVolumeInput.Load(int4(clamp(sampleCoord + int3(0, 0, 1), int3(0, 0, 0), maxCoord), 0))) +
+        ResolveFiniteFloat4OrZero(_HectonBiolumVolumeInput.Load(int4(clamp(sampleCoord + int3(0, 0, -1), int3(0, 0, 0), maxCoord), 0)));
+    neighborAverage *= rcp(6.0);
 
-    float diffusion = saturate(_HectonBiolumVolumeParams.y);
-    float decay = saturate(_HectonBiolumVolumeParams.z);
-    float deltaTime = max(_HectonBiolumVolumeParams.w, 0.0);
+    float diffusion = saturate(ResolveFiniteOrDefault(_HectonBiolumVolumeParams.y, 0.0));
+    float decay = saturate(ResolveFiniteOrDefault(_HectonBiolumVolumeParams.z, 0.0));
+    float deltaTime = max(ResolveFiniteOrDefault(_HectonBiolumVolumeParams.w, 0.0), 0.0);
     float blend = saturate(diffusion * deltaTime);
     float attenuation = saturate(1.0 - decay * deltaTime);
 
-    float spikeThreshold = saturate(_HectonBiolumCascadeParams.x);
-    float cascadeGain = max(_HectonBiolumCascadeParams.y, 0.0);
-    float cascadeSpeed = max(_HectonBiolumCascadeParams.z, 0.0);
-    float cascadeTime = _HectonBiolumCascadeParams.w;
+    float spikeThreshold = saturate(ResolveFiniteOrDefault(_HectonBiolumCascadeParams.x, 0.0));
+    float cascadeGain = max(ResolveFiniteOrDefault(_HectonBiolumCascadeParams.y, 0.0), 0.0);
+    float cascadeSpeed = max(ResolveFiniteOrDefault(_HectonBiolumCascadeParams.z, 0.0), 0.0);
+    float cascadeTime = ResolveFiniteOrDefault(_HectonBiolumCascadeParams.w, 0.0);
     float neighborLuminance = dot(max(neighborAverage.rgb, 0.0), float3(0.2126, 0.7152, 0.0722));
-    float spike01 = saturate((neighborLuminance - spikeThreshold) / max(1.0 - spikeThreshold, 0.001));
+    float spike01 = saturate((neighborLuminance - spikeThreshold) * rcp(max(1.0 - spikeThreshold, 0.001)));
     float3 worldPosition = ResolveVoxelWorldPosition(dispatchThreadId);
     float wavePhase = cascadeTime * cascadeSpeed - ApproxLength2(worldPosition.xz) * 0.17 - worldPosition.y * 0.035;
     float waveGate = FastTriangle01(wavePhase);
     float3 cascadeRadiance = neighborAverage.rgb * (spike01 * spike01 * cascadeGain * waveGate * deltaTime);
     float4 resolved = lerp(center, neighborAverage, blend) * attenuation;
     resolved.rgb += cascadeRadiance;
-    _HectonBiolumVolumeOutput[dispatchThreadId] = float4(max(resolved.rgb, 0.0), 1.0);
+    _HectonBiolumVolumeOutput[dispatchThreadId] = float4(ClampBiolumHdr(resolved.rgb), 1.0);
 }
 
 [numthreads(4, 4, 4)]
@@ -105,25 +140,28 @@ void InjectBiolumPoints(uint3 dispatchThreadId : SV_DispatchThreadID)
     uint height;
     uint depth;
     _HectonBiolumVolumeOutput.GetDimensions(width, height, depth);
-    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height || dispatchThreadId.z >= depth)
+    if (!IsValidVolume(width, height, depth) || dispatchThreadId.x >= width || dispatchThreadId.y >= height || dispatchThreadId.z >= depth)
         return;
 
-    float4 baseSample = _HectonBiolumVolumeInput.Load(int4(dispatchThreadId, 0));
+    float4 baseSample = ResolveFiniteFloat4OrZero(_HectonBiolumVolumeInput.Load(int4(dispatchThreadId, 0)));
     float3 worldPosition = ResolveVoxelWorldPosition(dispatchThreadId);
     float3 injectedRadiance = 0.0;
-    float injectionStrength = max(_HectonBiolumVolumeParams.x, 0.0);
+    float injectionStrength = max(ResolveFiniteOrDefault(_HectonBiolumVolumeParams.x, 0.0), 0.0);
+    uint pointCount = min(_HectonBiolumPointCount, kMaxBiolumVolumePointCount);
 
     [loop]
-    for (uint pointIndex = 0; pointIndex < _HectonBiolumPointCount; pointIndex++)
+    for (uint pointIndex = 0; pointIndex < pointCount; pointIndex++)
     {
         BiolumPoint point = _HectonBiolumPoints[pointIndex];
-        float3 toVoxel = worldPosition - point.positionRange.xyz;
-        float radius = max(point.positionRange.w, 0.001);
+        float4 positionRange = ResolveFiniteFloat4OrZero(point.positionRange);
+        float4 colorIntensity = ResolveFiniteFloat4OrZero(point.colorIntensity);
+        float3 toVoxel = worldPosition - positionRange.xyz;
+        float radius = max(positionRange.w, 0.001);
         float radiusSq = max(radius * radius, 0.000001);
-        float falloff = saturate(1.0 - dot(toVoxel, toVoxel) / radiusSq);
+        float falloff = saturate(1.0 - dot(toVoxel, toVoxel) * rcp(radiusSq));
         float weight = falloff * falloff;
-        injectedRadiance += point.colorIntensity.rgb * (point.colorIntensity.w * weight * injectionStrength);
+        injectedRadiance += max(colorIntensity.rgb, 0.0) * (max(colorIntensity.w, 0.0) * weight * injectionStrength);
     }
 
-    _HectonBiolumVolumeOutput[dispatchThreadId] = float4(baseSample.rgb + injectedRadiance, 1.0);
+    _HectonBiolumVolumeOutput[dispatchThreadId] = float4(ClampBiolumHdr(baseSample.rgb + injectedRadiance), 1.0);
 }

@@ -9,6 +9,7 @@ using Hecton8.World;
 using TMPro;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -29,6 +30,24 @@ namespace Hecton8.UI.Navigation
         public uint Flags;
         public uint LastAupShiftFrameId;
         public int CalibrationCount;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
+    public struct CompassPresentationStateDTO
+    {
+        public float LastPresentedHeadingDegrees;
+        public float LastCompassGlassChromatic01;
+        public float LastCompassPower01;
+        public float LastCompassOverkill01;
+        public float ParticleDebt;
+        public float LastUploadedDialHeadingDegrees;
+        public float3 LastUploadedDialPosition;
+        public float4 LastUploadedDialRotation;
+        public float3 LastUploadedDialScale;
+        public int LastCardinalIndex;
+        public int LastPowerState;
+        public int DialMatrixWriteIndex;
+        public uint PresentationFlags;
     }
 
     public static class DiegeticCompassSignals
@@ -78,6 +97,10 @@ namespace Hecton8.UI.Navigation
         private const float ChromaticEpsilon = 0.001f;
         private const float VelocityClampMetersPerSecond = 100000f;
         private const int MaxAnomalyParticleBurst = 128;
+        private const int DialMatrixStrideBytes = 64;
+        private const float DialPositionUploadEpsilon = 0.000001f;
+        private const float DialRotationUploadEpsilon = 0.0001f;
+        private const float DialScaleUploadEpsilon = 0.000001f;
         private const uint DumpMagic = 0x4759434Fu;
         private const string DumpFileName = "Dump_COMPASS_GYRO_STABILIZER.bin";
         private const uint FlagInitialized = 1u << 0;
@@ -88,6 +111,13 @@ namespace Hecton8.UI.Navigation
         private const uint FlagNonFiniteFallback = 1u << 5;
         private const uint FlagLowTier = 1u << 6;
         private const uint FlagIndirectDial = 1u << 7;
+        private const uint FlagHasPreviousAup = 1u << 8;
+        private const uint FlagCalibrationRequested = 1u << 9;
+        private const uint PresentationFlagTextInitialized = 1u << 0;
+        private const uint PresentationFlagDialInitialized = 1u << 1;
+        private const uint PresentationFlagShaderInitialized = 1u << 2;
+        private const uint PresentationFlagDialMatrixInitialized = 1u << 3;
+        private const uint PresentationFlagDialMatrixDirty = 1u << 4;
 
         private static readonly int _CompassDialMatricesId = Shader.PropertyToID("_CompassDialMatrices");
         private static readonly int _CompassGlassChromaticId = Shader.PropertyToID("_CompassGlassChromatic");
@@ -144,27 +174,7 @@ namespace Hecton8.UI.Navigation
         private IPlayerRuntimeContext _playerContext;
         private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
         private JobHandle _jobHandle;
-        private InertialNavigationSnapshot _snapshot;
-        private double3 _lastActualAup;
-        private float _suitPower01 = 1f;
-        private float _anomalyInterference01;
-        private float _systemStress01;
-        private float _calibrationHold01;
-        private float _noiseClock;
-        private float _lastPresentedHeading = float.NaN;
-        private float _lastChromatic = -1f;
-        private float _lastPower = -1f;
-        private float _lastOverkill = -1f;
-        private float _particleDebt;
-        private int _lastCardinalIndex = int.MinValue;
-        private int _lastPowerState = int.MinValue;
-        private int _blackBoxCursor;
-        private int _calibrationCount;
-        private uint _frameSequence;
-        private uint _lastAupShiftFrameId;
         private bool _lowTier;
-        private bool _hasLastActualAup;
-        private bool _pendingCalibration;
         private bool _jobPending;
         private bool _registeredFastTick;
         private bool _registeredSlowTick;
@@ -175,15 +185,17 @@ namespace Hecton8.UI.Navigation
 
         private readonly char[] _cardinalBuffer = new char[2]; // COLD ALLOC: char[2] - diegetic compass cardinal text buffer - owner: DiegeticGyroCompassRuntime
         private readonly uint[] _indirectArgs = new uint[5]; // COLD ALLOC: uint[5] - compass indirect draw args - owner: DiegeticGyroCompassRuntime
-        private readonly Matrix4x4[] _dialMatrices = new Matrix4x4[1]; // COLD ALLOC: Matrix4x4[1] - compass indirect dial matrix - owner: DiegeticGyroCompassRuntime
-        private ComputeBuffer _indirectArgsBuffer;
-        private ComputeBuffer _dialMatrixBuffer;
+        private GraphicsBuffer _indirectArgsBuffer;
+        private GraphicsBuffer _dialMatrixBufferA;
+        private GraphicsBuffer _dialMatrixBufferB;
+        private GraphicsBuffer _publishedDialMatrixBuffer;
+        private GraphicsBuffer _boundDialMatrixBuffer;
 
-        public InertialNavigationSnapshot Snapshot => _snapshot;
+        public InertialNavigationSnapshot Snapshot => TryGetSnapshot(out InertialNavigationSnapshot snapshot) ? snapshot : default;
 
-        public double3 EstimatedAUP => _snapshot.EstimatedAUP;
+        public double3 EstimatedAUP => TryGetSnapshot(out InertialNavigationSnapshot snapshot) ? snapshot.EstimatedAUP : double3.zero;
 
-        public float GyroDriftError => _snapshot.GyroDriftError;
+        public float GyroDriftError => TryGetSnapshot(out InertialNavigationSnapshot snapshot) ? snapshot.GyroDriftError : 0f;
 
         private void Awake()
         {
@@ -193,11 +205,8 @@ namespace Hecton8.UI.Navigation
         private void OnEnable()
         {
             ConfigureSignalLanes();
-            ResolveColdDependencies();
-            TryResolveVaultBuffers();
             TryRegisterService();
             TryRegisterTickables();
-            EnsureIndirectBuffers();
         }
 
         private void Start()
@@ -214,7 +223,7 @@ namespace Hecton8.UI.Navigation
             CompletePendingJob();
             TryUnregisterTickables();
             TryUnregisterService();
-            ApplyChromatic(0f, 0f);
+            ClearCompassShaderGlobals();
         }
 
         private void OnDestroy()
@@ -225,30 +234,53 @@ namespace Hecton8.UI.Navigation
 
         public bool TryGetSnapshot(out InertialNavigationSnapshot snapshot)
         {
-            snapshot = _snapshot;
-            return (_snapshot.Flags & FlagInitialized) != 0u;
+            if (TryReadCompassState(out CompassStateDTO state))
+            {
+                snapshot = BuildSnapshot(in state);
+                return (state.Flags & FlagInitialized) != 0u;
+            }
+
+            snapshot = default;
+            return false;
         }
 
         public void RequestRecalibration()
         {
-            _pendingCalibration = true;
-            _calibrationHold01 = 1f;
+            if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
+                return;
+
+            CompassStateDTO state = stateBuffer[0];
+            state.Flags |= FlagCalibrationRequested;
+            state.RecalibrationHold01 = 1f;
+            stateBuffer[0] = state;
         }
 
         public bool TryAccumulateRecalibrationHold(float deltaTime, out float progress01)
         {
+            progress01 = 0f;
+            if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
+                return false;
+
             float safeDeltaTime = SanitizeDeltaTime(deltaTime);
-            _calibrationHold01 = math.saturate(_calibrationHold01 + safeDeltaTime * math.rcp(RecalibrationHoldSeconds));
-            progress01 = _calibrationHold01;
-            if (_calibrationHold01 >= 1f)
-                RequestRecalibration();
+            CompassStateDTO state = stateBuffer[0];
+            state.RecalibrationHold01 = math.saturate(state.RecalibrationHold01 + safeDeltaTime * math.rcp(RecalibrationHoldSeconds));
+            progress01 = state.RecalibrationHold01;
+            if (state.RecalibrationHold01 >= 1f)
+                state.Flags |= FlagCalibrationRequested;
+
+            stateBuffer[0] = state;
 
             return true;
         }
 
         public void CancelRecalibrationHold()
         {
-            _calibrationHold01 = 0f;
+            if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
+                return;
+
+            CompassStateDTO state = stateBuffer[0];
+            state.RecalibrationHold01 = 0f;
+            stateBuffer[0] = state;
         }
 
         /// <summary>
@@ -292,9 +324,7 @@ namespace Hecton8.UI.Navigation
             cardinalText = nextCardinalText;
             dialMesh = nextDialMesh;
             dialIndirectMaterial = nextDialMaterial;
-            _lastPresentedHeading = float.NaN;
-            _lastCardinalIndex = int.MinValue;
-            _lastPowerState = int.MinValue;
+            ResetPresentationState(resetDialMatrix: true);
             ValidateDiegeticTextBinding();
 
             if (indirectBindingChanged)
@@ -313,13 +343,15 @@ namespace Hecton8.UI.Navigation
         {
             anomalyFailureParticles = nextAnomalyFailureParticles;
             anomalyParticleBurst = math.clamp(nextAnomalyParticleBurst, 0, MaxAnomalyParticleBurst);
-            _particleDebt = 0f;
+            ResetParticleDebt();
         }
 
         public void FastTick(float deltaTime)
         {
-            RefreshFastSignalInputs();
-            if (!ShouldUseFastCadence())
+            if (!RefreshFastSignalInputs(out CompassStateDTO state))
+                return;
+
+            if (!ShouldUseFastCadence(in state))
                 return;
 
             ScheduleDrift(SanitizeDeltaTime(deltaTime));
@@ -330,8 +362,10 @@ namespace Hecton8.UI.Navigation
             if (_playerContext == null || _vault == null)
                 return;
 
-            RefreshFastSignalInputs();
-            if (ShouldUseFastCadence())
+            if (!RefreshFastSignalInputs(out CompassStateDTO state))
+                return;
+
+            if (ShouldUseFastCadence(in state))
                 return;
 
             ScheduleDrift(DefaultSlowDeltaSeconds);
@@ -346,6 +380,12 @@ namespace Hecton8.UI.Navigation
         private void ConfigureSignalLanes()
         {
             GlobalSignals.InitializeAllQueues();
+            SignalBus<AnomalyProximitySignal>.EnsureInitialized();
+            SignalBus<CompassCalibratedSignal>.EnsureInitialized();
+
+            SignalBus<SurvivalVitalsChangedSignal>.EnsureInitialized();
+            SignalBus<SystemHealthSignal>.EnsureInitialized();
+            SignalBus<AupShiftSignal>.EnsureInitialized();
         }
 
         private void ResolveColdDependencies()
@@ -363,6 +403,123 @@ namespace Hecton8.UI.Navigation
         private bool TryResolveVaultBuffers()
         {
             return TryGetCompassBuffers(out _, out _, out _);
+        }
+
+        private bool TryReadCompassState(out CompassStateDTO state)
+        {
+            state = default;
+            if (!TryGetExistingStateBuffer(out var stateBuffer))
+                return false;
+
+            state = stateBuffer[0];
+            return true;
+        }
+
+        private bool TryGetExistingStateBuffer(out NativeArray<CompassStateDTO> stateBuffer)
+        {
+            stateBuffer = default;
+            IDataVault vault = _vault;
+            return vault != null &&
+                   vault.TryGetBuffer(BufferID.CompassState, out stateBuffer) &&
+                   stateBuffer.IsCreated &&
+                   stateBuffer.Length >= StateLength;
+        }
+
+        private bool TryGetExistingPresentationBuffer(out NativeArray<CompassPresentationStateDTO> presentationBuffer)
+        {
+            presentationBuffer = default;
+            IDataVault vault = _vault;
+            return vault != null &&
+                   vault.TryGetBuffer(BufferID.CompassPresentationState, out presentationBuffer) &&
+                   presentationBuffer.IsCreated &&
+                   presentationBuffer.Length >= StateLength;
+        }
+
+        private bool TryGetPresentationBuffer(out NativeArray<CompassPresentationStateDTO> presentationBuffer)
+        {
+            presentationBuffer = default;
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            presentationBuffer = vault.GetBuffer<CompassPresentationStateDTO>(
+                BufferID.CompassPresentationState,
+                StateLength,
+                SystemID.UI,
+                NativeArrayOptions.ClearMemory);
+
+            return presentationBuffer.IsCreated && presentationBuffer.Length >= StateLength;
+        }
+
+        private void ResetPresentationState(bool resetDialMatrix)
+        {
+            if (!TryGetPresentationBuffer(out var presentationBuffer))
+                return;
+
+            CompassPresentationStateDTO presentation = presentationBuffer[0];
+            presentation.LastPresentedHeadingDegrees = 0f;
+            presentation.LastCompassGlassChromatic01 = 0f;
+            presentation.LastCompassPower01 = 0f;
+            presentation.LastCompassOverkill01 = 0f;
+            presentation.ParticleDebt = 0f;
+            presentation.LastCardinalIndex = 0;
+            presentation.LastPowerState = 0;
+            presentation.PresentationFlags &= ~(PresentationFlagTextInitialized |
+                                                PresentationFlagDialInitialized |
+                                                PresentationFlagShaderInitialized);
+
+            if (resetDialMatrix)
+                MarkDialMatrixPresentationDirty(ref presentation);
+
+            presentationBuffer[0] = presentation;
+        }
+
+        private void ResetParticleDebt()
+        {
+            if (!TryGetExistingPresentationBuffer(out var presentationBuffer))
+                return;
+
+            CompassPresentationStateDTO presentation = presentationBuffer[0];
+            presentation.ParticleDebt = 0f;
+            presentationBuffer[0] = presentation;
+        }
+
+        private void MarkDialMatrixPresentationDirty()
+        {
+            if (!TryGetExistingPresentationBuffer(out var presentationBuffer))
+                return;
+
+            CompassPresentationStateDTO presentation = presentationBuffer[0];
+            MarkDialMatrixPresentationDirty(ref presentation);
+            presentationBuffer[0] = presentation;
+        }
+
+        private static void MarkDialMatrixPresentationDirty(ref CompassPresentationStateDTO presentation)
+        {
+            presentation.PresentationFlags &= ~PresentationFlagDialMatrixInitialized;
+            presentation.PresentationFlags |= PresentationFlagDialMatrixDirty;
+            presentation.DialMatrixWriteIndex = 0;
+            presentation.LastUploadedDialHeadingDegrees = 0f;
+            presentation.LastUploadedDialPosition = float3.zero;
+            presentation.LastUploadedDialRotation = float4.zero;
+            presentation.LastUploadedDialScale = float3.zero;
+        }
+
+        private void ClearCompassShaderGlobals()
+        {
+            Shader.SetGlobalFloat(_CompassGlassChromaticId, 0f);
+            Shader.SetGlobalFloat(_CompassPowerId, 0f);
+            Shader.SetGlobalFloat(_CompassOverkillId, 0f);
+
+            if (!TryGetExistingPresentationBuffer(out var presentationBuffer))
+                return;
+
+            CompassPresentationStateDTO presentation = presentationBuffer[0];
+            presentation.LastCompassGlassChromatic01 = 0f;
+            presentation.LastCompassPower01 = 0f;
+            presentation.LastCompassOverkill01 = 0f;
+            presentation.PresentationFlags &= ~PresentationFlagShaderInitialized;
+            presentationBuffer[0] = presentation;
         }
 
         private bool TryGetCompassBuffers(
@@ -456,10 +613,18 @@ namespace Hecton8.UI.Navigation
             }
         }
 
-        private void RefreshFastSignalInputs()
+        private bool RefreshFastSignalInputs(out CompassStateDTO state)
         {
+            state = default;
+            if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
+                return false;
+
+            state = stateBuffer[0];
+            if ((state.Flags & FlagInitialized) == 0u && state.Power01 <= 0f)
+                state.Power01 = 1f;
+
             ReadOnlySpan<AnomalyProximitySignal> anomalySignals = SignalBus<AnomalyProximitySignal>.GetFrameSnapshot();
-            float anomaly = _anomalyInterference01 * 0.88f;
+            float anomaly = state.AnomalyInterference01 * 0.88f;
             for (int i = 0; i < anomalySignals.Length; i++)
             {
                 ref readonly AnomalyProximitySignal signal = ref anomalySignals[i];
@@ -468,13 +633,13 @@ namespace Hecton8.UI.Navigation
                     anomaly = math.max(anomaly, math.saturate(interference));
             }
 
-            _anomalyInterference01 = anomaly;
+            state.AnomalyInterference01 = anomaly;
 
             ReadOnlySpan<CompassCalibratedSignal> calibrationSignals = SignalBus<CompassCalibratedSignal>.GetFrameSnapshot();
             if (calibrationSignals.Length > 0)
             {
-                _pendingCalibration = true;
-                _calibrationHold01 = 1f;
+                state.Flags |= FlagCalibrationRequested;
+                state.RecalibrationHold01 = 1f;
             }
 
             ReadOnlySpan<SurvivalVitalsChangedSignal> vitalsSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
@@ -482,7 +647,7 @@ namespace Hecton8.UI.Navigation
             {
                 ref readonly SurvivalVitalsChangedSignal signal = ref vitalsSignals[i];
                 if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) != 0u && math.isfinite(signal.Energy01))
-                    _suitPower01 = math.saturate(signal.Energy01);
+                    state.Power01 = math.saturate(signal.Energy01);
             }
 
             ReadOnlySpan<SystemHealthSignal> healthSignals = SignalBus<SystemHealthSignal>.GetFrameSnapshot();
@@ -490,32 +655,35 @@ namespace Hecton8.UI.Navigation
             {
                 ref readonly SystemHealthSignal signal = ref healthSignals[i];
                 if (math.isfinite(signal.SystemHealthIndex01))
-                    _systemStress01 = math.saturate(signal.SystemHealthIndex01);
+                    state.SystemStress01 = math.saturate(signal.SystemHealthIndex01);
             }
 
             ReadOnlySpan<AupShiftSignal> shiftSignals = SignalBus<AupShiftSignal>.GetFrameSnapshot();
             for (int i = 0; i < shiftSignals.Length; i++)
             {
                 uint shiftFrame = shiftSignals[i].ShiftFrameId;
-                if (IsNewerFrameId(shiftFrame, _lastAupShiftFrameId))
-                    _lastAupShiftFrameId = shiftFrame;
+                if (IsNewerFrameId(shiftFrame, state.LastAupShiftFrameId))
+                    state.LastAupShiftFrameId = shiftFrame;
             }
+
+            stateBuffer[0] = state;
+            return true;
         }
 
-        private bool ShouldUseFastCadence()
+        private bool ShouldUseFastCadence(in CompassStateDTO state)
         {
             return !_lowTier &&
-                   _systemStress01 <= StressSlowThreshold01 &&
-                   _suitPower01 >= PowerDeathThreshold01;
+                   state.SystemStress01 <= StressSlowThreshold01 &&
+                   state.Power01 >= PowerDeathThreshold01;
         }
 
         private void ScheduleDrift(float deltaTime)
         {
             if (_jobPending ||
                 !TryGetCompassBuffers(
-                    out NativeArray<CompassStateDTO> stateBuffer,
-                    out NativeArray<float> outputBuffer,
-                    out NativeArray<CompassBlackBoxEntry> blackBox))
+                    out var stateBuffer,
+                    out var outputBuffer,
+                    out var blackBox))
             {
                 return;
             }
@@ -529,54 +697,53 @@ namespace Hecton8.UI.Navigation
             {
                 state.Flags |= FlagNonFiniteFallback;
                 stateBuffer[0] = state;
-                DumpBlackBoxOnce(blackBox);
+                DumpBlackBoxOnce(state.BlackBoxCursor, blackBox);
                 return;
             }
+
+            if ((state.Flags & FlagInitialized) == 0u && state.Power01 <= 0f)
+                state.Power01 = 1f;
 
             float actualHeading = ResolveHeadingFromForward(pose.Forward, state.ActualHeadingDegrees);
             state.ActualAUP = actualAup;
             state.RawEstimatedAUP = actualAup;
             state.EstimatedAUP = actualAup;
-            state.Velocity = ResolveVelocity(actualAup, deltaTime);
+            state.Velocity = ResolveVelocity(actualAup, deltaTime, ref state);
             state.ActualHeadingDegrees = actualHeading;
-            state.AnomalyInterference01 = _anomalyInterference01;
-            state.Power01 = _suitPower01;
-            state.RecalibrationHold01 = _calibrationHold01;
             state.DeltaSeconds = deltaTime;
-            _frameSequence++;
-            state.Frame = _frameSequence;
-            state.LastAupShiftFrameId = _lastAupShiftFrameId;
+            state.Frame = state.Frame == uint.MaxValue ? 1u : state.Frame + 1u;
             state.Flags |= FlagInitialized;
             state.Flags = _lowTier ? state.Flags | FlagLowTier : state.Flags & ~FlagLowTier;
-            state.Flags = ShouldUseFastCadence() ? state.Flags & ~FlagStressSlowCadence : state.Flags | FlagStressSlowCadence;
-            state.Flags = ShouldUseVisualOverkill() ? state.Flags | FlagIndirectDial : state.Flags & ~FlagIndirectDial;
-            if ((state.Flags & FlagPowered) == 0u && _suitPower01 >= PowerDeathThreshold01)
+            state.Flags = ShouldUseFastCadence(in state) ? state.Flags & ~FlagStressSlowCadence : state.Flags | FlagStressSlowCadence;
+            state.Flags = ShouldUseVisualOverkill(in state) ? state.Flags | FlagIndirectDial : state.Flags & ~FlagIndirectDial;
+            if ((state.Flags & FlagPowered) == 0u && state.Power01 >= PowerDeathThreshold01)
                 state.CurrentHeadingDegrees = actualHeading;
 
-            stateBuffer[0] = state;
-            int resetDrift = _pendingCalibration ? 1 : 0;
-            if (_pendingCalibration)
+            int resetDrift = (state.Flags & FlagCalibrationRequested) != 0u ? 1 : 0;
+            if (resetDrift != 0)
             {
-                _pendingCalibration = false;
-                _calibrationHold01 = 0f;
-                _calibrationCount++;
+                state.Flags &= ~FlagCalibrationRequested;
+                state.RecalibrationHold01 = 0f;
+                state.CalibrationCount++;
             }
 
-            _noiseClock += deltaTime;
-            if (!math.isfinite(_noiseClock) || _noiseClock > 100000f)
-                _noiseClock = 0f;
+            state.NoiseClockSeconds += deltaTime;
+            if (!math.isfinite(state.NoiseClockSeconds) || state.NoiseClockSeconds > 100000f)
+                state.NoiseClockSeconds = 0f;
+
+            stateBuffer[0] = state;
 
             GyroDriftJob job = new GyroDriftJob
             {
                 State = stateBuffer,
                 Output = outputBuffer,
                 DeltaSeconds = deltaTime,
-                NoiseTime = _noiseClock,
+                NoiseTime = state.NoiseClockSeconds,
                 HeadingCatchupRate = headingCatchupRate,
                 DriftNoiseFrequency = driftNoiseFrequency,
                 AnomalyNoiseDegrees = anomalyNoiseDegrees,
                 WildSpinDegreesPerSecond = wildSpinDegreesPerSecond,
-                CalibrationCount = _calibrationCount,
+                CalibrationCount = state.CalibrationCount,
                 ResetDrift = resetDrift
             };
 
@@ -607,9 +774,9 @@ namespace Hecton8.UI.Navigation
         private void CommitCompletedState()
         {
             if (!TryGetCompassBuffers(
-                    out NativeArray<CompassStateDTO> stateBuffer,
+                    out var stateBuffer,
                     out _,
-                    out NativeArray<CompassBlackBoxEntry> blackBox))
+                    out var blackBox))
             {
                 return;
             }
@@ -619,10 +786,16 @@ namespace Hecton8.UI.Navigation
             {
                 state.Flags |= FlagNonFiniteFallback;
                 stateBuffer[0] = state;
-                DumpBlackBoxOnce(blackBox);
+                DumpBlackBoxOnce(state.BlackBoxCursor, blackBox);
             }
 
-            _snapshot = new InertialNavigationSnapshot
+            WriteBlackBox(ref state, blackBox);
+            stateBuffer[0] = state;
+        }
+
+        private static InertialNavigationSnapshot BuildSnapshot(in CompassStateDTO state)
+        {
+            return new InertialNavigationSnapshot
             {
                 ActualAUP = state.ActualAUP,
                 RawEstimatedAUP = state.RawEstimatedAUP,
@@ -638,75 +811,104 @@ namespace Hecton8.UI.Navigation
                 LastImpactFrame = 0u,
                 LastBrownoutFrame = 0u
             };
-
-            WriteBlackBox(in state, blackBox);
         }
 
         private void ApplyPresentation()
         {
-            if (!TryGetCompassBuffers(out _, out NativeArray<float> outputBuffer, out _))
+            if (!TryGetCompassBuffers(out var stateBuffer, out var outputBuffer, out _) ||
+                !TryGetPresentationBuffer(out var presentationBuffer))
                 return;
 
+            CompassStateDTO state = stateBuffer[0];
+            CompassPresentationStateDTO presentation = presentationBuffer[0];
             float power = outputBuffer[(int)CompassOutputSlot.Power01];
             float heading = outputBuffer[(int)CompassOutputSlot.CurrentHeadingDegrees];
             float anomaly = outputBuffer[(int)CompassOutputSlot.AnomalyInterference01];
             bool powered = power >= PowerDeathThreshold01;
             int cardinalIndex = powered ? ResolveCardinalIndex(heading) : -1;
-            ApplyCardinalText(cardinalIndex, powered);
+            bool presentationDirty = ApplyCardinalText(cardinalIndex, powered, ref presentation);
 
-            if (powered && math.abs(heading - _lastPresentedHeading) > HeadingEpsilon)
+            bool shouldDrawIndirect = ShouldDrawIndirectDial(in state);
+            bool shouldApplyHeading = ShouldApplyDialHeading(heading, in presentation);
+            if (powered && (shouldDrawIndirect || shouldApplyHeading))
             {
-                ApplyDialHeading(heading);
-                _lastPresentedHeading = heading;
+                presentationDirty |= ApplyDialHeading(heading, in state, ref presentation);
+                if (shouldApplyHeading)
+                {
+                    presentation.LastPresentedHeadingDegrees = heading;
+                    presentation.PresentationFlags |= PresentationFlagDialInitialized;
+                    presentationDirty = true;
+                }
             }
 
             float chromatic = powered && anomaly > 0.8f ? math.saturate((anomaly - 0.8f) * 5f) : 0f;
-            float overkill = powered && ShouldUseVisualOverkill() ? math.saturate(anomaly * 1.35f) : 0f;
-            ApplyChromatic(chromatic, power, overkill);
-            EmitHighTierFailureParticles(powered, anomaly);
+            float overkill = powered && ShouldUseVisualOverkill(in state) ? math.saturate(anomaly * 1.35f) : 0f;
+            presentationDirty |= ApplyChromatic(chromatic, power, overkill, ref presentation);
+            presentationDirty |= EmitHighTierFailureParticles(powered, anomaly, in state, ref presentation);
+
+            if (presentationDirty)
+                presentationBuffer[0] = presentation;
         }
 
-        private void ApplyDialHeading(float heading)
+        private bool ShouldApplyDialHeading(float heading, in CompassPresentationStateDTO presentation)
         {
-            if (ShouldDrawIndirectDial())
+            return (presentation.PresentationFlags & PresentationFlagDialInitialized) == 0u ||
+                   DeltaHeadingAbs(presentation.LastPresentedHeadingDegrees, heading) > HeadingEpsilon;
+        }
+
+        private bool ApplyDialHeading(float heading, in CompassStateDTO state, ref CompassPresentationStateDTO presentation)
+        {
+            if (ShouldDrawIndirectDial(in state))
             {
-                DrawIndirectDial(heading);
-                return;
+                return DrawIndirectDial(heading, ref presentation);
             }
 
             if (dialPivot == null)
-                return;
+                return false;
 
             dialPivot.localRotation = Quaternion.AngleAxis(heading + dialDegreesOffset, Vector3.up);
+            return true;
         }
 
-        private bool ShouldDrawIndirectDial()
+        private bool ShouldDrawIndirectDial(in CompassStateDTO state)
         {
             return enableIndirectHighTier &&
-                   _indirectArgsBuffer != null &&
-                   _dialMatrixBuffer != null &&
+                   IsValidBuffer(_indirectArgsBuffer) &&
+                   IsValidBuffer(_dialMatrixBufferA) &&
+                   IsValidBuffer(_dialMatrixBufferB) &&
                    dialMesh != null &&
                    dialIndirectMaterial != null &&
                    SupportsIndirectDial() &&
                    _cachedQualityTier >= HectonQualityTier.High &&
-                   _systemStress01 <= StressSlowThreshold01;
+                   state.SystemStress01 <= StressSlowThreshold01;
         }
 
-        private bool ShouldUseVisualOverkill()
+        private bool ShouldUseVisualOverkill(in CompassStateDTO state)
         {
             return _cachedQualityTier >= HectonQualityTier.High &&
-                   _systemStress01 <= StressSlowThreshold01;
+                   state.SystemStress01 <= StressSlowThreshold01;
         }
 
-        private void DrawIndirectDial(float heading)
+        private bool DrawIndirectDial(float heading, ref CompassPresentationStateDTO presentation)
         {
             Transform source = dialPivot != null ? dialPivot : (toolRoot != null ? toolRoot : transform);
-            Quaternion rotation = source.rotation * Quaternion.AngleAxis(heading + dialDegreesOffset, Vector3.up);
-            _dialMatrices[0] = Matrix4x4.TRS(source.position, rotation, source.lossyScale);
-            _dialMatrixBuffer.SetData(_dialMatrices, 0, 0, 1);
+            float resolvedHeading = NormalizeHeading(heading + dialDegreesOffset);
+            Vector3 position = source.position;
+            Quaternion rotation = source.rotation * Quaternion.AngleAxis(resolvedHeading, Vector3.up);
+            Vector3 scale = source.lossyScale;
+            bool stateDirty;
+            GraphicsBuffer matrixBuffer = ResolveDialMatrixBuffer(position, rotation, scale, resolvedHeading, ref presentation, out stateDirty);
+            if (!IsValidBuffer(matrixBuffer))
+                return stateDirty;
+
+            if (_boundDialMatrixBuffer != matrixBuffer)
+            {
+                dialIndirectMaterial.SetBuffer(_CompassDialMatricesId, matrixBuffer);
+                _boundDialMatrixBuffer = matrixBuffer;
+            }
 
             Bounds bounds = indirectDrawBounds;
-            bounds.center = source.position;
+            bounds.center = position;
             Graphics.DrawMeshInstancedIndirect(
                 dialMesh,
                 0,
@@ -721,16 +923,105 @@ namespace Hecton8.UI.Navigation
                 null,
                 LightProbeUsage.Off,
                 null);
+            return stateDirty;
         }
 
-        private void ApplyCardinalText(int cardinalIndex, bool powered)
+        private unsafe GraphicsBuffer ResolveDialMatrixBuffer(
+            Vector3 position,
+            Quaternion rotation,
+            Vector3 scale,
+            float heading,
+            ref CompassPresentationStateDTO presentation,
+            out bool stateDirty)
+        {
+            stateDirty = false;
+            if ((presentation.PresentationFlags & PresentationFlagDialMatrixDirty) == 0u &&
+                IsValidBuffer(_publishedDialMatrixBuffer) &&
+                !NeedsDialMatrixUpload(position, rotation, scale, heading, in presentation))
+            {
+                return _publishedDialMatrixBuffer;
+            }
+
+            int writeIndex = presentation.DialMatrixWriteIndex & 1;
+            GraphicsBuffer writeBuffer = writeIndex == 0 ? _dialMatrixBufferA : _dialMatrixBufferB;
+            if (!IsValidBuffer(writeBuffer))
+                return _publishedDialMatrixBuffer;
+
+            Matrix4x4 matrix = Matrix4x4.TRS(position, rotation, scale);
+            var mapped = writeBuffer.LockBufferForWrite<Matrix4x4>(0, 1);
+            UnsafeUtility.MemCpy(NativeArrayUnsafeUtility.GetUnsafePtr(mapped), UnsafeUtility.AddressOf(ref matrix), DialMatrixStrideBytes);
+            writeBuffer.UnlockBufferAfterWrite<Matrix4x4>(1);
+
+            presentation.DialMatrixWriteIndex = writeIndex ^ 1;
+            _publishedDialMatrixBuffer = writeBuffer;
+            presentation.LastUploadedDialPosition = ToFloat3(position);
+            presentation.LastUploadedDialRotation = ToFloat4(rotation);
+            presentation.LastUploadedDialScale = ToFloat3(scale);
+            presentation.LastUploadedDialHeadingDegrees = heading;
+            presentation.PresentationFlags |= PresentationFlagDialMatrixInitialized;
+            presentation.PresentationFlags &= ~PresentationFlagDialMatrixDirty;
+            stateDirty = true;
+            return writeBuffer;
+        }
+
+        private static bool NeedsDialMatrixUpload(
+            Vector3 position,
+            Quaternion rotation,
+            Vector3 scale,
+            float heading,
+            in CompassPresentationStateDTO presentation)
+        {
+            return (presentation.PresentationFlags & PresentationFlagDialMatrixInitialized) == 0u ||
+                   DeltaHeadingAbs(presentation.LastUploadedDialHeadingDegrees, heading) > HeadingEpsilon ||
+                   math.lengthsq(ToFloat3(position) - presentation.LastUploadedDialPosition) > DialPositionUploadEpsilon ||
+                   QuaternionChanged(ToFloat4(rotation), presentation.LastUploadedDialRotation) ||
+                   math.lengthsq(ToFloat3(scale) - presentation.LastUploadedDialScale) > DialScaleUploadEpsilon;
+        }
+
+        private static bool IsValidBuffer(GraphicsBuffer buffer)
+        {
+            return buffer != null && buffer.IsValid();
+        }
+
+        private static float DeltaHeadingAbs(float previous, float current)
+        {
+            if (!math.isfinite(previous) || !math.isfinite(current))
+                return float.PositiveInfinity;
+
+            float delta = math.fmod(current - previous + 540f, 360f) - 180f;
+            return math.abs(delta);
+        }
+
+        private static bool QuaternionChanged(float4 current, float4 previous)
+        {
+            return math.abs(current.x - previous.x) > DialRotationUploadEpsilon ||
+                   math.abs(current.y - previous.y) > DialRotationUploadEpsilon ||
+                   math.abs(current.z - previous.z) > DialRotationUploadEpsilon ||
+                   math.abs(current.w - previous.w) > DialRotationUploadEpsilon;
+        }
+
+        private static float3 ToFloat3(Vector3 value)
+        {
+            return new float3(value.x, value.y, value.z);
+        }
+
+        private static float4 ToFloat4(Quaternion value)
+        {
+            return new float4(value.x, value.y, value.z, value.w);
+        }
+
+        private bool ApplyCardinalText(int cardinalIndex, bool powered, ref CompassPresentationStateDTO presentation)
         {
             if (!_diegeticTextValid || cardinalText == null)
-                return;
+                return false;
 
             int powerState = powered ? 1 : 0;
-            if (cardinalIndex == _lastCardinalIndex && powerState == _lastPowerState)
-                return;
+            if ((presentation.PresentationFlags & PresentationFlagTextInitialized) != 0u &&
+                cardinalIndex == presentation.LastCardinalIndex &&
+                powerState == presentation.LastPowerState)
+            {
+                return false;
+            }
 
             int length;
             if (!powered)
@@ -745,49 +1036,66 @@ namespace Hecton8.UI.Navigation
             }
 
             cardinalText.SetCharArray(_cardinalBuffer, 0, length);
-            _lastCardinalIndex = cardinalIndex;
-            _lastPowerState = powerState;
+            presentation.LastCardinalIndex = cardinalIndex;
+            presentation.LastPowerState = powerState;
+            presentation.PresentationFlags |= PresentationFlagTextInitialized;
+            return true;
         }
 
-        private void ApplyChromatic(float chromatic, float power, float overkill = 0f)
+        private bool ApplyChromatic(float chromatic, float power, float overkill, ref CompassPresentationStateDTO presentation)
         {
+            float safeChromatic = math.saturate(chromatic);
             float safePower = math.saturate(power);
             float safeOverkill = math.saturate(overkill);
-            if (math.abs(_lastChromatic - chromatic) <= ChromaticEpsilon &&
-                math.abs(_lastPower - safePower) <= ChromaticEpsilon &&
-                math.abs(_lastOverkill - safeOverkill) <= ChromaticEpsilon)
+            if ((presentation.PresentationFlags & PresentationFlagShaderInitialized) != 0u &&
+                math.abs(presentation.LastCompassGlassChromatic01 - safeChromatic) <= ChromaticEpsilon &&
+                math.abs(presentation.LastCompassPower01 - safePower) <= ChromaticEpsilon &&
+                math.abs(presentation.LastCompassOverkill01 - safeOverkill) <= ChromaticEpsilon)
             {
-                return;
+                return false;
             }
 
-            Shader.SetGlobalFloat(_CompassGlassChromaticId, chromatic);
+            Shader.SetGlobalFloat(_CompassGlassChromaticId, safeChromatic);
             Shader.SetGlobalFloat(_CompassPowerId, safePower);
             Shader.SetGlobalFloat(_CompassOverkillId, safeOverkill);
-            _lastChromatic = chromatic;
-            _lastPower = safePower;
-            _lastOverkill = safeOverkill;
+            presentation.LastCompassGlassChromatic01 = safeChromatic;
+            presentation.LastCompassPower01 = safePower;
+            presentation.LastCompassOverkill01 = safeOverkill;
+            presentation.PresentationFlags |= PresentationFlagShaderInitialized;
+            return true;
         }
 
-        private void EmitHighTierFailureParticles(bool powered, float anomaly)
+        private bool EmitHighTierFailureParticles(bool powered, float anomaly, in CompassStateDTO state, ref CompassPresentationStateDTO presentation)
         {
             if (!powered ||
                 anomaly <= 0.8f ||
                 anomalyFailureParticles == null ||
                 anomalyParticleBurst <= 0 ||
-                !ShouldUseVisualOverkill())
+                !ShouldUseVisualOverkill(in state))
             {
-                _particleDebt = 0f;
-                return;
+                if (presentation.ParticleDebt == 0f)
+                    return false;
+
+                presentation.ParticleDebt = 0f;
+                return true;
             }
 
             int burst = math.min(anomalyParticleBurst, MaxAnomalyParticleBurst);
-            _particleDebt += math.saturate((anomaly - 0.8f) * 5f) * burst;
-            int emitCount = (int)math.floor(_particleDebt);
-            if (emitCount <= 0)
-                return;
+            float debt = presentation.ParticleDebt + math.saturate((anomaly - 0.8f) * 5f) * burst;
+            if (!math.isfinite(debt))
+                debt = 0f;
 
-            _particleDebt -= emitCount;
+            int emitCount = (int)math.floor(debt);
+            if (emitCount <= 0)
+            {
+                presentation.ParticleDebt = debt;
+                return true;
+            }
+
+            debt -= emitCount;
+            presentation.ParticleDebt = debt;
             anomalyFailureParticles.Emit(emitCount);
+            return true;
         }
 
         private void EnsureIndirectBuffers()
@@ -796,36 +1104,63 @@ namespace Hecton8.UI.Navigation
                 _cachedQualityTier < HectonQualityTier.High ||
                 dialMesh == null ||
                 dialIndirectMaterial == null ||
-                !SupportsIndirectDial() ||
-                _indirectArgsBuffer != null)
+                !SupportsIndirectDial())
+            {
+                ReleaseIndirectBuffers();
+                return;
+            }
+
+            if (IsValidBuffer(_indirectArgsBuffer) &&
+                IsValidBuffer(_dialMatrixBufferA) &&
+                IsValidBuffer(_dialMatrixBufferB))
             {
                 return;
             }
 
+            ReleaseIndirectBuffers();
             _indirectArgs[0] = dialMesh.GetIndexCount(0);
             _indirectArgs[1] = 1u;
             _indirectArgs[2] = dialMesh.GetIndexStart(0);
             _indirectArgs[3] = dialMesh.GetBaseVertex(0);
             _indirectArgs[4] = 0u;
-            _indirectArgsBuffer = new ComputeBuffer(1, sizeof(uint) * _indirectArgs.Length, ComputeBufferType.IndirectArguments); // COLD ALLOC: ComputeBuffer[1] - compass indirect args - owner: DiegeticGyroCompassRuntime
-            _dialMatrixBuffer = new ComputeBuffer(1, 64, ComputeBufferType.Structured); // COLD ALLOC: ComputeBuffer[1] - compass dial matrix buffer - owner: DiegeticGyroCompassRuntime
-            _indirectArgsBuffer.SetData(_indirectArgs, 0, 0, _indirectArgs.Length);
-            dialIndirectMaterial.SetBuffer(_CompassDialMatricesId, _dialMatrixBuffer);
+            _indirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, sizeof(uint) * _indirectArgs.Length); // COLD ALLOC: GraphicsBuffer[1] - compass indirect args - owner: DiegeticGyroCompassRuntime
+            _dialMatrixBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, DialMatrixStrideBytes); // COLD ALLOC: GraphicsBuffer[1] - compass dial matrix buffer A - owner: DiegeticGyroCompassRuntime
+            _dialMatrixBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, DialMatrixStrideBytes); // COLD ALLOC: GraphicsBuffer[1] - compass dial matrix buffer B - owner: DiegeticGyroCompassRuntime
+            UploadIndirectArgs();
+            MarkDialMatrixPresentationDirty();
         }
 
         private void ReleaseIndirectBuffers()
         {
-            if (_indirectArgsBuffer != null)
+            ReleaseGraphicsBuffer(ref _indirectArgsBuffer);
+            ReleaseGraphicsBuffer(ref _dialMatrixBufferA);
+            ReleaseGraphicsBuffer(ref _dialMatrixBufferB);
+            _publishedDialMatrixBuffer = null;
+            _boundDialMatrixBuffer = null;
+            MarkDialMatrixPresentationDirty();
+        }
+
+        private unsafe void UploadIndirectArgs()
+        {
+            if (!IsValidBuffer(_indirectArgsBuffer))
+                return;
+
+            var mapped = _indirectArgsBuffer.LockBufferForWrite<uint>(0, _indirectArgs.Length);
+            fixed (uint* source = _indirectArgs)
             {
-                _indirectArgsBuffer.Release();
-                _indirectArgsBuffer = null;
+                UnsafeUtility.MemCpy(NativeArrayUnsafeUtility.GetUnsafePtr(mapped), source, sizeof(uint) * _indirectArgs.Length);
             }
 
-            if (_dialMatrixBuffer != null)
-            {
-                _dialMatrixBuffer.Release();
-                _dialMatrixBuffer = null;
-            }
+            _indirectArgsBuffer.UnlockBufferAfterWrite<uint>(_indirectArgs.Length);
+        }
+
+        private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
         }
 
         private void ValidateDiegeticTextBinding()
@@ -839,18 +1174,18 @@ namespace Hecton8.UI.Navigation
             _diegeticTextValid = canvas != null && canvas.renderMode == RenderMode.WorldSpace;
         }
 
-        private float3 ResolveVelocity(double3 actualAup, float deltaTime)
+        private static float3 ResolveVelocity(double3 actualAup, float deltaTime, ref CompassStateDTO state)
         {
-            if (!_hasLastActualAup || deltaTime <= 0f)
+            if ((state.Flags & FlagHasPreviousAup) == 0u || !math.isfinite(deltaTime) || deltaTime <= math.EPSILON)
             {
-                _lastActualAup = actualAup;
-                _hasLastActualAup = true;
+                state.PreviousActualAUP = actualAup;
+                state.Flags |= FlagHasPreviousAup;
                 return float3.zero;
             }
 
-            double invDelta = 1d / deltaTime;
-            double3 velocity = (actualAup - _lastActualAup) * invDelta;
-            _lastActualAup = actualAup;
+            double invDelta = 1d / math.max(deltaTime, math.EPSILON);
+            double3 velocity = (actualAup - state.PreviousActualAUP) * invDelta;
+            state.PreviousActualAUP = actualAup;
             if (!math.all(math.isfinite(velocity)))
                 return float3.zero;
 
@@ -861,12 +1196,16 @@ namespace Hecton8.UI.Navigation
             return new float3((float)velocity.x, (float)velocity.y, (float)velocity.z);
         }
 
-        private void WriteBlackBox(in CompassStateDTO state, NativeArray<CompassBlackBoxEntry> blackBox)
+        private static void WriteBlackBox(ref CompassStateDTO state, NativeArray<CompassBlackBoxEntry> blackBox)
         {
             if (!blackBox.IsCreated || blackBox.Length < BlackBoxCapacity)
                 return;
 
-            blackBox[_blackBoxCursor] = new CompassBlackBoxEntry
+            int cursor = state.BlackBoxCursor;
+            if (cursor < 0 || cursor >= BlackBoxCapacity)
+                cursor = 0;
+
+            blackBox[cursor] = new CompassBlackBoxEntry
             {
                 Frame = state.Frame,
                 ActualHeadingDegrees = state.ActualHeadingDegrees,
@@ -880,12 +1219,14 @@ namespace Hecton8.UI.Navigation
                 CalibrationCount = state.CalibrationCount
             };
 
-            _blackBoxCursor++;
-            if (_blackBoxCursor >= BlackBoxCapacity)
-                _blackBoxCursor = 0;
+            cursor++;
+            if (cursor >= BlackBoxCapacity)
+                cursor = 0;
+
+            state.BlackBoxCursor = cursor;
         }
 
-        private void DumpBlackBoxOnce(NativeArray<CompassBlackBoxEntry> blackBox)
+        private void DumpBlackBoxOnce(int blackBoxCursor, NativeArray<CompassBlackBoxEntry> blackBox)
         {
             if (_blackBoxDumped || !blackBox.IsCreated)
                 return;
@@ -902,10 +1243,14 @@ namespace Hecton8.UI.Navigation
                 {
                     writer.Write(DumpMagic);
                     writer.Write(BlackBoxCapacity);
-                    writer.Write(_blackBoxCursor);
+                    int cursor = blackBoxCursor;
+                    if (cursor < 0 || cursor >= BlackBoxCapacity)
+                        cursor = 0;
+
+                    writer.Write(cursor);
                     for (int i = 0; i < BlackBoxCapacity; i++)
                     {
-                        int index = _blackBoxCursor + i;
+                        int index = cursor + i;
                         if (index >= BlackBoxCapacity)
                             index -= BlackBoxCapacity;
 

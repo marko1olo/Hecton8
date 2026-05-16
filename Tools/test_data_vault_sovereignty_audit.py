@@ -40,6 +40,40 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["forbiddenDirectConstructors"], 2)
             self.assertEqual(payload["forbiddenFileCount"], 1)
 
+    def test_scan_tracks_nativearray_field_declaration_debt(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_vault_declaration_audit_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            h8memory = source / "Core" / "Memory" / "H8Memory.cs"
+            gameplay = source / "Gameplay" / "StatefulSystem.cs"
+            h8memory.parent.mkdir(parents=True)
+            gameplay.parent.mkdir(parents=True)
+            h8memory.write_text(
+                "private NativeArray<int> _allocatorScratch;\n",
+                encoding="utf-8",
+            )
+            gameplay.write_text(
+                "private NativeArray<int> _localState;\n"
+                "[ReadOnly] public NativeArray<float> JobView;\n"
+                "public NativeArray<int> View => _localState;\n"
+                "NativeArray<int> localOnly = default;\n"
+                "// private NativeArray<byte> _commented;\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            self.assertEqual(payload["totalNativeArrayDeclarations"], 3)
+            self.assertEqual(payload["allowedNativeArrayDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeArrayDeclarations"], 2)
+            self.assertEqual(payload["declarationFileCount"], 1)
+
     def test_no_regression_gate_fails_when_file_count_increases(self) -> None:
         payload = {
             "findings": [
@@ -65,15 +99,50 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
         self.assertEqual(len(errors), 1)
         self.assertIn("BadSystem.cs", errors[0])
 
+    def test_no_regression_gate_fails_when_declaration_count_increases(self) -> None:
+        payload = {
+            "findings": [],
+            "forbiddenDirectConstructors": 0,
+            "declarationFindings": [
+                {
+                    "path": "Assets/_Project/Scripts/Gameplay/StatefulSystem.cs",
+                    "count": 2,
+                    "lines": [4, 5],
+                    "allowed": False,
+                }
+            ],
+            "forbiddenNativeArrayDeclarations": 2,
+        }
+        baseline = {
+            "schema": audit.BASELINE_SCHEMA,
+            "forbiddenDirectConstructors": 0,
+            "forbiddenByFile": {},
+            "forbiddenNativeArrayDeclarations": 1,
+            "forbiddenDeclarationsByFile": {
+                "Assets/_Project/Scripts/Gameplay/StatefulSystem.cs": 1,
+            },
+        }
+
+        errors = audit.detect_regressions(payload, baseline)
+
+        self.assertGreaterEqual(len(errors), 1)
+        self.assertTrue(any("StatefulSystem.cs" in error for error in errors))
+
     def test_baseline_round_trip_preserves_forbidden_counts(self) -> None:
         payload = {
             "sourceRoot": "Assets/_Project/Scripts",
             "pattern": audit.NATIVE_ARRAY_CONSTRUCTOR_RE.pattern,
+            "declarationPattern": audit.NATIVE_ARRAY_DECLARATION_RE.pattern,
             "totalDirectConstructors": 3,
             "allowedDirectConstructors": 1,
             "forbiddenDirectConstructors": 2,
             "forbiddenFileCount": 1,
+            "totalNativeArrayDeclarations": 2,
+            "allowedNativeArrayDeclarations": 1,
+            "forbiddenNativeArrayDeclarations": 1,
+            "declarationFileCount": 1,
             "allowedPathSuffixes": list(audit.DEFAULT_ALLOWED_PATH_SUFFIXES),
+            "declarationAllowedPathSuffixes": list(audit.DEFAULT_ALLOWED_DECLARATION_PATH_SUFFIXES),
             "findings": [
                 {
                     "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
@@ -88,6 +157,20 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
                     "allowed": False,
                 },
             ],
+            "declarationFindings": [
+                {
+                    "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                    "count": 1,
+                    "lines": [30],
+                    "allowed": True,
+                },
+                {
+                    "path": "Assets/_Project/Scripts/World/BadWorld.cs",
+                    "count": 1,
+                    "lines": [40],
+                    "allowed": False,
+                },
+            ],
         }
 
         with tempfile.TemporaryDirectory(prefix="h8_vault_baseline_") as temp_dir:
@@ -99,6 +182,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
 
         self.assertEqual(loaded["schema"], audit.BASELINE_SCHEMA)
         self.assertEqual(loaded["forbiddenByFile"]["Assets/_Project/Scripts/World/BadWorld.cs"], 2)
+        self.assertEqual(loaded["forbiddenDeclarationsByFile"]["Assets/_Project/Scripts/World/BadWorld.cs"], 1)
 
 
 if __name__ == "__main__":

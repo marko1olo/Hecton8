@@ -136,3 +136,60 @@ Validation:
 - `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_nan_polish.exit.txt` exits 1 with 130 foreign errors.
 - No diagnostics name `SdfSqueezeJob`, `HectonPlayerMotor`, `PlayerKinematicsRuntime`, or `HectonPlayerState`.
 - First foreign blockers: `RepairTool.cs(1036,52)`, `HectonUnderwaterVisuals.cs(3534+)`, and `World/SargassumMicroFaunaBoids.cs(2564+)`.
+
+## 2026-05-16 - Vault-Only State And Tether Compile Shim
+What was wrong:
+- The locomotion/player state path still had private H8Memory fallback allocation after DataVault hardening. That kept a second owner for hot NativeArray state.
+- DataVault service replacement could leave stale player runtime aliases unless the runtime explicitly pumped outstanding jobs and reacquired vault buffers.
+- The current validation tree briefly hit a PHYSICS/LOCOMOTION-adjacent `TetherManager` compile wall from a partial local fire-request queue edit.
+
+What was done:
+- Removed private H8Memory fallback allocation from `PlayerKinematicsRuntime`, `PlayerKinematicsNativeState`, and `HectonPlayerMotorNativeState`.
+- Added DataVault replacement handling in `PlayerKinematicsRuntime`: hand environment jobs are pumped, native aliases are disposed, and buffers are reacquired when DataVault returns.
+- Added fail-closed guards before player motor scheduled sweep and kinematic repair target buffers are indexed.
+- Restored `TetherManager` fire drain/execute flow to the existing typed `TetherSignals.TryConsumeFireForManager` lane and removed the partial local queue references.
+
+Cinematic cheats used:
+- No new visual code was added in this pass.
+- Existing low-tier 4-tap SDF, stress cadence interpolation, signal-driven scrape feedback, and high/ultra fluid impulse lanes remain the visual-cheat path.
+- Locomotion still emits typed signals for downstream salt/silt/hull-dent overkill instead of owning renderer effects.
+
+Exact microseconds saved:
+- Vault-only fallback removal: 0 us measured in this pass; expected low-tier cache churn saving remains 4-12 us from prior DataVault sharing estimate.
+- Tether compile shim: 0 us runtime saving; compile-wall containment only.
+- Measured failed validation time for latest `Build_KCC_SDF_SQUEEZE_RESOLVER_vault_polish8.exit.txt`: 227056406 us.
+
+Validation:
+- Static scan found no local persistent `H8Memory.Allocate`, `Allocator.Persistent`, `NativeMemorySentinel.RegisterNativeArray`, `COLD FALLBACK`, or `AllocateLocalArray` in the scanned KCC/player/tether surface.
+- Static scan found every `StructLayout` in the scanned KCC/player/tether surface uses `Pack = 1`.
+- Static scan found no unguarded `math.rsqrt`, `Update`, `string.Format`, legacy `EventBus`, managed delegate, `GameObject.Find`, `FindObjectOfType`, `Physics.CapsuleCast`, `OnCollisionStay`, or `KCCManager.Instance` in the scanned surface.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` exits 1 with 24 foreign `UI/Navigation/DiegeticGyroCompassRuntime.cs` and `World/EcosystemDirector.cs` errors.
+- No diagnostics name `SdfSqueezeJob`, `HectonPlayerMotor`, `PlayerKinematicsRuntime`, `HectonPlayerState`, `TetherManager`, or `TetherSignals`.
+
+## 2026-05-16 - Loop 11 Current Tree Green Revalidation
+What was wrong:
+- The status still treated `Build_KCC_SDF_SQUEEZE_RESOLVER_vault_polish8.exit.txt` as current, but the source had moved. The compass methods and ecosystem generic unsafe calls named by that stale log are present in the current files.
+- The documentation also described the old `TryConsumeFireForManager` sidecar-drain tether path after the actual tree had removed the managed fire-request sidecar.
+
+What was done:
+- Re-extracted the exact `KCC_SDF_SQUEEZE_RESOLVER` XML prompt and reconfirmed 18 tasks.
+- Reconciled status/rationale with the current tow flow: `HeavyTowWinch.TryAttach` publishes `TetherFiredSignal`, then calls `TetherManager.ExecuteFireRequest` directly.
+- Reran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false`.
+- Captured the green build in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop11.exit.txt`.
+
+Cinematic cheats used:
+- No new visual code was added in this pass.
+- Existing cheats remain active: MX350 4-tap SDF gradient, 5-frame stress cadence interpolation, signal-driven scrape feedback, high-tier camera roll, and high/ultra `FluidImpulseSignal` for downstream silt/wake overkill.
+
+Exact microseconds saved:
+- Loop 11 runtime saving claimed: 0 us measured.
+- Measured build validation time: 93277423 us.
+- Existing non-profiler low-tier active squeeze estimate remains 73-167 us saved per frame.
+
+Validation:
+- Build result: succeeded.
+- Warnings: 4, all CS0649 in `Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs`.
+- Errors: 0.
+- Exit code: 0.
+- Static scan found no local persistent `H8Memory.Allocate`, `Allocator.Persistent`, `NativeMemorySentinel.RegisterNativeArray`, `COLD FALLBACK`, or `AllocateLocalArray` in the scanned KCC/player/tether surface.
+- Static scan found no unguarded `math.rsqrt`, `Update`, `string.Format`, legacy `EventBus`, managed delegate, `GameObject.Find`, `FindObjectOfType`, `Physics.CapsuleCast`, `OnCollisionStay`, `KCCManager.Instance`, `TryConsumeFireForManager`, or `TetherFireRequest` in the scanned surface.

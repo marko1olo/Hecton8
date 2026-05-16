@@ -461,7 +461,7 @@ namespace MapMagic.Nodes.MatrixGenerators
     internal static class HectonSpaceEngine098MapMagicUtility
     {
         private const float BarrierWarningThresholdMs = 2f;
-        private const double AupCellSizeMeters = 5000.0;
+        private const double AupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
 
         internal static int ResolveCellCount(MatrixWorld matrix, out int width, out int height)
         {

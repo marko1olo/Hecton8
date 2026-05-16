@@ -6,6 +6,7 @@
                                 ],
     "references":  [
                        "Hecton8.Core",
+                       "Hecton8.Core.Contracts",
                        "Unity.Mathematics"
                    ],
     "includePlatforms":  [

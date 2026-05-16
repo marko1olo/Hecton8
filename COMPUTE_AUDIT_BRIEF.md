@@ -82,3 +82,81 @@ SQLite live sample at 2026-05-16T05:18-05:19+04:00:
 | Latest 5,000-row sample window | 2026-05-16T06:01:18+04:00 to 06:04:21+04:00 |
 | Latest sample ERROR rows | 8 |
 
+## Continuation Pulse 2026-05-16T14:57+04:00
+
+Source: `C:\Users\danat\.codex\state_5.sqlite` live tail plus current `Assets/_Project/Scripts/**/*.cs` LOC scan.
+
+| Metric | Value |
+|---|---:|
+| Current SQLite thread tokens | 48,761,315,725 |
+| Delta vs 03:56 SQLite snapshot | +1,295,589,659 tokens |
+| Delta vs 05:19 live sample end | +956,520,373 tokens |
+| 60-second sample delta | 5,591,521 tokens |
+| 60-second sample rate | 93,192.02 tokens/sec |
+| 60-second sample rate | 5,591,521 tokens/min |
+| 60-second day-equivalent | 8,051,790,240 tokens/day |
+| Cache-aware 60-second cost | USD 4.28 |
+| Cache-aware rate | USD 4.28/min; USD 256.95/hour; USD 6,166.81/day |
+| No-cache rate | USD 28.40/min; USD 1,704.18/hour; USD 40,900.39/day |
+| Estimated current cache-aware total | USD 33,007.19 |
+| Estimated current no-cache total | USD 217,190.76 |
+| Current first-party files | 1,561 |
+| Current physical script LOC | 1,006,323 |
+| Current meaningful script LOC | 827,838 |
+| Current logic density | 82.26% |
+| Current tokens per meaningful LOC | 58,902.00 |
+| Current burn per script byte | 1,117.06 tokens/byte |
+| Current energy estimate | 2,438.07 MWh |
+
+This pulse is SQLite-only for the post-03:56 delta. It inherits the latest full JSONL blended `gpt-5.5` cache-aware/no-cache rates. It is not invoice-grade.
+
+## Last 6H JSONL Check
+
+Window: 2026-05-16T09:55:54+04:00 to 2026-05-16T15:55:54+04:00. Source: recent `.codex\sessions` JSONL token deltas, not SQLite.
+
+| Metric | Value |
+|---|---:|
+| Last 6h total tokens | 757,394,868 |
+| Cached-input ratio | 95.599% |
+| Tokens/sec | 35,064.58 |
+| Tokens/min | 2,103,874.63 |
+| Tokens/hour | 126,232,478.00 |
+| Day equivalent | 3,029,579,472 tokens/day |
+| Cache-aware 6h cost | USD 607.01 |
+| No-cache 6h equivalent | USD 3,853.78 |
+| Cache-aware average | USD 1.69/min; USD 101.17/hour; USD 2,428.03/day |
+| Peak minute | 15,133,220 tokens at 2026-05-16T10:13+04:00 |
+
+Prompt cadence nearby: 146 explicit `event_msg.user_message` rows over six hours; peak minute 15 rows at 2026-05-16T14:24+04:00. Detailed file: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LAST6H_PROMPT_TOKEN_AUDIT.md`.
+
+## H-Phi Continuation
+
+Current H-Phi source scan at 2026-05-16T17:18:57+04:00:
+
+| Metric | Value |
+|---|---:|
+| Runtime H-Phi risk | 0.004164939 |
+| Runtime H-Phi narrow | 0.060806118 |
+| Data sovereignty | 0.114950891 |
+| Memory alignment | 0.528974740 |
+| DataVault refs | 948 |
+| NativeArray refs | 7,299 |
+| Owner-blocked NativeArray refs | 5,266 |
+
+Versus 2026-05-15T22:46:22+04:00 baseline:
+
+| Metric | Delta |
+|---|---:|
+| Runtime H-Phi risk | +0.003528848; 6.548x |
+| Runtime H-Phi narrow | +0.050018679; 5.637x |
+| Data sovereignty | +0.093644859; 5.395x |
+| Token spend between H-Phi artifacts | 2,464,254,349 |
+| Cache-aware cost between artifacts | USD 1,947.70 |
+| No-cache equivalent | USD 12,533.41 |
+
+Correlation across 76 valid H-Phi artifacts: tokens vs Runtime H-Phi risk `r=0.522`; tokens vs Runtime H-Phi narrow `r=0.493`; tokens vs Data sovereignty `r=0.492`. This proves local association, not causality.
+
+Latest SQLite pulse at 2026-05-16T23:14+04:00: current total `49,767,593,348` tokens; 30-second burn `3,815,200`; rate `127,173.33 tokens/sec`; blended cache-aware rate `USD 5.84/min`.
+
+Detailed file: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_TOKEN_CORRELATION_20260516.md`.
+

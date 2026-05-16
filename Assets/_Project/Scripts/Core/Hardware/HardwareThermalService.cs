@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
@@ -32,6 +33,10 @@ namespace Hecton8.Core.Hardware
         private const byte ThermalStatusModerate = 2;
         private const byte ThermalStatusSevere = 3;
         private const byte ThermalStatusEmergency = 5;
+        private const int AndroidThermalFeatureHeadroom = 1 << 0;
+        private const int AndroidThermalFeatureStatus = 1 << 1;
+        private const float HeadroomWarmPressure01 = 0.85f;
+        private const float HeadroomSeverePressure01 = 1.00f;
         private const int RecoverySamplesToClear = 2;
         private const float ThermalFreezeDistanceMeters = 100f;
         private const uint SourceHash = 0x54484452u;
@@ -44,15 +49,18 @@ namespace Hecton8.Core.Hardware
         private const uint ActionSlowTick = 1u << 3;
         private const uint ActionHapticMute = 1u << 4;
         private const uint ActionVisorWarning = 1u << 5;
-        private const string DumpFileName = "Dump_THERMAL_THROTTLING_DIRECTOR.bin";
+        private const string DumpFileName = "Dump_HARDWARE_THROTTLING_DIRECTOR_ThermalService.bin";
 
         private static bool s_sceneHooked;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
         private static AndroidJavaClass s_unityPlayerClass;
+        private static AndroidJavaClass s_androidVersionClass;
         private static AndroidJavaObject s_unityActivity;
         private static AndroidJavaObject s_powerManager;
         private static AndroidJavaObject s_batteryChangedFilter;
+        private static int s_androidSdkInt;
+        private static int s_androidThermalFeatureFlags;
         private static bool s_androidColdBridgeReady;
         private static bool s_androidColdBridgeFaulted;
 #endif
@@ -87,21 +95,37 @@ namespace Hecton8.Core.Hardware
             ? severity.AsReadOnly()
             : default;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 24)]
         private struct ThermalTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint Sequence;
+            [FieldOffset(8)]
             public uint ActionMask;
+            [FieldOffset(12)]
             public short TemperatureTenthsCelsius;
+            [FieldOffset(14)]
             public byte Severity;
+            [FieldOffset(15)]
             public byte BatteryPercent;
+            [FieldOffset(16)]
             public byte BatteryStatus;
+            [FieldOffset(17)]
             public byte ThermalStatus;
+            [FieldOffset(18)]
             public byte Flags;
+            [FieldOffset(19)]
             public byte Reserved0;
+            [FieldOffset(20)]
             public byte Reserved1;
+            [FieldOffset(21)]
             public byte Reserved2;
+            [FieldOffset(22)]
+            public byte Reserved3;
+            [FieldOffset(23)]
+            public byte Reserved4;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -299,8 +323,22 @@ namespace Hecton8.Core.Hardware
                 AndroidJavaObject powerManager = s_powerManager;
                 if (powerManager != null)
                 {
-                    int status = powerManager.Call<int>("getCurrentThermalStatus");
-                    thermalStatus = (byte)math.clamp(status, 0, byte.MaxValue);
+                    byte headroomStatus = 0;
+                    if ((s_androidThermalFeatureFlags & AndroidThermalFeatureHeadroom) != 0)
+                    {
+                        float headroom = powerManager.Call<float>("getThermalHeadroom", 30);
+                        if (math.isfinite(headroom))
+                            headroomStatus = MapThermalHeadroomToStatus(headroom);
+                    }
+
+                    byte currentStatus = 0;
+                    if ((s_androidThermalFeatureFlags & AndroidThermalFeatureStatus) != 0)
+                    {
+                        int status = powerManager.Call<int>("getCurrentThermalStatus");
+                        currentStatus = (byte)math.clamp(status, 0, byte.MaxValue);
+                    }
+
+                    thermalStatus = MaxByte(headroomStatus, currentStatus);
                 }
 
                 return true;
@@ -324,11 +362,18 @@ namespace Hecton8.Core.Hardware
             try
             {
                 s_unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                s_androidVersionClass = new AndroidJavaClass("android.os.Build$VERSION");
+                s_androidSdkInt = s_androidVersionClass.GetStatic<int>("SDK_INT");
                 s_unityActivity = s_unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
                 s_batteryChangedFilter = new AndroidJavaObject("android.content.IntentFilter", "android.intent.action.BATTERY_CHANGED");
                 s_powerManager = s_unityActivity != null
                     ? s_unityActivity.Call<AndroidJavaObject>("getSystemService", "power")
                     : null;
+                s_androidThermalFeatureFlags = 0;
+                if (s_powerManager != null && s_androidSdkInt >= 30)
+                    s_androidThermalFeatureFlags |= AndroidThermalFeatureHeadroom;
+                if (s_powerManager != null && s_androidSdkInt >= 29)
+                    s_androidThermalFeatureFlags |= AndroidThermalFeatureStatus;
                 s_androidColdBridgeReady = s_unityActivity != null && s_batteryChangedFilter != null;
             }
             catch (Exception)
@@ -343,15 +388,34 @@ namespace Hecton8.Core.Hardware
             s_powerManager?.Dispose();
             s_batteryChangedFilter?.Dispose();
             s_unityActivity?.Dispose();
+            s_androidVersionClass?.Dispose();
             s_unityPlayerClass?.Dispose();
             s_powerManager = null;
             s_batteryChangedFilter = null;
             s_unityActivity = null;
+            s_androidVersionClass = null;
             s_unityPlayerClass = null;
+            s_androidSdkInt = 0;
+            s_androidThermalFeatureFlags = 0;
             s_androidColdBridgeReady = false;
             s_androidColdBridgeFaulted = false;
         }
+
+        private static byte MapThermalHeadroomToStatus(float headroom)
+        {
+            float pressure = math.max(0f, headroom);
+            if (pressure >= HeadroomSeverePressure01)
+                return ThermalStatusSevere;
+            if (pressure >= HeadroomWarmPressure01)
+                return ThermalStatusModerate;
+            return 0;
+        }
 #endif
+
+        private static byte MaxByte(byte a, byte b)
+        {
+            return a > b ? a : b;
+        }
 
         private static void SampleSystemInfoFallbackCold(out byte batteryPercent, out byte batteryStatus)
         {
@@ -607,10 +671,15 @@ namespace Hecton8.Core.Hardware
                 Directory.CreateDirectory(folder);
                 string path = Path.Combine(folder, DumpFileName);
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(_sequence);
-                    writer.Write(_blackBoxCursor);
+                    Span<byte> header = stackalloc byte[16];
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), _sequence);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), _blackBoxCursor);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), BlackBoxFrameCount);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(12, 4), 24);
+                    stream.Write(header);
+
+                    Span<byte> entryBytes = stackalloc byte[24];
                     for (int i = 0; i < BlackBoxFrameCount; i++)
                     {
                         int index = _blackBoxCursor + i;
@@ -618,15 +687,22 @@ namespace Hecton8.Core.Hardware
                             index -= BlackBoxFrameCount;
 
                         ThermalTelemetryEntry entry = blackBox[index];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Sequence);
-                        writer.Write(entry.ActionMask);
-                        writer.Write(entry.TemperatureTenthsCelsius);
-                        writer.Write(entry.Severity);
-                        writer.Write(entry.BatteryPercent);
-                        writer.Write(entry.BatteryStatus);
-                        writer.Write(entry.ThermalStatus);
-                        writer.Write(entry.Flags);
+                        entryBytes.Clear();
+                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(0, 4), entry.Frame);
+                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(4, 4), entry.Sequence);
+                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(8, 4), entry.ActionMask);
+                        BinaryPrimitives.WriteInt16LittleEndian(entryBytes.Slice(12, 2), entry.TemperatureTenthsCelsius);
+                        entryBytes[14] = entry.Severity;
+                        entryBytes[15] = entry.BatteryPercent;
+                        entryBytes[16] = entry.BatteryStatus;
+                        entryBytes[17] = entry.ThermalStatus;
+                        entryBytes[18] = entry.Flags;
+                        entryBytes[19] = entry.Reserved0;
+                        entryBytes[20] = entry.Reserved1;
+                        entryBytes[21] = entry.Reserved2;
+                        entryBytes[22] = entry.Reserved3;
+                        entryBytes[23] = entry.Reserved4;
+                        stream.Write(entryBytes);
                     }
                 }
             }

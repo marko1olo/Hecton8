@@ -49,7 +49,7 @@ namespace Hecton8.Core
         PrologueStage = 29
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     public struct TelemetryEvent
     {
         public uint FrameIndex;

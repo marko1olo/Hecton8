@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
@@ -704,7 +705,7 @@ namespace Hecton8.Visor
             float density = fluidSimulation.WaterDensityKilogramsPerCubicMeter;
             FlagIfNonFinite(density, ref telemetryFlags);
             return math.isfinite(density)
-                ? math.saturate((density - 1025f) * (1f / 256f))
+                ? math.saturate((density - HectonPhysicsContract.WaterDensityKgPerCubicMeterConst) * (1f / 256f))
                 : 0f;
         }
 

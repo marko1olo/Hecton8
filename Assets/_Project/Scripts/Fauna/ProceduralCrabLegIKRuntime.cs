@@ -12,7 +12,7 @@ using UnityEngine.Rendering;
 
 namespace Hecton8.AI
 {
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct ProceduralCrabLegEntityState
     {
         public int IsActive;
@@ -46,7 +46,7 @@ namespace Hecton8.AI
         public quaternion RootRotation;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct ProceduralCrabLegStepState
     {
         public float3 StepFrom;
@@ -60,7 +60,7 @@ namespace Hecton8.AI
         public byte Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct ProceduralCrabBodyPose
     {
         public float4x4 BodyMatrix;
@@ -68,7 +68,7 @@ namespace Hecton8.AI
         public int IsActive;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct ProceduralCrabSolvedJointMatrices
     {
         public float4x4 UpperJointMatrix;
@@ -76,7 +76,7 @@ namespace Hecton8.AI
         public float4x4 FootJointMatrix;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct ProceduralCrabIkTelemetryEntry
     {
         public int FrameIndex;
@@ -90,7 +90,7 @@ namespace Hecton8.AI
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct ProceduralCrabGroundRaycastBuildJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<ProceduralCrabLegEntityState> Entities;
@@ -153,7 +153,7 @@ namespace Hecton8.AI
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct ProceduralCrabGroundTargetResolveJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<ProceduralCrabLegEntityState> Entities;
@@ -208,7 +208,7 @@ namespace Hecton8.AI
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct ProceduralCrabStepSchedulerJob : IJobParallelFor
     {
         public NativeArray<ProceduralCrabLegEntityState> Entities;
@@ -370,7 +370,7 @@ namespace Hecton8.AI
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct ProceduralCrabLegAupRebaseJob : IJobParallelFor
     {
         public NativeArray<float3> FootPositions;
@@ -391,7 +391,7 @@ namespace Hecton8.AI
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct ProceduralCrabEntityAupRebaseJob : IJobParallelFor
     {
         public NativeArray<ProceduralCrabLegEntityState> Entities;
@@ -418,7 +418,7 @@ namespace Hecton8.AI
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct ProceduralCrabBodyTiltJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<ProceduralCrabLegEntityState> Entities;
@@ -461,7 +461,7 @@ namespace Hecton8.AI
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct ProceduralCrabAnalyticalTwoBoneIkJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<ProceduralCrabLegEntityState> Entities;

@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Items;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -321,7 +322,7 @@ namespace Hecton8.Scavenging
         [Tooltip("When enabled, this node family only spawns inside deterministic deep-brine bowls.")]
         private bool requiresBrinePool;
 
-        [SerializeField, Min(1025f)]
+        [SerializeField, Min(HectonPhysicsContract.WaterDensityKgPerCubicMeterConst)]
         [Tooltip("Fluid density in kg/m3 used by deterministic brine-pool sampling for this node family.")]
         private float brineDensityKgPerCubicMeter = 1250f;
 
@@ -527,7 +528,7 @@ namespace Hecton8.Scavenging
         public bool RequiresBrinePool => requiresBrinePool;
 
         /// <summary>Fluid density in kg/m3 used by the brine-pool buoyancy override.</summary>
-        public float BrineDensityKgPerCubicMeter => math.max(1025f, brineDensityKgPerCubicMeter);
+        public float BrineDensityKgPerCubicMeter => math.max(HectonPhysicsContract.WaterDensityKgPerCubicMeterConst, brineDensityKgPerCubicMeter);
 
         /// <summary>Normalized toxicity intensity forwarded into the brine hazard runtime.</summary>
         public float BrineToxicityIntensity => math.saturate(brineToxicityIntensity);
@@ -702,7 +703,7 @@ namespace Hecton8.Scavenging
             steamExplosionRadiusMeters = math.max(0f, steamExplosionRadiusMeters);
             steamExplosionImpulse = math.max(0f, steamExplosionImpulse);
             depletionCraterRadiusMeters = math.max(0f, depletionCraterRadiusMeters);
-            brineDensityKgPerCubicMeter = math.max(1025f, brineDensityKgPerCubicMeter);
+            brineDensityKgPerCubicMeter = math.max(HectonPhysicsContract.WaterDensityKgPerCubicMeterConst, brineDensityKgPerCubicMeter);
             brineToxicityIntensity = math.saturate(brineToxicityIntensity);
             embeddedVeinStampCount = (byte)Mathf.Clamp((int)embeddedVeinStampCount, 2, 24);
             embeddedVeinLengthMeters = math.max(0.5f, embeddedVeinLengthMeters);

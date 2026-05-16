@@ -29,18 +29,21 @@ namespace Hecton8.UI
         private CanvasGroup _canvasGroup;
         private Image _ribbonImage;
         private Material _runtimeMaterial;
+        private IInertialNavigationService _navigation;
         private float _lastOffset = -1f;
         private float _lastRootAlpha = -1f;
 
         private void OnEnable()
         {
             EnsureUiBuilt(allowCreate: true);
+            ResolveNavigationService();
             TryRegister();
         }
 
         private void Start()
         {
             EnsureUiBuilt(allowCreate: true);
+            ResolveNavigationService();
             TryRegister();
         }
 
@@ -74,7 +77,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            IInertialNavigationService navigation = GlobalRegistry.InertialNavigation;
+            IInertialNavigationService navigation = _navigation;
             if (navigation == null || !navigation.TryGetSnapshot(out InertialNavigationSnapshot snapshot))
             {
                 ApplyRootAlpha(0f);
@@ -142,8 +145,17 @@ namespace Hecton8.UI
             if (_runtimeMaterial != null)
                 _ribbonImage.material = _runtimeMaterial;
 
+            ResolveNavigationService();
             _uiBuilt = true;
             return true;
+        }
+
+        private void ResolveNavigationService()
+        {
+            if (_navigation != null)
+                return;
+
+            _navigation = GlobalRegistry.InertialNavigation;
         }
 
         private void EnsureRuntimeMaterial()

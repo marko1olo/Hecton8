@@ -206,12 +206,168 @@ Hardware Impact: Exact microseconds remain unmeasured. Expected gain is lower up
 
 ## Decision 18: Current Compile Warning Is Ecosystem Integration
 
-Problem: After the bandwidth pass, an initial `dotnet build` failed in a foreign ecosystem namespace. A later run now exits 0, but still reports one non-ambient warning.
+Problem: After the bandwidth pass, an initial `dotnet build` failed in a foreign ecosystem namespace. A later Loop 6 run exited 0, but still reported one non-ambient warning.
 
-Solution: Reran the required build and recorded output to `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`. The latest result is build succeeded with 1 warning and 0 errors. The warning is `CS2002`: `Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs` is specified multiple times.
+Solution: Reran the required build during Loop 6 and recorded output to `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`. That result succeeded with 1 warning and 0 errors. The warning was `CS2002`: `Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs` is specified multiple times. Loop 7 supersedes this with the current foreign dependency wall.
 
 Rejected Alternatives: Editing `Directory.Build.targets`, `Hecton8.Core.csproj`, or ecosystem files from the ambient agent was rejected because that crosses the authoritative `Assets/_Project/Scripts/AI/Ambient/` domain. Claiming 0 warnings was rejected because the build log has one foreign warning.
 
 Scalability potential: No runtime scalability change. This is an integration/build graph ownership issue.
 
-Hardware Impact: 0 us runtime effect. Dotnet exit is green; Unity runtime/profiler proof remains pending.
+Hardware Impact: 0 us runtime effect. This was a historical Loop 6 build result; Unity runtime/profiler proof remains pending.
+
+## Decision 19: Treat Unity Bee Compile As The Real Boundary
+
+Problem: The generated `Hecton8.Core.csproj` can report a different result than the Unity asmdef graph. The ambient source now uses unsafe locked GPU uploads, so the actual `Hecton8.AI.Ambient` Bee response file must be checked instead of relying on a stale green core-project build.
+
+Solution: Ran direct Roslyn validation against `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Ambient.rsp`. The first blocker is a missing `Hecton8.Core.ref.dll`. Attempted to rebuild the Unity dependency chain; `Hecton8.Core.Bucketing`, `Hecton8.Core.Scheduling`, and `Hecton8.Audio.Virtualization` fail outside the ambient domain. A surrogate ambient compile was also run with the fresh generated `Temp/bin/Debug/Hecton8.Core.dll`; that harness only exposes the expected missing `ISimulationBucketer` after contract refs are stripped to avoid duplicate generated-project types.
+
+Rejected Alternatives: Claiming the ambient asmdef compiles from `dotnet build Hecton8.Core.csproj` was rejected because the project file is not the Unity assembly boundary. Editing Bucketing, Scheduling, Audio, World, or Diagnostics from this agent was rejected because those are outside `Assets/_Project/Scripts/AI/Ambient/` and the task's 3-strike protocol requires dependency-wall reporting instead of cross-domain damage.
+
+Scalability potential: No runtime scalability change from validation itself. The ambient source remains tiered: Low = 2048 billboard-style slots, triangle noise, 30 m stress radius; Middle = broader AUP drift with same SOA contract; High = headlight avoidance and panic emission; Ultra = larger capacity and richer material interpretation fed by the same GPU buffers.
+
+Hardware Impact: 0 us measured because validation does not run gameplay. The compile-wall evidence prevents false microsecond claims; Unity Editor profiling, GCMonitor, and GPU capture are still required for real CPU/GPU timings.
+
+## Decision 20: Double Buffer Indirect Args Too
+
+Problem: The payload GPU lanes were double-buffered, but indirect draw args were still a single locked buffer. The args payload is tiny, but it is still GPU data and should not be read by `RenderMeshIndirect` while a write mapping is being refreshed.
+
+Solution: Replaced the single indirect-args buffer with A/B `GraphicsBuffer` lanes. `UploadIndirectArgs` now writes to the non-current args buffer with `LockBufferForWrite`, swaps the read index only after the struct is written, and passes the resolved read buffer into `Graphics.RenderMeshIndirect`.
+
+Rejected Alternatives: Keeping the single args buffer was rejected because it leaves a synchronization edge inconsistent with the AUP/velocity/state upload path. Rebuilding CPU matrices was rejected again because it violates the indirect draw objective.
+
+Scalability potential: Low = one locked args write only when mesh/capacity changes; Middle/High/Ultra = same draw contract with denser GPU interpretation and no CPU matrix path. High-tier visual overkill stays shader/material-side rather than adding new CPU object ownership.
+
+Hardware Impact: Exact microseconds remain unmeasured. Expected runtime gain is synchronization-risk reduction rather than frame-time magnitude; args writes are cold path on mesh/capacity changes and add 0 B/frame managed allocation.
+
+## Decision 21: Remove Registry Polling From Per-Frame Ambient Tick
+
+Problem: `TryCapturePlayerPose`, biomass refresh, and abyssal-flow refresh had fallback `GlobalRegistry` lookups when cached dependencies were null. If a dependency was missing during boot, the ambient `Tick` path could poll the registry every frame, violating the Signal Lane Segregation mandate against frame polling for state changes.
+
+Solution: Added `RefreshRegistryDependencies()` and moved missing-dependency recovery into cold/slow execution. `Tick(float deltaTime)` now uses cached service references only; a static slice audit confirms no `GlobalRegistry.` access inside the tick block.
+
+Rejected Alternatives: Keeping lazy per-call lookups was rejected because it hides boot-order problems in the hot path. Adding direct hard dependencies to foreign systems was rejected because the ambient director must remain decoupled and use registry/service contracts only.
+
+Scalability potential: Low/MX350 avoids repeated registry probes when player/ecology/flow services are late. Middle/High/Ultra keep the same service contract while allowing richer material behavior from cached tier/flow state.
+
+Hardware Impact: Exact microseconds are unmeasured. Expected gain is small but deterministic: removes possible per-frame service-locator probes under missing-dependency conditions; no managed allocation is introduced.
+
+## Decision 22: Keep GPU Stream And Blackbox Honest After Non-Job Mutations
+
+Problem: Macro hydration/dehydration jobs mutate the DataVault SOA buffers synchronously, but the renderer dirty flag was not set afterward. Also, blackbox telemetry used the simulation seed frame index instead of a heartbeat index, and `CullRatePerSecond` stored raw cull count rather than a per-second rate.
+
+Solution: Set `_gpuPayloadDirty = true` after successful macro hydrate/dehydrate recounts. Added a dedicated heartbeat frame counter for telemetry and computed cull rate from finite elapsed unscaled time between recounts. High-tier panic state now clears/reacts branchlessly instead of leaving permanent `FlagHighTierReactive` and permanent emission. Added material parameters for quality profile, stress, flow vector, and overkill mode so shader-side visual scaling can respond without CPU matrices.
+
+Rejected Alternatives: Waiting for the next drift/spawn job to refresh GPU buffers was rejected because it can draw stale macro swarm state. Leaving panic as a permanent flag was rejected because it turns a momentary light reaction into polluted persistent state. Recording raw cull count as a rate was rejected because it lies to the blackbox.
+
+Scalability potential: Low = dirty uploads only when data changes and shader can stay in billboard fake mode. Middle = accurate blackbox and stable emission decay. High/Ultra = shader gets flow/stress/overkill knobs for richer silt and biolume without extra CPU ownership.
+
+Hardware Impact: Exact microseconds remain unmeasured. Dirty-flag repair prevents stale GPU data rather than saving time; heartbeat/cull-rate math is scalar and expected below 1 us per recount. Shader parameter writes add a few scalar/vector material updates only on the existing render path.
+
+## Decision 23: Do Not Rebind Vault Handles From Hot Resolve Paths
+
+Problem: `TryResolveBiotaBuffers`, `TryResolveMacroCounters`, and `TryResolveTelemetryBuffers` called `EnsureVaultBuffers()`. That meant per-frame `Tick`/`LateFrameTick` could request or rebind DataVault handles if capacity or handle state drifted, turning a resolve helper into a hidden structural allocation path.
+
+Solution: Removed `EnsureVaultBuffers()` from every resolve helper. Resolve helpers now require `_vault` and existing handles, then return false if the cold/slow setup did not prepare them. Structural creation remains limited to `OnEnable` and `SlowTick`, and `SlowTick` returns before `EnsureVaultBuffers()` while `_jobPending` is true.
+
+Rejected Alternatives: Leaving lazy hot-path ensure was rejected because it hides boot-order and capacity-change work inside frame cadence. Calling `CompleteActiveJob()` before rebinding was rejected because mid-frame synchronization is the Native Memory Jobs failure mode. Allocating local fallback `NativeArray` storage was rejected because it violates DataVault sovereignty.
+
+Scalability potential: Low = no surprise vault work during frame cadence on i3/MX350. Middle = stable handles while gameplay runs. High = capacity can still expand on cold/slow cadence. Ultra = larger visual density remains possible without job-handle rebinding under a live writer.
+
+Hardware Impact: Exact microseconds are unmeasured. Expected gain is removal of rare but severe hidden structural stalls from hot resolve paths; normal-frame cost remains simple handle validation and vault view resolution.
+
+## Decision 24: Cache System Stress For Ambient Runtime Cadence
+
+Problem: Radius resolution and indirect material parameters read `GlobalSignals.SystemStress01` from frame cadence. The value is a global scalar, but the ambient director already has a slow quality-policy refresh point; polling the global each frame is unnecessary for a slow homeostasis control.
+
+Solution: Added `_cachedSystemStress01`, finite-clamped in `RefreshQualityPolicy()`. `ResolveSimulationRadiusMeters()` and indirect material writes use the cached value. A static slice audit now confirms `Tick(float deltaTime)` has no `GlobalRegistry.`, no `EnsureVaultBuffers()`, and no `GlobalSignals.SystemStress01`.
+
+Rejected Alternatives: Keeping direct frame reads was rejected because stress homeostasis does not require per-frame precision. Creating a new stress signal was rejected because `GlobalSignals.SystemStress01` already exists and no duplicate lane should be invented. Reading stress inside the Burst jobs was rejected because it would expand job payload churn for a scalar already captured by policy.
+
+Scalability potential: Low = stress radius clamp updates on slow cadence without frame polling. Middle = stable radius between policy updates. High/Ultra = low-stress overkill radius still expands through the same cached policy, leaving shader-side visual overkill available without more CPU simulation truth.
+
+Hardware Impact: Exact microseconds remain unmeasured. Expected gain is tiny in steady state, but it removes another frame-cadence global read and makes the stress/radius policy deterministic for a tick group.
+
+## Decision 25: Current Compile Wall Is Physics Domain
+
+Problem: After Loop 9, validation is blocked by a fresh non-ambient compile wall in `Assets/_Project/Scripts/PhysicsApplySystem.cs`: missing force-packet queue fields/helpers and missing `BufferID.PhysicsForce*` entries.
+
+Solution: Recorded the failure in `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt` and did not patch the physics domain. Direct ambient Bee validation is also still blocked before source compile by missing `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.ref.dll`.
+
+Rejected Alternatives: Editing `PhysicsApplySystem.cs`, `H8Memory.cs`, or shared physics buffer IDs from the ambient biota agent was rejected because it crosses the authoritative `Assets/_Project/Scripts/AI/Ambient/` domain. Reporting green compile was rejected because objective logs say otherwise.
+
+Scalability potential: No runtime scalability change. Low/Middle/High/Ultra ambient paths remain statically clean; Unity runtime and GPU visual proof remain pending until foreign compile walls are repaired.
+
+Hardware Impact: 0 us measured. Compile blockers do not change runtime cost; they block profiler, GCMonitor, Frame Debugger, and player-build evidence.
+
+## Decision 26: Shader ABI Must Not Read Raw AUP
+
+Problem: The indirect renderer uploaded `AbsoluteUniversePosition` directly to GPU. That struct is correct CPU authority, but it contains 64-bit grid fields and no shader consumer existed. Reading that raw layout in HLSL would be poor Metal/Quest/Android ABI practice and would force every shader to know AUP internals.
+
+Solution: Added a packed 64 B `AmbientBiotaGpuInstance` render payload. The CPU derives camera-local `float3` meters from DataVault AUP truth, copies finite velocity/emission/state flags into a float/uint GPU struct, and binds one `_HectonBiotaInstances` buffer. AUP, velocity, and state remain DataVault-owned authority arrays; the packed buffer is presentation upload only.
+
+Rejected Alternatives: Keeping raw AUP buffers was rejected because shader-side int64/grid handling is not portable enough for Metal/mobile and had no material consumer. Adding another DataVault render buffer was rejected because this is a transient GPU upload mirror, not simulation truth. CPU matrix building was rejected again because it violates the indirect draw objective.
+
+Scalability potential: Low = shader reads one compact packet and draws cheap billboards with triangle fakery. Middle = stable motion vectors/emission from the same packet. High/Ultra = same packet drives SSS, procedural parallax, salt glints, and silt without additional CPU object ownership.
+
+Hardware Impact: Exact microseconds remain unmeasured. Expected bandwidth reduction is from 96 B/slot raw multi-stream upload to one 64 B/slot packed render stream, plus fewer `SetBuffer` bindings. Runtime file I/O remains 0 B/frame.
+
+## Decision 27: Domain-Local Ambient Biota Shader
+
+Problem: C# exposed `_HectonBiota*` buffers and knobs, but the project had no shader that consumed them. That made `INDIRECT_DRAW_CALL` structurally present but visually incomplete.
+
+Solution: Added `Assets/_Project/Scripts/AI/Ambient/Hecton_AmbientBiotaIndirect.shader` and its `.meta`. The shader consumes `_HectonBiotaInstances`, builds camera-facing quads, discards inactive slots, uses cheap low-tier triangle/pulse math, and gates high-tier 16-step procedural parallax, SSS rim light, volumetric-silt fake, and salt-glint fake behind `_HectonBiotaOverkill01`.
+
+Rejected Alternatives: Editing global art shaders outside the ambient domain was rejected because ownership belongs to rendering/art domains. Runtime material creation was rejected because project rules forbid hidden material clones; the shader exists for an assigned material asset/scene binding. Compute simulation was rejected because the current objective is indirect presentation and the shader has no compute thread-group risk.
+
+Scalability potential: Low = no texture samples and no collision; simple translucent billboards. Middle = biome tint and emission. High = reactive biolume and SSS. Ultra = procedural parallax/salt/silt overkill without changing the CPU simulation layout.
+
+Hardware Impact: Exact microseconds are unmeasured. Static shader audit shows no int64, no RW buffers, no group barriers, no wave intrinsics, no texture samples, and no `numthreads`; Unity shader compiler validation is still pending because no Unity MCP/compiler endpoint is available.
+
+## Decision 28: Ambient Must Not Claim Foreign SDF Truth
+
+Problem: `AmbientBiotaDirector` directly called `HectonVoxelVolume.GetSDFDensity` and marked macro-hydrated biota/spawn signals with SDF emergence flags. That crossed from `AI/Ambient` into cave/voxel ownership and claimed an SDF proof that ambient does not own through a registry-facing service contract.
+
+Solution: Removed the `Hecton8.Caves` import, removed the static voxel-volume density query, and replaced the guard with `ResolveMacroVisualQualityTier()`, which only clamps presentation quality from finite AUP and stress inputs already present at the ambient boundary. Also removed `FlagSdfEmergence` writes from ambient macro state and spawn signal payloads.
+
+Rejected Alternatives: Adding a new ambient SDF interface or editing Core/World contracts was rejected because this loop is inside the ambient domain and the batch forbids public interface churn without a critical dependency justification. Keeping the direct static cave call was rejected because it couples ambient biota to a foreign owner and can rot under asmdef splits. Leaving the SDF flags while not querying SDF was rejected because it is a false telemetry/rendering semantic.
+
+Scalability potential: Low = macro hydration still collapses to billboard visuals under high stress and finite checks. Middle = deterministic macro biota remains DataVault-owned without cave-query stalls. High/Ultra = visual overkill continues through shader overkill, larger scale, emission, flow, silt, salt glints, and parallax; actual SDF emergence can be restored later only through an owned typed service.
+
+Hardware Impact: Exact microseconds are unmeasured. Expected low-end gain is removal of a cold macro-hydration cave-volume scan/query from the ambient service path and reduced cross-domain dependency risk. Runtime `Tick`/`LateFrameTick` cost is unchanged; Unity profiling remains pending.
+
+## Decision 29: Current Compile Wall Is Contract Graph, Not Ambient
+
+Problem: After the domain-boundary repair, validation still cannot prove a green Unity/Bee compile. The direct ambient response-file compile fails before source analysis because `Hecton8.Core.ref.dll` is absent. The generated `Hecton8.Core.csproj` fails in non-ambient contract references.
+
+Solution: Recorded both logs. `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_ASMDEF_BUILD.txt` shows missing `Hecton8.Core.ref.dll`. `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt` shows 49 errors outside `AI/Ambient`: missing `HectonEcologyContract`, `ScalabilityContract`, `HectonPhysicsContract`, and `HectonSurvivalContract` references in ecosystem/core/physics/power/audio/PDA/world/modding files. No `AmbientBiotaDirector` or `AI/Ambient` error appears in the global build log.
+
+Rejected Alternatives: Editing ecosystem, homeostasis, physics, power, audio, PDA, world, or modding contract references from the ambient agent was rejected because it crosses the authoritative domain. Reporting compile success was rejected because both objective logs exit 1. Claiming shader runtime success was rejected because Unity shader import/compiler proof is unavailable.
+
+Scalability potential: No runtime scalability change. Low/Middle/High/Ultra ambient code paths remain statically clean and domain-contained; profiling and visual validation are blocked until the foreign contract graph is repaired.
+
+Hardware Impact: 0 us measured. This is validation state, not runtime behavior. It blocks GCMonitor, Frame Debugger, RenderDoc, and player-build evidence.
+
+## Decision 30: Shader-Side Normalize Must Be Explicitly Vaccinated
+
+Problem: The ambient indirect shader had CPU-side finite packing, but shader-side flow parallax, camera axes, billboard axes, normal generation, and view-vector math still used raw `normalize()`. On mobile/Metal/Quest, a zero-length vector in a transparent indirect draw can turn into NaN payload and poison the visible GPU pipeline.
+
+Solution: Added domain-local `SafeNormalize2` and `SafeNormalize3` helpers in `Hecton_AmbientBiotaIndirect.shader`. Replaced raw normalization for flow, camera right/up, drift right, billboard right, normal, and view direction with finite fallback vectors. Static audit now reports no `normalize(` call in the ambient shader.
+
+Rejected Alternatives: Relying on CPU-side `BuildGpuInstance()` sanitation was rejected because camera matrices, flow constants, and view vectors are shader-local state. Removing high-tier parallax/SSS was rejected because it would downgrade the PC/Ultra path instead of making the math safe. Editing global shader includes was rejected because this fix belongs to the ambient shader domain.
+
+Scalability potential: Low = safer billboard soup with no texture reads and no NaN collapse when flow/camera vectors degenerate. Middle = stable translucent biota under ordinary flow. High = keeps SSS, silt, salt glints, and panic biolume. Ultra = retains 16-step procedural parallax overkill without adding CPU simulation truth.
+
+Hardware Impact: Exact microseconds are unmeasured. Expected low-end effect is crash/NaN risk reduction, not a claimed frame-time gain. The extra dot/rsqrt guards are shader ALU; no runtime file I/O, managed allocation, or CPU matrix work is added. Unity shader compiler/profiler proof remains pending because no Unity MCP/compiler endpoint is exposed.
+
+## Decision 31: Biome Sync Cannot Pretend A Vault Buffer Exists
+
+Problem: The assignment asks to read `BiomeID` from the vault, but a fresh search found no authoritative current-biome DataVault `BufferID`/service contract in the reachable Core/World/AI sources. World biome systems keep private native maps and scatter-local hashes, while Core exposes an existing typed `BiomeChangedSignal` lane.
+
+Solution: Kept ambient on `SignalBus<BiomeChangedSignal>.GetFrameSnapshot()` and folded `CurrentBiomeHash` into species/emission selection. No duplicate signal, direct `GPUScatterDirector`, direct `BiomeBoundarySdfRuntime`, or private native map dependency was introduced.
+
+Rejected Alternatives: Adding a new `BufferID.CurrentBiome` or new registry interface from the ambient agent was rejected because it crosses shared contract/world ownership and would require integration coordination. Reading world biome private arrays was rejected because it violates Data Sovereignty and the domain boundary. Claiming vault biome read success was rejected because the objective source scan does not support it.
+
+Scalability potential: Low = O(signal count) slow/cold biome update and cheap tint/species bias. Middle = stable biome hash between transitions. High/Ultra = shader still uses biome hash to bias rich biolume/parallax/silt color without extra CPU spatial queries.
+
+Hardware Impact: Exact microseconds are unmeasured. Expected low-end cost remains typically sub-1 us when no biome transition signals are present; no MicroSD I/O and no persistent local NativeArray ownership are added.

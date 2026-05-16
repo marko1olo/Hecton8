@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Caves;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.World;
@@ -201,7 +202,7 @@ namespace Hecton8.Modding
         private const int MaxAupResponsesPerLateFrame = MaxDrainPerLateFrame;
         private const int MaxMemoryEvictionEventsPerLateFrame = ModCapacity;
         private const int CurrentApiVersion = ModLoader.CurrentAPIVersion;
-        private const int AupCellSizeMeters = 5000;
+        private const int AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
         private const double SpawnConflictEpsilonSq = 0.25d;
         private const long ModHeapQuotaBytes = 16L * 1024L * 1024L;
         private const long ModHeapFrameQuotaBytes = 1L * 1024L * 1024L;

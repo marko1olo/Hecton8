@@ -156,9 +156,6 @@ namespace Hecton8.Gameplay
         private const string HighCapacityBatteryPersistentId = "Comp_HighCapacityCell";
         private static readonly int _standardBatteryHashId = LocHash.Compute(StandardBatteryPersistentId);
         private static readonly int _highCapacityBatteryHashId = LocHash.Compute(HighCapacityBatteryPersistentId);
-        public event Action<int> ActiveSlotChanged;
-        public event Action ToolAssignmentsChanged;
-
         internal Transform HandAnchor => handAnchor;
         internal PlayerInventory Inventory => playerInventory;
 
@@ -272,6 +269,7 @@ namespace Hecton8.Gameplay
             ConsumeToolSlotInputSignals();
             if (ConsumeInventoryChangedSignals())
                 HandleInventoryChanged();
+            ConsumeEquippedToolDurabilitySignals();
 
             if (_externallyDockedTool != null)
             {
@@ -730,7 +728,6 @@ namespace Hecton8.Gameplay
             toolPrefabs[slotIndex] = prefab;
             EnsurePoolWarmup(prefab, toolPoolWarmupCount);
             RefreshSlotNameCacheSlot(slotIndex);
-            ToolAssignmentsChanged?.Invoke();
             PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
 
             if (!holsterIfCurrentInvalid || slotIndex != _currentSlotIndex)
@@ -893,7 +890,6 @@ namespace Hecton8.Gameplay
             }
 
             RefreshSlotNameCache();
-            ToolAssignmentsChanged?.Invoke();
             PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
             return true;
         }
@@ -1307,7 +1303,6 @@ namespace Hecton8.Gameplay
             _currentSlotIndex = _pendingSlotIndex;
             _pendingSlotIndex = -1;
             LogToolDebug("PerformSwap assigned current slot");
-            ActiveSlotChanged?.Invoke(_currentSlotIndex);
             PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonActiveSlotChanged);
 
             // Esli spavnili novyy — zapuskaem animatsiyu podema
@@ -1447,7 +1442,6 @@ namespace Hecton8.Gameplay
                 _currentTool = tool;
                 LogToolDebug("SpawnNewTool got PlayerTool");
                 _currentTool.OnEquip();
-                _currentTool.OnToolBroken += HandleEquippedToolBroken;
                 LogToolDebug("SpawnNewTool after OnEquip");
             }
             else
@@ -1473,7 +1467,6 @@ namespace Hecton8.Gameplay
 
             if (_currentTool != null)
             {
-                _currentTool.OnToolBroken -= HandleEquippedToolBroken;
                 _currentTool.OnUnequip();
                 _currentTool = null;
             }
@@ -1494,7 +1487,6 @@ namespace Hecton8.Gameplay
 
             _currentSlotIndex = -1;
             LogToolDebug("DespawnCurrentTool complete currentSlot=-1");
-            ActiveSlotChanged?.Invoke(_currentSlotIndex);
             PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonActiveSlotChanged);
         }
 
@@ -1900,7 +1892,6 @@ namespace Hecton8.Gameplay
             if (handAnchor != null)
                 handAnchor.localPosition = _anchorRestPosition;
 
-            ActiveSlotChanged?.Invoke(_currentSlotIndex);
             PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonActiveSlotChanged);
         }
 
@@ -1944,6 +1935,58 @@ namespace Hecton8.Gameplay
             }
 
             return changed;
+        }
+
+        private bool ConsumeEquippedToolDurabilitySignals()
+        {
+            if (_currentTool == null || _handlingEquippedToolBreak)
+                return false;
+
+            ToolMetadata metadata = _currentTool.Metadata;
+            if (metadata == null)
+                return false;
+
+            uint itemHash = ResolveToolDurabilitySignalHash(_currentTool);
+            uint metadataHash = !string.IsNullOrEmpty(metadata.toolID)
+                ? unchecked((uint)Animator.StringToHash(metadata.toolID))
+                : 0u;
+
+            ReadOnlySpan<ItemDurabilityChangedSignal> signals = SignalBus<ItemDurabilityChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly ItemDurabilityChangedSignal signal = ref signals[i];
+                bool broken = signal.Reason == ItemDurabilityChangedSignal.ReasonBreak ||
+                              (signal.Flags & ItemDurabilityChangedSignal.FlagBroken) != 0;
+                if (!broken)
+                    continue;
+
+                uint signalHash = signal.ItemHash;
+                if (signalHash == 0u ||
+                    (signalHash != itemHash && signalHash != metadataHash))
+                {
+                    continue;
+                }
+
+                HandleEquippedToolBroken();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static uint ResolveToolDurabilitySignalHash(PlayerTool tool)
+        {
+            if (tool == null)
+                return 0u;
+
+            ItemData toolData = tool.ToolData;
+            if (toolData != null && !string.IsNullOrEmpty(toolData.PersistentId))
+                return unchecked((uint)LocHash.Compute(toolData.PersistentId));
+
+            ToolMetadata metadata = tool.Metadata;
+            return metadata != null && !string.IsNullOrEmpty(metadata.toolID)
+                ? unchecked((uint)Animator.StringToHash(metadata.toolID))
+                : 0u;
         }
 
         private static uint ResolveInventorySignalHash(PlayerInventory inventory)

@@ -78,6 +78,215 @@ Residual risk:
 Current Status:
 - VERIFIED MASTER GRADE - BUILD GREEN.
 
+## 2026-05-16 - Inquisition42-44 Current-Disk Repass
+
+What was wrong:
+- The user ordered another memory recovery pass; prior green artifacts could not be treated as current proof.
+- A concurrent ledger entry had microsecond text that did not match the current artifact I produced.
+- The first inquisition43 static script failed on an empty file read and needed a stricter null-safe scanner.
+
+What was done:
+- Re-read `Status_INTEGRATION_ASSEMBLY_SURGEON.md`, `Rationale_INTEGRATION_ASSEMBLY_SURGEON.md`, and the exact `INTEGRATION_ASSEMBLY_SURGEON` XML block from `Docs/Tasks/CURRENT_BATCH.md`.
+- Rebuilt `Hecton8.Core.csproj --no-restore`.
+- Reran first-party asmdef graph, Core contract ABI, GlobalSignals layout, duplicate signal, compass typed-lane, shader portability, compute threadgroup, conflict-marker, and `git diff --check` gates.
+- Added a refined H-Phi scan separating contract NativeCollection API surface from local fields/allocations.
+
+Cinematic Cheats used:
+- No gameplay or visual feature was added by this Integrator pass.
+- Low-tier/toaster support remains guarded by explicit compile/runtime platform gates.
+- High/Ultra visual systems remain decoupled from Core; no new leaf assembly dependency was introduced.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Current compile verification time: 69,243,534 us.
+- Static scan timing: not separately stopwatch-measured.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_191500_inquisition42_current.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`, `MEASURED_TOOL_US=69243534`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition43_static_current.txt`: first-party asmdefs strict, no missing named Hecton8 refs, no first-party cycles, Core contract layouts packed, no duplicate signal names, no compass global queue init, no Core `Find`/`string.Format`, no DirectX-only shader hits, max compute group 512, no groups over 1024, no conflict start/end markers.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition44_hphi_refined.txt`: contract local NativeCollection fields 0, contract NativeCollection allocations 0, contract `Update` methods 0, contract `string.Format` 0, contract managed delegates/events 0, runtime MMF unguarded hits 0.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+- Contract NativeCollection API surface remains 6 borrowed-buffer signatures; no local contract allocation or field ownership exists in the refined scan.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-16 - Inquisition42-44 Current-Disk Repass
+
+What was wrong:
+- The user ordered another memory recovery pass; prior green artifacts could not be treated as current proof.
+- A concurrent ledger entry had microsecond text that did not match the current artifact I produced.
+- The first inquisition43 static script failed on an empty file read and needed a stricter null-safe scanner.
+
+What was done:
+- Re-read `Status_INTEGRATION_ASSEMBLY_SURGEON.md`, `Rationale_INTEGRATION_ASSEMBLY_SURGEON.md`, and the exact `INTEGRATION_ASSEMBLY_SURGEON` XML block from `Docs/Tasks/CURRENT_BATCH.md`.
+- Rebuilt `Hecton8.Core.csproj --no-restore`.
+- Reran first-party asmdef graph, Core contract ABI, GlobalSignals layout, duplicate signal, compass typed-lane, shader portability, compute threadgroup, conflict-marker, and `git diff --check` gates.
+- Added a refined H-Phi scan separating contract NativeCollection API surface from local fields/allocations.
+
+Cinematic Cheats used:
+- No gameplay or visual feature was added by this Integrator pass.
+- Low-tier/toaster support remains guarded by explicit compile/runtime platform gates.
+- High/Ultra visual systems remain decoupled from Core; no new leaf assembly dependency was introduced.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Current compile verification time: 69,243,534 us.
+- Static scan timing: not separately stopwatch-measured.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_191500_inquisition42_current.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`, `MEASURED_TOOL_US=69243534`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition43_static_current.txt`: first-party asmdefs strict, no missing named Hecton8 refs, no first-party cycles, Core contract layouts packed, no duplicate signal names, no compass global queue init, no Core `Find`/`string.Format`, no DirectX-only shader hits, max compute group 512, no groups over 1024, no conflict start/end markers.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition44_hphi_refined.txt`: contract local NativeCollection fields 0, contract NativeCollection allocations 0, contract `Update` methods 0, contract `string.Format` 0, contract managed delegates/events 0, runtime MMF unguarded hits 0.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+- Contract NativeCollection API surface remains 6 borrowed-buffer signatures; no local contract allocation or field ownership exists in the refined scan.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-16 - Inquisition42 Current-Disk Green Snapshot
+
+What was wrong:
+- The prior green evidence was valid but no longer the newest proof after the user ordered another memory recovery pass.
+- The git tree contains hundreds of concurrent agent edits, so chat memory and broad staging are unsafe.
+- The first rerun of the static scan failed from a PowerShell script syntax/path issue, not from project code.
+
+What was done:
+- Re-read the mandatory status/rationale files and exact XML assignment from `Docs/Tasks/CURRENT_BATCH.md`.
+- Ran `dotnet build Hecton8.Core.csproj --no-restore` on current disk.
+- Reran the refined static gate for first-party asmdefs, graph cycles, Core contract layout packing, GlobalSignals layout packing, Core contract-source inclusion, compass typed-lane initialization, Core scene-search/string.Format, DirectX-only shader hazards, compute threadgroup limits, conflict markers, and `git diff --check`.
+
+Cinematic Cheats used:
+- No gameplay or visual feature was added by the Integrator.
+- Low-tier compile guard and typed-lane bounded startup remain intact.
+- High/Ultra visual systems remain outside the Core compile graph, preserving visual-overkill capacity without new hard dependencies.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Current compile verification time: 87,185,239 us.
+- Static scan timing: not separately stopwatch-measured.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition42_current_recheck.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`, `ELAPSED_US=87185239`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition42_static_current.txt`: first-party asmdef strict, graph cycles 0, missing Hecton8 refs 0, Core GPR refs 0, Core contract `StructLayout` without `Pack = 1` 0, GlobalSignals explicit without `Pack = 1` 0, contract-source include missing 0, compass global init hits 0, Core Find/string.Format 0, DirectX-only shader hazards 0, max compute threadgroup 512, over-1024 groups 0, conflict start/end markers 0, `git diff --check` exit 0.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+- Git integration still requires scoped staging because the worktree contains many unrelated/concurrent edits.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-16 - Inquisition40 Contract Source and Compass Typed-Lane Final
+
+What was wrong:
+- Current disk was not green despite older status evidence. `inquisition33` failed with missing `HectonPhysicsContract`, `HectonEcologyContract`, and `ScalabilityContract`; later probes exposed missing `HectonSurvivalContract` and `HectonContractVersion`.
+- The generated Core compile lane consumed existing contract constants but did not consistently include the source files that define them.
+- `H8DataBaker` had a missing typed-signal namespace and used a `FileStream` overload rejected by the active Unity netstandard compile.
+- Static scan caught `GlobalSignals.InitializeAllQueues()` inside the compass after the compile went green, which would widen signal initialization from a UI/navigation runtime.
+
+What was done:
+- Added existing Core contract-source files to `Directory.Build.targets` for the Core CLI verification lane: physics, ecology, scalability, survival, MMF paging, signal-lane, lore, vault offset, and validator/version carrier source.
+- Kept the fix out of generated `Hecton8.Core.csproj`.
+- Updated `H8DataBaker` to import `Hecton8.Core.Contracts.Signals`, use a local 64 KB CSV read buffer, and call the supported six-argument `FileStream` constructor.
+- Removed broad compass global signal queue initialization and kept only the required typed lanes.
+
+Cinematic Cheats used:
+- No gameplay/visual feature was added.
+- Low tier keeps cheap math/contract constants available in the compile lane.
+- High/Ultra visual systems remain behind explicit dependencies; no new Core-to-leaf hard assembly edge was added.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Failed proof costs: `inquisition33` 26,825,902 us; `inquisition34` 13,560,433 us; `inquisition35` 49,939,197 us; `inquisition37` 32,616,384 us.
+- Successful proof costs: `inquisition38` 64,119,466 us; final `inquisition40` 31,139,642 us.
+- Static scan timing: not separately stopwatch-measured.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_190330_inquisition40_compass_typed_final.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition41_static_final.txt`: first-party asmdefs strict, no named Hecton8 missing refs, no asmdef cycles, no stale Core GPR reference, Core `StructLayout` declarations carry explicit Pack, GlobalSignals explicit payloads carry Pack, contract source inclusion count missing 0, compass global queue init hits 0, Core Find/string.Format hits 0, DirectX shader hits 0, max compute threadgroup 512, conflict start/end markers 0, `git diff --check` exit 0.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, Quest/Android player build, Metal player build, and IL2CPP strip build were not run in this shell session.
+- Git tree still contains concurrent agent edits. Do not stage the whole tree as this agent's work.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-16 - Inquisition31 Typed-Lane Final Green Snapshot
+
+What was wrong:
+- The active disk kept changing under parallel agents after the previous green proof.
+- `inquisition22`-`inquisition30` contained real and stale walls: duplicate `BufferID` values, duplicate `SaturateFinite01`, missing Lockstep typed-lane constants, a reverted compass broad `GlobalSignals.InitializeAllQueues()` call, and transient CameraJuice/ArchitectEye errors that were already absent from current source.
+- Compile-green alone was insufficient because the compass runtime still briefly reintroduced a broad global signal initialization from a UI component.
+
+What was done:
+- Re-read the disk status/rationale and exact `CURRENT_BATCH.md` XML assignment.
+- Restored only current-source compile constants in `LockstepStateValidator`.
+- Replaced the compass broad queue initialization with explicit `SignalBus<AnomalyProximitySignal>.Configure(...)` and `SignalBus<CompassCalibratedSignal>.Configure(...)`.
+- Re-ran Core build and static gates on current disk.
+
+Cinematic Cheats used:
+- No gameplay simulation or visual feature was added by this Integrator pass.
+- The preserved scalability value is architectural: low-tier avoids broad signal fan-out; High/Ultra presentation paths stay decoupled behind explicit lanes.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Final compile verification time: 3,590,000 us.
+- Static scan timing: not separately stopwatch-measured.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition31_typed_compass_final.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition32_static_final.txt`: `FIRST_PARTY_AUTO_REFERENCED_TRUE_COUNT=0`, `FIRST_PARTY_ASMDEF_CYCLES=0`, `FIRST_PARTY_MISSING_NAMED_HECTON8_REFERENCES=0`, `CORE_STRUCTLAYOUT_WITHOUT_PACK=0`, `GLOBAL_SIGNALS_EXPLICIT_WITHOUT_PACK=0`, `DIEGETIC_COMPASS_GLOBAL_INIT_HITS=0`, `CORE_FIND_HITS=0`, `CORE_STRING_FORMAT_HITS=0`, `COMPUTE_MAX_THREADGROUP_THREADS=512`, `COMPUTE_THREADGROUP_OVER_1024=0`, `CONFLICT_START_END_MARKER_HITS=0`, `GIT_DIFF_CHECK_EXIT=0`.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+- `git diff --check` exits 0 but reports CRLF conversion warnings from the existing worktree.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-16 - Inquisition07-08 Current-Disk Signal Pack Repass
+
+What was wrong:
+- Existing green logs were not enough after the renewed order.
+- Current static signal scan found explicit-layout `ISignal` payloads in `GlobalSignals.cs` with fixed `Size` but missing explicit `Pack = 1`.
+- First-party graph was clean, but vendor asmdefs still contain 39 `autoReferenced=true` flags under third-party asset integrity constraints.
+
+What was done:
+- Ran a fresh Core build on current disk: `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_141247_inquisition07_current.log`.
+- Re-audited first-party asmdefs, stale Core references, contract layouts, SignalBus linker preservation, scene-search calls, `Update`/`LateUpdate`, `string.Format`, MMF guards, synchronous file I/O markers, and compute threadgroup declarations.
+- Normalized explicit `GlobalSignals` typed `ISignal` layouts to `Pack = 1`.
+- Rebuilt Core after the signal ABI patch: `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_141638_inquisition08_signal_pack.log`.
+
+Cinematic Cheats used:
+- No gameplay or visual feature was added by this agent.
+- Low/Quest/Android get deterministic typed-lane packet ABI.
+- High/Ultra visual paths remain available; no forced mobile downgrade was introduced.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Inquisition07 compile verification time: 80,715,712 us.
+- Inquisition08 compile verification time: 117,150,580 us.
+
+Verification:
+- `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_141638_inquisition08_signal_pack.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `ISIGNAL_DECLARATIONS=163`, `ISIGNAL_LAYOUT_ISSUES=0`, `GLOBAL_SIGNALS_EXPLICIT_WITHOUT_PACK=0`.
+- `FIRST_PARTY_AUTO_REFERENCED_TRUE_COUNT=0`, `FIRST_PARTY_ASMDEF_CYCLES=0`, `FIRST_PARTY_MISSING_NAMED_HECTON8_REFERENCES=0`.
+- `CORE_FIND_HITS=0`, `CORE_STRING_FORMAT_HITS=0`.
+- `COMPUTE_MAX_LITERAL_THREADGROUP_THREADS=512`.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+- `CORE_NATIVE_OWNERSHIP_HITS=115`, `CORE_UPDATE_METHOD_HITS=2`, and `CORE_INTERPOLATED_STRING_HITS=15` remain recorded Core-wide debt outside this compile/asmdef/contracts pass.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
 ## 2026-05-16 - Inquisition02-05 Strict Graph and No-Find Polish
 
 What was wrong:
@@ -370,6 +579,78 @@ Verification:
 
 Residual risk:
 - Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-16 - Inquisition16 Current-Disk Green Snapshot
+
+What was wrong:
+- The previous compile wall artifact `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_162715_inquisition15_syntax_tail.log` was stale against current source. It reported 129 errors across dispatcher raycast storage, tether fire APIs, and EcosystemDirector vault aliases that no longer exist in the active compile lane.
+- The status ledger still pointed at older green logs and needed a fresh current-disk proof after parallel agent churn.
+- A broad static scan initially counted vendor/package `autoReferenced=true` asmdefs and one comment-only `cs_5_0` shader line as hazards; refined first-party/domain scan was required before reporting.
+
+What was done:
+- Re-extracted the exact `INTEGRATION_ASSEMBLY_SURGEON` XML block from `Docs/Tasks/CURRENT_BATCH.md`.
+- Ran `dotnet build .\Hecton8.Core.csproj --no-restore` against current disk.
+- Ran refined static checks for first-party asmdefs, missing Hecton8 named references, graph cycles, Core `StructLayout(Pack=1)`, `GlobalSignals` typed lane layouts, Core `Find`/`string.Format`, shader include portability, DirectX-only shader hazards, compute thread-group limits, low-tier define presence, and conflict markers.
+- Updated `Status_INTEGRATION_ASSEMBLY_SURGEON.md` and `Rationale_INTEGRATION_ASSEMBLY_SURGEON.md` with the new current-disk evidence.
+
+Cinematic Cheats used:
+- No gameplay or visual feature was added by this Integrator pass.
+- Low-tier/toaster support remains via `_MATH_LOD_LOW` compile gating.
+- High/Ultra visual systems remain decoupled from Core; no new direct AI/rendering assembly dependency was introduced.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Current compile verification time: 106,970,430 us.
+- Static scan timing: not separately stopwatch-measured.
+- Measured compile/runtime speedup claim: none.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_165933_inquisition16_current.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition16_static_refined.txt`: `FIRST_PARTY_AUTO_REFERENCED_TRUE_COUNT=0`, `FIRST_PARTY_ASMDEF_CYCLES=0`, `FIRST_PARTY_MISSING_NAMED_HECTON8_REFERENCES=0`, `CORE_GPR_REFERENCE_COUNT=0`, `CORE_STRUCTLAYOUT_WITHOUT_PACK=0`, `GLOBAL_SIGNALS_ISIGNAL_LAYOUT_ISSUES=0`, `CORE_FIND_HITS=0`, `CORE_STRING_FORMAT_HITS=0`, `METAL_DIRECTX_REAL_SHADER_HITS=0`, `COMPUTE_MAX_THREADGROUP_THREADS=512`, `COMPUTE_THREADGROUP_OVER_1024=0`, `CONFLICT_MARKER_HITS=0`.
+- Vendor/package `autoReferenced=true` asmdefs remain 39 outside `Assets/_Project`; first-party asmdefs remain strict at 0.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, Quest/Android player build, Metal player build, and IL2CPP strip build were not run.
+- `CORE_UPDATE_METHOD_HITS=2` remains in `SystemDispatcher.Update/LateUpdate`; this is the central Unity bridge and was not replaced under an assembly/contract compile-wall prompt.
+- Broad Core native collection type surface remains a runtime data-sovereignty follow-up, not a compile failure.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-16 - Inquisition42-44 Current-Disk Repass
+
+What was wrong:
+- The user ordered another memory recovery pass; prior green artifacts could not be treated as current proof.
+- A concurrent ledger entry had microsecond text that did not match the current artifact I produced.
+- The first inquisition43 static script failed on an empty file read and needed a stricter null-safe scanner.
+
+What was done:
+- Re-read `Status_INTEGRATION_ASSEMBLY_SURGEON.md`, `Rationale_INTEGRATION_ASSEMBLY_SURGEON.md`, and the exact `INTEGRATION_ASSEMBLY_SURGEON` XML block from `Docs/Tasks/CURRENT_BATCH.md`.
+- Rebuilt `Hecton8.Core.csproj --no-restore`.
+- Reran first-party asmdef graph, Core contract ABI, GlobalSignals layout, duplicate signal, compass typed-lane, shader portability, compute threadgroup, conflict-marker, and `git diff --check` gates.
+- Added a refined H-Phi scan separating contract NativeCollection API surface from local fields/allocations.
+
+Cinematic Cheats used:
+- No gameplay or visual feature was added by this Integrator pass.
+- Low-tier/toaster support remains guarded by explicit compile/runtime platform gates.
+- High/Ultra visual systems remain decoupled from Core; no new leaf assembly dependency was introduced.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Current compile verification time: 69,243,534 us.
+- Static scan timing: not separately stopwatch-measured.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_191500_inquisition42_current.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`, `MEASURED_TOOL_US=69243534`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition43_static_current.txt`: first-party asmdefs strict, no missing named Hecton8 refs, no first-party cycles, Core contract layouts packed, no duplicate signal names, no compass global queue init, no Core `Find`/`string.Format`, no DirectX-only shader hits, max compute group 512, no groups over 1024, no conflict start/end markers.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition44_hphi_refined.txt`: contract local NativeCollection fields 0, contract NativeCollection allocations 0, contract `Update` methods 0, contract `string.Format` 0, contract managed delegates/events 0, runtime MMF unguarded hits 0.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+- Contract NativeCollection API surface remains 6 borrowed-buffer signatures; no local contract allocation or field ownership exists in the refined scan.
 
 Current Status:
 - VERIFIED MASTER GRADE - BUILD GREEN.

@@ -33,7 +33,7 @@ namespace Hecton8.VFX
     /// Integrates with HectonSurvivalSystem, PlayerMovement, InteractionEvents, GameTickManager, SaveManager.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CameraJuiceSystem : MonoBehaviour, ICameraJuiceSystem, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpactEventListener, ICombatDamageEventListener
+    public sealed class CameraJuiceSystem : MonoBehaviour, ICameraJuiceSystem, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpactEventListener, ICombatDamageEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IScalabilityChangedEventListener
     {
         // ═══ CACHED REFERENCES ═══
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = CameraJuiceTelemetryEntrySizeBytes)]
@@ -363,6 +363,8 @@ namespace Hecton8.VFX
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
         private bool _movementEventsHooked;
+        private bool _hotSwapRegistered;
+        private bool _scalabilityEventsRegistered;
         private float _nextDependencyResolveTime;
 
         // ═══ EFFECT ENABLE FLAGS ═══
@@ -409,6 +411,7 @@ namespace Hecton8.VFX
                 return;
             }
 
+            RefreshCachedRegistryServices();
             if (!TryResolveCamera())
             {
                 LogMainCameraMissing();
@@ -440,6 +443,7 @@ namespace Hecton8.VFX
                 }
             }
 
+            TryRegisterScalabilityEvents();
             TryResolveGameplayDependencies();
             SyncDependencyFlags();
             EnsureCameraJuiceTelemetry();
@@ -456,6 +460,8 @@ namespace Hecton8.VFX
         private void OnEnable()
         {
             TryRegisterToGlobalRegistry();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityEvents();
             if (Application.isPlaying)
                 CameraJuiceSignals.EnsurePrewarmed();
 
@@ -481,6 +487,8 @@ namespace Hecton8.VFX
             // Unregister from GameTickManager
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
+            TryUnregisterScalabilityEvents();
+            TryUnregisterHotSwapListener();
 
             UnhookDependencyEvents();
 
@@ -587,10 +595,141 @@ namespace Hecton8.VFX
             _registeredLateFrame = false;
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+            RefreshCachedRegistryServices();
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+            {
+                ScalabilityEvents.Register(this);
+                _scalabilityEventsRegistered = true;
+            }
+
+            _cachedScalabilityTier = (byte)GlobalRegistry.ScalabilityTier;
+        }
+
+        private void TryUnregisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityEventsRegistered = false;
+        }
+
+        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _cachedScalabilityTier = (byte)payload.CurrentQualityTier;
+            _proceduralLowTierNoisePrimed = false;
+        }
+
+        void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        private void RefreshCachedRegistryServices()
+        {
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Dispatcher, GlobalRegistry.TickDispatcher);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Player, GlobalRegistry.Player);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Submarine, GlobalRegistry.Submarine);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DynamicResolutionRuntime, GlobalRegistry.DynamicResolution);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.VRAMMonitorRuntime, GlobalRegistry.VRAMMonitor);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
+        }
+
+        private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _dispatcher = currentService as ITickDispatcher;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    BindPlayerRuntime(currentService as IPlayerRuntimeContext);
+                    break;
+                case GlobalRegistryServiceSlot.Submarine:
+                    BindSubmarineRuntime(currentService as ISubmarineRuntimeContext);
+                    break;
+                case GlobalRegistryServiceSlot.DynamicResolutionRuntime:
+                    _dynamicResolutionScaler = currentService as DynamicResolutionScaler;
+                    break;
+                case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
+                    _vramMonitor = currentService as VRAMMonitor;
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    BindDataVault(currentService as IDataVault);
+                    break;
+            }
+        }
+
+        private void BindPlayerRuntime(IPlayerRuntimeContext playerRuntimeContext)
+        {
+            if (ReferenceEquals(_playerRuntimeContext, playerRuntimeContext))
+                return;
+
+            UnhookDependencyEvents();
+            _playerRuntimeContext = playerRuntimeContext;
+            _playerRigidbody = playerRuntimeContext != null ? playerRuntimeContext.PlayerRigidbody : null;
+            if (_survivalSystemReference == null)
+                _survivalSystem = playerRuntimeContext != null ? playerRuntimeContext.SurvivalSystem : null;
+            if (_playerMovementReference == null)
+                _playerMovement = playerRuntimeContext != null ? playerRuntimeContext.PlayerMovement : null;
+
+            SyncDependencyFlags();
+            if (isActiveAndEnabled)
+                SyncDependencySubscriptions();
+        }
+
+        private void BindSubmarineRuntime(ISubmarineRuntimeContext submarineRuntimeContext)
+        {
+            _submarineRuntimeContext = submarineRuntimeContext;
+            _submarineHullRigidbody = submarineRuntimeContext != null ? submarineRuntimeContext.HullRigidbody : null;
+            _submarineStructuralGrid = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
+        }
+
+        private void BindDataVault(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            _dataVault = vault;
+            _cameraJuiceTelemetryHandle = default;
+            _cameraJuiceTelemetryReady = false;
+            _cameraJuiceTelemetryCursor = 0;
+        }
+
         private void OnDestroy()
         {
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
+            TryUnregisterScalabilityEvents();
+            TryUnregisterHotSwapListener();
             InteractionEvents.Unregister(this);
             PhysicsEvents.Unregister(this);
             CombatDamageRuntime.Unregister(this);
@@ -1369,9 +1508,14 @@ namespace Hecton8.VFX
         private void UpdateSeismicCameraJitter(float dt, float effectiveShakeScale)
         {
             float safeDt = math.max(0f, dt);
-            if (GlobalSignals.TryGetLatestSeismicSignal(out SeismicSignal signal, out int sequence) &&
-                sequence != _lastSeismicSignalSequence)
+            ReadOnlySpan<SeismicSignal> seismicSignals = SignalBus<SeismicSignal>.GetFrameSnapshot();
+            for (int i = 0; i < seismicSignals.Length; i++)
             {
+                SeismicSignal signal = seismicSignals[i];
+                int sequence = signal.Sequence;
+                if (sequence == _lastSeismicSignalSequence)
+                    continue;
+
                 _lastSeismicSignalSequence = sequence;
                 float signalIntensity = math.saturate(signal.CameraJitter01 * math.max(0f, effectiveShakeScale));
                 if (signalIntensity > _seismicJitterIntensity)
@@ -1425,18 +1569,18 @@ namespace Hecton8.VFX
                 return false;
             }
 
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null || vault.IsCompactionFenceActive)
+            IDataVault vault = _dataVault;
+            if (vault == null)
             {
                 ReleaseCameraJuiceTelemetry();
                 return false;
             }
 
-            if (!ReferenceEquals(_dataVault, vault))
+            if (vault.IsCompactionFenceActive)
             {
-                _dataVault = vault;
                 _cameraJuiceTelemetryHandle = default;
                 _cameraJuiceTelemetryReady = false;
+                return false;
             }
 
             if (!vault.TryGetBufferHandle(BufferID.CameraJuiceTelemetryRing, out _cameraJuiceTelemetryHandle) ||
@@ -2048,7 +2192,7 @@ namespace Hecton8.VFX
 
             if (_mainCamera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null)
                     _mainCamera = playerContext.PlayerCamera;
 
@@ -2102,15 +2246,9 @@ namespace Hecton8.VFX
 
         private void TryResolveGameplayDependencies()
         {
-            _cachedScalabilityTier = (byte)GlobalRegistry.ScalabilityTier;
-            _dispatcher = GlobalRegistry.TickDispatcher;
-            _playerRuntimeContext = GlobalRegistry.Player;
             _playerRigidbody = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerRigidbody : null;
-            _submarineRuntimeContext = GlobalRegistry.Submarine;
             _submarineHullRigidbody = _submarineRuntimeContext != null ? _submarineRuntimeContext.HullRigidbody : null;
             _submarineStructuralGrid = _submarineRuntimeContext != null ? _submarineRuntimeContext.StructuralGrid : null;
-            _dynamicResolutionScaler = GlobalRegistry.DynamicResolution;
-            _vramMonitor = GlobalRegistry.VRAMMonitor;
 
             Transform playerRoot = null;
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&

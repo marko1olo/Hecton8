@@ -35,7 +35,7 @@ namespace Hecton8.Editor
         private const string MaskMaxLabel = "maskMax";
         private const double ShelfPreviewOriginMeters = -16000.0;
         private const double ShelfPreviewCellSizeMeters = 64.0;
-        private const double ShelfAupCellSizeMeters = 5000.0;
+        private const double ShelfAupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
         private const float ShelfHighWorldY = 2000f;
         private const float ShelfLowWorldY = -5000f;
         private const float ErosionHeightScaleMeters = 160f;

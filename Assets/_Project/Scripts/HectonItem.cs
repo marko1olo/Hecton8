@@ -16,6 +16,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
@@ -36,7 +37,7 @@ namespace Hecton8.Items
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;
         private const float OverflowScatterTorqueImpulse = 0.35f;
-        private const float DeepSeaSeawaterDensityKgPerM3 = 1025f;
+        private const float DeepSeaSeawaterDensityKgPerM3 = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
         private const float LooseItemBuoyancyAngularDragMultiplier = 2.75f;
         private const ushort DefaultQualityMilli = 1000;
         // Data
@@ -97,10 +98,6 @@ namespace Hecton8.Items
             ConfigureWaterDynamicsFromData();
             RefreshCachedItemHash();
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (itemData == null)
-                Debug.LogError("[HectonItem] ItemData is not assigned.", this);
-#endif
         }
 
         // Pool-Safe Settle (v3.1)
@@ -407,15 +404,12 @@ namespace Hecton8.Items
             if (addedQuantity <= 0 || _cachedItemHashId == 0)
                 return;
 
-            Vector3 signalPosition = transform.position;
-            if (interactor != null && IsFiniteVector(interactor.position))
-                signalPosition = interactor.position;
+            if (!TryResolveSignalAup(interactor, out AbsoluteUniversePosition positionAup))
+                return;
 
             ItemAcquiredSignal signal = new ItemAcquiredSignal
             {
-                PositionAup = IsFiniteVector(signalPosition)
-                    ? AbsoluteUniversePosition.FromRuntimePosition(signalPosition)
-                    : default,
+                PositionAup = positionAup,
                 ItemHash = unchecked((uint)_cachedItemHashId),
                 OreHash = unchecked((uint)_cachedItemHashId),
                 Quantity = (ushort)Mathf.Clamp(addedQuantity, 0, ushort.MaxValue),
@@ -424,6 +418,25 @@ namespace Hecton8.Items
                 Frame = unchecked((uint)Time.frameCount)
             };
             GlobalSignals.Publish(in signal);
+        }
+
+        private bool TryResolveSignalAup(Transform interactor, out AbsoluteUniversePosition positionAup)
+        {
+            if (interactor != null && IsFiniteVector(interactor.position))
+            {
+                positionAup = AbsoluteUniversePosition.FromRuntimePosition(interactor.position);
+                return true;
+            }
+
+            Vector3 signalPosition = transform.position;
+            if (IsFiniteVector(signalPosition))
+            {
+                positionAup = AbsoluteUniversePosition.FromRuntimePosition(signalPosition);
+                return true;
+            }
+
+            positionAup = default;
+            return false;
         }
 
         private static ushort NormalizeQualityMilli(ushort qualityMilli)
@@ -555,9 +568,6 @@ namespace Hecton8.Items
                 return;
 
             if (quantity < 1) quantity = 1;
-
-            if (itemData != null && !Application.isPlaying)
-                gameObject.name = $"Item_{itemData.itemName}";
 
             if (!Application.isPlaying)
             {

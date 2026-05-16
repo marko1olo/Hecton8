@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
+using Hecton8.AI.Ecosystem;
 using Hecton8.Construction;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.SaveSystem;
@@ -28,11 +28,6 @@ namespace Hecton8.Core
         private const uint DumpMagic = 0x4838424Cu; // H8BL
         private const int DumpVersion = 1;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_BINARY_LAYOUT_SENTINEL.bin";
-        private const string EcosystemPopulationCoefficientTypeName = "Hecton8.AI.Ecosystem.EcosystemPopulationCoefficient";
-        private const string EcosystemPopulationSectorStateTypeName = "Hecton8.AI.Ecosystem.EcosystemPopulationSectorState";
-        private const string EcosystemPopulationCullEventTypeName = "Hecton8.AI.Ecosystem.EcosystemPopulationCullEvent";
-        private const string EcosystemPopulationFreeSlotTypeName = "Hecton8.AI.Ecosystem.EcosystemPopulationFreeSlot";
-        private const string EcosystemPopulationTelemetryEntryTypeName = "Hecton8.AI.Ecosystem.EcosystemPopulationTelemetryEntry";
         private static bool _verified;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -103,88 +98,71 @@ namespace Hecton8.Core
 
         private static void VerifyEcosystemPopulationLayouts()
         {
-            Type coefficientType = ResolveOptionalType(EcosystemPopulationCoefficientTypeName);
-            Type sectorStateType = ResolveOptionalType(EcosystemPopulationSectorStateTypeName);
-            Type cullEventType = ResolveOptionalType(EcosystemPopulationCullEventTypeName);
-            Type freeSlotType = ResolveOptionalType(EcosystemPopulationFreeSlotTypeName);
-            Type telemetryType = ResolveOptionalType(EcosystemPopulationTelemetryEntryTypeName);
-            if (coefficientType == null &&
-                sectorStateType == null &&
-                cullEventType == null &&
-                freeSlotType == null &&
-                telemetryType == null)
-            {
-                return;
-            }
+            AssertSize<EcosystemPopulationCoefficient>(52);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.BirthRate), 0);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.DeathRate), 4);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.DeltaTimeSeconds), 8);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.FeedRate), 12);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.PredatorConversion), 16);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.PreyCarryingCapacity), 20);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.StablePredatorBiomass), 24);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.StablePreyBiomass), 28);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.ObservedPredatorMax), 32);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.ObservedPreyMax), 36);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.IntegrationSteps), 40);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.Flags), 44);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.Reserved), 48);
 
-            AssertResolved(coefficientType, EcosystemPopulationCoefficientTypeName);
-            AssertResolved(sectorStateType, EcosystemPopulationSectorStateTypeName);
-            AssertResolved(cullEventType, EcosystemPopulationCullEventTypeName);
-            AssertResolved(freeSlotType, EcosystemPopulationFreeSlotTypeName);
-            AssertResolved(telemetryType, EcosystemPopulationTelemetryEntryTypeName);
+            AssertSize<EcosystemPopulationSectorState>(112);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.SampleAup), 0);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.SectorHash), 48);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.PreyBiomass), 56);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.PredatorBiomass), 60);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.MaxCapacity), 64);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.ActivePreyCount), 68);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.ActivePredatorCount), 72);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.FreePreyCount), 76);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.DesiredPreyCount), 80);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.LastCulled), 84);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.LastSpawned), 88);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.LastFleeDown), 92);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.Flags), 96);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.Reserved0), 100);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.Reserved1), 104);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.Reserved2), 108);
 
-            AssertSize(coefficientType, 52);
-            AssertOffset(coefficientType, "BirthRate", 0);
-            AssertOffset(coefficientType, "DeathRate", 4);
-            AssertOffset(coefficientType, "DeltaTimeSeconds", 8);
-            AssertOffset(coefficientType, "FeedRate", 12);
-            AssertOffset(coefficientType, "PredatorConversion", 16);
-            AssertOffset(coefficientType, "PreyCarryingCapacity", 20);
-            AssertOffset(coefficientType, "StablePredatorBiomass", 24);
-            AssertOffset(coefficientType, "StablePreyBiomass", 28);
-            AssertOffset(coefficientType, "ObservedPredatorMax", 32);
-            AssertOffset(coefficientType, "ObservedPreyMax", 36);
-            AssertOffset(coefficientType, "IntegrationSteps", 40);
-            AssertOffset(coefficientType, "Flags", 44);
-            AssertOffset(coefficientType, "Reserved", 48);
+            AssertSize<EcosystemPopulationCullEvent>(88);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.PositionAup), 0);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.SectorHash), 48);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.EntityHash), 56);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.EntityIndex), 60);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.Intensity01), 64);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.Flags), 68);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.Reserved0), 72);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.Reserved1), 76);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.Reserved2), 80);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.Reserved3), 84);
 
-            AssertSize(sectorStateType, 112);
-            AssertOffset(sectorStateType, "SampleAup", 0);
-            AssertOffset(sectorStateType, "SectorHash", 48);
-            AssertOffset(sectorStateType, "PreyBiomass", 56);
-            AssertOffset(sectorStateType, "PredatorBiomass", 60);
-            AssertOffset(sectorStateType, "MaxCapacity", 64);
-            AssertOffset(sectorStateType, "ActivePreyCount", 68);
-            AssertOffset(sectorStateType, "ActivePredatorCount", 72);
-            AssertOffset(sectorStateType, "FreePreyCount", 76);
-            AssertOffset(sectorStateType, "DesiredPreyCount", 80);
-            AssertOffset(sectorStateType, "LastCulled", 84);
-            AssertOffset(sectorStateType, "LastSpawned", 88);
-            AssertOffset(sectorStateType, "LastFleeDown", 92);
-            AssertOffset(sectorStateType, "Flags", 96);
-            AssertOffset(sectorStateType, "Reserved0", 100);
-            AssertOffset(sectorStateType, "Reserved1", 104);
+            AssertSize<EcosystemPopulationFreeSlot>(24);
+            AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.SectorHash), 0);
+            AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.EntityIndex), 8);
+            AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.Frame), 12);
+            AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.Flags), 16);
+            AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.Reserved), 20);
 
-            AssertSize(cullEventType, 88);
-            AssertOffset(cullEventType, "PositionAup", 0);
-            AssertOffset(cullEventType, "SectorHash", 48);
-            AssertOffset(cullEventType, "EntityHash", 56);
-            AssertOffset(cullEventType, "EntityIndex", 60);
-            AssertOffset(cullEventType, "Intensity01", 64);
-            AssertOffset(cullEventType, "Flags", 68);
-            AssertOffset(cullEventType, "Reserved0", 72);
-            AssertOffset(cullEventType, "Reserved1", 76);
-
-            AssertSize(freeSlotType, 24);
-            AssertOffset(freeSlotType, "SectorHash", 0);
-            AssertOffset(freeSlotType, "EntityIndex", 8);
-            AssertOffset(freeSlotType, "Frame", 12);
-            AssertOffset(freeSlotType, "Flags", 16);
-            AssertOffset(freeSlotType, "Reserved", 20);
-
-            AssertSize(telemetryType, 64);
-            AssertOffset(telemetryType, "Frame", 0);
-            AssertOffset(telemetryType, "StateHash", 4);
-            AssertOffset(telemetryType, "TotalActiveEntities", 8);
-            AssertOffset(telemetryType, "CulledByEcology", 12);
-            AssertOffset(telemetryType, "SpawnedByEcology", 16);
-            AssertOffset(telemetryType, "FleeDownRequests", 20);
-            AssertOffset(telemetryType, "SectorCount", 24);
-            AssertOffset(telemetryType, "FreeRingCount", 28);
-            AssertOffset(telemetryType, "SystemStress01", 32);
-            AssertOffset(telemetryType, "Flags", 36);
-            AssertOffset(telemetryType, "Reserved0", 40);
-            AssertOffset(telemetryType, "Reserved5", 60);
+            AssertSize<EcosystemPopulationTelemetryEntry>(64);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.Frame), 0);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.StateHash), 4);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.TotalActiveEntities), 8);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.CulledByEcology), 12);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.SpawnedByEcology), 16);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.FleeDownRequests), 20);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.SectorCount), 24);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.FreeRingCount), 28);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.SystemStress01), 32);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.Flags), 36);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.Reserved0), 40);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.Reserved5), 60);
         }
 
         private static void VerifySaveLayouts()
@@ -394,28 +372,6 @@ namespace Hecton8.Core
                 Fail(ResolveTypeName<T>(), expected, observed, CombineHash(OffsetContextHash, ComputeFnv1A32(fieldName)));
         }
 
-        private static void AssertSize(Type type, int expected)
-        {
-            int observed = Marshal.SizeOf(type);
-            UnityEngine.Debug.Assert(observed == expected, type.FullName);
-            if (observed != expected)
-                Fail(type.FullName, expected, observed, CombineHash(SizeContextHash, ComputeFnv1A32(type.FullName)));
-        }
-
-        private static void AssertOffset(Type type, string fieldName, int expected)
-        {
-            int observed = Marshal.OffsetOf(type, fieldName).ToInt32();
-            UnityEngine.Debug.Assert(observed == expected, type.FullName);
-            if (observed != expected)
-                Fail(type.FullName, expected, observed, CombineHash(OffsetContextHash, ComputeFnv1A32(fieldName)));
-        }
-
-        private static void AssertResolved(Type type, string typeName)
-        {
-            if (type == null)
-                Fail(typeName, expected: 1, observed: 0, CombineHash(AttributeContextHash, ComputeFnv1A32(typeName)));
-        }
-
         private static void AssertBinarySafe<T>() where T : unmanaged
         {
             if (!UnsafeUtility.IsBlittable<T>())
@@ -473,19 +429,6 @@ namespace Hecton8.Core
         private static uint ResolveTypeHash<T>() where T : unmanaged
         {
             return ComputeFnv1A32(ResolveTypeName<T>());
-        }
-
-        private static Type ResolveOptionalType(string typeName)
-        {
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            for (int i = 0; i < assemblies.Length; i++)
-            {
-                Type type = assemblies[i].GetType(typeName, false);
-                if (type != null)
-                    return type;
-            }
-
-            return null;
         }
 
         private static uint CombineHash(uint left, uint right)

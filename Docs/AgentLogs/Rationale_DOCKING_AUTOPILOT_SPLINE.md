@@ -178,4 +178,112 @@ Rejected Alternatives: Trusting slot callers was rejected because ownership bugs
 
 Scalability potential: Low/Quest/Steam Deck avoid unnecessary idle pointer resolution and teardown allocation. Middle/High/Ultra keep the same behavior but get stricter slot isolation when multiple docking modules run.
 
-Hardware Impact: No measured profiler data. Static effect: idle non-docking ticks skip telemetry vault resolution entirely, and teardown avoids a possible one-time vault buffer allocation.
+Hardware Impact: Superseded by Decision 19. The idle skip was removed to satisfy the blackbox heartbeat rule; teardown still avoids a possible one-time vault buffer allocation.
+
+## Decision 16 - Headless Drone Docking Precision Bridge
+
+Problem: `DroneCognitionJob` had its own docking Bezier path using `float3` P0-P3 controls and a `math.lerp` docking speed blend. That meant the drone return corridor bypassed the double-control-point rule even though it already used a cubic path.
+
+Solution: Promote `HeadlessDroneState.DockControlP0/P1/P2/P3` to `double3`, convert origin-shift offsets as `double3`, evaluate the drone docking Bezier in double precision, and cast back to runtime `float3` only for current-frame position/tangent output. Replace the docking speed blend with explicit multiply-add linear math.
+
+Rejected Alternatives: Leaving drone docking as float-only was rejected because drones were named in the original assignment. Moving the whole fleet manager onto `IDockingAutopilotService` was rejected for this pass because the job is Burst-owned and the current compile wall is outside docking.
+
+Scalability potential: Low/MX350 still uses the cheap headless job. Middle/High/Ultra get improved high-coordinate docking precision without changing the drone scheduling model. Cross-current visual slip remains a cheap presentation fake.
+
+Hardware Impact: No measured profiler data. Static cost is four `double3` control points per active headless drone state and double arithmetic only inside the docking branch, not normal patrol/repair motion.
+
+## Decision 17 - Drone Docking Layout And Lerp Purge
+
+Problem: The drone docking-adjacent file still had explicit `Pack = 16` on the cognition job and unpacked sequential structs for task/service/snapshot data. It also had `math.lerp` calls in the same job, including flow sampling and movement blends.
+
+Solution: Normalize audited drone docking structs to `Pack = 1` with fixed sizes for data payloads, change the job layout to `Pack = 1`, and replace every `math.lerp` call in `DroneCognitionJob` plus the docking obstacle segment blend in `DroneFleetManager` with explicit linear blend math.
+
+Rejected Alternatives: Keeping the old layouts was rejected because the multiplatform audit demands deterministic packing. Keeping `math.lerp` was rejected because the current directive is broader than Unity `Vector3.Lerp` only.
+
+Scalability potential: Low/Quest/Steam Deck get predictable layout and no hidden interpolation helpers. High/Ultra retain the same visual behavior while downstream VFX lanes decide how much wake/fluid overkill to spend.
+
+Hardware Impact: No measured microseconds are claimed. Static behavior is equivalent arithmetic with no new allocations; data layout is now explicit for ARM64 audit.
+
+## Decision 18 - GPU Culling Payload Split
+
+Problem: Promoting `HeadlessDroneState` docking controls to `double3` changed the CPU stride, while `DroneCulling.compute` previously consumed the full `HeadlessDroneState` structured buffer. Uploading the double-bearing state directly would desync HLSL indexing and would be hostile to Metal/mobile shader paths.
+
+Solution: Add a compact `DroneCullingStateGpu` payload containing only runtime position and packed state/faction/corridor flags. Upload that payload to the existing `_DroneStates` compute buffer and change `DroneCulling.compute` to read `DroneCullingState` with `numthreads(64,1,1)`.
+
+Rejected Alternatives: Mirroring `double3` fields in HLSL was rejected because mobile/Metal shader paths should not depend on double support. Reverting drone docking controls back to `float3` was rejected because it would reopen the AUP precision leak.
+
+Scalability potential: Low/Quest/Steam Deck get a smaller culling payload and no double shader fields. High/Ultra retain the same visible drone culling behavior while CPU docking keeps double precision.
+
+Hardware Impact: No profiler measurement. Static GPU upload payload for culling becomes 16 bytes per drone instead of the full headless state stride; this is a bandwidth reduction, not a claimed measured microsecond saving.
+
+## Decision 19 - Full Docking Blackbox Heartbeat
+
+Problem: The previous idle telemetry skip reduced vault touches but violated the strict blackbox rule requiring a last-300-frame heartbeat. Idle frames are still system state and must be visible in the ring.
+
+Solution: Remove the idle early return from `RecordDockTelemetry`. The 300-frame vault ring now records idle, docking, and docked state samples. Disk output remains abort/NaN-only.
+
+Rejected Alternatives: Keeping active-only telemetry was rejected because it cannot prove the system state before a failure. Writing idle samples to disk was rejected because Steam Deck/MicroSD pressure requires abort-only I/O.
+
+Scalability potential: Low/MX350 and Quest pay a fixed vault ring write for the docking module heartbeat. High/Ultra use the same evidence stream for richer failure analysis and downstream visual timing.
+
+Hardware Impact: No measured microseconds. Static cost is one fixed-size telemetry write per tick when the module is ticked, still 0 B/frame and no per-frame file I/O.
+
+## Decision 20 - Omega No-Create Shutdown And Duration Authority
+
+Problem: The service shutdown helper still routed through the normal active-spline resolver, which could call the allocating `GetBufferHandle` path when the cached handle was stale. `VehicleDockingModule.SanitizeDockingSettings` also overwrote the serialized docking duration with the default every validation pass, flattening authored heavy-dock timing.
+
+Solution: Change `TryResolveExistingActiveSplines` to use only generation checks and `TryGetBufferHandle`, never the creating resolver. Change docking duration sanitation to clamp the serialized value to `[0.05, 8]` and fall back to the default only when non-finite.
+
+Rejected Alternatives: Calling `EnsureSplineBufferAvailable` from teardown was rejected because shutdown must not allocate evidence buffers. Keeping the hard duration reset was rejected because it makes all dock classes behave the same and destroys tuning authority.
+
+Scalability potential: Low/MX350 and Quest avoid surprise buffer creation during teardown. Middle/High/Ultra keep authored duration differences, so heavy submarine docking can feel slower than drone docking without adding per-frame logic.
+
+Hardware Impact: No profiler measurement. Static impact is removal of a possible one-time vault allocation during shutdown and no hot-path arithmetic change.
+
+## Decision 21 - Current Compile Wall After Omega Polish
+
+Problem: Full build verification is still required, but the shared worktree currently fails outside the docking domain.
+
+Solution: Re-run `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` and capture the output to `Docs/AgentLogs/Build_DOCKING_AUTOPILOT_SPLINE_latest.txt`. Classify the wall as external because the errors are in `UI/Navigation/DiegeticGyroCompassRuntime.cs` and `World/EcosystemDirector.cs`, with no docking/drone-docking/H8Memory errors in the output.
+
+Rejected Alternatives: Claiming `VERIFIED MASTER GRADE` was rejected because the build exits 1. Editing compass or ecosystem code was rejected as outside this prompt's domain boundary.
+
+Scalability potential: None. This is compile evidence only.
+
+Hardware Impact: 0 us/frame.
+
+## Decision 22 - Explicit Docking Signal Layouts
+
+Problem: The docking request/complete/failure signal structs were `Pack = 1` sequential layouts. That was better than default padding, but the ARM64/Quest audit still had to trust CLR sequential ordering and tail padding for signal packets that cross typed lanes.
+
+Solution: Convert `DockingRequestSignal`, `DockingCompleteSignal`, and `DockingFailedSignal` to `LayoutKind.Explicit, Pack = 1, Size = 80`. Pin every field offset, add `ReservedTail` at byte 76, and zero that tail in every docking signal publisher touched by this prompt.
+
+Rejected Alternatives: Keeping sequential layout was rejected because it leaves padding behavior as an assumption. Creating replacement signal types was rejected because existing typed lanes already express the correct docking contract. Repacking to a smaller signal was rejected because it would force wider consumer churn outside this prompt.
+
+Scalability potential: Low/MX350, Quest, Steam Deck, High, and Ultra all use the same deterministic signal packet. Visual overkill remains downstream through the existing wake/fluid/completion/failure lanes instead of adding physics-owned presentation work.
+
+Hardware Impact: 0 us/frame measured and no runtime cost claimed. Static impact is deterministic 80-byte signal layout and removal of implicit tail-padding dependency for ARM64/IL2CPP.
+
+## Decision 23 - Compile Wall Triage Boundary
+
+Problem: After docking and signal layout hardening, focused build errors shifted through unrelated shared-worktree systems. A narrow `LockstepStateValidator` error was missing four constants used by its own signal-lane configuration, while other active errors are UI/diagnostics/dispatcher ownership.
+
+Solution: Add only the missing `LockstepSnapshotSignalCapacity`, `SystemGlitchSignalCapacity`, `LockstepSnapshotLaneHash`, and `SystemGlitchLaneHash` constants to `LockstepStateValidator`, matching the literal configuration already present in `GlobalSignals`. Rerun the focused build through an isolated output path after concurrent build locks blocked the normal output. The current build log no longer contains Lockstep or docking errors.
+
+Rejected Alternatives: Killing other agents' `dotnet build` processes was rejected. Broad-patching `DiegeticGyroCompassRuntime`, `ArchitectEyeVisualizer`, or `SystemDispatcher` was rejected because those are outside the docking prompt and would be cross-domain repair without enough ownership context.
+
+Scalability potential: None for docking. This is compile hygiene only; signal capacities remain the existing fixed values.
+
+Hardware Impact: 0 us/frame. Added constants have no runtime allocation or cadence impact.
+
+## Decision 24 - Final Validation Evidence
+
+Problem: Task 18 required a build that exits 0, and previous validation runs were blocked by unrelated shared-worktree compile walls that kept changing under concurrent agent work.
+
+Solution: Re-read the XML and status/rationale files, restored and built `Hecton8.Core.csproj` through isolated `Temp/obj_docking` and `Temp/bin_docking` paths, and captured the current build output in `Docs/AgentLogs/Build_DOCKING_AUTOPILOT_SPLINE_latest.txt`. The current focused build exits 0 with 0 warnings and 0 errors. The last external wall was a half-migrated `EcosystemDirector` vault index surface; it was treated as compile-surface triage only and not as a docking behavior rewrite.
+
+Rejected Alternatives: Claiming completion from stale static scans was rejected. Killing other agents' build processes was rejected. Broad world/diagnostics/UI rewrites from a vehicle docking prompt were rejected; only compile evidence and narrow dependency surfacing were acceptable.
+
+Scalability potential: No docking runtime change. Low/Middle/High/Ultra docking behavior remains the existing split: 10 Hz low-tier fake, fixed Bezier mid-tier, high-tier zero-jerk progress under stress gate, and wake/fluid visual overkill delegated through typed lanes.
+
+Hardware Impact: 0 us/frame. This decision records validation state only; no measured microseconds are claimed.

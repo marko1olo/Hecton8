@@ -1,0 +1,5 @@
+Id,version_id,Name,Description,CategoryId,Cost,StackMax,MassKg,IconIndex,AccessFrequency
+scrap_metal,1.2,Scrap Metal,Torn hull alloy used for field repairs,1,12,64,0.80,0,100
+pressure_gasket,1.2,Pressure Gasket,Seal ring rated for abyss modules,1,38,16,0.15,1,82
+oxygen_cell,1.2,Oxygen Cell,Compact reserve cell for suit systems,2,90,8,0.45,2,76
+sonar_crystal,1.2,Sonar Crystal,Piezo shard for acoustic arrays,3,160,12,0.30,3,54

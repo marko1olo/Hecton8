@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts;
 using Unity.Mathematics;
 
 namespace Hecton8.AI.Cognition
@@ -9,10 +10,10 @@ namespace Hecton8.AI.Cognition
     /// </summary>
     public static class AlphaLeviathanStalkPhase
     {
-        public const byte Idle = 0;
-        public const byte Circle = 1;
-        public const byte Charge = 2;
-        public const byte Retreat = 3;
+        public const byte Idle = AlphaLeviathanPhase.Hidden;
+        public const byte Circle = AlphaLeviathanPhase.Circling;
+        public const byte Charge = AlphaLeviathanPhase.FalseCharge;
+        public const byte Retreat = AlphaLeviathanPhase.VeerOff;
     }
 
     /// <summary>
@@ -36,7 +37,7 @@ namespace Hecton8.AI.Cognition
         public const int MaxLeviathanSlots = 64;
         public const int TelemetryFrames = 300;
         public const int TelemetryCapacity = TelemetryFrames * MaxLeviathanSlots;
-        public const double AupCellSizeMeters = 5000d;
+        public const double AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble;
         public const float MinimumFogRingMeters = 8f;
         public const float FogEdgeOffsetMeters = 5f;
         public const float DirectionEpsilon = 0.0001f;

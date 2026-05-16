@@ -245,3 +245,111 @@ Solution: Ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p
 Rejected Alternatives: Keeping stale external-blocked status; claiming a green build before rerunning the gate; claiming 0 warnings after the duplicate-source warning appeared.
 Scalability potential: No runtime change; confirms Low/Middle/High/Ultra item magnet paths compile in the contained core assembly.
 Hardware Impact: 0 runtime impact. Build validation only.
+
+Problem: The scoped item-domain scan still found one editor-only interpolation in duplicate `HectonItem.OnValidate`, assigning `gameObject.name = $"Item_{itemData.itemName}"`.
+Solution: Removed the auto-rename line instead of replacing it with another allocating string construction path. This preserves item runtime behavior and eliminates the last scoped `$"..."` match.
+Rejected Alternatives: `string.Concat`, `string.Format`, or keeping editor convenience while the task demanded a hard string-allocation purge.
+Scalability potential: Low/Middle/High/Ultra runtime paths are unchanged. This is editor/cold-path hygiene so no visual budget changes.
+Hardware Impact: 0 runtime impact; editor-only allocation removed.
+
+Problem: The current project compile shifted after concurrent external edits despite the Pass 14 green build.
+Solution: Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`; latest failure is external to item magnet: duplicate `ArchitectEyeVisualizer.ValidatePackedStructSizes`, plus `LaserCutterEventPayload` ambiguity in `AbyssalThermalManager` and `PlayerCriticalProceduralAudioRenderer`.
+Rejected Alternatives: Claiming the Pass 14 green result is still current; editing diagnostics, world thermal, or audio ownership from the item magnet task.
+Scalability potential: No runtime change for loot magnet; external owners must repair their contracts.
+Hardware Impact: None in item magnet.
+
+Problem: Final disk truth needed to supersede stale external-wall entries at the bottom of the rationale log.
+Solution: Re-ran current validation after the `LaserCutterEvents` payload alias repair and concurrent external helper convergence. `Hecton8.Core.csproj` now builds with 0 warnings and 0 errors in 173.45 seconds; the item magnet forbidden-pattern and local NativeArray ownership scans are clean.
+Rejected Alternatives: Leaving the last rationale entry as an obsolete external-wall report; claiming runtime speedups from a compile-only bridge fix.
+Scalability potential: Low/Middle/High/Ultra magnet behavior is unchanged and compiled. The bridge repair keeps typed-lane payload layout explicit for every platform.
+Hardware Impact: 0 runtime impact; validation and ABI naming only.
+
+Problem: A new inquisition pass found two local residues after the previous green build: a guarded but naked `Debug.LogError` in the duplicate pickup component and one `math.sqrt` in the item-magnet telemetry commit path.
+Solution: Removed the development-build `HectonItem` log path entirely and replaced peak-velocity telemetry sqrt with `peakVelocitySq * math.rsqrt(peakVelocitySq)` behind finite/positive guards. Re-ran scoped scans: no item-magnet `Debug.Log`, `math.sqrt`, trigger callback, `OverlapSphere`, `Vector3.Distance`, interpolation, `string.Format`, or system-local NativeArray allocation ownership remains.
+Rejected Alternatives: Keeping the dev-only log because it was guarded; claiming `math.sqrt` was acceptable because it was telemetry; replacing the log with another managed warning path.
+Scalability potential: Low/Middle/High/Ultra magnet behavior is unchanged. Low keeps cheap 10 Hz math and High/Ultra keep wake/fluid/debris visual lanes; telemetry now follows the rsqrt mandate without buying fake runtime gains.
+Hardware Impact: The removed log is cold-path only. The telemetry sqrt replacement is one guarded rsqrt in the commit path; exact microseconds are not claimed.
+
+Problem: Current compile validation is no longer green on disk after concurrent external edits.
+Solution: Ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`; it failed outside item magnet with 17 errors in `UI/Navigation/DiegeticGyroCompassRuntime.cs` and 6 generic-inference errors in `World/EcosystemDirector.cs`. I did not edit those domains from the item magnet task.
+Rejected Alternatives: Carrying forward the stale Pass 16 green build; touching compass/ecosystem ownership without a cross-domain item-magnet contract reason; hiding the compile wall.
+Scalability potential: No runtime scalability change for loot magnet. The Low/Middle/High/Ultra item-magnet source remains clean while the external owners repair their compile drift.
+Hardware Impact: 0 runtime impact in item magnet. Build gate failed in external domains after 105.07 seconds.
+
+Problem: The last status still reported an external compile wall, but current disk had moved. The source now contains the compass methods and ecosystem explicit generic arguments that the previous compiler output claimed were missing.
+Solution: Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal` against current disk; it succeeded with 0 warnings and 0 errors in 123.98 seconds. Re-ran scoped item-magnet forbidden, local allocation, and pickup-prefab trigger scans; all remain clean. `git diff --check` reports one external trailing-whitespace line in `Docs/Tasks/CURRENT_BATCH.md:2312`, which I did not edit from this item-magnet task.
+Rejected Alternatives: Carrying forward the stale Pass 17 external-wall status; editing external prompt text to make `git diff --check` clean; claiming runtime microsecond gains from a compile-only validation pass.
+Scalability potential: Low/Middle/High/Ultra magnet paths are unchanged and compile. Low keeps 10 Hz fake movement; High/Ultra keep wake/fluid/debris visual-overkill signal lanes.
+Hardware Impact: 0 runtime impact. Build validation only; no microseconds claimed.
+
+Problem: The final compile wall blocked current validation even though the item magnet domain was source-clean; `LaserCutterEvents` exposed an ambiguous unqualified payload contract to world/audio listeners.
+Solution: Added explicit `LaserCutterEventPayloadSignal` and `LaserCutterEventTypeSignal` aliases in `LaserCutter.cs`, then routed the listener interface, `SignalBus<T>` snapshot/push calls, queued payload construction, and `IsBeamActive` helper through the packed `Hecton8.Core.Contracts.Signals` payload.
+Rejected Alternatives: Leaving consumers to fully qualify around an ambiguous producer contract; introducing a duplicate gameplay payload; touching item magnet runtime code to mask a bridge contract error.
+Scalability potential: Low/Middle/High/Ultra all keep the same zero-GC typed lane. This is a bridge ABI repair, not a visual-budget change.
+Hardware Impact: 0 runtime us in item magnet. The producer lane type is compile-time explicit; no hot-path allocation or dispatch cost was added.
+
+Problem: Final validation had to be rerun against current disk after concurrent external Fauna/VFX helper repairs landed.
+Solution: Re-ran the scoped item-domain forbidden scan, the item magnet local NativeArray ownership scan, `git diff --check`, and `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`. The build succeeded with 0 warnings and 0 errors in 173.45 seconds.
+Rejected Alternatives: Keeping stale external-wall status after a green build; claiming measured microsecond gains from compile-only work; hiding LF-to-CRLF warnings as functional errors.
+Scalability potential: No runtime scalability change. The Low/Middle/High/Ultra magnet paths remain compiled and source-validated.
+Hardware Impact: 0 runtime impact. Validation only.
+
+Problem: The scheduler rejected non-finite runtime poses, but the pickup presentation setter itself still trusted every caller and the wake/acoustic publisher trusted all Burst event payloads.
+Solution: Added a local `PickupItem.ApplyLootMagnetPose` finite gate before `transform.position`, made `RestoreLootMagnetRuntimeState` clear magnet ownership when the cached Rigidbody is gone, and added `TelemetrySignalNonFiniteFlag` so acoustic, wake, and fluid impulse packets are dropped unless their distance/velocity payloads are finite.
+Rejected Alternatives: Trusting only the scheduler guard; publishing VFX/audio packets with poisoned floats; leaving `_lootMagnetPhysicsSuppressed` stuck true when a Rigidbody reference disappears.
+Scalability potential: Low/Middle/High/Ultra keep the same magnet math and visual budget. Low avoids poisoned audio/VFX work entirely; High/Ultra keep fluid overkill only when event payloads are valid.
+Hardware Impact: Branch-only presentation-path cost. Exact microseconds are not claimed; this is NaN containment and physics-state survival.
+
+Problem: The previous final validation was stale after the presentation hardening patch.
+Solution: Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`; build succeeded with 0 warnings and 0 errors in 140.15 seconds.
+Rejected Alternatives: Carrying forward the previous duplicate-source warning; claiming compile status from static scans.
+Scalability potential: No runtime change. Confirms the Low/Middle/High/Ultra item magnet paths still compile after the final presentation guard pass.
+Hardware Impact: 0 runtime impact. Build validation only.
+
+Problem: A later scoped item-domain scan still found one editor-only interpolation in duplicate `HectonItem.OnValidate`, assigning `gameObject.name = $"Item_{itemData.itemName}"`.
+Solution: Removed the auto-rename line instead of replacing it with another allocating string construction path. This preserves item runtime behavior and eliminates the last scoped `$"..."` match.
+Rejected Alternatives: `string.Concat`, `string.Format`, or keeping editor convenience while the task demanded a hard string-allocation purge.
+Scalability potential: Low/Middle/High/Ultra runtime paths are unchanged. This is editor/cold-path hygiene so no visual budget changes.
+Hardware Impact: 0 runtime impact; editor-only allocation removed.
+
+Problem: The current project compile shifted after concurrent external edits despite the Pass 14 green build.
+Solution: Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`; latest failure is external to item magnet: duplicate `ArchitectEyeVisualizer.ValidatePackedStructSizes`, plus `LaserCutterEventPayload` ambiguity in `AbyssalThermalManager` and `PlayerCriticalProceduralAudioRenderer`.
+Rejected Alternatives: Claiming the Pass 14 green result is still current; editing diagnostics, world thermal, or audio ownership from the item magnet task.
+Scalability potential: No runtime change for loot magnet; external owners must repair their contracts.
+Hardware Impact: None in item magnet.
+
+Problem: Final disk truth needed to supersede stale external-wall entries at the bottom of the rationale log.
+Solution: Re-ran current validation after the `LaserCutterEvents` payload alias repair and concurrent external helper convergence. `Hecton8.Core.csproj` now builds with 0 warnings and 0 errors in 173.45 seconds; the item magnet forbidden-pattern and local NativeArray ownership scans are clean.
+Rejected Alternatives: Leaving the last rationale entry as an obsolete external-wall report; claiming runtime speedups from a compile-only bridge fix.
+Scalability potential: Low/Middle/High/Ultra magnet behavior is unchanged and compiled. The bridge repair keeps typed-lane payload layout explicit for every platform.
+Hardware Impact: 0 runtime impact; validation and ABI naming only.
+
+Problem: The blackbox dump header declared 128-byte `LootMagnetTelemetryEntry` records, but the writer serialized only 100 bytes per entry and wrote physical ring order. A postmortem parser would lose packet alignment after the first entry and the newest/oldest frame order was implicit.
+Solution: Bumped the dump version to 7, wrote chronological ring order starting at `_telemetryIndex`, serialized both packed 48-byte AUP payloads with explicit padding/tail words, and wrote the `Reserved` field so every entry is exactly 128 bytes.
+Rejected Alternatives: Leaving dump readers to infer a sparse payload; inventing a duplicate private telemetry dump struct; storing managed JSON/log text; editing unrelated crash-reporting infrastructure instead of fixing the item-magnet writer.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The gain is postmortem reliability on Quest/Android ARM64, Metal/Mac, Steam Deck, and PC because binary dump records now match the packed telemetry contract.
+Hardware Impact: 0 hot-frame runtime impact. Fault-path dump size increases by 28 bytes per entry, 8.4 KB for the 300-frame ring. No microseconds are claimed.
+
+Problem: Current compile validation shifted again after the blackbox ABI repair.
+Solution: Re-ran scoped item-magnet forbidden-pattern scans, local NativeArray ownership scan, pickup-prefab trigger scan, `git diff --check`, and the no-restore core build. Item magnet scans are clean and `git diff --check` has no whitespace errors, but `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal` fails outside item magnet with 62 errors in `UI/Navigation/DiegeticGyroCompassRuntime.cs` and `Core/SystemDispatcher.cs`.
+Rejected Alternatives: Claiming the stale Pass 18 green result; patching UI navigation or dispatcher internals from the loot magnet domain without a direct item contract; hiding the dependency wall.
+Scalability potential: No runtime scalability change for loot magnet. Low still runs the 10 Hz cheap magnet fake; High/Ultra still preserve wake/fluid/debris visual-overkill lanes.
+Hardware Impact: 0 runtime impact in item magnet. Build gate failed in external domains after 44.00 seconds.
+
+Problem: The status file carried a correct but now stale external UI/Core compile wall after concurrent owners converged the missing compass and dispatcher symbols on disk.
+Solution: Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`; current disk now succeeds with 0 warnings and 0 errors in 96.99 seconds. Updated status to `VERIFIED MASTER GRADE` because all 18 item-magnet tasks are checked, the blackbox ABI is corrected, and the current build gate is green.
+Rejected Alternatives: Leaving the stale Pass 19 external-wall state; claiming runtime speedups from a compile-only validation; editing unrelated UI/Core files after they had already converged.
+Scalability potential: Low/Middle/High/Ultra magnet behavior is unchanged and now compiles on current disk. Low keeps 10 Hz cheap movement; High/Ultra keep wake/fluid/debris visual-overkill signal lanes.
+Hardware Impact: 0 runtime impact. Build validation only; no microseconds claimed.
+
+Problem: Item-domain signal publication still had a false-origin fallback. If both pickup and interactor positions were non-finite, manual pickups could publish `ItemAcquiredSignal` at default AUP, and magnet presentation signals trusted `LootMagnetSignalEvent.PositionAup` after vault handoff.
+Solution: Added finite AUP gates before magnet item acquisition, snap debris, acoustic, wake, and fluid impulse publication. Added `TryResolveSignalAup` to `PickupItem` and duplicate `HectonItem` so manual pickup signals publish only from a finite interactor or pickup position. Added `PickupItem` finite guards before spatial hash refresh and current-force enqueue.
+Rejected Alternatives: Publishing default-origin signals as a "safe" fallback; relying only on Burst job writers; pushing poisoned spatial data to world/fauna hashes; adding a new signal lane instead of hardening existing typed lanes.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged for valid data. Low avoids wasted downstream signal work on poisoned pickups. High/Ultra keep wake/fluid/debris visual-overkill lanes only when spatial ownership is finite.
+Hardware Impact: Branch-only presentation/manual-pickup guards. No benchmarked microseconds claimed.
+
+Problem: Current compile validation is no longer green after the signal NaN vaccination pass, but the errors are moving external dependency walls.
+Solution: Ran three no-restore core build attempts. Attempt 1 failed outside item magnet in `HeavyTowWinch.cs` calling `TetherSignals.PublishFire` without the new `frameIndex`; the source converged afterward. Attempt 2 failed outside item magnet in `LockstepStateValidator.cs` missing lockstep/glitch signal constants. Attempt 3 failed outside item magnet in `EcosystemDirector.cs` duplicate `ResolveVaultIndexCapacity` and `TryFindIndexEntry` methods. Item-domain scans and scoped `git diff --check` are clean.
+Rejected Alternatives: Claiming the stale Pass 20 green build; editing winch, lockstep, or ecosystem ownership from the item-magnet task without a direct item contract; hiding the dependency wall.
+Scalability potential: No runtime scalability change for loot magnet. The item magnet Low/Middle/High/Ultra source remains clean while external owners repair compile drift.
+Hardware Impact: 0 runtime impact in item magnet. Failed build gates totaled 294.75 seconds; no microseconds claimed.

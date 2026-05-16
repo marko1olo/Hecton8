@@ -6,12 +6,13 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Vault-owned compass state. Runtime writers keep this as the single mutable compass authority.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 136)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 176)]
     public struct CompassStateDTO
     {
         public double3 ActualAUP;
         public double3 RawEstimatedAUP;
         public double3 EstimatedAUP;
+        public double3 PreviousActualAUP;
         public float3 Velocity;
         public float ActualHeadingDegrees;
         public float CurrentHeadingDegrees;
@@ -22,10 +23,14 @@ namespace Hecton8.Core.Contracts
         public float RecalibrationHold01;
         public float MaxGyroDriftDegrees;
         public float DeltaSeconds;
+        public float SystemStress01;
+        public float NoiseClockSeconds;
         public uint Frame;
         public uint Flags;
         public uint LastAupShiftFrameId;
+        public int BlackBoxCursor;
         public int CalibrationCount;
+        public uint Reserved0;
     }
 
     /// <summary>

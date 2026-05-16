@@ -159,3 +159,60 @@ Verification:
 - `rg --pcre2` found no non-`Pack = 1` struct layouts in the audited bite/fauna IK files.
 - `git diff --check` passed on touched files with line-ending warnings only.
 - `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly` exits 0 with 0 warnings and 0 errors.
+
+## 2026-05-16 - Loops 10-12 Multiplatform Adjacent IK Polish
+What was wrong:
+- `FaunaTentacleConstrainedIkChain` and `FaunaTentacleJointPose` had explicit 32-byte layouts but did not declare `Pack = 1`.
+- `LeviathanTentacleVerletSolver` allocated and released native tentacle buffers under `SystemID.External`.
+- `ProceduralCrabLegIKRuntime` had sequential data, telemetry, and Burst job structs without explicit `Pack = 1`.
+- `LeviathanTentacleVerletSolver` and `ProceduralCrabLegIKRuntime` still contain larger private NativeArray/DataVault debt; that remains recorded as unresolved adjacent debt, not claimed fixed.
+
+What was done:
+- Re-read AGENTS.md, the domain map, 8 mandate files, and the original `FAUNA_BITE_IK_SOLVER` XML assignment.
+- Added `Pack = 1` to the two adjacent tentacle IK explicit payload structs.
+- Replaced `SystemID.External` with `SystemID.AnimationFauna` on the Leviathan tentacle H8Memory allocate/release path.
+- Added `Pack = 1` to every `StructLayout(LayoutKind.Sequential)` declaration in `ProceduralCrabLegIKRuntime.cs`.
+- Updated `Status_FAUNA_BITE_IK_SOLVER.md` and `Rationale_FAUNA_BITE_IK_SOLVER.md` with Loops 10-12 and Decisions 22-24.
+
+Cinematic Cheats used:
+- No new simulation was added. These loops harden ABI and memory ownership around the existing cheap IK/math-lie systems.
+- Existing toaster mode and high/ultra overkill paths remain unchanged.
+
+Exact Microseconds saved:
+- 0 us measured by profiler. No profiler capture was available in this CLI session.
+- ABI pack changes: 0 us claimed; the gain is platform layout determinism.
+- `SystemID.AnimationFauna` owner correction: 0 us claimed; the gain is leak/pressure attribution.
+
+Verification:
+- `rg --pcre2` found no `StructLayout` entry missing `Pack = 1` in `Assets/_Project/Scripts/Animation/Fauna`, `FaunaTentacleConstrainedIk.cs`, or `ProceduralCrabLegIKRuntime.cs`.
+- Forbidden-pattern scan over the touched bite/fauna IK files found no `BiteManager.Instance`, `Animator.SetIKPosition`, Unity physics cast/overlap, `PhysicsEventBus`, generic `EventBus`, `string.Format`, or standard `Update/LateUpdate/FixedUpdate`.
+- `git diff --check` passed with line-ending warnings only.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly` exits 1 with 53 external errors in world ecosystem, player tool, bootstrap, fluid feedback, lockstep, global signals, and tether files. No emitted error targets `ProceduralBiteIkJobs.cs`, `FaunaTentacleConstrainedIk.cs`, `LeviathanTentacleVerletSolver.cs`, or `ProceduralCrabLegIKRuntime.cs`.
+
+## 2026-05-16 - Loop 13 Leviathan Tentacle DataVault Eviction
+What was wrong:
+- `LeviathanTentacleVerletSolver` still owned private persistent `NativeArray<T>` state for tentacle Verlet positions, previous positions, radii, segment matrices, scratch corrections, root/target caches, state bits, and 300-frame telemetry.
+- The earlier owner-ID correction fixed sentinel attribution only; it did not satisfy DataVault sovereignty.
+
+What was done:
+- Added dedicated `LeviathanTentacle*` `BufferID` values in `H8Memory`.
+- Replaced private persistent native arrays with `VaultBufferHandle<T>` fields.
+- Added a narrow vault-resolution view used only at seeding, job scheduling, damage contact, graphics upload, origin-shift rebase, telemetry write, and dump boundaries.
+- Removed local `H8Memory.Allocate/Release` and `NativeMemorySentinel` registration/release paths from the tentacle solver.
+- Kept 300-frame black-box telemetry capacity intact and still dumping to `Docs/AgentLogs/Dump_LEVIATHAN_TENTACLE_IK.bin`.
+
+Cinematic Cheats used:
+- No new expensive physics was added. The tentacle solver still uses the cheap Verlet/Jacobi visual lie with triangle-wave organic motion and AUP-only high-tier contact direction.
+- Low-tier remains fixed to minimal iterations; High/Ultra keep richer matrix/radius upload and flow-reactive visual overkill without extra private memory.
+
+Exact Microseconds saved:
+- 0 us measured by profiler. No Unity profiler or GCMonitor capture was available in this CLI session.
+- DataVault eviction: no frame-time saving claimed. Static impact is lower leak and stale-view risk, not measured CPU speed.
+
+Verification:
+- Re-read status/rationale, full `FAUNA_BITE_IK_SOLVER` XML, AGENTS.md, domain map, Unity MCP skill notes, and 8 mandate files before editing.
+- `rg` found no private `NativeArray`, `new NativeArray`, `H8Memory.Allocate/Release`, `NativeMemorySentinel.Register/Unregister`, or `SystemID.External` in `LeviathanTentacleVerletSolver.cs`.
+- `rg --pcre2` found no `StructLayout` entry missing `Pack = 1` in the audited owned/adjacent fauna IK files.
+- Forbidden-pattern scan found no Unity physics query, legacy EventBus, `BiteManager.Instance`, `Animator.SetIKPosition`, `string.Format`, or standard `Update/LateUpdate/FixedUpdate` in the audited IK set.
+- Targeted `git diff --check --` on touched files exits 0 with line-ending warnings only. Repository-wide `git diff --check` is blocked by unrelated trailing whitespace in `Docs/Tasks/CURRENT_BATCH.md:2312`.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly` exits 1 with 38 external errors in `TetherInstance.cs` and `PhysicsApplySystem.cs`. No emitted error targets `LeviathanTentacleVerletSolver.cs`, `H8Memory.cs`, or owned bite IK files.

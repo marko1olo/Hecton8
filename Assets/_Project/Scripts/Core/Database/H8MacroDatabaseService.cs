@@ -67,7 +67,7 @@ namespace Hecton8.Core.Database
         private byte _compactionFlags;
         private double _sectorSizeRcp = 1.0d / 512.0d;
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct SectorCoord64
         {
             public long X;
@@ -82,7 +82,7 @@ namespace Hecton8.Core.Database
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct HydrationCandidate
         {
             public ulong SectorHash;

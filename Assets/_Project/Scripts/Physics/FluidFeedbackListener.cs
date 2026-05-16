@@ -1,7 +1,8 @@
+using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Hecton.Localization;
-using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Physics
@@ -19,7 +20,7 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
-    /// NativeQueue-backed feedback event bridge for submarine fluid splash payloads.
+    /// Typed signal-lane feedback bridge for submarine fluid splash payloads.
     /// </summary>
     public static class FluidFeedbackEvents
     {
@@ -27,45 +28,39 @@ namespace Hecton8.Physics
         private const int PendingEventCapacity = 64;
 
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("FluidFeedbackEvents.Overflow"));
-        private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("FluidFeedbackEvents"));
+        private static readonly uint _queueHash = unchecked((uint)LocHash.Compute(nameof(SplashEvent)));
 
         // COLD ALLOC: RegistryBucket<IFluidSplashEventListener>[16] - splash feedback listeners drained by SystemDispatcher LateUpdate - owner: FluidFeedbackEvents
         private static readonly RegistryBucket<IFluidSplashEventListener> _listeners = new RegistryBucket<IFluidSplashEventListener>(ListenerCapacity);
 
-        private static NativeQueue<SplashEvent> _pendingEvents;
-        private static NativeQueue<SplashEvent> _nextFrameEvents;
-        private static int _pendingEventCount;
-        private static int _nextFrameEventCount;
-        private static bool _isDispatching;
+        private static int _snapshotReadFrame = -1;
+        private static int _snapshotReadCursor;
         private static int _lastOverflowWarningFrame = -1;
+        private static bool _initialized;
 
         /// <summary>
         /// Number of splash feedback payloads waiting for late-frame dispatch.
         /// </summary>
-        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int PendingCount
+        {
+            get
+            {
+                int snapshotCount = SignalBus<SplashEvent>.SnapshotCount;
+                if (snapshotCount <= 0)
+                    return 0;
+
+                return Math.Max(0, snapshotCount - _snapshotReadCursor);
+            }
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(FluidFeedbackEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(FluidFeedbackEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
-
             _listeners.Clear();
-            _pendingEventCount = 0;
-            _nextFrameEventCount = 0;
-            _isDispatching = false;
+            _snapshotReadFrame = -1;
+            _snapshotReadCursor = 0;
             _lastOverflowWarningFrame = -1;
+            _initialized = false;
         }
 
         /// <summary>
@@ -110,86 +105,45 @@ namespace Hecton8.Physics
         /// </summary>
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated)
+            if (_listeners.Count <= 0)
                 return;
 
-            PromoteNextFrameEventsIfFrontEmpty();
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            EnsureInitialized();
+            if (SignalBus<SplashEvent>.DroppedLastFlush > 0)
+                ReportOverflowOncePerFrame();
+
+            int currentFrame = Time.frameCount;
+            if (_snapshotReadFrame != currentFrame)
             {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
-
-                if (!_pendingEvents.TryDequeue(out SplashEvent splashEvent))
-                    break;
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
-
-                IFluidSplashEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
-                _isDispatching = true;
-                try
-                {
-                    for (int i = count - 1; i >= 0; i--)
-                    {
-                        IFluidSplashEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnFluidSplashQueued(in splashEvent);
-                    }
-                }
-                finally
-                {
-                    _isDispatching = false;
-                }
+                _snapshotReadFrame = currentFrame;
+                _snapshotReadCursor = 0;
             }
 
-            if (_pendingEvents.IsEmpty())
+            ReadOnlySpan<SplashEvent> snapshot = SignalBus<SplashEvent>.GetFrameSnapshot();
+            while (_snapshotReadCursor < snapshot.Length)
             {
-                _pendingEventCount = 0;
-                PromoteNextFrameEventsIfFrontEmpty();
+                int signalIndex = _snapshotReadCursor;
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                {
+                    RequeueRemainingSnapshot(snapshot, signalIndex);
+                    _snapshotReadCursor = snapshot.Length;
+                    return;
+                }
+
+                SplashEvent splashEvent = snapshot[signalIndex];
+                _snapshotReadCursor = signalIndex + 1;
+                DispatchToListeners(in splashEvent);
             }
         }
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
-            {
-                _pendingEvents = new NativeQueue<SplashEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SplashEvent>[64] - deferred fluid splash feedback lane flushed by SystemDispatcher LateUpdate - owner: FluidFeedbackEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(FluidFeedbackEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
-
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<SplashEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SplashEvent>[64] - next-frame fluid splash feedback lane prevents same-frame reentrant dispatch - owner: FluidFeedbackEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(FluidFeedbackEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
-            }
-        }
-
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
+            if (_initialized)
                 return;
 
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<SplashEvent>.EnsureInitialized();
+            _initialized = true;
         }
 
         private static bool Enqueue(in SplashEvent splashEvent)
@@ -197,23 +151,30 @@ namespace Hecton8.Physics
             if (_listeners.Count <= 0)
                 return false;
 
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-            {
-                ReportOverflowOncePerFrame();
-                return false;
-            }
-
             EnsureInitialized();
-            if (_isDispatching)
-            {
-                _nextFrameEvents.Enqueue(splashEvent);
-                _nextFrameEventCount++;
-                return true;
-            }
-
-            _pendingEvents.Enqueue(splashEvent);
-            _pendingEventCount++;
+            SignalBus<SplashEvent>.Push(in splashEvent);
             return true;
+        }
+
+        private static void DispatchToListeners(in SplashEvent splashEvent)
+        {
+            IFluidSplashEventListener[] rawArray = _listeners.RawArray;
+            int count = _listeners.Count;
+            for (int i = count - 1; i >= 0; i--)
+            {
+                IFluidSplashEventListener listener = rawArray[i];
+                if (listener != null)
+                    listener.OnFluidSplashQueued(in splashEvent);
+            }
+        }
+
+        private static void RequeueRemainingSnapshot(ReadOnlySpan<SplashEvent> snapshot, int startIndex)
+        {
+            for (int i = startIndex; i < snapshot.Length; i++)
+            {
+                SplashEvent splashEvent = snapshot[i];
+                SignalBus<SplashEvent>.Push(in splashEvent);
+            }
         }
 
         private static void ReportOverflowOncePerFrame()
@@ -226,22 +187,6 @@ namespace Hecton8.Physics
             GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
         }
 
-        private static void PromoteNextFrameEventsIfFrontEmpty()
-        {
-            if (!_pendingEvents.IsCreated ||
-                !_nextFrameEvents.IsCreated ||
-                _pendingEventCount > 0 ||
-                _nextFrameEventCount <= 0)
-            {
-                return;
-            }
-
-            NativeQueue<SplashEvent> swap = _pendingEvents;
-            _pendingEvents = _nextFrameEvents;
-            _nextFrameEvents = swap;
-            _pendingEventCount = _nextFrameEventCount;
-            _nextFrameEventCount = 0;
-        }
     }
 
     /// <summary>

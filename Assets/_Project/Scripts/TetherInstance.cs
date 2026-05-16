@@ -1,6 +1,7 @@
 using System.IO;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
@@ -247,6 +248,7 @@ namespace Hecton8.Physics
         private float _lastVerletPeakDelta;
         private int _lastTensionCreakFrame = -TensionCreakCooldownFrames;
         private int _lastTowLoadLimitCommandFrame = -TowLoadLimitCommandCooldownFrames;
+        private int _currentSimulationFrameIndex;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private bool _verletFaultDumpedThisActivation;
 #endif
@@ -258,11 +260,17 @@ namespace Hecton8.Physics
                 _dataVaultSlotReservations[i] = false;
         }
 
+        private GraphicsBuffer _visualSegmentBufferA;
+        private GraphicsBuffer _visualSegmentBufferB;
+        private GraphicsBuffer _visualSegmentTensionBufferA;
+        private GraphicsBuffer _visualSegmentTensionBufferB;
+        private int _visualGpuBufferIndex;
+
         /// <summary>GPU source buffer consumed by the procedural line-strip draw.</summary>
-        public GraphicsBuffer VisualSegmentBuffer { get; private set; }
+        public GraphicsBuffer VisualSegmentBuffer => _visualGpuBufferIndex == 0 ? _visualSegmentBufferA : _visualSegmentBufferB;
 
         /// <summary>GPU segment stress source consumed by the procedural tether shader.</summary>
-        public GraphicsBuffer VisualSegmentTensionBuffer { get; private set; }
+        public GraphicsBuffer VisualSegmentTensionBuffer => _visualGpuBufferIndex == 0 ? _visualSegmentTensionBufferA : _visualSegmentTensionBufferB;
 
         /// <summary>Current number of visual points owned by the line-strip buffer.</summary>
         public int VisualPointCount => _isActive && _visualSegmentPositions.IsCreated ? _visualSegmentPositions.Length : (_verletPositions.IsCreated ? _verletPositions.Length : 0);
@@ -422,7 +430,12 @@ namespace Hecton8.Physics
         /// <summary>
         /// Executes the fixed-step tether solver.
         /// </summary>
-        internal TetherLifecycleState Simulate(float fixedDeltaTime, int activeTetherCount, int maxVisualizedTethers)
+        internal TetherLifecycleState Simulate(
+            float fixedDeltaTime,
+            float fixedStepClockSeconds,
+            int fixedFrameIndex,
+            int activeTetherCount,
+            int maxVisualizedTethers)
         {
             if (!_isActive || _owner == null || _payloadBody == null || _playerRigidbody == null)
                 return TetherLifecycleState.Released;
@@ -430,7 +443,9 @@ namespace Hecton8.Physics
             if (_owner.ShouldSuppressTow || !_owner.IsTowPayloadValid(_payloadBody, _payloadCollider))
                 return TetherLifecycleState.Released;
 
-            if (fixedDeltaTime <= 0f)
+            _currentSimulationFrameIndex = fixedFrameIndex >= 0 ? fixedFrameIndex : 0;
+
+            if (fixedDeltaTime <= 0f || !math.isfinite(fixedDeltaTime))
                 return TetherLifecycleState.Alive;
 
             Vector3 anchorPosition = _owner.ResolveTowAnchorPosition();
@@ -455,7 +470,7 @@ namespace Hecton8.Physics
 
             ResolveSolverReferenceFrame();
             AdvanceExternalCableSnare(fixedDeltaTime);
-            Vector3 payloadCurrentForce = ComputePayloadCurrentForce(anchorPosition, payloadPosition);
+            Vector3 payloadCurrentForce = ComputePayloadCurrentForce(anchorPosition, payloadPosition, fixedStepClockSeconds);
             ApplyPayloadCurrentForce(payloadCurrentForce, fixedDeltaTime);
 
             int anchorCount = BuildAnchorChain(anchorPosition, _payloadBody.worldCenterOfMass);
@@ -532,9 +547,7 @@ namespace Hecton8.Physics
             }
 
             _visualBounds.SetMinMax(minBounds, maxBounds);
-            GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentBuffer, _visualSegmentPositions, _visualSegmentPositions.Length);
-            if (VisualSegmentTensionBuffer != null && _verletSegmentTensions.IsCreated)
-                GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentTensionBuffer, _verletSegmentTensions, _verletSegmentTensions.Length);
+            UploadVisualGpuBuffers(includeTension: true);
         }
 
         private static void BuildVisualCatenaryImmediate(
@@ -698,17 +711,7 @@ namespace Hecton8.Physics
         /// </summary>
         public void DisposeRuntimeResources()
         {
-            if (VisualSegmentBuffer != null)
-            {
-                VisualSegmentBuffer.Release();
-                VisualSegmentBuffer = null;
-            }
-
-            if (VisualSegmentTensionBuffer != null)
-            {
-                VisualSegmentTensionBuffer.Release();
-                VisualSegmentTensionBuffer = null;
-            }
+            ReleaseVisualBuffers();
 
             DisposeDataVaultCableState();
             _verletRuntimeInitialized = false;
@@ -735,30 +738,106 @@ namespace Hecton8.Physics
                 !_verletSegmentTensions.IsCreated)
                 return;
 
-            if (VisualSegmentBuffer != null && VisualSegmentBuffer.count != pointCount)
+            const int pointStride = sizeof(float) * 3;
+            bool positionBuffersInvalid =
+                _visualSegmentBufferA == null ||
+                _visualSegmentBufferB == null ||
+                _visualSegmentBufferA.count != pointCount ||
+                _visualSegmentBufferB.count != pointCount ||
+                _visualSegmentBufferA.stride != pointStride ||
+                _visualSegmentBufferB.stride != pointStride;
+            if (positionBuffersInvalid)
             {
-                VisualSegmentBuffer.Release();
-                VisualSegmentBuffer = null;
-            }
-
-            if (VisualSegmentBuffer == null)
-            {
-                // COLD ALLOC: GraphicsBuffer[pointCount] — persistent GPU line-strip source for tether visuals — owner: TetherInstance
-                VisualSegmentBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, pointCount, sizeof(float) * 3);
+                ReleaseGraphicsBuffer(ref _visualSegmentBufferA);
+                ReleaseGraphicsBuffer(ref _visualSegmentBufferB);
+                _visualGpuBufferIndex = 0;
+                // COLD ALLOC: GraphicsBuffer[pointCount * 2] — double-buffered GPU line-strip source for tether visuals — owner: TetherInstance
+                EnsureVisualGraphicsBuffer(ref _visualSegmentBufferA, pointCount, pointStride);
+                EnsureVisualGraphicsBuffer(ref _visualSegmentBufferB, pointCount, pointStride);
             }
 
             int visualSegmentCount = math.max(1, pointCount - 1);
-            if (VisualSegmentTensionBuffer != null && VisualSegmentTensionBuffer.count != visualSegmentCount)
+            const int tensionStride = sizeof(float);
+            bool tensionBuffersInvalid =
+                _visualSegmentTensionBufferA == null ||
+                _visualSegmentTensionBufferB == null ||
+                _visualSegmentTensionBufferA.count != visualSegmentCount ||
+                _visualSegmentTensionBufferB.count != visualSegmentCount ||
+                _visualSegmentTensionBufferA.stride != tensionStride ||
+                _visualSegmentTensionBufferB.stride != tensionStride;
+            if (tensionBuffersInvalid)
             {
-                VisualSegmentTensionBuffer.Release();
-                VisualSegmentTensionBuffer = null;
+                ReleaseGraphicsBuffer(ref _visualSegmentTensionBufferA);
+                ReleaseGraphicsBuffer(ref _visualSegmentTensionBufferB);
+                _visualGpuBufferIndex = 0;
+                // COLD ALLOC: GraphicsBuffer[visualSegmentCount * 2] — double-buffered per-segment stress source for tether shader — owner: TetherInstance
+                EnsureVisualGraphicsBuffer(ref _visualSegmentTensionBufferA, visualSegmentCount, tensionStride);
+                EnsureVisualGraphicsBuffer(ref _visualSegmentTensionBufferB, visualSegmentCount, tensionStride);
+            }
+        }
+
+        private static void EnsureVisualGraphicsBuffer(ref GraphicsBuffer buffer, int count, int stride)
+        {
+            if (buffer != null && (buffer.count != count || buffer.stride != stride))
+                ReleaseGraphicsBuffer(ref buffer);
+
+            if (buffer != null)
+                return;
+
+            // COLD ALLOC: GraphicsBuffer[count] — tether GPU upload lane — owner: TetherInstance
+            buffer = new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                count,
+                stride);
+        }
+
+        private void UploadVisualGpuBuffers(bool includeTension)
+        {
+            if (!_visualSegmentPositions.IsCreated)
+                return;
+
+            int writeIndex = 1 - _visualGpuBufferIndex;
+            GraphicsBuffer positionWriteBuffer = writeIndex == 0 ? _visualSegmentBufferA : _visualSegmentBufferB;
+            if (positionWriteBuffer == null)
+                return;
+
+            GraphicsBufferUploadUtility.UploadNativeArray(
+                positionWriteBuffer,
+                _visualSegmentPositions,
+                _visualSegmentPositions.Length);
+
+            if (includeTension && _verletSegmentTensions.IsCreated)
+            {
+                GraphicsBuffer tensionWriteBuffer = writeIndex == 0 ? _visualSegmentTensionBufferA : _visualSegmentTensionBufferB;
+                if (tensionWriteBuffer != null)
+                {
+                    GraphicsBufferUploadUtility.UploadNativeArray(
+                        tensionWriteBuffer,
+                        _verletSegmentTensions,
+                        _verletSegmentTensions.Length);
+                }
             }
 
-            if (VisualSegmentTensionBuffer == null)
-            {
-                // COLD ALLOC: GraphicsBuffer[visualSegmentCount] - persistent per-segment stress source for tether shader - owner: TetherInstance
-                VisualSegmentTensionBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, visualSegmentCount, sizeof(float));
-            }
+            _visualGpuBufferIndex = writeIndex;
+        }
+
+        private void ReleaseVisualBuffers()
+        {
+            ReleaseGraphicsBuffer(ref _visualSegmentBufferA);
+            ReleaseGraphicsBuffer(ref _visualSegmentBufferB);
+            ReleaseGraphicsBuffer(ref _visualSegmentTensionBufferA);
+            ReleaseGraphicsBuffer(ref _visualSegmentTensionBufferB);
+            _visualGpuBufferIndex = 0;
+        }
+
+        private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
         }
 
         private void EnsureVerletBuffers(int nodeCount)
@@ -1369,7 +1448,7 @@ namespace Hecton8.Physics
             int iterationCount = ResolveVerletIterationCount();
             _lastVerletIterationCount = iterationCount;
             float dtSq = fixedDeltaTime * fixedDeltaTime;
-            float3 gravity = new float3(0f, -9.81f, 0f);
+            float3 gravity = new float3(0f, -HectonPhysicsContract.GravityMetersPerSecondSquaredConst, 0f);
             float3 flowAcceleration = ToFloat3(ResolveVerletFlowAcceleration(payloadCurrentAcceleration));
             float velocityDamping = ResolveVerletVelocityDamping();
             var integrationJob = new TetherVerletIntegrationJob
@@ -1416,7 +1495,7 @@ namespace Hecton8.Physics
                 TelemetryHead = _verletTelemetryHead,
                 SolverStats = _verletSolverStats,
                 SolverFlags = _verletSolverFlags,
-                FrameIndex = (uint)Time.frameCount,
+                FrameIndex = unchecked((uint)_currentSimulationFrameIndex),
                 NodeCount = _verletPositions.Length,
                 IterationCount = iterationCount,
                 PeakCableTension = peakTension,
@@ -1566,8 +1645,8 @@ namespace Hecton8.Physics
             if (peakTension <= safeMargin)
                 return;
 
-            int frame = Time.frameCount;
-            if (frame - _lastTensionCreakFrame < TensionCreakCooldownFrames)
+            int frame = _currentSimulationFrameIndex;
+            if (IsFrameCooldownActive(frame, _lastTensionCreakFrame, TensionCreakCooldownFrames))
                 return;
 
             Vector3 midpoint = (anchorPosition + payloadPosition) * 0.5f;
@@ -1606,7 +1685,7 @@ namespace Hecton8.Physics
                 PayloadAup = AbsoluteUniversePosition.FromRuntimePosition(payloadPosition),
                 DirectionToPayload = ToFloat3(direction),
                 TetherId = unchecked((uint)EntityId.ToULong(GetEntityId())),
-                FrameIndex = (uint)Time.frameCount,
+                FrameIndex = unchecked((uint)_currentSimulationFrameIndex),
                 TensionForce = peakTension,
                 SnapThreshold = snapThreshold,
                 Tension01 = math.saturate(peakTension * math.rcp(math.max(1f, snapThreshold))),
@@ -1702,9 +1781,7 @@ namespace Hecton8.Physics
             }
 
             _visualBounds.SetMinMax(minBounds, maxBounds);
-            GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentBuffer, _visualSegmentPositions, _visualSegmentPositions.Length);
-            if (VisualSegmentTensionBuffer != null)
-                GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentTensionBuffer, _verletSegmentTensions, _verletSegmentTensions.Length);
+            UploadVisualGpuBuffers(includeTension: true);
         }
 
         private bool ShouldUseLowTierTautLineVisualFake()
@@ -1827,12 +1904,12 @@ namespace Hecton8.Physics
             _bioCableRequestedThisStep = false;
         }
 
-        private Vector3 ComputePayloadCurrentForce(Vector3 anchorPosition, Vector3 payloadPosition)
+        private Vector3 ComputePayloadCurrentForce(Vector3 anchorPosition, Vector3 payloadPosition, float fixedStepClockSeconds)
         {
             if (_payloadBody == null)
                 return Vector3.zero;
 
-            float time = Time.fixedTime;
+            float time = math.isfinite(fixedStepClockSeconds) ? fixedStepClockSeconds : 0f;
             float3 phantomCurrentSample = CurrentManager.SampleCurrent(
                 new float3(payloadPosition.x, payloadPosition.y, payloadPosition.z),
                 time,
@@ -2243,7 +2320,7 @@ namespace Hecton8.Physics
             {
                 SnapAup = AbsoluteUniversePosition.FromRuntimePosition(snapPosition),
                 TetherId = unchecked((uint)EntityId.ToULong(GetEntityId())),
-                FrameIndex = (uint)Time.frameCount,
+                FrameIndex = unchecked((uint)_currentSimulationFrameIndex),
                 PeakTension = peakTension,
                 SnapThreshold = snapThreshold,
                 Severity01 = math.saturate(snapSeverity),
@@ -2511,8 +2588,8 @@ namespace Hecton8.Physics
             if (_payloadBody == null || _playerRigidbody == null || _payloadMass01 < 0.75f || peakTension <= 0f || !math.isfinite(peakTension))
                 return;
 
-            int frame = Time.frameCount;
-            if (frame - _lastTowLoadLimitCommandFrame < TowLoadLimitCommandCooldownFrames)
+            int frame = _currentSimulationFrameIndex;
+            if (IsFrameCooldownActive(frame, _lastTowLoadLimitCommandFrame, TowLoadLimitCommandCooldownFrames))
                 return;
 
             float threshold = ResolveSnapTensionThreshold();
@@ -2540,10 +2617,7 @@ namespace Hecton8.Physics
                 return;
 
             if (_visualSegmentPositions.IsCreated)
-            {
-                GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentBuffer, _visualSegmentPositions, _visualSegmentPositions.Length);
-                return;
-            }
+                UploadVisualGpuBuffers(includeTension: _verletSegmentTensions.IsCreated);
         }
 
         internal void RetargetAnchorEndpoint(HectonPlayerMotor playerMotor, Rigidbody anchorBody)
@@ -2848,6 +2922,17 @@ namespace Hecton8.Physics
         {
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3));
+        }
+
+        private static bool IsFrameCooldownActive(int currentFrame, int lastFrame, int cooldownFrames)
+        {
+            if (cooldownFrames <= 0 || lastFrame < 0)
+                return false;
+
+            long elapsed = currentFrame >= lastFrame
+                ? currentFrame - lastFrame
+                : (long)int.MaxValue - lastFrame + currentFrame + 1L;
+            return elapsed < cooldownFrames;
         }
 
         private static float3 SanitizeFinite(float3 value)

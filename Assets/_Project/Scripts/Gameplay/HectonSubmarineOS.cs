@@ -2,6 +2,7 @@ using Hecton8.Atmosphere;
 using Hecton8.Audio;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Crafting;
 using Hecton8.Power;
@@ -546,7 +547,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Hecton Submarine OS")]
     public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable, IPowerGridTelemetryListener, IHighPressureEventListener, IFatalPressureImplosionEventListener, IDroneFleetSnapshotEventListener, ISonarPingEventListener, ISonarSnapshotEventListener
     {
-        private const float DefaultReferencePressureKPa = 101.325f;
+        private const float DefaultReferencePressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
         private const float LowPowerThreshold01 = 0.20f;
         private const float LowPowerReleaseThreshold01 = 0.24f;
         private const float CascadingBrownoutThreshold01 = 0.40f;

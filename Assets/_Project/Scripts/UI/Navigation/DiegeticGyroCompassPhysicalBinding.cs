@@ -42,20 +42,27 @@ namespace Hecton8.UI.Navigation
         [SerializeField, Min(0), Tooltip("Authored particle burst budget. Runtime clamps to its safety cap.")]
         private int anomalyParticleBurst = 64;
 
+        private bool _started;
+
         private void Awake()
         {
-            ResolveRuntime();
-            ApplyBinding();
+            if (toolRoot == null)
+                toolRoot = transform;
         }
 
         private void OnEnable()
         {
+            if (!_started)
+                return;
+
             ResolveRuntime();
+            InjectDependencies();
             ApplyBinding();
         }
 
         private void Start()
         {
+            _started = true;
             ResolveRuntime();
             InjectDependencies();
             ApplyBinding();

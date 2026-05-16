@@ -7,7 +7,7 @@ namespace Hecton8.Core
     /// </summary>
     internal static unsafe class UnsafeArenaAllocator
     {
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal readonly struct ArenaBlock
         {
             public readonly byte* Ptr;

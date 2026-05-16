@@ -41,3 +41,27 @@ Rejected Alternatives: Running unindexed global grouping until it blocks the age
 Scalability potential: Future offline job can export/index logs by thread and target.
 Hardware Impact: Metadata query was acceptable; full grouping is too expensive for interactive loop.
 
+Problem: The 03:56 JSONL scan and 05:19 live tail were stale while other HECTON agents kept running.
+Solution: Run another bounded 60-second SQLite tail and re-scan current first-party LOC, then append a continuation rebase instead of overwriting the original snapshot.
+Rejected Alternatives: Re-running the full 8.49GB JSONL pass for every user nudge; pretending the old snapshot is still current.
+Scalability potential: SQLite tail is cheap enough for repeated live accounting; full JSONL remains the slower invoice-model pass.
+Hardware Impact: 60-second wait plus read-only SQLite queries and a source LOC scan; no Unity import or runtime cost.
+
+Problem: The log DB continuation query initially assumed a `timestamp` column.
+Solution: Inspect `pragma table_info(logs)` and use the actual `ts`/`ts_nanos` indexed order.
+Rejected Alternatives: Forcing a broken schema assumption or treating the failed query as evidence.
+Scalability potential: Correct schema use keeps future tail samples cheap and reproducible.
+Hardware Impact: Indexed latest-5,000-row query completed interactively.
+
+Problem: SQLite live totals show burn but cannot prove input/cache/output split for the last six hours.
+Solution: Parse recent JSONL `event_msg.token_count` rows, use cumulative deltas with pre-window baselines, and price the actual `gpt-5.5` input/cache/output split.
+Rejected Alternatives: Extending the 60-second blended SQLite pulse to a six-hour invoice estimate; scanning the entire 8.49GB session ledger again.
+Scalability potential: Recent-file JSONL pass gives a middle tier between quick SQLite tail and full historical rescan.
+Hardware Impact: Read about 335MB of JSONL; no Unity runtime impact.
+
+Problem: User requested H-Phi in addition to token counting, but prior compute reports correctly said H-Phi/token correlation was not proven.
+Solution: Run the authoritative `Tools/Architecture/HectonPhiAudit.ps1` static scan, then parse historical H-Phi artifacts with UTF-8/UTF-16 autodetection and join them to `.codex` token deltas by timestamp.
+Rejected Alternatives: Inventing a new H-Phi formula; treating UTF-16 H-Phi JSON artifacts as invalid; claiming causation from sparse artifact timestamps.
+Scalability potential: The H-Phi current scan is one static pass; the timeseries extractor can be rerun without Unity import or build.
+Hardware Impact: H-Phi scan took about 57 seconds; token timeseries scan read JSONL only and did not touch Unity runtime.
+

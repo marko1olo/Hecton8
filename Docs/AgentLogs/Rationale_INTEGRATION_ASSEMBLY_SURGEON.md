@@ -2,7 +2,7 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Domain: Echelon 9 / The Integrator (Compile Medic)
-Status: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK53 + CURRENTDISKBUDGETGATE22 CURRENT-DISK GREEN
+Status: BUILD SUCCESSFUL / VERIFIED MASTER GRADE / INQUISITION42-44 CURRENT-DISK GREEN
 
 ## Decision 1 - RenderGraph Compatibility Wall
 
@@ -161,3 +161,63 @@ Solution: Rebuilt Core after the latch correction and kept the behavior claim li
 Rejected Alternatives: Letting a transient DataVault miss consume `_dumpedFault`, or claiming runtime crash-forensics readiness without Unity/player fault injection.
 Scalability potential: Low devices avoid accidental cold/startup dump file I/O; High/Ultra preserve full fault-only blackbox dumps when the ring exists.
 Hardware Impact: Runtime gain is 0 us measured. Compile verification cost for the latch build: 1,000,000 us.
+
+## 2026-05-16 Inquisition07-08 Signal ABI Current-Disk Repass
+
+Problem: The renewed user order required a current-disk proof pass instead of trusting the existing staged green chain. The first fresh pass was green, but static signal analysis found 105 explicit-layout `ISignal` payload declarations in `GlobalSignals.cs` with `Size` and field offsets but no explicit `Pack = 1`.
+Solution: Normalized the explicit signal payload layout attributes to `StructLayout(LayoutKind.Explicit, Pack = 1, Size = ...)`, reran the typed signal layout scan, and rebuilt Core. Current evidence: `ISIGNAL_DECLARATIONS=163`, `ISIGNAL_LAYOUT_ISSUES=0`, `GLOBAL_SIGNALS_EXPLICIT_WITHOUT_PACK=0`, and `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_141638_inquisition08_signal_pack.log` is green.
+Rejected Alternatives: Relying on explicit field offsets as "effectively packed", disabling the scan, or changing signal public fields/signatures during a batch boundary. Broad runtime NativeArray eviction and `SystemDispatcher.Update/LateUpdate` surgery were rejected as outside the compile/asmdef/contracts prompt.
+Scalability potential: Low/Quest/Android get deterministic signal packet ABI under ARM64/IL2CPP. Middle keeps the same typed-lane payloads. High/Ultra keep richer visual/telemetry consumers without reintroducing hidden assembly coupling or forcing `_MATH_LOD_LOW`.
+Hardware Impact: Runtime gain is 0 us measured. Inquisition07 compile proof cost: 80,715,712 us. Inquisition08 compile proof cost: 117,150,580 us. Crash-risk reduction is binary layout determinism, not profiler-proven frame time.
+
+Problem: The full-source inquisition still reports first-party runtime debt outside this agent's patch authority: `CORE_NATIVE_OWNERSHIP_HITS=115`, `CORE_UPDATE_METHOD_HITS=2`, and `CORE_INTERPOLATED_STRING_HITS=15`. `CORE_STRING_FORMAT_HITS=0`, so the exact `string.Format` ban is clean.
+Solution: Recorded the debt as residual. `SystemDispatcher.Update/LateUpdate` are the central Unity bridge required to drive registered phases; removing them needs an explicit PlayerLoop/bootstrap migration, not a compile wall patch.
+Rejected Alternatives: Faking H-Phi completion, editing unrelated runtime ownership systems from an asmdef task, or touching third-party/vendor asmdefs with `autoReferenced=true` despite first-party graph strictness being clean.
+Scalability potential: Low tier needs a separate runtime-memory/data-vault prompt to continue data sovereignty. High/Ultra remain protected by strict first-party assembly graph boundaries.
+Hardware Impact: Runtime gain is 0 us measured. Static compile-lane evidence only.
+
+## 2026-05-16 Inquisition16 Current-Disk Revalidation
+
+Problem: The prior wall log `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_162715_inquisition15_syntax_tail.log` reported 129 errors in `SystemDispatcher`, `TetherManager`, and `EcosystemDirector`, but current source had already moved past those symbols under parallel agent churn.
+Solution: Re-read the XML prompt, rebuilt the current `Hecton8.Core.csproj` with `--no-restore`, and reran refined static checks instead of patching stale line numbers. Current evidence: `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_165933_inquisition16_current.log` is green with 0 warnings and 0 errors; `Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition16_static_refined.txt` reports first-party asmdefs strict, Core `StructLayout` declarations packed, signal layouts clean, no Core `Find`/`string.Format`, no real DirectX-only shader hits, and max compute group size 512.
+Rejected Alternatives: Reintroducing old `_scheduledDispatcherRaycastHits` fields, adding obsolete tether queue adapters, or restoring removed EcosystemDirector handle fields was rejected because the current compile lane no longer has those errors. Editing 39 vendor/package `autoReferenced=true` asmdefs was rejected because the prompt authority is first-party `Assets/_Project/Scripts` assembly/contracts, and vendor graph mutation risks asset breakage without compile need.
+Scalability potential: Low/Quest/Android keep first-party ABI packing and `_MATH_LOD_LOW` gates; Steam Deck keeps explicit graph boundaries and avoids new shader/compute portability hazards; High/Ultra keep visual systems decoupled from Core with no new hard assembly edge.
+Hardware Impact: Runtime gain is 0 us measured. Current compile verification cost is exactly 106,970,430 us. Static scan timing was not separately stopwatch-measured.
+
+## 2026-05-16 Inquisition31 Typed-Lane Final Revalidation
+
+Problem: Parallel edits after the inquisition16 green state created a racy compile tail. `inquisition22` through `inquisition30` reported duplicate enum/method constants, stale missing helpers, transient `CameraJuiceSystem` interface visibility, and a recurring `GlobalSignals.InitializeAllQueues()` call inside `DiegeticGyroCompassRuntime.ConfigureSignalLanes()`. The compile state and static mandate state diverged.
+Solution: Re-read the exact XML prompt and current files, kept only current-source errors, restored the Lockstep typed-lane capacity/hash constants, removed the broad compass global queue initialization, and configured only the compass lanes needed by that runtime. Final proof: `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition31_typed_compass_final.log` reports `Build succeeded. 0 Warning(s). 0 Error(s). EXIT=0`.
+Rejected Alternatives: Repatching stale `ArchitectEyeVisualizer` helper errors was rejected because the helpers were present on disk. Adding broad `GlobalSignals.InitializeAllQueues()` back for convenience was rejected because it violates typed-lane segregation and can initialize unrelated queues from a UI component. Reverting parallel agent files was rejected under shared worktree rules.
+Scalability potential: Low/Quest/Android get bounded typed signal setup instead of global queue fan-out. Middle keeps the same compass behavior. High/Ultra retain indirect dial and particle presentation paths without widening Core broadcast initialization.
+Hardware Impact: Runtime frame savings are 0 us measured. Final compile verification cost: 3,590,000 us. Static scan timing was not separately stopwatch-measured.
+
+Problem: The final static gate needed to prove the compile fix did not reopen graph, ABI, scene-search, or compute-portability debt.
+Solution: Ran `Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition32_static_final.txt`. Results: first-party asmdefs strict, no named Hecton8 missing refs, no first-party asmdef cycles, Core `StructLayout` declarations packed, GlobalSignals explicit payloads packed, compass broad queue init count 0, Core Find/string.Format count 0, max compute threadgroup 512, no groups over 1024, no conflict start/end markers, and `git diff --check` exit 0.
+Rejected Alternatives: Counting Markdown `=======` separators as conflict markers was rejected as a false positive; the final marker gate checks real conflict start/end markers.
+Scalability potential: Low tier retains stable graph/ABI and avoids cache-hostile broad signal startup. High/Ultra visual systems remain free behind explicit dependencies and typed lanes.
+Hardware Impact: Runtime frame savings are 0 us measured. This is compile/static evidence, not Unity profiler proof.
+
+## 2026-05-16 Inquisition40 Contract-Source and Typed-Lane Revalidation
+
+Problem: Current disk diverged after the inquisition31/32 evidence. `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_184700_inquisition33_current_recheck.log` failed because existing Core contract constants (`HectonPhysicsContract`, `HectonEcologyContract`, `ScalabilityContract`, `HectonSurvivalContract`, and `HectonContractVersion`) were consumed by the generated Core compile lane but not all source files were present in that lane. `H8DataBaker` also exposed a missing `SignalBusRegistry` namespace and a `FileStream` overload mismatch under the Unity-generated netstandard compile.
+Solution: Added the existing contract-source files to the Core MSBuild supplement in `Directory.Build.targets`, without adding leaf assembly references or editing `Hecton8.Core.csproj` directly. Updated `H8DataBaker` to use the typed signal namespace and the supported six-argument `FileStream` overload with an explicit 64 KB read buffer. Removed the regressed `GlobalSignals.InitializeAllQueues()` call from `DiegeticGyroCompassRuntime.ConfigureSignalLanes()` so the compass initializes only its typed lanes.
+Rejected Alternatives: Adding direct assembly references to AI/Physics/Save leaf assemblies was rejected because it reopens the compile graph wall. Editing the generated `.csproj` was rejected because Unity regenerates it. Leaving broad signal queue initialization in the compass was rejected because it violates typed-lane segregation and initializes unrelated queues from a UI/navigation runtime.
+Scalability potential: Low/Quest/Android get explicit contract constants in the compile lane and bounded signal lane setup. Middle keeps existing compass/save/data behavior. High/Ultra keep indirect dial and visual-overkill presentation paths without widening Core dependencies or forcing global signal startup.
+Hardware Impact: Runtime frame savings are 0 us measured. Compile verification costs: inquisition33 failed in 26,825,902 us; inquisition34 failed in 13,560,433 us; inquisition35 failed in 49,939,197 us; inquisition37 failed in 32,616,384 us; inquisition38 succeeded in 64,119,466 us; final inquisition40 succeeded in 31,139,642 us. Static scan timing was not separately stopwatch-measured.
+
+## 2026-05-16 Inquisition42 Renewed Current-Disk Proof
+
+Problem: The renewed user order required treating disk as the only source of truth again after prior inquisition40/41 evidence and a large dirty parallel-agent worktree. Reporting the older green artifact without a fresh build would be stale.
+Solution: Re-read `Status_INTEGRATION_ASSEMBLY_SURGEON.md`, `Rationale_INTEGRATION_ASSEMBLY_SURGEON.md`, and the exact XML block from `Docs/Tasks/CURRENT_BATCH.md`, then rebuilt `Hecton8.Core.csproj --no-restore` and reran the refined static gate on current disk.
+Rejected Alternatives: Trusting chat memory, trusting only the earlier inquisition40/41 logs, or staging the whole dirty tree as this agent's work was rejected because the workspace contains hundreds of concurrent agent edits.
+Scalability potential: Low/Quest/Android retain explicit contract packing, strict first-party assembly boundaries, typed-lane compass initialization, and no Core scene-search fallback. Middle keeps existing behavior. High/Ultra keep visual-overkill leaf systems decoupled from Core without forcing global signal queue startup.
+Hardware Impact: Runtime frame savings are 0 us measured. Current compile verification cost is exactly 69,243,534 us in `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_191500_inquisition42_current.log`; static scan timing was not separately stopwatch-measured. Static proof reports max compute threadgroup 512 and no DirectX-only shader hazard hits.
+
+## 2026-05-16 Inquisition43-44 Static H-Phi Refinement
+
+Problem: The renewed static pass initially produced a scanner failure on empty file text and a coarse `NativeArray` count that mixed borrowed contract API surfaces with local system-owned native data. That would create false evidence under the data-sovereignty mandate.
+Solution: Fixed the scan logic to treat empty files as empty text, reran graph/ABI/shader/typed-lane checks, and added a refined H-Phi scan that separates contract API surface hits from local fields and allocations.
+Rejected Alternatives: Reporting the failed partial scan, rewriting public NativeArray contract methods without a compile-driven dependency reason, or claiming contract API surface hits were private local buffers.
+Scalability potential: Low/Quest/Android retain guarded MMF fallback paths and zero local NativeCollection ownership in contracts. Middle keeps the same contract behavior. High/Ultra keep visual-overkill leaf systems behind explicit dependencies while contract surfaces remain compile-stable.
+Hardware Impact: Runtime frame savings are 0 us measured. `Scan_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition44_hphi_refined.txt` reports `CORE_CONTRACT_NATIVE_COLLECTION_LOCAL_FIELD_HITS=0`, `CORE_CONTRACT_NATIVE_COLLECTION_ALLOCATION_HITS=0`, `CORE_CONTRACT_UPDATE_METHOD_HITS=0`, `CORE_CONTRACT_STRING_FORMAT_HITS=0`, `CORE_CONTRACT_MANAGED_DELEGATE_HITS=0`, and `FIRST_PARTY_RUNTIME_MMF_FILES_WITHOUT_COMPILE_GUARD=0`. It also records `CORE_CONTRACT_NATIVE_COLLECTION_API_SURFACE_HITS=6` as borrowed API surface, not local allocation.

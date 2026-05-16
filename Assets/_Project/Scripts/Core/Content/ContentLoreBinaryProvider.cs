@@ -26,6 +26,7 @@ namespace Hecton8.Core.Content
         private const byte SortStateUnknown = 0;
         private const byte SortStateSorted = 1;
         private const byte SortStateUnsorted = 2;
+        private const int FileStreamBufferBytes = 64 * 1024;
 
         [SerializeField] private string dictionaryRelativePath = "Babel_Dictionary.h8bin";
         [SerializeField] private ContentLoreBlockIndex[] blocks = Array.Empty<ContentLoreBlockIndex>();
@@ -39,6 +40,7 @@ namespace Hecton8.Core.Content
         private long _fileLength;
 
         public int BlockCount => blocks != null ? blocks.Length : 0;
+        public string DictionaryRelativePath => dictionaryRelativePath;
 
         public ContentLoreBlockIndex GetBlockAt(int index)
         {
@@ -79,8 +81,19 @@ namespace Hecton8.Core.Content
                 return false;
 
             _fallbackStream.Position = block.Offset;
-            bytesWritten = _fallbackStream.Read(destination.Slice(0, block.Length));
-            return bytesWritten == block.Length;
+            Span<byte> target = destination.Slice(0, block.Length);
+            int totalRead = 0;
+            while (totalRead < block.Length)
+            {
+                int read = _fallbackStream.Read(target.Slice(totalRead));
+                if (read <= 0)
+                    break;
+
+                totalRead += read;
+            }
+
+            bytesWritten = totalRead;
+            return totalRead == block.Length;
         }
 
         public bool Open()
@@ -88,11 +101,7 @@ namespace Hecton8.Core.Content
             Dispose();
             EnsureSortState();
 
-            string path = Path.Combine(Application.streamingAssetsPath, dictionaryRelativePath);
-            if (!File.Exists(path))
-                path = Path.Combine(Application.dataPath, dictionaryRelativePath);
-
-            if (!File.Exists(path))
+            if (!TryResolveDictionaryPath(dictionaryRelativePath, out string path))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[ContentLoreBinaryProvider] Babel dictionary missing: " + dictionaryRelativePath, this);
@@ -100,13 +109,30 @@ namespace Hecton8.Core.Content
                 return false;
             }
 
-            _fileLength = new FileInfo(path).Length;
+            try
+            {
+                _fileLength = new FileInfo(path).Length;
 #if UNITY_EDITOR || UNITY_STANDALONE
-            _mappedFile = MemoryMappedFile.CreateFromFile(path, FileMode.Open, null, 0L, MemoryMappedFileAccess.Read);
-            _accessor = _mappedFile.CreateViewAccessor(0L, 0L, MemoryMappedFileAccess.Read);
+                _mappedFile = MemoryMappedFile.CreateFromFile(path, FileMode.Open, null, 0L, MemoryMappedFileAccess.Read);
+                _accessor = _mappedFile.CreateViewAccessor(0L, 0L, MemoryMappedFileAccess.Read);
 #else
-            _fallbackStream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                _fallbackStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileStreamBufferBytes);
 #endif
+            }
+            catch (Exception exception) when (
+                exception is IOException ||
+                exception is UnauthorizedAccessException ||
+                exception is NotSupportedException ||
+                exception is ArgumentException)
+            {
+                Dispose();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[ContentLoreBinaryProvider] Failed to open Babel dictionary: " +
+                               dictionaryRelativePath + " error=" + exception.Message, this);
+#endif
+                return false;
+            }
+
             return true;
         }
 
@@ -241,6 +267,110 @@ namespace Hecton8.Core.Content
                 return false;
 
             return _fileLength <= 0L || end <= _fileLength;
+        }
+
+        private static bool TryResolveDictionaryPath(string relativePath, out string path)
+        {
+            path = null;
+            if (!IsPortableDictionaryRelativePath(relativePath))
+                return false;
+
+            if (TryResolveFileUnder(Application.persistentDataPath, relativePath, out path))
+                return true;
+
+            if (TryResolveFileUnder(Application.streamingAssetsPath, relativePath, out path))
+                return true;
+
+            return TryResolveFileUnder(Application.dataPath, relativePath, out path);
+        }
+
+        public static bool IsPortableDictionaryRelativePath(string relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath) ||
+                Path.IsPathRooted(relativePath) ||
+                IsCompressedPackagePath(relativePath) ||
+                relativePath.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
+            {
+                return false;
+            }
+
+            int length = relativePath.Length;
+            int segmentStart = 0;
+            bool sawSegment = false;
+            for (int i = 0; i <= length; i++)
+            {
+                if (i < length && relativePath[i] != '/' && relativePath[i] != '\\')
+                    continue;
+
+                int segmentLength = i - segmentStart;
+                if (segmentLength <= 0)
+                    return false;
+
+                if (segmentLength == 1 && relativePath[segmentStart] == '.')
+                    return false;
+
+                if (segmentLength == 2 &&
+                    relativePath[segmentStart] == '.' &&
+                    relativePath[segmentStart + 1] == '.')
+                {
+                    return false;
+                }
+
+                sawSegment = true;
+                segmentStart = i + 1;
+            }
+
+            return sawSegment;
+        }
+
+        private static bool TryResolveFileUnder(string root, string relativePath, out string path)
+        {
+            path = null;
+            if (string.IsNullOrEmpty(root) || IsCompressedPackagePath(root))
+                return false;
+
+            string rootPath;
+            string candidate;
+            try
+            {
+                rootPath = Path.GetFullPath(root);
+                candidate = Path.GetFullPath(Path.Combine(rootPath, relativePath));
+                if (!IsUnderRoot(rootPath, candidate))
+                    return false;
+            }
+            catch (Exception exception) when (
+                exception is IOException ||
+                exception is UnauthorizedAccessException ||
+                exception is NotSupportedException ||
+                exception is ArgumentException)
+            {
+                return false;
+            }
+
+            if (!File.Exists(candidate))
+                return false;
+
+            path = candidate;
+            return true;
+        }
+
+        private static bool IsUnderRoot(string root, string candidate)
+        {
+            if (string.IsNullOrEmpty(root) || string.IsNullOrEmpty(candidate))
+                return false;
+
+            char last = root[root.Length - 1];
+            string normalizedRoot = last == Path.DirectorySeparatorChar || last == Path.AltDirectorySeparatorChar
+                ? root
+                : root + Path.DirectorySeparatorChar;
+
+            return candidate.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsCompressedPackagePath(string path)
+        {
+            return path.IndexOf("://", StringComparison.Ordinal) >= 0 ||
+                   path.StartsWith("jar:", StringComparison.OrdinalIgnoreCase);
         }
 
 #if UNITY_EDITOR

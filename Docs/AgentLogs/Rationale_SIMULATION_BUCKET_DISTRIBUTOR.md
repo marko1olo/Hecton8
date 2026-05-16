@@ -146,3 +146,115 @@ Solution: Re-ran validation until the wall settled and filtered attempt11 for sc
 Rejected Alternatives: Patching AI ecosystem SignalBus/entity-death/ref-return logic from the scheduler prompt was rejected as out-of-domain ownership drift.
 Scalability potential: Scheduler remains isolated; global build can return to green after AI ecosystem dependency repair without changing bucket/admission code.
 Hardware Impact: No runtime impact from the external compile wall. Current evidence: Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt11_after_external_edits.log.
+
+## Decision: Job Admission Lane Constant Repair
+Problem: Strict contract audit found `BurstTokenBucketJobAdmissionService.ResolveDefaultRefillBudgetMs` still referenced stale `JobAdmissionLanes.Lane2AI` and `Lane3Physics` names after the public lane taxonomy had become `Lane2Voxel` and `Lane3AI`.
+Solution: Replaced the stale names with the current contract constants. The refill values are unchanged: voxel receives the 1.40 ms lane budget and AI receives the 0.80 ms lane budget.
+Rejected Alternatives: Adding alias constants was rejected because it would preserve interface chaos and hide lane taxonomy drift.
+Scalability potential: Low tier keeps deterministic fixed token budgets; High/Ultra admission remains compatible with voxel and AI job callers using the public lane enum.
+Hardware Impact: Compile correctness only. No runtime microsecond gain claimed.
+
+## Decision: Current Fauna Compile Wall
+Problem: After scheduler lane constants were repaired, attempt12 fails outside CORE/SCHEDULING in `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs` with missing species-target/tuning fields and helpers.
+Solution: Stopped at the domain boundary and recorded attempt12 after verifying no scheduler, bucketer, bootstrap, H8Memory, SimulationBucket, or JobAdmission errors are present.
+Rejected Alternatives: Patching predator cognition species targeting from the scheduler prompt was rejected as out-of-domain ownership drift.
+Scalability potential: Scheduler stays isolated; fauna cognition can repair its own species-target DataVault contract without scheduler mutation.
+Hardware Impact: No runtime impact from the external compile wall. Current evidence: Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt12_lane_constants.log.
+
+## Decision: Job Admission Bootstrap Vault Repair
+Problem: The H-Phi rewrite moved admission storage to GlobalDataVault, but `GameBootstrapper.EnsureJobAdmissionServiceRegistered` was still calling the interface-only Initialize overload, leaving the concrete admission service uninitialized and fail-open.
+Solution: Rewired bootstrap to pass `GlobalRegistry.DataVault` when the registered service is `BurstTokenBucketJobAdmissionService`, and added a boxed DataVault overload to survive generated-project source/reference identity divergence.
+Rejected Alternatives: Reintroducing private admission NativeArrays or requiring a public interface signature mutation was rejected. The legacy interface overload remains for non-concrete test services.
+Scalability potential: Low tier now actually receives vault-backed fixed token budgets; High/Ultra admission can use vault-backed EWMA costs instead of silently allowing every job.
+Hardware Impact: Cold-path correctness only. Hot-path loop counts unchanged; no measured microsecond gain claimed.
+
+## Decision: Current Tether Compile Wall
+Problem: After admission bootstrap wiring compiled, attempt15 fails outside CORE/SCHEDULING with `TetherManager`/`TetherSignals` missing `TetherFireRequest`.
+Solution: Recorded the wall and filtered the attempt15 log; it has no scheduler, bucketer, bootstrap, H8Memory, SimulationBucket, or JobAdmission errors.
+Rejected Alternatives: Patching tether physics signal ownership from the scheduling prompt was rejected as out-of-domain ownership drift.
+Scalability potential: Scheduler remains isolated; tether physics can repair its signal contract independently.
+Hardware Impact: No runtime impact from the external compile wall. Current evidence: Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt15_bootstrap_object_vault.log.
+
+## Decision: Generated-Project Vault Overload Repair
+Problem: The boxed job-admission overload exists in source but the generated Core project compiles against the precompiled scheduling DLL, which exposes the `IDataVault` overload and rejects boxed `object` calls.
+Solution: `GameBootstrapper` now calls the compile-visible `BurstTokenBucketJobAdmissionService.Initialize(IJobAdmissionTelemetrySink, IDataVault)` overload with `GlobalRegistry.DataVault` for concrete admission services, while non-concrete services keep the interface-only path.
+Rejected Alternatives: Relying on the boxed overload before Unity regenerates the scheduling assembly was rejected because attempt16 proved the generated project cannot see it. Reverting to interface-only initialization was rejected because it leaves admission fail-open after DataVault eviction.
+Scalability potential: Low tier receives fixed vault-backed token budgets; High/Ultra can use the same vault EWMA cost table to deny or permit downstream visual jobs without scheduler-owned data.
+Hardware Impact: Cold bootstrap correctness only. Hot-path loop counts are unchanged; no measured microsecond gain claimed.
+
+## Decision: SystemDispatcher NativeArray Fallback Eviction
+Problem: Re-inquisition found `SystemDispatcher` still owned fallback `NativeArray` storage for H8 time and deferred raycast hits if DataVault resolution failed.
+Solution: Removed the private `NativeArray` fields and H8Memory fallback allocations for those two persistent SOA buffers. The dispatcher now stores DataVault handles and resolves temporary NativeArray views only when updating H8 time or scheduling/completing raycast jobs.
+Rejected Alternatives: Keeping fallback H8Memory allocations with the correct SystemID was rejected because it preserves a scheduler-owned data island. Moving raycast command queues/lists into the vault was rejected in this pass because they are dispatcher request-staging lanes, not persistent frame-state SOA.
+Scalability potential: Low/Middle keep the same deterministic command staging while persistent time/raycast result storage remains vault-owned. High/Ultra keep the same job path and can rely on the vault lock around raycast hit writes.
+Hardware Impact: Removes two cold fallback allocation paths. Normal frame microseconds were not benchmarked; no runtime speed gain is claimed.
+
+## Decision: Current UI Navigation and Ecosystem Compile Wall
+Problem: attempt18 fails outside CORE/SCHEDULING in `DiegeticGyroCompassRuntime.cs` and `EcosystemDirector.cs`; the errors are missing UI navigation members/overloads and ecosystem native-pointer generic inference.
+Solution: Recorded the wall and filtered attempt18; there are zero hits in `SystemDispatcher`, `GameBootstrapper`, Core/Scheduling, Core/Bucketing, H8Memory, SimulationBucket, or JobAdmission paths.
+Rejected Alternatives: Patching compass UI black-box/visual-overkill logic or ecosystem native pointer inference from the scheduler prompt was rejected as out-of-domain ownership drift.
+Scalability potential: Scheduler remains isolated; downstream UI/ecosystem domains can repair their contracts while the master bucketer and admission gate stay vault-backed.
+Hardware Impact: No runtime impact from the external compile wall. Current evidence: Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt18_dispatcher_vault_views.log.
+
+## Decision: Dispatcher PlayerLoop Authority
+Problem: The master dispatcher still depended on Unity MonoBehaviour `Update()` and `LateUpdate()` messages, leaving the time authority hidden behind generic engine callbacks.
+Solution: Moved the bodies behind `RunDispatcherUpdate` and `RunDispatcherLateFrame`, then installed explicit PlayerLoop nodes before Unity's script update and script late-update phases during dispatcher initialization.
+Rejected Alternatives: Keeping standard MonoBehaviour update names was rejected because the prompt explicitly calls for SystemDispatcher as sole owner of time. Replacing the entire Unity player loop was rejected as unnecessary blast radius.
+Scalability potential: Low/Middle/High/Ultra all enter the same explicit dispatcher cadence; downstream visual overkill still keys from typed bucket signals.
+Hardware Impact: Lifecycle determinism repair only. No measured microsecond gain claimed.
+
+## Decision: Dispatcher Debug Log Purge
+Problem: Re-inquisition found dev-only `Debug.LogError` calls in the dispatcher heap-lock and AUP NaN paths.
+Solution: Replaced console string emission with typed `ComplianceViolationSignal` and `GlobalTelemetryBus` numeric events. The heap-lock guard still throws in the fail-fast editor path after the typed signal is emitted.
+Rejected Alternatives: Leaving console logs in the time authority was rejected because typed lanes and black-box telemetry already exist.
+Scalability potential: Toaster builds avoid managed console-string diagnostics; High/Ultra diagnostics can consume the same typed signal lane.
+Hardware Impact: Normal-path allocation remains 0 B; fault path emits typed telemetry only. Exact microseconds not measured.
+
+## Decision: Dispatcher Raycast Command Vault Eviction
+Problem: After H8 time and hit-result eviction, the deferred raycast command staging still lived in dispatcher-owned native containers.
+Solution: Pending and scheduled `RaycastCommand` buffers now resolve through GlobalDataVault handles using `BufferID.SystemDispatcherRaycastPendingCommands` and `BufferID.SystemDispatcherRaycastScheduledCommands`; scheduling copies the fixed range into the scheduled vault buffer and clears the pending range.
+Rejected Alternatives: Keeping `NativeQueue<RaycastCommand>` and `NativeList<RaycastCommand>` was rejected as another private scheduler data island. Per-raycast managed events were rejected for GC and scheduling jitter.
+Scalability potential: Low tier keeps bounded 1024-command fixed buffers; High/Ultra can issue the same deferred query volume without command-container allocation churn.
+Hardware Impact: Two private native containers removed. Frame-time delta was not benchmarked; no microsecond gain claimed.
+
+## Decision: Current UI Navigation and Diagnostics Compile Wall
+Problem: attempt22 fails outside scheduler after the PlayerLoop/vault-command pass. Current failures are missing compass DTO presentation fields and missing debug visualizer/debug-signal contracts.
+Solution: Recorded the wall and filtered attempt22; there are zero hits in `SystemDispatcher`, `GameBootstrapper`, Core/Scheduling, Core/Bucketing, H8Memory, SimulationBucket, or JobAdmission paths.
+Rejected Alternatives: Patching compass presentation DTOs or diagnostic visualizer contracts from the scheduling prompt was rejected as out-of-domain ownership drift.
+Scalability potential: Scheduler remains isolated; downstream UI/diagnostics domains can repair their contracts while scheduler cadence, raycast command staging, and admission gates remain vault-backed.
+Hardware Impact: No runtime impact from the external compile wall. Current evidence: Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt22_current_playerloop_vault_commands.log.
+
+## Decision: Dispatcher Black Box Completion
+Problem: Concurrent dispatcher black-box scaffolding had DataVault IDs, fields, and calls, but the actual ensure/dispose/write/dump methods were missing, breaking the scheduler compile and leaving the time authority without its own 300-frame heartbeat ring.
+Solution: Implemented a DataVault-backed `DispatcherBlackBoxEntry` ring with a one-int cursor buffer, per-frame heartbeat writes from `RecordMemoryBlackBoxHeartbeat`, non-finite guards, typed compliance telemetry, and fault-only binary dump to `Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin`.
+Rejected Alternatives: Reverting the black-box calls was rejected because the prompt explicitly requires last-300-frame survival data. Per-frame file logging was rejected for Steam Deck MicroSD stutter.
+Scalability potential: Low tier writes the same fixed heartbeat ring without disk I/O; High/Ultra can correlate PlayerLoop cadence, raycast backlog, homeostasis pressure, and time dilation when visual-overkill budgeting misbehaves.
+Hardware Impact: Normal path is one fixed-size DataVault write; exact microseconds were not benchmarked. Fault path writes one cold binary dump only on non-finite dispatcher state.
+
+## Decision: Final Build Green
+Problem: attempt22 was externally blocked, but the current source required another compile after the dispatcher black-box repair.
+Solution: Ran attempt25 with `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly`; it succeeded with 0 warnings and 0 errors.
+Rejected Alternatives: Reporting stale blocked logs was rejected because the current artifact is build-green.
+Scalability potential: Build-green scheduler artifacts are ready for platform smoke testing across low/high tiers.
+Hardware Impact: Compile validation only; no runtime microsecond gain claimed.
+
+## Decision: Current Build Revalidation
+Problem: The build-green state needed a fresh proof after the final static debt and process checks.
+Solution: Ran attempt26 with `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly`; it succeeded with 0 warnings and 0 errors.
+Rejected Alternatives: Relying only on attempt25 was rejected because concurrent agent work can mutate generated project state.
+Scalability potential: The scheduler, bucketer, admission, dispatcher, and vault-backed black boxes are compile-ready for low-tier and high-tier platform smoke passes.
+Hardware Impact: Compile validation only. No runtime benchmark was run and no microsecond savings are claimed.
+
+## Decision: Dispatcher Tier Snapshot and Dump Path Repair
+Problem: Re-inquisition found the dispatcher black-box fault path still used the stale `Dump_CORE_TICK_DILATION.bin` filename, and `SystemDispatcher` read `GlobalRegistry.ScalabilityTierProfileByte` repeatedly inside dispatcher cadence helpers.
+Solution: Retargeted the dispatcher dump to `Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin` and added one `_scalabilityTierProfileByte` frame snapshot refreshed at the start of PRE_SIMULATION. Time-dilation VFX, memory defrag cadence, black-box low-tier flags, job-admission refill, and bucket advancement now consume the cached byte.
+Rejected Alternatives: Leaving the stale dump name was rejected because it breaks owner post-mortem traceability. Pushing a new cross-domain scalability signal was rejected in this pass because it would mutate public signaling surface during a batch; one dispatcher-owned frame snapshot is lower blast radius.
+Scalability potential: Low tier keeps cold memory defrag cadence and static bucket fakes without repeated registry reads; High/Ultra consume the same cached tier for dynamic rebalancing and downstream visual-overkill budget flags.
+Hardware Impact: Measured microseconds saved: 0 us. No profiler harness was run. Static impact is four repeated registry property reads replaced with one PRE_SIMULATION snapshot.
+
+## Decision: Current Ecosystem Compile Wall
+Problem: attempt27 after the dispatcher repair fails outside CORE/SCHEDULING in `Assets/_Project/Scripts/World/EcosystemDirector.cs` duplicate method definitions for `ResolveVaultIndexCapacity`, `ClearIndexEntries`, `TryUpsertIndexEntry`, and `TryFindIndexEntry`.
+Solution: Stopped at the domain boundary and filtered the attempt27 log; it has zero scheduler, bucketer, SystemDispatcher, GameBootstrapper, H8Memory, SimulationBucket, or JobAdmission hits.
+Rejected Alternatives: Editing ecosystem indexing from the scheduling prompt was rejected as out-of-domain ownership drift.
+Scalability potential: Scheduler remains isolated; ecosystem can remove its duplicate index helpers without changing dispatcher cadence or bucket/admission contracts.
+Hardware Impact: No runtime impact from this scheduling patch is measured. Current compile status is externally blocked, not scheduler-broken.

@@ -177,9 +177,18 @@ namespace Hecton8.Core.Determinism
         private const int ReplayInputFrameCapacity = 300;
         private const int TelemetryFrameCapacity = 300;
         private const int MasterHashHistoryCapacity = 10;
+        private const int PlayerKinematicStateBytes = 96;
+        private const int ReplayHeaderBytes = 128;
+        private const int ReplayInputBytes = 48;
+        private const int ArrayHashBytes = 32;
+        private const int TelemetryEntryBytes = 64;
+        private const int MasterHashHistoryEntryBytes = 32;
+        private const int SignalPayloadBytes = 32;
+        private const int DumpHeaderBytes = 8;
+        private const int DumpPayloadBytes = DumpHeaderBytes + (TelemetryFrameCapacity * TelemetryEntryBytes);
         private const int MaxHashElements = 8192;
         private const int MaxGhostReplayBlocks = 128;
-        private const int ReplayBlockBytes = 128 + (ReplayInputFrameCapacity * 48);
+        private const int ReplayBlockBytes = ReplayHeaderBytes + (ReplayInputFrameCapacity * ReplayInputBytes);
         private const ulong ReplayMagic = 0x48384C4F434B5354ul;
         private const uint ReplayVersion = 1u;
         private const uint StablePlayerId = 0x504C5952u;
@@ -193,6 +202,7 @@ namespace Hecton8.Core.Determinism
         private const uint TelemetryFlagLowTierSkipped = 1u << 5;
         private const uint TelemetryFlagDesync = 1u << 6;
         private const uint TelemetryFlagWriterBusy = 1u << 7;
+        private const uint TelemetryFlagLayoutInvalid = 1u << 8;
         private const uint ArrayFlagMissing = 1u << 0;
         private const uint ArrayFlagTruncated = 1u << 1;
         private const uint ArrayFlagNonFinite = 1u << 2;
@@ -208,6 +218,7 @@ namespace Hecton8.Core.Determinism
 
         private readonly byte[] _replayWriteScratch = new byte[ReplayBlockBytes]; // COLD ALLOC: byte[14528] - replay block staging buffer - owner: LockstepStateValidator
         private readonly byte[] _replayReadScratch = new byte[ReplayBlockBytes]; // COLD ALLOC: byte[14528] - replay block load buffer - owner: LockstepStateValidator
+        private readonly byte[] _dumpWriteScratch = new byte[DumpPayloadBytes]; // COLD ALLOC: byte[19208] - blackbox dump staging buffer - owner: LockstepStateValidator
         private readonly object _writerGate = new object(); // COLD ALLOC: object[1] - replay writer state gate - owner: LockstepStateValidator
         private Thread _writerThread;
         private AutoResetEvent _writerSignal;
@@ -225,6 +236,8 @@ namespace Hecton8.Core.Determinism
         private int _inputWriteIndex;
         private int _inputFrameCount;
         private int _registeredPostFixed;
+        private int _binaryLayoutInvalid;
+        private int _binaryLayoutDumped;
         private int _writerShouldStop;
         private int _writeInProgress;
         private int _pendingWriteBytes;
@@ -242,7 +255,7 @@ namespace Hecton8.Core.Determinism
         {
             get
             {
-                return TryGetVaultBuffer(BufferID.LockstepMasterStateHash, out NativeArray<ulong> masterHash)
+                return TryGetVaultBuffer(BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong> masterHash)
                     ? masterHash[0]
                     : 0UL;
             }
@@ -264,6 +277,10 @@ namespace Hecton8.Core.Determinism
             _activeInstance = this;
             RefreshDependenciesFromRegistry();
             ConfigureSignalLanes();
+            _binaryLayoutInvalid = ValidateBinaryLayout() ? 0 : 1;
+            _binaryLayoutDumped = 0;
+            if (_binaryLayoutInvalid != 0)
+                GlobalTelemetryBus.PublishModTelemetry(ReasonDesyncHash, 0x4C41594Fu, 0u);
             EnsureNativeState();
             ScalabilityEvents.Register(this);
             if (GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Core))
@@ -293,6 +310,17 @@ namespace Hecton8.Core.Determinism
             uint frame = ++_postSimulationFrame;
             bool ghostReplayActive = Volatile.Read(ref _ghostReplayActive) != 0;
             uint flags = ghostReplayActive ? TelemetryFlagReplayMode : 0u;
+            if (_binaryLayoutInvalid != 0)
+            {
+                flags |= TelemetryFlagMissingData | TelemetryFlagLayoutInvalid;
+                _lastMasterHashLo = 0u;
+                _lastMasterHashHi = 0u;
+                WriteTelemetry(frame, flags);
+                if (Interlocked.Exchange(ref _binaryLayoutDumped, 1) == 0)
+                    DumpBlackBox();
+                return;
+            }
+
             if (IsLowTierDisabledForNormalPlay())
             {
                 WriteTelemetry(frame, flags | TelemetryFlagLowTierSkipped);
@@ -381,6 +409,18 @@ namespace Hecton8.Core.Determinism
             SignalBus<SystemGlitchSignal>.EnsureInitialized();
         }
 
+        private static bool ValidateBinaryLayout()
+        {
+            return UnsafeUtility.SizeOf<LockstepPlayerKinematicState>() == PlayerKinematicStateBytes &&
+                UnsafeUtility.SizeOf<LockstepReplayBlockHeader>() == ReplayHeaderBytes &&
+                UnsafeUtility.SizeOf<LockstepReplayInputFrame>() == ReplayInputBytes &&
+                UnsafeUtility.SizeOf<LockstepArrayHash>() == ArrayHashBytes &&
+                UnsafeUtility.SizeOf<LockstepTelemetryEntry>() == TelemetryEntryBytes &&
+                UnsafeUtility.SizeOf<LockstepMasterHashHistoryEntry>() == MasterHashHistoryEntryBytes &&
+                UnsafeUtility.SizeOf<LockstepSnapshotSignal>() == SignalPayloadBytes &&
+                UnsafeUtility.SizeOf<SystemGlitchSignal>() == SignalPayloadBytes;
+        }
+
         private bool IsLowTierDisabledForNormalPlay()
         {
             if (Volatile.Read(ref _ghostReplayActive) != 0)
@@ -431,6 +471,9 @@ namespace Hecton8.Core.Determinism
             }
 
             int index = _inputWriteIndex;
+            if ((uint)index >= ReplayInputFrameCapacity)
+                index = 0;
+
             inputRing[index] = replayInput;
             _inputWriteIndex = (index + 1) % ReplayInputFrameCapacity;
             if (_inputFrameCount < ReplayInputFrameCapacity)
@@ -440,24 +483,31 @@ namespace Hecton8.Core.Determinism
 
         private void ApplyGhostReplayInput(uint frame)
         {
-            if (Volatile.Read(ref _ghostReplayActive) == 0 ||
-                !TryGetVaultBuffer(BufferID.LockstepGhostReplayInputs, out NativeArray<LockstepReplayInputFrame> ghostInputs))
+            if (Volatile.Read(ref _ghostReplayActive) == 0)
                 return;
 
-            if (_ghostInputCursor >= _ghostInputCount)
+            int ghostInputCursor = _ghostInputCursor;
+            if (ghostInputCursor < 0 || ghostInputCursor >= _ghostInputCount)
             {
                 EndGhostReplay();
                 return;
             }
 
-            LockstepReplayInputFrame ghost = ghostInputs[_ghostInputCursor];
+            if (!TryGetVaultBuffer(BufferID.LockstepGhostReplayInputs, ghostInputCursor + 1, out NativeArray<LockstepReplayInputFrame> ghostInputs) ||
+                ghostInputCursor >= ghostInputs.Length)
+            {
+                EndGhostReplay();
+                return;
+            }
+
+            LockstepReplayInputFrame ghost = ghostInputs[ghostInputCursor];
             if (ghost.Frame != frame)
             {
                 ReportGhostInputFrameMismatch(frame);
                 return;
             }
 
-            _ghostInputCursor++;
+            _ghostInputCursor = ghostInputCursor + 1;
             uint ghostFlags = ghost.Flags;
             PlayerInputState state = default;
             float2 move = SanitizeReplayInput(ghost.MoveDelta, float2.zero, ref ghostFlags);
@@ -920,7 +970,7 @@ namespace Hecton8.Core.Determinism
                 BufferID.LockstepMasterHashHistoryCursor,
                 1,
                 NativeArrayOptions.ClearMemory);
-            if (!history.IsCreated || !cursor.IsCreated)
+            if (!HasRequiredLength(history, MasterHashHistoryCapacity) || !HasRequiredLength(cursor, 1))
                 return;
 
             int index = cursor[0];
@@ -945,7 +995,7 @@ namespace Hecton8.Core.Determinism
         {
             if (Volatile.Read(ref _ghostReplayActive) == 0 ||
                 !TryGetVaultBuffer(BufferID.LockstepGhostReplayHeaders, out NativeArray<LockstepReplayBlockHeader> ghostHeaders) ||
-                !TryGetVaultBuffer(BufferID.LockstepMasterStateHash, out NativeArray<ulong> masterHash))
+                !TryGetVaultBuffer(BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong> masterHash))
                 return;
 
             int blockIndex = _ghostExpectedBlockIndex;
@@ -1020,7 +1070,7 @@ namespace Hecton8.Core.Determinism
             {
                 expected.Magic = ReplayMagic;
                 expected.HashFrame = frame;
-                expected.MasterHash = TryGetVaultBuffer(BufferID.LockstepMasterStateHash, out NativeArray<ulong> masterHash) ? masterHash[0] : 0UL;
+                expected.MasterHash = TryGetVaultBuffer(BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong> masterHash) ? masterHash[0] : 0UL;
             }
 
             ReportDesync(frame, in expected, 3u);
@@ -1072,12 +1122,12 @@ namespace Hecton8.Core.Determinism
 
         private int BuildReplayBlock(uint frame, byte[] destination, uint telemetryFlags, int hashCadenceFrames)
         {
-            if (destination == null || destination.Length < ReplayBlockBytes)
+            if (_binaryLayoutInvalid != 0 || destination == null || destination.Length < ReplayBlockBytes)
                 return 0;
 
-            if (!TryGetVaultBuffer(BufferID.LockstepArrayHashes, out NativeArray<LockstepArrayHash> arrayHashes) ||
-                !TryGetVaultBuffer(BufferID.LockstepMasterStateHash, out NativeArray<ulong> masterHash) ||
-                !TryGetVaultBuffer(BufferID.LockstepReplayInputRing, out NativeArray<LockstepReplayInputFrame> inputRing))
+            if (!TryGetVaultBuffer(BufferID.LockstepArrayHashes, (int)LockstepHashCategory.Count, out NativeArray<LockstepArrayHash> arrayHashes) ||
+                !TryGetVaultBuffer(BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong> masterHash) ||
+                !TryGetVaultBuffer(BufferID.LockstepReplayInputRing, ReplayInputFrameCapacity, out NativeArray<LockstepReplayInputFrame> inputRing))
             {
                 return 0;
             }
@@ -1089,7 +1139,7 @@ namespace Hecton8.Core.Determinism
             LockstepReplayBlockHeader header = default;
             header.Magic = ReplayMagic;
             header.Version = ReplayVersion;
-            header.HeaderSizeBytes = 128u;
+            header.HeaderSizeBytes = ReplayHeaderBytes;
             header.StartFrame = frame - (ReplayInputFrameCapacity - 1u);
             header.HashFrame = frame;
             header.InputCount = ReplayInputFrameCapacity;
@@ -1111,14 +1161,17 @@ namespace Hecton8.Core.Determinism
             fixed (byte* rawDestination = destination)
             {
                 UnsafeUtility.CopyStructureToPtr(ref header, rawDestination);
-                int offset = 128;
+                int offset = ReplayHeaderBytes;
                 int start = _inputWriteIndex;
+                if ((uint)start >= ReplayInputFrameCapacity)
+                    start = 0;
+
                 for (int i = 0; i < ReplayInputFrameCapacity; i++)
                 {
                     int index = (start + i) % ReplayInputFrameCapacity;
                     LockstepReplayInputFrame input = inputRing[index];
                     UnsafeUtility.CopyStructureToPtr(ref input, rawDestination + offset);
-                    offset += 48;
+                    offset += ReplayInputBytes;
                 }
             }
 
@@ -1127,7 +1180,7 @@ namespace Hecton8.Core.Determinism
 
         private static uint BuildCategoryMask(NativeArray<LockstepArrayHash> arrayHashes, uint flag)
         {
-            if (!arrayHashes.IsCreated)
+            if (!HasRequiredLength(arrayHashes, (int)LockstepHashCategory.Count))
                 return 0u;
 
             uint mask = 0u;
@@ -1158,6 +1211,9 @@ namespace Hecton8.Core.Determinism
             LockstepArrayHash room = ReadArrayHash(arrayHashes, LockstepHashCategory.RoomWaterLevels);
             LockstepArrayHash entity = ReadArrayHash(arrayHashes, LockstepHashCategory.EntityAups);
             int index = _telemetryWriteIndex;
+            if ((uint)index >= TelemetryFrameCapacity)
+                index = 0;
+
             telemetryRing[index] = new LockstepTelemetryEntry
             {
                 Frame = frame,
@@ -1181,7 +1237,8 @@ namespace Hecton8.Core.Determinism
 
         private static LockstepArrayHash ReadArrayHash(NativeArray<LockstepArrayHash> arrayHashes, LockstepHashCategory category)
         {
-            return arrayHashes.IsCreated ? arrayHashes[(int)category] : default;
+            int index = (int)category;
+            return HasRequiredLength(arrayHashes, index + 1) ? arrayHashes[index] : default;
         }
 
         private void DumpBlackBox()
@@ -1202,19 +1259,14 @@ namespace Hecton8.Core.Determinism
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                int byteCount = BuildBlackBoxDump(_dumpWriteScratch, telemetryRing);
+                if (byteCount <= 0)
+                    return;
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 {
-                    uint magic = 0x4C535456u;
-                    uint count = TelemetryFrameCapacity;
-                    WriteStruct(stream, ref magic);
-                    WriteStruct(stream, ref count);
-                    int start = _telemetryWriteIndex;
-                    for (int i = 0; i < TelemetryFrameCapacity; i++)
-                    {
-                        int index = (start + i) % TelemetryFrameCapacity;
-                        LockstepTelemetryEntry entry = telemetryRing[index];
-                        WriteStruct(stream, ref entry);
-                    }
+                    stream.Write(_dumpWriteScratch, 0, byteCount);
+                    stream.Flush();
                 }
             }
             catch (Exception ex)
@@ -1230,24 +1282,53 @@ namespace Hecton8.Core.Determinism
             throw new FatalDesyncException(frame, masterHash, flags);
         }
 
-        private static void WriteStruct<T>(Stream stream, ref T value)
-            where T : unmanaged
+        private int BuildBlackBoxDump(byte[] destination, NativeArray<LockstepTelemetryEntry> telemetryRing)
         {
-            int size = UnsafeUtility.SizeOf<T>();
-            byte* buffer = stackalloc byte[size];
-            UnsafeUtility.CopyStructureToPtr(ref value, buffer);
-            for (int i = 0; i < size; i++)
-                stream.WriteByte(buffer[i]);
+            if (destination == null || !telemetryRing.IsCreated ||
+                UnsafeUtility.SizeOf<LockstepTelemetryEntry>() != TelemetryEntryBytes)
+                return 0;
+
+            int recordCount = math.min(TelemetryFrameCapacity, telemetryRing.Length);
+            if (recordCount <= 0 || destination.Length < DumpHeaderBytes + (recordCount * TelemetryEntryBytes))
+                return 0;
+
+            fixed (byte* rawDestination = destination)
+            {
+                int offset = 0;
+                uint magic = 0x4C535456u;
+                uint count = (uint)recordCount;
+                UnsafeUtility.CopyStructureToPtr(ref magic, rawDestination + offset);
+                offset += 4;
+                UnsafeUtility.CopyStructureToPtr(ref count, rawDestination + offset);
+                offset += 4;
+
+                int start = _telemetryWriteIndex;
+                if ((uint)start >= (uint)recordCount)
+                    start = 0;
+
+                for (int i = 0; i < recordCount; i++)
+                {
+                    int index = (start + i) % recordCount;
+                    LockstepTelemetryEntry entry = telemetryRing[index];
+                    UnsafeUtility.CopyStructureToPtr(ref entry, rawDestination + offset);
+                    offset += TelemetryEntryBytes;
+                }
+
+                return offset;
+            }
         }
 
         private bool LoadGhostReplay(string path)
         {
+            if (_binaryLayoutInvalid != 0)
+                return false;
+
             StopReplayWriter();
             PhysicsDeterminismSignals.ClearInputOverride();
             Volatile.Write(ref _ghostReplayActive, 0);
             EnsureGhostReplayBuffers();
-            if (!TryGetVaultBuffer(BufferID.LockstepGhostReplayHeaders, out NativeArray<LockstepReplayBlockHeader> ghostHeaders) ||
-                !TryGetVaultBuffer(BufferID.LockstepGhostReplayInputs, out NativeArray<LockstepReplayInputFrame> ghostInputs))
+            if (!TryGetVaultBuffer(BufferID.LockstepGhostReplayHeaders, MaxGhostReplayBlocks, out NativeArray<LockstepReplayBlockHeader> ghostHeaders) ||
+                !TryGetVaultBuffer(BufferID.LockstepGhostReplayInputs, MaxGhostReplayBlocks * ReplayInputFrameCapacity, out NativeArray<LockstepReplayInputFrame> ghostInputs))
             {
                 return false;
             }
@@ -1287,7 +1368,7 @@ namespace Hecton8.Core.Determinism
 
                         ghostHeaders[blockIndex] = header;
                         int inputBase = blockIndex * ReplayInputFrameCapacity;
-                        int offset = 128;
+                        int offset = ReplayHeaderBytes;
                         bool inputFramesValid = true;
                         for (int i = 0; i < ReplayInputFrameCapacity; i++)
                         {
@@ -1299,7 +1380,7 @@ namespace Hecton8.Core.Determinism
                             }
 
                             ghostInputs[inputBase + i] = input;
-                            offset += 48;
+                            offset += ReplayInputBytes;
                         }
 
                         if (!inputFramesValid)
@@ -1334,7 +1415,7 @@ namespace Hecton8.Core.Determinism
         {
             if (header.Magic != ReplayMagic ||
                 header.Version != ReplayVersion ||
-                header.HeaderSizeBytes != 128u ||
+                header.HeaderSizeBytes != ReplayHeaderBytes ||
                 header.InputCount != ReplayInputFrameCapacity)
                 return false;
 
@@ -1384,9 +1465,11 @@ namespace Hecton8.Core.Determinism
             where T : struct
         {
             IDataVault vault = ResolveDataVault();
-            return vault != null
-                ? vault.GetBuffer<T>(bufferId, requiredLength, SystemID.CoreDeterminism, options)
-                : default;
+            if (vault == null)
+                return default;
+
+            NativeArray<T> buffer = vault.GetBuffer<T>(bufferId, requiredLength, SystemID.CoreDeterminism, options);
+            return HasRequiredLength(buffer, requiredLength) ? buffer : default;
         }
 
         private bool TryGetVaultBuffer<T>(BufferID bufferId, out NativeArray<T> buffer)
@@ -1398,6 +1481,23 @@ namespace Hecton8.Core.Determinism
 
             buffer = default;
             return false;
+        }
+
+        private bool TryGetVaultBuffer<T>(BufferID bufferId, int requiredLength, out NativeArray<T> buffer)
+            where T : struct
+        {
+            if (TryGetVaultBuffer(bufferId, out buffer) && HasRequiredLength(buffer, requiredLength))
+                return true;
+
+            buffer = default;
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasRequiredLength<T>(NativeArray<T> buffer, int requiredLength)
+            where T : struct
+        {
+            return buffer.IsCreated && requiredLength >= 0 && buffer.Length >= requiredLength;
         }
 
         private void EnsureNativeState()
@@ -1628,6 +1728,9 @@ namespace Hecton8.Core.Determinism
         public static ulong BuildMasterHash(NativeArray<LockstepArrayHash> hashes, uint frame)
         {
             ulong hash = Fnv1A64(FnvOffset64, frame);
+            if (!hashes.IsCreated || hashes.Length < (int)LockstepHashCategory.Count)
+                return Fnv1A64(hash, 0x4D495353u);
+
             for (int i = 0; i < (int)LockstepHashCategory.Count; i++)
             {
                 LockstepArrayHash arrayHash = hashes[i];

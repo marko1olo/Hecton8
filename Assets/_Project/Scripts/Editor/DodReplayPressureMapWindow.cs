@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEditor;
@@ -13,7 +14,7 @@ namespace Hecton8.EditorTools
     public sealed class DodReplayPressureMapWindow : EditorWindow
     {
         private const int CellCapacity = 256;
-        private const float NominalPressureKpa = 101.325f;
+        private const float NominalPressureKpa = HectonSurvivalContract.KPaPerAtmosphere;
         private NativeArray<DodReplayAtmosphereCellRecord> _cells;
         private int _cellCount;
 

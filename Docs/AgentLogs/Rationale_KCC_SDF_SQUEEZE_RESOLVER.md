@@ -1,6 +1,6 @@
 # Rationale_KCC_SDF_SQUEEZE_RESOLVER
 
-STATUS: KCC SDF SQUEEZE IMPLEMENTED / NAN POLISH APPLIED / CURRENT BUILD BLOCKED BY FOREIGN COMPILE ERRORS
+STATUS: VERIFIED MASTER GRADE / KCC SDF SQUEEZE IMPLEMENTED / BUILD GREEN WITH 4 FOREIGN CS0649 WARNINGS
 
 ## Decision 0 - Scope Lock
 Problem: KCC tight-gap traversal touches physics, voxel SDF, player signals, telemetry, haptics/audio, and gas dynamics. Direct concrete references across those domains would create compile and ownership risk.
@@ -64,3 +64,24 @@ Solution: Added finite checks and `math.max(..., MinVectorMagnitudeSq)` denomina
 Rejected Alternatives: Leaving comparison-only guards was rejected because NaN comparisons are false in a way that can silently reach rsqrt. Replacing the motor sweep solver was rejected because the existing deferred sweep lane is outside the SDF kernel and already uses DataVault-backed command/result buffers.
 Scalability potential: Low/MX350 keeps the cheap branch and avoids NaN recovery spikes. Middle/High/Ultra retain the same visual-overkill signal path without extra samples or renderer ownership changes.
 Hardware Impact: Runtime saving is 0 us; this is stability armor. The latest validation build elapsed 105.25 seconds (105250000 us) and failed on 130 foreign errors in RepairTool, HectonUnderwaterVisuals, and SargassumMicroFaunaBoids; no diagnostics name KCC/player files touched by this pass.
+
+## Decision 9 - Vault-Only Locomotion State
+Problem: Earlier DataVault work still left private H8Memory fallback allocation paths in `PlayerKinematicsRuntime`, `PlayerKinematicsNativeState`, and `HectonPlayerMotorNativeState`. That kept a second ownership route alive and violated the current DataVault sovereignty mandate.
+Solution: Removed the private H8Memory fallback allocation path. When DataVault is absent or cannot provide a buffer, the allocator returns default; runtime and motor hot paths now fail closed through existing `IsCreated`/length guards. `PlayerKinematicsRuntime` now handles DataVault service replacement by pumping outstanding hand jobs, disposing stale aliases, and reacquiring vault buffers when the service returns.
+Rejected Alternatives: Keeping cold private NativeArrays was rejected because it still makes locomotion own state outside the vault. Adding a second allocator facade was rejected because it would hide the same sovereignty problem behind a new name. Blocking gameplay with exceptions was rejected because missing vault state should disable the unsafe path and preserve telemetry, not crash.
+Scalability potential: Low/MX350 keeps one compact vault-owned SOA path and no duplicate kinematic caches. Middle keeps standard SDF cadence. High/Ultra keep visual overkill through typed signal consumers, not extra private locomotion state.
+Hardware Impact: Estimated runtime saving remains 4-12 us on low-end silicon from reduced duplicate cache churn. This pass claims 0 us additional measured runtime gain because no profiler capture was run. Latest measured failed build validation elapsed 227056406 us in `Build_KCC_SDF_SQUEEZE_RESOLVER_vault_polish8.exit.txt`.
+
+## Decision 10 - Tether Compile Shim Kept Inside Physics Boundary
+Problem: The validation build hit a PHYSICS/LOCOMOTION-adjacent tether compile wall after another edit partially redirected `TetherManager` to manager-local fire-request helpers that were not present. That blocked KCC final validation before Roslyn could reach the remaining tree.
+Solution: Kept `TetherFiredSignal` as the typed telemetry lane, removed the managed `TetherFireRequest` sidecar queue, and routed the owner-local attach through `TetherManager.ExecuteFireRequest` immediately after publish. This preserves signal observability without storing Unity object references in a static sidecar.
+Rejected Alternatives: Reviving `TryConsumeFireForManager` was rejected because it required a managed object-reference sidecar outside the signal payload. Implementing another manager-local queue was rejected because it would create two fire-request authorities. Editing `World/EcosystemDirector.cs` was rejected because it is outside KCC/locomotion and now forms the foreign compile wall.
+Scalability potential: Low/MX350 keeps one typed fire signal plus direct attach with no per-frame drain. Middle/High/Ultra keep the same lane; visual overkill remains in tether rendering and downstream effects, not in KCC collision truth.
+Hardware Impact: Runtime saving is 0 us. This is compile-wall containment. The follow-up checkpoint advanced past tether and audio blockers; at that checkpoint the wall was 24 foreign `UI/Navigation/DiegeticGyroCompassRuntime.cs` and `World/EcosystemDirector.cs` errors with no diagnostics naming `SdfSqueezeJob`, `HectonPlayerMotor`, `PlayerKinematicsRuntime`, `HectonPlayerState`, `TetherManager`, or `TetherSignals`. Decision 11 supersedes this stale wall with the current green build.
+
+## Decision 11 - Stale Wall Revalidation
+Problem: The latest status still treated `Build_KCC_SDF_SQUEEZE_RESOLVER_vault_polish8.exit.txt` as current truth, but the source had already moved: compass methods and ecosystem generic unsafe calls referenced by that log now exist in the files.
+Solution: Revalidated the current tree with `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false`, captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop11.exit.txt`. The build exits 0 with 0 errors. The only remaining diagnostics are four CS0649 warnings in `Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs`, outside PHYSICS/LOCOMOTION.
+Rejected Alternatives: Trusting the stale blocker was rejected because it contradicted current source. Editing UI/Ecosystem from the KCC prompt was rejected because the current build no longer requires it. Claiming 0-warning validation was rejected because Roslyn reports four unrelated warnings.
+Scalability potential: Low remains 4-tap SDF plus stress cadence interpolation. Middle keeps standard SDF cadence and typed feedback. High/Ultra keep camera-roll and fluid-impulse overkill through downstream lanes, not extra KCC collision truth.
+Hardware Impact: Measured validation time is 93277423 us. Runtime savings remain non-profiler estimates: 73-167 us saved per active low-tier squeeze frame from SDF-vs-capsule repair, DataVault sharing, stress cadence, and duplicate feedback collapse.

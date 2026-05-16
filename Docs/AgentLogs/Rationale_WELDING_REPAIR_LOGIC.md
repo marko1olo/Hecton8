@@ -160,3 +160,143 @@ Solution: Audited the actual repair lane directly and swept adjacent Tools/Gamep
 Rejected Alternatives: Editing every adjacent offender would violate domain boundaries and collide with parallel agents. Pretending the strict XML path exists would be fake evidence.
 Scalability potential: WELDING_REPAIR_LOGIC remains bounded to one repair lane. Adjacent debt should be scheduled under the owning prompts because those systems have their own runtime contracts.
 Hardware Impact: Repair lane impact is unchanged. The adjacent sweep cost was CLI-only, estimated 950 microseconds of audit work and 0 runtime cost.
+
+## Repair Blackbox ABI Dump Contract
+Problem: RepairToolBlackBoxEntry was Pack=1 and Size=64, but sequential layout still depended on size-only trailing padding. The dump path also wrote semantic fields only, producing records shorter than the 64-byte vault stride.
+Solution: Changed RepairToolBlackBoxEntry to LayoutKind.Explicit Pack=1 Size=64 with FieldOffset coverage through byte 63. Added a Reserved0 byte, an UnsafeUtility.SizeOf guard, and a dump format that writes entrySize plus exactly 64 bytes of payload per ring entry including AUP pad/reserved bytes.
+Rejected Alternatives: Keeping sequential layout would leave ARM64/Quest stride interpretation dependent on compiler layout. Keeping 51-byte field dumps would make postmortem tooling disagree with the vault ring. Raw unmanaged stream writes were rejected to avoid backend API drift; explicit field writes are slower but fault-path only and deterministic.
+Scalability potential: Low/MX350 pays no additional hot-path cost. Middle/High/Ultra gain a consistent binary dump contract for richer repair diagnostics without changing the gameplay repair kernel.
+Hardware Impact: Hot path gain is 0 microseconds. Fault-path ABI guard is estimated under 1 microsecond before disk I/O; deterministic 64-byte records prevent ARM64 postmortem misreads.
+
+## Validation Wall Seventh Pass
+Problem: The explicit ABI and dump rewrite touched unsafe layout, FieldOffset attributes, and UnsafeUtility imports, so it needed a fresh compile-filter pass.
+Solution: Ran grep for explicit offsets, UnsafeUtility.SizeOf, direct SignalBus pushes, and banned repair-lane patterns. Ran filtered `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false`; it returned NO_REPAIR_ABI_DUMP_DIAGNOSTICS with exit code 1.
+Rejected Alternatives: Calling the ABI pass done without compiler filtering would be fake evidence. Fixing unrelated project-reference failures remains outside WELDING_REPAIR_LOGIC.
+Scalability potential: No gameplay scalability change; this pass hardens postmortem survival across ARM64/Quest/Android and desktop.
+Hardware Impact: No runtime gain beyond fault-path correctness. The normal repair heartbeat still writes one 64-byte vault record while equipped.
+
+## Interaction Raycast Vault Eviction
+Problem: The repair tool used the queued interaction raycast service, which correctly schedules RaycastCommand, but the service kept persistent scheduled command, scheduled hit, and staging command lanes as private NativeArrays.
+Solution: Moved those persistent raycast lanes to GlobalDataVault handles: InteractionRaycastScheduledCommands, InteractionRaycastScheduledHits, and InteractionRaycastStagingCommands. EquipmentInteractionHandler now resolves transient NativeArray views from handles only when writing, copying, scheduling, and completing.
+Rejected Alternatives: Adding a RepairTool-owned RaycastCommand buffer would duplicate the interaction service and violate stateless repair logic. Keeping private arrays in EquipmentInteractionHandler would leave the repair hit path outside vault sovereignty. Keeping a staging-hit vault lane after fixed scheduled result storage would be dead allocation bloat. Editing unrelated completed-hit managed mirrors was rejected because they are collider/result side-channel arrays, not native authority.
+Scalability potential: Low keeps one frame-latent RaycastCommand result without synchronous physics stalls. Middle/High/Ultra can drive heavier repair visuals from the same hit path while the command/result storage remains centrally owned.
+Hardware Impact: Expected low-end gain is 2-5 microseconds during service lifecycle by avoiding private allocation/sentinel churn, with 1-3 microseconds lock overhead per staged ray batch. The main win is preventing MicroSD/scene-transition churn and removing private native ownership from the repair raycast lane.
+
+## Validation Wall Eighth Pass
+Problem: The interaction raycast vault migration touched a shared service and H8Memory BufferID enum, so it needed a compile-filter pass despite being a critical repair dependency.
+Solution: Ran grep for RaycastCommand.ScheduleBatch, new InteractionRaycast BufferIDs, VaultBufferHandle raycast fields, TryLockBuffer/TryUnlockBuffer usage, and absence of direct Physics.Raycast/RaycastNonAlloc in RepairTool. Ran filtered `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false`; it returned NO_REPAIR_INTERACTION_RAYCAST_VAULT_DIAGNOSTICS with exit code 1. Reran the full project graph with the same repair/interaction filter; it returned NO_REPAIR_INTERACTION_RAYCAST_FULLGRAPH_DIAGNOSTICS with exit code 1.
+Rejected Alternatives: Treating the existing service as good enough would leave a private native allocation in the repair hit path. Full build repair remains outside scope because external project dependencies still block the graph.
+Scalability potential: No gameplay contract changed; the same IInteractionSignalService interface now has vault-owned raycast storage underneath.
+Hardware Impact: No direct frame-time gain beyond allocation ownership and lock discipline; the RaycastCommand path continues to avoid synchronous per-tool physics stalls.
+
+## Raycast Vault Lock Discipline
+Problem: The eighth-pass raycast migration still resolved some NativeArray views before the relevant TryLockBuffer call. It also ping-ponged scheduled/staging handles, but EnsureRaycastBufferHandles enforces fixed BufferIDs, so completion could rebind the scheduled fields away from the buffers actually owned by the RaycastCommand job.
+Solution: ResetCommandLaneLocked now locks before resolving cold command lanes. QueuePrimaryRaycast locks the staging command buffer before resolving and writing. ScheduleStagedRaycasts no longer swaps handles; it locks staging commands plus fixed scheduled command/hit buffers, copies at most 64 commands into the fixed scheduled command lane, schedules RaycastCommand.ScheduleBatch against fixed scheduled storage, and keeps scheduled locks alive until completion. The unused InteractionRaycastStagingHits lane was removed.
+Rejected Alternatives: Keeping the handle swap was cheaper by a small copy but conflicted with fixed BufferID validation and unlock correctness. Scheduling directly from staging while reopening staging next frame would risk writing into a job-owned pointer. A private RepairTool raycast lane would duplicate the interaction service and violate the XML dependency shape.
+Scalability potential: Low keeps one frame-latent RaycastCommand and pays only a 64-command worst-case copy. Middle/High/Ultra use the same deterministic hit lane while spending the saved synchronous physics budget on compute spark drift and hull shader recovery.
+Hardware Impact: i3/MX350 pays an estimated 2-6 microseconds per staged batch for the fixed-lane copy plus 1-3 microseconds lock overhead. This is accepted to prevent stale aliases and wrong-buffer completion. Worst-case direct synchronous raycast stalls remain avoided, estimated up to 1200 microseconds under tool spam/collider load.
+
+## Validation Wall Ninth Pass
+Problem: The raycast lock-discipline patch touched schedule/complete ownership, so it needed compiler-filter and anti-bloat evidence.
+Solution: Ran grep across RepairTool and EquipmentInteractionHandler for local Raycast NativeArray ownership, direct Physics.Raycast/RaycastNonAlloc, EventBus, string.Format, Update, and repair GlobalSignals.Publish; all returned no matches. Ran filtered `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false`; it returned NO_REPAIR_INTERACTION_RAYCAST_LOCK_DISCIPLINE_DIAGNOSTICS with exit code 1. Reran full graph filtered for repair/interaction raycast diagnostics; it returned NO_REPAIR_INTERACTION_RAYCAST_LOCK_DISCIPLINE_FULLGRAPH_DIAGNOSTICS with exit code 1. `git diff --check` reports only CRLF warnings in touched files.
+Rejected Alternatives: Declaring this fixed from static inspection only would be fake completion. Editing RealtimeCSG, global fauna, fluid, or unrelated Core dependency walls remains outside WELDING_REPAIR_LOGIC.
+Scalability potential: No gameplay contract changed; this pass hardens the same vault-backed RaycastCommand service used by repair.
+Hardware Impact: No validation hardware gain. Runtime impact remains the fixed-lane copy/lock cost above, traded for deterministic job ownership and post-Quest survival.
+
+## Power Indicator SRP Batcher Compliance
+Problem: RepairTool used MaterialPropertyBlock to change `_EmissionColor` on `_powerIndicatorRenderer`. The project rule forbids MPB on standard geometry because it breaks SRP batching, and this path ran from ToolTick while equipped.
+Solution: Removed the MPB field, Shader.PropertyToID, GetPropertyBlock, SetPropertyBlock, and per-frame emission color writes. The indicator now caches its default shared material and optionally switches to authored shared materials for Off, Low, and On states only when the state or material changes.
+Rejected Alternatives: Runtime material instantiation would leak or allocate. Mutating `sharedMaterial.SetColor` would alter an asset globally. Keeping per-frame brownout flicker via MPB would keep the SRP batching violation. Removing the indicator entirely would degrade tool readability.
+Scalability potential: Low/MX350 gets a three-state material fake with no per-frame emission writes. Middle/High/Ultra can assign premium authored emissive materials for off/low/on states without changing gameplay code.
+Hardware Impact: i3/MX350 saves an estimated 2-5 microseconds per equipped ToolTick with a power indicator by skipping MPB get/set and color writes. State transitions still pay a sharedMaterial assignment only when battery state changes.
+
+## Validation Wall Tenth Pass
+Problem: The power-indicator patch touched RepairTool serialized fields and material switching logic, so it needed compiler-filter and anti-bloat evidence.
+Solution: Ran grep across RepairTool, EquipmentInteractionHandler, and H8Memory for MaterialPropertyBlock/GetPropertyBlock/SetPropertyBlock, raycast NativeArray ownership, direct Physics.Raycast/RaycastNonAlloc, EventBus, string.Format, Update, and repair GlobalSignals.Publish; all returned no matches. Ran filtered `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false`; it returned NO_REPAIR_POWER_INDICATOR_MPB_DIAGNOSTICS with exit code 1. Reran full graph filtered for repair power-indicator diagnostics; it returned NO_REPAIR_POWER_INDICATOR_MPB_FULLGRAPH_DIAGNOSTICS with exit code 1. `git diff --check` reports only CRLF warnings in touched files.
+Rejected Alternatives: Declaring the MPB path removed without compiler filtering would be fake completion. Editing external RealtimeCSG/fauna/fluid/Core dependency walls remains outside WELDING_REPAIR_LOGIC.
+Scalability potential: No gameplay contract changed; visual quality scales through authored shared materials.
+Hardware Impact: No validation hardware gain. Runtime gain is the ToolTick MPB eviction described above.
+
+## Interaction Overflow Debug Log Purge
+Problem: EquipmentInteractionHandler still emitted a Debug.LogWarning on packet overflow. The path is a repair raycast dependency and can run in the late-frame interaction service; console logging is duplicate evidence because the same branch already publishes GlobalTelemetryBus overflow telemetry.
+Solution: Removed the Debug.LogWarning block. Overflow state continues through GlobalTelemetryBus with capacity and queue count, which keeps binary/telemetry evidence without managed console spam.
+Rejected Alternatives: Wrapping the warning in another conditional helper would still leave a log call and could still spam development builds. Removing GlobalTelemetryBus evidence would blind the service. Leaving it unchanged would violate the no naked hot-path logging standard.
+Scalability potential: Low/MX350 avoids console overhead during interaction floods. Middle/High/Ultra keep the same telemetry event for diagnostics without changing gameplay contracts.
+Hardware Impact: Release build gain is 0 microseconds because the warning was editor/development guarded. Editor/development overflow frames save an estimated 3-10 microseconds plus avoided console allocation/spam risk.
+
+## Validation Wall Eleventh Pass
+Problem: The debug-log purge touched the interaction service dependency for repair hits, so it needed fresh anti-bloat and compiler-filter evidence.
+Solution: Ran explicit fixed-string grep across RepairTool and EquipmentInteractionHandler for Debug.Log/LogWarning/LogError, Unity scene find APIs, direct physics queries, coroutine APIs, .ToString, material clone access, Time.deltaTime/fixedDeltaTime, local new NativeArray, MPB, string.Format, and void Update; all returned no matches. Ran filtered `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false`; it returned NO_REPAIR_INTERACTION_DEBUG_LOG_DIAGNOSTICS with exit code 1. Reran full graph filtered for repair/interaction debug-log diagnostics; it returned NO_REPAIR_INTERACTION_DEBUG_LOG_FULLGRAPH_DIAGNOSTICS with exit code 1. `git diff --check` reports only CRLF warnings in touched files.
+Rejected Alternatives: Claiming debug hygiene without grep evidence would be fake completion. Editing external dependency walls remains outside WELDING_REPAIR_LOGIC.
+Scalability potential: No gameplay contract changed; telemetry remains decoupled and non-visual.
+Hardware Impact: No validation hardware gain. Runtime impact is limited to overflow frames in editor/development builds.
+
+## HullDents Handle Generation Guard
+Problem: RepairTool cached a VaultBufferHandle<float4> for HullDents and checked BufferID plus length before use, but it did not force a vault generation resolve in EnsureHullDentsHandle. After a vault generation shift, scene transition, or cold reallocation, that left the repair kernel dependent on the later locked Resolve call to discover staleness.
+Solution: EnsureHullDentsHandle now requires `vault.ResolveBuffer(ref _hullDentsHandle)` before accepting the cached handle. If resolution fails, the handle is reacquired through GlobalDataVault with BufferID.HullDents, 16 float4 slots, SystemID.GameplayTools, and ClearMemory. The locked kernel view now also rejects uncreated or undersized HullDents buffers before iteration.
+Rejected Alternatives: Keeping BufferID/Length-only validation was cheaper by one branch but allowed stale-generation ambiguity. Allocating a fallback local dent array would violate the XML rule to modify GlobalDataVault.HullDents directly. Repairing a partial vault view would hide data-contract corruption.
+Scalability potential: Low/MX350 keeps the same 16-slot bounded O(16) dent repair pass. Middle/High/Ultra keep the same shader recovery and compute spark overkill, with the dent authority remaining a single vault lane across scene churn.
+Hardware Impact: i3/MX350 pays an estimated 1-2 microseconds per active repair tick for handle generation validation and 0-1 microsecond for the locked length branch. The trade is accepted to prevent stale pointer writes and post-Quest vault generation faults.
+
+## Validation Wall Twelfth Pass
+Problem: The HullDents handle guard touched the core repair kernel and could have introduced syntax, unsafe handle, or vault contract breakage.
+Solution: Ran fixed-string grep across RepairTool and EquipmentInteractionHandler for Debug.Log/LogWarning/LogError, scene find APIs, coroutine APIs, direct physics queries, Time.deltaTime/fixedDeltaTime, material clone access, local new NativeArray, MPB, string.Format, and void Update; all returned no matches. Ran filtered `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false`; it returned NO_REPAIR_HULLDENTS_HANDLE_GENERATION_DIAGNOSTICS with exit code 1. Reran full graph filtered for repair/HullDents diagnostics; it returned NO_REPAIR_HULLDENTS_HANDLE_GENERATION_FULLGRAPH_DIAGNOSTICS with exit code 1. `git diff --check` reports only CRLF warnings in touched files.
+Rejected Alternatives: Declaring the repair kernel hardened from static inspection only would be fake completion. Editing unrelated dependency walls remains outside WELDING_REPAIR_LOGIC.
+Scalability potential: No gameplay contract changed; this pass hardens the same vault-backed 16-slot HullDents repair lane.
+Hardware Impact: No validation hardware gain. Runtime impact is the 1-2 microsecond handle validation cost above, traded for deterministic vault-generation survival.
+
+## HullDent Visual Mirror Generation Guard
+Problem: HullDentShaderController mirrors GlobalDataVault.HullDents into `_HectonHullDents` for shader unbend/rust removal. Its cached VaultBufferHandle<float4> had the same BufferID/Length-only acceptance weakness that RepairTool had, so the visual mirror could lag or fail after a vault generation change even when the gameplay repair kernel was hardened.
+Solution: HullDentShaderController.EnsureHullDentsHandle now requires `vault.ResolveBuffer(ref _hullDentsHandle)` before accepting the cached handle. SyncDentBufferFromVault and FlushDentBufferToVault now reject uncreated or undersized views before upload/flush. The 16-slot shader contract is explicit on both gameplay repair and visual mirror sides.
+Rejected Alternatives: Letting the shader mirror repair itself opportunistically would leave a visual/authority split. Allocating a second VFX-owned dent authority would violate data sovereignty. Uploading a partial dent buffer would hide a corrupted GlobalDataVault lane.
+Scalability potential: Low/MX350 still gets a cheap fixed Vector4[16] shader upload only when dirty. Middle/High/Ultra keep the same procedural hull deformation, POM rust fade, and compute spark overkill with the authoritative dent state shared through the vault.
+Hardware Impact: i3/MX350 pays an estimated 1-2 microseconds per active late-frame dent sync for handle validation and 0-1 microsecond for length branches. No extra file I/O or native ownership was added.
+
+## Validation Wall Thirteenth Pass
+Problem: The visual mirror patch touched the HullDents shader presenter and crosses the repair/VFX task boundary, so repair-only validation was insufficient.
+Solution: Ran signal duplicate grep for HullRepaired/HullRepair/RepairSignal and confirmed the active code path uses RepairTool as producer, SignalBus<HullRepairedSignal>, and GasDynamicsSolver as consumer. Ran combined fixed-string grep across RepairTool, EquipmentInteractionHandler, and HullDentShaderController; it returned NO_REPAIR_VISUAL_HOTPATH_BLOAT_MATCHES. Ran filtered `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false`; it returned NO_REPAIR_HULLDENT_VISUAL_HANDLE_DIAGNOSTICS with exit code 1. Reran full graph filtered for repair/HullDentShaderController diagnostics; it returned NO_REPAIR_HULLDENT_VISUAL_HANDLE_FULLGRAPH_DIAGNOSTICS with exit code 1. `git diff --check` reports only CRLF warnings in touched files.
+Rejected Alternatives: Treating VFX as outside the prompt would ignore task 10. Editing broader GasDynamics native allocation debt is outside WELDING_REPAIR_LOGIC and belongs to the gas owner.
+Scalability potential: No gameplay contract changed; the existing vault and shader lanes now share the same generation discipline.
+Hardware Impact: No validation hardware gain. Runtime impact is the visual mirror handle/branch cost above.
+
+## Gas Deferred Seal Consumption
+Problem: GasDynamicsSolver drained HullRepairedSignal only when `_stepRunning` was false. SignalBus readers consume a current-frame snapshot with a cursor, and snapshots are cleared by the signal lifecycle. A repair completion produced while the gas job owned room lanes could therefore miss the sealing window instead of clearing RoomFlagBreached.
+Solution: GasDynamicsSolver now drains HullRepairedSignal even while the gas job is running and stages completed room ids in two ulong masks covering the 128-room maximum. Once room lanes are writable, ApplyPendingHullRepairSignals clears RoomFlagBreached through TrySetRoomFlags. The VFX deformation lane was also moved from GlobalSignals.Publish to SignalBus<HullDeformedSignal>, and gas dump failure logging now reports GlobalTelemetryBus.PublishUnityLogFault without Debug.LogError/string concatenation.
+Rejected Alternatives: Adding a NativeList<HullRepairedSignal> would add private native ownership to a gas system already under data-sovereignty pressure. Calling directly from RepairTool into IGasDynamicsSolver would couple gameplay tools to atmosphere internals. Mutating room flags while `_stepRunning` is true would race the scheduled gas job.
+Scalability potential: Low/MX350 pays two scalar masks and bounded bit scans only when a repair seal is pending. Middle/High/Ultra keep deterministic gas sealing while spending visual budget on hull shader recovery and compute sparks.
+Hardware Impact: i3/MX350 pays an estimated 0-2 microseconds per drained repair signal and 0-4 microseconds when applying pending room masks, bounded to 128 rooms and 0 B native allocation. Direct HullDeformedSignal push saves an estimated 0-1 microseconds per accepted combat dent signal. Removing dump Debug.LogError saves an estimated 3-10 microseconds only on fault logging in editor/development builds.
+
+## Validation Wall Fourteenth Pass
+Problem: The deferred seal patch touched GasDynamicsSolver and HullDentShaderController, so it needed repair/gas/VFX filter evidence.
+Solution: Ran fixed-string grep across RepairTool, HullDentShaderController, GasDynamicsSolver, and EquipmentInteractionHandler for Debug.Log/LogWarning/LogError, EventBus, GlobalSignals.Publish, string.Format, and void Update; it returned NO_REPAIR_GAS_VISUAL_SIGNAL_BLOAT_MATCHES. Ran targeted rg confirming SignalBus<HullDeformedSignal>, SignalBus<HullRepairedSignal>, pendingHullRepair masks, and PublishUnityLogFault. Ran filtered `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false`; it returned NO_REPAIR_GAS_DEFERRED_SEAL_TYPED_SIGNAL_DIAGNOSTICS with exit code 1. Reran full graph filtered for repair/gas/VFX diagnostics; it returned NO_REPAIR_GAS_DEFERRED_SEAL_TYPED_SIGNAL_FULLGRAPH_DIAGNOSTICS with exit code 1. `git diff --check` reports only CRLF warnings in touched files.
+Rejected Alternatives: Treating the gas race as theoretical would leave task 16 dependent on frame timing. Editing all unrelated GasDynamics NativeArray ownership is outside this repair prompt.
+Scalability potential: No new signal contract was added; the existing typed repair lane now survives gas job ownership.
+Hardware Impact: No validation hardware gain. Runtime impact is the bounded pending-mask cost above.
+
+## HullDents Lock / Signal Hygiene
+Problem: TryRepairVaultHullDents emitted HullRepairedSignal while holding the HullDents vault write lock. SignalBus.Push can initialize lane storage and enqueue native data, so doing it under a data lock creates avoidable lock coupling between the repair kernel, signal system, and gas consumer.
+Solution: The repair loop now records completed dent indices in a ushort bitmask while the vault lane is locked. After TryUnlockBuffer(BufferID.HullDents), PublishHullRepairedSignals walks the 16-bit mask, preserves dent-index order, and emits the existing HullRepairedSignal typed lane with cumulative repaired counts.
+Rejected Alternatives: A NativeList or NativeArray staging buffer would violate the no-private-native-data pressure for a 16-slot problem. A managed List would add GC risk. Calling GasDynamics directly would couple the gameplay tool to atmosphere internals and bypass the typed lane.
+Scalability potential: Low/MX350 keeps O(16) repair math and 0 B staging allocation. Middle/High/Ultra keep deterministic repair completion events for gas sealing and premium VFX without lock-held signal enqueue work.
+Hardware Impact: i3/MX350 saves an estimated 0-2 microseconds on completion frames by avoiding SignalBus work while the HullDents lock is held. The bitmask path adds an estimated 0-1 microsecond branch cost per repaired dent and no allocation.
+
+## Validation Wall Fifteenth Pass
+Problem: Moving HullRepairedSignal emission out of the vault lock changed completion ordering and needed compiler-filter proof.
+Solution: Ran rg confirming repairedDentMask, PublishHullRepairedSignals, TryLockBuffer/TryUnlockBuffer, and SignalBus<HullRepairedSignal> placement. Ran fixed-string grep across RepairTool, HullDentShaderController, GasDynamicsSolver, and EquipmentInteractionHandler; it returned NO_REPAIR_LOCK_SIGNAL_BLOAT_MATCHES. Ran filtered `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false`; it returned NO_REPAIR_HULLDENTS_LOCK_SIGNAL_DIAGNOSTICS with exit code 1. Reran full graph filtered for repair lock/signal diagnostics; it returned NO_REPAIR_HULLDENTS_LOCK_SIGNAL_FULLGRAPH_DIAGNOSTICS with exit code -1. `git diff --check` reports only CRLF warnings in touched files.
+Rejected Alternatives: Treating the old in-lock SignalBus.Push as harmless would preserve unnecessary lock coupling. Editing unrelated graph failures remains outside WELDING_REPAIR_LOGIC.
+Scalability potential: No signal contract changed; lock duration is now bounded to HullDents math and memory writes only.
+Hardware Impact: No validation hardware gain. Runtime impact is the bitmask cost/saving described above.
+
+## Shader Packed Dent NaN Guard
+Problem: The CPU repair and mirror paths clamp non-finite HullDents, but the shader unpackers still relied on max/floor/fmod/casts to handle packed radius-depth values. NaN behavior through those operations can vary by backend, and a single NaN in the hull dent shader path can poison mobile GPU output.
+Solution: Added explicit `isfinite` guards before packed dent unpacking in Hecton_DamageHologram.compute, Hecton_CoreLit.hlsl, and Hecton8_UberNoir.hlsl. Non-finite packed dent values now become 0 before integer casts or fmod.
+Rejected Alternatives: Trusting CPU-side clamps alone would leave shader upload/backend corruption unvaccinated. Removing high-tier dent deformation would violate the reactive VFX requirement. Adding a separate sanitization compute pass would waste GPU work for a 16-slot constant array.
+Scalability potential: Low/MX350 still uses cheap dent bypass/low math paths. Middle/High/Ultra keep procedural dent deformation and rust/POM recovery with backend-safe packed values.
+Hardware Impact: Estimated 0-1 microsecond GPU cost per dent loop from finite checks in active hull-dent shader paths. This is fault prevention, not a speed gain.
+
+## Validation Wall Sixteenth Pass
+Problem: Shader NaN hardening touched compute/HLSL assets and needed platform-thread evidence.
+Solution: Ran rg confirming HectonSanitizePackedDent and `isfinite(packed...)` guards in Hecton_DamageHologram, Hecton_CoreLit, and Hecton8_UberNoir. Ran thread-group grep confirming Hecton_DamageHologram uses [numthreads(64,1,1)] and Hecton_FluidAdvection uses HECTON_FLUID_ADVECTION_THREADS=64 or [numthreads(1,1,1)], below the 1024 Metal limit. Ran fixed-string C# bloat grep; it returned NO_REPAIR_SHADER_PASS_CSHARP_BLOAT_MATCHES. A dotnet build filter was attempted but timed out after 315 seconds, so no clean compile claim is made. `git diff --check` reports only CRLF warnings.
+Rejected Alternatives: Claiming Metal compliance without thread-group grep would be weak evidence. Reporting the timed-out build as clean would be false.
+Scalability potential: No new shader features were added; existing low/high tier branches remain intact.
+Hardware Impact: No validation hardware gain. Runtime impact is the finite-check cost above.

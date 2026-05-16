@@ -36,7 +36,7 @@ Status hygiene: fresh file created for current batch. Previous status file was m
 - [x] 15. HOMEOSTASIS_ADAPTATION: N/A for core math; no runtime adaptation branch added.
 - [x] 16. GRAVITY_VECTOR_FIX: player default gravity now resolves from predicted AUP absolute position toward the AUP center with guarded double3 normalization.
 - [x] 17. GHOST_REPLAY_VALIDATION: KCC body job, state staging, and sync-fence hashing all use millimeter quantization before persisted replay/hash state.
-- [x] 18. FINAL_VALIDATION: `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` previously passed with 0 warnings and 0 errors; post-reopen compile is now `[BLOCKED BY DEPENDENCY]` in external world/repair lanes after three attempts.
+- [x] 18. FINAL_VALIDATION: `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` passes with 0 warnings and 0 errors on attempt 15.
 
 ## Loop 1 Evidence: Tasks 1-5
 
@@ -82,7 +82,7 @@ Status hygiene: fresh file created for current batch. Previous status file was m
 - Data sovereignty scan: `PlayerKinematicsRuntime` runtime arrays are DataVault-first through `AllocateRuntimeArray(..., BufferID.*, SystemID.GameplayPlayer)`; the only remaining `H8Memory.Allocate<T>` call is the fallback path with `SystemID.GameplayPlayer`.
 - NaN vaccination scan: removed remaining `math.sqrt` in the scanned AUP/physics/audio-adjacent scope and clamped additional `rsqrt`/`rcp` sites in station keeping, CCD, fluid math, tether constraints, docking spline distance, and acoustic portal reverb mix.
 - Status: `VERIFIED MASTER GRADE`; global compile gate passes with 0 warnings and 0 errors.
-- Post-reopen correction: AUP/player/physics scans remain clean, but the global compile gate is no longer green because concurrent external files now fail in `SargassumMicroFaunaBoids.cs` and `RepairTool.cs`.
+- Post-reopen correction: superseded by Loop 9. AUP/player/physics scans remain clean and the latest global compile gate is green.
 
 ## Loop 7 Evidence: Compile Wall Burn-Down
 
@@ -99,6 +99,42 @@ Status hygiene: fresh file created for current batch. Previous status file was m
 - Compile DOD: three post-reopen compile attempts were executed. Current blockers are external to AUP: `World/SargassumMicroFaunaBoids.cs` missing vault/native fields and `RepairTool.cs` unassigned `localPoint`. Logs written to `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt2.txt` and `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt3.txt`.
 - Final scan DOD: broad AUP/player/physics scan returns no matches for `Vector3.Distance`, `math.sqrt`, `math.length`, unguarded `math.rsqrt`, `string.Format`, standard `Update()`, `GameObject.Find`, `FindObjectOfType`, or non-`Pack = 1` `StructLayout`.
 
+## Loop 9 Evidence: Typed-Lane Event Inquisition
+
+- Signal DOD: `FluidFeedbackEvents` and `PhysicsEventBus` no longer own private `NativeQueue` event lanes. `SplashEvent`, `PhysicsEventPayload`, and deferred submarine impact payloads are packed `ISignal` packets published through `SignalBus<T>` and consumed as `ReadOnlySpan<T>` snapshots.
+- Late-frame DOD: both converted bridges requeue unconsumed snapshot tails when the late-frame budget is exhausted, preserving the old deferred behavior without private queue ownership.
+- ARM64 layout DOD: `PhysicsApplySystem` force/acoustic/pressure packet structs now carry `Pack = 1`; scan over the AUP/physics patch scope returns no non-packed `StructLayout` matches.
+- Rejected: renaming the public `PhysicsEventBus` API was rejected because existing listeners and producers depend on that surface. Converting `ForcePacket` command queues was rejected in this loop because they expose a fixed-step `NativeQueue<ForcePacket>.ParallelWriter` command contract, not a presentation event bus; changing that requires a dedicated force-command vault migration.
+- Compile DOD: `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` passes with 0 warnings and 0 errors. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt10.txt`.
+- Microsecond estimate: event-lane migration saves 0.0 us directly; it removes duplicate native event queues and centralizes sentinel accounting. Requeue work is only on late-frame budget exhaustion and capped by existing lane capacity.
+
+## Loop 10 Evidence: Force Command Vault Migration
+
+- Data sovereignty DOD: `PhysicsApplySystem` no longer owns private `NativeQueue<ForcePacket>` front/back queues or private validation `NativeArray` fields. Force command front/back buffers and validation packet/mask buffers are `GlobalDataVault` handles: `PhysicsForceCommandFront`, `PhysicsForceCommandBack`, `PhysicsForceValidationPackets`, and `PhysicsForceValidationMask`.
+- Producer audit DOD: repo-wide `rg` found no consumer of `TryGetForcePacketBackWriter`; the only force producers route through `PhysicsForceRouter` main-thread methods, so the unused `NativeQueue<ForcePacket>.ParallelWriter` API was removed instead of preserving a dead private queue.
+- Fixed-step DOD: front/back swap semantics remain intact with `_frontCount`/`_backCount`; validation still runs through `ValidateForcePacketsJob`, but its input/output storage is vault-owned.
+- Scan DOD: `rg -n "TryGetForcePacketBackWriter|NativeQueue<ForcePacket>|new NativeQueue<ForcePacket>|\b_frontPacketQueue\b|\b_backPacketQueue\b|\b_validationPackets\b|\b_validationMask\b|\b_frontPackets\b" Assets/_Project/Scripts/PhysicsApplySystem.cs` returns no matches.
+- Compile DOD: attempts 11-13 were run. Attempt 11 exposed missing lockstep lane constants and attempt 12 exposed a diagnostics namespace compile gap; both were repaired. Attempt 13 is `[BLOCKED BY DEPENDENCY]` on external `DiegeticGyroCompassRuntime` DTO drift and `SystemDispatcher` missing blackbox/raycast lock members. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt13.txt`.
+- Microsecond estimate: queue migration saves 0.0 us directly; it removes duplicate private native queue allocation/sentinel ownership. Main-thread enqueue remains O(1) bounded array write; validation copy remains capped at 64 packets.
+
+## Loop 11 Evidence: Global Physics Vault Migration
+
+- Data sovereignty DOD: `GlobalPhysicsStateManager` no longer owns private persistent `NativeArray` fields or a private `NativeQueue<PhysicsImpactEventData>`. Last-valid positions, AUP culling lanes, result lanes, culling telemetry, and deferred impact events resolve through `GlobalDataVault` handles.
+- Deferred impact DOD: collision impact buffering now uses a vault-backed bounded ring with read/write cursors and the same late-frame flush budget; rejected `SignalBus<T>` for this path because the fixed/late flush cadence must not depend on pre-simulation signal snapshots.
+- ARM64 layout DOD: `RigidbodyState`, `PhysicsConnection`, `PhysicsImpactEventData`, and `PhysicsCullingTelemetryEntry` now declare `Pack = 1`.
+- NaN DOD: remaining `GlobalPhysicsStateManager` impact normals, acoustic energy radius, and rigidbody sleep distance paths use `math.rsqrt(math.max(...))`.
+- Scan DOD: `rg --pcre2` over `GlobalPhysicsStateManager.cs` returns no matches for private native container ownership, non-`Pack = 1` `StructLayout`, `Vector3.Distance`, direct `math.sqrt`, `math.length`, unguarded `math.rsqrt`, `string.Format`, or standard `Update()`.
+- Compile DOD: attempt 14 is `[BLOCKED BY DEPENDENCY]` on external save/data-baker contract drift: `HectonContractVersion`, `CsvReadBufferBytes`, and `SignalBusRegistry`. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt14.txt`.
+- Microsecond estimate: 0.0 us direct frame gain; impact enqueue remains O(1), culling job still receives contiguous NativeArray views, and low-end gain is sentinel/vault consolidation plus removal of duplicate private native ownership.
+
+## Loop 12 Evidence: Player Blackbox Vault Closure
+
+- Data sovereignty DOD: `HectonPlayerMovement` no longer owns the cinematic focus blackbox as a private `NativeArray`; it stores a `VaultBufferHandle<CinematicFocusTelemetryEntry>` and resolves the DataVault view only when writing or dumping telemetry.
+- Blackbox DOD: the 300-entry cinematic focus telemetry ring keeps the same dump format and cooldown, but storage ownership remains in `GlobalDataVault` under `BufferID.PlayerCinematicFocusBlackBox`.
+- Scan DOD: broad AUP/player/physics/vehicle scan returns no matches for private native container ownership, private native allocations, non-`Pack = 1` `StructLayout`, `Vector3.Distance`, direct `math.sqrt`, `math.length`, unguarded `math.rsqrt`, `string.Format`, or standard `Update()`.
+- Compile DOD: attempt 15 passes with 0 warnings and 0 errors. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt15.txt`.
+- Microsecond estimate: 0.0 us direct frame gain; telemetry writes still resolve to a contiguous DataVault buffer and remain cadence/fault gated.
+
 ## Loop State
 
 - Iteration 0: prompt extracted; mandates read; codebase scan complete for AUP/KCC station-keeping targets.
@@ -110,3 +146,7 @@ Status hygiene: fresh file created for current batch. Previous status file was m
 - Iteration 6: post-inquisition hardening completed; ARM64 `Pack = 1` scan clean in touched AUP/physics scope, KCC scratch/state arrays are DataVault-first, and guarded `rsqrt`/`rcp` replaced remaining scanned sqrt/division risk.
 - Iteration 7: compile wall burned down; `Hecton8.Core.csproj` builds clean with 0 warnings and 0 errors, and final scans are clean in the AUP/player/physics scope.
 - Iteration 8: post-reopen scan tightened additional AUP/vehicle-fluid packing, magnitude paths, and physics determinism signal ownership; compile is `[BLOCKED BY DEPENDENCY]` after three attempts on external Sargassum/RepairTool errors, with AUP/player/physics scans clean.
+- Iteration 9: converted fluid/physics deferred event bridges and submarine impact trauma dispatch to typed `SignalBus<T>` lanes, tightened `PhysicsApplySystem` packet packing, and restored a green `Hecton8.Core.csproj` compile.
+- Iteration 10: migrated `PhysicsApplySystem` force command buffers and validation staging to `GlobalDataVault`; force-queue scans are clean, compile is blocked after three attempts by external UI/SystemDispatcher dependency drift.
+- Iteration 11: migrated `GlobalPhysicsStateManager` native culling/impact storage to `GlobalDataVault`, enforced pack/NaN guards, and confirmed attempt 14 is blocked outside AUP by save/data-baker contract drift.
+- Iteration 12: migrated the remaining player cinematic focus blackbox `NativeArray` field to a DataVault handle; broad AUP/player/physics scans are clean and attempt 15 builds green.

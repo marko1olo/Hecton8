@@ -20,9 +20,11 @@ namespace Hecton8.Core.Content.Editor
         private const string HighResGroupName = "High_Res";
         private const string OverkillGroupName = "Overkill";
         private const long MaxSingleContentAssetBytes = 256L * 1024L * 1024L;
-        private const string ResourcesApiPrefix = "Resources.";
+        private const string UnityEngineNamespace = "UnityEngine";
+        private const string ResourcesTypeName = "Resources";
         private const string ResourcesLoadMethod = "Load";
         private const string ResourcesLoadAllMethod = "LoadAll";
+        private const string ResourcesLoadAsyncMethod = "LoadAsync";
         private static readonly Regex _hashRegex = new Regex(
             "\"(?:itemHash|meshHash|prefabHash|assetHash|hash)\"\\s*:\\s*\"?(?<hash>0x[0-9A-Fa-f]{1,8}|[0-9]{1,10})\"?",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -44,7 +46,9 @@ namespace Hecton8.Core.Content.Editor
             ValidateNoCyclicRegistryDependencies(maps);
             ValidateTierGroups(maps);
             ValidateBinaryLayouts();
+            ValidateObjectBatchPayloads();
             ValidateLoreBlockIoBudgets();
+            ValidateRuntimePrefabBindings();
             ValidateComputeShaderThreadGroups();
             ValidateVfxPrewarmManifests();
         }
@@ -55,18 +59,13 @@ namespace Hecton8.Core.Content.Editor
             if (!Directory.Exists(firstPartyRoot))
                 return;
 
-            string loadCall = ResourcesApiPrefix + ResourcesLoadMethod + "(";
-            string loadAllCall = ResourcesApiPrefix + ResourcesLoadAllMethod + "(";
             string[] files = Directory.GetFiles(firstPartyRoot, "*.cs", SearchOption.AllDirectories);
             for (int i = 0; i < files.Length; i++)
             {
                 string path = files[i].Replace('\\', '/');
                 string source = File.ReadAllText(path);
-                if (source.IndexOf(loadCall, StringComparison.Ordinal) < 0 &&
-                    source.IndexOf(loadAllCall, StringComparison.Ordinal) < 0)
-                {
+                if (!ContainsBannedResourcesLoad(source))
                     continue;
-                }
 
                 Fail("First-party Resources API usage is banned: " + path);
             }
@@ -84,7 +83,6 @@ namespace Hecton8.Core.Content.Editor
                 if (map == null)
                     continue;
 
-                map.ForceSort();
                 maps[count] = map;
                 count++;
             }
@@ -113,6 +111,8 @@ namespace Hecton8.Core.Content.Editor
                     ContentAssetEntry entry = map.GetEntryAt(j);
                     if (entry.Hash == 0u)
                         Fail("ContentAssetHashMap contains zero hash: " + mapName + " index=" + j);
+
+                    ValidateEntryShape(in entry, mapName, j);
 
                     if (ownersByHash.TryGetValue(entry.Hash, out string existingOwner))
                     {
@@ -161,6 +161,67 @@ namespace Hecton8.Core.Content.Editor
                              mapName + " hash=0x" + entry.Hash.ToString("X8") +
                              " dependency=0x" + dependency.ToString("X8"));
                     }
+                }
+            }
+        }
+
+        private static void ValidateEntryShape(in ContentAssetEntry entry, string mapName, int index)
+        {
+            if (entry.Kind == ContentAssetKind.Unknown || entry.Kind > ContentAssetKind.Compute)
+            {
+                Fail("Content entry has invalid kind: " +
+                     mapName + " index=" + index + " hash=0x" + entry.Hash.ToString("X8"));
+            }
+
+            if (entry.Tier > ContentTier.Overkill)
+            {
+                Fail("Content entry has invalid tier: " +
+                     mapName + " index=" + index + " hash=0x" + entry.Hash.ToString("X8"));
+            }
+
+            if (entry.EstimatedVramBytes < 0L)
+            {
+                Fail("Content entry has negative VRAM estimate: " +
+                     mapName + " index=" + index + " hash=0x" + entry.Hash.ToString("X8"));
+            }
+
+            if (entry.LodLevel > 2)
+            {
+                Fail("Content entry has unsupported LOD level: " +
+                     mapName + " index=" + index + " hash=0x" + entry.Hash.ToString("X8"));
+            }
+
+            uint[] dependencies = entry.DependencyHashes;
+            if (dependencies == null)
+                return;
+
+            if (dependencies.Length > ushort.MaxValue)
+            {
+                Fail("Content entry dependency list exceeds binary record capacity: " +
+                     mapName + " index=" + index + " hash=0x" + entry.Hash.ToString("X8"));
+            }
+
+            HashSet<uint> dependencySet = new HashSet<uint>(dependencies.Length);
+            for (int dependencyIndex = 0; dependencyIndex < dependencies.Length; dependencyIndex++)
+            {
+                uint dependency = dependencies[dependencyIndex];
+                if (dependency == 0u)
+                {
+                    Fail("Content entry has zero dependency hash: " +
+                         mapName + " index=" + index + " dependencyIndex=" + dependencyIndex);
+                }
+
+                if (dependency == entry.Hash)
+                {
+                    Fail("Content entry depends on itself: " +
+                         mapName + " hash=0x" + entry.Hash.ToString("X8"));
+                }
+
+                if (!dependencySet.Add(dependency))
+                {
+                    Fail("Content entry has duplicate dependency hash: " +
+                         mapName + " hash=0x" + entry.Hash.ToString("X8") +
+                         " dependency=0x" + dependency.ToString("X8"));
                 }
             }
         }
@@ -429,14 +490,174 @@ namespace Hecton8.Core.Content.Editor
                 for (int providerIndex = 0; providerIndex < providers.Length; providerIndex++)
                 {
                     ContentLoreBinaryProvider provider = providers[providerIndex];
-                    for (int blockIndex = 0; blockIndex < provider.BlockCount; blockIndex++)
+                    string dictionaryPath = provider.DictionaryRelativePath;
+                    if (!ContentLoreBinaryProvider.IsPortableDictionaryRelativePath(dictionaryPath))
+                    {
+                        Fail("Lore dictionary path is not portable: " + path);
+                    }
+
+                    int blockCount = provider.BlockCount;
+                    if (blockCount == 0)
+                        Fail("Lore provider has no block index entries: " + path);
+
+                    HashSet<uint> hashes = new HashSet<uint>(blockCount);
+                    ContentLoreBlockIndex[] blocksByOffset = new ContentLoreBlockIndex[blockCount];
+                    for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)
                     {
                         ContentLoreBlockIndex block = provider.GetBlockAt(blockIndex);
+                        if (block.Hash == 0u)
+                            Fail("Lore block has zero hash: " + path + " blockIndex=" + blockIndex);
+                        if (!hashes.Add(block.Hash))
+                        {
+                            Fail("Lore provider has duplicate block hash: " +
+                                 path + " hash=0x" + block.Hash.ToString("X8"));
+                        }
+
+                        if (block.Offset < 0L)
+                            Fail("Lore block has negative offset: " + path + " hash=0x" + block.Hash.ToString("X8"));
+                        if (block.Length <= 0)
+                            Fail("Lore block has invalid length: " + path + " hash=0x" + block.Hash.ToString("X8"));
                         if (block.Length > ContentLoreBinaryProvider.MaxSynchronousLoreReadBytes)
                         {
                             Fail("Lore block exceeds synchronous I/O budget: " +
                                  path + " hash=0x" + block.Hash.ToString("X8"));
                         }
+
+                        long end = block.Offset + block.Length;
+                        if (end < block.Offset)
+                            Fail("Lore block range overflows: " + path + " hash=0x" + block.Hash.ToString("X8"));
+
+                        blocksByOffset[blockIndex] = block;
+                    }
+
+                    SortLoreBlocksByOffset(blocksByOffset);
+                    long previousEnd = 0L;
+                    bool hasPrevious = false;
+                    for (int blockIndex = 0; blockIndex < blocksByOffset.Length; blockIndex++)
+                    {
+                        ContentLoreBlockIndex block = blocksByOffset[blockIndex];
+                        if (hasPrevious && block.Offset < previousEnd)
+                        {
+                            Fail("Lore block byte ranges overlap: " +
+                                 path + " hash=0x" + block.Hash.ToString("X8"));
+                        }
+
+                        previousEnd = block.Offset + block.Length;
+                        hasPrevious = true;
+                    }
+                }
+            }
+        }
+
+        private static void SortLoreBlocksByOffset(ContentLoreBlockIndex[] blocks)
+        {
+            if (blocks == null)
+                return;
+
+            for (int i = 1; i < blocks.Length; i++)
+            {
+                ContentLoreBlockIndex current = blocks[i];
+                int j = i - 1;
+                while (j >= 0 && blocks[j].Offset > current.Offset)
+                {
+                    blocks[j + 1] = blocks[j];
+                    j--;
+                }
+
+                blocks[j + 1] = current;
+            }
+        }
+
+        private static void ValidateObjectBatchPayloads()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:ScriptableObject", new[] { "Assets/_Project" });
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                ObjectBatchBase batch = AssetDatabase.LoadAssetAtPath<ObjectBatchBase>(path);
+                if (batch == null)
+                    continue;
+
+                int meshCount = batch.MeshCount;
+                int materialCount = batch.MaterialCount;
+                int instanceCount = batch.InstanceCount;
+                int chunkCount = batch.ChunkCount;
+                if (meshCount == 0 && materialCount == 0 && instanceCount == 0 && chunkCount == 0)
+                    continue;
+
+                if (meshCount == 0)
+                    Fail("Object batch has no mesh table: " + path);
+                if (materialCount == 0)
+                    Fail("Object batch has no material table: " + path);
+                if (instanceCount == 0)
+                    Fail("Object batch has no instances: " + path);
+                if (chunkCount == 0)
+                    Fail("Object batch has no chunks: " + path);
+
+                for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
+                {
+                    if (batch.GetMesh(meshIndex) == null)
+                        Fail("Object batch has null mesh binding: " + path + " meshIndex=" + meshIndex);
+                }
+
+                for (int materialIndex = 0; materialIndex < materialCount; materialIndex++)
+                {
+                    if (batch.GetMaterial(materialIndex) == null)
+                        Fail("Object batch has null material binding: " + path + " materialIndex=" + materialIndex);
+                }
+
+                for (int instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
+                {
+                    ObjectBatchInstance instance = batch.GetInstance(instanceIndex);
+                    if (instance.AssetHash == 0u)
+                        Fail("Object batch instance has zero asset hash: " + path + " instanceIndex=" + instanceIndex);
+                    if (instance.MeshIndex < 0 || instance.MeshIndex >= meshCount)
+                        Fail("Object batch instance has invalid mesh index: " + path + " instanceIndex=" + instanceIndex);
+                    if (instance.MaterialIndex < 0 || instance.MaterialIndex >= materialCount)
+                        Fail("Object batch instance has invalid material index: " + path + " instanceIndex=" + instanceIndex);
+                    if (!IsFinite(instance.LocalToWorld))
+                        Fail("Object batch instance has non-finite transform: " + path + " instanceIndex=" + instanceIndex);
+                }
+
+                for (int chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)
+                {
+                    ObjectBatchChunk chunk = batch.GetChunk(chunkIndex);
+                    if (chunk.ChunkHash == 0u)
+                        Fail("Object batch chunk has zero chunk hash: " + path + " chunkIndex=" + chunkIndex);
+                    if (chunk.Count <= 0)
+                        Fail("Object batch chunk has empty range: " + path + " chunkIndex=" + chunkIndex);
+                    if (chunk.StartIndex < 0 || chunk.StartIndex > instanceCount - chunk.Count)
+                        Fail("Object batch chunk range exceeds instance payload: " + path + " chunkIndex=" + chunkIndex);
+                    if (chunk.LodLevel > 2)
+                        Fail("Object batch chunk uses unsupported LOD level: " + path + " chunkIndex=" + chunkIndex);
+                    if (!IsFinite(chunk.Bounds))
+                        Fail("Object batch chunk has non-finite bounds: " + path + " chunkIndex=" + chunkIndex);
+                }
+            }
+        }
+
+        private static void ValidateRuntimePrefabBindings()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project" });
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab == null)
+                    continue;
+
+                ContentAuthorityRuntime[] runtimes = prefab.GetComponentsInChildren<ContentAuthorityRuntime>(true);
+                for (int runtimeIndex = 0; runtimeIndex < runtimes.Length; runtimeIndex++)
+                {
+                    ContentAuthorityRuntime runtime = runtimes[runtimeIndex];
+                    if (runtime.AssetHashMap == null)
+                        Fail("ContentAuthorityRuntime prefab missing asset hash map: " + path);
+                    if (!runtime.HasHologramProxyBinding)
+                        Fail("ContentAuthorityRuntime prefab missing hologram proxy mesh/material: " + path);
+                    if (runtime.HologramPoolCapacity <= 0 ||
+                        runtime.HologramPoolCapacity > ContentAuthorityRuntime.MaxPendingLoadCount)
+                    {
+                        Fail("ContentAuthorityRuntime prefab has invalid hologram pool capacity: " + path);
                     }
                 }
             }
@@ -552,6 +773,111 @@ namespace Hecton8.Core.Content.Editor
                 return Convert.ToUInt32(raw.Substring(2), 16);
 
             return uint.TryParse(raw, out uint value) ? value : 0u;
+        }
+
+        private static bool ContainsBannedResourcesLoad(string source)
+        {
+            int length = source != null ? source.Length : 0;
+            for (int i = 0; i < length; i++)
+            {
+                int afterResources;
+                if (!MatchesIdentifier(source, i, ResourcesTypeName, out afterResources))
+                {
+                    if (!MatchesIdentifier(source, i, UnityEngineNamespace, out int afterUnityEngine) ||
+                        !TryReadDotIdentifier(source, afterUnityEngine, ResourcesTypeName, out afterResources))
+                    {
+                        continue;
+                    }
+                }
+
+                int afterMethod;
+                if (!TryReadDotIdentifier(source, afterResources, ResourcesLoadMethod, out afterMethod) &&
+                    !TryReadDotIdentifier(source, afterResources, ResourcesLoadAllMethod, out afterMethod) &&
+                    !TryReadDotIdentifier(source, afterResources, ResourcesLoadAsyncMethod, out afterMethod))
+                {
+                    continue;
+                }
+
+                int afterWhitespace = SkipWhitespace(source, afterMethod);
+                if (afterWhitespace < length && source[afterWhitespace] == '(')
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryReadDotIdentifier(string source, int index, string token, out int afterToken)
+        {
+            afterToken = index;
+            int length = source != null ? source.Length : 0;
+            int cursor = SkipWhitespace(source, index);
+            if (cursor >= length || source[cursor] != '.')
+                return false;
+
+            cursor = SkipWhitespace(source, cursor + 1);
+            return MatchesIdentifier(source, cursor, token, out afterToken);
+        }
+
+        private static bool MatchesIdentifier(string source, int index, string token, out int afterToken)
+        {
+            afterToken = index;
+            int length = source != null ? source.Length : 0;
+            int tokenLength = token != null ? token.Length : 0;
+            if (tokenLength == 0 || index < 0 || index + tokenLength > length)
+                return false;
+
+            if (index > 0 && IsIdentifierPart(source[index - 1]))
+                return false;
+
+            for (int i = 0; i < tokenLength; i++)
+            {
+                if (source[index + i] != token[i])
+                    return false;
+            }
+
+            afterToken = index + tokenLength;
+            return afterToken >= length || !IsIdentifierPart(source[afterToken]);
+        }
+
+        private static int SkipWhitespace(string source, int index)
+        {
+            int length = source != null ? source.Length : 0;
+            int cursor = index;
+            while (cursor < length && char.IsWhiteSpace(source[cursor]))
+                cursor++;
+
+            return cursor;
+        }
+
+        private static bool IsIdentifierPart(char value)
+        {
+            return value == '_' || char.IsLetterOrDigit(value);
+        }
+
+        private static bool IsFinite(Matrix4x4 matrix)
+        {
+            return IsFinite(matrix.m00) && IsFinite(matrix.m01) &&
+                   IsFinite(matrix.m02) && IsFinite(matrix.m03) &&
+                   IsFinite(matrix.m10) && IsFinite(matrix.m11) &&
+                   IsFinite(matrix.m12) && IsFinite(matrix.m13) &&
+                   IsFinite(matrix.m20) && IsFinite(matrix.m21) &&
+                   IsFinite(matrix.m22) && IsFinite(matrix.m23) &&
+                   IsFinite(matrix.m30) && IsFinite(matrix.m31) &&
+                   IsFinite(matrix.m32) && IsFinite(matrix.m33);
+        }
+
+        private static bool IsFinite(Bounds bounds)
+        {
+            Vector3 center = bounds.center;
+            Vector3 extents = bounds.extents;
+            return IsFinite(center.x) && IsFinite(center.y) && IsFinite(center.z) &&
+                   IsFinite(extents.x) && IsFinite(extents.y) && IsFinite(extents.z) &&
+                   extents.x >= 0f && extents.y >= 0f && extents.z >= 0f;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private static void Fail(string message)

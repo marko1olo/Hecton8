@@ -463,3 +463,16 @@ Cinematic cheats retained:
 - God-mode route: overkill visual/audio payloads are allowed only after Core contracts are deterministic and tier isolated.
 
 Exact microseconds saved: 0us measured. This pass changed documentation/logs only. Any future runtime savings require populated content, player build profiling, and platform captures.
+## Eighth Pass - Integration Truth And Foundation Residue
+
+What was wrong -> The latest integration logs use strong "BUILD GREEN" language, but that phrase was too broad for the actual proof. Current C# compilation is green, while Unity import, Play Mode, Addressables build, Android/Quest IL2CPP, Metal shader build, Steam Deck storage pressure, and runtime profiler budgets are still unproven. The Core assembly boundary also hides an AI/Ecosystem implementation inside the root Core asmdef.
+
+What was done -> Read `LOG_INTEGRATION_ASSEMBLY_SURGEON.md` and `Dump_COMPILE_ERROR.txt`, then verified current disk directly. Ran `dotnet build Hecton8.Core.csproj --no-restore -v:q /clp:ErrorsOnly`: build succeeded, 0 warnings, 0 errors, 00:00:05.21. Ran `dotnet build Hecton8.Editor.csproj --no-restore -v:q /clp:ErrorsOnly /m:1`: build succeeded, 36 warnings, 0 errors, 00:02:20.99. Cross-checked asmdefs, StructLayout markers, GlobalSignals tether validators, ContentAuthority payload state, audio metas, ModBuilder/ModLoader manifest contract, H8 world payload constants, native ownership, Update hooks, and EventBus/delegate surfaces.
+
+Cinematic Cheats used -> No new runtime cheats were implemented. Tactical reference remains clean-room: use Subnautica-like sidecar topology as a contract vocabulary, not copied data. Low tier keeps cheap fakes and strict payload absence prevention; Ultra keeps visual overkill only through explicit tiered content gates.
+
+Exact Microseconds saved -> Research-only 0us. No frame-time or memory-savings number is claimed. Build timings above are compile verification times, not runtime optimization results.
+
+Verification -> Core compile is green now. Editor compile is green now but carries 36 warnings not yet triaged. Current payload facts remain bad: `Assets/AddressableAssetsData` files=0, `Assets/_SourceData` files=0, `Assets/StreamingAssets` missing, `static_data.h8bin` missing, `ContentAssetHashMap` assets=0, `ContentVfxPrewarmManifest` assets=0. Audio metas still show 45 `loadType=0 preload=1` clips, with top WAVs 23-32 MB. ModBuilder still omits `RequiredAPIVersion`, while ModLoader v2 rejects missing/zero required API. H8 page payload constants still do not name `TerrainCellBase`, `ObjectBatchBase`, `VisibilityPhysicsProxyBase`, `AudioBiomeBank`, or `DiscoveryRouteBase`.
+
+Status -> EIGHTH PASS COMPLETE. Build is currently C# green; foundation is not product green. P0 queue remains: 1) populate minimal content authority payload and monolith output, 2) fix mod manifest v2 SDK output, 3) force audio reimport or fail stale meta drift, 4) split managed `ContentAssetEntry` from binary layout claims, 5) move AI/Ecosystem implementation out of root Core or formalize contract-only layout ownership, 6) classify no-Pack structs and local NativeContainer owners, 7) add platform build/player/profiler gates before claiming AAA readiness.

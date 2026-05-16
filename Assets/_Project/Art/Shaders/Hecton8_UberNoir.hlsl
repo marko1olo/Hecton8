@@ -364,13 +364,15 @@ float3 H8UberNoirTransformNormal(float3 normalOS, float4x4 worldToObject)
 
 float H8UberNoirUnpackDentRadius(float packed)
 {
-    float packedInt = floor(max(packed, 0.0) + 0.5);
+    float safePacked = isfinite(packed) ? max(packed, 0.0) : 0.0;
+    float packedInt = floor(safePacked + 0.5);
     return fmod(packedInt, 256.0) * 0.0625;
 }
 
 float H8UberNoirUnpackDentDepth(float packed)
 {
-    float packedInt = floor(max(packed, 0.0) + 0.5);
+    float safePacked = isfinite(packed) ? max(packed, 0.0) : 0.0;
+    float packedInt = floor(safePacked + 0.5);
     return fmod(floor(packedInt * (1.0 / 256.0)), 256.0) * (1.0 / 255.0);
 }
 
@@ -667,6 +669,7 @@ float2 H8UberNoirResolveRustPomUv(
     rustPacked = SAMPLE_TEXTURE2D(_RustDetailMap, sampler_RustDetailMap, rustUv);
 
     float pomEnabled = step(H8_UBER_NOIR_EPS, rust01) * step(_UberNoirRustParams.y, rust01) * step(0.5, _UberNoirFeatureFlags.x) * step(_HectonMaterialDecayRuntime.z, 0.5) * H8UberNoirHighCostAllowed();
+    [branch]
     if (pomEnabled <= 0.0)
         return baseUv;
 
@@ -918,24 +921,12 @@ half3 H8UberNoirEvaluateMainLighting(H8UberNoirVaryings input, H8UberNoirSurface
 #endif
 }
 
-half3 H8UberNoirBeerLambertFallback(float3 positionWS)
-{
-    float surfaceY = H8WaterExtinctionFinite(_ExtinctionLUTRuntime.x, 0.0);
-    float depthMeters = max(0.0, surfaceY - H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0)).y);
-    half turbidity = (half)max(H8WaterExtinctionFinite(_ExtinctionLUTRuntime.y, 1.0), 0.0);
-    half depth = (half)min(depthMeters, 5000.0);
-    half3 extinctionSigma = half3(0.2303h, 0.061h, 0.018h) * max(turbidity, 0.25h);
-    return exp2(-depth * extinctionSigma * 1.442695h);
-}
-
 half3 H8UberNoirResolveExtinctionColor(H8UberNoirVaryings input)
 {
-    half3 fallback = H8UberNoirBeerLambertFallback(input.positionWS);
-    half active = (half)H8WaterExtinctionActive();
 #if defined(_MATH_LOD_LOW)
-    return max(lerp(fallback, input.extinctionColor, active), half3(0.0h, 0.0h, 0.0h));
+    return max(input.extinctionColor, half3(0.0h, 0.0h, 0.0h));
 #else
-    return max(lerp(fallback, H8WaterExtinctionSampleRgbByWorld(input.positionWS, (half)_ExtinctionLUTRuntime.y), active), half3(0.0h, 0.0h, 0.0h));
+    return H8WaterExtinctionResolveRgbByWorld(input.positionWS, (half)_ExtinctionLUTRuntime.y);
 #endif
 }
 
@@ -952,7 +943,7 @@ half3 H8UberNoirApplyNoirFog(half3 color, half fogFactor, half3 extinctionColor,
     half fogCurve = fog * fog * (0.82h + fog * 0.18h);
     fogCurve = saturate(fogCurve + H8UberNoirFogIgnDither(positionCS, fogCurve));
     half3 floorColor = max((half3)_NoirFogColor.rgb, (half3)_NoirAbyssFloorColor.rgb);
-    half extinctionFogBlend = saturate((half)_ExtinctionLUTRuntime.z * (half)_ExtinctionLUTParams.w);
+    half extinctionFogBlend = H8WaterExtinctionFogBlend();
     floorColor = H8WaterExtinctionApplyFogTint(floorColor, extinctionColor, extinctionFogBlend);
     half extinctionMax = max(extinctionColor.r, max(extinctionColor.g, extinctionColor.b));
     floorColor = lerp(floorColor, (half3)_NoirAbyssFloorColor.rgb, saturate(fogCurve * (1.0h - extinctionMax)));
@@ -1117,7 +1108,7 @@ H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
     output.instanceSeed = (half)saturate(frac(safeInstanceSeed));
     output.instanceFade = (half)safeInstanceFade;
 #if defined(_MATH_LOD_LOW)
-    output.extinctionColor = H8WaterExtinctionSampleRgbByWorld(positionWS, (half)_ExtinctionLUTRuntime.y);
+    output.extinctionColor = H8WaterExtinctionResolveRgbByWorld(positionWS, (half)_ExtinctionLUTRuntime.y);
 #else
     output.extinctionColor = half3(1.0h, 1.0h, 1.0h);
 #endif

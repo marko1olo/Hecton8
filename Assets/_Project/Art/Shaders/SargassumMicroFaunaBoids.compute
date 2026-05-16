@@ -524,19 +524,29 @@ float3 SafeNormalize(float3 value)
     if (!IsFiniteFloat(lengthL1) || lengthL1 <= EPSILON)
         return float3(0.0, 0.0, 0.0);
 
-    return value / lengthL1;
+    return value * rcp(max(lengthL1, EPSILON));
 }
 
 float3 CheapNormalizeL1(float3 value, float3 fallback)
 {
     if (!IsFiniteFloat3(value))
-        return fallback;
+    {
+        float fallbackLengthL1 = abs(fallback.x) + abs(fallback.y) + abs(fallback.z);
+        return IsFiniteFloat3(fallback) && IsFiniteFloat(fallbackLengthL1) && fallbackLengthL1 > EPSILON
+            ? fallback * rcp(max(fallbackLengthL1, EPSILON))
+            : float3(0.0, 0.0, 0.0);
+    }
 
     float lengthL1 = abs(value.x) + abs(value.y) + abs(value.z);
     if (!IsFiniteFloat(lengthL1) || lengthL1 <= EPSILON)
-        return fallback;
+    {
+        float fallbackLengthL1 = abs(fallback.x) + abs(fallback.y) + abs(fallback.z);
+        return IsFiniteFloat3(fallback) && IsFiniteFloat(fallbackLengthL1) && fallbackLengthL1 > EPSILON
+            ? fallback * rcp(max(fallbackLengthL1, EPSILON))
+            : float3(0.0, 0.0, 0.0);
+    }
 
-    return value / lengthL1;
+    return value * rcp(max(lengthL1, EPSILON));
 }
 
 float3 SafeNormalizeRsqrt(float3 value, float3 fallback)
@@ -972,12 +982,24 @@ void AccumulateGrazingAnchorSample(
 float3 ResolveAcousticPanicChaos(float3 positionWS, uint boidIndex, out float panicGate)
 {
     panicGate = 0.0;
-    if (_AcousticPanicRadius <= EPSILON || _AcousticPanicStrength <= EPSILON || _AcousticPanicTimeRemaining <= EPSILON)
+    if (!IsFiniteFloat3(positionWS) ||
+        !IsFiniteFloat3(_AcousticPanicOriginWS) ||
+        !IsFiniteFloat(_AcousticPanicRadius) ||
+        !IsFiniteFloat(_AcousticPanicStrength) ||
+        !IsFiniteFloat(_AcousticPanicTimeRemaining) ||
+        _AcousticPanicRadius <= EPSILON ||
+        _AcousticPanicStrength <= EPSILON ||
+        _AcousticPanicTimeRemaining <= EPSILON)
+    {
         return float3(0.0, 0.0, 0.0);
+    }
 
     float3 fromPing = positionWS - _AcousticPanicOriginWS;
     float distanceSq = dot(fromPing, fromPing);
-    float radiusSq = _AcousticPanicRadius * _AcousticPanicRadius;
+    float radiusSq = max(_AcousticPanicRadius * _AcousticPanicRadius, EPSILON);
+    if (!IsFiniteFloat(distanceSq) || !IsFiniteFloat(radiusSq))
+        return float3(0.0, 0.0, 0.0);
+
     if (distanceSq >= radiusSq)
         return float3(0.0, 0.0, 0.0);
 
@@ -988,7 +1010,9 @@ float3 ResolveAcousticPanicChaos(float3 positionWS, uint boidIndex, out float pa
     if (panicGate <= EPSILON)
         return float3(0.0, 0.0, 0.0);
 
-    float seed = _AcousticPanicSeed + (float)boidIndex * 17.131 + _SimulationTime * 11.719;
+    float acousticSeed = IsFiniteFloat(_AcousticPanicSeed) ? _AcousticPanicSeed : 0.0;
+    float acousticTime = IsFiniteFloat(_SimulationTime) ? _SimulationTime : 0.0;
+    float seed = acousticSeed + (float)boidIndex * 17.131 + acousticTime * 11.719;
     float3 chaos = float3(
         Hash11(seed + positionWS.x * 0.317) * 2.0 - 1.0,
         Hash11(seed + positionWS.y * 0.373) * 2.0 - 1.0,
@@ -1005,6 +1029,17 @@ float3 ResolveAcousticPanicChaos(float3 positionWS, uint boidIndex, out float pa
 
 float3 ResolveHeadlightPhotophobiaForce(float3 positionWS, float headlightPanic01)
 {
+    if (!IsFiniteFloat3(positionWS) ||
+        !IsFiniteFloat3(_PlayerPositionWS) ||
+        !IsFiniteFloat3(_PlayerForwardWS) ||
+        !IsFiniteFloat(headlightPanic01) ||
+        !IsFiniteFloat(_PanicPlayerRadius) ||
+        !IsFiniteFloat(_BoidBodyRadius) ||
+        !IsFiniteFloat(_PanicWeight))
+    {
+        return float3(0.0, 0.0, 0.0);
+    }
+
     float panicGate = saturate(headlightPanic01);
     if (panicGate <= 0.001)
         return float3(0.0, 0.0, 0.0);
@@ -1015,6 +1050,9 @@ float3 ResolveHeadlightPhotophobiaForce(float3 positionWS, float headlightPanic0
 
     float3 toBoid = positionWS - _PlayerPositionWS;
     float axialDistance = dot(toBoid, lightDirectionWS);
+    if (!IsFiniteFloat(axialDistance))
+        return float3(0.0, 0.0, 0.0);
+
     float coneLength = max(_PanicPlayerRadius * 2.6, 8.0);
     if (axialDistance <= 0.0 || axialDistance >= coneLength)
         return float3(0.0, 0.0, 0.0);
@@ -1025,7 +1063,7 @@ float3 ResolveHeadlightPhotophobiaForce(float3 positionWS, float headlightPanic0
     float3 radialOffset = positionWS - coneCenter;
     float radialDistanceSq = dot(radialOffset, radialOffset);
     float coneRadiusSq = coneRadius * coneRadius;
-    if (radialDistanceSq >= coneRadiusSq)
+    if (!IsFiniteFloat(radialDistanceSq) || !IsFiniteFloat(coneRadiusSq) || radialDistanceSq >= coneRadiusSq)
         return float3(0.0, 0.0, 0.0);
 
     float radialSq01 = saturate(radialDistanceSq / max(coneRadiusSq, EPSILON));
@@ -1041,8 +1079,19 @@ float3 ResolveHeadlightPhotophobiaForce(float3 positionWS, float headlightPanic0
 
 float3 ResolvePlayerCurtainPartingForce(float3 positionCR, float3 velocityCR, float3 playerPositionCR, float playerThreatGate, float panicFromPlayer)
 {
-    if (ShouldSkipBoidGroupCurtainMath() || _ParasiteMode > 0.5 || playerThreatGate <= 0.001)
+    if (ShouldSkipBoidGroupCurtainMath() ||
+        _ParasiteMode > 0.5 ||
+        !IsFiniteFloat3(positionCR) ||
+        !IsFiniteFloat3(velocityCR) ||
+        !IsFiniteFloat3(playerPositionCR) ||
+        !IsFiniteFloat(playerThreatGate) ||
+        !IsFiniteFloat(panicFromPlayer) ||
+        !IsFiniteFloat(_HeadlightPanic) ||
+        !IsFiniteFloat(_PanicWeight) ||
+        playerThreatGate <= 0.001)
+    {
         return float3(0.0, 0.0, 0.0);
+    }
 
     float3 toPlayer = _PlayerDirectionWS;
     if (dot(toPlayer, toPlayer) <= EPSILON)

@@ -1,4 +1,4 @@
-# COMPUTE DOMINANCE REPORT
+﻿# COMPUTE DOMINANCE REPORT
 
 Status: AUDIT COMPLETE
 Agent: COMPUTE_LOGISTICS_AUDITOR
@@ -1264,3 +1264,92 @@ Tariff scenarios:
 | USD 0.30/kWh | USD 689,199.00 |
 
 Verdict: the clean translation is `2.30 GWh`, roughly `210 household-years` at 30 kWh/day. Do not call it measured power consumption.
+
+## 2026-05-16 Continuation Rebase 14:57
+
+This is a live SQLite rebase, not a new full JSONL pass.
+
+| Metric | Value |
+|---|---:|
+| Current SQLite thread tokens | 48,761,315,725 |
+| Delta vs 03:56 SQLite snapshot | +1,295,589,659 |
+| 60-second live delta | 5,591,521 |
+| 60-second live rate | 93,192.02 tokens/sec |
+| Cache-aware live rate | USD 4.28/min; USD 256.95/hour; USD 6,166.81/day |
+| No-cache live rate | USD 28.40/min; USD 1,704.18/hour; USD 40,900.39/day |
+| Current meaningful script LOC | 827,838 |
+| Current tokens per meaningful LOC | 58,902.00 |
+| Estimated current cache-aware total | USD 33,007.19 |
+| Estimated current no-cache total | USD 217,190.76 |
+| Current energy estimate | 2,438.07 MWh |
+
+Verdict: burn rate increased again. The current 60-second pulse is hotter than the 05:19 pulse and far hotter than the rolling 24h average from the full scan. Cache is still the only reason the public-price estimate does not look completely absurd.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-16 Last 6H JSONL Cadence
+
+Window: 2026-05-16T09:55:54+04:00 to 2026-05-16T15:55:54+04:00.
+
+| Metric | Value |
+|---|---:|
+| JSONL files scanned | 47 |
+| JSONL bytes scanned | 335,002,125 |
+| Token rows inside window | 8,388 |
+| Total tokens | 757,394,868 |
+| Cached input ratio | 95.599% |
+| Tokens/sec | 35,064.58 |
+| Tokens/min | 2,103,874.63 |
+| Tokens/hour | 126,232,478.00 |
+| Day equivalent | 3,029,579,472 tokens/day |
+| Cache-aware 6h cost | USD 607.01 |
+| No-cache 6h equivalent | USD 3,853.78 |
+| Cache-aware average | USD 1.69/min; USD 101.17/hour |
+| Peak token minute | 15,133,220 tokens at 2026-05-16T10:13+04:00 |
+| Explicit user-message rows | 146 |
+| Peak prompt minute | 15 rows at 2026-05-16T14:24+04:00 |
+
+Verdict: the 14:57 pulse was a burst. The six-hour baseline is lower, but still burns 757.4M tokens and USD 607 cache-aware. Cache remains the economic shield.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-16 H-Phi Correlation
+
+Current H-Phi scan: 2026-05-16T17:18:57+04:00.
+
+| Metric | Value |
+|---|---:|
+| Runtime H-Phi risk | 0.004164939 |
+| Runtime H-Phi narrow | 0.060806118 |
+| Data sovereignty | 0.114950891 |
+| Memory alignment | 0.528974740 |
+| DataVault refs | 948 |
+| NativeArray refs | 7,299 |
+| Owner-blocked NativeArray refs | 5,266 |
+| Runtime lines | 913,046 |
+
+Versus the 2026-05-15T22:46 baseline:
+
+| Metric | Delta |
+|---|---:|
+| Runtime H-Phi risk | +0.003528848; 6.548x |
+| Runtime H-Phi narrow | +0.050018679; 5.637x |
+| Data sovereignty | +0.093644859; 5.395x |
+| Tokens between artifacts | 2,464,254,349 |
+| Cache-aware cost between artifacts | USD 1,947.70 |
+| No-cache equivalent | USD 12,533.41 |
+
+Artifact correlation across 76 valid H-Phi JSONs:
+
+| Pair | Pearson r |
+|---|---:|
+| Tokens vs Runtime H-Phi risk | 0.522 |
+| Tokens vs Runtime H-Phi narrow | 0.493 |
+| Tokens vs Data sovereignty | 0.492 |
+
+Verdict: local evidence shows moderate positive association between token burn and H-Phi improvement. It does not prove causation. Score improved strongly, but old absolute budget gates for GlobalRegistry surface, NativeArray refs, ManagedFormat surface, JobComplete surface, and PrimaryManagedRuntimeRisk are not all green.
+
+Latest token pulse: 49,767,593,348 SQLite thread tokens at 2026-05-16T23:14+04:00; 3,815,200 tokens in 30 seconds; 127,173.33 tokens/sec.
+
+STATUS: AUDIT COMPLETE.
+

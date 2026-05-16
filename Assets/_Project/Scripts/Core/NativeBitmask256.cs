@@ -4,7 +4,7 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core
 {
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct NativeBitmask256
     {
         public ulong Word0;

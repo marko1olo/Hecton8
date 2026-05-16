@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -34,6 +35,11 @@ namespace Hecton8.Graphics.Scalability
         IResolutionScalerService
     {
         private const int TelemetryCapacity = 300;
+        private const int TelemetryHeaderBytes = 20;
+        private const int DrsTelemetryEntryBytes = 48;
+        private const int ResolutionScaleStateBytes = 64;
+        private const int HardwareThermalSnapshotBytes = 20;
+        private const int DynamicResolutionRuntimeSnapshotBytes = 24;
         private const uint TelemetryMagic = 0x53545041u; // STPA
         private const uint SourceHash = 0x53545051u; // STPQ
         private const uint ScaleContextHash = 0x5343414Cu; // SCAL
@@ -252,6 +258,13 @@ namespace Hecton8.Graphics.Scalability
             }
 
             s_activeAdapter = this;
+            if (!ValidateAbiLayout())
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)TelemetryMagic));
+                enabled = false;
+                return;
+            }
+
             _urpAsset = UniversalRenderPipeline.asset;
             _defaultRenderScale = _urpAsset != null ? ClampRenderScale(_urpAsset.renderScale) : PolicyMaxScale;
             _currentScale = math.min(_defaultRenderScale, PolicyMaxScale);
@@ -341,7 +354,11 @@ namespace Hecton8.Graphics.Scalability
             if (!ReferenceEquals(s_activeAdapter, this))
                 return;
 
-            TryResolveScaleStatePointer(out ResolutionScaleState* scaleState, out int scaleStateLength);
+            ResolutionScaleState* scaleState = null;
+            int scaleStateLength = 0;
+            if (!_stressEwmaScheduled)
+                TryResolveScaleStatePointer(out scaleState, out scaleStateLength);
+
             ConsumeSignals();
             _latestFrameTimeEwmaMs = SanitizePositive(_latestFrameTimeEwmaMs, TargetFrameTimeMs);
             _latestSystemHealth01 = Sanitize01(_latestSystemHealth01);
@@ -418,6 +435,12 @@ namespace Hecton8.Graphics.Scalability
         public bool TryGetScaleState(out ResolutionScaleState state)
         {
             CompletePendingStressJob();
+            if (_stressEwmaScheduled)
+            {
+                state = default;
+                return false;
+            }
+
             if (TryResolveScaleStatePointer(out ResolutionScaleState* scaleState, out _))
             {
                 state = scaleState[0];
@@ -634,6 +657,42 @@ namespace Hecton8.Graphics.Scalability
         {
             telemetryRing = null;
             telemetryLength = 0;
+            if (!TryEnsureTelemetryHandle())
+                return false;
+
+            void* pointer = _telemetryHandle.ResolvePointer(_dataVault);
+            if (pointer == null || _telemetryHandle.Length < TelemetryCapacity)
+                return false;
+
+            telemetryRing = (DrsTelemetryEntry*)pointer;
+            telemetryLength = _telemetryHandle.Length;
+            return true;
+        }
+
+        private bool TryLockTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength)
+        {
+            telemetryRing = null;
+            telemetryLength = 0;
+            if (!TryEnsureTelemetryHandle())
+                return false;
+
+            if (!_dataVault.TryLockBuffer(BufferID.ResolutionScaleTelemetry))
+                return false;
+
+            void* pointer = _telemetryHandle.ResolvePointer(_dataVault);
+            if (pointer == null || _telemetryHandle.Length < TelemetryCapacity)
+            {
+                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleTelemetry);
+                return false;
+            }
+
+            telemetryRing = (DrsTelemetryEntry*)pointer;
+            telemetryLength = _telemetryHandle.Length;
+            return true;
+        }
+
+        private bool TryEnsureTelemetryHandle()
+        {
             IDataVault vault = GlobalRegistry.DataVault;
             if (!ReferenceEquals(_dataVault, vault))
                 RebindDataVault(vault);
@@ -651,13 +710,7 @@ namespace Hecton8.Graphics.Scalability
                     NativeArrayOptions.ClearMemory);
             }
 
-            void* pointer = _telemetryHandle.ResolvePointer(_dataVault);
-            if (pointer == null || _telemetryHandle.Length < TelemetryCapacity)
-                return false;
-
-            telemetryRing = (DrsTelemetryEntry*)pointer;
-            telemetryLength = _telemetryHandle.Length;
-            return true;
+            return _telemetryHandle.IsCreated;
         }
 
         private void RebindDataVault(IDataVault vault)
@@ -1044,65 +1097,88 @@ namespace Hecton8.Graphics.Scalability
 
         private void WriteTelemetry(byte flags)
         {
-            if (!TryResolveTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
+            if (!TryLockTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
                 return;
 
-            bool nonFinite =
-                !math.isfinite(_currentScale) ||
-                !math.isfinite(_targetScale) ||
-                !math.isfinite(_latestFrameTimeEwmaMs) ||
-                !math.isfinite(_latestSystemStress01) ||
-                !math.isfinite(_latestSystemStressEwma01) ||
-                !math.isfinite(_sharpenIntensity01);
-
-            int index = _telemetryCursor;
-            if ((uint)index >= (uint)TelemetryCapacity || index >= telemetryLength)
-                index = 0;
-
-            telemetryRing[index] = new DrsTelemetryEntry
+            try
             {
-                Frame = unchecked((uint)Time.frameCount),
-                CurrentScale01 = _currentScale,
-                TargetScale01 = _targetScale,
-                FrameTimeEwmaMs = _latestFrameTimeEwmaMs,
-                SystemStress01 = _latestSystemStress01,
-                SystemStressEwma01 = _latestSystemStressEwma01,
-                SharpenIntensity01 = _sharpenIntensity01,
-                Flags = flags,
-                Sequence = _sequence++,
-                PressureLevel = _pressureLevel,
-                ThermalSeverity = _thermalSeverity,
-                StpActive = _stpActive ? (byte)1 : (byte)0,
-                AupLockFrames = (byte)math.clamp(_aupShiftLockFrames, 0, byte.MaxValue),
-                HysteresisCounters = PackHysteresisCounters(),
-                Reserved = (ushort)math.clamp(ScaleToMilli(_visualOverkill01), 0, ushort.MaxValue),
-                Reserved0 = _visualFeatureFlags
-            };
+                bool nonFinite =
+                    !math.isfinite(_currentScale) ||
+                    !math.isfinite(_targetScale) ||
+                    !math.isfinite(_latestFrameTimeEwmaMs) ||
+                    !math.isfinite(_latestSystemStress01) ||
+                    !math.isfinite(_latestSystemStressEwma01) ||
+                    !math.isfinite(_sharpenIntensity01);
 
-            index++;
-            _telemetryCursor = index >= TelemetryCapacity ? 0 : index;
+                int index = _telemetryCursor;
+                if ((uint)index >= (uint)TelemetryCapacity || index >= telemetryLength)
+                    index = 0;
 
-            if (nonFinite)
+                telemetryRing[index] = new DrsTelemetryEntry
+                {
+                    Frame = unchecked((uint)Time.frameCount),
+                    CurrentScale01 = _currentScale,
+                    TargetScale01 = _targetScale,
+                    FrameTimeEwmaMs = _latestFrameTimeEwmaMs,
+                    SystemStress01 = _latestSystemStress01,
+                    SystemStressEwma01 = _latestSystemStressEwma01,
+                    SharpenIntensity01 = _sharpenIntensity01,
+                    Flags = flags,
+                    Sequence = _sequence++,
+                    PressureLevel = _pressureLevel,
+                    ThermalSeverity = _thermalSeverity,
+                    StpActive = _stpActive ? (byte)1 : (byte)0,
+                    AupLockFrames = (byte)math.clamp(_aupShiftLockFrames, 0, byte.MaxValue),
+                    HysteresisCounters = PackHysteresisCounters(),
+                    Reserved = (ushort)math.clamp(ScaleToMilli(_visualOverkill01), 0, ushort.MaxValue),
+                    Reserved0 = _visualFeatureFlags
+                };
+
+                index++;
+                _telemetryCursor = index >= TelemetryCapacity ? 0 : index;
+
+                if (nonFinite)
+                {
+                    DumpBlackBoxOnceLocked(telemetryRing, telemetryLength);
+                    _currentScale = PolicyMaxScale;
+                    _targetScale = PolicyMaxScale;
+                    _latestFrameTimeEwmaMs = TargetFrameTimeMs;
+                    _latestSystemStress01 = 1f;
+                    _latestSystemStressEwma01 = 1f;
+                    _sharpenIntensity01 = 0f;
+                    _pressureFrameCount = 0;
+                    _recoveryFrameCount = RecoveryHysteresisFrames;
+                    s_systemScalePercentage = 100f;
+                }
+            }
+            finally
             {
-                DumpBlackBoxOnce();
-                _currentScale = PolicyMaxScale;
-                _targetScale = PolicyMaxScale;
-                _latestFrameTimeEwmaMs = TargetFrameTimeMs;
-                _latestSystemStress01 = 1f;
-                _latestSystemStressEwma01 = 1f;
-                _sharpenIntensity01 = 0f;
-                _pressureFrameCount = 0;
-                _recoveryFrameCount = RecoveryHysteresisFrames;
-                s_systemScalePercentage = 100f;
+                if (_dataVault != null)
+                    _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleTelemetry);
             }
         }
 
         private void DumpBlackBoxOnce()
         {
-            if (_blackBoxDumped || !TryResolveTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
+            if (!TryLockTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
                 return;
 
-            _blackBoxDumped = true;
+            try
+            {
+                DumpBlackBoxOnceLocked(telemetryRing, telemetryLength);
+            }
+            finally
+            {
+                if (_dataVault != null)
+                    _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleTelemetry);
+            }
+        }
+
+        private void DumpBlackBoxOnceLocked(DrsTelemetryEntry* telemetryRing, int telemetryLength)
+        {
+            if (_blackBoxDumped || telemetryRing == null || telemetryLength < TelemetryCapacity)
+                return;
+
             try
             {
                 string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
@@ -1112,37 +1188,68 @@ namespace Hecton8.Graphics.Scalability
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
                 using FileStream stream = File.Open(Path.Combine(logDirectory, DumpFileName), FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(TelemetryMagic);
-                writer.Write(TelemetryCapacity);
-                writer.Write(_telemetryCursor);
-                writer.Write(_sequence);
                 int count = math.min(TelemetryCapacity, telemetryLength);
+                Span<byte> header = stackalloc byte[TelemetryHeaderBytes];
+                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), TelemetryMagic);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), count);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), _telemetryCursor);
+                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), _sequence);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), DrsTelemetryEntryBytes);
+                stream.Write(header);
+
+                Span<byte> telemetryBytes = stackalloc byte[TelemetryCapacity * DrsTelemetryEntryBytes];
                 for (int i = 0; i < count; i++)
                 {
-                    DrsTelemetryEntry entry = telemetryRing[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.CurrentScale01);
-                    writer.Write(entry.TargetScale01);
-                    writer.Write(entry.FrameTimeEwmaMs);
-                    writer.Write(entry.SystemStress01);
-                    writer.Write(entry.SystemStressEwma01);
-                    writer.Write(entry.SharpenIntensity01);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.Sequence);
-                    writer.Write(entry.PressureLevel);
-                    writer.Write(entry.ThermalSeverity);
-                    writer.Write(entry.StpActive);
-                    writer.Write(entry.AupLockFrames);
-                    writer.Write(entry.HysteresisCounters);
-                    writer.Write(entry.Reserved);
-                    writer.Write(entry.Reserved0);
+                    int index = _telemetryCursor + i;
+                    if (index >= count)
+                        index -= count;
+
+                    WriteDrsTelemetryEntryLittleEndian(
+                        telemetryBytes.Slice(i * DrsTelemetryEntryBytes, DrsTelemetryEntryBytes),
+                        telemetryRing[index]);
                 }
+
+                stream.Write(telemetryBytes.Slice(0, count * DrsTelemetryEntryBytes));
+                _blackBoxDumped = true;
             }
             catch (Exception)
             {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)TelemetryMagic));
             }
+        }
+
+        private static void WriteDrsTelemetryEntryLittleEndian(Span<byte> destination, DrsTelemetryEntry entry)
+        {
+            destination.Clear();
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            WriteFloatLittleEndian(destination.Slice(4, 4), entry.CurrentScale01);
+            WriteFloatLittleEndian(destination.Slice(8, 4), entry.TargetScale01);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.FrameTimeEwmaMs);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.SystemStress01);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.SystemStressEwma01);
+            WriteFloatLittleEndian(destination.Slice(24, 4), entry.SharpenIntensity01);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(28, 4), entry.Flags);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(32, 4), entry.Sequence);
+            destination[36] = entry.PressureLevel;
+            destination[37] = entry.ThermalSeverity;
+            destination[38] = entry.StpActive;
+            destination[39] = entry.AupLockFrames;
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(40, 2), entry.HysteresisCounters);
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(42, 2), entry.Reserved);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(44, 4), entry.Reserved0);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination, math.asuint(value));
+        }
+
+        private static bool ValidateAbiLayout()
+        {
+            return UnsafeUtility.SizeOf<DrsTelemetryEntry>() == DrsTelemetryEntryBytes &&
+                   UnsafeUtility.SizeOf<ResolutionScaleState>() == ResolutionScaleStateBytes &&
+                   UnsafeUtility.SizeOf<HardwareThermalSnapshot>() == HardwareThermalSnapshotBytes &&
+                   UnsafeUtility.SizeOf<DynamicResolutionRuntimeSnapshot>() == DynamicResolutionRuntimeSnapshotBytes;
         }
 
         private static float SanitizePositive(float value, float fallback)

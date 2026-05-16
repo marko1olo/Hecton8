@@ -11,6 +11,7 @@ namespace Hecton8.Inventory
     using Hecton.Localization;
     using Hecton8.Audio;
     using Hecton8.Core;
+    using Hecton8.Core.Contracts;
     using Hecton8.Core.Contracts.Signals;
     using Hecton8.Gameplay;
     using Hecton8.Interaction;
@@ -5212,7 +5213,7 @@ namespace Hecton8.Inventory
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
             float playerMass = playerBody != null ? Mathf.Max(0.1f, playerBody.mass) : 80f;
-            return math.max(0f, impactSignal.Force * math.rcp(playerMass * 9.81f));
+            return math.max(0f, impactSignal.Force * math.rcp(playerMass * HectonPhysicsContract.GravityMetersPerSecondSquaredConst));
         }
 
         private void ApplyKineticInventoryDamage()

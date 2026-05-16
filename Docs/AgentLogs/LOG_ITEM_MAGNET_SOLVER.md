@@ -364,7 +364,7 @@ Cinematic Cheats used:
 - None. Validation only.
 
 Exact Microseconds saved:
-- 0 us runtime savings claimed. Build elapsed time: 1.23 seconds.
+- 0 us runtime savings claimed. Build elapsed time: 57.20 seconds.
 
 Validation:
 - Forbidden-pattern scan is clean for `Gameplay/Loot`, `Items/PickupItem.cs`, and `HectonItem.cs`.
@@ -372,3 +372,188 @@ Validation:
 - `git diff --check` is clean except Git CRLF normalization warnings.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal` succeeded with 0 errors and 1 warning.
 - Warning is external to item magnet: `AI/Ecosystem/EcosystemPopulationBalancer.cs` is specified multiple times in `Hecton8.Core.csproj`.
+
+## 2026-05-16 Presentation Signal NaN Hardening Pass
+
+What was wrong:
+- The scheduler guarded AUP-to-runtime conversion, but `PickupItem.ApplyLootMagnetPose` itself still trusted incoming runtime positions. Presentation signal publication also trusted event payload distance and velocity before sending acoustic/wake/fluid packets to downstream consumers.
+
+What was done:
+- Added a pickup-local finite `Vector3` guard before transform mutation.
+- Made `RestoreLootMagnetRuntimeState` clear magnet physics ownership if the cached Rigidbody is gone before restore.
+- Added `TelemetrySignalNonFiniteFlag` and finite gates around acoustic, wake, and High/Ultra fluid impulse publication.
+- Clamped acoustic radius and radius-squared before intensity math.
+
+Cinematic Cheats used:
+- Low tier keeps the 10 Hz lerp fake.
+- High/Ultra keep typed wake/fluid overkill only for finite payloads; bad packets are dropped instead of poisoning GPU/audio consumers.
+
+Exact Microseconds saved:
+- 0 us claimed. Branch-only hardening; no benchmarked speed win.
+
+Validation:
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal` succeeded with 0 warnings and 0 errors in 140.15 seconds.
+
+## 2026-05-16 Duplicate Item Editor String Purge
+
+What was wrong:
+- The scoped item-domain scan still found one interpolation in duplicate `HectonItem.OnValidate`: editor-only object auto-renaming used `$"Item_{itemData.itemName}"`.
+
+What was done:
+- Removed the auto-rename line instead of replacing it with another allocating string operation.
+
+Cinematic Cheats used:
+- None. This was allocation hygiene.
+
+Exact Microseconds saved:
+- 0 runtime us. Editor-only allocation removed.
+
+Validation:
+- Scoped item-domain scan is clean: no trigger callbacks, `OverlapSphere`, `LootManager.Instance`, `Vector3.Distance`, `string.Format`, `$"..."`, `foreach`, standard `Update`/`LateUpdate`/`FixedUpdate`, Unity object search, legacy item-collected events, or modding namespace usage in `Gameplay/Loot`, `Items`, or `HectonItem.cs`.
+- `LootMagnetSystem.cs` local NativeArray ownership scan is clean.
+- `git diff --check` is clean except CRLF normalization warnings.
+- Latest `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal` failed outside item magnet with 7 errors: duplicate `ArchitectEyeVisualizer.ValidatePackedStructSizes`, and `LaserCutterEventPayload` ambiguity in `AbyssalThermalManager` / `PlayerCriticalProceduralAudioRenderer`.
+
+## 2026-05-16 Final Compile Wall Repair Pass
+
+What was wrong:
+- Current validation was blocked by cross-domain signal contract drift. `LaserCutterEvents` used unqualified `LaserCutterEventPayload` references inside the `Hecton8.Gameplay` namespace, while world/audio listeners consumed the packed `Hecton8.Core.Contracts.Signals.LaserCutterEventPayload` lane.
+- Later build retries also exposed transient external Fauna/VFX helper drift, which was repaired on disk by concurrent owners before the final gate.
+
+What was done:
+- Added explicit `LaserCutterEventPayloadSignal` and `LaserCutterEventTypeSignal` aliases in `LaserCutter.cs`.
+- Routed the cutter listener contract, queued payloads, `SignalBus<T>` snapshot/push calls, and beam-active helper through the packed core signal type.
+- Re-ran item-domain forbidden scans, item magnet NativeArray ownership scan, whitespace check, and the core build gate.
+
+Cinematic Cheats used:
+- None in this pass. This was a compile/ABI bridge repair. The loot magnet still uses the existing Low 10 Hz math fake and High/Ultra wake/fluid signal overkill.
+
+Exact Microseconds saved:
+- 0 measured runtime us. No item magnet hot path was changed.
+
+Validation:
+- Scoped item-domain scan is clean.
+- `LootMagnetSystem.cs` local NativeArray ownership scan is clean.
+- `git diff --check` reports no whitespace errors, only existing LF-to-CRLF warnings.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal` succeeded with 0 warnings and 0 errors in 173.45 seconds.
+## Pass 17 - Residue Purge / External Compile Wall
+
+What was wrong:
+- Duplicate `HectonItem` still had a guarded naked `Debug.LogError` in pickup initialization.
+- `LootMagnetSystem` still used one telemetry `math.sqrt` after the rsqrt mandate was already applied to the hot pull kernel.
+- Current disk compile drifted after the previous green gate.
+
+What was done:
+- Removed the `HectonItem` dev-build log path instead of replacing it with another managed warning.
+- Replaced item-magnet peak velocity telemetry with a finite/positive guarded `math.rsqrt` estimator.
+- Re-ran item-magnet anti-bloat, local allocation, pickup-prefab trigger, whitespace, and compile gates.
+
+Cinematic cheats used:
+- Kept the low-tier magnet path as the existing 10 Hz lerp fake.
+- Kept High/Ultra wake/fluid/debris signal lanes unchanged; no visual downgrade was introduced.
+
+Exact microseconds saved:
+- Removed dev log path: 0 hot-frame us; cold initialization only.
+- Replaced telemetry sqrt: no measured microsecond claim. This is mandate compliance and NaN-safe telemetry hygiene, not a benchmarked speed win.
+
+Validation:
+- Scoped item-magnet scan: no `Debug.Log`, `math.sqrt`, trigger callbacks, `OverlapSphere`, `Vector3.Distance`, string interpolation, `string.Format`, or system-local NativeArray allocation ownership.
+- Pickup prefab trigger scan: clean for item pickup prefabs.
+- `git diff --check`: no whitespace errors; existing LF-to-CRLF warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`: failed outside item magnet with 17 errors in `DiegeticGyroCompassRuntime.cs` and 6 errors in `EcosystemDirector.cs`.
+
+## Pass 18 - Current-Disk Revalidation
+
+What was wrong:
+- The status file still carried a stale external compile wall after concurrent owners repaired the compass/ecosystem drift on disk.
+
+What was done:
+- Re-read the XML assignment and active mandate files.
+- Re-ran the current-disk core build gate.
+- Re-ran the item-magnet forbidden-pattern scan, local allocation ownership scan, and pickup prefab trigger scan.
+- Updated status and rationale to the current build truth.
+
+Cinematic cheats used:
+- No new runtime cheat in this pass. Existing Low tier remains 10 Hz lerp. Existing High/Ultra presentation remains typed wake/fluid/debris signal overkill.
+
+Exact microseconds saved:
+- 0 runtime us. This pass was validation and status correction only.
+
+Validation:
+- Scoped item-magnet scan: no `Debug.Log`, `math.sqrt`, trigger callbacks, `OverlapSphere`, `Vector3.Distance`, string interpolation, `string.Format`, standard `Update`/`LateUpdate`/`FixedUpdate`, or local NativeArray allocation ownership.
+- Pickup prefab trigger scan: clean for item pickup prefabs.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`: succeeded with 0 warnings and 0 errors in 123.98 seconds.
+- `git diff --check`: item-magnet files are clean; one external trailing-whitespace defect remains in `Docs/Tasks/CURRENT_BATCH.md:2312`.
+
+## Pass 19 - Blackbox ABI Re-Polish / External Compile Wall
+
+What was wrong:
+- The item-magnet crash dump header declared 128-byte telemetry entries, but the writer serialized only 100 bytes per entry and omitted explicit AUP padding/tail bytes plus `Reserved`.
+- The dump was written in physical ring order, forcing postmortem readers to guess chronological order.
+- Current disk compile validation drifted again outside item magnet.
+
+What was done:
+- Bumped `LootMagnetSystem` dump format to version 7.
+- Serialized exact 128-byte telemetry entries: 48-byte current AUP, 48-byte previous AUP, scalar telemetry fields, and `Reserved`.
+- Wrote the 300-frame telemetry ring in chronological order from `_telemetryIndex`.
+- Re-ran scoped item-magnet anti-bloat, local allocation, pickup trigger, whitespace, and compile gates.
+
+Cinematic cheats used:
+- No visual downgrade. Low tier keeps the 10 Hz lerp fake. High/Ultra keep wake, fluid impulse, debris spark, and motion-vector presentation lanes.
+- The pass buys postmortem determinism, not fake speed.
+
+Exact microseconds saved:
+- 0 runtime us claimed. Hot path unchanged.
+- Fault dump writes 28 additional bytes per telemetry entry, 8.4 KB total for the 300-frame ring.
+
+Validation:
+- Scoped item-magnet forbidden scan: clean.
+- `LootMagnetSystem.cs` local NativeArray ownership scan: clean.
+- Pickup prefab trigger scan: clean.
+- `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`: failed outside item magnet with 62 errors in `UI/Navigation/DiegeticGyroCompassRuntime.cs` and `Core/SystemDispatcher.cs`. No item-magnet compile errors were emitted.
+
+## Pass 20 - Current-Disk Green Revalidation
+
+What was wrong:
+- The latest status correctly recorded the Pass 19 external UI/Core compile wall, but that wall converged on disk after concurrent owner edits.
+
+What was done:
+- Re-ran the current-disk no-restore core build gate.
+- Updated `Status_ITEM_MAGNET_SOLVER.md` from external-wall state to `VERIFIED MASTER GRADE`.
+- Appended this report so the log bottom reflects the current build truth.
+
+Cinematic cheats used:
+- No new runtime cheat in this pass. Existing Low tier remains the 10 Hz lerp fake; High/Ultra keep wake, fluid impulse, debris spark, and motion-vector presentation lanes.
+
+Exact microseconds saved:
+- 0 runtime us. This was validation and status correction only.
+
+Validation:
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`: succeeded with 0 warnings and 0 errors in 96.99 seconds.
+
+## Pass 21 - Signal NaN Vaccination / External Dependency Wall
+
+What was wrong:
+- Manual pickup signals could fall back to default AUP when both pickup and interactor positions were non-finite, turning bad spatial data into a false origin event.
+- Magnet-side presentation publishers trusted `LootMagnetSignalEvent.PositionAup` after vault handoff.
+- `PickupItem` spatial hash/current-force paths still read transform/current vectors before finite rejection.
+
+What was done:
+- Added finite AUP gates before magnet `ItemAcquiredSignal`, `DebrisSpawnSignal`, `AcousticPingSignal`, `WakeGeneratedSignal`, and High/Ultra `FluidImpulseSignal` publication.
+- Added `TryResolveSignalAup` in `PickupItem` and duplicate `HectonItem`; manual acquisition signals now publish only from a finite interactor or pickup position.
+- Added finite guards before `PickupItem` spatial hash refresh and current-force enqueue.
+
+Cinematic cheats used:
+- No visual downgrade. Low tier still uses the 10 Hz movement fake. High/Ultra still emit wake/fluid/debris overkill when payload ownership is finite.
+
+Exact microseconds saved:
+- 0 runtime us claimed. This is NaN containment and false-origin prevention, not a benchmarked speed pass.
+
+Validation:
+- Scoped item-domain forbidden scan: clean.
+- Scoped `$"` interpolation scan: clean.
+- Loot magnet local NativeArray ownership scan: clean.
+- Pickup prefab trigger scan: clean.
+- Scoped `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`: blocked outside item magnet after three attempts. Failures moved from `HeavyTowWinch.cs` to `LockstepStateValidator.cs` to `EcosystemDirector.cs`; no item-magnet compile errors were emitted.

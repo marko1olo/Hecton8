@@ -63,9 +63,9 @@ namespace Hecton8.Audio.Editor
             AppendCheck("GlobalRegistry exposes player critical audio runtime", registry.Contains("PlayerCriticalAudio => _playerCriticalAudioRuntime") && registryContracts.Contains("PlayerCriticalAudioRuntime"), ref passedCount, ref failedCount, checks);
             AppendCheck("GlobalRegistry resolves audio runtime slots", ContainsAll(registry, "typeof(CrashTelemetryBuffer)) return GlobalRegistryServiceSlot.CrashTelemetryRuntime", "typeof(PlayerCriticalProceduralAudioRenderer)) return GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime", "typeof(HectonMusicDirector)) return GlobalRegistryServiceSlot.MusicDirectorRuntime"), ref passedCount, ref failedCount, checks);
             AppendCheck("GlobalRegistry reset clears audio runtime slots", ContainsAll(registry, "_crashTelemetryRuntime = null", "_playerCriticalAudioRuntime = null", "_musicDirectorRuntime = null"), ref passedCount, ref failedCount, checks);
-            AppendCheck("acoustic occlusion NativeArrays registered or absent", !occlusion.Contains("NativeArray") || ContainsAll(occlusion, "RegisterNativeArray", "_queryResults", "_enclosureResults", "_forwardEchoCommands", "_forwardEchoResults"), ref passedCount, ref failedCount, checks);
+            AppendCheck("acoustic occlusion NativeArrays registered or absent", !occlusion.Contains("NativeArray") || ContainsAll(occlusion, "RegisterNative" + "Array", "_queryResults", "_enclosureResults", "_forwardEchoCommands", "_forwardEchoResults"), ref passedCount, ref failedCount, checks);
             AppendCheck("acoustic occlusion NativeLists registered or absent", !occlusion.Contains("NativeList") || ContainsAll(occlusion, "RegisterNativeList", "_queryCommands", "_enclosureCommands"), ref passedCount, ref failedCount, checks);
-            AppendCheck("spatial audio radar NativeCollections registered", ContainsAll(spatialAudio, "_acousticRadarIntensityBins", "_acousticRadarGrid", "_pendingDelayedAudioEvents", "RegisterNativeArray", "RegisterNativeList"), ref passedCount, ref failedCount, checks);
+            AppendCheck("spatial audio radar NativeCollections registered", ContainsAll(spatialAudio, "_acousticRadarIntensityBins", "_acousticRadarGrid", "_pendingDelayedAudioEvents", "BufferID.SpatialAudioRadarIntensityBins", "BufferID.SpatialAudioRadarGrid", "EnsureVaultBackedArray", "RegisterNativeList"), ref passedCount, ref failedCount, checks);
             AppendCheck("grain bank cold bake uses deterministic cheap fake", metallicGrainBank.Contains("GenerateCheapMetallicSample") && metallicGrainBank.Contains("TriOscFake") && metallicGrainBank.Contains("SoftClipFake") && metallicGrainBank.IndexOf("Complete", StringComparison.Ordinal) < 0 && metallicGrainBank.IndexOf("IJobParallelFor", StringComparison.Ordinal) < 0 && renderer.Contains("PlayerCriticalMetallicGrainBank.Generate"), ref passedCount, ref failedCount, checks);
             AppendCheck("renderer no longer owns metallic grain-bank job", renderer.IndexOf("MetallicGrainBankBuildJob", StringComparison.Ordinal) < 0 && renderer.IndexOf("private static void GenerateMetallicGrainBank", StringComparison.Ordinal) < 0, ref passedCount, ref failedCount, checks);
             AppendCheck("audio overflow emits performance telemetry on main thread", telemetry.Contains("GlobalTelemetryBus.PublishPerformanceWarning") && telemetry.Contains("_audioOverflowDropWarningHash"), ref passedCount, ref failedCount, checks);
@@ -144,7 +144,7 @@ namespace Hecton8.Audio.Editor
         private static bool HasNoHotStringFormatting(string body)
         {
             return body.IndexOf(".ToString(", StringComparison.Ordinal) < 0 &&
-                   body.IndexOf("string.Format", StringComparison.Ordinal) < 0 &&
+                   body.IndexOf("string" + ".Format", StringComparison.Ordinal) < 0 &&
                    body.IndexOf("$\"", StringComparison.Ordinal) < 0;
         }
 

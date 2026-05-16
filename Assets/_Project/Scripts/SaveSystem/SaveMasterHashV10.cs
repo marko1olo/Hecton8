@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory.Layout;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -52,7 +53,7 @@ namespace Hecton8.SaveSystem
         internal const int MasterStateHashLoOffset = 56;
         internal const int MasterStateHashHiOffset = 64;
 
-        private const int MasterPreimageBytes = 80;
+        private const int MasterPreimageBytes = 96;
         private const int MasterLoHashBytes = MasterPreimageBytes + 3;
         private const int MasterHiHashBytes = MasterPreimageBytes + 11;
         private const int ShuffleMaskLoBytes = 36;
@@ -231,6 +232,10 @@ namespace Hecton8.SaveSystem
             WriteU64(target + cursor, unchecked((ulong)worldSeed));
             cursor += 8;
             WriteU64(target + cursor, unchecked((ulong)sectorHash));
+            cursor += 8;
+            WriteU64(target + cursor, HectonContractVersion.HashLo);
+            cursor += 8;
+            WriteU64(target + cursor, HectonContractVersion.HashHi);
         }
 
         private static ulong Hash64(void* ptr, int length)

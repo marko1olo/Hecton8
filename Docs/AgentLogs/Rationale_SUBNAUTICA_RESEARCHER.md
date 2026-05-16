@@ -205,3 +205,39 @@ Solution: Re-read build validators and shader sources. `ContentAuthorityBuildVal
 Rejected Alternatives: Calling Shader Model 5 compute universal, or deleting visual overkill instead of tier-gating it.
 Scalability potential: Low = LUT/parabolic/dot-product fakes; Middle = reduced compute kernels; High = full compute effects; Ultra = volumetrics/particles/raymarched detail behind hardware tier.
 Hardware Impact: Research-only 0us. Future benefit is avoiding mobile/Metal build breaks while preserving PC 4090 overkill; profiler numbers are not available.
+
+Problem: Integration logs now show green compilation, but they are not product-platform proof.
+Solution: Re-read integration logs and current compile output. `dotnet build Hecton8.Core.csproj --no-restore -v:q /clp:ErrorsOnly` currently exits 0 with 0 warnings/errors in 00:00:05.21. `dotnet build Hecton8.Editor.csproj --no-restore -v:q /clp:ErrorsOnly /m:1` currently exits 0 with 36 warnings and 0 errors in 00:02:20.99. This proves current C# project compilation only. It does not prove Unity import, domain reload, Play Mode, Addressables build, Android/Quest IL2CPP, Metal shader build, Steam Deck storage behavior, or runtime profiler budgets.
+Rejected Alternatives: Treating "BUILD GREEN" in another agent log as equivalent to a shippable Unity player.
+Scalability potential: Low = keep compile gates fast; Middle = add Unity import/playmode gates; High = platform-specific Android/Metal/Steam Deck build lanes; Ultra = high-tier content build with Overkill assets separately validated.
+Hardware Impact: Research-only 0us. Compile proof prevents integration breakage but does not claim frame-time savings.
+
+Problem: The Core assembly boundary still absorbs an AI/Ecosystem implementation detail.
+Solution: Verify source instead of trusting the log. `Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs` has no local asmdef and is therefore included under the root `Hecton8.Core` asmdef at `Assets/_Project/Scripts/Hecton8.Core.asmdef`. `BinaryLayoutManifest.cs` directly imports `Hecton8.AI.Ecosystem` and asserts internal ecosystem population layouts. This compiles because the AI file is inside Core assembly coverage, but it weakens domain separation and makes Core a catch-all owner.
+Rejected Alternatives: Calling this "no hard dependency" because the root asmdef does not list `Hecton8.AI.Ecosystem` as a reference, or moving code blindly without a contract asmdef.
+Scalability potential: Low = document Core-owned exception; Middle = move layout contracts to a small ecosystem contracts asmdef; High = generated binary layout manifest from contract assemblies; Ultra = platform build lanes validate all contract layouts without pulling implementation systems into Core.
+Hardware Impact: Research-only 0us. Future benefit is lower rebuild churn and cleaner IL2CPP/domain ownership, not direct frame time.
+
+Problem: ABI hygiene improved in some lanes but is not globally solved.
+Solution: Cross-check current source. Tether signals now have size validators of 144/80/48 and the ecosystem population structs are explicit Pack=1 records. However scans still find many `[StructLayout(LayoutKind.Sequential)]` records without Pack in Core/Gameplay/Save/Modding. Some are benign managed wrappers such as `SpscSignalRingBuffer<T>` with a `NativeArray<T>` field and `CombatDamageSignalAupShiftTransformer`; others are real payload/snapshot contracts such as `AudioEvent`, `DamagePacket`, `CurrentMeta`, `PlayerRuntimePoseSnapshot`, gas snapshots, registry events, and ecosystem samples. These need classification, not blanket Pack=1.
+Rejected Alternatives: Adding Pack=1 blindly to structs containing managed/native container handles, or ignoring all no-Pack structs because some are not serialized payloads.
+Scalability potential: Low = whitelist wrappers and patch true payloads; Middle = CI classification for binary/signal/vault structs; High = generated size/offset manifest; Ultra = same manifest drives low/mobile and high/overkill payload compatibility.
+Hardware Impact: Research-only 0us. Future impact is ARM64/Quest/Android crash prevention and deterministic binary layout.
+
+Problem: ContentAuthority code got stronger, but content payloads are still absent.
+Solution: Re-count disk state after parallel edits. `Assets/AddressableAssetsData` has 0 files, `Assets/_SourceData` has 0 files, `Assets/StreamingAssets` is missing, `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` is missing, `ContentAssetHashMap` assets found = 0, and `ContentVfxPrewarmManifest` assets found = 0. `ContentAssetEntry` is still `[StructLayout(Pack=1)]` while containing `string`, `AssetReference`, `GameObject`, `Mesh`, `Material`, bools, and `uint[]`; the 32-byte `ContentAssetBinaryRecord` is the correct binary form.
+Rejected Alternatives: Declaring content readiness from validators, or removing validators because current empty content would fail a real production build.
+Scalability potential: Low = minimal Core group/map/blob; Middle = High_Res/Overkill maps and source-data exporter; High = biome/object/audio/route payload sections; Ultra = tiered visual payload isolation for PC overkill without poisoning low-tier builds.
+Hardware Impact: Research-only 0us. Future benefit is reduced hitch/missing-content risk and controlled VRAM; exact microseconds require populated player profiling.
+
+Problem: Audio and modding P0s remain concrete.
+Solution: Re-count audio metas and re-read mod manifest paths. Audio metas still include 45 clips with `loadType=0 preload=1`; top WAVs are 32.47 MB and 23-25 MB Atmos files. The new AudioImportDictator/build gate should reject this, but stale metas prove the project is not clean yet. ModBuilder still emits `ModManifestData` without `RequiredAPIVersion` or `ModPriority`, while ModLoader version 2 rejects manifests where `RequiredAPIVersion <= 0`.
+Rejected Alternatives: Assuming postprocessor existence has already reimported old assets, or treating ModLoader runtime validation as SDK correctness.
+Scalability potential: Low = stream ambience and manifest v2; Middle = audio bank taxonomy and mod data overlays; High = package hash/resource validation; Ultra = high-tier mod visuals under ContentAuthority budgets.
+Hardware Impact: Research-only 0us. Future memory savings can be hundreds of MB after audio reimport, but exact platform RAM requires Unity import data.
+
+Problem: H-Phi/DataVault purity is partial and the hot-path contract still has explicit exceptions.
+Solution: Current scans show no `string.Format` or interpolated strings in the checked Core/Save/Modding/Scanner slices, but Core still has `SystemDispatcher.Update()` and `SystemDispatcher.LateUpdate()` as central dispatch hooks. Native ownership remains broad: `H8BinaryWorldPager`, `UIStateStore`, `GlobalTelemetryBus`, `H8Memory`, `H8MacroDatabaseService`, `FoveatedSimulationManager`, `SignalBus<T>`, `GlobalRegistry`, `InputDispatcher`, and modding registries own local NativeContainers. Modding also intentionally exposes `HectonEventBus`, `Action<>`, delegates, and managed callback bridges.
+Rejected Alternatives: Pretending every local NativeContainer is architectural failure, or pretending sentinel registration equals full data sovereignty. The correct next step is owner classification: vault-owned shared state, singleton infrastructure exceptions, and mod-facing managed bridge exceptions.
+Scalability potential: Low = document and cap exceptions; Middle = move shared lanes to DataVault; High = typed-lane generator with ReadOnlySpan snapshots; Ultra = deterministic telemetry/data contracts feeding overkill visuals without managed hot-path churn.
+Hardware Impact: Research-only 0us. Future effect is leak containment, lower memory ambiguity, and cleaner mobile crash forensics.

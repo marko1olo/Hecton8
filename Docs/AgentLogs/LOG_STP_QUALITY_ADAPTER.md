@@ -118,3 +118,98 @@ Validation:
 - `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -maxcpucount:1 -p:UseSharedCompilation=false` passed in 4.30s with 0 warnings and 0 errors.
 - Build log: `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt6_no_restore.txt`.
 - Unity import, Play Mode, player build, profiler frame-time, GC, memory, and visual captures remain PENDING VERIFICATION.
+
+## 2026-05-16 - Loop 9 / ABI Guard + Fault Dump Compaction
+
+What was wrong:
+- Packed STP and thermal structs were explicit, but the adapter did not verify runtime ABI sizes before touching DataVault-backed pointers.
+- The NaN blackbox dump still serialized every field through `BinaryWriter` instead of writing the packed telemetry ring as the binary artifact it already is.
+- Latest source validation had to be re-run after more agents changed the project; the prior clean compile was no longer enough evidence for current disk state.
+
+What was done:
+- Added a cold startup ABI guard for 48B `DrsTelemetryEntry`, 64B `ResolutionScaleState`, 20B `HardwareThermalSnapshot`, and 24B `DynamicResolutionRuntimeSnapshot`.
+- On ABI mismatch, the STP adapter publishes a math-guard telemetry fault, disables itself, and avoids writing Unity render scale.
+- Replaced `BinaryWriter` fault dump writes with a 20B little-endian header plus fixed 48B little-endian telemetry records staged through a contiguous stack span.
+- Re-ran adapter-domain scans: no `NativeArray<T>`, no `new NativeArray`, no `Allocator.Persistent`, no `EventBus`, no managed delegate/event, no `string.Format`, and no `Update()` in `ThermalDynamicResolutionAdapter.cs`.
+- Re-ran duplicate-signal scan: one definition each for `AupShiftSignal`, `ResolutionChangedSignal`, `HUDNotificationSignal`, `ThermalStateChangedSignal`, `SystemHealthSignal`, and `FrameTimeSignal`.
+- Verified Unity MCP resources/templates are empty in this session; no Editor import, Play Mode, player build, profiler, GC, memory, or visual capture evidence is available from MCP.
+- Performed one narrow cross-domain compile-wall repair in `Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs`: added the missing packed-struct validator that an existing diagnostics `Awake()` call required.
+
+Cinematic cheats used:
+- Toaster mode remains `DearLie01=1`, low-tier 0.5 scale, emergency 0.35 scale, threshold sharpen, and no expensive visual flags.
+- God-mode remains 1.0 scale on High/Ultra with STP-published flags for visor salt crystals, volumetric silt, procedural hull dents, 16-tap POM, SSS, and raymarched fog consumers.
+- Fault-path binary dump is a data cheat: compact packed telemetry, not text, to keep Steam Deck/MicroSD crash capture lean.
+
+Exact microseconds saved:
+- Not measured. No Unity profiler, player build, or GC capture was run.
+- Source-only impact: cold ABI validation adds no per-frame work; blackbox dump compaction reduces fault-path I/O calls, not normal-frame cost.
+- Existing task estimates remain unchanged: 0-2 us/frame source estimates by checklist item, with real visual savings coming from pixel-count reduction at low scale.
+
+Validation:
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt7_no_restore.txt`: failed outside STP on missing diagnostics helper methods.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt8_no_restore.txt`: failed before C# analysis because `Temp/obj/Hecton8.Core/project.assets.json` was missing.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_restore_attempt9.txt`: restore succeeded.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt9_no_restore.txt`: failed with 18 external Construction errors in `DroneFleetManager.cs` and `DroneCognitionJob.cs`; no STP adapter/scalability contract errors appeared.
+- `git diff --check` on touched STP/diagnostics/doc files reported line-ending warnings only, no whitespace errors.
+
+## 2026-05-16 - Loop 10 / DataVault Pointer Race Removal
+
+What was wrong:
+- `ResolutionScaleState` was locked while the EWMA Burst job owned the pointer, but the next `Tick()` could still resolve and write the same pointer if the job had not completed.
+- Telemetry ring writes used raw DataVault pointers without a short lock around the immediate heartbeat/dump write.
+- The previous compile wall shifted again; current disk state needed fresh validation evidence.
+
+What was done:
+- `Tick()` now skips `ResolutionScaleState*` resolution and DataVault scale-state writes while `_stressEwmaScheduled` is still true after the non-blocking completion check.
+- `TryGetScaleState()` now returns false during an in-flight EWMA job instead of reading a possibly torn state.
+- Added `TryLockTelemetryPointer()` and fenced STP telemetry writes/dumps with `TryLockBuffer(BufferID.ResolutionScaleTelemetry)` / `TryUnlockBuffer`.
+- Kept the no-stall job discipline: no unconditional `Complete()` was added to hot `Tick()`.
+- Re-ran adapter scans for local NativeArrays, persistent allocations, EventBus, managed delegates/events, string formatting, `Update()` surfaces, and unsafe math debt.
+- Re-ran layout and shader-platform scans. STP structs remain explicit `Pack=1`; the adapter owns no compute shader and no DirectX-only shader path.
+
+Cinematic cheats used:
+- Low/toaster remains render-scale 0.5, emergency 0.35, STP reconstruction, sharpen scalar, and `DearLie01=1`.
+- High/Ultra remains full scale with visual budget flags for visor salt, volumetric silt, hull dents, 16-tap POM, SSS, and raymarched fog consumers.
+- No new simulation or render pass was added; pointer fencing bought stability, not spectacle.
+
+Exact microseconds saved:
+- Not measured. No profiler, player build, GC capture, or Unity timeline exists for this loop.
+- Source-only impact: race removal and avoided forced job completion; one telemetry lock/unlock was added around heartbeat/dump writes.
+
+Validation:
+- Adapter static scan produced no hits for `NativeArray<T>`, `new NativeArray`, `Allocator.Persistent`, `EventBus`, managed delegate/event, `string.Format`, `Update/LateUpdate/FixedUpdate`, `.normalized`, or `math.normalize`.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt10_no_restore.txt`: empty log, process exit `-1`; not accepted as source evidence.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt11_no_restore.txt`: failed with 3 external errors in `PhysicsApplySystem.cs` on `_queueHash` and `PendingEventCapacity`; no STP adapter/scalability contract errors appeared.
+- Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION.
+
+## 2026-05-16 - Loop 11 / Blackbox Retry Fix + Gate 15 Evidence
+
+What was wrong:
+- The STP blackbox dump flag could be set before the dump file write was fully proven, suppressing a later retry after a transient I/O failure.
+- Validation evidence was stale again because the shared project changed after loop 10.
+
+What was done:
+- Moved `_blackBoxDumped = true` to the end of `DumpBlackBoxOnceLocked()` after the 20B header and one contiguous telemetry body are written.
+- Collapsed fault dump I/O to two stream writes: one header write and one body write.
+- Re-ran adapter scans for local `NativeArray<T>`, persistent local allocation, `EventBus`, managed delegates/events, `string.Format`, `Update/LateUpdate/FixedUpdate`, unsafe normalization debt, and explicit packed layouts.
+- Waited for overlapping external `dotnet build` processes to clear before running another isolated STP gate.
+- Updated the task status and rationale with attempt 12-15 evidence instead of claiming runtime verification.
+
+Cinematic cheats used:
+- Toaster mode remains render-scale 0.5, emergency 0.35, STP reconstruction, threshold sharpen, and `DearLie01=1`.
+- God-mode remains full scale with visual budget flags for visor salt crystals, volumetric silt, procedural hull dents, 16-tap POM, SSS, and raymarched fog consumers.
+- Fault capture stays binary and fixed-size enough for Steam Deck/MicroSD survival; no JSON or text dump was added.
+
+Exact microseconds saved:
+- Not measured. No profiler, player build, GC capture, or Unity timeline exists.
+- Loop 11 changes are fault-path reliability and source-validation work; normal-frame hot-path cost is unchanged by the blackbox flag move. Fault-path I/O is two writes, source-verified but not profiled.
+
+Validation:
+- Adapter static scan produced no hits for `NativeArray<T>`, `new NativeArray`, `Allocator.Persistent`, `EventBus`, managed delegate/event, `string.Format`, `Update/LateUpdate/FixedUpdate`, `.normalized`, or `math.normalize`.
+- Layout scan confirms explicit `Pack=1` records: `DrsTelemetryEntry` 48B, `ResolutionScaleState` 64B, `HardwareThermalSnapshot` 20B, and `DynamicResolutionRuntimeSnapshot` 24B.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt12_outdir.txt`: build succeeded, 0 errors, 4 warnings in `ArchitectEyeVisualizer.cs`.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt13_outdir.txt`: build failed with 23 external errors in `World/EcosystemDirector.cs`; no STP adapter/scalability contract errors appeared before the wall.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt14_outdir.txt`: did not reach C#; `Temp/obj/Hecton8.Core/project.assets.json` was missing.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_restore_attempt15.txt`: restore succeeded.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt15_outdir.txt`: build succeeded in 4.51s with 0 warnings and 0 errors after the blackbox two-write patch.
+- Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION.

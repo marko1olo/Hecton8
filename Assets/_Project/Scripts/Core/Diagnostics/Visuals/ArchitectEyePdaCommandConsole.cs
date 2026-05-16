@@ -28,7 +28,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
         [SerializeField] private Vector2 keyboardMin = new Vector2(16f, 42f);
         [SerializeField] private Vector2 keyboardSize = new Vector2(480f, 168f);
 
-        private readonly char[] _textBuffer = new char[TextCapacity];
+        private readonly char[] _textBuffer = new char[TextCapacity]; // COLD ALLOC: char[96] - fixed PDA command input buffer - owner: ArchitectEyePdaCommandConsole
         private int _textLength;
         private float _keyWidth;
         private float _keyHeight;
@@ -126,9 +126,14 @@ namespace Hecton8.Core.Diagnostics.Visuals
             float safeHeight = math.max(1f, math.isfinite(keyboardSize.y) ? keyboardSize.y : 168f);
             _keyWidth = safeWidth * (1f / KeyColumnCount);
             _keyHeight = safeHeight * (1f / KeyRowCount);
-            _invKeyWidth = math.rcp(math.max(0.0001f, _keyWidth));
-            _invKeyHeight = math.rcp(math.max(0.0001f, _keyHeight));
+            _invKeyWidth = SafeRcp(_keyWidth);
+            _invKeyHeight = SafeRcp(_keyHeight);
             _layoutCached = true;
+        }
+
+        private static float SafeRcp(float value)
+        {
+            return value > 0.0001f && math.isfinite(value) ? 1f / value : 0f;
         }
 
 #if UNITY_EDITOR

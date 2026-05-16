@@ -142,7 +142,7 @@ namespace Hecton8.Core
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
         private struct FoveatedSimulationTelemetryEntry
         {
             public int Frame;
@@ -199,7 +199,7 @@ namespace Hecton8.Core
         private const float Tier0CombatLockSeconds = 10.0f;
         private const int TelemetryCapacity = 300;
         private const uint TelemetryMagic = 0x46384C44u;
-        private const float SoundSpeedWaterMetersPerSecond = 1480.0f;
+        private const float SoundSpeedWaterMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         private const float MinimumPitch = 0.5f;
         private const float MaximumPitch = 2.0f;
         private const float VoxelTeardownBackpressureSwimSpeedMultiplier = 0.5f;

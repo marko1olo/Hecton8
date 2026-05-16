@@ -155,3 +155,65 @@ Validation:
 - `git diff --check` clean except CRLF normalization warnings.
 - `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` returned EXIT=0 in `Docs/AgentLogs/Dotnet_VOLUMETRIC_SILT_ADVECTION_Loop9.log` and `Docs/AgentLogs/Dotnet_VOLUMETRIC_SILT_ADVECTION_Loop9_PostDocs.log`.
 - Unity DX12/Vulkan/player validation remains pending and is not claimed.
+
+## Entry 2026-05-16 - Marine Snow Kernel Group Query Pass
+
+What was wrong:
+- `HectonMarineSnowRenderer` duplicated compute shader thread-group dimensions with C# constants and shift math.
+- That was legal for the current shader text but brittle for Metal/Quest/Steam Deck/backend variants because dispatch chunking was not derived from the actual kernel contract.
+- Unity platform validation still could not be honestly completed.
+
+What was done:
+- Added per-kernel `ComputeShader.GetKernelThreadGroupSizes` queries for simulation, initialization, sonar accumulate, sonar clear, and fog clear.
+- Cached sanitized particle group widths and 2D clear tile dimensions, with invalid or >1024-thread totals falling back to the known 64/8x8 defaults.
+- Reworked particle and clear chunk dispatch math to use queried dimensions instead of `ThreadGroupShift`, fixed group constants, or `(dimension + 7) >> 3`.
+- Retained <=512-group chunking and the 8,000 low / 100,000 high particle budget split.
+
+Cinematic Cheats used:
+- Low/Toaster remains the radial wake fake with 8,000 particles, no 3D flow, no curl, and no SDF collision.
+- High/Ultra keep 100,000 particles, abyssal flow texture, curl fake, headlight emission, sonar glow, and fog injection; the dispatch contract is now backend-aware rather than hardcoded.
+
+Exact Microseconds saved:
+- 0 us measured. No profiler/player capture was run.
+- No frame-time gain is claimed. This is platform correctness and shader ABI hardening.
+- Runtime overhead is a cold-path kernel query during buffer setup, not per-particle hot-path work.
+
+Validation:
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` returned EXIT=0 in `Docs/AgentLogs/Dotnet_VOLUMETRIC_SILT_ADVECTION_Loop10_KernelQuery.log`.
+- Shader thread-group parse reports 8x8x1, 8x8x1, 1x1x1, and 64x1x1 kernels, all <=1024 threads.
+- Scoped VFX scan reports no standard Unity update loops, no `string.Format`, no interpolation `$"`, no scene discovery, no legacy `EventBus`, no coroutine, no `Resources.Load`, and no `Camera.main`.
+- `git diff --check` is clean except CRLF normalization warnings.
+- Unity default batchmode was attempted twice: the first run collided with another Unity process, and the retry stalled in script compilation/ILPP before platform shader validation. The owned Unity/ILPP processes were terminated. DX12/Vulkan validation remains blocked and is not claimed.
+
+## Entry 2026-05-16 - Typed Lane and Hot-Swap Cache Pass
+
+What was wrong:
+- VFX runtime paths still contained legacy latest-state signal reads and bridge publishes after the marine-snow core had moved to typed signal/data-vault architecture.
+- Camera juice telemetry resolved `GlobalRegistry.DataVault` inside its telemetry path, and camera/material/marine-snow systems still had repeated service lookup shape instead of hot-swap cached services.
+- Low-tier marine-snow fake wander used hash samples in [0, 1], causing a positive X/Z drift bias instead of suspended symmetric silt.
+
+What was done:
+- `HectonMarineSnowRenderer` now pushes vehicle wake impulses through `SignalBus<FluidImpulseSignal>.Push`.
+- `MaterialDecayRuntime` now consumes `ReadOnlySpan<PlayerStressSignal>` and pushes `ToolAcousticSignal` through its typed lane.
+- `CameraJuiceSystem` now consumes `ReadOnlySpan<SeismicSignal>` and caches Player/Submarine/Dispatcher/DynamicResolution/VRAM/DataVault through hot-swap listeners.
+- `GlobalSignals.Publish(in SeismicSignal)` now mirrors the existing seismic payload into `SignalBus<SeismicSignal>`; no new signal type was invented.
+- `CameraJuiceSystem` and `MaterialDecayRuntime` preserve cached DataVault pointers during compaction fences and invalidate only handles/readiness.
+- `Hecton_MarineSnow.compute` centers low-tier wander hash to [-1, 1] before scaling.
+
+Cinematic Cheats used:
+- Low/Toaster marine snow remains 8,000 particles, radial wake fake, symmetric hash wander, no 3D noise, no curl texture, no SDF collision.
+- Camera seismic response remains triangle-pulse presentation shake driven by a typed snapshot, not physical camera simulation.
+- High/Ultra keep 100,000 particles, abyssal flow texture, curl fake, sonar glow, fog density injection, and headlight emission.
+
+Exact Microseconds saved:
+- 0 us measured. No profiler/player capture was run.
+- No frame-time gain is claimed. The concrete result is removal of legacy latest-state polling/bridge publishes from VFX paths and service cache hardening.
+- Added seismic typed-lane mirroring is one additional native queue push per seismic publish; accepted to remove VFX latest-state dependency without changing the producer API.
+
+Validation:
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` returned EXIT=0 in `Docs/AgentLogs/Dotnet_VOLUMETRIC_SILT_ADVECTION_Loop11_TypedLaneCamera.log`.
+- Static VFX scans report no `GlobalSignals.Publish`, no `GlobalSignals.TryGetLatest`, no legacy `EventBus`, no standard Unity update loops, no `string.Format`, no interpolation `$"`, no scene discovery, no coroutine, no `Resources.Load`, and no `Camera.main` under `Assets/_Project/Scripts/VFX`.
+- Shader audit reports no `distance()`, no wave intrinsics, no groupshared/SV_Group, no `ComputeBuffer`, no `SetData`, and no `GetData` in the marine-snow compute/render path.
+- Thread-group scan reports 8x8x1, 1x1x1, and 64x1x1 declarations, all under the 1024-thread Metal/Quest limit.
+- `git diff --check` is clean except CRLF normalization warnings.
+- Unity DX12/Vulkan validation is not claimed. A Unity process was already active (`Docs/AgentLogs/UnityProcess_VOLUMETRIC_SILT_ADVECTION_Loop11.log`), so no second platform compile was started.

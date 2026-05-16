@@ -213,3 +213,237 @@ Verification:
 Blocked:
 - 105 legacy explicit signal layouts still omit `Pack=1`; they are ABI-union layouts and remain staged-migration work, not a safe mechanical edit.
 - Full Unity project graph remains blocked by RealtimeCSG third-party source inventory outside CORE/SIGNALS.
+
+## Surgical Record - 2026-05-16 Multiplatform Lane Drift Reclosure
+
+What was wrong:
+- `SignalLaneTelemetry` crossed the Architect Eye/DataVault telemetry boundary without explicit Pack=1/Size.
+- Local `SignalBus<T>.Configure` calls had returned in lockstep/glitch, laser cutter, and compass/anomaly code.
+- The current core build is no longer green because unrelated Fauna/Construction edits introduced 17 compile errors.
+
+What was done:
+- Hardened `SignalLaneTelemetry` to `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]` with explicit reserved fields.
+- Removed local Configure authority from `LockstepStateValidator`, `LaserCutterEvents`, and `DiegeticGyroCompassRuntime`; these surfaces now use central `GlobalSignals.InitializeAllQueues()` and typed `EnsureInitialized()`/Push/snapshot calls.
+- Re-ran lane centralization, namespace, payload layout, managed event, and managed formatting scans.
+
+Cinematic cheats used:
+- No new simulation was added. The clean typed-lane surface preserves cheap low-tier truth and leaves high-tier presentation free to spend cycles on compass glass, cutter heat shimmer, glitch feedback, visor salt, silt wake, and hull-response consumers.
+
+Exact microseconds saved:
+- `SignalLaneTelemetry` ABI hardening: 0 us runtime; prevents platform layout drift.
+- Lane drift reclosure: estimated 2-6 us saved during cold bootstrap/reinitialization by removing feature-owned policy mutation.
+
+Verification:
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- `OLD_SIGNAL_NAMESPACE_HITS=0`.
+- `ISIGNAL_TOTAL=163`.
+- `ISIGNAL_NO_SIZE_OR_NON16=0`.
+- `PLAYER_INTERACTION_EVENT_HITS=0`.
+- Targeted managed format scan over touched runtime files: 0 hits.
+- `SignalLaneTelemetry`: Pack=1 Size=32 with explicit reserved fields.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: FAIL outside CORE/SIGNALS with 17 errors in `PredatorCognitionDomain.cs` and `DroneFleetManager.cs`; no signal lane errors were emitted.
+
+Blocked:
+- Current core build is dependency-blocked by Fauna native-container drift and Construction double3/float3 conversion drift outside CORE/SIGNALS.
+
+## Surgical Record - 2026-05-16 Splash And Physics Event Lane Closure
+
+What was wrong:
+- `SplashEvent`, `PhysicsEventPayload`, and `DeferredSubmarineImpactSignal` existed as feature-owned `ISignal` payloads.
+- `FluidFeedbackEvents`, `PhysicsEventBus`, and `PhysicsApplySystem` owned local `SignalBus<T>.Configure` calls.
+- Concurrent drift repeatedly reintroduced lockstep and compass local Configure authority.
+
+What was done:
+- Moved the active splash, physics event, and deferred submarine impact payload contracts into `Hecton8.Core.Contracts.Signals`.
+- Added central lane policies, size validators, and Push-time finite guards for the three lanes in `GlobalSignals`.
+- Reduced fluid/physics/compass/lockstep bridges to central `GlobalSignals.InitializeAllQueues()` plus typed `EnsureInitialized()`/Push/snapshot calls.
+- Added the required contract import for `RandomEventSystem` splash publishing.
+
+Cinematic cheats used:
+- Low tier can bound splash and physics feedback lanes while the presentation layer fakes richness from stable packets.
+- High/Ultra can spend the clean event stream on denser splash, pressure, acoustic, trauma, visor, silt, and hull feedback without increasing simulation truth cost.
+
+Exact microseconds saved:
+- Splash/physics/deferred impact centralization: estimated 2-6 us saved during cold bootstrap/reinitialization.
+- ABI/finite guard additions: 0 us saved; expected guard overhead below 1-4 us per normal burst, buying mobile NaN containment.
+
+Verification:
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- `ISIGNAL_NAMESPACE_VIOLATIONS=0`.
+- `OLD_SIGNAL_NAMESPACE_HITS=0`.
+- Targeted managed format scan over touched runtime files: 0 hits.
+- `git diff --check` on touched signal/runtime/doc files: whitespace-clean; CRLF conversion warnings only.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: FAIL outside CORE/SIGNALS with 41 errors in `EcosystemDirector.cs`, `DiegeticGyroCompassRuntime.cs`, and `InputDispatcher.cs`; no SignalBus registry or signal contract namespace errors were emitted.
+
+Blocked:
+- Current core build is dependency-blocked by World/UI/Input compile drift outside CORE/SIGNALS.
+
+## Surgical Record - 2026-05-16 ARM64 ABI Polish Pass
+
+What was wrong:
+- Signal authority scans were clean, but adjacent physics event DTOs used Pack=1 without explicit final `Size`.
+- `FloodMassPropertiesResult` used an explicit 44-byte stride, which is not a 16-byte multiple.
+- The AUP snapshot transformer carried one `float3` without an explicit 16-byte stride.
+
+What was done:
+- Set `PressureImpulseEvent` to Size=80, `ElectromagneticPulseEvent` to Size=32, `AcousticPingEvent` to Size=48, `AcousticImpulseEvent` to Size=48, and `LargeAcousticImpulseEvent` to Size=48.
+- Set `CombatDamageSignalAupShiftTransformer` to Size=16.
+- Padded `FloodMassPropertiesResult` to Size=48 with an explicit reserved field.
+
+Cinematic cheats used:
+- No simulation cost was added. Stable compact packets keep low-tier dispatch cheap and let high-tier consumers spend the same event stream on pressure bloom, acoustic feedback, silt wake, hull deformation, and visor detail.
+
+Exact microseconds saved:
+- ABI polish: 0 us runtime saved. This is mobile/Burst/IL2CPP stability work, not a frame-time shortcut.
+
+Verification:
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- `ISIGNAL_NAMESPACE_VIOLATIONS=0`.
+- `TARGET_MANAGED_FORMAT_HITS=0`.
+- `git diff --check` on touched files: whitespace-clean; CRLF conversion warnings only.
+
+Blocked:
+- Current core build remains dependency-blocked outside CORE/SIGNALS by World/UI/Input compile drift.
+
+## Surgical Record - 2026-05-16 Concurrent Configure Drift Reclosure
+
+What was wrong:
+- While the build was running, local `SignalBus<T>.Configure` authority reappeared in compass/anomaly and lockstep/glitch code.
+- The current core build wall moved again; it now fails in `World/SargassumMicroFaunaBoids.cs` on missing `SaturateFinite01`.
+
+What was done:
+- Removed the reintroduced compass/anomaly Configure calls and restored central `GlobalSignals.InitializeAllQueues()` ownership.
+- Removed the reintroduced lockstep/glitch Configure calls and deleted their stale local capacity/hash constants.
+- Re-ran centralization scan after the repair.
+
+Cinematic cheats used:
+- No new simulation cost was added. Centralized lanes keep low-tier packet flow bounded and leave high-tier consumers free to spend stable events on richer compass, glitch, tether, acoustic, and hull feedback.
+
+Exact microseconds saved:
+- Reclosing local Configure authority: estimated 2-6 us saved during cold bootstrap/reinitialization. Runtime hot path is unchanged.
+
+Verification:
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- Current `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: FAIL outside CORE/SIGNALS with 9 errors in `World/SargassumMicroFaunaBoids.cs`; no SignalBus registry or payload namespace errors were emitted.
+
+Blocked:
+- World/Sargassum owner must restore or replace `SaturateFinite01`; this is outside the signal authority domain.
+
+## Surgical Record - 2026-05-16 Architect Eye Debug Lane Closure
+
+What was wrong:
+- `DebugSignal : ISignal` was declared in `Hecton8.Core.Diagnostics.Visuals` instead of the contract namespace.
+- The debug visual lane had no central `GlobalSignals.InitializeAllQueues()` policy.
+
+What was done:
+- Moved `DebugSignal` and `DebugSignalKind` to `Hecton8.Core.Contracts.Signals`.
+- Registered the `DebugSignal` lane centrally with a 64-packet cap and low-tier cap of 8.
+- Marked the lane non-critical for stress shedding and added Push-time finite guards for position, vector, and scalar values.
+- Routed `ArchitectEyeDebugBus.EnsureInitialized()` through central signal initialization.
+
+Cinematic cheats used:
+- Low tier can drop debug visual packet flood under stress. High/Ultra can keep dense Architect Eye overlays without mutating gameplay lanes.
+
+Exact microseconds saved:
+- Debug lane centralization: estimated 1-3 us saved during diagnostic bootstrap. Runtime hot path is unchanged except stress-based packet shedding.
+
+Verification:
+- `ISIGNAL_NAMESPACE_VIOLATIONS=0`.
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- `TARGET_MANAGED_FORMAT_HITS=0`.
+- Current `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: FAIL outside signal authority with 46 errors in UI compass DTO and SystemDispatcher blackbox/raycast fields; no SignalBus registry or signal payload namespace errors were emitted.
+
+Blocked:
+- UI compass and SystemDispatcher owners must repair their presentation DTO and dispatcher blackbox/raycast state drift.
+
+## Surgical Record - 2026-05-16 Final Core Build Recovery
+
+What was wrong:
+- A final build attempt initially failed because the generated `Temp/obj/Hecton8.Core/Hecton8.Core.csproj.nuget.g.targets` file had been removed.
+- Concurrent local Configure drift was reintroduced several times during validation.
+
+What was done:
+- Re-closed compass/anomaly and lockstep/glitch Configure drift again, leaving central `GlobalSignals.InitializeAllQueues()` as the only lane policy owner.
+- Ran `dotnet restore Hecton8.Core.csproj /nr:false` to regenerate the missing target.
+- Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`.
+
+Cinematic cheats used:
+- No new physical simulation was added. Low tier keeps bounded lanes and stress shedding; High/Ultra can spend the clean signal surface on dense debug overlays, splash/acoustic feedback, visor detail, and hull response.
+
+Exact microseconds saved:
+- Final drift closure: estimated 2-6 us saved during cold bootstrap/reinitialization.
+- Restore/build recovery: 0 us runtime; verification-only.
+
+Verification:
+- `dotnet restore Hecton8.Core.csproj /nr:false`: PASS.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: PASS, 0 warnings, 0 errors.
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS_AFTER_WAIT=0`.
+
+Blocked:
+- Full `Assembly-CSharp.csproj` Unity graph was not re-run after the core pass.
+
+## Surgical Record - 2026-05-16 Re-Inquisition SPSC And Drift Closure
+
+What was wrong:
+- Fresh scans found four reintroduced local lane Configure calls in `DiegeticGyroCompassRuntime.cs` and `LockstepStateValidator.cs`.
+- `SpscSignalRingBuffer<T>` still allocated a backing `NativeArray<T>` directly instead of routing through the memory sentinel.
+- The stale PlayerInteraction scan path was wrong; the live file is `Assets/_Project/Scripts/Interaction/PlayerInteraction.cs`.
+
+What was done:
+- Removed compass/anomaly and lockstep/glitch local Configure calls and stale capacity/hash constants.
+- Reduced those call sites to `GlobalSignals.InitializeAllQueues()` plus typed `EnsureInitialized()`.
+- Replaced direct SPSC fallback `NativeArray<T>` allocation with `H8Memory.Allocate/Release` and an explicit `SystemID` owner path.
+- Re-ran signal centralization, namespace, layout, managed format, PlayerInteraction, and native allocation scans.
+
+Cinematic cheats used:
+- No new simulation cost was added. Low tier keeps bounded central lanes and stress shedding; High/Ultra can spend stable packets on richer compass glass, glitch overlays, replay diagnostics, visor salt, wake/silt, and hull feedback in presentation consumers.
+
+Exact microseconds saved:
+- Reclosing local Configure authority: estimated 2-6 us saved during cold bootstrap/reinitialization.
+- SPSC memory-sentinel routing: 0 us while unused; improves leak attribution if activated.
+
+Verification:
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- `DUPLICATE_SIGNAL_NAME_HITS=0`.
+- `OLD_SIGNAL_NAMESPACE_HITS=0`.
+- `ISIGNAL_NAMESPACE_VIOLATIONS=0`.
+- `ISIGNAL_LAYOUT_VIOLATIONS=0`.
+- `TARGET_STRING_FORMAT_OR_FIXEDSTRING_HITS=0`.
+- `PLAYER_INTERACTION_EVENT_HITS=0`.
+- Direct native allocation scan in `GlobalSignals.cs` now shows only central `SignalBus<T>` `NativeQueue`/`NativeList` transport allocations; direct SPSC `NativeArray<T>` allocation is gone.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: FAIL outside CORE/SIGNALS with 0 warnings and 2 errors in `World/EcosystemDirector.cs` for duplicate `ResolveVaultIndexCapacity` and `TryFindIndexEntry`.
+
+Blocked:
+- World/Ecosystem owner must repair the duplicate helper merge in `EcosystemDirector.cs`. No SignalBus registry, signal namespace, signal layout, or managed signal-format errors were emitted.
+
+## Surgical Record - 2026-05-16 Warning Truth Recheck
+
+What was wrong:
+- An intermediate core build emitted 2 `CS2002` warnings while Unity-generated project files were changing under concurrent agent work.
+- That intermediate state was not stable enough to claim as final.
+
+What was done:
+- Re-read the XML assignment and current status/rationale before reporting.
+- Re-ran signal authority scans and layout scans.
+- Re-ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`.
+- Forced `dotnet build Hecton8.Core.csproj -t:Rebuild --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`.
+- Updated status, rationale, audit matrix, and this log to match the forced rebuild evidence.
+
+Cinematic cheats used:
+- No physical simulation was added. Signal lanes remain bounded on low tier and fully propagated for high-tier visual/audio overkill when stress allows.
+
+Exact microseconds saved:
+- Warning recheck: 0 us runtime. This is verification truth maintenance.
+- Central lane state remains at the prior estimated 2-6 us bootstrap/reinitialization savings by eliminating decentralized Configure drift.
+
+Verification:
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- `OLD_SIGNAL_NAMESPACE_HITS=0`.
+- `PLAYER_INTERACTION_EVENT_HITS=0`.
+- `ISIGNAL_NAMESPACE_VIOLATIONS=0`.
+- `ISIGNAL_LAYOUT_VIOLATIONS=0`.
+- `STRING_FORMAT_OR_FIXEDSTRING_HITS=0` across targeted signal/runtime files.
+- `dotnet build Hecton8.Core.csproj -t:Rebuild --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: PASS, 0 warnings, 0 errors.
+
+Blocked:
+- Full `Assembly-CSharp.csproj` Unity graph was not re-run after the core pass.

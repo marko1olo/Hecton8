@@ -6,6 +6,7 @@ using Unity.Profiling;
 using UnityEngine;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using Hecton8.Physics.CCD;
@@ -66,7 +67,7 @@ namespace Hecton8.Gameplay
         private const float DefaultGroundSlopeLimitDegrees = 45f;
         private const float TractionLossStartDegrees = 45f;
         private const float GroundContactHoldSeconds = 0.2f;
-        private const float VehicleGravityAcceleration = 9.81f;
+        private const float VehicleGravityAcceleration = HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
         private const float SlopeDot45Degrees = 0.70710678f;
         private const float GroundAlignmentSharpness = 10f;
         private const float DenormalVelocityFlushThresholdMetersPerSecond = 0.001f;

@@ -91,7 +91,12 @@ namespace Hecton8.Core.Content
         {
             get
             {
-                return TryResolve(out ContentBundleRefState* _, out int* count) ? *count : 0;
+                return TryResolveNormalized(
+                    out ContentBundleRefState* _,
+                    out int* _,
+                    out int count)
+                    ? count
+                    : 0;
             }
         }
 
@@ -110,12 +115,8 @@ namespace Hecton8.Core.Content
             if (hash == 0u)
                 return false;
 
-            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
+            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* countPtr, out int count))
                 return false;
-
-            int count = *countPtr;
-            if ((uint)count > (uint)_capacity)
-                count = 0;
 
             for (int i = 0; i < count; i++)
             {
@@ -123,6 +124,12 @@ namespace Hecton8.Core.Content
                     continue;
 
                 ContentBundleRefState state = states[i];
+                if (state.RefCount < 0 || state.RefCount == int.MaxValue)
+                {
+                    LogRefCountViolation(hash);
+                    return false;
+                }
+
                 state.RefCount++;
                 state.LastAccessFrame = frame;
                 if (bytes > state.Bytes)
@@ -153,11 +160,13 @@ namespace Hecton8.Core.Content
         public unsafe bool Release(uint hash, int frame, out bool becameUnused)
         {
             becameUnused = false;
-            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
+            if (hash == 0u)
+            {
+                LogRefCountViolation(hash);
                 return false;
+            }
 
-            int count = *countPtr;
-            if ((uint)count > (uint)_capacity)
+            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* _, out int count))
                 return false;
 
             for (int i = 0; i < count; i++)
@@ -166,16 +175,20 @@ namespace Hecton8.Core.Content
                     continue;
 
                 ContentBundleRefState state = states[i];
-                state.RefCount--;
-                if (state.RefCount < 0)
-                    state.RefCount = 0;
+                if (state.RefCount <= 0)
+                {
+                    LogRefCountViolation(hash);
+                    return false;
+                }
 
+                state.RefCount--;
                 state.LastAccessFrame = frame;
                 becameUnused = state.RefCount == 0;
                 states[i] = state;
                 return true;
             }
 
+            LogRefCountViolation(hash);
             return false;
         }
 
@@ -185,11 +198,7 @@ namespace Hecton8.Core.Content
             if (hash == 0u)
                 return false;
 
-            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
-                return false;
-
-            int count = *countPtr;
-            if ((uint)count > (uint)_capacity)
+            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* _, out int count))
                 return false;
 
             for (int i = 0; i < count; i++)
@@ -207,11 +216,7 @@ namespace Hecton8.Core.Content
         public unsafe bool TrySelectOldestUnusedBiomeCache(out uint hash)
         {
             hash = 0u;
-            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
-                return false;
-
-            int count = *countPtr;
-            if ((uint)count > (uint)_capacity)
+            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* _, out int count))
                 return false;
 
             int bestIndex = -1;
@@ -238,11 +243,7 @@ namespace Hecton8.Core.Content
 
         public unsafe bool Remove(uint hash)
         {
-            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
-                return false;
-
-            int count = *countPtr;
-            if ((uint)count > (uint)_capacity)
+            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* countPtr, out int count))
                 return false;
 
             for (int i = 0; i < count; i++)
@@ -262,11 +263,7 @@ namespace Hecton8.Core.Content
 
         public unsafe long EstimateResidentBytes()
         {
-            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
-                return 0L;
-
-            int count = *countPtr;
-            if ((uint)count > (uint)_capacity)
+            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* _, out int count))
                 return 0L;
 
             long total = 0L;
@@ -282,6 +279,21 @@ namespace Hecton8.Core.Content
                 total += bytes;
             }
             return total;
+        }
+
+        public unsafe void Clear()
+        {
+            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
+                return;
+
+            int count = *countPtr;
+            if ((uint)count > (uint)_capacity)
+                count = _capacity;
+
+            for (int i = 0; i < count; i++)
+                states[i] = default;
+
+            *countPtr = 0;
         }
 
         private unsafe bool TryResolve(out ContentBundleRefState* states, out int* count)
@@ -314,6 +326,47 @@ namespace Hecton8.Core.Content
             states = (ContentBundleRefState*)_statesHandle.ResolvePointer(vault);
             count = (int*)_countHandle.ResolvePointer(vault);
             return states != null && count != null && _statesHandle.Length >= _capacity && _countHandle.Length >= 1;
+        }
+
+        private unsafe bool TryResolveNormalized(
+            out ContentBundleRefState* states,
+            out int* countPtr,
+            out int count)
+        {
+            count = 0;
+            if (!TryResolve(out states, out countPtr))
+                return false;
+
+            count = *countPtr;
+            if ((uint)count <= (uint)_capacity)
+                return true;
+
+            LogLedgerCountCorruption();
+            ClearResolved(states, countPtr, _capacity);
+            count = 0;
+            return true;
+        }
+
+        private static unsafe void ClearResolved(ContentBundleRefState* states, int* countPtr, int capacity)
+        {
+            for (int i = 0; i < capacity; i++)
+                states[i] = default;
+
+            *countPtr = 0;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogRefCountViolation(uint hash)
+        {
+            Debug.LogError("[ContentBundleReferenceCounter] Invalid ref-count transition for hash 0x" + hash.ToString("X8") + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogLedgerCountCorruption()
+        {
+            Debug.LogError("[ContentBundleReferenceCounter] Vault ledger count exceeded fixed capacity; cleared residency ledger.");
         }
     }
 
@@ -359,7 +412,8 @@ namespace Hecton8.Core.Content
         private const ulong BlackBoxMagic = 0x484543544F4E3800UL;
         private const uint BlackBoxEntrySizeBytes = 64u;
         private const int TelemetryCapacity = 300;
-        private const int PendingLoadCapacity = 64;
+        public const int MaxPendingLoadCount = 64;
+        private const int PendingLoadCapacity = MaxPendingLoadCount;
 #if UNITY_ADDRESSABLES_EXIST
         private const int BundleHandleCapacity = 256;
 #endif
@@ -405,6 +459,8 @@ namespace Hecton8.Core.Content
 
         public ContentAssetHashMap AssetHashMap => assetHashMap;
         public ContentBundleReferenceCounter BundleReferenceCounter => _bundleRefs;
+        public int HologramPoolCapacity => hologramPoolCapacity;
+        public bool HasHologramProxyBinding => hologramProxyMesh != null && hologramMaterial != null;
 
         private void Awake()
         {
@@ -440,17 +496,9 @@ namespace Hecton8.Core.Content
         private void OnDestroy()
         {
             TryUnregister();
+            ClearBundleResidencyState();
 
 #if UNITY_ADDRESSABLES_EXIST
-            for (int i = 0; i < _bundleHandles.Length; i++)
-            {
-                if (_bundleHandles[i].IsValid())
-                    Addressables.Release(_bundleHandles[i]);
-
-                _bundleHandles[i] = default;
-                _bundleHandleHashes[i] = 0u;
-            }
-
             for (int i = 0; i < _vfxPrewarmHandles.Count; i++)
             {
                 if (_vfxPrewarmHandles[i].IsValid())
@@ -526,8 +574,9 @@ namespace Hecton8.Core.Content
             if (TryTrackBundleHandle(hash, handle))
                 return true;
 
-            _bundleRefs.Release(hash, Time.frameCount, out _);
-            _bundleRefs.Remove(hash);
+            _bundleRefs.Release(hash, Time.frameCount, out bool becameUnused);
+            if (becameUnused)
+                _bundleRefs.Remove(hash);
             VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
             return false;
         }
@@ -565,11 +614,7 @@ namespace Hecton8.Core.Content
             if (_dataVault == null)
                 CacheDependencies();
 
-            if (!TryResolvePendingLoads(out ContentPendingLoadState* pendingLoads, out int* countPtr))
-                return false;
-
-            int count = *countPtr;
-            if ((uint)count > PendingLoadCapacity)
+            if (!TryResolvePendingLoadsNormalized(out ContentPendingLoadState* pendingLoads, out int* countPtr, out int count))
                 return false;
 
             for (int i = 0; i < count; i++)
@@ -596,11 +641,7 @@ namespace Hecton8.Core.Content
 
         public unsafe bool CompleteAsyncLoad(uint hash, Renderer targetRenderer)
         {
-            if (!TryResolvePendingLoads(out ContentPendingLoadState* pendingLoads, out int* countPtr))
-                return false;
-
-            int count = *countPtr;
-            if ((uint)count > PendingLoadCapacity)
+            if (!TryResolvePendingLoadsNormalized(out ContentPendingLoadState* pendingLoads, out int* countPtr, out int count))
                 return false;
 
             for (int i = count - 1; i >= 0; i--)
@@ -687,11 +728,10 @@ namespace Hecton8.Core.Content
 
         private unsafe void TickPendingLoads(ref uint flags)
         {
-            if (!TryResolvePendingLoads(out ContentPendingLoadState* pendingLoads, out int* countPtr))
+            if (!TryResolvePendingLoadsNormalized(out ContentPendingLoadState* pendingLoads, out int* _, out int count))
                 return;
 
-            int count = *countPtr;
-            if (count == 0 || (uint)count > PendingLoadCapacity)
+            if (count == 0)
                 return;
 
             float now = Time.unscaledTime;
@@ -712,21 +752,37 @@ namespace Hecton8.Core.Content
             if (target == null || _hologramPool == null || _hologramPool.Length == 0)
                 return -1;
 
-            int index = _nextHologramIndex;
-            _nextHologramIndex = (_nextHologramIndex + 1) % _hologramPool.Length;
-            GameObject proxy = _hologramPool[index];
+            int index = -1;
+            GameObject proxy = null;
+            int poolLength = _hologramPool.Length;
+            for (int i = 0; i < poolLength; i++)
+            {
+                int candidateIndex = _nextHologramIndex + i;
+                if (candidateIndex >= poolLength)
+                    candidateIndex -= poolLength;
+
+                GameObject candidate = _hologramPool[candidateIndex];
+                if (candidate == null || candidate.activeSelf)
+                    continue;
+
+                index = candidateIndex;
+                proxy = candidate;
+                break;
+            }
+
             if (proxy == null)
                 return -1;
+
+            _nextHologramIndex = index + 1;
+            if (_nextHologramIndex >= poolLength)
+                _nextHologramIndex = 0;
 
             Transform targetTransform = target.transform;
             Transform proxyTransform = proxy.transform;
             proxyTransform.SetPositionAndRotation(targetTransform.position, targetTransform.rotation);
             proxyTransform.localScale = targetTransform.lossyScale;
-            if (!proxy.activeSelf)
-            {
-                proxy.SetActive(true);
-                _hologramsActive++;
-            }
+            proxy.SetActive(true);
+            _hologramsActive++;
 
             return index;
         }
@@ -764,12 +820,8 @@ namespace Hecton8.Core.Content
 
         private unsafe void ClearPendingLoads()
         {
-            if (TryResolvePendingLoads(out ContentPendingLoadState* pendingLoads, out int* countPtr))
+            if (TryResolvePendingLoadsNormalized(out ContentPendingLoadState* pendingLoads, out int* countPtr, out int count))
             {
-                int count = *countPtr;
-                if ((uint)count > PendingLoadCapacity)
-                    count = PendingLoadCapacity;
-
                 for (int i = 0; i < count; i++)
                 {
                     HideHologram(pendingLoads[i].HologramIndex);
@@ -1027,7 +1079,12 @@ namespace Hecton8.Core.Content
 
         private unsafe int GetPendingLoadCount()
         {
-            return TryResolvePendingLoads(out ContentPendingLoadState* _, out int* countPtr) ? *countPtr : 0;
+            return TryResolvePendingLoadsNormalized(
+                out ContentPendingLoadState* _,
+                out int* _,
+                out int count)
+                ? count
+                : 0;
         }
 
         private unsafe bool TryResolvePendingLoads(
@@ -1067,6 +1124,59 @@ namespace Hecton8.Core.Content
                    _pendingLoadCountHandle.Length >= 1;
         }
 
+        private unsafe bool TryResolvePendingLoadsNormalized(
+            out ContentPendingLoadState* pendingLoads,
+            out int* countPtr,
+            out int count)
+        {
+            count = 0;
+            if (!TryResolvePendingLoads(out pendingLoads, out countPtr))
+                return false;
+
+            count = *countPtr;
+            if ((uint)count <= PendingLoadCapacity)
+                return true;
+
+            LogPendingLoadCountCorruption();
+            ClearResolvedPendingLoads(pendingLoads, countPtr);
+            ClearPendingLoadTargets();
+            HideAllHolograms();
+            count = 0;
+            return true;
+        }
+
+        private static unsafe void ClearResolvedPendingLoads(ContentPendingLoadState* pendingLoads, int* countPtr)
+        {
+            for (int i = 0; i < PendingLoadCapacity; i++)
+                pendingLoads[i] = default;
+
+            *countPtr = 0;
+        }
+
+        private void ClearPendingLoadTargets()
+        {
+            if (_pendingLoadTargets == null)
+                return;
+
+            for (int i = 0; i < _pendingLoadTargets.Length; i++)
+                _pendingLoadTargets[i] = null;
+        }
+
+        private void HideAllHolograms()
+        {
+            if (_hologramPool != null)
+            {
+                for (int i = 0; i < _hologramPool.Length; i++)
+                {
+                    GameObject proxy = _hologramPool[i];
+                    if (proxy != null && proxy.activeSelf)
+                        proxy.SetActive(false);
+                }
+            }
+
+            _hologramsActive = 0;
+        }
+
         private void ClearVaultHandles()
         {
             _telemetryHandle = default;
@@ -1077,6 +1187,22 @@ namespace Hecton8.Core.Content
             _vramMonitor = null;
             _vramPressure = null;
             _assetLifecycle = null;
+        }
+
+        private void ClearBundleResidencyState()
+        {
+#if UNITY_ADDRESSABLES_EXIST
+            for (int i = 0; i < _bundleHandles.Length; i++)
+            {
+                if (_bundleHandles[i].IsValid())
+                    Addressables.Release(_bundleHandles[i]);
+
+                _bundleHandles[i] = default;
+                _bundleHandleHashes[i] = 0u;
+            }
+#endif
+            _bundleRefs.Clear();
+            VRAMBudgetTracker.Unregister(VramLedgerOwnerHash);
         }
 
         private unsafe void DumpBlackBox()
@@ -1091,55 +1217,145 @@ namespace Hecton8.Core.Content
             if (string.IsNullOrEmpty(path))
                 return;
 
-            _blackBoxDumpedThisSession = true;
             int cursor = *cursorPtr;
             if ((uint)cursor >= TelemetryCapacity)
                 cursor = 0;
 
-            using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+            if (TryWriteBlackBox(path, telemetry, cursor))
             {
-                writer.Write(BlackBoxMagic);
-                writer.Write((uint)TelemetryCapacity);
-                writer.Write(BlackBoxEntrySizeBytes);
-                writer.Write((uint)0u);
+                _blackBoxDumpedThisSession = true;
+                return;
+            }
 
-                for (int i = 0; i < TelemetryCapacity; i++)
+            string fallbackPath = ResolvePersistentBlackBoxDumpPath();
+            if (string.Equals(path, fallbackPath, StringComparison.Ordinal))
+                return;
+
+            if (TryWriteBlackBox(fallbackPath, telemetry, cursor))
+                _blackBoxDumpedThisSession = true;
+        }
+
+        private static unsafe bool TryWriteBlackBox(
+            string path,
+            ContentAuthorityTelemetryEntry* telemetry,
+            int cursor)
+        {
+            if (string.IsNullOrEmpty(path) || telemetry == null)
+                return false;
+
+            try
+            {
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
                 {
-                    int index = cursor + i;
-                    if (index >= TelemetryCapacity)
-                        index -= TelemetryCapacity;
+                    writer.Write(BlackBoxMagic);
+                    writer.Write((uint)TelemetryCapacity);
+                    writer.Write(BlackBoxEntrySizeBytes);
+                    writer.Write((uint)0u);
 
-                    ContentAuthorityTelemetryEntry entry = telemetry[index];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.FocusHash);
-                    writer.Write(entry.PendingLoads);
-                    writer.Write(entry.HologramsActive);
-                    writer.Write(entry.BundleRefCount);
-                    writer.Write(entry.EstimatedVramBytes);
-                    writer.Write(entry.VramPressure01);
-                    writer.Write(entry.RamPressure01);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.Reserved0);
-                    writer.Write(entry.Reserved1);
-                    writer.Write(entry.Reserved2);
-                    writer.Write(entry.Reserved3);
-                    writer.Write(entry.Reserved4);
+                    for (int i = 0; i < TelemetryCapacity; i++)
+                    {
+                        int index = cursor + i;
+                        if (index >= TelemetryCapacity)
+                            index -= TelemetryCapacity;
+
+                        ContentAuthorityTelemetryEntry entry = telemetry[index];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.FocusHash);
+                        writer.Write(entry.PendingLoads);
+                        writer.Write(entry.HologramsActive);
+                        writer.Write(entry.BundleRefCount);
+                        writer.Write(entry.EstimatedVramBytes);
+                        writer.Write(entry.VramPressure01);
+                        writer.Write(entry.RamPressure01);
+                        writer.Write(entry.StateHash);
+                        writer.Write(entry.Reserved0);
+                        writer.Write(entry.Reserved1);
+                        writer.Write(entry.Reserved2);
+                        writer.Write(entry.Reserved3);
+                        writer.Write(entry.Reserved4);
+                    }
                 }
+
+                return true;
+            }
+            catch (Exception exception) when (
+                exception is IOException ||
+                exception is UnauthorizedAccessException ||
+                exception is NotSupportedException ||
+                exception is ArgumentException)
+            {
+                LogBlackBoxDumpFailure(path, exception);
+                return false;
             }
         }
 
         private static string ResolveBlackBoxDumpPath()
         {
-            string projectPath = Path.Combine(Directory.GetCurrentDirectory(), BlackBoxRelativePath);
-            string projectDirectory = Path.GetDirectoryName(projectPath);
-            if (!string.IsNullOrEmpty(projectDirectory) && Directory.Exists(projectDirectory))
-                return projectPath;
+            try
+            {
+                string projectPath = Path.Combine(Directory.GetCurrentDirectory(), BlackBoxRelativePath);
+                string projectDirectory = Path.GetDirectoryName(projectPath);
+                if (!string.IsNullOrEmpty(projectDirectory) && Directory.Exists(projectDirectory))
+                    return projectPath;
+            }
+            catch (Exception exception) when (
+                exception is IOException ||
+                exception is UnauthorizedAccessException ||
+                exception is NotSupportedException ||
+                exception is ArgumentException)
+            {
+                LogBlackBoxPathFailure(exception);
+            }
 
-            string fallbackDirectory = Application.persistentDataPath;
-            return string.IsNullOrEmpty(fallbackDirectory)
-                ? BlackBoxFallbackFileName
-                : Path.Combine(fallbackDirectory, BlackBoxFallbackFileName);
+            return ResolvePersistentBlackBoxDumpPath();
+        }
+
+        private static string ResolvePersistentBlackBoxDumpPath()
+        {
+            try
+            {
+                string fallbackDirectory = Application.persistentDataPath;
+                return string.IsNullOrEmpty(fallbackDirectory)
+                    ? BlackBoxFallbackFileName
+                    : Path.Combine(fallbackDirectory, BlackBoxFallbackFileName);
+            }
+            catch (Exception exception) when (
+                exception is IOException ||
+                exception is UnauthorizedAccessException ||
+                exception is NotSupportedException ||
+                exception is ArgumentException)
+            {
+                LogBlackBoxPathFailure(exception);
+                return BlackBoxFallbackFileName;
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPendingLoadCountCorruption()
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Pending load vault count exceeded fixed capacity; cleared pending-load ledger.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogBlackBoxDumpFailure(string path, Exception exception)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Failed to write content blackbox dump: " +
+                           path + " error=" + exception.Message);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogBlackBoxPathFailure(Exception exception)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Failed to resolve content blackbox dump path: " +
+                           exception.Message);
         }
 
         private static bool IsFinite(float value)

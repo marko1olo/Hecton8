@@ -201,7 +201,7 @@ float3 HectonCoreLitSanitizePositionOS(float3 positionOS)
 
 void HectonCoreLitUnpackHullDent(float packedRadiusDepth, out float radius, out float depth)
 {
-    float safePacked = max(0.0, packedRadiusDepth);
+    float safePacked = isfinite(packedRadiusDepth) ? max(0.0, packedRadiusDepth) : 0.0;
     float depthQ = floor(safePacked * rcp(256.0));
     float radiusQ = safePacked - depthQ * 256.0;
     radius = max(radiusQ * 0.0625, 0.001);

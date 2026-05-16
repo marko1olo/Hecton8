@@ -148,3 +148,117 @@ Current validation:
 - Brace counts: `Hecton_WaterExtinction.hlsl` 12/12, `Hecton8_UberNoir.hlsl` 61/61, `Hecton_NoirDepthFog.shader` 13/13, `Hecton_ScooterVolumetricShafts.shader` 89/89.
 - Scoped `git diff --check` passed with CRLF warnings only.
 - Latest dotnet build still exits 0 with 0 warnings and 0 errors. Dump: `Docs/AgentLogs/Dump_EXTINCTION_LUT_SAMPLER_Build.txt`.
+
+## 2026-05-16 Sixth-Pass DataVault / Blackbox Polish
+What was wrong:
+- `HectonUberNoirRuntimeBridge` still owned direct shader-global writes for `_HectonUberNoirRuntimeParams` and `_HectonActiveShaderFeatureMask`.
+- The shader-runtime blackbox path dumped only `Dump_UBER_NOIR_INTEGRATOR.bin`; this prompt required an EXTINCTION-named dump artifact on fault.
+
+What was done:
+- Added UberNoir runtime and feature-mask slots to `HectonShaderGlobalDataVaultBridge`.
+- Routed dirty-flagged UberNoir runtime uploads through `HectonShaderGlobalDataVaultBridge.PublishUberNoirRuntime(...)`.
+- Removed the direct shader property IDs from `HectonUberNoirRuntimeBridge`.
+- Preserved the existing 300-frame Pack=1 telemetry ring and mirrored fault dumps to both `Dump_UBER_NOIR_INTEGRATOR.bin` and `Dump_EXTINCTION_LUT_SAMPLER.bin`.
+- Re-ran C# compile after a concurrent external `ArchitectEyeVisualizer` compile wall cleared.
+
+Cinematic cheats used:
+- No new simulation. Beer-Lambert remains a packed LUT fake; the high-tier visual feature mask remains the gate for POM, caustics, refraction, wake silt, hull dents, and overkill diagnostics.
+
+Exact microseconds saved:
+- Exact profiler measurements remain unavailable; no Unity player/profiler run was executed.
+- Expected runtime delta for the bridge reroute: 0 us measured, with dirty-flag gating unchanged.
+- Fault dump mirror cost: 0 us in normal frames; file I/O occurs only after layout/non-finite/vault faults.
+
+Current validation:
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` exits 0 with 0 warnings and 0 errors. Dump: `Docs/AgentLogs/Dump_EXTINCTION_LUT_SAMPLER_Build.txt`.
+- `rg` finds no direct UberNoir runtime shader-global property IDs or direct UberNoir `Shader.SetGlobal*` calls in `HectonUberNoirRuntimeBridge.cs`; the remaining UberNoir write is centralized in `HectonShaderGlobalDataVaultBridge.cs`.
+- `rg` finds no `sampler_ExtinctionLUT`, `File.ReadAllBytes`, `downloadHandler.data`, `UnityWebRequest.Get`, or emissive `if` branch in the scoped extinction files.
+- Unity shader import, Android/Quest device staging, RenderDoc, GCMonitor, and player build validation remain pending.
+
+## 2026-05-16 Seventh-Pass Analytical Fallback / Single Bind Audit
+What was wrong:
+- The low-memory/mobile analytical fallback was selected by the C# resolver, but shader consumers did not consistently use an analytical extinction path when `_ExtinctionLUTRuntime.x` disabled the LUT. Post fog and scooter shafts could collapse to white/no-op extinction instead of the intended Dear-Lie Beer-Lambert look.
+- `LutArrayResolver` still bound `_ExtinctionLUT` on the disabled path through `Texture2D.blackTexture`, which weakened the "texture bound globally once" rule.
+- The status files overclaimed a current green C# compile after parallel non-rendering edits changed the disk state.
+
+What was done:
+- Added shared analytical Beer-Lambert resolve helpers in `Hecton_WaterExtinction.hlsl`, with finite depth clamps, turbidity floor, `exp2` attenuation, and an explicit inactive early return before any LUT sample call.
+- Routed UberNoir, NoirDepthFog, and ScooterVolumetricShafts through `H8WaterExtinctionResolveRgbByWorld` / `H8WaterExtinctionResolveRgbByDepthMeters`.
+- Changed the disabled-path resolver publish to `PublishWaterExtinctionAnalyticalFallback()` and removed the black-texture `_ExtinctionLUT` bind. The only remaining `_ExtinctionLUT` bind is the real loaded texture path in `LutArrayResolver`.
+- Re-ran scoped shader brace checks, binding scans, debt scans, git whitespace checks, domain shader thread-group audit, and dotnet compile.
+
+Cinematic cheats used:
+- Toaster/mobile mode now uses an ALU Beer-Lambert fake instead of uploading or sampling the 32 MiB LUT under pressure.
+- High tier keeps the packed LUT path for per-pixel material color, post fog, and scooter volumetric shafts.
+- No raymarch, no Texture3D-only dependency, no compute prefilter, no sampled `lerp` fallback, and no emissive branch were added.
+
+Exact microseconds saved:
+- Exact profiler measurements remain unavailable; no Unity player/profiler run was executed.
+- Expected fallback hot-path change: texture bandwidth is removed when LUT inactive; cost is a small ALU block and `exp2` per sampled point.
+- Expected cold-memory change: fallback mode avoids the 33,554,432 byte LUT upload path entirely; normal LUT upload still uses the 131,072 byte scratch staging path.
+- Prior microsecond values remain estimates, not measurements: LOW vertex sampling saves 40-140 us/frame versus broad per-pixel object LUT sampling; packed LUT fake saves 80-250 us/frame versus an 8-step raymarch.
+
+Current validation:
+- Brace counts pass: `Hecton_WaterExtinction.hlsl` 20/20, `Hecton8_UberNoir.hlsl` 63/63, `Hecton_NoirDepthFog.shader` 13/13, `Hecton_ScooterVolumetricShafts.shader` 89/89.
+- `_ExtinctionLUT` bind scan shows one real `Shader.SetGlobalTexture(_ExtinctionLutId, _extinctionTexture)` call, no `Texture2D.blackTexture` fallback bind, and no `lerp(analytical, sampledLut, active)` resolve path.
+- Scoped debt scan finds no `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `File.ReadAllBytes`, `downloadHandler.data`, `UnityWebRequest.Get`, `StartCoroutine`, local `new NativeArray`, local `new NativeList`, `EventBus`, `Action<>`, `Func<>`, `sampler_ExtinctionLUT`, or emissive `if` branch in the scoped extinction files.
+- Domain shader thread-group audit found no literal `numthreads` product above 1024 in `Assets/_Project/Art/Shaders`.
+- `git diff --check` passes on scoped files with CRLF warnings only.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` fails with 12 external non-rendering errors in `GameBootstrapper`, `PlayerTool`, `PlayerToolManager`, `PlayerNoiseEmitter`, `FluidFeedbackListener`, and `GlobalSignals`. Dump: `Docs/AgentLogs/Dump_EXTINCTION_LUT_SAMPLER_Build.txt`.
+- I am not marking VERIFIED MASTER GRADE. The current disk build is blocked by external errors and Unity runtime/profiler/player validation remains pending.
+
+## 2026-05-16 Eighth-Pass Compile-Seam Repair / Current Validation
+What was wrong:
+- The prior build dump was stale. After parallel work, the old 12-error wall cleared, but the current build exposed 23 active errors.
+- `DiegeticGyroCompassRuntime` had stale references to deleted private `_lastActualAup`, `_hasLastActualAup`, and `_blackBoxCursor` fields even though compass state now lives in vault-owned `CompassStateDTO`.
+- `EcosystemDirector` passed vault wrapper structs into generic unsafe pointer/upload APIs; C# 9 does not use implicit conversions for generic type inference there.
+
+What was done:
+- Patched `DiegeticGyroCompassRuntime` so velocity history uses `CompassStateDTO.PreviousActualAUP` plus `FlagHasPreviousAup`.
+- Patched compass blackbox writes/dumps to use `CompassStateDTO.BlackBoxCursor`.
+- Patched high-tier compass failure VFX to pass the current `CompassStateDTO` into `ShouldUseVisualOverkill`.
+- Patched `EcosystemDirector` unsafe pointer and graphics-buffer upload calls to resolve vault wrappers to explicit `NativeArray<T>` and specify generic element types.
+- Re-ran stale-reference scans, scoped `git diff --check`, and dotnet compile validation.
+
+Cinematic cheats used:
+- No new simulation, raymarch, particle truth, or physical water/light work was added.
+- Existing visual fake ladder remains unchanged: analytical Beer-Lambert on fallback/mobile, packed LUT on active material/post/shaft paths.
+
+Exact microseconds saved:
+- Exact profiler measurements remain unavailable; no Unity player/profiler run was executed.
+- Expected hot-path delta from compile-seam repairs: 0 us. These edits restore typed access to existing vault-owned state and GPU upload buffers; they add no per-frame allocation, file I/O, or extra shader sampling.
+- Prior extinction estimates remain estimates, not measurements: LOW vertex sampling saves 40-140 us/frame versus broad per-pixel object LUT sampling; packed LUT fake saves 80-250 us/frame versus an 8-step raymarch.
+
+Current validation:
+- `rg` finds no deleted compass `_blackBoxCursor`, `_hasLastActualAup`, or `_lastActualAup` fields; no no-arg `ShouldUseVisualOverkill()` call remains.
+- `rg` finds no untyped ecosystem `GetUnsafeBufferPointerWithoutChecks(_...)`, `GetUnsafeReadOnlyPtr(_...)`, or `_floraPredatorAupUpload` generic inference call.
+- Scoped `git diff --check` passes with CRLF warnings only.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` exits 0 with 0 warnings and 0 errors. Dump: `Docs/AgentLogs/Dump_EXTINCTION_LUT_SAMPLER_Build.txt`.
+- Unity shader import, Android/Quest device staging, RenderDoc, GCMonitor, Memory Profiler, player build, and visual capture remain pending. I am not claiming those from dotnet.
+
+## 2026-05-16 Ninth-Pass Unity Import / Bucketing Cycle Repair
+What was wrong:
+- Unity 6000.4.1f1 batch import was not validated. The first real import attempt failed before shader validation.
+- One failure belonged to code this workstream had already touched: `ModuloSimulationBucketer.Initialize(int)` referenced `GlobalRegistry` from `Hecton8.Core.Bucketing`, but `Hecton8.Core` references `Hecton8.Core.Bucketing`, creating a Unity asmdef cycle.
+- Parallel non-rendering work also changed the current compile state; the latest dotnet dump is no longer green.
+
+What was done:
+- Ran Unity batchmode import with logs written to `Docs/AgentLogs/Unity_EXTINCTION_LUT_SAMPLER_Import.log`.
+- Patched `ModuloSimulationBucketer.Initialize(int)` to reuse an injected `_dataVault` instead of touching `GlobalRegistry`.
+- Patched `GameBootstrapper.EnsureSimulationBucketerRegistered()` to inject `GlobalRegistry.DataVault` through the concrete cold bootstrap overload.
+- Re-ran Unity batchmode import with `Docs/AgentLogs/Unity_EXTINCTION_LUT_SAMPLER_Import_AfterBucketer.log`.
+
+Cinematic cheats used:
+- No new simulation. Extinction remains a Beer-Lambert fake: analytical ALU fallback on low-memory/mobile, packed LUT on active middle/high/ultra material/post/shaft paths.
+- No raymarch, no Texture3D-only path, no emissive branch, no sampled fallback `lerp`, and no extra texture bind were added.
+
+Exact microseconds saved:
+- Exact profiler measurements remain unavailable; no Unity player/profiler run was executed.
+- Bucketing asmdef cycle repair expected runtime delta: 0 us. It changes cold bootstrap injection only.
+- Existing extinction estimates remain estimates, not measurements: LOW vertex sampling saves 40-140 us/frame versus broad per-pixel object LUT sampling; packed LUT fake saves 80-250 us/frame versus an 8-step raymarch; global bind avoids 5-40 us/frame of material-loop style churn in material-heavy scenes.
+
+Current validation:
+- `Hecton8.Core.Bucketing.dll` now compiles during Unity import and copies to `Library/ScriptAssemblies`.
+- Unity import still exits 1. Current blocking errors are external to extinction: `Assets/_Project/Scripts/Audio/Virtualization/AudioVirtualizationJobs.cs` assembly/reference errors and `_Project/Editor` missing-reference errors in `HectonDevToolsMenu`, `HectonRenderPipelineValidator`, `HectonSurfacePainter`, `RockDataBakerWindow`, and `SaveSlotManagerWindow`.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` exits 1 on external `SargassumMicroFaunaBoids` and `TetherInstance` errors. Dump: `Docs/AgentLogs/Dump_EXTINCTION_LUT_SAMPLER_Build.txt`.
+- Runtime/profiler/player validation remains pending. I am not marking VERIFIED MASTER GRADE while the current disk build and Unity import are blocked.

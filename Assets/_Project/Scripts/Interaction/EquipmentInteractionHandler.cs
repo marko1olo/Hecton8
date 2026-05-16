@@ -1,6 +1,7 @@
 using Hecton8.Caves;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.World;
@@ -55,10 +56,10 @@ namespace Hecton8.Interaction
         private readonly bool[] _queuedHasPlatformLocalHit = new bool[MaxQueuedSignals];
 
         private NativeQueue<InteractionSignal> _signalQueue;
-        private NativeArray<RaycastCommand> _scheduledCommands;
-        private NativeArray<RaycastHit> _scheduledHits;
-        private NativeArray<RaycastCommand> _stagingCommands;
-        private NativeArray<RaycastHit> _stagingHits;
+        private IDataVault _dataVault;
+        private VaultBufferHandle<RaycastCommand> _scheduledCommandsHandle;
+        private VaultBufferHandle<RaycastHit> _scheduledHitsHandle;
+        private VaultBufferHandle<RaycastCommand> _stagingCommandsHandle;
         private JobHandle _scheduledRaycastHandle;
         private int _queueHead;
         private int _queueTail;
@@ -74,6 +75,7 @@ namespace Hecton8.Interaction
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
+        private bool _scheduledRaycastVaultLocked;
 
         internal static EquipmentInteractionHandler ActiveRuntimeInstance { get; private set; }
 
@@ -209,34 +211,17 @@ namespace Hecton8.Interaction
                 PrewarmQueue(ref _signalQueue, MaxQueuedSignals);
             }
 
-            if (!_scheduledCommands.IsCreated)
+            if (EnsureRaycastBufferHandles())
             {
-                _scheduledCommands = new NativeArray<RaycastCommand>(MaxQueuedRayRequests, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[64] - scheduled tool raycast lane - owner: EquipmentInteractionHandler
-                NativeMemorySentinel.RegisterNativeArray(
-                    _scheduledCommands,
-                    nameof(EquipmentInteractionHandler),
-                    nameof(_scheduledCommands),
-                    NativeAllocationLifetime.Session);
-                _scheduledHits = new NativeArray<RaycastHit>(MaxQueuedRayRequests, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[64] - scheduled tool raycast results - owner: EquipmentInteractionHandler
-                NativeMemorySentinel.RegisterNativeArray(
-                    _scheduledHits,
-                    nameof(EquipmentInteractionHandler),
-                    nameof(_scheduledHits),
-                    NativeAllocationLifetime.Session);
-                _stagingCommands = new NativeArray<RaycastCommand>(MaxQueuedRayRequests, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[64] - writable tool raycast staging lane - owner: EquipmentInteractionHandler
-                NativeMemorySentinel.RegisterNativeArray(
-                    _stagingCommands,
-                    nameof(EquipmentInteractionHandler),
-                    nameof(_stagingCommands),
-                    NativeAllocationLifetime.Session);
-                _stagingHits = new NativeArray<RaycastHit>(MaxQueuedRayRequests, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[64] - writable tool raycast staging results - owner: EquipmentInteractionHandler
-                NativeMemorySentinel.RegisterNativeArray(
-                    _stagingHits,
-                    nameof(EquipmentInteractionHandler),
-                    nameof(_stagingHits),
-                    NativeAllocationLifetime.Session);
-                ResetCommandLane(_scheduledCommands);
-                ResetCommandLane(_stagingCommands);
+                IDataVault vault = ResolveDataVault();
+                ResetCommandLaneLocked(
+                    vault,
+                    ref _scheduledCommandsHandle,
+                    BufferID.InteractionRaycastScheduledCommands);
+                ResetCommandLaneLocked(
+                    vault,
+                    ref _stagingCommandsHandle,
+                    BufferID.InteractionRaycastStagingCommands);
             }
         }
 
@@ -365,9 +350,6 @@ namespace Hecton8.Interaction
 
             _lastOverflowWarningFrame = currentFrame;
             GlobalTelemetryBus.PublishInteractionPacketOverflow(MaxInteractionPacketsPerFrame, _queueCount);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[EquipmentInteractionHandler] Interaction packet capacity exceeded. Excess packets were dropped for this frame.");
-#endif
         }
 
         private void TryRegisterToDispatcher()
@@ -744,21 +726,41 @@ namespace Hecton8.Interaction
 
         private void QueuePrimaryRaycast(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
         {
-            if (!_stagingCommands.IsCreated || !_stagingHits.IsCreated)
+            if (!EnsureRaycastBufferHandles())
                 return;
 
             int requestIndex = FindStagedRequestIndex(requesterId);
+            bool newRequest = requestIndex < 0;
             if (requestIndex < 0)
             {
                 if (_stagedRequestCount >= MaxQueuedRayRequests)
                     return;
 
                 requestIndex = _stagedRequestCount;
-                _stagingRequesterIds[_stagedRequestCount] = requesterId;
-                _stagedRequestCount++;
             }
 
-            _stagingCommands[requestIndex] = CreateRaycastCommand(origin, direction, range, layerMask, queryTriggerInteraction);
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || !vault.TryLockBuffer(_stagingCommandsHandle.BufferId))
+                return;
+
+            try
+            {
+                NativeArray<RaycastCommand> stagingCommands = _stagingCommandsHandle.Resolve(vault);
+                if (!stagingCommands.IsCreated || stagingCommands.Length < MaxQueuedRayRequests)
+                    return;
+
+                if (newRequest)
+                {
+                    _stagingRequesterIds[_stagedRequestCount] = requesterId;
+                    _stagedRequestCount++;
+                }
+
+                stagingCommands[requestIndex] = CreateRaycastCommand(origin, direction, range, layerMask, queryTriggerInteraction);
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(_stagingCommandsHandle.BufferId);
+            }
         }
 
         private bool TryGetCompletedRaycast(ulong requesterId, int currentFrame, out RaycastHit hit)
@@ -804,12 +806,22 @@ namespace Hecton8.Interaction
             if (!DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: false))
                 return;
 
+            if (!TryResolveScheduledRaycastBuffers(
+                    out NativeArray<RaycastCommand> scheduledCommands,
+                    out NativeArray<RaycastHit> scheduledHits))
+            {
+                UnlockScheduledRaycastVaultBuffers();
+                _scheduledRequestCount = 0;
+                _scheduledRaycastActive = false;
+                return;
+            }
+
             _completedResultCount = _scheduledRequestCount;
 
             for (int i = 0; i < _scheduledRequestCount; i++)
             {
-                RaycastCommand command = _scheduledCommands[i];
-                RaycastHit candidate = _scheduledHits[i];
+                RaycastCommand command = scheduledCommands[i];
+                RaycastHit candidate = scheduledHits[i];
                 int layerMask = command.queryParameters.layerMask;
                 _completedRequesterIds[i] = _scheduledRequesterIds[i];
                 _completedHasHit[i] = IsValidHit(command.from, command.direction, command.distance, layerMask, candidate);
@@ -828,7 +840,8 @@ namespace Hecton8.Interaction
 
             _scheduledRequestCount = 0;
             _scheduledRaycastActive = false;
-            ResetCommandLane(_scheduledCommands);
+            ResetCommandLane(scheduledCommands);
+            UnlockScheduledRaycastVaultBuffers();
         }
 
         private void ScheduleStagedRaycasts()
@@ -836,63 +849,212 @@ namespace Hecton8.Interaction
             if (_scheduledRaycastActive || _stagedRequestCount <= 0)
                 return;
 
-            int scheduledCount = _stagedRequestCount;
-            NativeArray<RaycastCommand> commandBatch = _stagingCommands.GetSubArray(0, scheduledCount);
-            NativeArray<RaycastHit> hitBatch = _stagingHits.GetSubArray(0, scheduledCount);
-            _scheduledRaycastHandle = RaycastCommand.ScheduleBatch(commandBatch, hitBatch, MinCommandsPerJob, default);
-            _scheduledRaycastActive = true;
-            _scheduledRequestCount = scheduledCount;
+            if (!EnsureRaycastBufferHandles())
+                return;
 
-            NativeArray<RaycastCommand> scheduledCommands = _scheduledCommands;
-            _scheduledCommands = _stagingCommands;
-            _stagingCommands = scheduledCommands;
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return;
 
-            NativeArray<RaycastHit> scheduledHits = _scheduledHits;
-            _scheduledHits = _stagingHits;
-            _stagingHits = scheduledHits;
+            bool stagingCommandsLocked = false;
+            bool scheduledCommandsLocked = false;
+            bool scheduledHitsLocked = false;
 
-            System.Array.Copy(_stagingRequesterIds, _scheduledRequesterIds, scheduledCount);
-            System.Array.Clear(_stagingRequesterIds, 0, scheduledCount);
+            try
+            {
+                if (!vault.TryLockBuffer(_stagingCommandsHandle.BufferId))
+                    return;
 
-            _stagedRequestCount = 0;
+                stagingCommandsLocked = true;
+
+                if (!vault.TryLockBuffer(_scheduledCommandsHandle.BufferId))
+                    return;
+
+                scheduledCommandsLocked = true;
+
+                if (!vault.TryLockBuffer(_scheduledHitsHandle.BufferId))
+                    return;
+
+                scheduledHitsLocked = true;
+
+                NativeArray<RaycastCommand> stagingCommands = _stagingCommandsHandle.Resolve(vault);
+                NativeArray<RaycastCommand> scheduledCommands = _scheduledCommandsHandle.Resolve(vault);
+                NativeArray<RaycastHit> scheduledHits = _scheduledHitsHandle.Resolve(vault);
+                if (!stagingCommands.IsCreated ||
+                    stagingCommands.Length < MaxQueuedRayRequests ||
+                    !scheduledCommands.IsCreated ||
+                    scheduledCommands.Length < MaxQueuedRayRequests ||
+                    !scheduledHits.IsCreated ||
+                    scheduledHits.Length < MaxQueuedRayRequests)
+                {
+                    return;
+                }
+
+                int scheduledCount = _stagedRequestCount;
+                ResetCommandLane(scheduledCommands);
+                for (int i = 0; i < scheduledCount; i++)
+                    scheduledCommands[i] = stagingCommands[i];
+
+                NativeArray<RaycastCommand> commandBatch = scheduledCommands.GetSubArray(0, scheduledCount);
+                NativeArray<RaycastHit> hitBatch = scheduledHits.GetSubArray(0, scheduledCount);
+                _scheduledRaycastHandle = RaycastCommand.ScheduleBatch(commandBatch, hitBatch, MinCommandsPerJob, default);
+                _scheduledRaycastActive = true;
+                _scheduledRequestCount = scheduledCount;
+                _scheduledRaycastVaultLocked = true;
+
+                System.Array.Copy(_stagingRequesterIds, _scheduledRequesterIds, scheduledCount);
+                System.Array.Clear(_stagingRequesterIds, 0, scheduledCount);
+                ResetCommandLane(stagingCommands);
+
+                _stagedRequestCount = 0;
+                scheduledCommandsLocked = false;
+                scheduledHitsLocked = false;
+            }
+            finally
+            {
+                if (stagingCommandsLocked)
+                    vault.TryUnlockBuffer(_stagingCommandsHandle.BufferId);
+
+                if (scheduledCommandsLocked)
+                    vault.TryUnlockBuffer(_scheduledCommandsHandle.BufferId);
+
+                if (scheduledHitsLocked)
+                    vault.TryUnlockBuffer(_scheduledHitsHandle.BufferId);
+            }
         }
 
         private void DisposeRaycastBuffers()
         {
-            if (_scheduledCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_scheduledCommands);
-                if (_scheduledRaycastActive)
-                    _scheduledCommands.Dispose(_scheduledRaycastHandle);
-                else
-                    _scheduledCommands.Dispose();
+            if (_scheduledRaycastActive)
+                DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: true);
 
-                _scheduledCommands = default;
+            UnlockScheduledRaycastVaultBuffers();
+            _scheduledCommandsHandle = default;
+            _scheduledHitsHandle = default;
+            _stagingCommandsHandle = default;
+            _dataVault = null;
+        }
+
+        private IDataVault ResolveDataVault()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                return vault;
+
+            vault = GlobalRegistry.DataVault;
+            _dataVault = vault;
+            return vault;
+        }
+
+        private bool EnsureRaycastBufferHandles()
+        {
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return false;
+
+            if (!EnsureRaycastBufferHandle(
+                    vault,
+                    ref _scheduledCommandsHandle,
+                    BufferID.InteractionRaycastScheduledCommands,
+                    MaxQueuedRayRequests))
+                return false;
+
+            if (!EnsureRaycastBufferHandle(
+                    vault,
+                    ref _scheduledHitsHandle,
+                    BufferID.InteractionRaycastScheduledHits,
+                    MaxQueuedRayRequests))
+                return false;
+
+            if (!EnsureRaycastBufferHandle(
+                    vault,
+                    ref _stagingCommandsHandle,
+                    BufferID.InteractionRaycastStagingCommands,
+                    MaxQueuedRayRequests))
+                return false;
+
+            return true;
+        }
+
+        private static bool EnsureRaycastBufferHandle<T>(
+            IDataVault vault,
+            ref VaultBufferHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength)
+            where T : struct
+        {
+            if (!handle.IsCreated ||
+                handle.BufferId != bufferId ||
+                handle.Length < requiredLength ||
+                !vault.ResolveBuffer(ref handle))
+            {
+                handle = vault.GetBufferHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    SystemID.GameplayTools,
+                    NativeArrayOptions.ClearMemory);
             }
 
-            if (_scheduledHits.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_scheduledHits);
-                if (_scheduledRaycastActive)
-                    _scheduledHits.Dispose(_scheduledRaycastHandle);
-                else
-                    _scheduledHits.Dispose();
+            return handle.IsCreated && handle.Length >= requiredLength;
+        }
 
-                _scheduledHits = default;
+        private bool TryResolveScheduledRaycastBuffers(
+            out NativeArray<RaycastCommand> scheduledCommands,
+            out NativeArray<RaycastHit> scheduledHits)
+        {
+            scheduledCommands = default;
+            scheduledHits = default;
+
+            if (!EnsureRaycastBufferHandles())
+                return false;
+
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return false;
+
+            scheduledCommands = _scheduledCommandsHandle.Resolve(vault);
+            scheduledHits = _scheduledHitsHandle.Resolve(vault);
+            return scheduledCommands.IsCreated &&
+                   scheduledCommands.Length >= MaxQueuedRayRequests &&
+                   scheduledHits.IsCreated &&
+                   scheduledHits.Length >= MaxQueuedRayRequests;
+        }
+
+        private void UnlockScheduledRaycastVaultBuffers()
+        {
+            if (!_scheduledRaycastVaultLocked)
+                return;
+
+            IDataVault vault = ResolveDataVault();
+            if (vault != null)
+            {
+                vault.TryUnlockBuffer(_scheduledCommandsHandle.BufferId);
+                vault.TryUnlockBuffer(_scheduledHitsHandle.BufferId);
             }
 
-            if (_stagingCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_stagingCommands);
-                _stagingCommands.Dispose();
-                _stagingCommands = default;
-            }
+            _scheduledRaycastVaultLocked = false;
+        }
 
-            if (_stagingHits.IsCreated)
+        private static void ResetCommandLaneLocked(
+            IDataVault vault,
+            ref VaultBufferHandle<RaycastCommand> handle,
+            BufferID bufferId)
+        {
+            if (vault == null || !handle.IsCreated || handle.BufferId != bufferId)
+                return;
+
+            if (!vault.TryLockBuffer(bufferId))
+                return;
+
+            try
             {
-                NativeMemorySentinel.UnregisterNativeArray(_stagingHits);
-                _stagingHits.Dispose();
-                _stagingHits = default;
+                NativeArray<RaycastCommand> commands = handle.Resolve(vault);
+                if (commands.IsCreated && commands.Length >= MaxQueuedRayRequests)
+                    ResetCommandLane(commands);
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(bufferId);
             }
         }
 

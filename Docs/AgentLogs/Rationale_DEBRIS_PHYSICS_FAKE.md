@@ -167,3 +167,75 @@ Rejected Alternatives: Repairing the full durability system from the debris prom
 Scalability potential: Debris scalability is unchanged: low stays 1024 no-wake/no-SDF, middle stays 4096 active dispatch, high/ultra stay 16,384 with wake/SDF/tumble/motion vectors.
 
 Hardware Impact: 0 us direct debris runtime impact. External compile drift blocks runtime profiling, so no new measured microsecond claims are made.
+
+## Decision 15 - Final Compile Green After External Wall Moved
+
+Problem: Task 18 was still marked blocked by external compile drift. A fresh compiler pass was required before claiming any final validation state.
+
+Solution: Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`. Current workspace compiled successfully to `Temp\bin\Debug\Hecton8.Core.dll` with 0 warnings and 0 errors. Task 18 can be marked done.
+
+Rejected Alternatives: Keeping the stale `[BLOCKED BY DEPENDENCY]` marker was rejected because current compiler evidence supersedes it. Claiming Unity runtime, Quest, Android, Metal, or profiler proof was rejected because this pass only proves the C# project compile gate.
+
+Scalability potential: Debris source remains tiered: low/MX350 uses 1024 shards with wake/SDF bypass; middle uses 4096 active-capacity dispatch; high/ultra use 16,384 shards with wake, SDF, shader tumble, motion vectors, and indirect rendering.
+
+Hardware Impact: 0 us directly saved by the compile gate. It removes validation blockage and allows actual Unity/profiler capture next; no measured runtime microseconds are claimed.
+
+## Decision 16 - Multiplatform Static Inquisition Recheck
+
+Problem: A later instruction required a fresh ARM64/Quest, Metal, Steam Deck I/O, H-Phi, signal lane, NaN, and blackbox audit after the prior compile-green entry. The status file only recorded the older 4.22s compile pass and did not show the newest targeted debris scan.
+
+Solution: Re-ran the DEBRIS XML extraction, re-ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`, and re-ran targeted debris scans for local native storage, instantiation, `GraphicsBuffer.SetData`, disabled motion vectors, standard `Update()`, string formatting, legacy bus traffic, managed delegates, and singleton debris access. The compile passed with 0 warnings and 0 errors in 58.78s. The static scan returned no forbidden debris-domain matches. Shader audit confirmed carve debris thread groups are 64 or 1, below the 1024 group ceiling.
+
+Rejected Alternatives: Reporting the older compile pass was rejected because the user explicitly requested current memory and no stale truth. Editing outside VFX/debris after a clean build was rejected because cross-domain compile defects are not currently present. Claiming Quest/Android/Metal/player build proof was rejected because only C# compile and static shader/source scans were run.
+
+Scalability potential: Low/MX350 remains 1024 shards with wake/SDF bypass and bounded signal ingestion. Middle remains 4096 active-capacity dispatch. High remains 16,384 shards with SDF, wake response, shader tumble, motion vectors, and indirect rendering. Ultra can spend the same GPU-only SoA path on denser material/detail work without adding producer CPU cost.
+
+Hardware Impact: Measured microsecond gain is still not claimed. Static risk reduction: no GameObject debris instantiate path in the audited debris target set; no hot-path `SetData` stall path; no private debris `NativeArray<T>` ownership fields; no shader thread-group above Metal/Quest limits.
+
+## Decision 17 - Shader Omega Mask Polish
+
+Problem: The static shader audit still found small normalization and basis-selection ternaries in carve debris shader code. These were not the expensive SDF/wake skip branches, so they could be removed without damaging MX350 behavior.
+
+Solution: Replaced debris shader safe-normalize ternaries with `step` + `lerp` + `rsqrt(max(lengthSq, epsilon))`. Replaced both forward and motion-vector debris basis-up selection ternaries with `step` + `lerp`. Replaced the dynamic wake low-tier slot-cap ternary with `step` + `lerp` while preserving the current shader-source wake capacity values. Re-ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`; it passed with 0 warnings and 0 errors in 5.61s.
+
+Rejected Alternatives: Removing the carve debris SDF/wake skip guard was rejected because it would execute `SampleAbyssalFlow`, `ApplyDynamicWakes`, or `IsSolidVoxel` on low-tier paths and violate the MX350 Dear Lie requirement. Removing finite-state ternaries was rejected because shader boolean-to-float casts are less portable than the current explicit NaN kill path.
+
+Scalability potential: Low remains protected from unnecessary wake/SDF work. Middle and High keep the same visible behavior with slightly more ALU-predictable normalization and basis construction. Ultra retains the same indirect draw and motion-vector path.
+
+Hardware Impact: No measured microsecond claim. Static improvement: removes branch-like helper selection in render/motion-vector basis and dynamic wake cap selection without expanding low-tier helper evaluation.
+
+## Decision 18 - High-Tier Debris Material Overkill
+
+Problem: The high tier had density, SDF bounce, wake response, shader tumble, and motion vectors, but the material response was still too close to the middle-tier shard look. The prompt explicitly requires spending saved cycles on high-end visual excess without charging MX350/Quest.
+
+Solution: Added a high-tier-only procedural crystal/strata mask in `Hecton_CarveDebrisIndirect.shader` using triangle-noise-style banding and hash masks. The high-tier fragment path perturbs normals, sharpens edge response, and adds a subtle crystal rim contribution. `CarveDebrisComputeRenderer` now resolves the high-tier flag once, binds it to the material, enables receive shadows on high tier, and forces shadow casting on high tier when the serialized debris shadow mode is Off.
+
+Rejected Alternatives: Adding texture assets, 16-tap POM, or full SSS immediately was rejected because Unity shader import is currently blocked externally and new assets would increase validation surface. Applying the effect to all tiers was rejected because low-tier must remain a Dear Lie. CPU-side shard material randomization was rejected because it violates the GPU-only shard path.
+
+Scalability potential: Low = unchanged cheap baseline, no crystal branch work beyond the tier test. Middle = unchanged 4096-shard path. High = denser 16,384 shards with extra material grain, edge sparkle, and shadows. Ultra = same hook can later feed POM/SSS texture detail once the project imports cleanly.
+
+Hardware Impact: No measured microseconds are claimed. Static impact is an intentional high-tier GPU ALU spend only; low-tier particle cap, wake/SDF bypass, and cheap material path remain unchanged.
+
+## Decision 19 - Unity Import Validation Wall
+
+Problem: `Hecton8.Core.csproj` passes with non-shared compilation, but that project does not include the debris assembly. Attempts to validate the actual Unity debris assembly hit external dependency walls before debris proof: `Assembly-CSharp.csproj` is missing RealtimeCSG source files, direct Bee debris compilation lacks valid generated refs, and Unity batch import fails in Audio/Editor asmdef/reference resolution.
+
+Solution: Recorded task 18 as `[BLOCKED BY DEPENDENCY]` for Unity import/player/shader validation while preserving the current core C# pass and debris static evidence. The Unity import log is kept at `Docs/AgentLogs/UnityImport_DEBRIS_PHYSICS_FAKE.log`. No runtime, platform-player, GPU profiler, or shader-import success is claimed.
+
+Rejected Alternatives: Faking completion from the core-only compile was rejected. Replacing Bee refs with incompatible dlls was rejected after duplicate `IDataVault`/`VaultBufferHandle<T>` types appeared. Repairing Audio, Editor tools, RealtimeCSG, or SaveSystem references from the debris prompt was rejected because those are outside the VFX/Debris domain and would collide with other agents.
+
+Scalability potential: Debris tier behavior remains intact by source: low/MX350 1024 shards with no wake/SDF, middle 4096 active-capacity dispatch, high/ultra 16,384 with wake/SDF/tumble/motion vectors and high-tier material overkill. Runtime platform proof is blocked until external assembly import is repaired.
+
+Hardware Impact: 0 us direct runtime change from this validation decision. It prevents false microsecond reporting and preserves a clean boundary for the integrator.
+
+## Decision 20 - Global Wake Param Mirror And Blackbox Wake Flag
+
+Problem: The carve debris compute shader now consumes the global wake array contract (`_GlobalWakeBuffer`, `_GlobalWakeVectors`, `_GlobalWakeParams`), but the renderer did not explicitly mirror `_GlobalWakeParams` into its compute dispatch. That risks stale zero wake params on backends where global compute state is not reliably visible, and the blackbox could not distinguish flow-field response from wake response.
+
+Solution: Added a debris-owned `_GlobalWakeParams` property ID, resolved the global wake params once per dispatch, clamped the slot limit to the shader's 16-slot capacity, and forced a zero-wake parameter block on low tier. Added `WakeActiveFlag` to the debris blackbox flags and reset `_blackBoxDumped` whenever the DataVault-backed telemetry ring is cleared.
+
+Rejected Alternatives: Copying `_GlobalWakeBuffer` and `_GlobalWakeVectors` into private debris arrays was rejected because it would duplicate wake data and violate the shared global lane. Reading global vector arrays back into C# was rejected because it would allocate or mirror data that another domain already owns. Forcing wakes on low tier was rejected because MX350/Quest must keep the Dear Lie path.
+
+Scalability potential: Low = no wake loop, explicit zero params. Middle = bounded 16-slot wake response only when the global wake publisher provides active slots. High/Ultra = debris shards can visibly react to wake turbulence while the blackbox records when that path was active.
+
+Hardware Impact: No measured microseconds are claimed. Static low-tier impact is preserved at zero wake work. Middle/high add one scalar global-param read on CPU and one compute uniform set; the wake loop remains bounded to 16 slots and only runs off low tier.

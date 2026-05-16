@@ -25,7 +25,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-102)]
-    public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, IFixedTickable, ILateFrameTickable, IOriginShiftListener, IThermodynamicsService, IRandomEventListener, ILaserCutterEventListener
+    public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, IFixedTickable, ILateFrameTickable, IOriginShiftListener, IThermodynamicsService, IRandomEventListener, global::Hecton8.Gameplay.ILaserCutterEventListener
     {
         public struct ThermalFlowSample
         {
@@ -3624,9 +3624,9 @@ namespace Hecton8.World
         /// Receives deferred laser cutter beam-state events used for abyssal cable cutting.
         /// </summary>
         /// <param name="payload">Blittable cutter event payload.</param>
-        public void OnLaserCutterEvent(in LaserCutterEventPayload payload)
+        public void OnLaserCutterEvent(in global::Hecton8.Core.Contracts.Signals.LaserCutterEventPayload payload)
         {
-            if ((LaserCutterEventType)payload.EventType != LaserCutterEventType.BeamStateChanged)
+            if ((global::Hecton8.Core.Contracts.Signals.LaserCutterEventType)payload.EventType != global::Hecton8.Core.Contracts.Signals.LaserCutterEventType.BeamStateChanged)
                 return;
 
             bool isActive = LaserCutterEvents.IsBeamActive(in payload);

@@ -36,7 +36,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Queue payload raised when the platform scalability profile changes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 2)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 2)]
     public readonly struct ScalabilityChangedEvent
     {
         public ScalabilityChangedEvent(byte previousTier, byte currentTier)

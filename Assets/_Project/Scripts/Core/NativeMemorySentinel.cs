@@ -25,7 +25,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable source descriptor for deterministic replay snapshot capture.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct NativeAllocationSnapshotSource
     {
         /// <summary>Raw pointer to a stable pointer-backed native allocation.</summary>
@@ -83,7 +83,7 @@ namespace Hecton8.Core
         private static readonly uint _staleBufferCrimeHash = unchecked((uint)LocHash.Compute(StaleBufferCrimePrefix));
         private static readonly uint _persistentFragmentationRiskHash = unchecked((uint)LocHash.Compute(PersistentFragmentationRiskPrefix));
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct NativeAllocationRecord
         {
             public int Id;
@@ -100,7 +100,7 @@ namespace Hecton8.Core
             public string StackTrace;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct PersistentReallocationRecord
         {
             public string Owner;

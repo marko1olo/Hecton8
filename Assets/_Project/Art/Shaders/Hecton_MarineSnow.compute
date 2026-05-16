@@ -24,8 +24,8 @@ StructuredBuffer<SiltParticle> _MarineSnowParticlesRead;
 RWStructuredBuffer<SiltParticle> _MarineSnowParticlesWrite;
 StructuredBuffer<float2> _MarineSnowFlowField;
 StructuredBuffer<float4> _AbyssalFlowFieldResult;
-StructuredBuffer<float4> _DynamicWakes;
-StructuredBuffer<float4> _DynamicWakeVectors;
+float4 _GlobalWakeBuffer[16];
+float4 _GlobalWakeVectors[16];
 StructuredBuffer<float4> _MarineSnowMaelstroms;
 Texture3D<float4> _AbyssalFlowFieldTexture;
 SamplerState sampler_AbyssalFlowFieldTexture;
@@ -85,7 +85,7 @@ float4 _HectonSubmarineWashSphere;
 float4 _HectonSubmarineWashVelocity;
 float4 _HectonFloatingOriginOffset;
 float4 _AupShiftOffset;
-float4 _DynamicWakeParams;
+float4 _GlobalWakeParams;
 float4 _HectonFlashlightPositionWS;
 float4 _HectonFlashlightDirectionWS;
 float4 _HectonFlashlightColor;
@@ -354,22 +354,25 @@ float3 SafeNormalize3(float3 value)
     return value * rsqrt(max(magnitudeSq, EPSILON));
 }
 
-float3 ResolveDynamicWakeFlow(float3 positionWS)
+float3 ResolveGlobalWakeFlow(float3 positionWS)
 {
-    uint slotLimit = (uint)min(max(_DynamicWakeParams.x, 0.0), (float)8.0);
-    if (slotLimit == 0u || _DynamicWakeParams.z <= 0.5)
+    uint rawSlotLimit = (uint)min(max(_GlobalWakeParams.x, 0.0), 16.0);
+    uint slotLimit = _GlobalWakeParams.y > 0.5
+        ? min(rawSlotLimit, 4u)
+        : rawSlotLimit;
+    if (slotLimit == 0u || _GlobalWakeParams.z <= 0.5)
         return float3(0.0, 0.0, 0.0);
 
-    float lowTier = step(0.5, _DynamicWakeParams.y);
+    float lowTier = step(0.5, _GlobalWakeParams.y);
     float3 flow = float3(0.0, 0.0, 0.0);
     [loop]
-    for (uint wakeIndex = 0u; wakeIndex < 8u; wakeIndex++)
+    for (uint wakeIndex = 0u; wakeIndex < 16u; wakeIndex++)
     {
         if (wakeIndex >= slotLimit)
             break;
 
-        float4 wake = _DynamicWakes[wakeIndex];
-        float4 wakeVector = _DynamicWakeVectors[wakeIndex];
+        float4 wake = _GlobalWakeBuffer[wakeIndex];
+        float4 wakeVector = _GlobalWakeVectors[wakeIndex];
         float radius = max(wakeVector.w, 0.001);
         float radiusSq = radius * radius;
         float3 fromWake = positionWS - wake.xyz;
@@ -1014,19 +1017,20 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float timeBase = simulationTime * 0.15 + index * 0.0001;
     float2 wander = float2(
         HashSin(float2(timeBase, particle.Pos.z * 0.4)),
-        HashSin(float2(timeBase + 31.7, particle.Pos.x * 0.4))) * _MarineSnowDriftParams.z;
+        HashSin(float2(timeBase + 31.7, particle.Pos.x * 0.4))) * 2.0 - 1.0;
+    wander *= _MarineSnowDriftParams.z;
 
     float targetVerticalVelocity = isBubble ? max(0.02, baseDescent) : -baseDescent;
     particle.Vel.y = lerp(particle.Vel.y, targetVerticalVelocity, saturate(dt * 4.0));
     particle.Vel.xz += wander;
 
-    bool flowAdvectionEnabled = _MarineSnowScalabilityParams.x > 0.5 || _DynamicWakeParams.z > 0.5;
+    bool flowAdvectionEnabled = _MarineSnowScalabilityParams.x > 0.5 || _GlobalWakeParams.z > 0.5;
     float3 synchronizedFlow = float3(0.0, 0.0, 0.0);
     if (flowAdvectionEnabled)
     {
         float3 flowSample = ResolveFlowField(particle.Pos, index);
-        float3 dynamicWakeFlow = ResolveDynamicWakeFlow(particle.Pos);
-        flowSample += dynamicWakeFlow;
+        float3 globalWakeFlow = ResolveGlobalWakeFlow(particle.Pos);
+        flowSample += globalWakeFlow;
         float4 shallowWaterData = EvaluateShallowWaterFieldData(particle.Pos);
         float2 shallowWaterVelocity = DecodeShallowWaterVelocity(shallowWaterData.xy);
         float shallowWaterDisplacement = saturate(shallowWaterData.z);

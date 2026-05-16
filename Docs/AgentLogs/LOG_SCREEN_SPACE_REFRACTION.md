@@ -9,7 +9,7 @@ Exact Microseconds saved: Pending measurement; no runtime code changed yet.
 
 ## 2026-05-16 - Screen-Space Snell Refraction Core
 
-What was wrong: Visor glass relied on fabricated scene color or the old fullscreen blit path. It did not have a shared low-cost Snell approximation, an IOR LUT, explicit `_CameraOpaqueTexture` refraction, depth rejection, or dirt-gated intensity. Full verification was impossible because the shared project currently fails in unrelated core/fauna/AI/animation/VFX files.
+What was wrong: Visor glass relied on fabricated scene color or the old fullscreen blit path. It did not have a shared low-cost Snell approximation, an IOR LUT, explicit `_CameraOpaqueTexture` refraction, depth rejection, or dirt-gated intensity. Full verification was impossible at that checkpoint because the shared project failed in unrelated core/fauna/AI/animation/VFX files.
 
 What was done: Added `Assets/_Project/Art/Shaders/Post/Hecton_SnellRefractionCore.hlsl`; updated `SuitVisor.shader` to sample `_CameraOpaqueTexture`, use depth-buffer foreground rejection, clamp UV offsets, apply inverse dirt masks, and fall back to chromatic-only low-tier refraction; updated `Hecton_VisorFluidDistortion.shader` with opaque/depth sampling, droplet-mask Snell offsets, and chromatic fallback; migrated `HectonVisorFluidDistortionFeature.cs` from `AddBlitPass` to `AddRasterRenderPass`, binding `_BlitTexture`, `_CameraDepthTexture`, and `_CameraOpaqueTexture` explicitly.
 
@@ -91,4 +91,76 @@ Cinematic Cheats used: No new physical simulation. This protects the existing ch
 
 Exact Microseconds saved: 0 us certified. CPU adds two finite checks when the player camera is evaluated; GPU adds small helper ALU. Exact CPU/GPU us pending Unity profiler.
 
-Build/validation: Stale-pattern scan found no old raw Snell LUT/depth/clamp path. Forbidden-pattern scan still finds no `NativeArray`, `EventBus`, managed delegate lane, `Update`, `string.Format`, Unity object search, singleton `.Instance`, `GrabPass`, `RenderGraphUtils`, `AddBlitPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files. `git diff --check` reports no whitespace errors, only LF/CRLF warnings. Latest `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:ContinuousIntegrationBuild=false -p:EnableSourceControlManagerQueries=false -v:minimal -clp:Summary` is blocked outside this domain with 22 errors in `SubmarineFluidDynamics.cs(614-635)`: `VaultNativeBuffer<>` type not found.
+Build/validation: Stale-pattern scan found no old raw Snell LUT/depth/clamp path. Forbidden-pattern scan still finds no `NativeArray`, `EventBus`, managed delegate lane, `Update`, `string.Format`, Unity object search, singleton `.Instance`, `GrabPass`, `RenderGraphUtils`, `AddBlitPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files. `git diff --check` reports no whitespace errors, only LF/CRLF warnings. That build retry was blocked outside this domain with 22 errors in `SubmarineFluidDynamics.cs(614-635)`: `VaultNativeBuffer<>` type not found.
+
+## 2026-05-16 - Shader Vector Global Guard
+
+What was wrong: The fullscreen visor shader finite-guarded many scalar gates, but still read `_HectonVisorFluidLocalVelocity`, `_HectonScreenSpaceRainParams`, and `_GlobalWind` directly before droplet flow, silt drift, rain density/exposure, and wind `rsqrt` math. A bad vector global could still contaminate UV offsets or rain overlay math on mobile/Metal GPUs.
+
+What was done: Added `ResolveFinite4`, resolved local velocity once in `Frag`, and passed that finite value into droplet, silt, and refraction offset functions. Rain params and global wind now resolve to stable fallback vectors before density, area scale, exposure, wind speed, and wind direction math. No new texture, buffer, render pass, signal lane, file I/O, or managed allocation was added.
+
+Cinematic Cheats used: The refraction still uses the cheap screen-space Snell approximation, low-tier chromatic fallback, inverse dirt/depth gates, procedural salt crystals, and screen-space silt shimmer. Invalid motion/rain vectors now collapse to a controlled fake instead of trying to simulate or recover physical state.
+
+Exact Microseconds saved: 0 us certified. CPU cost remains 0.0 us/frame. GPU adds a small finite-check boundary around vector globals; exact GPU microseconds require Unity profiler after the shared build clears.
+
+Build/validation: Vector-global scan shows `_HectonVisorFluidLocalVelocity`, `_HectonScreenSpaceRainParams`, and `_GlobalWind` are now read through `ResolveFinite4` before flow/rain math. Forbidden-pattern scan returns no `NativeArray`, `EventBus`, managed delegate lane, `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, Unity object search, singleton `.Instance`, `AddBlitPass`, `RenderGraphUtils`, `GrabPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files. A C# build pass after the vector guard was blocked outside this domain with 17 errors, first in `PredatorCognitionDomain.cs` (`NativeArray<float3>.Clear`, `AsParallelWriter`, missing `_speciesTuningById`) and `DroneFleetManager.cs` (`double3` to `float3` conversion).
+
+## 2026-05-16 - Shared Build Lock Retry
+
+What was wrong: After the documentation closure, the newest `dotnet build` retries failed before C# compilation because `Temp/obj/Hecton8.Core/Hecton8.Core.sourcelink.json` is locked by another build process.
+
+What was done: Retried the same build once after a short wait, then queried active `dotnet.exe` processes. Multiple concurrent `dotnet build Hecton8.Core.csproj` commands were observed in the shared workspace. I did not kill them and did not delete `Temp/obj`.
+
+Cinematic Cheats used: None. This was validation infrastructure only; runtime cheats remain screen-space Snell, low-tier chromatic fallback, depth/dirt masks, salt-crystal ALU, and silt shimmer.
+
+Exact Microseconds saved: 0 us measured. The lock has no runtime impact. Exact visor CPU/GPU microseconds remain pending profiler.
+
+Build/validation: That command failed with 0 warnings and 1 error at `Microsoft.SourceLink.Common.targets(56,5)`: cannot write `Temp/obj/Hecton8.Core/Hecton8.Core.sourcelink.json` because another process held the file. Previous static scans remained clean.
+
+## 2026-05-16 - Full Visor Scalar Guard
+
+What was wrong: Vector globals were guarded, but scalar shader globals in the mesh visor and fullscreen fluid pass could still enter HUD/foveation/glitch/distortion/refraction math as NaN before the final color or UV clamps.
+
+What was done: `SuitVisor.shader` now resolves HECTON HUD fog/frost, suit-health glitch, VR comfort, foveation, stress vignette, HUD focus blur, and visual-static seed through finite helpers. `Hecton_VisorFluidDistortion.shader` now guards droplet scale, runoff speed, edge exponent, lateral/forward/edge strengths, fluid speed, distortion strength, depth softness, low-tier/homeostasis flags, Snell strength, water density, and ambient dust response through finite scalar helpers.
+
+Cinematic Cheats used: No physical simulation was added. Low-tier remains chromatic/dirt/depth fake; High/Ultra retain procedural salt crystals and silt shimmer, now with invalid controls collapsing to stable zero/fallback values.
+
+Exact Microseconds saved: 0 us certified. CPU cost is 0.0 us/frame. GPU cost is added finite-check ALU only; exact GPU microseconds require Unity profiler.
+
+Build/validation: Raw HECTON-global scan no longer finds direct `saturate(_Hecton...)`, raw `_Hecton...xyz/w` access, or raw HECTON vector arithmetic in `SuitVisor.shader`; fullscreen fluid scalar knobs route through finite helpers. Forbidden-pattern scan is clean for touched files. That build retry reached C# and failed outside this domain with 0 warnings and 1 error: `TetherManager.cs(266,58) CS0426 TetherFireRequest does not exist in TetherSignals`.
+
+## 2026-05-16 - Shared Finite Helper Consolidation
+
+What was wrong: The NaN guard pass left two local helper families in the visor shaders. Functionally acceptable, but fragile: shared Snell refraction should not depend on duplicated local finite-guard code.
+
+What was done: Added `HectonFiniteValue`, `HectonFiniteNonNegative`, and `HectonFinite4` to `Hecton_SnellRefractionCore.hlsl`. Removed the local finite helper implementations from `Hecton_VisorFluidDistortion.shader` and `SuitVisor.shader`; both shaders now call the shared helpers.
+
+Cinematic Cheats used: No new simulation. This preserves the existing Dear Lie stack: low-tier chromatic fallback, bounded screen-space Snell, inverse dirt/depth gates, procedural salt crystals, and visor-space suspended silt.
+
+Exact Microseconds saved: 0 us certified. CPU cost is 0.0 us/frame. GPU instruction shape should inline to the same finite-check ALU; exact microseconds require Unity profiler.
+
+Build/validation: Stale helper scan finds no `ResolveFinite4`, `ResolveFiniteScalar`, `ResolveFiniteNonNegative`, `HectonResolveFinite4`, or `HectonResolveFiniteScalar`. Raw HECTON-global scan remained clean for targeted visor shader patterns. First build retry hit SourceLink file lock; SourceLink-disabled retry reached C# and failed outside VFX/POST with 0 warnings and 23 errors, first in `DiegeticGyroCompassRuntime.cs` and `EcosystemDirector.cs`. This was later superseded by the dynamic division guard build success.
+
+## 2026-05-16 - Dynamic Division Guard
+
+What was wrong: Some shader denominators were bounded by surrounding code but still expressed as direct `/` operations. That is weak evidence for the mobile NaN-vaccination rule.
+
+What was done: Converted dynamic divisions to guarded reciprocal math for screen texel size, sonar contact/fade timing, foveated quantization, droplet cell normalization, and fluid radial edge direction. Literal Bayer table divisions and fixed HUD-box normalization remain unchanged because their denominators are compile-time constants.
+
+Cinematic Cheats used: No new simulation. This keeps the same screen-space Snell, chromatic low-tier fake, depth/dirt masks, salt crystal fake, and visor-space silt shimmer.
+
+Exact Microseconds saved: 0 us certified. GPU instruction cost is equivalent reciprocal math; exact microseconds require Unity profiler.
+
+Build/validation: Dynamic slash scan now leaves only constants/comments/includes plus guarded `rcp`/`rsqrt` paths. Forbidden-pattern scan is clean for touched visor/refraction files. SourceLink-disabled `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:ContinuousIntegrationBuild=false -p:EnableSourceControlManagerQueries=false -p:EnableSourceLink=false -v:minimal -clp:Summary` succeeded: `Hecton8.Core -> Temp/bin/Debug/Hecton8.Core.dll`, 1 warning, 0 errors. Warning: `MSB3061` could not delete locked `Hecton8.Core.sourcelink.json` held by `csc (67600)`.
+
+## 2026-05-16 - Literal Division And Boundary Guard
+
+What was wrong: The denominator audit still had literal Bayer `/ 16.0` constants and a fixed HUD battery-box vector divide, which were safe but kept audit noise alive. The mesh visor also still trusted several material and engine-fed values near approximate normalization, screen/depth W reciprocal math, HUD close occlusion, glass alpha, static/hazard/bios controls, grime/mask/crack controls, and final refraction-adjacent color gates.
+
+What was done: Replaced the Bayer table divisions with a `0.0625` multiply, replaced the HUD battery-box divide with multiply constants, finite-guarded approximate normalization inputs, resolved refraction-adjacent mesh visor material controls through the shared finite helpers, guarded screen-position and depth W before reciprocal use, reused a finite HUD close-occlusion distance, and zeroed any non-finite fullscreen fluid base offset before deriving the Snell normal.
+
+Cinematic Cheats used: No physical simulation was added. This preserves the Dear Lie stack: `_CameraOpaqueTexture` screen-space Snell, low-tier chromatic fallback, inverse dirt/depth gates, procedural salt crystals, and visor-space suspended silt shimmer.
+
+Exact Microseconds saved: 0 us certified. CPU cost is 0.0 us/frame. GPU cost is small finite-check ALU; constant divides became compile-time multiply constants. Exact GPU microseconds still require Unity profiler.
+
+Build/validation: An initial normal build retry failed outside domain in `TetherInstance.cs` on missing `IsFrameCooldownActive`; no tether code was edited. After shader cleanup, targeted slash/raw-uniform scan reports only shader names, include paths, and comments. Forbidden-pattern scan remains clean for touched visor/refraction files. `git diff --check` reports no whitespace errors, only existing LF/CRLF warnings. SourceLink-disabled and normal build checkpoints briefly succeeded with 0 warnings and 0 errors, but latest retries are now blocked outside VFX/POST: normal build fails in `EcosystemDirector.cs(5970-6027)` on duplicate index helper members, and SourceLink-disabled build fails in `LockstepStateValidator.cs(408-417)` on missing lockstep/system-glitch lane constants. Unity runtime shader compilation, RenderGraph Frame Debugger order, platform shader compile, and profiler timings remain pending.

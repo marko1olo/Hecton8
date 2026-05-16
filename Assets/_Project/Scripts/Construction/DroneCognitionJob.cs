@@ -54,7 +54,7 @@ namespace Hecton8.Construction
         Hostile = 2
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 308)]
     internal struct HeadlessDroneState
     {
         public int DroneId;
@@ -95,13 +95,13 @@ namespace Hecton8.Construction
         public byte DockingReserved0;
         public byte DockingReserved1;
         public byte DockingReserved2;
-        public float3 DockControlP0;
-        public float3 DockControlP1;
-        public float3 DockControlP2;
-        public float3 DockControlP3;
+        public double3 DockControlP0;
+        public double3 DockControlP1;
+        public double3 DockControlP2;
+        public double3 DockControlP3;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 36)]
     internal struct HeadlessDroneTask
     {
         public int TaskIndex;
@@ -135,15 +135,16 @@ namespace Hecton8.Construction
             if (drone.State == (byte)HeadlessDroneRuntimeState.Empty)
                 return;
 
+            double3 doubleOffset = new double3(RuntimeOffset.x, RuntimeOffset.y, RuntimeOffset.z);
             drone.Position += RuntimeOffset;
             drone.HomePosition += RuntimeOffset;
             drone.TargetPosition += RuntimeOffset;
             drone.SupplyPosition += RuntimeOffset;
             drone.DockStartPosition += RuntimeOffset;
-            drone.DockControlP0 += RuntimeOffset;
-            drone.DockControlP1 += RuntimeOffset;
-            drone.DockControlP2 += RuntimeOffset;
-            drone.DockControlP3 += RuntimeOffset;
+            drone.DockControlP0 += doubleOffset;
+            drone.DockControlP1 += doubleOffset;
+            drone.DockControlP2 += doubleOffset;
+            drone.DockControlP3 += doubleOffset;
             DroneStates[index] = drone;
 
             if (DroneStateBackBuffer.IsCreated && index < DroneStateBackBuffer.Length)
@@ -184,7 +185,7 @@ namespace Hecton8.Construction
         DockingHatchOpen = 3
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
     internal struct DroneServiceCommand
     {
         public int Slot;
@@ -198,7 +199,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 16)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal unsafe struct DroneCognitionJob : IJobParallelFor
     {
         private const int UnclaimedTask = 0;
@@ -385,9 +386,9 @@ namespace Hecton8.Construction
             float3 flowAcceleration = (flowVelocity - drone.Velocity) * dragCoefficient;
             float3 flowAdjustedVelocity = drone.Velocity + (flowAcceleration * DeltaTime);
             float counterFlow01 = ResolveFlowCounteract(in drone, emergency);
-            float3 targetVelocity = math.lerp(flowVelocity, desiredVelocity, counterFlow01);
+            float3 targetVelocity = BlendLinear(flowVelocity, desiredVelocity, counterFlow01);
             float velocityBlend = drone.AvoidanceHysteresisSeconds > 0f ? 4f : 8f;
-            drone.Velocity = math.lerp(flowAdjustedVelocity, targetVelocity, math.saturate(DeltaTime * velocityBlend));
+            drone.Velocity = BlendLinear(flowAdjustedVelocity, targetVelocity, math.saturate(DeltaTime * velocityBlend));
             drone.Position += drone.Velocity * DeltaTime;
             if (math.lengthsq(drone.Velocity) > MinimumVectorLengthSq)
                 drone.Rotation = quaternion.LookRotationSafe(SafeNormalize(drone.Velocity, routeDirection), math.up());
@@ -727,10 +728,8 @@ namespace Hecton8.Construction
 
             float progress = math.saturate(drone.DockingElapsed);
             float cubicT = progress * progress * progress;
-            float speed = math.lerp(
-                math.max(DockingArrivalSpeedMetersPerSecond, drone.MaxSpeed),
-                DockingArrivalSpeedMetersPerSecond,
-                cubicT);
+            float startSpeed = math.max(DockingArrivalSpeedMetersPerSecond, drone.MaxSpeed);
+            float speed = startSpeed + ((DockingArrivalSpeedMetersPerSecond - startSpeed) * cubicT);
             float pathLength = math.max(DockingMinimumPathLengthMeters, drone.DockingPathLengthMeters);
             float t = math.saturate(progress + (math.max(0f, DeltaTime) * speed * math.rcp(pathLength)));
             EvaluateDockingBezier(in drone, t, out float3 targetPosition, out float3 tangent);
@@ -775,15 +774,15 @@ namespace Hecton8.Construction
             float3 startForward = SafeNormalize(math.mul(startRotation, new float3(0f, 0f, 1f)), new float3(0f, 0f, 1f));
             float3 airlockForward = SafeNormalize(math.mul(targetRotation, new float3(0f, 0f, 1f)), new float3(0f, 0f, 1f));
 
-            drone.DockControlP0 = IsFinite(drone.DockStartPosition) ? drone.DockStartPosition : drone.Position;
-            drone.DockControlP1 = drone.DockControlP0 + (startForward * DockingStartForwardMeters);
-            drone.DockControlP2 = drone.HomePosition + (airlockForward * DockingAirlockForwardMeters);
-            drone.DockControlP3 = drone.HomePosition;
+            drone.DockControlP0 = ToDouble3(IsFinite(drone.DockStartPosition) ? drone.DockStartPosition : drone.Position);
+            drone.DockControlP1 = drone.DockControlP0 + (ToDouble3(startForward) * DockingStartForwardMeters);
+            drone.DockControlP2 = ToDouble3(drone.HomePosition) + (ToDouble3(airlockForward) * DockingAirlockForwardMeters);
+            drone.DockControlP3 = ToDouble3(drone.HomePosition);
 
             float estimate =
                 DockingStartForwardMeters +
                 DockingAirlockForwardMeters +
-                ApproximateDistanceNoSqrt(drone.DockControlP2 - drone.DockControlP1);
+                ApproximateDistanceNoSqrt(ToFloat3(drone.DockControlP2 - drone.DockControlP1));
             drone.DockingPathLengthMeters = math.max(DockingMinimumPathLengthMeters, estimate);
         }
 
@@ -826,25 +825,30 @@ namespace Hecton8.Construction
 
         private static void EvaluateDockingBezier(in HeadlessDroneState drone, float t, out float3 position, out float3 tangent)
         {
-            float clampedT = math.saturate(t);
-            float oneMinusT = 1f - clampedT;
-            float oneMinusT2 = oneMinusT * oneMinusT;
-            float t2 = clampedT * clampedT;
-            float3 p0 = drone.DockControlP0;
-            float3 p1 = drone.DockControlP1;
-            float3 p2 = drone.DockControlP2;
-            float3 p3 = drone.DockControlP3;
+            double clampedT = math.saturate(t);
+            double oneMinusT = 1.0 - clampedT;
+            double oneMinusT2 = oneMinusT * oneMinusT;
+            double t2 = clampedT * clampedT;
+            double3 p0 = drone.DockControlP0;
+            double3 p1 = drone.DockControlP1;
+            double3 p2 = drone.DockControlP2;
+            double3 p3 = drone.DockControlP3;
 
-            position =
+            double3 positionDouble =
                 (oneMinusT2 * oneMinusT * p0) +
-                (3f * oneMinusT2 * clampedT * p1) +
-                (3f * oneMinusT * t2 * p2) +
+                (3.0 * oneMinusT2 * clampedT * p1) +
+                (3.0 * oneMinusT * t2 * p2) +
                 (t2 * clampedT * p3);
 
-            float3 derivative =
-                (3f * oneMinusT2 * (p1 - p0)) +
-                (6f * oneMinusT * clampedT * (p2 - p1)) +
-                (3f * t2 * (p3 - p2));
+            double3 derivativeDouble =
+                (3.0 * oneMinusT2 * (p1 - p0)) +
+                (6.0 * oneMinusT * clampedT * (p2 - p1)) +
+                (3.0 * t2 * (p3 - p2));
+            position = ToFloat3(positionDouble);
+            if (!IsFinite(position))
+                position = IsFinite(drone.HomePosition) ? drone.HomePosition : drone.Position;
+
+            float3 derivative = ToFloat3(derivativeDouble);
             tangent = SafeNormalize(derivative, SafeNormalize(drone.HomePosition - drone.DockStartPosition, new float3(0f, 0f, 1f)));
         }
 
@@ -938,13 +942,13 @@ namespace Hecton8.Construction
             float3 sample101 = ReadAbyssalFlowCell(x1, y1, z0);
             float3 sample011 = ReadAbyssalFlowCell(x0, y1, z1);
             float3 sample111 = ReadAbyssalFlowCell(x1, y1, z1);
-            float3 sampleX00 = math.lerp(sample000, sample100, fracX);
-            float3 sampleX10 = math.lerp(sample010, sample110, fracX);
-            float3 sampleX01 = math.lerp(sample001, sample101, fracX);
-            float3 sampleX11 = math.lerp(sample011, sample111, fracX);
-            float3 sampleZ0 = math.lerp(sampleX00, sampleX10, fracZ);
-            float3 sampleZ1 = math.lerp(sampleX01, sampleX11, fracZ);
-            return math.lerp(sampleZ0, sampleZ1, fracY);
+            float3 sampleX00 = BlendLinear(sample000, sample100, fracX);
+            float3 sampleX10 = BlendLinear(sample010, sample110, fracX);
+            float3 sampleX01 = BlendLinear(sample001, sample101, fracX);
+            float3 sampleX11 = BlendLinear(sample011, sample111, fracX);
+            float3 sampleZ0 = BlendLinear(sampleX00, sampleX10, fracZ);
+            float3 sampleZ1 = BlendLinear(sampleX01, sampleX11, fracZ);
+            return BlendLinear(sampleZ0, sampleZ1, fracY);
         }
 
         private float3 ReadAbyssalFlowCell(int x, int y, int z)
@@ -1130,6 +1134,27 @@ namespace Hecton8.Construction
         private static bool IsFinite(float3 value)
         {
             return math.all(math.isfinite(value));
+        }
+
+        private static bool IsFinite(double3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static double3 ToDouble3(float3 value)
+        {
+            return new double3(value.x, value.y, value.z);
+        }
+
+        private static float3 ToFloat3(double3 value)
+        {
+            return new float3((float)value.x, (float)value.y, (float)value.z);
+        }
+
+        private static float3 BlendLinear(float3 from, float3 to, float t)
+        {
+            float clampedT = math.saturate(t);
+            return from + ((to - from) * clampedT);
         }
 
         private static float ApproximateDistanceNoSqrt(float3 delta)

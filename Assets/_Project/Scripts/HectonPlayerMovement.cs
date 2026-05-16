@@ -107,7 +107,7 @@ namespace Hecton8.Gameplay
         private const float MovementProbeCacheScalarEpsilon = 0.0001f;
         private const float CinematicCenterSupportNormalY = 0.92f;
         private const float ReusableGroundProbeMinNormalY = 0.05f;
-        private const float ReferenceSeaWaterDensityKgPerCubicMeter = 1025f;
+        private const float ReferenceSeaWaterDensityKgPerCubicMeter = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
         private const float SpeculativeCcdImpulseThresholdMetersPerSecond = 20f;
         private const float SpeculativeCcdImpulseThresholdMetersPerSecondSq =
             SpeculativeCcdImpulseThresholdMetersPerSecond * SpeculativeCcdImpulseThresholdMetersPerSecond;
@@ -1260,7 +1260,7 @@ namespace Hecton8.Gameplay
         private CameraJuiceOutput _juiceOutput;
         private Vector3 _cameraBaseLocalPos;
         private IDataVault _dataVault;
-        private NativeArray<CinematicFocusTelemetryEntry> _cinematicFocusBlackBox;
+        private VaultBufferHandle<CinematicFocusTelemetryEntry> _cinematicFocusBlackBoxHandle;
         private AbsoluteUniversePosition _cinematicFocusTargetAup;
         private int _cinematicFocusBlackBoxCursor;
         private int _cinematicFocusBlackBoxCount;
@@ -1278,7 +1278,6 @@ namespace Hecton8.Gameplay
         private bool _cinematicFocusActive;
         private bool _cinematicFocusAudioDucked;
         private bool _cinematicFocusFovAllowedCached;
-        private bool _cinematicFocusBlackBoxVaultOwned;
         private Vector3 _feedbackVelocity;
         private float _underwaterSomaticPhase;
         private float _underwaterSomaticWeight;
@@ -2629,45 +2628,41 @@ namespace Hecton8.Gameplay
 
         private void EnsureCinematicFocusBlackBox()
         {
-            if (_cinematicFocusBlackBox.IsCreated)
+            if (ResolveCinematicFocusBlackBox().IsCreated)
                 return;
 
             IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
             _dataVault = vault;
-            if (vault != null)
-            {
-                NativeArray<CinematicFocusTelemetryEntry> vaultArray = vault.GetBuffer<CinematicFocusTelemetryEntry>(
-                    BufferID.PlayerCinematicFocusBlackBox,
-                    CinematicFocusBlackBoxCapacity,
-                    SystemID.GameplayPlayer,
-                    NativeArrayOptions.ClearMemory);
-                if (vaultArray.IsCreated)
-                {
-                    _cinematicFocusBlackBox = vaultArray;
-                    _cinematicFocusBlackBoxVaultOwned = true;
-                    return;
-                }
-            }
+            if (vault == null)
+                return;
 
-            _cinematicFocusBlackBoxVaultOwned = false;
+            _cinematicFocusBlackBoxHandle = vault.GetBufferHandle<CinematicFocusTelemetryEntry>(
+                BufferID.PlayerCinematicFocusBlackBox,
+                CinematicFocusBlackBoxCapacity,
+                SystemID.GameplayPlayer,
+                NativeArrayOptions.ClearMemory);
+        }
+
+        NativeArray<CinematicFocusTelemetryEntry> ResolveCinematicFocusBlackBox()
+        {
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null || !_cinematicFocusBlackBoxHandle.IsCreated)
+                return default;
+
+            _dataVault = vault;
+            return _cinematicFocusBlackBoxHandle.Resolve(vault);
         }
 
         private void DisposeCinematicFocusBlackBox()
         {
-            if (!_cinematicFocusBlackBox.IsCreated)
-                return;
-
-            if (_cinematicFocusBlackBoxVaultOwned)
+            if (!_cinematicFocusBlackBoxHandle.IsCreated)
             {
-                _cinematicFocusBlackBox = default;
-                _cinematicFocusBlackBoxVaultOwned = false;
                 _cinematicFocusBlackBoxCursor = 0;
                 _cinematicFocusBlackBoxCount = 0;
                 return;
             }
 
-            NativeMemorySentinel.UnregisterNativeArray(_cinematicFocusBlackBox);
-            H8Memory.Release(ref _cinematicFocusBlackBox, SystemID.GameplayPlayer);
+            _cinematicFocusBlackBoxHandle = default;
             _cinematicFocusBlackBoxCursor = 0;
             _cinematicFocusBlackBoxCount = 0;
         }
@@ -8121,10 +8116,11 @@ namespace Hecton8.Gameplay
             float distanceSq,
             float pullWeight)
         {
-            if (!_cinematicFocusBlackBox.IsCreated)
+            NativeArray<CinematicFocusTelemetryEntry> blackBox = ResolveCinematicFocusBlackBox();
+            if (!blackBox.IsCreated)
                 return;
 
-            _cinematicFocusBlackBox[_cinematicFocusBlackBoxCursor] = new CinematicFocusTelemetryEntry
+            blackBox[_cinematicFocusBlackBoxCursor] = new CinematicFocusTelemetryEntry
             {
                 Frame = unchecked((uint)Time.frameCount),
                 FocusHash = _cinematicFocusHash,
@@ -8150,7 +8146,8 @@ namespace Hecton8.Gameplay
 
         private void DumpCinematicFocusBlackBox(uint reasonHash)
         {
-            if (!_cinematicFocusBlackBox.IsCreated)
+            NativeArray<CinematicFocusTelemetryEntry> blackBox = ResolveCinematicFocusBlackBox();
+            if (!blackBox.IsCreated)
                 return;
 
             int frame = Time.frameCount;
@@ -8184,7 +8181,7 @@ namespace Hecton8.Gameplay
                         if (entryIndex >= CinematicFocusBlackBoxCapacity)
                             entryIndex -= CinematicFocusBlackBoxCapacity;
 
-                        CinematicFocusTelemetryEntry entry = _cinematicFocusBlackBox[entryIndex];
+                        CinematicFocusTelemetryEntry entry = blackBox[entryIndex];
                         writer.Write(entry.Frame);
                         writer.Write(entry.FocusHash);
                         writer.Write(entry.PlayerGridX);
@@ -8289,7 +8286,7 @@ namespace Hecton8.Gameplay
             Vector3 safeFallback = HectonPlayerMotor.SafeVelocity(fallbackGravity);
             float gravityMagnitude = MagnitudeFromRsqrt(safeFallback);
             if (gravityMagnitude <= 0.0001f)
-                gravityMagnitude = 9.81f;
+                gravityMagnitude = HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
 
             double3 absolutePosition = _playerState.PredictedAbsolutePosition.ToAbsoluteDouble3();
             double3 toAupCenter = -absolutePosition;
@@ -8382,7 +8379,7 @@ namespace Hecton8.Gameplay
             if (currentGravity.sqrMagnitude > MinLocalGravitySqr)
                 return currentGravity;
 
-            return Vector3.down * 9.81f;
+            return Vector3.down * HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
         }
 
         private static Vector3 BlendGravityVectorCheap(Vector3 startGravity, Vector3 targetGravity, float blend01)

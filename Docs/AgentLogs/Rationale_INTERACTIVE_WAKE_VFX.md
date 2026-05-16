@@ -195,3 +195,51 @@ Rejected Alternatives: Reintroducing `Schedule().Complete()` in `Tick` would vio
 Scalability potential: Low/MX350 still caps wake publication to 4 slots under stress and shader work to two nearest radial wakes. Middle/High/Ultra keep 16 wake slots and spend GPU budget on vortex curvature, normal shimmer, silt turbulence, and fauna scatter. The compile-wall repair has no runtime visual tier effect.
 
 Hardware Impact: Avoids an estimated 10-80 us main-thread stall risk from same-frame job fences on weak CPUs; steady-state wake decay remains an estimated 0-3 us for 16 slots. The external compile repair is 0 us/frame and only restores validation.
+
+## Decision 17 - Current External Compile Wall After Wake Recheck
+
+Problem: The live workspace moved again after the wake slice had a green Core build. A controlled `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false -v:minimal -clp:ErrorsOnly` now fails with 12 errors in non-wake owners: `GlobalSignals`, `FluidFeedbackListener`, `PlayerTool`, `PlayerToolManager`, `PlayerNoiseEmitter`, and `GameBootstrapper`.
+
+Solution: Stop reporting the stale green build as current truth. Keep the wake slice verified by targeted scans for no wake singleton, no legacy wake queue, no wake hot-path job fence, no banned shader `distance()`/raw `normalize()`, and 64-wide compute groups. Cross-domain compile repairs were limited to mechanical contract drift encountered while validating the build; the remaining wall is outside `Assets/_Project/Scripts/VFX/Wakes/`.
+
+Rejected Alternatives: Chasing player-tool durability events, physics feedback queue fields, bootstrap DataVault casts, or global physics sanitizers from the wake prompt would be a broad compile-medic pass, not VFX wake polish. Reverting other agents' edits is forbidden in the shared worktree. Claiming `VERIFIED MASTER GRADE` without a fresh green build would be false.
+
+Scalability potential: Wake scaling remains unchanged: Low/MX350 uses 4 published wake slots under stress and 2 nearest radial shader pushes; Middle/High/Ultra keep 16 slots and spend GPU budget on vortex curvature, normal shimmer, silt turbulence, and fauna scatter.
+
+Hardware Impact: 0 us/frame direct. Risk avoided: turning a wake VFX pass into unrelated player-tool/bootstrap churn. The wake hot-path savings remain estimated at 10-80 us avoided stall risk from removing same-frame job fences, plus 8-22 us saved on low-tier GPU by avoiding full 16-slot vortex math.
+
+## Decision 18 - Current External UI/Ecosystem/Tether Compile Wall
+
+Problem: The live workspace moved again. The transient `SubmarineFluidDynamics` syntax wall is no longer the active blocker, but a controlled Core build now fails with 111 errors in non-wake owners: `DiegeticGyroCompassRuntime`, `EcosystemDirector`, and `HeavyTowWinch` calling a removed `TetherManager` API.
+
+Solution: Record the current truth and keep the wake slice constrained to its XML domain. Re-read the XML block, reran wake-domain scans, and verified no wake singleton, no legacy wake queue, no wake local `NativeArray` ownership, no managed Wind/Force components, no shader `distance()` or raw `normalize()`, and no compute thread group above 64x1x1.
+
+Rejected Alternatives: Repairing UI compass state fields, ecosystem DataVault handle migration, or tether gameplay APIs from a VFX wake prompt would violate the domain boundary and risk overwriting concurrent owners. Claiming the old green build would be false.
+
+Scalability potential: Wake scaling remains unchanged: Low/MX350 caps publication to 4 slots under stress and the shader uses two nearest radial pushes. Middle/High/Ultra keep 16 slots for vortex curvature, normal shimmer, silt turbulence, and fauna scatter.
+
+Hardware Impact: 0 us/frame direct for the compile wall. Wake estimates remain the only supported numbers here: 8-22 us low-tier GPU savings versus full 16-slot vortex math, 3-8 us signal duplication avoided, and 10-80 us main-thread fence risk avoided by keeping wake decay completion out of `Tick`.
+
+## Decision 19 - Reactive Silt Full Wake Contract
+
+Problem: The global wake contract is 16 slots, and both flora and boid consumers read that full budget on high/ultra tiers. `Hecton_FluidAdvection.compute` still clamped dynamic wake turbulence to 8 slots, so high-intensity wakes in slots 8-15 could bend flora and scatter fish but fail to stir silt/marine snow.
+
+Solution: Raised the fluid-advection dynamic wake capacity to 16 and added a shader-side low-tier cap of 4 driven by `_GlobalWakeParams.y`. The low/MX350 path stays bounded even if CPU parameters drift, while high/ultra can spend the full global wake buffer on visible wake turbulence.
+
+Rejected Alternatives: Keeping the 8-slot compute cap would leave the visual system internally inconsistent. Raising all tiers to 16 was rejected because low-tier toaster mode must preserve the 4-slot budget. Adding another CPU-side wake list was rejected because DataVault already owns the authoritative wake sources.
+
+Scalability potential: Low/MX350 remains a 4-slot visual lie. Middle/High/Ultra consume up to 16 wake slots for stronger silt wash, vortex churn, and marine-snow breakup without adding CPU source ownership or a second signal lane.
+
+Hardware Impact: Low-tier estimate remains unchanged because the shader now enforces the 4-slot cap. High/ultra may spend an estimated additional 2-6 us/frame GPU-side in wake-heavy scenes to buy denser reactive silt. This is visual overkill, not gameplay truth.
+
+## Decision 20 - Reactive Silt Wake Binding
+
+Problem: `Hecton_FluidAdvection.compute` had a separate `_DynamicWakes`/`_DynamicWakeVectors`/`_DynamicWakeParams` input path while the authoritative wake publisher writes `_GlobalWakeBuffer`, `_GlobalWakeVectors`, and `_GlobalWakeParams` via raw `Shader.SetGlobalVectorArray`. `CarveDebrisComputeRenderer` then bound the dynamic wake buffers to `_emptyFlowBuffer` and forced params to zero before dispatch, which could make reactive silt/debris wake turbulence inert even when flora and boids consumed the global wake contract correctly.
+
+Solution: Removed the dynamic wake buffer properties from the compute path and switched fluid/debris advection to the same global wake arrays already published by `FloraInteractionManager`. Removed the empty dynamic wake buffer/zero-param binding from `CarveDebrisComputeRenderer` so the compute shader inherits the authoritative global wake state instead of an empty per-renderer override.
+
+Rejected Alternatives: Creating a second GPU wake buffer in the debris renderer was rejected because it would reintroduce private wake data ownership. Copying DataVault wake state into a debris-owned staging buffer every frame was rejected because the XML mandates raw shader globals and the existing global publisher already owns that contract. Keeping both dynamic and global wake names was rejected because it leaves two authorities for the same visual signal.
+
+Scalability potential: Low/MX350 still caps the compute path to 4 wake slots through `_GlobalWakeParams.y` and uses cheap dot/radial/triangle fakes. Middle/High/Ultra now use the same 16-slot wake signal across flora, boids, silt, bubbles, and carve debris, so saved CPU cycles buy visible wake wash instead of disappearing into an empty compute binding.
+
+Hardware Impact: 0 us/frame low-tier cost change because the cap and loop budget remain unchanged. High/ultra restores the previously budgeted 2-6 us/frame GPU spend to actual silt/debris motion. External compile status moved during shared-workspace churn from `TetherInstance`/`PhysicsApplySystem` to UI/diagnostics owners (`DiegeticGyroCompassRuntime`, `GlobalSignals`, `ArchitectEyeVisualizer`); no current build error names the wake files changed here.

@@ -2,7 +2,7 @@
 
 Prompt: SCREEN_SPACE_REFRACTION
 Domain: VFX/POST
-Status: CORE COMPLETE / LATEST BUILD BLOCKED OUTSIDE VFX/POST / UNITY RUNTIME PENDING
+Status: CORE COMPLETE / CSHARP BUILD PASSED WITH SOURCELINK DISABLED / UNITY RUNTIME PENDING
 
 ## Decision 0 - Mandate Selection
 
@@ -78,11 +78,11 @@ Hardware Impact: One depth sample plus ALU on the mesh visor path; exact cost pe
 
 ## Decision 9 - Polish Mandate Honesty
 
-Problem: The polish mandate requests VERIFIED MASTER GRADE, but the shared project build fails in unrelated domains before this work can be fully compiled and profiled.
-Solution: Keep status as core complete/build blocked, record the exact blocker list, and avoid fabricated profiler numbers.
-Rejected Alternatives: Claiming master-grade verification without a clean build, or editing unrelated agent files to force the build forward, would be a false report.
-Scalability potential: Low/Middle/High/Ultra design is present; certification waits on integration compile and GPU profiling.
-Hardware Impact: Exact microseconds saved are not measured. The only proven value is static removal of legacy blit/grab-style paths and bounded shader branches.
+Problem: The polish mandate requests VERIFIED MASTER GRADE, but code build alone does not prove Unity runtime shader compilation, platform shader translation, RenderGraph frame ordering, or profiler microseconds.
+Solution: Keep status as core complete/build passed with caveat, record the exact warning and missing runtime/profiler evidence, and avoid fabricated microsecond numbers.
+Rejected Alternatives: Claiming master-grade verification from C# build only, or editing unrelated agent files to force earlier build walls forward, would be a false report.
+Scalability potential: Low/Middle/High/Ultra design is present; certification now waits on Unity runtime, platform shader compilation, Frame Debugger ordering, and GPU profiling.
+Hardware Impact: Exact microseconds saved are not measured. The proven value is static removal of legacy blit/grab-style paths, bounded shader branches, and C# build success with SourceLink disabled.
 
 ## Decision 10 - DataVault Blackbox Correction
 
@@ -111,7 +111,7 @@ Hardware Impact: Low-end i3/MX350 sees 0.0 CPU cost and the salt branch forced o
 ## Decision 13 - Continuation Compile Wall
 
 Problem: The shared project still does not compile after visor static verification.
-Solution: Re-run `dotnet build` and record the current first blockers: UI compass blackbox/visual overkill drift, lockstep replay header drift, homeostasis missing buffers/helpers, item pickup missing `ItemAcquiredSignal`, and tether signal type constraints.
+Solution: Re-run `dotnet build` and record the then-current first blockers: UI compass blackbox/visual overkill drift, lockstep replay header drift, homeostasis missing buffers/helpers, item pickup missing `ItemAcquiredSignal`, and tether signal type constraints.
 Rejected Alternatives: Editing UI, determinism, core homeostasis, item, or physics signal code would exceed the VFX/POST assignment and collide with other agents.
 Scalability potential: Refraction Low/Mid/High/Ultra paths remain implemented; certification is blocked by unrelated integration debt.
 Hardware Impact: No runtime impact from this blocker. Exact visor microseconds remain unmeasured until the compile wall is cleared.
@@ -127,7 +127,7 @@ Hardware Impact: Same 48-byte heartbeat write when evaluated. Removing cursor/la
 ## Decision 15 - Compile Wall Retry
 
 Problem: The first retry hit a shared SourceLink file lock; the second retry reached C# and failed outside the visor domain.
-Solution: Record the current blockers without touching unrelated domains: `HectonXRRuntimeState`, `BiolumPulseSyncRuntime`, `VaultProbeUtility`, `SpatialAudioManager`, and `SubmarineStructuralGrid`.
+Solution: Record the then-current blockers without touching unrelated domains: `HectonXRRuntimeState`, `BiolumPulseSyncRuntime`, `VaultProbeUtility`, `SpatialAudioManager`, and `SubmarineStructuralGrid`.
 Rejected Alternatives: Fixing XR refresh-rate APIs, biolum telemetry structs, vault diagnostics, audio residency helpers, or submarine breach buffers would exceed the VFX/POST assignment.
 Scalability potential: No change to visor scalability; the compile wall is integration debt.
 Hardware Impact: No runtime impact from the blocker. Exact visor microseconds remain unmeasured until the shared project compiles.
@@ -162,7 +162,7 @@ Problem: Earlier validation attempts were blocked by unrelated compile drift and
 Solution: Retry the same non-shared-compiler build after the NaN hardening pass and record the checkpoint-green code compile result without expanding scope into unrelated domains.
 Rejected Alternatives: Killing unknown concurrent build processes was rejected; editing unrelated blockers was rejected; claiming Unity runtime/profiler verification from a `dotnet build` was rejected.
 Scalability potential: Low/Middle/High/Ultra shader paths are now code-build verified. Runtime visual quality, Frame Debugger ordering, GCMonitor, and GPU microseconds still require Unity execution.
-Hardware Impact: Code compile succeeded at that checkpoint with 0 warnings and 0 errors. The current latest build is superseded by the unrelated `SubmarineFluidDynamics.cs` blocker, and no profiler data exists yet, so exact MX350/Quest/Metal/4090 microseconds remain pending.
+Hardware Impact: Code compile succeeded at that checkpoint with 0 warnings and 0 errors. Later retries are now superseded by unrelated `PredatorCognitionDomain.cs` and `DroneFleetManager.cs` blockers, and no profiler data exists yet, so exact MX350/Quest/Metal/4090 microseconds remain pending.
 
 ## Decision 20 - Common Snell Boundary Hardening
 
@@ -170,4 +170,52 @@ Problem: The shared Snell helper still allowed non-finite IOR LUT, depth, softne
 Solution: Fail closed in `Hecton_SnellRefractionCore.hlsl` by substituting stable IOR defaults, finite depth/softness values, and zero clamp bounds when inputs are non-finite. Pass telemetry flags into `ResolveWaterDensitySignal01` so invalid shader-global or fluid-simulation density is recorded before the safe zero fallback.
 Rejected Alternatives: Trusting material settings and upstream systems was rejected because shared shader helpers must be the final GPU boundary; editing `SubmarineFluidDynamics` was rejected because it is outside VFX/POST and currently belongs to another integration wall.
 Scalability potential: Low/MX350 stays chromatic-only with finite masks. Middle keeps bounded Snell. High/Ultra keep salt and silt fakes with stronger common-helper immunity. No new texture, buffer, render pass, or signal was added.
-Hardware Impact: CPU cost is two finite checks when the player camera is evaluated; exact microseconds pending profiler. GPU cost is small ALU in the common Snell helper; exact microseconds pending profiler. Latest build is blocked outside this domain by `SubmarineFluidDynamics.cs` missing `VaultNativeBuffer<>`.
+Hardware Impact: CPU cost is two finite checks when the player camera is evaluated; exact microseconds pending profiler. GPU cost is small ALU in the common Snell helper; exact microseconds pending profiler. That build retry was later superseded by the vector-global guard retry, then by the shared SourceLink file-lock retry.
+
+## Decision 21 - Shader Vector Global Guard
+
+Problem: The fullscreen visor shader still trusted vector globals for local velocity, screen-space rain parameters, and global wind before droplet flow, suspended-silt drift, rain exposure, and `rsqrt` wind direction math. C# sanitation helps, but it is not the final boundary before GPU UV/sample math.
+Solution: Add `ResolveFinite4`, resolve `_HectonVisorFluidLocalVelocity` once in `Frag`, pass that safe vector into droplet, silt, and refraction offset functions, and resolve `_HectonScreenSpaceRainParams` plus `_GlobalWind` before rain density/exposure and wind normalization.
+Rejected Alternatives: C#-only sanitization was rejected because shader globals can be overridden by other systems or material state; a whole-shader rewrite was rejected because the local boundary guard solves the actual non-finite risk without changing render topology; editing fauna/construction build blockers was rejected as out-of-domain.
+Scalability potential: Low/MX350 still uses chromatic/depth/dirt fakes and receives finite-safe flow inputs. Middle keeps bounded Snell. High and Ultra keep salt crystals and suspended silt visual overkill, but invalid vector globals now collapse to stable zero/fallback motion instead of corrupting opaque texture sampling.
+Hardware Impact: CPU cost is 0.0 us/frame. GPU cost is a small vector finite-check ALU boundary before affected branches, exact microseconds pending Unity profiler. Later retries were superseded by the dynamic division guard build, which succeeded with SourceLink disabled.
+
+## Decision 22 - Shared SourceLink Lock Boundary
+
+Problem: That validation retry did not reach C# compilation because `Temp/obj/Hecton8.Core/Hecton8.Core.sourcelink.json` was locked by another concurrent `dotnet build` process in the shared multi-agent workspace.
+Solution: Retry once after a short wait, query active `dotnet.exe` build processes for evidence, record the exact lock, and keep VFX/POST code unchanged.
+Rejected Alternatives: Killing unknown build processes was rejected because this workspace is explicitly shared with other agents; deleting `Temp/obj` was rejected because it is destructive to concurrent validation; changing SourceLink project settings was rejected because it is outside the screen-space refraction assignment.
+Scalability potential: No change to Low/Middle/High/Ultra visor paths. The lock is validation infrastructure contention, not runtime behavior.
+Hardware Impact: No runtime impact. Exact visor microseconds remain pending Unity profiler and a clean build window.
+
+## Decision 23 - Full Visor Scalar Boundary Guard
+
+Problem: After vector guarding, two visor shader paths still had scalar shader globals that could feed NaN into HUD/VR/foveation color math or fluid droplet/refraction motion before final clamps.
+Solution: Add finite scalar/vector resolution in `SuitVisor.shader` for HECTON HUD fog/frost, suit-health glitch, VR comfort, foveation, stress vignette, HUD focus blur, and visual-static seed. Add finite scalar fallbacks in `Hecton_VisorFluidDistortion.shader` for droplet scale, runoff speed, edge exponent, streak strengths, distortion strength, depth softness, low-tier/homeostasis flags, Snell strength, water-density input, and ambient dust response.
+Rejected Alternatives: C#-only sanitation was rejected because shader globals are the last GPU boundary; a broad physical rewrite was rejected because the problem is invalid scalar inputs, not missing simulation; editing the current tether build blocker was rejected as out-of-domain.
+Scalability potential: Low/MX350 keeps chromatic/dirt/depth fakes with fail-closed motion. Middle keeps bounded Snell. High/Ultra keep salt, silt, HUD glitch, VR comfort, and foveated effects without allowing non-finite globals to contaminate final color or UV sampling.
+Hardware Impact: CPU cost is 0.0 us/frame. GPU cost is extra finite-check ALU in the touched visor fragments, exact microseconds pending profiler. That build retry was superseded by the shared-helper consolidation and dynamic division guard passes; latest SourceLink-disabled build succeeded with 1 warning and 0 errors.
+
+## Decision 24 - Shared Finite Helper Consolidation
+
+Problem: The fullscreen fluid shader and mesh visor shader had separate finite scalar/vector helper implementations after the NaN hardening pass. That creates drift risk: one caller can be hardened while another silently diverges.
+Solution: Move the reusable scalar/vector finite fallback functions into `Hecton_SnellRefractionCore.hlsl` as `HectonFiniteValue`, `HectonFiniteNonNegative`, and `HectonFinite4`, then make both visor shaders consume those shared helpers.
+Rejected Alternatives: Leaving duplicate helpers was rejected because shared Snell safety belongs in the shared refraction core; a broader shader framework refactor was rejected because it adds surface area without improving the current NaN boundary; editing UI/navigation/world build blockers was rejected as out-of-domain.
+Scalability potential: Low/MX350, Middle, High, and Ultra now share identical fail-closed shader input semantics while still selecting different visual paths. High/Ultra salt/silt overkill and mesh HUD effects no longer depend on local duplicate helper behavior.
+Hardware Impact: CPU cost is 0.0 us/frame. GPU instruction shape is effectively unchanged; helper calls are inlined by shader compilation. Exact GPU microseconds remain pending Unity profiler. A later SourceLink-disabled build after the dynamic division guard succeeded with 0 errors and one SourceLink cleanup warning.
+
+## Decision 25 - Dynamic Division Guard
+
+Problem: Several shader denominators were safe by intent but still written as direct division, which weakens NaN-vaccination evidence for mobile/Metal review.
+Solution: Convert dynamic divisions for screen texel size, sonar wave and fade timing, foveated quantization, droplet-grid normalization, and fluid radial direction to bounded reciprocal paths using `rcp(max(...))`.
+Rejected Alternatives: Trusting engine screen params and authored sonar values was rejected because the shader should prove its denominator safety; replacing literal Bayer/HUD-box constant divisions was rejected as churn with no runtime safety value.
+Scalability potential: Low/MX350 keeps the same cheap chromatic/depth/dirt path with stronger denominator guards. Middle/High/Ultra retain Snell, HUD, salt, silt, and foveated visual paths with explicit divide safety.
+Hardware Impact: CPU cost is 0.0 us/frame. GPU ALU is equivalent reciprocal math on already-active shader paths; exact microseconds pending Unity profiler. Latest SourceLink-disabled build succeeded with 1 warning and 0 errors; the warning is the existing locked `Hecton8.Core.sourcelink.json` cleanup.
+
+## Decision 26 - Literal Division And Boundary Guard
+
+Problem: The remaining visor slash audit still contained literal Bayer divisions and a fixed HUD normalization divide, and the mesh visor still trusted several material/engine values around approximate normalization, screen-position W, depth W, close-depth occlusion, static/hazard controls, and refraction-adjacent glass dirt controls.
+Solution: Replace literal lookup divisions with multiply constants, convert the fixed HUD box normalization to multiply constants, finite-guard approximate normalization inputs, resolve refraction-adjacent material knobs through shared finite helpers, guard screen/depth W before reciprocal math, reuse finite HUD close occlusion distance, and zero non-finite fullscreen fluid base offsets before deriving the Snell normal.
+Rejected Alternatives: Leaving constant divisions was rejected because it keeps automated denominator audits noisy; trusting Unity material ranges and engine screen/depth values was rejected because shader-side NaN vaccination must be the final boundary; editing the transient tether compile wall was rejected because it is outside VFX/POST and was superseded by later green builds.
+Scalability potential: Low/MX350 still receives chromatic/depth/dirt fakes with fewer invalid-input escape paths. Middle keeps bounded Snell. High/Ultra keep salt crystals, suspended silt, HUD glitch, grime, and lens-crack polish while invalid controls fail closed rather than contaminating UVs or final color.
+Hardware Impact: CPU cost is 0.0 us/frame. GPU cost is small finite-check ALU and multiply constants replacing compile-time divides; exact GPU microseconds remain pending Unity profiler. SourceLink-disabled and normal `dotnet build` checkpoints both succeeded with 0 warnings and 0 errors, but latest retries are now blocked outside VFX/POST by `EcosystemDirector.cs` duplicate members and `LockstepStateValidator.cs` missing lane constants.

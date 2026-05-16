@@ -11,6 +11,7 @@
 // through deterministic lanes instead of scattered Unity message callbacks.
 // ============================================================================
 
+using System.Runtime.InteropServices;
 using System.Threading;
 using UnityEngine;
 
@@ -31,6 +32,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable snapshot of the dispatcher-owned time state.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public readonly struct H8TimeSnapshot
     {
         public readonly double Time;

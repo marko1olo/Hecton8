@@ -18,13 +18,13 @@ Actual implementation surface: Assets/_Project/Scripts/World/SargassumMicroFauna
 - [x] 9. High-end overkill: flashlight capsule SDF in shader. DOD: full simulation tier sets capsule flag and shader uses closest point on player-to-endpoint segment. Rejected alternative: CPU-expanded multi-sphere beam. Estimate: same upload bandwidth, adds one segment projection per boid only on full tier.
 - [x] 10. Reactive VFX: boids entering beam multiply Albedo. DOD: compute sets `BOID_FLAG_LIGHT_STIMULUS`; instanced fish shader brightens albedo/biolum when flag is present. Rejected alternative: render-side threat buffer sampling. Estimate: saves a render buffer bind and per-fragment SDF.
 - [x] 11. STP N/A. DOD: no STP-specific allocation or scheduling path added. Rejected alternative: inventing an STP hook. Estimate: 0 us/frame.
-- [x] 12. NaN vaccination: `w=max(w,0.1f)`. DOD: CPU slot writer clamps active w to `SensoryThreatMinRadiusMeters`; shader rejects non-finite threat payloads before radius math, guards capsule segment projection, and clamps sensory radius to 0.1. Rejected alternative: trusting signal payloads or letting `max(NaN, 0.1)` decide backend behavior. Estimate: avoids NaN/zero-radius branch stalls; adds only finite checks inside the existing capped loop.
-- [x] 13. Blackbox originally N/A, superseded by inquisition addendum. DOD: added vault-backed 300-frame `BoidSensoryBlackBoxEntry` ring with `[StructLayout(Pack=1, Size=64)]`, state hashes, flags, active threat count, submarine/flashlight slots, ping radii, and anomaly dump to `Docs/AgentLogs/Dump_BOID_SENSORY_INPUT_PUMP.bin`; storage is resolved from `_boidSensoryBlackBoxHandle`, not a local persistent NativeArray field. Rejected alternative: per-frame text log or local managed list. Estimate: adds ~2 us/frame CPU, 19.2 KB vault memory, 0 steady-state I/O.
+- [x] 12. NaN vaccination: `w=max(w,0.1f)`. DOD: CPU slot writer rejects non-finite or non-positive radii, clamps active w to `SensoryThreatMinRadiusMeters`; pre-upload sanitizer zeros non-finite/inactive vault slots before GraphicsBuffer upload; light/acoustic signal scalar inputs use finite saturate; CPU acoustic panic and predator-fear burst state reject non-finite origin/radius/duration/strength; shader rejects non-finite sensory and acoustic panic payloads before radius math, guards capsule segment projection, and clamps sensory radius to 0.1. Rejected alternative: trusting signal payloads, stale vault residue, or letting `max(NaN, 0.1)` decide backend behavior. Estimate: avoids NaN/zero-radius branch stalls; sanitizer and acoustic guards add fixed capped checks estimated under 1 us/frame on i3/MX350, no profiler proof claimed.
+- [x] 13. Blackbox originally N/A, superseded by inquisition addendum. DOD: added vault-backed 300-frame `BoidSensoryBlackBoxEntry` ring with `[StructLayout(Pack=1, Size=64)]`, state hashes, flags, active threat count, submarine/flashlight slots, ping radii, ordered oldest-to-newest anomaly dump to `Docs/AgentLogs/Dump_BOID_SENSORY_INPUT_PUMP.bin`, and preserved pre-upload anomaly hash in the dump header; storage is resolved from `_boidSensoryBlackBoxHandle`, not a local persistent NativeArray field. Rejected alternative: per-frame text log, local managed list, repeated dump retries, or generic-only anomaly hash. Estimate: adds ~2 us/frame CPU, 19.2 KB vault memory, 0 steady-state I/O; one anomaly dump only.
 - [x] 14. Fix Compute Buffer binding. DOD: sensory array binds to `_PredatorAUPBuffer`; encounter predator data binds to `_EncounterPredatorAUPBuffer` with fallback rebinding when no encounter buffer exists. Rejected alternative: overwriting sensory buffer with encounter buffer per frame. Estimate: fixed 256 byte sensory upload.
 - [x] 15. Homeostasis N/A. DOD: no homeostasis loop is part of the sensory buffer directive. Rejected alternative: adding unrelated behavior state. Estimate: 0 us/frame.
-- [x] 16. Ping decay threats reduce w by `dt*decay`. DOD: slots 2-4 decay by `simulationDt * SensoryAcousticPingDecayMetersPerSecond`, read newest capped acoustic pings, clear below 0.1, and use an unsigned ring cursor so long sessions cannot wrap into a negative slot. Rejected alternative: timestamped managed ping list. Estimate: 0 GC, ~1 us/frame.
-- [x] 17. Thread sync upload completes before `VISUAL_SYNC` compute dispatch. DOD: `GraphicsBufferUploadUtility.UploadNativeArray` is called inside `BindSimulationUniforms` before `CSMain` dispatch buffers are rebound and dispatched. Rejected alternative: render-late upload. Estimate: avoids one-frame sensory latency.
-- [x] 18. `dotnet build`. DOD: `Build_BOID_SENSORY_INPUT_PUMP_Polish9.txt` succeeded for `Hecton8.Core.csproj` with 0 warnings and 0 errors. Rejected alternative: declaring success before the shader NaN hardening compile pass. Estimate: no frame impact; validation only.
+- [x] 16. Ping decay threats reduce w by `dt*decay`. DOD: slots 2-4 decay by `simulationDt * SensoryAcousticPingDecayMetersPerSecond`, read newest capped acoustic pings, clear below 0.1, use an unsigned ring cursor so long sessions cannot wrap into a negative slot, and secondary movement/acoustic panic consumers now read the newest capped SignalBus windows too. Rejected alternative: timestamped managed ping list or oldest-window signal sampling under burst pressure. Estimate: 0 GC, ~1 us/frame.
+- [x] 17. Thread sync upload completes before `VISUAL_SYNC` compute dispatch. DOD: `GraphicsBufferUploadUtility.UploadNativeArray` is called inside `BindSimulationUniforms` before `CSMain` dispatch buffers are rebound and dispatched; sensory threat upload now writes to a frame-parity ping-pong GraphicsBuffer, rebinds the read buffer before dispatch, and skips unchanged parity-buffer uploads by 16-slot hash. Rejected alternative: single sensory upload buffer or blind per-dispatch upload of unchanged 256 B payloads. Estimate: avoids driver-side lock contention; +256 B VRAM for the second 16-slot buffer; unchanged frames save one buffer lock/memcpy.
+- [x] 18. `dotnet build`. DOD: latest post-change compile probe `Build_BOID_SENSORY_INPUT_PUMP_Polish16.txt` is blocked by external `ArchitectEyeVisualizer` missing `DebugSignal`; prior Polish15 probes were blocked by external `LockstepStateValidator` missing symbols. Scans found no diagnostics in `SargassumMicroFaunaBoids.cs`, `SargassumMicroFaunaBoids.compute`, `BoidFishInstanced.shader`, or `H8Memory.cs`. Last full green build remains `Build_BOID_SENSORY_INPUT_PUMP_Polish14.txt` before the finite-signal/shader-constant passes. Rejected alternative: editing diagnostics/determinism core outside the AI/COMPUTE boid sensory domain. Estimate: no frame impact; validation only.
 
 ## Loop Log
 
@@ -132,3 +132,100 @@ Hardening evidence:
 - Hardened `ClosestPointOnSegment` with finite checks for sample/start/end, finite segment-length validation, finite projection validation, and `projection * rcp(max(segmentLengthSq, EPSILON))` instead of direct division.
 - Kept Metal/Mac thread-group compliance unchanged: `THREAD_GROUP_SIZE` remains 64 and all compute kernels remain under the 1024 thread-group limit.
 - Compile check: `dotnet build Hecton8.Core.csproj --no-restore` logged at `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish9.txt` and succeeded with 0 warnings and 0 errors.
+
+### Loop 11: Sensory GraphicsBuffer Ping-Pong
+
+STATUS: VERIFIED MASTER GRADE.
+
+Hardening evidence:
+
+- Re-read `Status_BOID_SENSORY_INPUT_PUMP.md`, `Rationale_BOID_SENSORY_INPUT_PUMP.md`, and the original XML assignment before editing.
+- Split the sensory threat GPU upload resource into `_boidSensoryThreatBufferA` and `_boidSensoryThreatBufferB`.
+- `UpdateBoidSensoryThreats` writes the frame-parity buffer, and `BindSimulationUniforms` rebinds `_PredatorAUPBuffer` to that buffer immediately before compute dispatch.
+- Preserved the vault-backed CPU source view; no local `NativeArray` ownership was reintroduced.
+- Restore check: `Restore_BOID_SENSORY_INPUT_PUMP_Polish10.txt` succeeded after `--no-restore` reported a missing `project.assets.json`.
+- Compile check: `dotnet build Hecton8.Core.csproj --no-restore` logged at `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish10.txt` and succeeded with 0 warnings and 0 errors.
+
+### Loop 12: Sensory Upload Dirty Gate
+
+STATUS: VERIFIED MASTER GRADE.
+
+Hardening evidence:
+
+- Added a 16-slot hash for the vault-resolved sensory threat view.
+- Added per-parity upload cache fields so `_boidSensoryThreatBufferA` and `_boidSensoryThreatBufferB` each receive their first upload and skip only when the selected buffer already holds the same payload hash.
+- Reset upload cache on sensory buffer recreation and release.
+- Added source comments documenting why GPU interop structs stay `Pack=4` while non-GPU native/job telemetry structs stay `Pack=1`.
+- Debt scan returned no matches for `void Update`, `string.Format`, local `NativeArray`, `NativeQueue`, `GlobalSignals.Publish`, managed delegates, `Allocator.Temp`, legacy `ComputeBuffer` type, `SetData`, or `GetData` in the boid/shader surface.
+- Compile check: `dotnet build Hecton8.Core.csproj --no-restore` first hit concurrent external `ArchitectEyeVisualizer` errors, then `Build_BOID_SENSORY_INPUT_PUMP_Polish11_Strike3.txt` succeeded with 0 errors and 2 external `MSB3026` copy-retry warnings.
+
+### Loop 13: Compile-Wall Recheck
+
+STATUS: BLOCKED BY DEPENDENCY, BOID SURFACE CLEAN.
+
+Hardening evidence:
+
+- Re-read `Status_BOID_SENSORY_INPUT_PUMP.md`, `Rationale_BOID_SENSORY_INPUT_PUMP.md`, and the original XML assignment before the recheck.
+- `Build_BOID_SENSORY_INPUT_PUMP_Polish12.txt` failed on external duplicate `ArchitectEyeVisualizer.ValidatePackedStructSizes` plus ambiguous `LaserCutterEventPayload` references in `AbyssalThermalManager` and `PlayerCriticalProceduralAudioRenderer`.
+- `Build_BOID_SENSORY_INPUT_PUMP_Polish12_Strike2.txt` timed out with an empty log; the orphaned build process later exited without diagnostics written to that file.
+- `Build_BOID_SENSORY_INPUT_PUMP_Polish12_Strike3.txt` failed on external missing constants in `HectonMarineSnowRenderer`: `ThreadGroupSize`, `ThreadGroupShift`, and `ClearKernelTileSize`.
+- Log scans found no diagnostics referencing `SargassumMicroFaunaBoids.cs`, `SargassumMicroFaunaBoids.compute`, `BoidFishInstanced.shader`, or `H8Memory.cs`.
+- Omega mandate read: no standalone `<POLISH_MANDATE>` tag exists in `CURRENT_BATCH.md`; this agent's XML block contains `[VI. OMEGA POLISH MANDATE]` with `STATUS: MUST BE "VERIFIED MASTER GRADE"`.
+- Cross-domain edits were rejected under the domain boundary rule; this task remains validated by the prior successful `Build_BOID_SENSORY_INPUT_PUMP_Polish11_Strike3.txt` and current touched-surface scans.
+
+### Loop 14: Pre-Upload Sanitizer and Ordered Blackbox Dump
+
+STATUS: BLOCKED BY DEPENDENCY, BOID SURFACE CLEAN.
+
+Hardening evidence:
+
+- Re-read `Status_BOID_SENSORY_INPUT_PUMP.md`, `Rationale_BOID_SENSORY_INPUT_PUMP.md`, and the original XML assignment before this pass.
+- Added `SanitizeBoidSensoryThreatSlots` after all signal ingestion and before upload hashing/GraphicsBuffer upload. It zeros non-finite vault slots, clamps positive sub-0.1 radii, and clears inactive slots across the fixed 16-slot contract.
+- Preserved pre-upload slot anomaly hashes through `RecordBoidSensoryBlackBox` so the dump header identifies corrupt slot payloads instead of collapsing them to only the generic non-finite constant.
+- Changed `TryDumpBoidSensoryBlackBox` to set the dumped sentinel before disk I/O, catch `IOException` and `UnauthorizedAccessException`, and serialize the ring oldest-to-newest from the current cursor.
+- Debt scan returned no matches for `void Update`, `string.Format`, local `NativeArray`, `NativeQueue`, `GlobalSignals.Publish`, managed delegates, `Allocator.Temp`, legacy `ComputeBuffer` type, `SetData`, or `GetData` in the boid/shader surface.
+- `git diff --check` on touched code/docs produced no whitespace errors; only repository LF-to-CRLF warnings.
+- Compile check: `Build_BOID_SENSORY_INPUT_PUMP_Polish13.txt` failed on 112 external errors in `DiegeticGyroCompassRuntime`, `HeavyTowWinch`/`TetherSignals`, and `EcosystemDirector`; `Build_BOID_SENSORY_INPUT_PUMP_Polish13_Strike2.txt` failed on 24 external errors in `DiegeticGyroCompassRuntime` and `EcosystemDirector`; `Build_BOID_SENSORY_INPUT_PUMP_Polish13_Strike3.txt` exited `-1` and wrote an empty log.
+- Log scans found no diagnostics referencing `SargassumMicroFaunaBoids.cs`, `SargassumMicroFaunaBoids.compute`, `BoidFishInstanced.shader`, or `H8Memory.cs`.
+
+### Loop 15: Acoustic Panic Recency and NaN Guard
+
+STATUS: VERIFIED MASTER GRADE.
+
+Hardening evidence:
+
+- Re-read `Status_BOID_SENSORY_INPUT_PUMP.md`, `Rationale_BOID_SENSORY_INPUT_PUMP.md`, the original XML assignment, `AGENTS.md`, `Docs/Actual Domains of Project.txt`, and relevant mandates before editing.
+- Fixed secondary `MovementAcousticSignal` and `AcousticPingSignal` panic consumers to scan the newest capped `SignalBus<T>.GetFrameSnapshot()` window instead of the oldest entries.
+- Hardened `RegisterAcousticPanicBurst` against non-finite origin, radius, duration, and strength before writing acoustic panic frame state.
+- Hardened compute shader `ResolveAcousticPanicChaos` against non-finite position, origin, radius, strength, time remaining, radius square, seed, and simulation time before `smoothstep`, hash seed math, or directional normalization.
+- Debt scan returned no matches for `void Update`, `string.Format`, local `NativeArray`, `NativeQueue`, `GlobalSignals.Publish`, managed delegates, `Allocator.Temp`, legacy `ComputeBuffer` type, `SetData`, or `GetData` in the boid/shader surface.
+- `git diff --check` on touched code/docs produced no whitespace errors; only repository LF-to-CRLF warnings.
+- Compile check: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /maxcpucount:1` logged at `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish14.txt` and succeeded with 0 warnings and 0 errors.
+
+### Loop 16: Finite Signal Scalar and Normalize Hardening
+
+STATUS: BLOCKED BY DEPENDENCY, BOID SURFACE CLEAN.
+
+Hardening evidence:
+
+- Re-read `Status_BOID_SENSORY_INPUT_PUMP.md`, `Rationale_BOID_SENSORY_INPUT_PUMP.md`, the original XML assignment, `AGENTS.md`, `Docs/Actual Domains of Project.txt`, and relevant mandates before editing.
+- Added `SaturateFinite01` and routed external light/acoustic scalar ingress through it so NaN intensity/volume/strength collapses to zero instead of surviving `math.saturate`.
+- Hardened `RegisterPredatorFearBurst`, `TryPublishSwarmDispersedSignal`, `RegisterVatHitReaction`, and the massive-displacement boid bridge against non-finite position/radius/duration/strength before writing GPU-facing threat/VFX state.
+- Replaced C# and compute-shader L1 normalize direct divisions with guarded reciprocal multiplication and finite fallback handling.
+- `WriteBoidSensoryThreatSlot` now clears non-positive radius inputs instead of turning a bad negative radius into an active 0.1 m threat.
+- Debt scan returned no matches for `void Update`, `string.Format`, local `NativeArray`, `NativeQueue`, `GlobalSignals.Publish`, managed delegates, `Allocator.Temp`, legacy `ComputeBuffer`, `SetData`, or `GetData` in the boid/shader surface.
+- `git diff --check` on touched code files produced no whitespace errors; only repository LF-to-CRLF warnings.
+- Compile check: `Build_BOID_SENSORY_INPUT_PUMP_Polish15.txt` and `Polish15_Strike2.txt` failed on external `LockstepStateValidator.ValidateBinaryLayout`; `Polish15_Strike3.txt` failed on external `LockstepSnapshotSignalCapacity`, `LockstepSnapshotLaneHash`, `SystemGlitchSignalCapacity`, and `SystemGlitchLaneHash`. Log scans found no diagnostics referencing this boid sensory surface.
+
+### Loop 17: Headlight Shader Frame-Constant Guard
+
+STATUS: BLOCKED BY DEPENDENCY, BOID SURFACE CLEAN.
+
+Hardening evidence:
+
+- Normalized finite shader L1 fallback vectors instead of returning raw fallback data.
+- Added finite guards to `ResolveHeadlightPhotophobiaForce` for boid position, player position, player forward, headlight panic, panic radius, boid body radius, panic weight, axial distance, radial distance, and cone radius before force math.
+- Added finite guards to `ResolvePlayerCurtainPartingForce` for boid/player positions, velocity, player threat gate, panic, headlight panic, and panic weight before high-tier curtain parting.
+- Debt scan returned no matches for `void Update`, `string.Format`, local `NativeArray`, `NativeQueue`, `GlobalSignals.Publish`, managed delegates, `Allocator.Temp`, legacy `ComputeBuffer`, `SetData`, or `GetData` in the boid/shader surface.
+- `git diff --check` on touched code/docs produced no whitespace errors; only repository LF-to-CRLF warnings.
+- Compile check: `Build_BOID_SENSORY_INPUT_PUMP_Polish16.txt` failed on external `ArchitectEyeVisualizer.DebugSignal`; no diagnostics referenced this boid sensory surface.

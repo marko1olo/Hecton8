@@ -42,15 +42,16 @@ Known historical blocker:
 
 | Gate | Command | Blocks Merge |
 |---|---|---|
-| no new direct NativeArray constructor debt | `python Tools\DataVaultSovereigntyAudit.py --fail-on-regression` | Yes |
+| no new direct NativeArray constructor or field declaration debt | `python Tools\DataVaultSovereigntyAudit.py --fail-on-regression` | Yes |
 | final zero-debt authority | `python Tools\DataVaultSovereigntyAudit.py --fail-on-any` | Yes when migration is declared complete |
 | baseline refresh | `python Tools\DataVaultSovereigntyAudit.py --write-baseline` | Manual CTO/integrator action only |
 
 Rules:
 
 - `H8Memory.cs` is the only allowed first-party file with direct `new NativeArray<T>` constructors.
+- Field-like `NativeArray<T>` declarations are allowed only in `H8Memory.cs` and `GlobalDataVault.cs`; every other declaration is migration debt unless it is removed or replaced by a vault accessor contract in a coordinated domain pass.
 - Every other first-party direct constructor is legacy debt until migrated to `GlobalDataVault` or `H8Memory.Allocate`.
-- The no-regression gate allows debt to decrease but blocks any file whose forbidden constructor count increases against `Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCER.json`.
+- The no-regression gate allows debt to decrease but blocks any file whose forbidden constructor count or field-like declaration count increases against `Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCER.json`.
 - The zero-debt gate is expected to fail until the remaining cross-domain migrations are complete.
 
 ---

@@ -368,6 +368,9 @@ namespace Hecton8.Core
 
         private void ShutdownServiceState()
         {
+            if (_memoryLifecycleTransitionActive)
+                H8Memory.SetSceneUnloadedVerificationDeferred(false);
+
             TryUnregisterUpdatable();
             TryUnregisterSceneCallbacks();
             TryUnregisterSceneService();
@@ -385,10 +388,12 @@ namespace Hecton8.Core
 
         private static void HandleSceneUnloaded(Scene scene)
         {
-            if (_suppressRuntimeClearForManagedUnload)
-                return;
+            if (!_suppressRuntimeClearForManagedUnload)
+                ClearRuntimeState();
 
-            ClearRuntimeState();
+            SceneRuntimeService runtime = GlobalRegistry.SceneRuntime;
+            if (runtime != null)
+                runtime.CompleteMemoryLifecycleTransition();
         }
 
         private static void ClearRuntimeState()
@@ -414,6 +419,7 @@ namespace Hecton8.Core
         {
             CacheDataVaultCold();
             H8Memory.BeginSceneTransitionPurge();
+            H8Memory.SetSceneUnloadedVerificationDeferred(true);
             _memoryLifecycleTransitionActive = true;
             PublishMemoryLifecyclePause(paused: true, MemoryTransitionLockFlag);
         }
@@ -427,6 +433,7 @@ namespace Hecton8.Core
             bool verified = H8Memory.CompleteSceneTransitionVerification();
             if (verified)
             {
+                H8Memory.SetSceneUnloadedVerificationDeferred(false);
                 PublishMemoryLifecyclePause(paused: false, MemoryTransitionReleasedFlag);
                 _memoryLifecycleTransitionActive = false;
                 return;

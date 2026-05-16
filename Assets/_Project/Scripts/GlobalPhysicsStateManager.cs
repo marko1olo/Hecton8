@@ -313,7 +313,106 @@ namespace Hecton8.Physics
     [DefaultExecutionOrder(-8995)]
     public sealed class GlobalPhysicsStateManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IPostFixedTickable, IOriginShiftListener, IAcousticPingEventListener, IPhysicsAcousticImpulseEventListener, IPhysicsImpactEventListener, IPhysicsCullingOverseer, IServiceHeartbeat, IServiceShutdown
     {
-        [StructLayout(LayoutKind.Sequential)]
+        private struct VaultBufferBinding<T>
+            where T : struct
+        {
+            public VaultBufferHandle<T> Handle;
+            public BufferID BufferId;
+            public int RequiredLength;
+            public SystemID OwnerSystemId;
+
+            public VaultBufferBinding(BufferID bufferId, int requiredLength, SystemID ownerSystemId)
+            {
+                Handle = default;
+                BufferId = bufferId;
+                RequiredLength = requiredLength;
+                OwnerSystemId = ownerSystemId;
+            }
+
+            public bool IsCreated
+            {
+                get
+                {
+                    NativeArray<T> buffer = ResolveExisting();
+                    return buffer.IsCreated;
+                }
+            }
+
+            public int Length
+            {
+                get
+                {
+                    NativeArray<T> buffer = ResolveExisting();
+                    return buffer.IsCreated ? buffer.Length : 0;
+                }
+            }
+
+            public bool Ensure(NativeArrayOptions options = NativeArrayOptions.ClearMemory)
+            {
+                IDataVault dataVault = GlobalRegistry.DataVault;
+                if (dataVault == null || RequiredLength <= 0)
+                {
+                    Handle = default;
+                    return false;
+                }
+
+                if (!Handle.IsCreated || Handle.Length < RequiredLength)
+                {
+                    Handle = dataVault.GetBufferHandle<T>(
+                        BufferId,
+                        RequiredLength,
+                        OwnerSystemId,
+                        options);
+                }
+
+                NativeArray<T> buffer = ResolveExisting(dataVault);
+                return buffer.IsCreated && buffer.Length >= RequiredLength;
+            }
+
+            public NativeArray<T> AsNativeArray()
+            {
+                return ResolveExisting();
+            }
+
+            public void ReleaseView()
+            {
+                Handle = default;
+            }
+
+            public T this[int index]
+            {
+                get
+                {
+                    NativeArray<T> buffer = ResolveExisting();
+                    return buffer[index];
+                }
+                set
+                {
+                    NativeArray<T> buffer = ResolveExisting();
+                    buffer[index] = value;
+                }
+            }
+
+            public static implicit operator NativeArray<T>(VaultBufferBinding<T> binding)
+            {
+                return binding.AsNativeArray();
+            }
+
+            NativeArray<T> ResolveExisting()
+            {
+                return ResolveExisting(GlobalRegistry.DataVault);
+            }
+
+            NativeArray<T> ResolveExisting(IDataVault dataVault)
+            {
+                if (dataVault == null || !Handle.IsCreated)
+                    return default;
+
+                return Handle.Resolve(dataVault);
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct RigidbodyState
         {
             public ulong EntityId;
@@ -454,7 +553,7 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct PhysicsConnection
         {
             public UnityEngine.Object Owner;
@@ -465,7 +564,7 @@ namespace Hecton8.Physics
             public bool CompensationActive;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct PhysicsImpactEventData
         {
             public ulong PrimaryBodyId;
@@ -481,7 +580,7 @@ namespace Hecton8.Physics
             public byte SecondaryAudioMaterialId;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct PhysicsCullingTelemetryEntry
         {
             public int FrameIndex;
@@ -564,6 +663,7 @@ namespace Hecton8.Physics
         private const float SpeculativeHoverTideMaxScale = 1.25f;
         private const double ColliderLodCompoundToSimpleDistanceSq = ColliderLodCompoundToSimpleDistanceMeters * ColliderLodCompoundToSimpleDistanceMeters;
         private const double ColliderLodSimpleToCompoundDistanceSq = ColliderLodSimpleToCompoundDistanceMeters * ColliderLodSimpleToCompoundDistanceMeters;
+        private const SystemID OwnerSystemId = SystemID.GlobalPhysicsStateManager;
         private static readonly uint _nanRecoverySystemHash = unchecked((uint)LocHash.Compute(nameof(GlobalPhysicsStateManager)));
         private static readonly uint _kinematicHitStopHash = unchecked((uint)LocHash.Compute("GlobalPhysicsStateManager.KinematicHitStop"));
 
@@ -586,19 +686,20 @@ namespace Hecton8.Physics
         // COLD ALLOC: List<MeshCollider>[4] - cold registration scratch; never used by frame loops - owner: GlobalPhysicsStateManager
         private readonly List<MeshCollider> _meshColliderScratch = new List<MeshCollider>(MeshColliderScratchCapacity);
 
-        private NativeArray<float3> _lastValidPositions;
-        private NativeArray<double3> _rigidbodyAUPs;
-        private NativeArray<byte> _rigidbodyCullingStateSnapshot;
-        private NativeArray<byte> _rigidbodyAwakeResults;
-        private NativeArray<byte> _rigidbodyCullingCommandResults;
-        private NativeArray<float> _rigidbodyDistanceSqResults;
-        private NativeArray<PhysicsCullingTelemetryEntry> _physicsCullingTelemetry;
-        private NativeQueue<PhysicsImpactEventData> _impactQueue;
-        private bool _rigidbodyAUPsVaultOwned;
+        private VaultBufferBinding<float3> _lastValidPositions = new VaultBufferBinding<float3>(BufferID.RigidbodyLastValidPositions, MaxTrackedBodies, OwnerSystemId);
+        private VaultBufferBinding<double3> _rigidbodyAUPs = new VaultBufferBinding<double3>(BufferID.RigidbodyAUPs, MaxTrackedBodies, OwnerSystemId);
+        private VaultBufferBinding<byte> _rigidbodyCullingStateSnapshot = new VaultBufferBinding<byte>(BufferID.RigidbodyCullingState, MaxTrackedBodies, OwnerSystemId);
+        private VaultBufferBinding<byte> _rigidbodyAwakeResults = new VaultBufferBinding<byte>(BufferID.RigidbodyAwakeResults, MaxTrackedBodies, OwnerSystemId);
+        private VaultBufferBinding<byte> _rigidbodyCullingCommandResults = new VaultBufferBinding<byte>(BufferID.RigidbodyCullingCommands, MaxTrackedBodies, OwnerSystemId);
+        private VaultBufferBinding<float> _rigidbodyDistanceSqResults = new VaultBufferBinding<float>(BufferID.RigidbodyDistanceSq, MaxTrackedBodies, OwnerSystemId);
+        private VaultBufferBinding<PhysicsCullingTelemetryEntry> _physicsCullingTelemetry = new VaultBufferBinding<PhysicsCullingTelemetryEntry>(BufferID.PhysicsCullingTelemetry, PhysicsCullingTelemetryCapacity, OwnerSystemId);
+        private VaultBufferBinding<PhysicsImpactEventData> _impactEvents = new VaultBufferBinding<PhysicsImpactEventData>(BufferID.PhysicsImpactEvents, MaxQueuedImpactEvents, OwnerSystemId);
         private JobHandle _physicsCullingJobHandle;
         private int _trackedBodyCount;
         private int _connectionCount;
         private int _queuedImpactCount;
+        private int _impactEventReadIndex;
+        private int _impactEventWriteIndex;
         private int _physicsCullingJobCount;
         private int _culledBodyCount;
         private int _physicsCullingTelemetryWriteIndex;
@@ -985,79 +1086,50 @@ namespace Hecton8.Physics
 
             if (!_lastValidPositions.IsCreated)
             {
-                // COLD ALLOC: NativeArray<float3>[512] — authoritative last-valid runtime-space body positions for origin-shift-safe recovery — owner: GlobalPhysicsStateManager
-                _lastValidPositions = H8Memory.Allocate<float3>(MaxTrackedBodies, SystemID.GlobalPhysicsStateManager, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _lastValidPositions,
-                    nameof(GlobalPhysicsStateManager),
-                    nameof(_lastValidPositions),
-                    NativeAllocationLifetime.Session);
+                // COLD VAULT: float3[512] - authoritative last-valid runtime-space body positions for origin-shift-safe recovery.
+                _lastValidPositions.Ensure();
             }
 
-            if (!_impactQueue.IsCreated)
+            if (!_impactEvents.IsCreated)
             {
-                // COLD ALLOC: NativeQueue<PhysicsImpactEventData>[128] — deferred gameplay physics impact bus — owner: GlobalPhysicsStateManager
-                _impactQueue = new NativeQueue<PhysicsImpactEventData>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _impactQueue,
-                    MaxQueuedImpactEvents,
-                    nameof(GlobalPhysicsStateManager),
-                    nameof(_impactQueue),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _impactQueue, MaxQueuedImpactEvents);
+                // COLD VAULT: PhysicsImpactEventData[256] - deferred gameplay physics impact ring.
+                _impactEvents.Ensure();
             }
 
             if (!_rigidbodyAUPs.IsCreated)
             {
-                // COLD ALLOC: NativeArray<double3>[512] - player-relative AUP body positions for Burst distance culling - owner: GlobalPhysicsStateManager
-                IDataVault dataVault = GlobalRegistry.DataVault;
-                if (dataVault != null)
-                {
-                    _rigidbodyAUPs = dataVault.GetBuffer<double3>(
-                        BufferID.RigidbodyAUPs,
-                        MaxTrackedBodies,
-                        SystemID.GlobalPhysicsStateManager,
-                        NativeArrayOptions.ClearMemory);
-                    _rigidbodyAUPsVaultOwned = _rigidbodyAUPs.IsCreated;
-                }
-
-                if (_rigidbodyAUPs.IsCreated)
-                    NativeMemorySentinel.RegisterNativeArray(_rigidbodyAUPs, nameof(GlobalPhysicsStateManager), nameof(_rigidbodyAUPs), NativeAllocationLifetime.Session);
+                // COLD VAULT: double3[512] - player-relative AUP body positions for Burst distance culling.
+                _rigidbodyAUPs.Ensure();
             }
 
             if (!_rigidbodyCullingStateSnapshot.IsCreated)
             {
-                // COLD ALLOC: NativeArray<byte>[512] - culling state snapshot consumed by Burst job - owner: GlobalPhysicsStateManager
-                _rigidbodyCullingStateSnapshot = H8Memory.Allocate<byte>(MaxTrackedBodies, SystemID.GlobalPhysicsStateManager, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_rigidbodyCullingStateSnapshot, nameof(GlobalPhysicsStateManager), nameof(_rigidbodyCullingStateSnapshot), NativeAllocationLifetime.Session);
+                // COLD VAULT: byte[512] - culling state snapshot consumed by Burst job.
+                _rigidbodyCullingStateSnapshot.Ensure();
             }
 
             if (!_rigidbodyAwakeResults.IsCreated)
             {
-                // COLD ALLOC: NativeArray<byte>[512] - Burst awake/sleep result lane - owner: GlobalPhysicsStateManager
-                _rigidbodyAwakeResults = H8Memory.Allocate<byte>(MaxTrackedBodies, SystemID.GlobalPhysicsStateManager, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_rigidbodyAwakeResults, nameof(GlobalPhysicsStateManager), nameof(_rigidbodyAwakeResults), NativeAllocationLifetime.Session);
+                // COLD VAULT: byte[512] - Burst awake/sleep result lane.
+                _rigidbodyAwakeResults.Ensure();
             }
 
             if (!_rigidbodyCullingCommandResults.IsCreated)
             {
-                // COLD ALLOC: NativeArray<byte>[512] - Burst culling command lane - owner: GlobalPhysicsStateManager
-                _rigidbodyCullingCommandResults = H8Memory.Allocate<byte>(MaxTrackedBodies, SystemID.GlobalPhysicsStateManager, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_rigidbodyCullingCommandResults, nameof(GlobalPhysicsStateManager), nameof(_rigidbodyCullingCommandResults), NativeAllocationLifetime.Session);
+                // COLD VAULT: byte[512] - Burst culling command lane.
+                _rigidbodyCullingCommandResults.Ensure();
             }
 
             if (!_rigidbodyDistanceSqResults.IsCreated)
             {
-                // COLD ALLOC: NativeArray<float>[512] - distance squared diagnostics from culling job - owner: GlobalPhysicsStateManager
-                _rigidbodyDistanceSqResults = H8Memory.Allocate<float>(MaxTrackedBodies, SystemID.GlobalPhysicsStateManager, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_rigidbodyDistanceSqResults, nameof(GlobalPhysicsStateManager), nameof(_rigidbodyDistanceSqResults), NativeAllocationLifetime.Session);
+                // COLD VAULT: float[512] - distance squared diagnostics from culling job.
+                _rigidbodyDistanceSqResults.Ensure();
             }
 
             if (!_physicsCullingTelemetry.IsCreated)
             {
-                // COLD ALLOC: NativeArray<PhysicsCullingTelemetryEntry>[300] - black-box circular telemetry for sleep enforcer - owner: GlobalPhysicsStateManager
-                _physicsCullingTelemetry = H8Memory.Allocate<PhysicsCullingTelemetryEntry>(PhysicsCullingTelemetryCapacity, SystemID.GlobalPhysicsStateManager, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_physicsCullingTelemetry, nameof(GlobalPhysicsStateManager), nameof(_physicsCullingTelemetry), NativeAllocationLifetime.Session);
+                // COLD VAULT: PhysicsCullingTelemetryEntry[300] - black-box circular telemetry for sleep enforcer.
+                _physicsCullingTelemetry.Ensure();
             }
         }
 
@@ -1065,6 +1137,7 @@ namespace Hecton8.Physics
         {
             bool hasUndersizedLane =
                 (_lastValidPositions.IsCreated && _lastValidPositions.Length < MaxTrackedBodies) ||
+                (_impactEvents.IsCreated && _impactEvents.Length < MaxQueuedImpactEvents) ||
                 (_rigidbodyAUPs.IsCreated && _rigidbodyAUPs.Length < MaxTrackedBodies) ||
                 (_rigidbodyCullingStateSnapshot.IsCreated && _rigidbodyCullingStateSnapshot.Length < MaxTrackedBodies) ||
                 (_rigidbodyAwakeResults.IsCreated && _rigidbodyAwakeResults.Length < MaxTrackedBodies) ||
@@ -1075,57 +1148,31 @@ namespace Hecton8.Physics
                 return;
 
             CompletePhysicsCullingJobForStateMutation(discardResults: true);
-            ReleaseUndersizedNativeArray(ref _lastValidPositions, MaxTrackedBodies);
-            ReleaseUndersizedRigidbodyAupLane();
-            ReleaseUndersizedNativeArray(ref _rigidbodyCullingStateSnapshot, MaxTrackedBodies);
-            ReleaseUndersizedNativeArray(ref _rigidbodyAwakeResults, MaxTrackedBodies);
-            ReleaseUndersizedNativeArray(ref _rigidbodyCullingCommandResults, MaxTrackedBodies);
-            ReleaseUndersizedNativeArray(ref _rigidbodyDistanceSqResults, MaxTrackedBodies);
-            ReleaseUndersizedNativeArray(ref _physicsCullingTelemetry, PhysicsCullingTelemetryCapacity);
+            ReleaseUndersizedVaultBuffer(ref _lastValidPositions, MaxTrackedBodies);
+            ReleaseUndersizedVaultBuffer(ref _impactEvents, MaxQueuedImpactEvents);
+            ReleaseUndersizedVaultBuffer(ref _rigidbodyAUPs, MaxTrackedBodies);
+            ReleaseUndersizedVaultBuffer(ref _rigidbodyCullingStateSnapshot, MaxTrackedBodies);
+            ReleaseUndersizedVaultBuffer(ref _rigidbodyAwakeResults, MaxTrackedBodies);
+            ReleaseUndersizedVaultBuffer(ref _rigidbodyCullingCommandResults, MaxTrackedBodies);
+            ReleaseUndersizedVaultBuffer(ref _rigidbodyDistanceSqResults, MaxTrackedBodies);
+            ReleaseUndersizedVaultBuffer(ref _physicsCullingTelemetry, PhysicsCullingTelemetryCapacity);
         }
 
-        private static void ReleaseUndersizedNativeArray<T>(ref NativeArray<T> array, int requiredLength)
+        private static void ReleaseUndersizedVaultBuffer<T>(ref VaultBufferBinding<T> buffer, int requiredLength)
             where T : struct
         {
-            if (!array.IsCreated || array.Length >= requiredLength)
+            if (!buffer.IsCreated || buffer.Length >= requiredLength)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array, SystemID.GlobalPhysicsStateManager);
-        }
-
-        private void ReleaseUndersizedRigidbodyAupLane()
-        {
-            if (!_rigidbodyAUPs.IsCreated || _rigidbodyAUPs.Length >= MaxTrackedBodies)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(_rigidbodyAUPs);
-            if (_rigidbodyAUPsVaultOwned)
-                _rigidbodyAUPs = default;
-            else
-                H8Memory.Release(ref _rigidbodyAUPs, SystemID.GlobalPhysicsStateManager);
-
-            _rigidbodyAUPsVaultOwned = false;
-        }
-
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
+            buffer.ReleaseView();
         }
 
         private bool HasRequiredNativeState()
         {
             return _lastValidPositions.IsCreated &&
                 _lastValidPositions.Length >= MaxTrackedBodies &&
+                _impactEvents.IsCreated &&
+                _impactEvents.Length >= MaxQueuedImpactEvents &&
                 _rigidbodyAUPs.IsCreated &&
                 _rigidbodyAUPs.Length >= MaxTrackedBodies &&
                 _rigidbodyCullingStateSnapshot.IsCreated &&
@@ -1169,58 +1216,14 @@ namespace Hecton8.Physics
             UnsubscribeSceneEvents();
             ClearRuntimeState();
 
-            if (_impactQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(GlobalPhysicsStateManager), nameof(_impactQueue));
-                _impactQueue.Dispose();
-                _impactQueue = default;
-            }
-
-            if (_lastValidPositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_lastValidPositions);
-                H8Memory.Release(ref _lastValidPositions, SystemID.GlobalPhysicsStateManager);
-            }
-
-            if (_rigidbodyAUPs.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_rigidbodyAUPs);
-                if (_rigidbodyAUPsVaultOwned)
-                    _rigidbodyAUPs = default;
-                else
-                    H8Memory.Release(ref _rigidbodyAUPs, SystemID.GlobalPhysicsStateManager);
-                _rigidbodyAUPsVaultOwned = false;
-            }
-
-            if (_rigidbodyCullingStateSnapshot.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_rigidbodyCullingStateSnapshot);
-                H8Memory.Release(ref _rigidbodyCullingStateSnapshot, SystemID.GlobalPhysicsStateManager);
-            }
-
-            if (_rigidbodyAwakeResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_rigidbodyAwakeResults);
-                H8Memory.Release(ref _rigidbodyAwakeResults, SystemID.GlobalPhysicsStateManager);
-            }
-
-            if (_rigidbodyCullingCommandResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_rigidbodyCullingCommandResults);
-                H8Memory.Release(ref _rigidbodyCullingCommandResults, SystemID.GlobalPhysicsStateManager);
-            }
-
-            if (_rigidbodyDistanceSqResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_rigidbodyDistanceSqResults);
-                H8Memory.Release(ref _rigidbodyDistanceSqResults, SystemID.GlobalPhysicsStateManager);
-            }
-
-            if (_physicsCullingTelemetry.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_physicsCullingTelemetry);
-                H8Memory.Release(ref _physicsCullingTelemetry, SystemID.GlobalPhysicsStateManager);
-            }
+            _impactEvents.ReleaseView();
+            _lastValidPositions.ReleaseView();
+            _rigidbodyAUPs.ReleaseView();
+            _rigidbodyCullingStateSnapshot.ReleaseView();
+            _rigidbodyAwakeResults.ReleaseView();
+            _rigidbodyCullingCommandResults.ReleaseView();
+            _rigidbodyDistanceSqResults.ReleaseView();
+            _physicsCullingTelemetry.ReleaseView();
 
             TryUnregisterService();
             _isInitialized = false;
@@ -1917,7 +1920,7 @@ namespace Hecton8.Physics
         {
             if (primaryBody == null ||
                 HectonFloatingOrigin.IsShiftInProgress ||
-                !_impactQueue.IsCreated ||
+                !_impactEvents.IsCreated ||
                 _queuedImpactCount >= MaxQueuedImpactEvents)
             {
                 return;
@@ -1948,11 +1951,11 @@ namespace Hecton8.Physics
             if (!math.all(math.isfinite(normal3)) || normalSq <= 0.000001f)
                 normal3 = new float3(0f, 1f, 0f);
             else
-                normal3 *= math.rsqrt(normalSq);
+                normal3 *= math.rsqrt(math.max(normalSq, 0.000001f));
             AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(point3.x, point3.y, point3.z));
             PhysicsImpactWeightClass weightClass = ResolveImpactWeightClass(impactIntensity);
 
-            _impactQueue.Enqueue(new PhysicsImpactEventData
+            EnqueueImpactEvent(new PhysicsImpactEventData
             {
                 PrimaryBodyId = EntityId.ToULong(primaryBody.GetEntityId()),
                 SecondaryBodyId = secondaryBody != null ? EntityId.ToULong(secondaryBody.GetEntityId()) : 0ul,
@@ -1966,7 +1969,6 @@ namespace Hecton8.Physics
                 PrimaryAudioMaterialId = ResolveImpactAudioMaterialId(primaryBody),
                 SecondaryAudioMaterialId = ResolveImpactAudioMaterialId(secondaryBody)
             });
-            _queuedImpactCount++;
         }
 
         private void QueueKinematicImpactInternal(
@@ -1978,7 +1980,7 @@ namespace Hecton8.Physics
         {
             if (primaryBody == null ||
                 HectonFloatingOrigin.IsShiftInProgress ||
-                !_impactQueue.IsCreated ||
+                !_impactEvents.IsCreated ||
                 _queuedImpactCount >= MaxQueuedImpactEvents)
             {
                 return;
@@ -2003,14 +2005,14 @@ namespace Hecton8.Physics
             if (!math.all(math.isfinite(normal3)) || normalSq <= 0.000001f)
                 normal3 = new float3(0f, 1f, 0f);
             else
-                normal3 *= math.rsqrt(normalSq);
+                normal3 *= math.rsqrt(math.max(normalSq, 0.000001f));
             AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(point3.x, point3.y, point3.z));
 
             float impactIntensity = ResolveImpactIntensityFromForce(impactForce);
             if (!(impactIntensity > 0f))
                 return;
 
-            _impactQueue.Enqueue(new PhysicsImpactEventData
+            EnqueueImpactEvent(new PhysicsImpactEventData
             {
                 PrimaryBodyId = EntityId.ToULong(primaryBody.GetEntityId()),
                 SecondaryBodyId = secondaryBody != null ? EntityId.ToULong(secondaryBody.GetEntityId()) : 0ul,
@@ -2024,24 +2026,43 @@ namespace Hecton8.Physics
                 PrimaryAudioMaterialId = ResolveImpactAudioMaterialId(primaryBody),
                 SecondaryAudioMaterialId = ResolveImpactAudioMaterialId(secondaryBody)
             });
+        }
+
+        private bool EnqueueImpactEvent(in PhysicsImpactEventData impactEvent)
+        {
+            if (!_impactEvents.IsCreated || _queuedImpactCount >= MaxQueuedImpactEvents)
+                return false;
+
+            int writeIndex = _impactEventWriteIndex;
+            if ((uint)writeIndex >= (uint)MaxQueuedImpactEvents)
+                writeIndex = 0;
+
+            _impactEvents[writeIndex] = impactEvent;
+            _impactEventWriteIndex = writeIndex + 1 >= MaxQueuedImpactEvents
+                ? 0
+                : writeIndex + 1;
             _queuedImpactCount++;
+            return true;
         }
 
         private void FlushImpactEvents()
         {
-            if (!_impactQueue.IsCreated || _queuedImpactCount <= 0)
+            if (!_impactEvents.IsCreated || _queuedImpactCount <= 0)
                 return;
 
             int processedCount = 0;
             while (_queuedImpactCount > 0 &&
                    processedCount < MaxImpactFlushIterations)
             {
-                if (!_impactQueue.TryDequeue(out PhysicsImpactEventData impactEvent))
-                {
-                    _queuedImpactCount = 0;
-                    break;
-                }
+                int readIndex = _impactEventReadIndex;
+                if ((uint)readIndex >= (uint)MaxQueuedImpactEvents)
+                    readIndex = 0;
 
+                PhysicsImpactEventData impactEvent = _impactEvents[readIndex];
+                _impactEvents[readIndex] = default;
+                _impactEventReadIndex = readIndex + 1 >= MaxQueuedImpactEvents
+                    ? 0
+                    : readIndex + 1;
                 _queuedImpactCount--;
                 processedCount++;
                 Vector3 impactPoint = new Vector3(impactEvent.Point.x, impactEvent.Point.y, impactEvent.Point.z);
@@ -3115,7 +3136,9 @@ namespace Hecton8.Physics
                 return;
 
             float kineticEnergy = math.max(0f, impulseEvent.KineticEnergyJoules);
-            float energyRadius = kineticEnergy > 0f ? kineticEnergy * math.rsqrt(kineticEnergy) * 0.1f : 0f;
+            float energyRadius = kineticEnergy > 0f
+                ? kineticEnergy * math.rsqrt(math.max(kineticEnergy, 0.000001f)) * 0.1f
+                : 0f;
             float radiusMeters = math.clamp(
                 math.max(impulseEvent.RadiusMeters, energyRadius) * math.max(impulseEvent.Volume01, 0.25f),
                 AcousticWakeMinimumRadiusMeters,
@@ -3246,7 +3269,7 @@ namespace Hecton8.Physics
         {
             double safeDistanceSq = math.max(0.0, distanceSq);
             float distanceMeters = safeDistanceSq > 0.0
-                ? (float)math.min(1000000.0, safeDistanceSq * math.rsqrt(safeDistanceSq))
+                ? (float)math.min(1000000.0, safeDistanceSq * math.rsqrt(math.max(safeDistanceSq, 0.000001)))
                 : 0f;
             RigidbodySleepSignal signal = new RigidbodySleepSignal
             {
@@ -3659,16 +3682,16 @@ namespace Hecton8.Physics
         private void ClearRuntimeState()
         {
             CompletePhysicsCullingJobForStateMutation(discardResults: true);
-            if (_impactQueue.IsCreated)
+            if (_impactEvents.IsCreated)
             {
-                int drainIterations = 0;
-                while (drainIterations < MaxQueuedImpactEvents && _impactQueue.TryDequeue(out _))
-                {
-                    drainIterations++;
-                }
+                int impactClearCount = math.min(_impactEvents.Length, MaxQueuedImpactEvents);
+                for (int i = 0; i < impactClearCount; i++)
+                    _impactEvents[i] = default;
             }
 
             _queuedImpactCount = 0;
+            _impactEventReadIndex = 0;
+            _impactEventWriteIndex = 0;
 
             for (int i = 0; i < _trackedBodyCount; i++)
             {
@@ -3727,6 +3750,8 @@ namespace Hecton8.Physics
             _trackedBodyCount = 0;
             _connectionCount = 0;
             _queuedImpactCount = 0;
+            _impactEventReadIndex = 0;
+            _impactEventWriteIndex = 0;
             _culledBodyCount = 0;
             _physicsCullingJobCount = 0;
             _physicsCullingTelemetryWriteIndex = 0;

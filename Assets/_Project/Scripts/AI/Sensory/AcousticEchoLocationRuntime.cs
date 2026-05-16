@@ -12,6 +12,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace Hecton8.AI.Sensory
 {
@@ -211,15 +212,6 @@ namespace Hecton8.AI.Sensory
 
         public static uint AcousticHuntsTriggered => _trailState.AcousticHuntsTriggered;
 
-        public static NativeQueue<EchoTap>.ParallelWriter EchoTapWriter
-        {
-            get
-            {
-                EnsureInitialized();
-                return _echoTapQueue.AsParallelWriter();
-            }
-        }
-
         public static void EnsureInitialized()
         {
             if (_initialized != 0)
@@ -275,11 +267,7 @@ namespace Hecton8.AI.Sensory
             if (!EnsureVaultBuffers() || _queuedEchoTapCount >= MaxQueuedEchoTaps)
                 return false;
 
-            if (!IsFiniteAup(in tap.PortalAup) ||
-                !IsFiniteAup(in tap.SourceAup) ||
-                !math.isfinite(tap.Volume01) ||
-                !math.isfinite(tap.Transmission01) ||
-                !math.isfinite(tap.LastHeardTime))
+            if (!IsValidTap(in tap))
             {
                 WriteFaultBlackBox(0, in tap.PortalAup);
                 return false;
@@ -576,13 +564,14 @@ namespace Hecton8.AI.Sensory
                 }
                 else
                 {
+                    _lastRefreshFrame = frame;
                     WriteHeartbeatBlackBox(frame, currentTime);
                     return;
                 }
             }
 
             _cachedQualityTier = ResolveQualityTier();
-            int tapCount = DrainEchoTapQueue(frameTaps, currentTime);
+            int tapCount = DrainEchoTapQueue(frameTaps, frame, currentTime);
             tapCount = AppendMovementSignals(frameTaps, tapCount, frame, currentTime);
             tapCount = AppendAcousticPingSignals(frameTaps, tapCount, frame, currentTime);
 
@@ -601,12 +590,18 @@ namespace Hecton8.AI.Sensory
             WriteHeartbeatBlackBox(frame, currentTime);
         }
 
-        private static int DrainEchoTapQueue(NativeArray<EchoTap> frameTaps, float currentTime)
+        private static int DrainEchoTapQueue(NativeArray<EchoTap> frameTaps, int frame, float currentTime)
         {
             int count = 0;
             int limit = math.min(MaxEchoTapsPerFrame, frameTaps.IsCreated ? frameTaps.Length : 0);
             while (count < limit && _echoTapQueue.TryDequeue(out EchoTap tap))
             {
+                if (!IsValidTap(in tap))
+                {
+                    WriteFaultBlackBox(frame, in tap.PortalAup);
+                    continue;
+                }
+
                 if (tap.LastHeardTime <= 0f || !math.isfinite(tap.LastHeardTime))
                     tap.LastHeardTime = currentTime;
 
@@ -780,6 +775,16 @@ namespace Hecton8.AI.Sensory
                    math.isfinite(aup.LocalZ);
         }
 
+        private static bool IsValidTap(in EchoTap tap)
+        {
+            return IsFiniteAup(in tap.PortalAup) &&
+                   IsFiniteAup(in tap.SourceAup) &&
+                   math.isfinite(tap.Volume01) &&
+                   math.isfinite(tap.Transmission01) &&
+                   math.isfinite(tap.DelaySeconds) &&
+                   math.isfinite(tap.LastHeardTime);
+        }
+
         private static uint HashState(in AcousticEchoTrailState state)
         {
             uint hash = 2166136261u;
@@ -859,7 +864,7 @@ namespace Hecton8.AI.Sensory
 
             try
             {
-                string dumpPath = Path.GetFullPath(DumpRelativePath);
+                string dumpPath = ResolveDumpPath();
                 string directory = Path.GetDirectoryName(dumpPath);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
@@ -893,6 +898,15 @@ namespace Hecton8.AI.Sensory
             catch (Exception)
             {
             }
+        }
+
+        private static string ResolveDumpPath()
+        {
+            string dataPath = Application.dataPath;
+            if (!string.IsNullOrEmpty(dataPath))
+                return Path.GetFullPath(Path.Combine(dataPath, "..", DumpRelativePath));
+
+            return Path.GetFullPath(DumpRelativePath);
         }
     }
 }

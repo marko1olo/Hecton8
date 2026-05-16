@@ -62,6 +62,7 @@ using Hecton8.Building;
 using Hecton8.Caves;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -208,15 +209,15 @@ namespace Hecton8.Gameplay
         /// Maksimum kollayderov, pereschityvaemyh pri holodnoy sinhronizatsii interior zone.
         /// </summary>
         private const int INTERIOR_OVERLAP_CAPACITY = 32;
-        private const float SeawaterDensityKilogramsPerCubicMeter = 1025f;
-        private const float GravityAccelerationMetersPerSecondSquared = 9.81f;
+        private const float SeawaterDensityKilogramsPerCubicMeter = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
+        private const float GravityAccelerationMetersPerSecondSquared = HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
         private const float MinimumMassKilograms = 1f;
         private const float BuoyancyMassUpdateThresholdKilograms = 0.5f;
         private const float DefaultMaximumHydroStructuralLoadNewtons = 500000f;
         private const float DefaultBulkheadFailureWaterMassKilograms = 18000f;
         private const float DefaultBulkheadStressRatePerSecond = 0.035f;
         private const float DefaultBulkheadStressRecoveryPerSecond = 0.01f;
-        private const float SurfacePressureKPa = 101.325f;
+        private const float SurfacePressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
         private const float DefaultDeepCompressionStartDepthMeters = 3000f;
         private const float DefaultDeepCompressionFullPressureKPa = 60000f;
         private const float DefaultMaximumDeepCompressionAxisLoss = 0.001f;

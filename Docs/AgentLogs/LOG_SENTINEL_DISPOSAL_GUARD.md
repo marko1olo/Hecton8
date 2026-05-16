@@ -283,3 +283,252 @@ Verification:
 - `git diff --check` reported line-ending warnings only.
 - `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:03.24 and succeeded with 0 warnings and 0 errors.
 - Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-16 - Continuation Inquisition / Versioned Dump Headers and Compile Green
+
+What was wrong:
+- H8Memory fatal dumps contained ordered heartbeat and lifecycle rings, but the stream did not identify dump version, ring kind, capacity, or record sizes.
+- GlobalDataVault defrag/PhiVOD dumps had magic/count/entry-size fields but no version or ring capacity.
+- Decoder-side assumptions were still required for postmortem tooling, which is unacceptable for crash forensics after long-running sessions.
+
+What was done:
+- Added `FatalLeakDumpMagic`, `FatalLeakDumpVersion`, blackbox ring-kind constants, telemetry entry size, allocation record size, and blackbox capacity to the H8Memory fatal dump header.
+- H8Memory now serializes heartbeat and lifecycle-event rings with explicit ring kind, ring capacity, entry size, recorded count, and oldest-to-newest entries.
+- Added `DefragDumpVersion` and ring capacity to GlobalDataVault defrag/PhiVOD dump headers.
+- Reran the exact XML extraction and relevant static inquisition scans.
+
+Cinematic Cheats used:
+- No visual-domain edit belongs in CORE/MEMORY.
+- Toaster mode: headers are written only on cold fatal/defrag dump paths; no per-frame disk I/O, no managed queue, no larger hot telemetry records.
+- God-mode: stronger deterministic crash forensics preserves recovered scene-transition memory for Ocean/VFX domains instead of burning runtime budget.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Gameplay hot path: 0 B/frame and no new per-frame CPU branch from the dump header changes.
+- Cold dump path writes a few additional primitive header fields; exact CPU and I/O microseconds are unmeasured.
+- Existing heartbeat cost remains one fixed native struct store per active frame; exact CPU cost unmeasured.
+
+Verification:
+- Re-read `Docs/Tasks/Status_SENTINEL_DISPOSAL_GUARD.md`, `Docs/AgentLogs/Rationale_SENTINEL_DISPOSAL_GUARD.md`, and the exact `SENTINEL_DISPOSAL_GUARD` XML assignment from `Docs/Tasks/CURRENT_BATCH.md`.
+- Static scan found no CORE/MEMORY `StructLayout` without `Pack = 1`.
+- Static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>` in CORE/MEMORY.
+- `git diff --check` on touched files reported line-ending warnings only.
+- First validation pass failed on 17 transient external errors in `PredatorCognitionDomain` and `DroneFleetManager`; those files changed under parallel work before a Sentinel-domain edit was justified.
+- Final validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:01:39.53 and succeeded with 0 warnings and 0 errors.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-16 - Continuation Inquisition / External UI-World Compile Drift
+
+What was wrong:
+- A newer validation pass invalidated the prior green checkpoint.
+- The current compile errors are outside CORE/MEMORY: `DiegeticGyroCompassRuntime` has signature/state-field drift, and `EcosystemDirector` has native generic inference/upload drift.
+- A previously reported `SubmarineFluidDynamics` syntax error was already repaired by parallel work before a Sentinel edit was required.
+
+What was done:
+- Re-read Sentinel status/rationale and continued from disk state.
+- Rechecked the Submarine compile-gate region and did not edit it because the missing brace was already present.
+- Reran CORE/MEMORY static scans for packed struct layout and forbidden patterns.
+- Reran the compile gate with a longer timeout after the first pass timed out.
+- Updated Sentinel status/rationale to stop reporting stale green validation.
+
+Cinematic Cheats used:
+- No visual-domain edit belongs in CORE/MEMORY.
+- Toaster mode: no additional runtime work was added; Sentinel memory dump/header work remains cold-path or fixed-ring heartbeat only.
+- God-mode: recovered memory and deterministic crash evidence remain available for Ocean/VFX domains once external compile drift is repaired.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- No new gameplay hot-path code was added in this pass.
+- Static CORE/MEMORY audits still show 0 B/frame from the dump-header changes.
+
+Verification:
+- Static scan found no CORE/MEMORY `StructLayout` without `Pack = 1`.
+- Static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>` in CORE/MEMORY.
+- First build pass timed out after 254.9s without returning compiler errors.
+- Second validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:03:03.97 and failed with 23 external errors in `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs` and `Assets/_Project/Scripts/World/EcosystemDirector.cs`.
+- No compiler errors were reported in touched CORE/MEMORY files.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-16 - Continuation Inquisition / External Drift Settled and Compile Green
+
+What was wrong:
+- Sentinel status correctly recorded a red compile gate from external UI/World drift, but those external files changed again under parallel work.
+- The disk record needed revalidation instead of preserving stale failure state.
+
+What was done:
+- Re-read Sentinel status/rationale before responding.
+- Re-extracted the exact `SENTINEL_DISPOSAL_GUARD` XML assignment from `Docs/Tasks/CURRENT_BATCH.md` with CLI.
+- Inspected the previously failing `DiegeticGyroCompassRuntime` and `EcosystemDirector` regions; the reported missing overload/state/generic errors were already repaired by parallel work.
+- Reran CORE/MEMORY static inquisition scans.
+- Reran the compile gate and updated Status/Rationale with current objective output.
+
+Cinematic Cheats used:
+- No visual-domain edit belongs in CORE/MEMORY.
+- Toaster mode: no additional runtime work was added; memory dump/header work remains cold-path or fixed-ring heartbeat only.
+- God-mode: compile green restores the path to runtime transition profiling where recovered memory can be spent by Ocean/VFX domains.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- No code edits were made in this pass; runtime delta is 0 B/frame.
+- Build validation is not runtime profiling.
+
+Verification:
+- Static scan found no CORE/MEMORY `StructLayout` without `Pack = 1`.
+- Static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>` in CORE/MEMORY.
+- `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:01:16.17 and succeeded with 0 warnings and 0 errors.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-16 - Continuation Inquisition / Full CORE-MEMORY Domain Recheck
+
+What was wrong:
+- Compile green is not sufficient evidence for H-Phi data sovereignty.
+- The domain needed another source-level pass to distinguish legal memory-authority native state from illegal per-system private containers.
+
+What was done:
+- Enumerated all files under `Assets/_Project/Scripts/Core/Memory/`.
+- Scanned native collections, raw allocation/free calls, scene hooks, disposal guards, pointer guards, and job fences in CORE/MEMORY and the scene runtime bridge.
+- Confirmed remaining native containers are H8Memory registries/rings, GlobalDataVault arena/metadata/cache lanes, relocation scratch, or API views backed by the central vault/sentinel ownership layer.
+- Confirmed disposal paths guard `IsCreated`/`IntPtr.Zero`, owner `JobHandle`s are completed before release, and dump I/O remains cold-path.
+
+Cinematic Cheats used:
+- No visual-domain edit belongs in CORE/MEMORY.
+- Toaster mode: centralized ownership keeps scene teardown deterministic and avoids per-frame disk I/O.
+- God-mode: no memory is kept leaked for visuals; recovered budget belongs to Ocean/VFX domains after transition verification.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Audit-only pass added no runtime work.
+- Current verified hot-path allocation impact remains 0 B/frame by static inspection.
+
+Verification:
+- `rg --files Assets/_Project/Scripts/Core/Memory` enumerated the full domain file set.
+- Native collection audit found only memory-authority/vault-owned containers and API views.
+- Disposal/pointer/job-fence scan found guarded release paths and cold dump writes.
+- `git diff --check` on touched Sentinel/runtime bridge files reported line-ending warnings only and no whitespace errors.
+
+## 2026-05-16 - Continuation Inquisition / Compile Gate Bridges and Zero Warnings
+
+What was wrong:
+- Fresh validation after parallel edits exposed compile-gate drift outside Sentinel's memory domain.
+- PhysicsApplySystem used GlobalDataVault packet lane IDs that were missing from the central `BufferID` enum.
+- ArchitectEyeVisualizer had double-buffer GPU fields read by upload code but never assigned, producing CS0649 warnings and a silent null-upload path.
+- SargassumMicroFaunaBoids consumed signal intensities through a missing finite clamp helper.
+
+What was done:
+- Added `PhysicsForceCommandFront`, `PhysicsForceCommandBack`, `PhysicsForceValidationPackets`, and `PhysicsForceValidationMask` to `BufferID`.
+- Allocated and released ArchitectEye's A/B GPU instance and args buffers instead of leaving the double-buffer fields null.
+- Added `SaturateFinite01` to Sargassum signal handling: non-finite input returns 0, finite input is saturated to [0,1].
+- Revalidated build and static CORE/MEMORY scans.
+
+Cinematic Cheats used:
+- No Sentinel visual-domain work was added.
+- Toaster mode: physics packet IDs stay in GlobalDataVault, no per-frame disk writes, no managed queue fallback.
+- God-mode: diagnostics double-buffering now has actual GPU buffers, so high-tier visual diagnostics do not silently drop uploads.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Sentinel memory hot path remains unchanged.
+- Compile bridges affect external diagnostics/physics/sargassum paths; runtime cost was not profiled.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:00:01.29 and succeeded with 0 warnings and 0 errors.
+- CORE/MEMORY static scan found no `StructLayout` without `Pack = 1`.
+- CORE/MEMORY static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>`.
+- `git diff --check` on touched files reported line-ending warnings only and no whitespace errors.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-16 - Continuation Inquisition / Deferred Disposal Fence and Compile Green
+
+What was wrong:
+- Deferred native-array release retired H8Memory ownership and scheduled `NativeArray.Dispose(JobHandle)` without recording the returned dispose handle in Sentinel's owner fence table.
+- Scene-transition job draining only walked owners with active pointer lists, so an owner with retired pointers but pending disposal work could be skipped.
+- The dotnet compile list missed the existing `ArchitectEyeDebugSignal.cs` typed-lane source.
+- A later external UI navigation compile drift blocked validation until parallel work settled the presentation DTO mismatch.
+
+What was done:
+- `H8Memory.Release(ref NativeArray<T>, JobHandle, SystemID)` now registers the returned dispose handle through `RegisterActiveJob`.
+- `CompleteSceneTransitionOwnerJobs()` now drains scene-owned `_ownerJobKeys` as well as pointer-lane owners.
+- Added the existing `ArchitectEyeDebugSignal.cs` source to `Hecton8.Core.csproj` for local dotnet validation, without duplicating `DebugSignal`.
+- Re-read the UI navigation drift and rejected moving presentation fields into `CompassStateDTO`; build was rerun after the external mismatch settled.
+
+Cinematic Cheats used:
+- No visual-domain work was added to Sentinel.
+- Toaster mode: no polling, no per-frame disk write, no new managed queues; transition blocking remains cold-path only.
+- God-mode: the release barrier protects memory budget before Ocean/VFX domains spend it on high-tier presentation.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- H8Memory hot-path allocation impact remains 0 B/frame by static inspection.
+- Deferred release now pays one owner-fence native hash update only when callers schedule deferred disposal; exact CPU cost is unmeasured.
+
+Verification:
+- CORE/MEMORY static scan found no `StructLayout` without `Pack = 1`.
+- CORE/MEMORY static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>`.
+- `git diff --check` on touched files reported line-ending warnings only and no whitespace errors.
+- `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:00:26.13 and succeeded with 0 warnings and 0 errors.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-16 - Continuation Inquisition / Metadata Cleanup and Static Revalidation
+
+What was wrong:
+- Direct `Hecton8.Core.csproj` entries for `HectonContractValidator.cs` and `HectonSurvivalContract.cs` duplicated the active `Directory.Build.targets` contract bridge.
+- Fresh validation also exposed an external `H8DataBaker` compile gate: missing namespace import for the existing typed `SignalBusRegistry` and a rejected `FileStream` bool overload.
+- Sentinel needed another static pass after the metadata cleanup, not a stale green report.
+
+What was done:
+- Re-read Sentinel Status/Rationale before responding and re-extracted the exact XML prompt from `Docs/Tasks/CURRENT_BATCH.md` with CLI.
+- Removed only the redundant contract includes from `Hecton8.Core.csproj`.
+- Kept the existing typed SignalBus registry and fixed `H8DataBaker` with `using Hecton8.Core;`.
+- Changed the cold CSV read stream to `FileOptions.SequentialScan` to preserve sequential I/O intent under the local compile gate.
+- Reran CORE/MEMORY static scans and the full dotnet gate.
+
+Cinematic Cheats used:
+- No visual-domain edit belongs in Sentinel.
+- Toaster mode: no per-frame disk writes, no managed registry duplication, and cold CSV reads stay sequential for MicroSD-style I/O pressure.
+- God-mode: the deterministic memory release barrier remains available before Ocean/VFX domains spend recovered memory budget.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Sentinel hot path remains 0 B/frame by static inspection.
+- Deferred disposal still pays one owner-fence native hash update only when callers schedule deferred disposal; exact CPU cost is unmeasured.
+- `H8DataBaker` change is cold data-bake I/O only.
+
+Verification:
+- CORE/MEMORY static scan found no `StructLayout` without `Pack = 1`.
+- CORE/MEMORY static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>`.
+- `.Complete()` scan found only intentional H8Memory owner teardown/shutdown fences.
+- `git diff --check` on touched files reported line-ending warnings only and no whitespace errors.
+- `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:00:38.31 and succeeded with 0 warnings and 0 errors.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-16 - Continuation Inquisition / Scene Unload Verification Ownership
+
+What was wrong:
+- H8Memory's direct `sceneUnloaded` hook could complete transition verification before `SceneRuntimeService` evicted scene-owned GlobalDataVault buffers.
+- Verification compared total tracked bytes to the pre-load baseline only, so legitimate post-cutoff Ocean allocations could be misreported as leaks.
+- Failed verification cleared the cutoff generation, losing the old-scene leak boundary after a transient timing failure.
+
+What was done:
+- Added `H8Memory.SetSceneUnloadedVerificationDeferred(bool)` so the scene runtime can own managed transition ordering.
+- `SceneRuntimeService` now defers H8Memory unload verification after purge capture, then completes memory lifecycle from its own unload callback after `ReleaseSceneOwnedVaultBuffers()`.
+- H8Memory now computes `LastTransitionExpectedBytes` as captured persistent baseline plus post-cutoff allocations and verifies against that expected total.
+- H8Memory clears the cutoff generation only on successful verification, allowing later retry after a failed transition proof.
+- Fatal leak dump version is now 3 and writes expected bytes beside baseline bytes.
+
+Cinematic Cheats used:
+- No visual-domain edit was made.
+- Toaster mode: no per-frame polling, no per-frame disk write, no pre-unload force free while old scene objects may still touch buffers.
+- God-mode: post-cutoff Ocean/VFX allocations remain legal while pre-cutoff scene data is still proven gone.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Sentinel hot path remains 0 B/frame by static inspection.
+- Added work is cold transition verification: one allocation-table scan to compute post-cutoff bytes, plus cold fatal dump metadata on failure.
+
+Verification:
+- CORE/MEMORY static scan found no `StructLayout` without `Pack = 1`.
+- CORE/MEMORY static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>`.
+- `.Complete()` scan found only intentional H8Memory owner teardown/shutdown fences.
+- `git diff --check` on touched Sentinel files reported line-ending warnings only and no whitespace errors.
+- `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:03:23.66 and succeeded with 0 warnings and 0 errors after transient external Tether/World compile drift settled without Sentinel edits.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.

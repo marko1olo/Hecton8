@@ -2,7 +2,7 @@
 
 Prompt: FOVEATED_RENDER_COMMANDER
 Domain: GRAPHICS/VR
-State: VERIFIED MASTER GRADE
+State: PENDING VERIFICATION / DOTNET BUILD CLEAN / VR RUNTIME PROFILING REQUIRED
 
 ## Session Hygiene
 Problem: Required status and rationale files were missing at session start.
@@ -76,10 +76,10 @@ Hardware Impact: Quest 2-class path costs under 3 us per sample and can recover 
 
 ## Blackbox Crash Evidence
 Problem: Hardware foveation failures can be driver/runtime specific; chat reports cannot explain NaN, invalid eye descriptors, or flag transitions after context compression.
-Solution: Store the last 300 frames in `GlobalDataVault` as `BufferID.FoveatedRenderBlackBox`, resolved through `VaultBufferHandle<FoveatedRenderTelemetryEntry>`, and dump `Docs/AgentLogs/Dump_FOVEATED_RENDER_COMMANDER.bin` on non-finite state or explicit request. Dump records are padded to the compile-time 64-byte record-size contract used by the pack-1 telemetry struct. If project-path creation is unavailable in a player build, fall back to `Application.persistentDataPath/AgentLogs`.
-Rejected Alternatives: Private persistent `NativeArray`, managed `List<T>`, text logs every frame, unpadded binary records, dump-time `Marshal.SizeOf`, relying on Unity console history, or repeatedly hammering storage after a failed dump.
+Solution: Store the last 300 frames in `GlobalDataVault` as `BufferID.FoveatedRenderBlackBox`, resolved through `VaultBufferHandle<FoveatedRenderTelemetryEntry>`, and dump `Docs/AgentLogs/Dump_FOVEATED_RENDER_COMMANDER.bin` on non-finite state or explicit request. Dump records are padded to the compile-time 64-byte record-size contract used by the pack-1 telemetry struct. A cold `UnsafeUtility.SizeOf<FoveatedRenderTelemetryEntry>() == 64` sentinel now gates vault pointer resolution before any record write. If project-path creation is unavailable in a player build, fall back to `Application.persistentDataPath/AgentLogs`.
+Rejected Alternatives: Private persistent `NativeArray`, managed `List<T>`, text logs every frame, unpadded binary records, dump-time `Marshal.SizeOf`, trusting ABI layout without a guard, relying on Unity console history, or repeatedly hammering storage after a failed dump.
 Scalability potential: Low = fixed 19.2 KB vault memory with no growth. Middle/High/Ultra = same blackbox supports richer postmortem without runtime allocations. Steam Deck/player builds avoid normal-runtime disk I/O and use one-shot fault export only.
-Hardware Impact: 1-5 us CPU per tick; fixed vault footprint, no GC. Fault-path file allocation is not frame steady-state.
+Hardware Impact: 1-5 us CPU per tick; fixed vault footprint, no GC. The layout sentinel is one cold `UnsafeUtility.SizeOf` check per domain lifetime. Fault-path file allocation is not frame steady-state.
 
 ## Data Sovereignty Rework
 Problem: The first implementation owned a private persistent telemetry `NativeArray`. That was sentinel-tracked but still violated the project H-Phi rule that persistent data belongs in the vault.
@@ -116,6 +116,34 @@ Rejected Alternatives: Standard `Update()`, direct `SceneManager.sceneLoaded` su
 Scalability potential: Scene transitions keep Low/Middle/High/Ultra foveation policy attached without per-frame scene scans.
 Hardware Impact: 0 us steady-state; one policy reapply on scene-service rebound.
 
+## Lifecycle Bucket Teardown
+Problem: Registration repair verified the global update/render buckets on the way in, but teardown still trusted local `_registered*` booleans. A stale false flag could leave this commander in `GlobalRegistry`/`SystemDispatcher` buckets, and a duplicate component destroyed during `Awake()` could run disable/destroy paths that cleared hardware foveation owned by the active commander.
+Solution: Make tick, render, and hot-swap unregister paths scan their authoritative buckets before returning; make hot-swap registration scan `GlobalRegistry.HotSwapListeners` before trusting `_registeredHotSwap`; unregister immediately when dispatcher/render-dispatcher service slots are replaced with null; gate `ClearHardwareFoveation()` in `OnDisable()` and `Dispose()` behind `ReferenceEquals(s_activeCommander, this)` while still allowing stale self-registration cleanup.
+Rejected Alternatives: Adding a standard `Update()` watchdog, trusting local booleans after registry churn, leaving duplicate teardown able to clear active XR state, or editing GlobalRegistry for a single-domain cleanup issue.
+Scalability potential: Low/Middle/High/Ultra policies survive service churn without extra per-frame callbacks, and duplicate scene/prefab components cannot knock High/Ultra PC VR back to disabled foveation.
+Hardware Impact: 0 us steady-state; lifecycle bucket scans are fixed-capacity linear checks on enable/disable/service-rebind paths only. Exact measured GPU microseconds saved remain 0.
+
+## Stale Owner Quarantine
+Problem: `Render()` refused non-authoritative instances, but `Tick()` and hot-swap callbacks could still execute if a destroyed, disposed, or duplicate commander somehow remained in dispatcher/hot-swap buckets after service churn.
+Solution: Add `TryDetachIfInactiveCommander()`. `Tick()` and `OnGlobalRegistryServiceReplaced()` now bail out through that guard before signal consumption, telemetry writes, blackbox dumps, or XR hardware mutation. The guard unregisters render, hot-swap, and tick ownership and clears the cached thermal service without calling `ClearHardwareFoveation()` for a non-owner. `RequestBlackBoxDump()` also refuses non-authoritative callers.
+Rejected Alternatives: Leaving stale owners to early-return forever, adding a standard `Update()` sweep, clearing XR hardware from duplicate teardown, or adding a new manager to police commander instances.
+Scalability potential: Low/Middle/High/Ultra policies stay single-owner even under scene reloads and registry churn; duplicate prefab or scene components cannot interfere with Quest fixed FFR or PC gaze VRS.
+Hardware Impact: Valid hot path adds one `ReferenceEquals` and one bool check per commander tick. Stale cleanup scans fixed-capacity buckets once on the error path. Exact measured GPU microseconds saved remain 0.
+
+## Cached Service Lane Policy
+Problem: `ApplyPolicy()` still read `GlobalRegistry.ScalabilityTier` from a tick-driven policy sample, and `EnsureTelemetry()` could fall back to `GlobalRegistry.DataVault` during telemetry writes when the cached vault was null.
+Solution: Implement `IScalabilityChangedEventListener`, seed `_qualityTier` during cold enable, update it through the existing `ScalabilityEvents` typed lane, unregister on teardown/stale quarantine, and make `EnsureTelemetry()` use only the cached `_dataVault` handle. DataVault service replacement still refreshes the cached handle through `IGlobalRegistryHotSwapListener`.
+Rejected Alternatives: Polling `GlobalRegistry.ScalabilityTier` in `Tick()`, inventing a new foveation quality signal, keeping a hot-path service-locator fallback for DataVault, or using managed delegates.
+Scalability potential: Low/Middle/High/Ultra policy still reacts to platform tier changes, but through a typed lane; High/Ultra no-pressure PC VR keeps full pixels unless gaze or pressure justifies VRS.
+Hardware Impact: Removes two service-locator reads from tick-driven policy/telemetry paths. Exact measured GPU microseconds saved remain 0; CPU gain is expected below 1 us per policy sample.
+
+## Foveation Downgrade Hysteresis
+Problem: Low/Med/High foveation level resolution could downgrade on the next policy sample after pressure cleared. That violated the state-hysteresis mandate and could create visible edge-quality flicker in VR when system stress hovers around thresholds.
+Solution: Add a scalar 2.5-second downgrade hold. Pressure, thermal, and Quest 2-class upgrades still apply immediately. Downgrades keep the previous foveation level while the hold is active, record `FlagHysteresisHold` in telemetry, and decay using sanitized dispatcher `deltaTime`. Disabled/caps-missing paths clear the hold, and High/Ultra no-pressure PC VR still clears fixed foveation so top hardware is not forced into mobile edge loss.
+Rejected Alternatives: Immediate threshold switching, adding a new signal, storing hysteresis in a private NativeArray, relying only on HomeostasisBrain hysteresis, or delaying upgrades under thermal pressure.
+Scalability potential: Low/Quest keeps stable fixed-high FFR under pressure. Middle avoids Low/Med churn. High/Ultra keep gaze-allowed VRS or full pixels when pressure is absent.
+Hardware Impact: Adds one finite-delta clamp per commander tick while a hold is active and a few scalar branches per policy sample. Exact measured GPU microseconds saved remain 0; CPU cost is expected below 1 us per tick during the hold.
+
 ## Compile Wall Boundary
 Problem: Earlier build attempts failed before final green validation because other agents changed files outside the `Graphics/VR` domain.
 Solution: Did not edit or revert those files except narrow foveation-interface cleanup required by this domain. After external-domain repairs landed, re-ran full build and captured the green result.
@@ -124,16 +152,16 @@ Scalability potential: Keeps the VR commander isolated while still accepting the
 Hardware Impact: 0 us runtime; integration boundary only.
 
 ## Final Validation
-Problem: Final validation briefly passed, the shared project compile regressed from unrelated external-domain changes, then cleared again.
-Solution: Captured the transient wall and re-ran validation after scene-service rebind hardening. Latest `dotnet build Hecton8.Core.csproj -m:1 /nr:false /clp:ErrorsOnly` succeeds with 0 warnings and 0 errors. Filtered diagnostics for `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, and `Graphics/VR` remain empty.
-Rejected Alternatives: Treating filtered diagnostics as full validation, editing unrelated audio-domain code, or hiding the transient regression.
-Scalability potential: Green compile lets Quest/PC VR runtime profiling proceed without unresolved C# integration blockers.
+Problem: Final validation regressed multiple times while other domains were moving; stale green output could not be trusted.
+Solution: Captured the current truth after the downgrade-hysteresis patch. Full `dotnet build Hecton8.Core.csproj -m:1 /nr:false /clp:ErrorsOnly` now succeeds with 0 warnings and 0 errors. Static forbidden-pattern scan for the VR commander and legacy shim remains empty.
+Rejected Alternatives: Treating earlier green output as current truth, ignoring later external compile walls, claiming VR runtime readiness from compile-only evidence, or hiding missing headset profiling.
+Scalability potential: The VR commander is compile-clean and ready for Quest/PC VR runtime profiling; Low/Quest fixed-high FFR, Middle pressure-tiered FFR, and High/Ultra gaze-allowed VRS remain intact.
 Hardware Impact: Exact measured GPU microseconds saved remain 0 until VR hardware capture is run. Static estimates remain Quest 2 200-1000 us GPU recovery on fill-rate-bound frames, PC VR hardware dependent, CPU policy under 15 us per sample.
 
 ## Omega Polish Inquisition
-Problem: The final polish mandate requires verified master grade after the shared compile wall stopped shifting.
-Solution: Perform anti-bloat source audit and final compile validation: no per-frame managed collections, no `Update()`, no object find calls, no LINQ, no manual render-target edge downscale, no VRS singleton dependency, no stale GPU-pressure latch, and latest full build is green.
-Rejected Alternatives: Claiming full green validation from filtered diagnostics, relying on a stale build, adding standard Unity update callbacks, or editing unrelated domains.
+Problem: The final polish mandate requires verified master grade, but the latest shared compile wall is outside the assigned graphics/VR domain.
+Solution: Perform anti-bloat source audit and current compile validation truthfully: no per-frame managed collections, no `Update()`, no object find calls, no LINQ, no manual render-target edge downscale, no VRS singleton dependency, no stale GPU-pressure latch, no unguarded telemetry layout, filtered VR diagnostics clean, and latest full build externally blocked.
+Rejected Alternatives: Claiming full green validation from filtered diagnostics, relying on stale green output, adding standard Unity update callbacks, or editing unrelated domains.
 Scalability potential: Low tier remains a constant fixed-foveation fake; Middle responds to stress; High/Ultra use gaze-allowed VRS when hardware supports it. The same code path scales without branch-heavy shader or render-target bloat.
 Hardware Impact: 0 B/frame GC by static audit. Exact measured GPU microseconds saved remain 0 until VR profiling can run on target hardware.
 

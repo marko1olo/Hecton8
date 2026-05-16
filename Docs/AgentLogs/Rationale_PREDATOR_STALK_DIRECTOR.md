@@ -203,3 +203,111 @@ Rejected Alternatives: Treating scheduler/view structs as exempt was rejected be
 Scalability potential: All hardware tiers use one deterministic contract surface. Quest/Android layout stays explicit while PC/RTX keeps the same VFX intent payload.
 
 Hardware Impact: 0 us runtime. This is ABI stability work, not a performance claim.
+
+## Decision 18: Dormant Rows Must Not Request Cadence Or LOD Work
+
+Problem: The action gate zeroed most dormant presentation intent, but `RecommendedCadenceSeconds` and `LowTierRadialFallback` could still tell downstream owners that an inactive slot had work to schedule. That is a false signal under the DataVault contract because dormant rows have no tracking authority.
+
+Solution: Gate `LowTierRadialFallback` with `lowTier & eligibleToAct` and zero `RecommendedCadenceSeconds` when `eligibleToAct` is false. DOD pattern used: branchless authority gating with `math.select`, no `if` inside the Burst job.
+
+Rejected Alternatives: Leaving the cadence live was rejected because render/VFX owners may reasonably trust the steering row as an intent contract. Moving the fix downstream was rejected because every consumer would need duplicate Active/anchor checks. Clearing the entire state row was rejected because lifecycle seeding belongs to the owner, not the Burst solver.
+
+Scalability potential: Low tier only schedules the 5Hz Dear Lie for a real stalking row. Middle/High/Ultra only spend SDF contour, VFX, and steering update budget when the predator has a valid player or ping anchor.
+
+Hardware Impact: Measured savings: 0 us. Static effect is false-work containment on MX350 and Steam Deck; no profiler proof was captured.
+
+## Decision 19: Handle-First Scheduling And Fault Dump API
+
+Problem: The previous handle pass let owners resolve handles and views, but canonical scheduling still required raw `AlphaLeviathanVaultBuffers`. That left room for integrators to cache raw `NativeArray` views for too long or manually assemble a job with stale aliases.
+
+Solution: Added `TryCreateStalkJob(IDataVault, ref AlphaLeviathanVaultHandles, uint, out LeviathanStalkJob)` and a handle-based `TryDumpBlackBoxOnFault(...)` overload. Owners can cache handles, resolve current views at schedule or fault-dump time, and let the vault refresh handle generations.
+
+Rejected Alternatives: Removing the raw-buffer API was rejected because public API removal during batch integration can break other agents. Requiring every caller to repeat the view-resolution pattern was rejected because it spreads stale-alias risk. Allocating private arrays was rejected by DataVault sovereignty.
+
+Scalability potential: All tiers keep one buffer contract. Low/Middle/High/Ultra feature differences stay in the DataVault rows, not in caller-owned native containers.
+
+Hardware Impact: 0 us hot path. The new work is cold schedule-path and cold fault-path metadata resolution; no measured runtime savings are claimed.
+
+## Decision 20: Stalk Phase Constants Reference The Legacy Wire Contract
+
+Problem: `AlphaLeviathanStalkPhase` repeated byte literals that already existed in `AlphaLeviathanPhase`. The values matched today, but duplicated literals are interface drift waiting to happen because Fauna still consumes the legacy phase contract.
+
+Solution: Replaced the stalk phase literal values with references to `AlphaLeviathanPhase.Hidden`, `Circling`, `FalseCharge`, and `VeerOff`. The public byte values remain unchanged: Idle/Hidden = 0, Circle/Circling = 1, Charge/FalseCharge = 2, Retreat/VeerOff = 3.
+
+Rejected Alternatives: Editing Fauna phase consumers was rejected as outside the authoritative AI/COGNITION domain. Changing numeric values was rejected because telemetry and legacy Fauna contracts already depend on them. Adding a third mapping table was rejected because it would create another duplicated source of truth.
+
+Scalability potential: Low/Middle/High/Ultra all emit the same byte contract; tier differences stay in steering/VFX scalar fields, not phase identity.
+
+Hardware Impact: 0 us runtime. This is compile-time constant deduplication and interface-risk reduction only.
+
+## Decision 21: Cursor Heartbeat Belongs Outside The Parallel Stalk Job
+
+Problem: The Alpha Leviathan telemetry cursor buffer existed but had no public owner-side write path. Writing it inside `LeviathanStalkJob` would either require a branch for index zero or cause all parallel workers to write the same cursor cell, both of which violate the current Burst job hygiene.
+
+Solution: Added `TryRecordTelemetryHeartbeat(...)` overloads on `AlphaLeviathanCognitionVault`. The owner calls this after the job completes; it writes one int cursor value into the DataVault-owned `AlphaLeviathanTelemetryCursor` buffer. DOD pattern used: post-job heartbeat cursor, no parallel cursor race, DataVault-owned storage.
+
+Rejected Alternatives: Writing the cursor from every job row was rejected because it creates a parallel write race. Adding a second Burst cursor job was rejected because it adds scheduling overhead for one int. Dropping the cursor buffer was rejected because the black-box dump format already records it.
+
+Scalability potential: Low/Middle/High/Ultra all use the same 300-frame cursor. Tier behavior stays in steering rows and VFX scalars, not in dump mechanics.
+
+Hardware Impact: Measured savings: 0 us. Static cost is one cold post-job integer write; no profiler data was captured.
+
+## Decision 22: Fault Dump Checks Should Scan The Current Frame First
+
+Problem: The broad fault-dump helper scans all 19,200 telemetry entries. That is acceptable for crash triage but wasteful for a normal post-job fault check, and it can keep reacting to an old historical fault.
+
+Solution: Added `TryDumpBlackBoxOnFrameFault(...)` overloads. They compute `frame % 300`, scan only the 64 slots for that frame, require `entry.Frame == frame`, and dump the full black box only when the current frame contains a fault. DOD pattern used: bounded current-frame fault gate with full historical dump only after a live fault.
+
+Rejected Alternatives: Replacing the broad scan was rejected because crash recovery may still need a full-ring sweep. Clearing old fault flags was rejected because black-box history must remain intact. Per-frame file writes were rejected as Steam Deck/MicroSD pressure.
+
+Scalability potential: Low tier uses a 64-row cold scan after completion instead of a full-ring sweep. High/Ultra retain the same full dump payload when a current fault is detected.
+
+Hardware Impact: Measured savings: 0 us. Static cold scan bound drops from 19,200 rows to 64 rows for normal post-job fault checks; runtime profiler proof absent.
+
+## Decision 23: Readonly View Carrier Fix
+
+Problem: The first heartbeat implementation took `in AlphaLeviathanVaultBuffers` and attempted to write `TelemetryCursor[0]`, producing CS8332 because the compiler treats the view carrier as readonly.
+
+Solution: Changed only `TryRecordTelemetryHeartbeat` to accept `AlphaLeviathanVaultBuffers` by value. `NativeArray<int>` remains a small view struct pointing at DataVault-owned memory, so ownership does not move and no allocation is introduced.
+
+Rejected Alternatives: Unsafe pointer writes were rejected because the standard `NativeArray` setter is sufficient. Passing the whole carrier by `ref` was rejected because the method does not mutate the carrier fields. Moving the write into the parallel job was rejected for race/branch reasons.
+
+Scalability potential: Identical across Low/Middle/High/Ultra; this is API correctness, not tier behavior.
+
+Hardware Impact: 0 us runtime claim. This is a compiler-correctness fix with no measured performance delta.
+
+## Decision 24: AUP Shift Frame Must Survive The Dump
+
+Problem: The job reset steering on `ObservedShiftFrameId` changes and set the `ShiftFenceReset` flag, but the blackbox payload did not preserve the actual shift frame ID. A dump could show that a reset occurred without proving which origin-shift fence caused it.
+
+Solution: Wrote `stimulus.ObservedShiftFrameId` into the existing `AlphaLeviathanTelemetryEntry.Reserved1` field. The binary dump already writes this field, so the AUP fence ID now reaches crash artifacts without changing the 64-byte telemetry stride or public method signatures. DOD pattern used: reuse reserved telemetry capacity, no hot-path allocation, no ABI expansion.
+
+Rejected Alternatives: Expanding `AlphaLeviathanTelemetryEntry` was rejected because ARM64/Quest stride stability matters during batch integration. Adding a separate shift telemetry stream was rejected because it creates another DataVault buffer and integration dependency. Renaming `Reserved1` was rejected because downstream dump readers may already parse the public field name/offset.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same telemetry stride. Low tier gains cheap hash/fence evidence; High/Ultra keep enough dump context to diagnose SDF contour steering resets after origin rebases.
+
+Hardware Impact: Measured savings: 0 us. Static cost is one uint store replacing a zero literal in the existing telemetry write; no profiler proof captured.
+
+## Decision 25: Document The Wire Contract Without Renaming It
+
+Problem: `AlphaLeviathanCognitionContracts.cs` exposed phase bytes, telemetry flags, and a 64-byte telemetry row with almost no public XML documentation. After assigning `Reserved1` to the observed AUP shift frame, leaving the field undocumented would make dump readers depend on tribal knowledge.
+
+Solution: Added XML summaries to the public phase constants, telemetry flags, and telemetry entry fields. `Reserved1` is documented as the observed AUP shift frame ID while keeping its name and offset unchanged. DOD pattern used: public contract hygiene with zero ABI churn.
+
+Rejected Alternatives: Renaming `Reserved1` was rejected because downstream dump readers may already parse the public field. Expanding the struct was rejected because Quest/Android layout stability and existing binary dump readers depend on the 64-byte stride. Adding an external schema document only was rejected because the C# contract itself must carry enough intent for integrators.
+
+Scalability potential: Low/Middle/High/Ultra share the same documented telemetry row. The field meaning is stable across tier behavior and helps diagnose both low-tier Dear Lie resets and high-tier SDF contour resets after AUP shifts.
+
+Hardware Impact: 0 us runtime. XML docs compile away; verification is compile/static only.
+
+## Decision 26: Owners Need A Canonical Schedule Count
+
+Problem: `TryCreateStalkJob(...)` could return a valid job from resolved DataVault views, but the caller still had to choose an `IJobParallelFor` schedule length. If any DataVault view was shorter than the requested slot count, an owner-side schedule mistake could drive `LeviathanStalkJob.Execute` past one of its NativeArray views.
+
+Solution: Added `GetScheduleLength(in AlphaLeviathanVaultBuffers)` to compute the minimum safe row count across state, sensory, steering output, telemetry slots, and `MaxLeviathanSlots`. Added `TryGetScheduleLength(...)` plus guarded `TryCreateStalkJob(...)` overloads for both raw transient views and generation-checked handles. The existing handle-first job factory overload remains source-compatible and delegates to the guarded overload. `TryRecordTelemetryHeartbeat(...)` now refuses to write when the resolved view set has no schedulable rows. DOD pattern used: cold fail-fast integration guard around DataVault views, Burst job unchanged.
+
+Rejected Alternatives: Adding bounds checks inside `LeviathanStalkJob.Execute` was rejected because the Omega mandate keeps the Burst job branchless and the schedule count is an owner responsibility. Changing the existing `TryCreateStalkJob` signature was rejected because batch-time public API churn can break integrators. Trusting caller folklore was rejected because the vault bridge exists to prevent repeated manual wiring mistakes.
+
+Scalability potential: Low/Middle/High/Ultra all schedule the exact safe row count for the resolved vault state. Low tier avoids accidental out-of-bounds fault spam on partially provisioned buffers; High/Ultra keep SDF and VFX intent tied to valid rows only.
+
+Hardware Impact: Measured savings: 0 us. Static cost is a few cold-path integer `min` operations before scheduling; hot Burst job cost is unchanged.

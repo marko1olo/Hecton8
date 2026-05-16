@@ -1,6 +1,6 @@
 # Rationale_ACOUSTIC_ECHO_LOCATION_AI
 
-Status: VERIFIED MASTER GRADE / ACOUSTIC DOMAIN CLEAN / DOTNET BUILD BLOCKED BY EXTERNAL DEPENDENCIES / UNITY RUNTIME PENDING
+Status: VERIFIED MASTER GRADE / ACOUSTIC DOMAIN STATIC CLEAN / DOTNET BUILD GREEN / UNITY BATCHMODE GREEN / PLAYMODE PROFILER PENDING
 
 ## Decision 0 - Batch Memory Initialization
 Problem: Agent-local status and rationale files were missing at session start.
@@ -52,11 +52,11 @@ Scalability potential: Low drops invalid/overflow taps; Middle/High/Ultra keep t
 Hardware Impact: Guard cost is estimated at 1-3 us/frame; avoided crash diagnosis time is not runtime but directly protects low-end stability.
 
 ## Decision 6 - Build Dependency Wall
-Problem: Earlier `dotnet build Hecton8.Core.csproj` attempts were blocked by unrelated world, determinism, ladder, and submarine edits, then briefly passed, then a fresh build exposed new unrelated compile walls.
-Solution: Re-ran the build after the latest inquisition pass. A compile-only preprocessor placement error in `InputDispatcher.cs` was corrected so the build could advance, then validation stopped in non-acoustic domains: Fauna bite IK local-name conflict, Tool durability unresolved DataVault migration helpers/fields, and Bootstrap initializer signature mismatch.
-Rejected Alternatives: Stale green-build reporting, chat-only validation, and broad cross-domain rewrites of tool durability/IK/bootstrap systems were rejected.
-Scalability potential: Low/Middle/High/Ultra acoustic behavior remains static-scan clean, but project-level C# compile proof is dependency-blocked until those external domains land coherent code.
-Hardware Impact: 0 us runtime impact; latest validation wall-clock was 2m08s before the external compile wall.
+Problem: Earlier `dotnet build Hecton8.Core.csproj` attempts were blocked by unrelated world, determinism, ladder, submarine, input, fauna, tools, bootstrap, construction, and cognition edits from parallel work.
+Solution: Re-ran the build after the latest current-disk repair pass. A compile-only preprocessor placement error in `InputDispatcher.cs` was corrected earlier, and the final adjacent AI blocker in `PredatorCognitionDomain.cs` now uses the existing `MathGuard.IsFinite(float3)` helper in species-target validation. The latest build succeeds with 0 errors and 0 warnings.
+Rejected Alternatives: Stale dependency-blocked reporting, chat-only validation, and broad cross-domain rewrites were rejected.
+Scalability potential: Low/Middle/High/Ultra acoustic behavior now has a green C# compile gate again; Unity Play Mode/profiler evidence remains a separate runtime gate.
+Hardware Impact: 0 us runtime impact; latest successful validation wall-clock was 3m06.93s.
 
 ## Decision 7 - Multiplatform Data Sovereignty Polish
 Problem: The acoustic structs were sequential without explicit pack, and the sensory runtime still owned persistent NativeArray fields, violating ARM64 layout discipline and GlobalDataVault sovereignty.
@@ -77,4 +77,53 @@ Problem: A final build recheck after the acoustic polish pass no longer matches 
 Solution: Fixed only the trivial compile-only `#define` placement in `InputDispatcher.cs`, then stopped at the next wall because the remaining errors are owned by Fauna animation, Tools, and Bootstrap domains.
 Rejected Alternatives: Editing unrelated systems deeply from the acoustic prompt was rejected as domain drift; leaving status as green was rejected as false reporting.
 Scalability potential: Acoustic Low/Middle/High/Ultra paths are unchanged; no acoustic runtime behavior was altered by the external compile-wall triage.
-Hardware Impact: 0 microseconds runtime impact for the acoustic system; build validation remains blocked by external code.
+Hardware Impact: 0 microseconds runtime impact for the acoustic system; the external compile wall was cleared by current-disk parallel repairs plus one adjacent AI finite-helper correction.
+
+## Decision 10 - Green Compile Revalidation
+Problem: The status file was stale after the compile wall shifted from 96 errors to 25 errors, then to 2 errors, then one adjacent AI finite-helper error.
+Solution: Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`; patched the final `PredatorCognitionDomain` finite check to `MathGuard.IsFinite(candidate)`; reran build to success.
+Rejected Alternatives: Leaving task 18 blocked after a green build was rejected; adding a duplicate local `IsFinite` helper was rejected because `MathGuard` already owns the typed lane for finite math.
+Scalability potential: Low/Middle/High/Ultra acoustic paths are unchanged; this only restores project compile evidence.
+Hardware Impact: 0 microseconds runtime impact in acoustic echo logic; build verification wall-clock was 3m06.93s on the final current-disk check.
+
+## Decision 11 - Final Current-Disk Race Check
+Problem: While parallel agents were active, a follow-up compile briefly saw a stale Bootstrap/DataVault signature mismatch that was no longer present in current source.
+Solution: Re-read the current source around `GameBootstrapper.EnsureJobAdmissionServiceRegistered`, reran the build after the parallel edit settled, and kept the status tied to the latest successful current-disk result.
+Rejected Alternatives: Reporting the transient stale error after source no longer matched it was rejected; editing Bootstrap again was rejected once the current source already used the one-argument service contract.
+Scalability potential: Acoustic Low/Middle/High/Ultra behavior unchanged; this is validation evidence only.
+Hardware Impact: 0 microseconds runtime impact; final compile verification wall-clock was 3m06.93s.
+
+## Decision 12 - Queue Ingress Hardening
+Problem: The acoustic runtime still exposed a direct `NativeQueue<EchoTap>.ParallelWriter`, and queue drain trusted dequeued taps even though a direct writer could bypass main-thread validation and backlog accounting.
+Solution: Removed the unused direct writer API and added `IsValidTap` validation in `DrainEchoTapQueue` before any queued tap reaches `EchoTrackingJob`.
+Rejected Alternatives: Leaving an unbounded direct writer was rejected; adding another signal lane was rejected because existing `MovementAcousticSignal`, `AcousticPingSignal`, and portal propagation calls already cover the required producers.
+Scalability potential: Low/Toaster remains a capped direct-node fake; Middle/High/Ultra get the same deterministic 32 scored taps without allowing invalid queue payloads into the Burst job.
+Hardware Impact: Validation adds finite checks for at most 32 dequeued taps, estimated below 1 microsecond/frame on i3/MX350; it prevents NaN propagation and unaccounted producer bypass.
+
+## Decision 13 - External Compile Wall After Hardening
+Problem: A build after the acoustic queue hardening failed outside AI/Sensory with lockstep constants, ecosystem DataVault property writes, global signal sanitizer helpers, and tether fire-request helpers.
+Solution: Stopped cross-domain surgery and marked final validation dependency-blocked again. Acoustic source-level scans passed, but project-level compile and Unity batchmode are blocked by unrelated current-disk errors.
+Rejected Alternatives: Pretending the prior green build still applies was rejected; editing the ecosystem and tether systems from the acoustic prompt was rejected as domain drift.
+Scalability potential: Acoustic Low/Middle/High/Ultra behavior is unchanged except safer queue ingress.
+Hardware Impact: 0 microseconds runtime impact from the compile wall; latest failed compile wall-clock was 35.98s.
+
+## Decision 14 - Current-Disk External Wall Shift
+Problem: A fresh build no longer failed on the previous lockstep/global-signal groups; the first attempt saw a transient `SubmarineFluidDynamics.cs` parse error, and the stable re-run exposed 167 external errors in UI navigation, ecosystem, dispatcher, and tether/winch code.
+Solution: Re-read the source around the transient submarine error, reran the build after the disk state settled, and kept the acoustic task dependency-blocked because no errors target `Assets/_Project/Scripts/AI/Sensory/`.
+Rejected Alternatives: Reporting the transient submarine parse error as stable was rejected; patching UI, ecosystem, dispatcher, and tether ownership from the acoustic prompt was rejected as unbounded domain drift.
+Scalability potential: Acoustic Low/Middle/High/Ultra behavior is unchanged; the blocked systems must be repaired by their owners before Unity runtime/profiler verification is meaningful.
+Hardware Impact: 0 microseconds runtime impact in acoustic echo logic; latest failed build wall-clock was 3m40.72s.
+
+## Decision 15 - Current-Disk Green Compile And Unity Gate
+Problem: The previous 167-error report became stale; current source no longer matched the reported UI/navigation `_snapshot` errors, and final validation needed a fresh current-disk compile instead of a stale dependency-blocked status.
+Solution: Reran `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`; it succeeded with 0 warnings and 0 errors in 1.31s. Then attempted Unity 6000.4.1f1 batchmode import/compile with a log under `Docs/AgentLogs/Unity_ACOUSTIC_ECHO_LOCATION_AI.log`, but Unity aborted because another Editor instance has `C:/hades/Hecton8` open and no Unity MCP resources/templates are exposed in this session.
+Rejected Alternatives: Treating stale compiler output as current truth was rejected; killing the user's open Unity editor was rejected; claiming Unity runtime verification from `dotnet build` was rejected.
+Scalability potential: Acoustic Low/Middle/High/Ultra behavior is unchanged; C# compile is verified, but Play Mode, profiler, Quest/Android, Metal/Mac, and Steam Deck I/O evidence remain pending until the live Editor can be queried or closed.
+Hardware Impact: 0 microseconds runtime impact in acoustic echo logic; green compile wall-clock was 1,310,000 microseconds.
+
+## Decision 16 - Project-Root Blackbox Dump Path And Unity Batchmode
+Problem: The acoustic fault dump used `Path.GetFullPath(DumpRelativePath)`, which depends on process working directory. Unity Editor, batchmode, Windows shortcuts, and Steam Deck launch contexts do not guarantee that current directory is the project root.
+Solution: Added `ResolveDumpPath()` using `Application.dataPath/..` as the project root and falling back to the old relative path only if `Application.dataPath` is empty. Re-ran `dotnet build` green and re-ran Unity batchmode after the Editor lock cleared; exit code 0 and no compiler/fatal/abort/exception matches in the fresh log.
+Rejected Alternatives: Writing to `Application.persistentDataPath` was rejected because the batch black-box contract requires `Docs/AgentLogs`; keeping current-working-directory behavior was rejected as Steam Deck/MicroSD hostile; adding a hot-path path cache was rejected because dumps are one-shot fault-path only.
+Scalability potential: Low/Middle/High/Ultra acoustic behavior unchanged; fault dumps now land in the repo log path consistently across launch contexts.
+Hardware Impact: 0 microseconds hot-path impact; cold fault dump path resolution happens only after a NaN/invalid AUP fault and is one-shot gated.

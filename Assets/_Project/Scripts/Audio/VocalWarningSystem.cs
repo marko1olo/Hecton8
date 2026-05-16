@@ -5,6 +5,7 @@ using System.Threading;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.UI;
 using Unity.Collections;
 using Unity.Jobs;
@@ -29,7 +30,7 @@ namespace Hecton8.Audio
             public AudioClip[] Clips => clips;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
         private struct VwsTelemetryEntry
         {
             [FieldOffset(0)] public uint Frame;
@@ -53,6 +54,7 @@ namespace Hecton8.Audio
         private const float SlowTickDeltaSeconds = 0.1f;
         private const float DefaultGain = 0.85f;
         private const string NativeMemoryOwner = nameof(VocalWarningSystem);
+        private const SystemID VaultOwner = SystemID.AudioVocalWarning;
 
         private static readonly string[] SubtitleFallbacks =
         {
@@ -77,12 +79,19 @@ namespace Hecton8.Audio
         [SerializeField, Min(0f)] private float fallbackCooldownSeconds = DefaultCooldownSeconds;
 
         private NativeQueue<byte> _pendingWarningIds;
-        private NativeArray<byte> _vwsQueue;
-        private NativeArray<byte> _warningFlags;
-        private NativeArray<float> _cooldowns;
-        private NativeArray<float> _warningSeverity;
-        private NativeArray<uint> _warningSourceIds;
-        private NativeArray<VwsTelemetryEntry> _telemetryRing;
+        private NativeArray<byte> _vwsQueue; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<byte> _warningFlags; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<float> _cooldowns; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<float> _warningSeverity; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<uint> _warningSourceIds; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<VwsTelemetryEntry> _telemetryRing; // Vault alias; GlobalDataVault owns backing memory.
+        private IDataVault _dataVault;
+        private VaultBufferHandle<byte> _vwsQueueHandle;
+        private VaultBufferHandle<byte> _warningFlagsHandle;
+        private VaultBufferHandle<float> _cooldownsHandle;
+        private VaultBufferHandle<float> _warningSeverityHandle;
+        private VaultBufferHandle<uint> _warningSourceIdsHandle;
+        private VaultBufferHandle<VwsTelemetryEntry> _telemetryRingHandle;
         private AudioClip[] _activeWarningClips;
         private int _telemetryCursor;
         private int _pendingNativeCount;
@@ -279,6 +288,12 @@ namespace Hecton8.Audio
         /// <inheritdoc />
         public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                RebindDataVault(currentService as IDataVault);
+                return;
+            }
+
             if (Volatile.Read(ref _nativeAllocated) == 0)
                 return;
 
@@ -303,15 +318,21 @@ namespace Hecton8.Audio
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime)
-                return;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime:
+                    if (ReferenceEquals(previousService, currentService))
+                        return;
 
-            if (ReferenceEquals(previousService, currentService))
-                return;
-
-            PlayerCriticalProceduralAudioRenderer previousRenderer = previousService as PlayerCriticalProceduralAudioRenderer;
-            if (previousRenderer != null)
-                previousRenderer.CancelVocalWarningPlayback();
+                    PlayerCriticalProceduralAudioRenderer previousRenderer = previousService as PlayerCriticalProceduralAudioRenderer;
+                    if (previousRenderer != null)
+                        previousRenderer.CancelVocalWarningPlayback();
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    if (!ReferenceEquals(previousService, currentService))
+                        RebindDataVault(currentService as IDataVault);
+                    break;
+            }
         }
 
         private void EnsureNativeStorage()
@@ -319,25 +340,125 @@ namespace Hecton8.Audio
             if (Volatile.Read(ref _nativeAllocated) != 0)
                 return;
 
-            _pendingWarningIds = new NativeQueue<byte>(Allocator.Persistent); // COLD ALLOC: NativeQueue<byte>[16] - VWS pending byte IDs - owner: VocalWarningSystem
-            _vwsQueue = new NativeArray<byte>(QueueCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[16] - fixed priority queue - owner: VocalWarningSystem
-            _warningFlags = new NativeArray<byte>(WarningStateLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[6] - warning flags SOA - owner: VocalWarningSystem
-            _cooldowns = new NativeArray<float>(WarningStateLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[6] - warning cooldowns - owner: VocalWarningSystem
-            _warningSeverity = new NativeArray<float>(WarningStateLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[6] - warning severity SOA - owner: VocalWarningSystem
-            _warningSourceIds = new NativeArray<uint>(WarningStateLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[6] - warning source SOA - owner: VocalWarningSystem
-            _telemetryRing = new NativeArray<VwsTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VwsTelemetryEntry>[300] - VWS black box ring - owner: VocalWarningSystem
+            IDataVault vault = ResolveDataVaultCold();
+            if (vault == null)
+                return;
 
-            NativeMemorySentinel.RegisterNativeQueue(_pendingWarningIds, QueueCapacity, NativeMemoryOwner, nameof(_pendingWarningIds), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_vwsQueue, NativeMemoryOwner, nameof(_vwsQueue), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_warningFlags, NativeMemoryOwner, nameof(_warningFlags), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_cooldowns, NativeMemoryOwner, nameof(_cooldowns), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_warningSeverity, NativeMemoryOwner, nameof(_warningSeverity), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_warningSourceIds, NativeMemoryOwner, nameof(_warningSourceIds), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_telemetryRing, NativeMemoryOwner, nameof(_telemetryRing), NativeAllocationLifetime.Session);
+            if (!_pendingWarningIds.IsCreated)
+            {
+                _pendingWarningIds = new NativeQueue<byte>(Allocator.Persistent); // COLD ALLOC: NativeQueue<byte>[16] - VWS pending byte IDs; GlobalDataVault has no queue primitive - owner: VocalWarningSystem
+                NativeMemorySentinel.RegisterNativeQueue(_pendingWarningIds, QueueCapacity, NativeMemoryOwner, nameof(_pendingWarningIds), NativeAllocationLifetime.Session);
+            }
+
+            BindVaultStorage(vault);
+            if (!_vwsQueue.IsCreated ||
+                !_warningFlags.IsCreated ||
+                !_cooldowns.IsCreated ||
+                !_warningSeverity.IsCreated ||
+                !_warningSourceIds.IsCreated ||
+                !_telemetryRing.IsCreated)
+            {
+                ClearVaultBackedStorageAliases();
+                return;
+            }
 
             PrewarmPendingQueue();
             _activeWarningClips = defaultWarningClips;
             Volatile.Write(ref _nativeAllocated, 1);
+        }
+
+        private IDataVault ResolveDataVaultCold()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                vault = GlobalRegistry.DataVault;
+                _dataVault = vault;
+            }
+
+            return vault;
+        }
+
+        private void BindVaultStorage(IDataVault vault)
+        {
+            _dataVault = vault;
+            _vwsQueueHandle = vault.GetBufferHandle<byte>(
+                BufferID.AudioVocalWarningQueue,
+                QueueCapacity,
+                VaultOwner,
+                NativeArrayOptions.ClearMemory);
+            _warningFlagsHandle = vault.GetBufferHandle<byte>(
+                BufferID.AudioVocalWarningFlags,
+                WarningStateLength,
+                VaultOwner,
+                NativeArrayOptions.ClearMemory);
+            _cooldownsHandle = vault.GetBufferHandle<float>(
+                BufferID.AudioVocalWarningCooldowns,
+                WarningStateLength,
+                VaultOwner,
+                NativeArrayOptions.ClearMemory);
+            _warningSeverityHandle = vault.GetBufferHandle<float>(
+                BufferID.AudioVocalWarningSeverity,
+                WarningStateLength,
+                VaultOwner,
+                NativeArrayOptions.ClearMemory);
+            _warningSourceIdsHandle = vault.GetBufferHandle<uint>(
+                BufferID.AudioVocalWarningSourceIds,
+                WarningStateLength,
+                VaultOwner,
+                NativeArrayOptions.ClearMemory);
+            _telemetryRingHandle = vault.GetBufferHandle<VwsTelemetryEntry>(
+                BufferID.AudioVocalWarningTelemetry,
+                TelemetryCapacity,
+                VaultOwner,
+                NativeArrayOptions.ClearMemory);
+
+            _vwsQueue = _vwsQueueHandle.Resolve(vault);
+            _warningFlags = _warningFlagsHandle.Resolve(vault);
+            _cooldowns = _cooldownsHandle.Resolve(vault);
+            _warningSeverity = _warningSeverityHandle.Resolve(vault);
+            _warningSourceIds = _warningSourceIdsHandle.Resolve(vault);
+            _telemetryRing = _telemetryRingHandle.Resolve(vault);
+        }
+
+        private void RebindDataVault(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            ReleaseVaultBackedStorage();
+            _dataVault = vault;
+            Volatile.Write(ref _nativeAllocated, 0);
+            _queueCount = 0;
+            _pendingNativeCount = 0;
+            _currentWarningId = 0;
+            if (vault != null)
+                EnsureNativeStorage();
+        }
+
+        private void ReleaseVaultBackedStorage()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.ReleaseOwnerBuffers(VaultOwner, out _);
+
+            ClearVaultBackedStorageAliases();
+        }
+
+        private void ClearVaultBackedStorageAliases()
+        {
+            _vwsQueue = default;
+            _warningFlags = default;
+            _cooldowns = default;
+            _warningSeverity = default;
+            _warningSourceIds = default;
+            _telemetryRing = default;
+            _vwsQueueHandle = default;
+            _warningFlagsHandle = default;
+            _cooldownsHandle = default;
+            _warningSeverityHandle = default;
+            _warningSourceIdsHandle = default;
+            _telemetryRingHandle = default;
         }
 
         private void PrewarmPendingQueue()
@@ -372,39 +493,20 @@ namespace Hecton8.Audio
 
         private void DisposeNativeStorage()
         {
-            if (Interlocked.Exchange(ref _nativeAllocated, 0) == 0)
+            if (Interlocked.Exchange(ref _nativeAllocated, 0) == 0 &&
+                !_pendingWarningIds.IsCreated &&
+                _dataVault == null)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(_pendingWarningIds));
-            NativeMemorySentinel.UnregisterNativeArray(_vwsQueue);
-            NativeMemorySentinel.UnregisterNativeArray(_warningFlags);
-            NativeMemorySentinel.UnregisterNativeArray(_cooldowns);
-            NativeMemorySentinel.UnregisterNativeArray(_warningSeverity);
-            NativeMemorySentinel.UnregisterNativeArray(_warningSourceIds);
-            NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
-
             if (_pendingWarningIds.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(_pendingWarningIds));
                 _pendingWarningIds.Dispose();
-            if (_vwsQueue.IsCreated)
-                _vwsQueue.Dispose();
-            if (_warningFlags.IsCreated)
-                _warningFlags.Dispose();
-            if (_cooldowns.IsCreated)
-                _cooldowns.Dispose();
-            if (_warningSeverity.IsCreated)
-                _warningSeverity.Dispose();
-            if (_warningSourceIds.IsCreated)
-                _warningSourceIds.Dispose();
-            if (_telemetryRing.IsCreated)
-                _telemetryRing.Dispose();
+            }
+
+            ReleaseVaultBackedStorage();
 
             _pendingWarningIds = default;
-            _vwsQueue = default;
-            _warningFlags = default;
-            _cooldowns = default;
-            _warningSeverity = default;
-            _warningSourceIds = default;
-            _telemetryRing = default;
             _queueCount = 0;
             _pendingNativeCount = 0;
             _currentWarningId = 0;

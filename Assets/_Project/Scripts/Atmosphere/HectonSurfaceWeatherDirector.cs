@@ -8,6 +8,7 @@ using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Modding;
@@ -56,7 +57,7 @@ namespace Hecton8.Atmosphere
         private const float ExponentialBlendRateScale = 4.6051702f;
         private const float ResolveRetryInterval = 2f;
         private const float LightningFlashSeconds = 0.1f;
-        private const float SpeedOfSoundMetersPerSecond = 343f;
+        private const float SpeedOfSoundMetersPerSecond = HectonPhysicsContract.SoundSpeedAirMetersPerSecondConst;
         private const float ThunderAcousticShockMinRadiusMeters = 72f;
         private const float ThunderAcousticShockMaxRadiusMeters = 240f;
         private const float ThunderAcousticShockLifetimeSeconds = 8f;

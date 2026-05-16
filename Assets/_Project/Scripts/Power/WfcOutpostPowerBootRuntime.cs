@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Logistics.Grid;
@@ -39,13 +40,13 @@ namespace Hecton8.Power
         private const float NodeCapacityWatts = 1000f;
         private const float EdgeResistance = 0.025f;
         private const float NodeResistance = 0.02f;
-        private const float StandardOxygenKPa = 21.22f;
-        private const float StandardCarbonDioxideKPa = 0.04f;
-        private const float StandardNitrogenKPa = 80.065f;
-        private const float StandardAmbientKPa = 101.325f;
+        private const float StandardOxygenKPa = HectonSurvivalContract.StandardOxygenKPa;
+        private const float StandardCarbonDioxideKPa = HectonSurvivalContract.StandardCarbonDioxideKPa;
+        private const float StandardNitrogenKPa = HectonSurvivalContract.StandardNitrogenKPa;
+        private const float StandardAmbientKPa = HectonSurvivalContract.KPaPerAtmosphere;
         private const float ShiftEpsilonMeters = 0.0001f;
         private const float MaxAupShiftMeters = 10000f;
-        private const double MacroAupCellSizeMeters = 5000.0;
+        private const double MacroAupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble;
         private const uint OutpostNodeCountHash = 0x4F4E4354u; // ONCT
         private const uint WfcPowerBootContextHash = 0x57465042u; // WFPB
         private const uint FaultTelemetryHash = 0x57464654u; // WFFT

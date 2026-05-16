@@ -251,3 +251,135 @@ Rejected Alternatives: Running a competing Unity batchmode instance, killing ano
 Scalability potential: No runtime behavior change. This preserves cross-agent build stability while keeping deterministic validator evidence current.
 
 Hardware Impact: 0us runtime. Static scans show only the vault helper NativeArray return, which is not a local allocation or persistent private array.
+
+## Continuation Blackbox I/O Repair
+
+Problem: `DumpBlackBox()` wrote the 300-frame telemetry dump through `WriteByte` in a nested struct loop. The path is fault-only, but on Steam Deck or MicroSD that still creates worst-case tiny synchronous writes exactly when crash evidence needs to survive.
+
+Solution: Add one cold preallocated 19208-byte dump staging buffer, clamp serialization to the actual vault telemetry buffer length, serialize the dump header and up to 300 Pack=1 telemetry records into it with `UnsafeUtility.CopyStructureToPtr`, then issue one `FileStream.Write` and flush the file stream.
+
+Rejected Alternatives: Keeping per-byte writes, reading 300 entries blindly if the vault returns a shorter buffer, allocating a fresh dump byte array during the fault, or moving crash evidence into a managed list/string log.
+
+Scalability potential: Low/MX350 and Steam Deck get lower fault-path I/O call pressure. High/Ultra retain the same full 300-frame binary evidence and do not spend extra normal-frame time.
+
+Hardware Impact: No measured microseconds are claimed. Static operation count removes up to 19208 single-byte write calls per blackbox dump and replaces them with one block write; hot-path impact is 0us because dump serialization only runs on desync/NaN fault.
+
+## Fresh Unity Compile Evidence
+
+Problem: Previous Unity validation was stale and one run was skipped while another agent owned the Unity process. After the typed-lane regression was repaired again, the compiler state needed fresh evidence.
+
+Solution: Run Unity 6000.4.1f1 batchmode after confirming no active Unity process. Parse `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260516_blackbox_unity.log` after the blackbox dump change.
+
+Rejected Alternatives: Relying on old logs, claiming determinism compile success without a clean Unity pass, or fixing editor/audio/scheduling/bucketing compile walls from the lockstep domain.
+
+Scalability potential: No runtime behavior change. This is integration proof and blocker isolation.
+
+Hardware Impact: 0us runtime. The fresh log reports external compile errors in editor tooling, audio virtualization, core scheduling, and bucketing. It reports no `LockstepStateValidator` or `Hecton8.Core.Determinism` diagnostics.
+
+## Final Concurrent Drift Check
+
+Problem: Parallel work repeatedly restored monolithic signal initialization in the validator. After the blackbox bounds guard, source truth had to be checked again instead of trusting the status file.
+
+Solution: Re-scan `LockstepStateValidator.cs` for `GlobalSignals.InitializeAllQueues`, typed signal configuration, Pack=1 layout drift, hot-path GC patterns, and active Unity processes. Re-apply typed lane setup when the drift reappeared.
+
+Rejected Alternatives: Leaving source and status inconsistent, killing the active `UBER_NOIR_INTEGRATOR` Unity process, or launching a competing Unity batch process in the same project.
+
+Scalability potential: Low/MX350 keeps bounded lockstep lane capacities and avoids broad global queue init from this validator. High/Ultra keep the richer 60-frame snapshot cadence without extra gameplay broadcast volume.
+
+Hardware Impact: 0us hot-path runtime. Current Unity ownership is PID 44132 for `Unity_UBER_NOIR_INTEGRATOR_loop23.log`; no fresh lockstep Unity rerun was started after that process appeared.
+
+## Final Compiler Slot Evidence
+
+Problem: The previous source-state proof was correct, but the final compiler result still needed a current batchmode log after the Unity slot became available.
+
+Solution: Launch Unity 6000.4.1f1 batchmode against `C:\hades\Hecton8`, wait for the child editor process to exit, and parse `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260516_final_unity.log` for compiler diagnostics and lockstep-domain hits.
+
+Rejected Alternatives: Leaving the live Unity child process behind, treating the early launcher return as a completed compile, or repairing external audio/editor/bucketing/AI ownership failures from the lockstep pass.
+
+Scalability potential: No runtime behavior change. The value is integration proof that the 300-frame master state hashing source is not producing current compiler diagnostics while external assembly walls still exist.
+
+Hardware Impact: 0us runtime. The final log fails on external errors in audio virtualization, editor tooling, core bucketing, and AI cognition; no `LockstepStateValidator` or `Hecton8.Core.Determinism` diagnostics were found.
+
+## Vault Length Guard And Drift Repair
+
+Problem: The active source had drifted back to `GlobalSignals.InitializeAllQueues()`, and several vault reads treated `NativeArray.IsCreated` as enough proof before indexing fixed slots. A created-but-undersized vault view would crash the validator before the 300-frame blackbox evidence could be dumped.
+
+Solution: Restore typed lane-only setup for the two lockstep-owned signals. Add required-length validation for master hash reads, replay input reads, replay block serialization, ghost replay loading, category masks, history cursor writes, and public master-hash folding. `GetVaultBuffer` now returns default when the vault cannot satisfy the requested length.
+
+Rejected Alternatives: Trusting vault `IsCreated`, adding local fallback arrays, or broad-initializing every global signal lane from this system.
+
+Scalability potential: Low/MX350 keeps bounded typed signal lanes and gets fail-safe replay/hash exits instead of exception storms. High/Ultra keep full 60-frame debug cadence and 300-frame blackbox payloads with stronger guard rails.
+
+Hardware Impact: No measured microseconds are claimed. Added guards are O(1) integer length checks at hash/replay/fault cadence, not per-entity math. Hot-path heap impact remains 0 B; Unity compile remains blocked by external editor/audio/bucketing assemblies with no lockstep-domain diagnostics.
+
+## Ring Cursor Guard
+
+Problem: The validator normalized most ring cursors after ordinary updates, but a stale private cursor after replay fault, re-enable, or cross-agent state churn could still index a replay or telemetry ring before normalization. That is the wrong failure mode for a blackbox owner.
+
+Solution: Normalize `_inputWriteIndex` before replay-input writes, reject negative or out-of-window `_ghostInputCursor`, normalize replay block ring start before serialization, and normalize `_telemetryWriteIndex` before telemetry writes. Re-apply typed signal lane setup after another concurrent drift restored broad global queue initialization.
+
+Rejected Alternatives: Trusting cursor invariants, adding managed try/catch around every ring access, or allocating local fallback arrays.
+
+Scalability potential: Low/MX350 gets deterministic fail-safe ring access without disk or heap pressure. High/Ultra keep richer replay and telemetry evidence without increasing per-entity hash cost.
+
+Hardware Impact: No measured microseconds are claimed. The change adds O(1) unsigned bounds checks at replay/telemetry cadence, preserves 0 B hot-path heap allocation, and prevents an out-of-range crash before blackbox evidence can be written.
+
+## ABI Sentinel And Drift Repair
+
+Problem: The active source drifted back to `GlobalSignals.InitializeAllQueues()` again, and the binary replay/blackbox path still depended on raw 128/48/64 byte constants. Pack=1 annotations are necessary, but not enough proof that a future field edit or platform-specific layout change will preserve Quest/Android replay evidence.
+
+Solution: Restore typed lane-only configuration for the lockstep snapshot and glitch lanes. Add named byte constants and a cold `ValidateBinaryLayout()` sentinel using `UnsafeUtility.SizeOf<T>()` for `LockstepPlayerKinematicState`, `LockstepReplayBlockHeader`, `LockstepReplayInputFrame`, `LockstepArrayHash`, `LockstepTelemetryEntry`, `LockstepMasterHashHistoryEntry`, `LockstepSnapshotSignal`, and `SystemGlitchSignal`. Replace raw replay offsets with those constants. If layout validation fails, set `TelemetryFlagLayoutInvalid`, publish numeric telemetry, attempt one blackbox dump, block ghost replay load, and block replay block writes.
+
+Rejected Alternatives: Trusting the attributes without runtime verification, leaving raw byte offsets in serialization code, broad-initializing every signal lane, or throwing repeated exceptions/dumps every fixed tick on an invalid ABI.
+
+Scalability potential: Low/MX350 and Android/Quest get fail-fast binary evidence guards without heap pressure. High/Ultra keep full 60-frame validation and 300-frame blackbox fidelity with stronger ABI proof.
+
+Hardware Impact: No measured microseconds are claimed. Normal hot-path heap remains 0 B. Layout checks run cold in `OnEnable`; invalid-layout dump throttling uses one `Interlocked.Exchange` only on the fault path. Dotnet build remains blocked by external UI/navigation and dispatcher compile walls with no lockstep-domain diagnostics.
+
+## Integration Compile Constants Revalidation
+
+Problem: A later shared-worktree drift removed the lockstep typed-lane capacity/hash constants while leaving `ConfigureSignalLanes()` wired to them. The result was a Core compile wall in the integration pass.
+
+Solution: Restore the four compile constants only: `LockstepSnapshotSignalCapacity`, `SystemGlitchSignalCapacity`, `LockstepSnapshotLaneHash`, and `SystemGlitchLaneHash`. No lane size or payload behavior was changed.
+
+Rejected Alternatives: Broad `GlobalSignals.InitializeAllQueues()` was rejected because the validator owns two typed lanes and must not initialize unrelated queues. Changing capacity values during integration was rejected because it would alter lockstep telemetry behavior outside a lockstep task.
+
+Scalability potential: Low/MX350 keeps bounded lockstep snapshot/glitch lanes. High/Ultra keep richer validation cadence without hidden global queue initialization.
+
+Hardware Impact: Runtime frame savings are 0 us measured. Evidence is the integration green build `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition31_typed_compass_final.log`; final static scan remains clean for Core layouts and global signal packing.
+
+## Ghost Cursor Pre-Arithmetic Guard
+
+Problem: `ApplyGhostReplayInput()` requested a vault buffer length with `_ghostInputCursor + 1` before proving `_ghostInputCursor` was non-negative and inside the replay window. A stale negative or corrupted cursor could turn the guard into the failure site, which is unacceptable for the system responsible for replay proof and blackbox evidence.
+
+Solution: Snapshot `_ghostInputCursor` into a local scalar, reject negative or out-of-window values before any addition, then request the required DataVault length and re-check the returned buffer length before indexing. The cursor advance now writes `_ghostInputCursor = ghostInputCursor + 1` only after a valid frame match.
+
+Rejected Alternatives: Trusting private cursor invariants, catching the exception, allocating a managed fallback replay list, or creating new contract stubs to get a clean build. The first three weaken blackbox determinism; the contract stubs would cross into `Core/Contracts` ownership and mutate public interface surface from a determinism task.
+
+Scalability potential: Low/MX350 and Steam Deck get deterministic replay fail-safe behavior with no disk or heap pressure. High/Ultra keep the same 60-frame hash validation and ghost replay override path, but corrupted replay cursor state now exits through controlled replay shutdown instead of an out-of-range crash.
+
+Hardware Impact: No measured microseconds are claimed. Added work is O(1) scalar checks at replay cadence and 0 B heap. `dotnet build Hecton8.Core.csproj` is blocked before determinism compile by missing `Core/Contracts/HectonPlatformContract.cs`, `HectonDataSovereigntyContract.cs`, and `HectonVisualOverkillContract.cs`; the new build log has 0 `LockstepStateValidator` or `Hecton8.Core.Determinism` hits.
+
+## Post-Cursor Typed Lane Drift Repair
+
+Problem: A final broad determinism scan caught `GlobalSignals.InitializeAllQueues()` restored again inside `ConfigureSignalLanes()` after the ghost cursor patch and documentation update. That invalidated the typed-lane source truth even though the status already recorded typed lanes.
+
+Solution: Re-apply the narrow `SignalBus<LockstepSnapshotSignal>.Configure` and `SignalBus<SystemGlitchSignal>.Configure` setup with fixed capacities and lane hashes, then re-scan the determinism folder.
+
+Rejected Alternatives: Leaving a known source/status mismatch, broad-initializing every signal queue from the validator, or depending on a different system to configure the lockstep lanes.
+
+Scalability potential: Low/MX350 avoids broad cold signal setup from this validator. High/Ultra keep the tighter 60-frame snapshot cadence and fault-only glitch path through bounded typed lanes.
+
+Hardware Impact: 0us hot-path runtime. This is cold `OnEnable` lane setup; no profiler microseconds are claimed. Immediate post-repair scan shows only typed lane configuration and the DataVault helper NativeArray return.
+
+## Final Ghost Cursor Compile Wall
+
+Problem: After the final typed-lane drift repair, `dotnet build Hecton8.Core.csproj` no longer stopped on the three missing contract source files. It now stops on `Assets/_Project/Scripts/HectonFloatingOrigin.cs(1426,66)` with CS0120 against `_totalOffsetDouble`. That file is modified outside the `CORE/DETERMINISM` domain.
+
+Solution: Re-scan the determinism source after the build and confirm the lockstep validator still has typed lanes, no broad signal initialization, no Update-family methods, no local NativeArray allocation, no direct physics/transform authority reads, and no Pack=1 drift. Record the build wall as external dependency evidence.
+
+Rejected Alternatives: Editing `HectonFloatingOrigin.cs` from this role, because it is outside the authoritative determinism folder and already modified by another worker; fabricating a green build; or ignoring the newer compiler log and retaining stale missing-contract evidence as final truth.
+
+Scalability potential: No runtime behavior change inside lockstep. The validator remains bounded for Low/MX350 and retains 60-frame High/Ultra validation. Floating-origin repair belongs to the AUP/core owner because it controls world rebasing semantics.
+
+Hardware Impact: 0us runtime. The final build log reports 0 `LockstepStateValidator` and 0 `Hecton8.Core.Determinism` diagnostics; the compile wall is external.

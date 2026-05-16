@@ -3,41 +3,97 @@ using Unity.Mathematics;
 
 namespace Hecton8.AI.Cognition
 {
+    /// <summary>
+    /// Legacy Alpha Leviathan phase byte values shared by Fauna and AI/Cognition telemetry.
+    /// </summary>
     public static class AlphaLeviathanPhase
     {
+        /// <summary>Predator is hidden or dormant.</summary>
         public const byte Hidden = 0;
+
+        /// <summary>Predator circles the current anchor.</summary>
         public const byte Circling = 1;
+
+        /// <summary>Predator commits to a false charge.</summary>
         public const byte FalseCharge = 2;
+
+        /// <summary>Predator strike-compatible phase value retained for legacy readers.</summary>
         public const byte Strike = 3;
+
+        /// <summary>Predator retreats using the legacy strike byte for wire compatibility.</summary>
         public const byte VeerOff = Strike;
     }
 
+    /// <summary>
+    /// Flags written into Alpha Leviathan telemetry entries.
+    /// </summary>
     public static class AlphaLeviathanTelemetryFlags
     {
+        /// <summary>Low-tier radial fallback was used.</summary>
         public const byte LowTierRadialFallback = 1 << 0;
+
+        /// <summary>High-tier SDF contouring was requested.</summary>
         public const byte SdfDiveRequested = 1 << 1;
+
+        /// <summary>Player gaze crossed the predator exposure threshold.</summary>
         public const byte PlayerGazeBreak = 1 << 2;
+
+        /// <summary>Legacy roar marker reserved for Fauna readers.</summary>
         public const byte RoarEmitted = 1 << 3;
+
+        /// <summary>Invalid or non-finite stalk math was detected.</summary>
         public const byte Fault = 1 << 4;
+
+        /// <summary>Current anchor was sourced from an acoustic lure.</summary>
         public const byte AcousticLure = 1 << 5;
+
+        /// <summary>Headlight exposure forced retreat behavior.</summary>
         public const byte LightRetreat = 1 << 6;
+
+        /// <summary>AUP shift frame changed and steering history was reset.</summary>
         public const byte ShiftFenceReset = 1 << 7;
     }
 
+    /// <summary>
+    /// Fixed-size blackbox row for Alpha Leviathan stalking state.
+    /// </summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     public struct AlphaLeviathanTelemetryEntry
     {
+        /// <summary>Simulation frame for this row.</summary>
         public uint Frame;
+
+        /// <summary>Dense Alpha Leviathan slot index.</summary>
         public ushort Slot;
+
+        /// <summary>Current phase byte from <see cref="AlphaLeviathanPhase"/>.</summary>
         public byte Phase;
+
+        /// <summary>Bitmask from <see cref="AlphaLeviathanTelemetryFlags"/>.</summary>
         public byte Flags;
+
+        /// <summary>Distance from Leviathan to the active anchor in meters.</summary>
         public float DistanceToPlayerMeters;
+
+        /// <summary>Target fog-edge orbit ring in meters.</summary>
         public float FogRingDistanceMeters;
+
+        /// <summary>Sanitized Leviathan absolute position sample.</summary>
         public float3 Position;
+
+        /// <summary>Sanitized active anchor absolute position sample.</summary>
         public float3 PlayerPosition;
+
+        /// <summary>Sanitized desired steering direction.</summary>
         public float3 DesiredDirection;
+
+        /// <summary>Deterministic state hash for crash triage.</summary>
         public uint StateHash;
+
+        /// <summary>Reported aggression scalar clamped to 0..1.</summary>
         public float LeviathanAgressivity01;
+
+        /// <summary>Observed AUP shift frame ID that produced this row.</summary>
         public uint Reserved1;
     }
 }

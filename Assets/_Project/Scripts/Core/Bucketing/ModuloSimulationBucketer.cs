@@ -115,7 +115,7 @@ namespace Hecton8.Core.Bucketing
 
         public void Initialize(int entityCapacity)
         {
-            Initialize(entityCapacity, GlobalRegistry.DataVault);
+            Initialize(entityCapacity, _dataVault);
         }
 
         /// <summary>

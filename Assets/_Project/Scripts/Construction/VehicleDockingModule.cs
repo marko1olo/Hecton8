@@ -988,9 +988,6 @@ namespace Hecton8.Construction
 
         private unsafe void RecordDockTelemetry()
         {
-            if (!_dockingInProgress && !_isDocked)
-                return;
-
             if (!TryResolveDockTelemetry(out DockTelemetryEntry* telemetry, out int telemetryLength, out int* cursorPtr))
                 return;
 
@@ -1183,7 +1180,9 @@ namespace Hecton8.Construction
 
         private void SanitizeDockingSettings()
         {
-            dockingDurationSeconds = DefaultDockingDurationSeconds;
+            dockingDurationSeconds = math.isfinite(dockingDurationSeconds)
+                ? math.clamp(dockingDurationSeconds, 0.05f, 8f)
+                : DefaultDockingDurationSeconds;
             undockEjectSpeedMetersPerSecond = math.isfinite(undockEjectSpeedMetersPerSecond)
                 ? math.max(0f, undockEjectSpeedMetersPerSecond)
                 : DefaultUndockEjectSpeedMetersPerSecond;
@@ -1414,7 +1413,8 @@ namespace Hecton8.Construction
                 Flags = _activeDockingSpline.Flags,
                 Reserved0 = 0,
                 Reserved1 = 0,
-                Reserved2 = 0
+                Reserved2 = 0,
+                ReservedTail = 0u
             };
             SignalBus<DockingCompleteSignal>.Push(in signal);
             _dockingCompletionSignalPublished = true;
@@ -1444,7 +1444,8 @@ namespace Hecton8.Construction
                 Reason = (byte)reason,
                 Flags = _activeDockingSpline.Flags,
                 Reserved0 = 0,
-                Reserved1 = 0
+                Reserved1 = 0,
+                ReservedTail = 0u
             };
             SignalBus<DockingFailedSignal>.Push(in signal);
         }

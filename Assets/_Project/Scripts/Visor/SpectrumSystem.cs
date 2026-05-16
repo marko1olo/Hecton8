@@ -26,6 +26,7 @@ using Hecton8.AI;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
@@ -1435,7 +1436,7 @@ namespace Hecton8.Visor
         private const uint AupDiscoveryDiscoveredBit = 1u;
         private const int ActiveSonarGeoPingCapacity = 4;
         private const int ActiveSonarGeoTelemetryCapacity = 300;
-        private const float ActiveSonarGeoSpeedMetersPerSecond = 1480f;
+        private const float ActiveSonarGeoSpeedMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         private const float ActiveSonarGeoMaxRangeMeters = 400f;
 
         // ══════════════════════════════════════════════════════════

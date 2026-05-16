@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 
 namespace Hecton8.Atmosphere
 {
@@ -194,7 +195,7 @@ namespace Hecton8.Atmosphere
         private const byte SurfaceExecutionModeSurfaceSuppressed = 2;
         private const float TwoPi = 6.283185307179586f;
         private const float LightningFlashSeconds = 0.1f;
-        private const float SpeedOfSoundMetersPerSecond = 343f;
+        private const float SpeedOfSoundMetersPerSecond = HectonPhysicsContract.SoundSpeedAirMetersPerSecondConst;
 
         public SurfaceWeatherJobInput input;
         public NativeArray<SurfaceWeatherJobOutput> output;

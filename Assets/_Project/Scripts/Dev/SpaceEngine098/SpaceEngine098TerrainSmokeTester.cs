@@ -18,7 +18,7 @@ namespace Hecton8.Dev
         private const int WarmupWidth = 16;
         private const int TimedWidth = 64;
         private const float CellSizeMeters = 16f;
-        private const double AupCellSizeMeters = 5000.0;
+        private const double AupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
         private const uint Seed = 880031u;
 
         private readonly struct PipelineResult

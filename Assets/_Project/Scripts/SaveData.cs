@@ -43,6 +43,12 @@ namespace Hecton8.SaveSystem
         /// <summary>Versiya formata. Inkrementiruetsya pri izmenenii struktury DTO.</summary>
         public int version = CurrentVersion;
 
+        /// <summary>Low 64 bits of the contract version hash used when this save was written.</summary>
+        public ulong contractVersionHashLo = HectonContractVersion.HashLo;
+
+        /// <summary>High 64 bits of the contract version hash used when this save was written.</summary>
+        public ulong contractVersionHashHi = HectonContractVersion.HashHi;
+
         /// <summary>Vremennaya metka sohraneniya (ISO 8601).</summary>
         public string timestamp;
 
@@ -50,7 +56,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
-        public const int CurrentVersion = 72; // v72: first-hour DTO ABI lock.
+        public const int CurrentVersion = 73; // v73: contract authority version hash.
 
         internal static void EnsureExactArrayCapacity<T>(ref T[] values, int capacity)
         {
@@ -288,6 +294,8 @@ namespace Hecton8.SaveSystem
             return new SaveData
             {
                 version       = CurrentVersion,
+                contractVersionHashLo = HectonContractVersion.HashLo,
+                contractVersionHashHi = HectonContractVersion.HashHi,
                 timestamp     = DateTime.Now.ToString("O"),
                 totalPlayTime = playTime,
                 playerStats   = new PlayerStatsDTO(),

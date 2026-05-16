@@ -16,7 +16,6 @@
 namespace Hecton8.Gameplay
 {
     using System;
-    using System.Runtime.InteropServices;
     using Hecton8.Audio;
     using Hecton8.Bootstrap;
     using Hecton8.Building;
@@ -33,6 +32,8 @@ namespace Hecton8.Gameplay
     using Hecton8.World;
     using EquipmentInteractionPacket = Hecton8.Interaction.InteractionPacket;
     using EquipmentInteractionSignal = Hecton8.Interaction.InteractionSignal;
+    using LaserCutterEventPayloadSignal = Hecton8.Core.Contracts.Signals.LaserCutterEventPayload;
+    using LaserCutterEventTypeSignal = Hecton8.Core.Contracts.Signals.LaserCutterEventType;
     using Unity.Mathematics;
     using UnityEngine;
 
@@ -45,7 +46,7 @@ namespace Hecton8.Gameplay
         /// Receives a laser cutter event during <see cref="SystemDispatcher"/> LateUpdate.
         /// </summary>
         /// <param name="payload">Blittable cutter event payload.</param>
-        void OnLaserCutterEvent(in LaserCutterEventPayload payload);
+        void OnLaserCutterEvent(in LaserCutterEventPayloadSignal payload);
     }
 
     /// <summary>
@@ -56,7 +57,6 @@ namespace Hecton8.Gameplay
         private const int PendingEventCapacity = 16;
         private const int ListenerCapacity = 8;
         private const int SourceCapacity = 8;
-        private const ushort BeamActiveFlag = 1;
 
         private struct SourceRecord
         {
@@ -112,7 +112,7 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureInitialized();
-            ReadOnlySpan<LaserCutterEventPayload> payloads = SignalBus<LaserCutterEventPayload>.GetFrameSnapshot();
+            ReadOnlySpan<LaserCutterEventPayloadSignal> payloads = SignalBus<LaserCutterEventPayloadSignal>.GetFrameSnapshot();
             if (payloads.Length <= 0)
                 return;
 
@@ -132,7 +132,7 @@ namespace Hecton8.Gameplay
                     return;
                 }
 
-                LaserCutterEventPayload payload = payloads[eventIndex];
+                LaserCutterEventPayloadSignal payload = payloads[eventIndex];
                 ILaserCutterEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
@@ -176,7 +176,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalSignals.InitializeAllQueues();
-            SignalBus<LaserCutterEventPayload>.EnsureInitialized();
+            SignalBus<LaserCutterEventPayloadSignal>.EnsureInitialized();
             _laneConfigured = true;
         }
 
@@ -232,25 +232,25 @@ namespace Hecton8.Gameplay
 
         internal static void RaiseHeatChanged(float heat01, int cutterInstanceId, int rootInstanceId)
         {
-            Enqueue(new LaserCutterEventPayload
+            Enqueue(new LaserCutterEventPayloadSignal
             {
                 Heat01 = math.saturate(heat01),
                 CutterInstanceId = cutterInstanceId,
                 CutterRootInstanceId = rootInstanceId,
-                EventType = (ushort)LaserCutterEventType.HeatChanged,
+                EventType = (ushort)LaserCutterEventTypeSignal.HeatChanged,
                 StateFlags = 0
             });
         }
 
         internal static void RaiseBeamStateChanged(int cutterInstanceId, int rootInstanceId, bool isActive)
         {
-            Enqueue(new LaserCutterEventPayload
+            Enqueue(new LaserCutterEventPayloadSignal
             {
                 Heat01 = 0f,
                 CutterInstanceId = cutterInstanceId,
                 CutterRootInstanceId = rootInstanceId,
-                EventType = (ushort)LaserCutterEventType.BeamStateChanged,
-                StateFlags = isActive ? BeamActiveFlag : (ushort)0
+                EventType = (ushort)LaserCutterEventTypeSignal.BeamStateChanged,
+                StateFlags = isActive ? LaserCutterEventPayloadSignal.StateFlagBeamActive : (ushort)0
             });
         }
 
@@ -259,9 +259,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         /// <param name="payload">Payload to inspect.</param>
         /// <returns>True when the payload marks the cutter beam active.</returns>
-        public static bool IsBeamActive(in LaserCutterEventPayload payload)
+        public static bool IsBeamActive(in LaserCutterEventPayloadSignal payload)
         {
-            return (payload.StateFlags & BeamActiveFlag) != 0;
+            return (payload.StateFlags & LaserCutterEventPayloadSignal.StateFlagBeamActive) != 0;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -276,7 +276,7 @@ namespace Hecton8.Gameplay
             _laneConfigured = false;
         }
 
-        private static void Enqueue(in LaserCutterEventPayload payload)
+        private static void Enqueue(in LaserCutterEventPayloadSignal payload)
         {
             if (payload.CutterInstanceId == 0 || payload.CutterRootInstanceId == 0)
                 return;
@@ -285,19 +285,19 @@ namespace Hecton8.Gameplay
             if (_pendingEventCount >= PendingEventCapacity)
                 return;
 
-            SignalBus<LaserCutterEventPayload>.Push(in payload);
+            SignalBus<LaserCutterEventPayloadSignal>.Push(in payload);
             _pendingEventCount++;
         }
 
-        private static void RequeueRemaining(ReadOnlySpan<LaserCutterEventPayload> payloads, int startIndex)
+        private static void RequeueRemaining(ReadOnlySpan<LaserCutterEventPayloadSignal> payloads, int startIndex)
         {
             if (startIndex < 0 || startIndex >= payloads.Length)
                 return;
 
             for (int i = startIndex; i < payloads.Length; i++)
             {
-                LaserCutterEventPayload payload = payloads[i];
-                SignalBus<LaserCutterEventPayload>.Push(in payload);
+                LaserCutterEventPayloadSignal payload = payloads[i];
+                SignalBus<LaserCutterEventPayloadSignal>.Push(in payload);
             }
         }
     }

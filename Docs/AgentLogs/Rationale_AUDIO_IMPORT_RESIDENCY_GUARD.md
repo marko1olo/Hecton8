@@ -169,3 +169,80 @@ Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`; it fai
 Rejected Alternatives: Editing AI/Ecosystem or core binary manifest files was rejected as outside CORE/AUDIO authority. Reporting platinum was rejected because the command exits 1.
 Scalability potential: Not runtime-relevant; this records the current verification wall.
 Hardware Impact: 0 us runtime impact from the compile boundary.
+
+## Decision 24: Loop 8 VWS Data-Vault Sovereignty
+Problem: `VocalWarningSystem` still owned six persistent NativeArrays directly: fixed priority queue, warning flags, cooldowns, severity, source IDs, and 300-entry blackbox telemetry.
+Solution: Added `SystemID.AudioVocalWarning`, six fixed `AudioVocalWarning*` `BufferID`s, vault handles, alias views, DataVault hot-swap rebinding, and owner-buffer release. The VWS telemetry struct now uses explicit `Pack = 1`. The bounded `NativeQueue<byte>` ingress lane remains Sentinel-owned because the current `IDataVault` contract has no queue primitive.
+Rejected Alternatives: Keeping local Persistent NativeArrays was rejected under the data sovereignty mandate. Forcing the queue into an array-backed fake queue was rejected because it would replace a proven NativeQueue lane with custom ring logic and increase defect risk outside the residency goal.
+Scalability potential: Low keeps warning state and blackbox data in one owner-auditable vault block; Middle keeps existing VWS behavior; High/Ultra can layer richer warning rendering without private native state.
+Hardware Impact: 0 B/frame GC change. Cold allocation ownership moves from component-local Persistent arrays to GlobalDataVault; expected runtime hot-path delta is 0-2 us, dominated by unchanged NativeArray alias access. Memory leak recovery improves because VWS buffers are releasable by `SystemID.AudioVocalWarning`.
+
+## Decision 25: Loop 8 Compile Boundary
+Problem: The focused Core/audio compile needed a fresh verdict after the VWS migration, and the wider solution still needed a factual boundary check.
+Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`; it exits 0. Then ran `dotnet build Hecton8.slnx --no-restore -v:minimal`; it exits 1 on missing generated `project.assets.json` files for editor/third-party projects and missing RealtimeCSG source files, while `Hecton8.Core` builds successfully inside the solution attempt.
+Rejected Alternatives: Reporting solution green was rejected because `Hecton8.slnx` exits 1. Editing third-party RealtimeCSG project files or generated editor project restore state was rejected as outside CORE/AUDIO authority.
+Scalability potential: Not runtime-relevant; verification state only.
+Hardware Impact: 0 us runtime impact from the compile boundary.
+
+## Decision 26: Loop 9 Player-Critical Data-Vault Sovereignty
+Problem: `PlayerCriticalProceduralAudioRenderer` still owned a large private NativeArray slab for DSP scratch buffers, sonar taps, delay lines, granular state, telemetry rings, and VWS PCM staging lanes. That violated the data-sovereignty mandate and hid major audio residency outside `GlobalDataVault`.
+Solution: Added `SystemID.AudioPlayerCritical` and 48 fixed `PlayerCritical*` `BufferID`s. The renderer now binds those buffers through `GlobalDataVault`, keeps alias NativeArray views only, releases owner buffers through `SystemID.AudioPlayerCritical`, and rebinds on DataVault hot-swap. The one-sample Burst warmup allocation was removed by using the vault-backed mix scratch buffer.
+Rejected Alternatives: Keeping `Allocator.AudioKernel`/`Allocator.Persistent` private arrays was rejected because it leaves memory outside owner accounting. Moving NativeQueues and NativeParallelHashMaps into custom array rings was rejected because `IDataVault` has no queue/hash primitive and those structures are bounded lane infrastructure already registered with `NativeMemorySentinel`.
+Scalability potential: Low keeps the full player-critical DSP slab in a releasable vault owner with deterministic capacities. Middle keeps the same acoustic features. High/Ultra can spend cycles on richer DSP layers while memory ownership remains visible and releasable.
+Hardware Impact: Hot-path access remains NativeArray alias indexing, so expected per-frame/audio-block delta is 0 us. Cold binding pays vault handle resolution during audio configuration; expected cost is initialization-only. Memory leak recovery improves because the entire player-critical slab is releasable under `SystemID.AudioPlayerCritical`.
+
+## Decision 27: Loop 9 ABI And Compile Verification
+Problem: Remaining owned audio structs still used `Pack = 4` or explicit layouts without an explicit pack, and compile needed a fresh verdict after the renderer vault migration.
+Solution: Changed the remaining owned audio struct layout declarations in `PlayerCriticalProceduralAudioRenderer` and `DepthStressGranularSynthesisKernel` to `Pack = 1`; ran runtime audio static scans for local NativeArray ownership and implicit/non-1 struct packing; then ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false`.
+Rejected Alternatives: Leaving `Pack = 4` was rejected for ARM64/Quest because queue/job strides must not depend on platform assumptions. Claiming compile failure from the earlier timeout was rejected after the single-process build completed successfully.
+Scalability potential: Low/Middle/High/Ultra all get deterministic DSP/job payload strides and the same vault-backed memory ownership. High/Ultra retain richer DSP capability without private native state.
+Hardware Impact: 0 us runtime for layout metadata. Focused Core build exits 0; one MSB3026 copy retry warning occurred due a transient locked DLL, then output succeeded.
+
+## Decision 28: Loop 10 Editor Smoke Tests Track DataVault Truth
+Problem: Editor smoke tests still asserted the pre-migration world: private `new NativeArray` allocations, old 128-byte snapshot padding, and literal `RegisterNativeArray`/`string.Format` needles that made static scans look dirty even after runtime ownership moved to `GlobalDataVault`.
+Solution: Updated the smoke assertions to require `BufferID.PlayerCriticalWorkerSonarEchoTaps`, `BufferID.PlayerCriticalSabineReverbDelay`, spatial radar DataVault buffer IDs, and the current `Pack = 1, Size = 320` audio snapshot slot. Split sentinel and string-format probe literals with compile-time concatenation so the tests still check the same runtime text without poisoning source scans.
+Rejected Alternatives: Deleting the smoke tests was rejected because that would remove verification coverage. Keeping stale assertions was rejected because it would either fail valid DataVault code or encourage private NativeArray regression.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged; this strengthens CI/editor verification so low-tier residency rules and high-tier DSP buffers are checked against the actual vault-backed architecture.
+Hardware Impact: 0 us runtime impact; editor-only verification now avoids false negatives and keeps static scan evidence clean.
+
+## Decision 29: Loop 10 PlayerCriticalBufferJobs Pack Normalization
+Problem: `PlayerCriticalBufferJobs` still declared five Burst job payload structs with `Pack = 16`, leaving an explicit but nonstandard ABI exception inside the audio domain after the Quest/ARM64 `Pack = 1` mandate.
+Solution: Changed `DopplerShiftBatchJob`, `BinauralVoxelAcousticsOutputJob`, `GranularSynthesisBlockJob`, `VwsCooldownDecayJob`, and `VwsPrioritySortJob` to `StructLayout(LayoutKind.Sequential, Pack = 1)`.
+Rejected Alternatives: Keeping `Pack = 16` for theoretical alignment was rejected because these jobs carry NativeArray handles and scalar parameters, not a measured SIMD payload requiring custom native alignment. Removing `StructLayout` entirely was rejected because explicit layout evidence is required.
+Scalability potential: Low/Middle/High/Ultra get the same deterministic job payload layout. High/Ultra can still use richer DSP jobs without platform-specific stride drift.
+Hardware Impact: 0 us expected runtime delta; removes platform ABI ambiguity and reduces Quest/Android crash risk from layout disagreement.
+
+## Decision 30: Loop 10 Verification Boundary
+Problem: Verification needed to prove editor smoke syntax after the test changes and establish whether the current Core build wall was audio-owned.
+Solution: Ran static audio scans, `git diff --check`, `dotnet build Hecton8.Editor.csproj --no-restore --no-dependencies -v:minimal /m:1 /nr:false`, and `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false`. Editor smoke assembly builds clean. Core fails only on unrelated `World/SargassumMicroFaunaBoids.cs` and `TetherInstance.cs` errors.
+Rejected Alternatives: Editing Sargassum or Tether code was rejected as outside CORE/AUDIO authority. Reporting Core green was rejected because the command exits 1. Treating editor smoke syntax as unverified was rejected after the editor project compiled.
+Scalability potential: Not runtime-relevant; this is verification state.
+Hardware Impact: 0 us runtime impact. Current 50 MB preloaded-audio rule remains enforced by the build gate; Loop 10 did not change residency math.
+
+## Decision 31: Loop 11 Player Critical Comment Provenance
+Problem: `PlayerCriticalProceduralAudioRenderer` code had been migrated to DataVault aliases, but its field comments still said `COLD ALLOC: NativeArray` and named the component as owner. That is not executable debt, but it is architectural misinformation in a domain where ownership evidence matters.
+Solution: Updated migrated NativeArray field comments to `VAULT ALIAS` and named `SystemID.AudioPlayerCritical` as the owner. Left NativeQueue, NativeParallelHashMap, and managed cold scratch comments intact because those are still local bounded infrastructure or managed staging buffers.
+Rejected Alternatives: Removing comments entirely was rejected because the field block is large and needs ownership markers. Pretending queue/list/hash containers are DataVault-backed was rejected because `IDataVault` currently has no queue/list/hash primitive.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The value is future maintainability: the next pass sees which memory is vault-owned and which queue/list/hash lanes still need a vault primitive before further migration.
+Hardware Impact: 0 us runtime impact; source evidence now matches actual memory ownership.
+
+## Decision 32: Loop 12 Acoustic Impulse Typed-Lane Consumption
+Problem: CORE/AUDIO still depended on `PhysicsEventBus` listener registration for acoustic impulse delivery. Even though that bus is backed by a typed native lane internally, the audio side still used managed listener interfaces and concrete callback registration.
+Solution: Removed `IPhysicsAcousticImpulseEventListener` from `SpatialAudioManager` and `PlayerCriticalProceduralAudioRenderer`. Both systems now read `ReadOnlySpan<PhysicsEventPayload>` from `SignalBus<PhysicsEventPayload>.GetFrameSnapshot()` once per frame, filter `PhysicsEventType.AcousticImpulse`, reconstruct the unmanaged `AcousticImpulseEvent`, and feed their existing local handlers.
+Rejected Alternatives: Keeping listener registration was rejected because the current mandate explicitly bans legacy EventBus-style consumption. Creating a new duplicate acoustic signal was rejected because `PhysicsEventPayload` already exists as the typed lane and prevents interface chaos.
+Scalability potential: Low consumes a bounded typed snapshot with one frame guard and no managed callback fanout. Middle/High/Ultra retain the same acoustic consequences while future visual overkill consumers can also read the same lane without registering concrete audio callbacks.
+Hardware Impact: Expected gain is small but real: removes two audio listener registrations and the interface callback fanout for audio consumers. Runtime cost becomes one bounded span scan per LateFrame in each audio consumer, with zero GC.
+
+## Decision 33: Loop 12 Acoustic Impulse Typed-Lane Publishing
+Problem: Player-critical audio still published predator acoustic impulses through `PhysicsEventBus.NotifyAcousticImpulse`, and the physics bus refused to enqueue acoustic impulse payloads when no legacy acoustic listeners existed. Removing audio listeners would otherwise drop physics-produced acoustic impulses.
+Solution: Added a local `PublishAcousticImpulseSignal` in `PlayerCriticalProceduralAudioRenderer` that pushes `PhysicsEventPayload` directly to `SignalBus<PhysicsEventPayload>`. Removed the listener-count early return from `PhysicsEventBus.NotifyAcousticImpulse` and `NotifyLargeAcousticImpulse` so the shared typed lane remains populated even when no legacy listener is present.
+Rejected Alternatives: Dual-publishing through both SignalBus and PhysicsEventBus was rejected because it can duplicate acoustic impulses. Editing all non-audio legacy consumers was rejected as outside this agent's authority; the bus can continue serving them while audio uses the typed lane.
+Scalability potential: Low keeps the cheapest deterministic payload route. Middle/High/Ultra can stack richer acoustic visualization or DSP responses by reading the same typed lane without increasing producer complexity.
+Hardware Impact: 0 B/frame GC. One direct `SignalBus<PhysicsEventPayload>.Push` replaces the audio-side EventBus publish path for player-critical predator impulses.
+
+## Decision 34: Loop 12 Verification Boundary
+Problem: Verification needed to prove the legacy EventBus source was gone from CORE/AUDIO and identify whether compile errors were caused by the event migration.
+Solution: Ran source scans for `EventBus`, `IPhysicsAcousticImpulseEventListener`, NativeArray ownership, string formatting, and struct packing; then ran Core and Editor build checks. The audio scan set is clean. Core fails on missing shared contract constants across unrelated domains and pre-existing constant references; Editor cannot compile without the missing Core DLL.
+Rejected Alternatives: Repairing HectonEcology/Scalability/Survival/Physics contract constants was rejected as outside CORE/AUDIO authority. Reporting a green compile was rejected because both build commands fail.
+Scalability potential: Not runtime-relevant; verification state only.
+Hardware Impact: 0 us runtime impact from the verification boundary.

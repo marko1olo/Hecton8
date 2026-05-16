@@ -9,7 +9,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Persistent non-allocating JobHandle fan-in buffer.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct JobFenceManager : IDisposable
     {
         private const string BudgetOwner = nameof(JobFenceManager);

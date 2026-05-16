@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -68,7 +69,7 @@ namespace Hecton8.Atmosphere
         public const float BendsHealthDamage = 8f;
         public const float NarcosisDepthMeters = 150f;
 
-        private const float DefaultMaxPressureKPa = 101.325f;
+        private const float DefaultMaxPressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
         private const float DefaultOxygenFraction = 0.2095f;
         private const float DefaultCarbonDioxideFraction = 0.0004f;
         private const float NarcosisFullRangeInv = 0.006666667f;

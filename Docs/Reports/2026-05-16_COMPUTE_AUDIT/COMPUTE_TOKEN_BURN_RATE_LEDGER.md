@@ -186,3 +186,67 @@ The root cause is not "too many lines of code." The root cause is long-context a
 
 STATUS: AUDIT COMPLETE.
 
+## Live Rebase - 2026-05-16T23:14+04:00
+
+This is a SQLite live rebase, not a new full JSONL rescan.
+
+| Metric | Value |
+|---|---:|
+| Current SQLite thread tokens | 49,767,593,348 |
+| Delta vs 14:57 SQLite rebase | +1,006,277,623 |
+| 30-second live delta | 3,815,200 |
+| Live rate | 127,173.33 tokens/sec |
+| Live minute equivalent | 7,630,400 tokens/min |
+| Live day equivalent | 10,987,776,000 tokens/day |
+| Estimated current cache-aware total | USD 33,777.90 |
+| Delta cost since 14:57, cache-aware blended | USD 770.70 |
+| Current energy estimate | 2,488.38 MWh |
+
+The 23:14 pulse is hotter than both previous same-day continuation samples. It should be treated as burst evidence, not a stable daily forecast.
+
+STATUS: AUDIT COMPLETE.
+
+## Continuation Rebase - 2026-05-16T14:57+04:00
+
+This section does not replace the full 03:56 JSONL scan. It rebases the live total with SQLite and recalculates code ratios after the source tree moved.
+
+| Metric | 03:56 full scan | 14:57 live rebase | Delta |
+|---|---:|---:|---:|
+| Token total used for current estimate | 47,456,271,437 | 48,761,315,725 | +1,305,044,288 |
+| First-party script files | 1,538 | 1,561 | +23 |
+| Physical script LOC | 985,864 | 1,006,323 | +20,459 |
+| Meaningful script LOC | 809,871 | 827,838 | +17,967 |
+| Script bytes | 43,119,776 | 43,651,495 | +531,719 |
+| Logic density | 82.15% | 82.26% | +0.11 pp |
+| Tokens per meaningful LOC | 58,597.32 | 58,902.00 | +304.68 |
+| Burn tokens per script byte | 1,100.57 | 1,117.06 | +16.49 |
+| Cache-aware estimate | USD 32,007.67 | USD 33,007.19 | +USD 999.52 |
+| No-cache equivalent | USD 210,561.57 | USD 217,190.76 | +USD 6,629.19 |
+| Energy | 2,372.81 MWh | 2,438.07 MWh | +65.25 MWh |
+
+Current code distribution:
+
+| Domain | Files | Physical LOC | Meaningful LOC |
+|---|---:|---:|---:|
+| `(root)` | 337 | 307,870 | 252,679 |
+| `World` | 177 | 136,020 | 113,155 |
+| `Editor` | 210 | 88,202 | 76,192 |
+| `Gameplay` | 139 | 83,870 | 66,366 |
+| `UI` | 108 | 72,068 | 59,157 |
+| `Core` | 143 | 74,353 | 58,353 |
+| `Construction` | 37 | 26,172 | 21,898 |
+| `Audio` | 27 | 22,311 | 18,950 |
+| `Fauna` | 22 | 22,026 | 18,887 |
+| `Visor` | 34 | 19,657 | 16,494 |
+
+Current boilerplate split:
+
+| Bucket | Files | Physical LOC | Meaningful LOC | Share of meaningful LOC |
+|---|---:|---:|---:|---:|
+| Contracts/interfaces/protocol-like files | 117 | 30,376 | 22,037 | 2.66% |
+| Implementation | 1,444 | 975,947 | 805,801 | 97.34% |
+
+The contract ratio changed because the current scanner classifies `I*.cs`, `*Interface*`, and `*Contract*` names as contract-like. That is broader than the 03:56 pass and should not be treated as a perfect semantic boundary.
+
+STATUS: AUDIT COMPLETE.
+

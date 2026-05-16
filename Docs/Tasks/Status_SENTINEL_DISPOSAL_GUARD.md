@@ -46,7 +46,7 @@ Relevant mandates read before coding:
 
 ## Compile Wall Note
 - Latest build command: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`.
-- Current result: build succeeded in 00:03.24 with 0 warnings and 0 errors.
+- Current result: final build succeeded in 00:00:01.29 with 0 warnings and 0 errors after Sentinel memory IDs and external compile-gate bridges settled.
 - Unity Editor/runtime verification is still pending because no Unity MCP/editor console is exposed in this session.
 
 ## Omega Polish
@@ -105,3 +105,61 @@ Relevant mandates read before coding:
 - [x] Vault ring count: added explicit recorded-count state for the GlobalDataVault defrag/PhiVOD 300-entry ring so ordered dumps remain correct after sequence wrap. Rejected: deriving count from `_defragTickSequence`. Estimate: one bounded int increment per vault heartbeat/defrag event; exact microseconds unmeasured.
 - [x] Typed signal compile bridge: added the missing `Hecton8.Core.Contracts.Signals` import to `ContextualPhysicalIkRuntime` after the remaining compile gate exposed `KccVelocitySignal` as a typed-lane namespace error. Rejected: moving or duplicating the signal struct. Estimate: 0.0 us runtime; compile-only namespace fix.
 - [x] Latest validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:03.24 and succeeded with 0 warnings and 0 errors.
+
+## Continuation Inquisition - Versioned Dump Headers / Prior Compile Green
+- [x] H8Memory fatal dump header: added fixed magic/version, telemetry entry size, allocation record size, and blackbox ring capacity before fatal leak payloads so postmortem parsers do not infer binary layout from position alone. Rejected: undocumented positional stream decoding. Estimate: cold fatal-dump path only; exact microseconds unmeasured.
+- [x] H8Memory ring section headers: heartbeat and lifecycle-event rings now serialize ring kind, ring capacity, entry size, then recorded count and chronological records. Rejected: two anonymous rings with decoder-side assumptions. Estimate: cold fatal-dump path only; no gameplay hot-path change.
+- [x] GlobalDataVault defrag/PhiVOD header: added dump version and ring capacity beside existing magic, recorded count, and entry size. Rejected: magic-only versioning. Estimate: cold crash/defrag dump path only; no Tick change.
+- [x] Static validation: CORE/MEMORY scans found no `StructLayout` without `Pack = 1`, no `Update`/`FixedUpdate`/`LateUpdate`, no `string.Format`, no legacy `EventBus`, no custom `event`, no `Action<>`, and no `Func<>`.
+- [x] Prior validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:01:39.53 and succeeded with 0 warnings and 0 errors before later external UI/World drift.
+
+## Continuation Inquisition - External UI/World Compile Drift
+- [x] Rechecked `SubmarineFluidDynamics` compile-gate syntax drift; the missing brace had already been restored by parallel work before a Sentinel edit was required.
+- [x] Static validation: CORE/MEMORY scans found no `StructLayout` without `Pack = 1`, no `Update`/`FixedUpdate`/`LateUpdate`, no `string.Format`, no legacy `EventBus`, no custom `event`, no `Action<>`, and no `Func<>`.
+- [x] Latest validation [BLOCKED BY DEPENDENCY]: first build pass timed out after 254.9s without returning errors; rerun `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:03:03.97 and failed with 23 external errors in `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs` and `Assets/_Project/Scripts/World/EcosystemDirector.cs`. No errors were reported in CORE/MEMORY touched files.
+
+## Continuation Inquisition - External Drift Settled / Compile Green
+- [x] Re-extracted the exact `SENTINEL_DISPOSAL_GUARD` XML assignment from `Docs/Tasks/CURRENT_BATCH.md` using CLI and ignored neighboring prompts.
+- [x] Re-read the current external blockers; the previously reported `DiegeticGyroCompassRuntime` overload/state and `EcosystemDirector` generic inference errors were already repaired by parallel work before a Sentinel edit was required.
+- [x] Static validation: CORE/MEMORY scans found no `StructLayout` without `Pack = 1`, no `Update`/`FixedUpdate`/`LateUpdate`, no `string.Format`, no legacy `EventBus`, no custom `event`, no `Action<>`, and no `Func<>`.
+- [x] Latest validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:01:16.17 and succeeded with 0 warnings and 0 errors.
+
+## Continuation Inquisition - Full Domain Recheck
+- [x] Enumerated every file in `Assets/_Project/Scripts/Core/Memory/`: `H8Memory.cs`, `GlobalDataVault.cs`, `BinaryBlittableSafeAttribute.cs`, `Defrag/MemoryDefragContracts.cs`, and asmdef/meta files.
+- [x] Native collection audit: remaining `NativeArray`, `NativeList`, and `NativeParallelHashMap` declarations are H8Memory tracking tables, GlobalDataVault arena/metadata/cache lanes, fixed 300-entry blackbox rings, relocation scratch, or API handles returning vault/sentinel-owned views. Rejected: moving the memory authority's own registry into another layer. Estimate: 0.0 us gameplay hot path from audit-only pass.
+- [x] Disposal audit: CORE/MEMORY disposal paths guard `IsCreated`/`IntPtr.Zero`, complete owner `JobHandle`s before release, and keep disk dumps cold-path only. Rejected: adding per-frame disposal polling. Estimate: no new runtime work.
+- [x] `git diff --check` on touched Sentinel/runtime bridge files reported line-ending warnings only and no whitespace errors.
+
+## Continuation Inquisition - Compile Gate Bridges / Zero Warning Build
+- [x] Physics vault lane IDs: added `PhysicsForceCommandFront`, `PhysicsForceCommandBack`, `PhysicsForceValidationPackets`, and `PhysicsForceValidationMask` to `BufferID` so the GlobalDataVault-backed physics packet lanes resolve through the central memory enum instead of private identifiers. Rejected: ad hoc physics-local buffer IDs. Estimate: enum-only compile bridge; 0.0 us runtime.
+- [x] ArchitectEye diagnostics warning bridge: allocated both double-buffered GPU instance/args lanes and released both lanes, removing CS0649 and fixing a silent null-upload path. Rejected: suppressing warnings. Estimate: diagnostics visual path only; no Sentinel gameplay hot-path cost.
+- [x] Sargassum finite clamp bridge: added `SaturateFinite01` for signal consumers; non-finite values clamp to 0, finite values saturate to [0,1]. Rejected: raw `math.saturate` on possible NaN inputs. Estimate: external signal path only; no Sentinel gameplay hot-path cost.
+- [x] Latest validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:00:01.29 and succeeded with 0 warnings and 0 errors.
+
+## Continuation Inquisition - Deferred Disposal Fence / Compile Green
+- [x] Deferred disposal fence: `H8Memory.Release(ref NativeArray<T>, JobHandle, SystemID)` now registers the returned dispose `JobHandle` in the owner fence table after unregistering ownership. Rejected: leaving untracked scheduled native frees that can outlive transition verification. Estimate: 0 B/frame; one owner-fence native hash update only when callers use deferred disposal.
+- [x] Scene-transition job drain: `CompleteSceneTransitionOwnerJobs()` now drains scene-owned `_ownerJobKeys` in addition to owners with active pointer lists, covering owners whose arrays were already retired but whose `Dispose(JobHandle)` has not completed. Rejected: relying on pointer lanes only. Estimate: transition blocking only; exact microseconds unmeasured.
+- [x] Typed diagnostics compile bridge: included `ArchitectEyeDebugSignal.cs` in the dotnet compile list so the existing `DebugSignal` typed lane is compiled instead of duplicating the signal in `GlobalSignals`. Rejected: duplicate signal structs or local EventBus fallback. Estimate: project metadata only; 0.0 us runtime.
+- [x] External UI navigation drift: re-read `DiegeticGyroCompassRuntime` after the compile wall; the presentation-state DTO mismatch had settled in parallel work before a Sentinel-owned patch was required. Rejected: copying presentation fields into `CompassStateDTO`. Estimate: no Sentinel runtime change.
+- [x] Static validation: CORE/MEMORY scans found no `StructLayout` without `Pack = 1`, no `Update`/`FixedUpdate`/`LateUpdate`, no `string.Format`, no legacy `EventBus`, no custom `event`, no `Action<>`, and no `Func<>`.
+- [x] Latest validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:00:26.13 and succeeded with 0 warnings and 0 errors.
+
+## Continuation Inquisition - Compile Metadata Cleanup / Static Revalidation
+- [x] Re-extracted the exact `SENTINEL_DISPOSAL_GUARD` XML assignment from `Docs/Tasks/CURRENT_BATCH.md` using CLI before updating state. Rejected: relying on compressed chat memory. Estimate: 0.0 us runtime.
+- [x] Removed redundant direct `HectonContractValidator.cs` and `HectonSurvivalContract.cs` entries from `Hecton8.Core.csproj` after verifying `Directory.Build.targets` already owns the remove/include bridge. Rejected: duplicate project metadata. Estimate: project metadata only; 0.0 us runtime.
+- [x] External compile bridge: `H8DataBaker` now imports the existing `Hecton8.Core` namespace for `SignalBusRegistry` and uses `FileOptions.SequentialScan` for cold CSV reads. Rejected: duplicating the signal registry or keeping the rejected bool overload. Estimate: cold data-bake I/O only; no Sentinel gameplay hot-path change.
+- [x] Static validation: CORE/MEMORY scans found no `StructLayout` without `Pack = 1`, no `Update`/`FixedUpdate`/`LateUpdate`, no `string.Format`, no legacy `EventBus`, no custom `event`, no `Action<>`, and no `Func<>`.
+- [x] Thread-sync validation: only `.Complete()` calls in CORE/MEMORY are the intentional owner teardown/shutdown fences in `H8Memory`. Rejected: hidden gameplay sync points. Estimate: transition/shutdown blocking only; exact microseconds unmeasured.
+- [x] Latest validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:00:38.31 and succeeded with 0 warnings and 0 errors.
+- [x] Unity Editor/runtime scene-transition verification remains pending because no Unity MCP/editor console is exposed in this session.
+
+## Continuation Inquisition - Scene Unload Verification Ownership
+- [x] Re-extracted the exact `SENTINEL_DISPOSAL_GUARD` XML assignment from `Docs/Tasks/CURRENT_BATCH.md` using CLI before this pass. Rejected: using chat memory. Estimate: 0.0 us runtime.
+- [x] Fixed transition ordering: `SceneRuntimeService` now defers H8Memory's raw `sceneUnloaded` verification during managed transitions, then completes memory lifecycle from its own unload callback after `ReleaseSceneOwnedVaultBuffers()`. Rejected: letting H8Memory verify before GlobalDataVault scene-owned buffer eviction. Estimate: cold scene-unload path only.
+- [x] Fixed additive/Ocean allocation accounting: H8Memory now tracks `LastTransitionExpectedBytes` and verifies total tracked bytes against captured persistent baseline plus post-cutoff allocations. Rejected: treating legitimate post-cutoff Ocean allocations as leaks. Estimate: one cold scan of allocation records during transition verification; 0 B/frame.
+- [x] Retry-safe verification: failed transition verification no longer clears the cutoff generation, so a later retry can still release pre-cutoff scene-owned records. Rejected: one-shot failure that permanently loses the leak boundary. Estimate: cold failure path only.
+- [x] Fatal dump version bumped to 3 and now writes transition expected bytes beside baseline bytes. Rejected: blackbox entries that force postmortem tools to infer the expected total. Estimate: cold dump path only.
+- [x] Static validation: CORE/MEMORY scans found no `StructLayout` without `Pack = 1`, no `Update`/`FixedUpdate`/`LateUpdate`, no `string.Format`, no legacy `EventBus`, no custom `event`, no `Action<>`, and no `Func<>`.
+- [x] Thread-sync validation: only `.Complete()` calls in CORE/MEMORY are the intentional owner teardown/shutdown fences in `H8Memory`. Rejected: hidden gameplay sync points. Estimate: transition/shutdown blocking only; exact microseconds unmeasured.
+- [x] Latest validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:03:23.66 and succeeded with 0 warnings and 0 errors after transient external Tether/World compile drift settled without Sentinel edits.
+- [x] Unity Editor/runtime scene-transition verification remains pending because no Unity MCP/editor console is exposed in this session.

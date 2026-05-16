@@ -22,6 +22,7 @@ namespace Hecton8.Core
         private const float StressShedThreshold = 0.8f;
         private const float StressRecoveryThreshold = 0.72f;
         private const uint DumpMagic = 0x55424E52u; // UBNR
+        private const string IntegratorDumpFileName = "Dump_UBER_NOIR_INTEGRATOR.bin";
 
         private const uint FeaturePom = 1u << 0;
         private const uint FeatureAnalyticalCaustics = 1u << 1;
@@ -37,9 +38,6 @@ namespace Hecton8.Core
         private const uint TelemetryFlagLayoutFault = 1u << 0;
         private const uint TelemetryFlagNonFinite = 1u << 1;
         private const uint TelemetryFlagVaultUnavailable = 1u << 2;
-
-        private static readonly int _RuntimeParamsId = Shader.PropertyToID("_HectonUberNoirRuntimeParams");
-        private static readonly int _ActiveShaderFeatureMaskId = Shader.PropertyToID("_HectonActiveShaderFeatureMask");
 
         private static HectonUberNoirRuntimeBridge s_runtimeInstance;
 
@@ -198,6 +196,19 @@ namespace Hecton8.Core
                 _telemetryHandle.BufferId != BufferID.ShaderFeatureTelemetryRing ||
                 _telemetryHandle.Length < TelemetryCapacity)
             {
+                if (vault.TryGetBufferHandle(
+                    BufferID.ShaderFeatureTelemetryRing,
+                    out VaultBufferHandle<UberNoirShaderTelemetryEntry> existing) &&
+                    existing.IsCreated &&
+                    existing.Length >= TelemetryCapacity)
+                {
+                    _telemetryHandle = existing;
+                    return true;
+                }
+
+                if (vault.IsAllocationLocked)
+                    return false;
+
                 _telemetryHandle = vault.GetBufferHandle<UberNoirShaderTelemetryEntry>(
                     BufferID.ShaderFeatureTelemetryRing,
                     TelemetryCapacity,
@@ -271,7 +282,7 @@ namespace Hecton8.Core
             try
             {
                 var ring = _telemetryHandle.Resolve(vault);
-                if (!ring.IsCreated)
+                if (!ring.IsCreated || ring.Length < TelemetryCapacity)
                 {
                     WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
                     return;
@@ -281,29 +292,7 @@ namespace Hecton8.Core
                 string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
-                string dumpPath = Path.Combine(logDirectory, "Dump_UBER_NOIR_INTEGRATOR.bin");
-                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(DumpMagic);
-                writer.Write(reasonFlags);
-                writer.Write(_telemetryCursor);
-                writer.Write(ring.Length);
-                for (int i = 0; i < ring.Length; i++)
-                {
-                    UberNoirShaderTelemetryEntry entry = ring[(_telemetryCursor + i) % ring.Length];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.FeatureMask);
-                    writer.Write(entry.SystemStress01);
-                    writer.Write(entry.HighCostAllowed01);
-                    writer.Write(entry.VisualOverkill01);
-                    writer.Write(entry.QualityTier);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.PomEnabled01);
-                    writer.Write(entry.SecondaryCaustics01);
-                    writer.Write(entry.Refraction01);
-                    writer.Write(entry.Reserved0);
-                }
+                WriteBlackBoxFile(Path.Combine(logDirectory, IntegratorDumpFileName), reasonFlags, _telemetryCursor, ring);
             }
             catch (Exception)
             {
@@ -326,13 +315,7 @@ namespace Hecton8.Core
                 string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
-                string dumpPath = Path.Combine(logDirectory, "Dump_UBER_NOIR_INTEGRATOR.bin");
-                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(DumpMagic);
-                writer.Write(reasonFlags);
-                writer.Write(_telemetryCursor);
-                writer.Write(0);
+                WriteEmptyBlackBoxFile(Path.Combine(logDirectory, IntegratorDumpFileName), reasonFlags, _telemetryCursor);
             }
             catch (Exception)
             {
@@ -340,21 +323,61 @@ namespace Hecton8.Core
             }
         }
 
+        private static void WriteBlackBoxFile(
+            string dumpPath,
+            uint reasonFlags,
+            int telemetryCursor,
+            NativeArray<UberNoirShaderTelemetryEntry> ring)
+        {
+            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+            using BinaryWriter writer = new BinaryWriter(stream);
+            int entryCount = math.min(TelemetryCapacity, ring.Length);
+            int wrappedCursor = telemetryCursor % math.max(entryCount, 1);
+            writer.Write(DumpMagic);
+            writer.Write(reasonFlags);
+            writer.Write(wrappedCursor);
+            writer.Write(entryCount);
+            for (int i = 0; i < entryCount; i++)
+            {
+                UberNoirShaderTelemetryEntry entry = ring[(wrappedCursor + i) % entryCount];
+                writer.Write(entry.Frame);
+                writer.Write(entry.FeatureMask);
+                writer.Write(entry.SystemStress01);
+                writer.Write(entry.HighCostAllowed01);
+                writer.Write(entry.VisualOverkill01);
+                writer.Write(entry.QualityTier);
+                writer.Write(entry.Flags);
+                writer.Write(entry.StateHash);
+                writer.Write(entry.PomEnabled01);
+                writer.Write(entry.SecondaryCaustics01);
+                writer.Write(entry.Refraction01);
+                writer.Write(entry.Reserved0);
+            }
+        }
+
+        private static void WriteEmptyBlackBoxFile(string dumpPath, uint reasonFlags, int telemetryCursor)
+        {
+            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+            using BinaryWriter writer = new BinaryWriter(stream);
+            writer.Write(DumpMagic);
+            writer.Write(reasonFlags);
+            writer.Write(telemetryCursor);
+            writer.Write(0);
+        }
+
         private void UploadShaderGlobals(float stress01, float highCostAllowed01, uint featureMask, float visualOverkill01, bool force)
         {
             float featureMaskFloat = featureMask & 0x00FFFFFFu;
             Vector4 runtimeParams = new Vector4(stress01, highCostAllowed01, featureMaskFloat, visualOverkill01);
-            if (force || HasVectorChanged(runtimeParams, _lastRuntimeParams))
-            {
-                Shader.SetGlobalVector(_RuntimeParamsId, runtimeParams);
-                _lastRuntimeParams = runtimeParams;
-            }
+            bool runtimeChanged = force || HasVectorChanged(runtimeParams, _lastRuntimeParams);
+            bool featureMaskChanged = force || math.abs(_lastFeatureMask - featureMaskFloat) > 0.5f;
 
-            if (force || math.abs(_lastFeatureMask - featureMaskFloat) > 0.5f)
-            {
-                Shader.SetGlobalFloat(_ActiveShaderFeatureMaskId, featureMaskFloat);
-                _lastFeatureMask = featureMaskFloat;
-            }
+            if (!runtimeChanged && !featureMaskChanged)
+                return;
+
+            HectonShaderGlobalDataVaultBridge.PublishUberNoirRuntime(runtimeParams, featureMaskFloat);
+            _lastRuntimeParams = runtimeParams;
+            _lastFeatureMask = featureMaskFloat;
         }
 
         private bool ResolveStressShed(float stress01)

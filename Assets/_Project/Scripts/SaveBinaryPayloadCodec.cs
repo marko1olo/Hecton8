@@ -40,6 +40,7 @@ namespace Hecton8.SaveSystem
         private const int RtgDecaySaveVersion = 70;
         private const int MetaCampaignSaveVersion = 71;
         private const int FirstHourDtoLockSaveVersion = 72;
+        private const int ContractAuthoritySaveVersion = 73;
         private const int ProceduralFaunaStateStrideBytes = 16;
         private const int HibernatedFaunaStateStrideBytes = 112;
         private const int ModuleSorterBufferSlotMax = 8;
@@ -377,6 +378,9 @@ namespace Hecton8.SaveSystem
             if (data.version != SaveData.CurrentVersion)
                 data.version = SaveData.CurrentVersion;
 
+            data.contractVersionHashLo = HectonContractVersion.HashLo;
+            data.contractVersionHashHi = HectonContractVersion.HashHi;
+
             BufferWriter writer = new BufferWriter(destination, capacity);
             if (!WriteSaveData(data, ref writer))
             {
@@ -427,6 +431,8 @@ namespace Hecton8.SaveSystem
                 SaveData.MaxCorporateOrderIds);
 
             return writer.WriteInt(data.version)
+                && writer.WriteStruct(data.contractVersionHashLo)
+                && writer.WriteStruct(data.contractVersionHashHi)
                 && writer.WriteString(data.timestamp)
                 && writer.WriteDouble(data.totalPlayTime)
                 && WritePlayerStats(ref writer, data.playerStats)
@@ -502,8 +508,24 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadSaveData(ref BufferReader reader, SaveData data)
         {
-            if (!reader.ReadInt(out data.version)
-                || !reader.ReadString(out data.timestamp)
+            if (!reader.ReadInt(out data.version))
+                return false;
+
+            if (data.version >= ContractAuthoritySaveVersion)
+            {
+                if (!reader.ReadStruct(out data.contractVersionHashLo) ||
+                    !reader.ReadStruct(out data.contractVersionHashHi))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                data.contractVersionHashLo = HectonContractVersion.HashLo;
+                data.contractVersionHashHi = HectonContractVersion.HashHi;
+            }
+
+            if (!reader.ReadString(out data.timestamp)
                 || !ReadTotalPlayTime(ref reader, data.version, out data.totalPlayTime)
                 || !ReadPlayerStats(ref reader, data.version, out data.playerStats)
                 || !ReadInventory(ref reader, data.version, out data.inventory)

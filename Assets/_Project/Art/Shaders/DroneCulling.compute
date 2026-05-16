@@ -1,44 +1,10 @@
 #pragma kernel CS_ClearArgs
 #pragma kernel CS_CullDrones
 
-struct HeadlessDroneState
+struct DroneCullingState
 {
-    int DroneId;
-    int HubGridId;
-    int HubSlot;
-    int TargetTaskIndex;
-    int TargetModuleId;
-    int SolderUnits;
-    int LoadedSolderCapacity;
-    uint PackedStateFactionCorridor;
-    float BatteryPercent;
-    float RepairAccumulator;
-    float DockingElapsed;
-    float RebootElapsed;
-    float AvoidanceHysteresisSeconds;
-    float TransactionProgress;
-    float ServiceRadius;
-    float MaxSpeed;
-    float BatteryDrainPerSecond;
-    float RepairRatePerSecond;
-    float WeldPowerNormalized;
-    float WeldRangeMeters;
     float3 Position;
-    float3 Velocity;
-    float3 HomePosition;
-    float3 TargetPosition;
-    float3 SupplyPosition;
-    float3 DockStartPosition;
-    float4 Rotation;
-    float4 HomeRotation;
-    float4 DockStartRotation;
-    float DockingPathLengthMeters;
-    uint DockingRequestId;
-    uint PackedDockingFlags;
-    float3 DockControlP0;
-    float3 DockControlP1;
-    float3 DockControlP2;
-    float3 DockControlP3;
+    uint PackedStateFactionCorridor;
 };
 
 struct DroneRenderInstance
@@ -48,7 +14,7 @@ struct DroneRenderInstance
     float3 Padding;
 };
 
-StructuredBuffer<HeadlessDroneState> _DroneStates;
+StructuredBuffer<DroneCullingState> _DroneStates;
 StructuredBuffer<float4x4> _DroneMatrices;
 StructuredBuffer<DroneRenderInstance> _DroneRenderInstances;
 AppendStructuredBuffer<float4x4> _InstanceMatrices;
@@ -88,7 +54,7 @@ void CS_CullDrones(uint3 id : SV_DispatchThreadID)
     if (index >= (uint)_DroneCount)
         return;
 
-    HeadlessDroneState drone = _DroneStates[index];
+    DroneCullingState drone = _DroneStates[index];
     uint runtimeState = drone.PackedStateFactionCorridor & 0xFFu;
     if (runtimeState == 0u || runtimeState == 8u || runtimeState == 9u)
         return;

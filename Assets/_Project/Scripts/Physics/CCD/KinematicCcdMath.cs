@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Hecton8.Core.Contracts;
 using Unity.Mathematics;
 
 namespace Hecton8.Physics.CCD
@@ -8,11 +9,11 @@ namespace Hecton8.Physics.CCD
     /// </summary>
     public static class KinematicCcdMath
     {
-        public const float SpeedGateMetersPerSecondSq = 25f;
-        public const float RollbackFractionBias = 0.01f;
-        public const float MinVectorMagnitudeSq = 0.000001f;
-        public const float CornerNormalDotThreshold = 0.45f;
-        public const float MassiveLostKineticEnergyJoules = 1500f;
+        public const float SpeedGateMetersPerSecondSq = HectonPhysicsContract.KinematicCcdSpeedGateMetersPerSecondSq;
+        public const float RollbackFractionBias = HectonPhysicsContract.KinematicCcdRollbackFractionBias;
+        public const float MinVectorMagnitudeSq = HectonPhysicsContract.KinematicCcdMinVectorMagnitudeSq;
+        public const float CornerNormalDotThreshold = HectonPhysicsContract.KinematicCcdCornerNormalDotThreshold;
+        public const float MassiveLostKineticEnergyJoules = HectonPhysicsContract.MassiveLostKineticEnergyJoules;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ShouldSchedule(float3 velocity)
@@ -24,7 +25,7 @@ namespace Hecton8.Physics.CCD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveHitFraction(float hitDistance, float sweepDistance, float skinWidth)
         {
-            float denominator = math.max(0.0001f, sweepDistance + math.max(0f, skinWidth));
+            float denominator = math.max(HectonPhysicsContract.FluidDistanceEpsilon, sweepDistance + math.max(0f, skinWidth));
             return math.saturate(hitDistance * math.rcp(denominator));
         }
 
@@ -57,7 +58,7 @@ namespace Hecton8.Physics.CCD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float KineticEnergy(float mass, float velocityMagnitudeSq)
         {
-            return 0.5f * math.max(0.001f, mass) * math.max(0f, velocityMagnitudeSq);
+            return 0.5f * math.max(HectonPhysicsContract.DeterministicInvMillimeterScale, mass) * math.max(0f, velocityMagnitudeSq);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

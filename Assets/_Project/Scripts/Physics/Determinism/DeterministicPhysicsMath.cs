@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Hecton8.Core.Contracts;
 
 namespace Hecton8.Physics.Determinism
 {
@@ -9,16 +10,16 @@ namespace Hecton8.Physics.Determinism
     {
         public const uint FnvOffsetBasis = 2166136261u;
         public const uint FnvPrime = 16777619u;
-        private const float MillimeterScale = 1000f;
-        private const float InvMillimeterScale = 0.001f;
-        private const float MaxQuantizedMillimeterFloat = 2147483000f;
-        private const float MinQuantizedMillimeterFloat = -2147483000f;
-        private const int MaxQuantizedMillimeter = 2147483647;
-        private const int MinQuantizedMillimeter = -2147483647 - 1;
-        private const float Pi = 3.14159265358979323846f;
-        private const float TwoPi = 6.28318530717958647692f;
-        private const float InvTwoPi = 0.15915494309189533577f;
-        private const float MaxWrapInput = 13493037000f;
+        private const float MillimeterScale = HectonPhysicsContract.DeterministicMillimeterScale;
+        private const float InvMillimeterScale = HectonPhysicsContract.DeterministicInvMillimeterScale;
+        private const float MaxQuantizedMillimeterFloat = HectonPhysicsContract.DeterministicMaxQuantizedMillimeterFloat;
+        private const float MinQuantizedMillimeterFloat = HectonPhysicsContract.DeterministicMinQuantizedMillimeterFloat;
+        private const int MaxQuantizedMillimeter = HectonPhysicsContract.DeterministicMaxQuantizedMillimeter;
+        private const int MinQuantizedMillimeter = HectonPhysicsContract.DeterministicMinQuantizedMillimeter;
+        private const float Pi = HectonPhysicsContract.DeterministicPi;
+        private const float TwoPi = HectonPhysicsContract.DeterministicTwoPi;
+        private const float InvTwoPi = HectonPhysicsContract.DeterministicInvTwoPi;
+        private const float MaxWrapInput = HectonPhysicsContract.DeterministicMaxWrapInput;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SnapMillimeter(float value)

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -40,7 +41,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
             MotionVectorVelocityThresholdMetersPerSecond * MotionVectorVelocityThresholdMetersPerSecond;
         public const float StressRadiusReductionThreshold01 = 0.8f;
         public const float StressRadiusMultiplier = 0.5f;
-        public const double AupCellSizeMeters = 5000d;
+        public const double AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble;
         public const double AupCellSizeSq = AupCellSizeMeters * AupCellSizeMeters;
         public const byte ItemSourceLootMagnet = 8;
         public const byte SignalFlagLootMagnet = 1;

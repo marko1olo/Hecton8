@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -8,7 +9,7 @@ namespace Hecton8.Cartography
 {
     public static class CartographyGridConstants
     {
-        public const int AupCellSizeMeters = 5000;
+        public const int AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
         public const int MacroCellSizeMeters = 50;
         public const int AxisBits = 7;
         public const int AxisLength = 1 << AxisBits;

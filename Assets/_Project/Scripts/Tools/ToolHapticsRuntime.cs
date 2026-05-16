@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
@@ -5,6 +6,7 @@ using Hecton8.Core.Memory;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -263,14 +265,20 @@ namespace Hecton8.Tools
                 TryUnregisterLateFrame();
         }
 
-        public NativeArray<HapticCommand>.ReadOnly GetFrontBuffer()
+        public unsafe ReadOnlySpan<HapticCommand> GetFrontBuffer()
         {
-            return TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer) ? frontBuffer.AsReadOnly() : default;
+            if (!TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer))
+                return ReadOnlySpan<HapticCommand>.Empty;
+
+            int count = math.min(math.max(0, _frontCount), frontBuffer.Length);
+            return count > 0
+                ? new ReadOnlySpan<HapticCommand>(frontBuffer.GetUnsafeReadOnlyPtr(), count)
+                : ReadOnlySpan<HapticCommand>.Empty;
         }
 
-        internal bool TryGetFrontBufferSnapshot(out NativeArray<HapticCommand>.ReadOnly frontBuffer, out int count)
+        internal unsafe bool TryGetFrontBufferSnapshot(out ReadOnlySpan<HapticCommand> frontBuffer, out int count)
         {
-            frontBuffer = default;
+            frontBuffer = ReadOnlySpan<HapticCommand>.Empty;
             if (PowerSaveMuteActive)
             {
                 count = 0;
@@ -287,7 +295,8 @@ namespace Hecton8.Tools
                 return false;
             }
 
-            frontBuffer = buffer.AsReadOnly();
+            count = math.min(count, buffer.Length);
+            frontBuffer = new ReadOnlySpan<HapticCommand>(buffer.GetUnsafeReadOnlyPtr(), count);
             return true;
         }
 

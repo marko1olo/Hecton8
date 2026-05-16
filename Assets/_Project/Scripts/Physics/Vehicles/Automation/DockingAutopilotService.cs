@@ -20,24 +20,24 @@ namespace Hecton8.Vehicles.Automation
         Aborted = 4
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 144)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 144)]
     public struct ActiveSplineData
     {
-        public double3 P0;
-        public double3 P1;
-        public double3 P2;
-        public double3 P3;
-        public float3 TargetForward;
-        public float3 TargetUp;
-        public uint OwnerHash;
-        public uint RequestId;
-        public float DurationSeconds;
-        public float Progress01;
-        public byte MathLod;
-        public byte State;
-        public byte Flags;
-        public byte Reserved;
-        public uint ReservedTail;
+        [FieldOffset(0)] public double3 P0;
+        [FieldOffset(24)] public double3 P1;
+        [FieldOffset(48)] public double3 P2;
+        [FieldOffset(72)] public double3 P3;
+        [FieldOffset(96)] public float3 TargetForward;
+        [FieldOffset(108)] public float3 TargetUp;
+        [FieldOffset(120)] public uint OwnerHash;
+        [FieldOffset(124)] public uint RequestId;
+        [FieldOffset(128)] public float DurationSeconds;
+        [FieldOffset(132)] public float Progress01;
+        [FieldOffset(136)] public byte MathLod;
+        [FieldOffset(137)] public byte State;
+        [FieldOffset(138)] public byte Flags;
+        [FieldOffset(139)] public byte Reserved;
+        [FieldOffset(140)] public uint ReservedTail;
 
         public readonly bool IsFinite()
         {
@@ -54,17 +54,17 @@ namespace Hecton8.Vehicles.Automation
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 56)]
     public struct DockingSplineSample
     {
-        public double3 AbsolutePosition;
-        public float3 Tangent;
-        public float3 Up;
-        public float Progress01;
-        public byte State;
-        public byte Reserved0;
-        public byte Reserved1;
-        public byte Reserved2;
+        [FieldOffset(0)] public double3 AbsolutePosition;
+        [FieldOffset(24)] public float3 Tangent;
+        [FieldOffset(36)] public float3 Up;
+        [FieldOffset(48)] public float Progress01;
+        [FieldOffset(52)] public byte State;
+        [FieldOffset(53)] public byte Reserved0;
+        [FieldOffset(54)] public byte Reserved1;
+        [FieldOffset(55)] public byte Reserved2;
     }
 
     [BurstCompile]
@@ -301,7 +301,12 @@ namespace Hecton8.Vehicles.Automation
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Physics/Vehicles/Docking Autopilot Service")]
-    public sealed class DockingAutopilotService : MonoBehaviour, IDockingAutopilotService, IServiceHeartbeat, IServiceShutdown
+    public sealed class DockingAutopilotService :
+        MonoBehaviour,
+        IDockingAutopilotService,
+        IServiceHeartbeat,
+        IServiceShutdown,
+        IGlobalRegistryHotSwapListener
     {
         private const int DefaultActiveSplineCapacity = 64;
         private const int MaxActiveSplineCapacity = 256;
@@ -311,6 +316,7 @@ namespace Hecton8.Vehicles.Automation
         private IDataVault _dataVault;
         private VaultBufferHandle<ActiveSplineData> _activeSplineHandle;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private ServiceHeartbeatState _heartbeatState = ServiceHeartbeatState.NotStarted;
 
         public bool IsReady => _activeSplineHandle.IsCreated && _heartbeatState == ServiceHeartbeatState.Ready;
@@ -325,6 +331,7 @@ namespace Hecton8.Vehicles.Automation
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             UnregisterService();
         }
 
@@ -342,6 +349,26 @@ namespace Hecton8.Vehicles.Automation
                 _serviceRegistered = ReferenceEquals(GlobalRegistry.DockingAutopilot, this);
             }
 
+            TryRegisterHotSwapListener();
+            _heartbeatState = EnsureSplineBufferAvailable()
+                ? ServiceHeartbeatState.Ready
+                : ServiceHeartbeatState.Degraded;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            if (ReferenceEquals(_dataVault, currentService))
+                return;
+
+            _dataVault = currentService as IDataVault;
+            _activeSplineHandle = default;
             _heartbeatState = EnsureSplineBufferAvailable()
                 ? ServiceHeartbeatState.Ready
                 : ServiceHeartbeatState.Degraded;
@@ -440,6 +467,7 @@ namespace Hecton8.Vehicles.Automation
             }
 
             UnregisterService();
+            TryUnregisterHotSwapListener();
             _activeSplineHandle = default;
             _dataVault = null;
             _heartbeatState = ServiceHeartbeatState.Shutdown;
@@ -447,13 +475,26 @@ namespace Hecton8.Vehicles.Automation
 
         private bool EnsureSplineBufferAvailable()
         {
-            if (_activeSplineHandle.IsCreated && _dataVault != null && _dataVault.ResolveBuffer(ref _activeSplineHandle))
-                return true;
-
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
             if (_dataVault == null)
                 return false;
+
+            activeSplineCapacity = math.clamp(activeSplineCapacity, 1, MaxActiveSplineCapacity);
+            if (_activeSplineHandle.IsCreated &&
+                _activeSplineHandle.Length >= activeSplineCapacity &&
+                _dataVault.TryGetBufferGeneration(BufferID.VehicleDockingActiveSplines, out uint generation) &&
+                generation == _activeSplineHandle.generation)
+            {
+                return true;
+            }
+
+            if (_dataVault.TryGetBufferHandle(BufferID.VehicleDockingActiveSplines, out VaultBufferHandle<ActiveSplineData> refreshed) &&
+                refreshed.Length >= activeSplineCapacity)
+            {
+                _activeSplineHandle = refreshed;
+                return true;
+            }
 
             _activeSplineHandle = _dataVault.GetBufferHandle<ActiveSplineData>(
                 BufferID.VehicleDockingActiveSplines,
@@ -470,7 +511,7 @@ namespace Hecton8.Vehicles.Automation
             if (!EnsureSplineBufferAvailable())
                 return false;
 
-            void* ptr = _activeSplineHandle.ResolvePointer(_dataVault);
+            void* ptr = _activeSplineHandle.ptr;
             if (ptr == null || _activeSplineHandle.Length <= 0)
                 return false;
 
@@ -486,7 +527,27 @@ namespace Hecton8.Vehicles.Automation
             if (!_activeSplineHandle.IsCreated || _dataVault == null)
                 return false;
 
-            void* ptr = _activeSplineHandle.ResolvePointer(_dataVault);
+            if (_dataVault.TryGetBufferGeneration(BufferID.VehicleDockingActiveSplines, out uint generation) &&
+                generation == _activeSplineHandle.generation)
+            {
+                void* activePtr = _activeSplineHandle.ptr;
+                if (activePtr != null && _activeSplineHandle.Length > 0)
+                {
+                    activeSplines = (ActiveSplineData*)activePtr;
+                    length = _activeSplineHandle.Length;
+                    return true;
+                }
+            }
+
+            if (!_dataVault.TryGetBufferHandle(BufferID.VehicleDockingActiveSplines, out VaultBufferHandle<ActiveSplineData> existing) ||
+                !existing.IsCreated)
+            {
+                return false;
+            }
+
+            _activeSplineHandle = existing;
+
+            void* ptr = _activeSplineHandle.ptr;
             if (ptr == null || _activeSplineHandle.Length <= 0)
                 return false;
 
@@ -503,6 +564,23 @@ namespace Hecton8.Vehicles.Automation
             _serviceRegistered = false;
             if (_heartbeatState != ServiceHeartbeatState.Shutdown)
                 _heartbeatState = ServiceHeartbeatState.NotStarted;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.UnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

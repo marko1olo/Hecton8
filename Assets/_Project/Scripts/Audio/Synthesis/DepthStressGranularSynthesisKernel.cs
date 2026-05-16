@@ -7,7 +7,7 @@ using Unity.Mathematics;
 
 namespace Hecton8.Audio.Synthesis
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct DepthStressGranularVoice
     {
         public byte Active;
@@ -21,7 +21,7 @@ namespace Hecton8.Audio.Synthesis
         public uint Seed;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct DepthStressGranularSpawnState
     {
         public float SpawnAccumulator;
@@ -265,7 +265,7 @@ namespace Hecton8.Audio.Synthesis
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct KineticImpactSineOscillatorState
     {
         public double Phase;

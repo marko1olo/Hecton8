@@ -35,8 +35,9 @@ namespace Hecton8.Gameplay.Loot
         private const uint TelemetryPickupProxyInvalidFlag = 1u << 10;
         private const uint TelemetryAuthoringClampFlag = 1u << 11;
         private const uint TelemetryStressRadiusClampFlag = 1u << 12;
+        private const uint TelemetrySignalNonFiniteFlag = 1u << 13;
         private const uint TelemetryDumpMagic = 0x48384C4Du;
-        private const uint TelemetryDumpVersion = 6u;
+        private const uint TelemetryDumpVersion = 7u;
         private const uint TelemetryHashOffset = 2166136261u;
         private const uint TelemetryHashPrime = 16777619u;
 
@@ -927,7 +928,7 @@ namespace Hecton8.Gameplay.Loot
             _lastCommittedAcquiredCount = acquiredCount;
             _lastCommittedFlagsHash = _registryFlagsHash;
             _lastActiveLootPullsCount = activePullsCount;
-            _lastPeakMagnetVelocity = peakVelocitySq > 0f ? math.sqrt(peakVelocitySq) : 0f;
+            _lastPeakMagnetVelocity = EstimatePeakVelocity(peakVelocitySq);
             _lastCommittedFlags = (fault ? TelemetryFaultFlag : 0u) | telemetryFlags;
             if (fault && !_dumpedFault)
             {
@@ -1107,6 +1108,15 @@ namespace Hecton8.Gameplay.Loot
             return math.all(math.isfinite(value));
         }
 
+        private static float EstimatePeakVelocity(float peakVelocitySq)
+        {
+            if (!math.isfinite(peakVelocitySq) || peakVelocitySq <= 0f)
+                return 0f;
+
+            float velocity = peakVelocitySq * math.rsqrt(peakVelocitySq);
+            return math.isfinite(velocity) ? velocity : 0f;
+        }
+
         private static float SanitizeFiniteRange(
             float value,
             float fallback,
@@ -1146,8 +1156,12 @@ namespace Hecton8.Gameplay.Loot
 
         private void PublishItemAcquired(in LootMagnetSignalEvent signalEvent, int addedQuantity)
         {
-            if ((signalEvent.Flags & LootMagnetEventFlags.Acquired) == 0u || addedQuantity <= 0)
+            if ((signalEvent.Flags & LootMagnetEventFlags.Acquired) == 0u ||
+                addedQuantity <= 0 ||
+                !IsFiniteAup(in signalEvent.PositionAup))
+            {
                 return;
+            }
 
             uint itemHash = signalEvent.ItemHash;
             if (itemHash == 0u)
@@ -1170,7 +1184,8 @@ namespace Hecton8.Gameplay.Loot
         {
             if ((signalEvent.Flags & LootMagnetEventFlags.Acquired) == 0u ||
                 signalEvent.ItemHash == 0u ||
-                addedQuantity <= 0)
+                addedQuantity <= 0 ||
+                !IsFiniteAup(in signalEvent.PositionAup))
             {
                 return;
             }
@@ -1202,22 +1217,45 @@ namespace Hecton8.Gameplay.Loot
             bool wantsAcoustic = (signalEvent.Flags & LootMagnetEventFlags.Acoustic) != 0u;
             bool wantsWake = (signalEvent.Flags & LootMagnetEventFlags.Wake) != 0u;
             uint droppedFlags = 0u;
+            bool positionFinite = IsFiniteAup(in signalEvent.PositionAup);
+            bool distanceFinite = math.isfinite(signalEvent.DistanceSq) && signalEvent.DistanceSq >= 0f;
+            bool velocityFinite = math.all(math.isfinite(signalEvent.Velocity));
+            if ((wantsAcoustic || wantsWake) && !positionFinite)
+                droppedFlags |= TelemetrySignalNonFiniteFlag;
+
+            if ((wantsAcoustic && !distanceFinite) || (wantsWake && !velocityFinite))
+                droppedFlags |= TelemetrySignalNonFiniteFlag;
+
             if (wantsAcoustic && acousticBudget <= 0)
                 droppedFlags |= TelemetryAcousticBudgetDropFlag;
 
             if (wantsWake && wakeBudget <= 0)
                 droppedFlags |= TelemetryWakeBudgetDropFlag;
 
-            bool publishAcoustic = wantsAcoustic && acousticBudget > 0;
-            bool publishWake = wantsWake && wakeBudget > 0;
+            bool publishAcoustic = wantsAcoustic && acousticBudget > 0 && distanceFinite && positionFinite;
+            bool publishWake = wantsWake && wakeBudget > 0 && velocityFinite && positionFinite;
             if (!publishAcoustic && !publishWake)
                 return droppedFlags;
 
             if (publishAcoustic)
             {
                 acousticBudget--;
-                float radiusMeters = math.max(LootMagnetConstants.AcquireDistanceMeters, _scheduledPullRadiusMeters);
-                float radiusSq = math.max(_scheduledPullRadiusSq, LootMagnetConstants.MinDistanceSq);
+                float radiusMeters = _scheduledPullRadiusMeters;
+                if (!math.isfinite(radiusMeters))
+                    radiusMeters = LootMagnetConstants.AcquireDistanceMeters;
+
+                radiusMeters = math.clamp(
+                    radiusMeters,
+                    LootMagnetConstants.AcquireDistanceMeters,
+                    LootMagnetConstants.MaxStablePullRadiusMeters);
+                float radiusSq = _scheduledPullRadiusSq;
+                if (!math.isfinite(radiusSq))
+                    radiusSq = radiusMeters * radiusMeters;
+
+                radiusSq = math.clamp(
+                    radiusSq,
+                    LootMagnetConstants.MinDistanceSq,
+                    LootMagnetConstants.MaxStablePullRadiusMeters * LootMagnetConstants.MaxStablePullRadiusMeters);
                 float intensity = addedQuantity > 0
                     ? 1f
                     : math.saturate(1f - (signalEvent.DistanceSq * math.rcp(radiusSq)));
@@ -1244,7 +1282,7 @@ namespace Hecton8.Gameplay.Loot
                 };
                 GlobalSignals.Publish(in wakeSignal);
 
-                if (_scalabilityTier >= 2 && math.all(math.isfinite(signalEvent.Velocity)))
+                if (_scalabilityTier >= 2)
                 {
                     FluidImpulseSignal fluidImpulse = new FluidImpulseSignal
                     {
@@ -1407,13 +1445,15 @@ namespace Hecton8.Gameplay.Loot
                 writer.Write(TelemetryDumpMagic);
                 writer.Write(TelemetryDumpVersion);
                 writer.Write(LootMagnetConstants.TelemetryEntrySizeBytes);
-                writer.Write(views.Telemetry.Length);
+                int telemetryLength = views.Telemetry.Length;
+                writer.Write(telemetryLength);
                 writer.Write(_telemetryIndex);
-                for (int index = 0; index < views.Telemetry.Length; index++)
+                for (int offset = 0; offset < telemetryLength; offset++)
                 {
+                    int index = (_telemetryIndex + offset) % telemetryLength;
                     LootMagnetTelemetryEntry entry = views.Telemetry[index];
-                    WriteAup(writer, entry.PlayerAup);
-                    WriteAup(writer, entry.SampleLootAup);
+                    WriteAupPacked48(writer, entry.PlayerAup);
+                    WriteAupPacked48(writer, entry.SampleLootAup);
                     writer.Write(entry.Frame);
                     writer.Write(entry.ActiveCount);
                     writer.Write(entry.ActiveLootPullsCount);
@@ -1421,11 +1461,12 @@ namespace Hecton8.Gameplay.Loot
                     writer.Write(entry.FlagsHash);
                     writer.Write(entry.Flags);
                     writer.Write(entry.PeakMagnetVelocity);
+                    writer.Write(entry.Reserved);
                 }
             }
         }
 
-        private static void WriteAup(BinaryWriter writer, AbsoluteUniversePosition aup)
+        private static void WriteAupPacked48(BinaryWriter writer, AbsoluteUniversePosition aup)
         {
             writer.Write(aup.GridX);
             writer.Write(aup.GridY);
@@ -1433,6 +1474,8 @@ namespace Hecton8.Gameplay.Loot
             writer.Write(aup.LocalX);
             writer.Write(aup.LocalY);
             writer.Write(aup.LocalZ);
+            writer.Write(0f);
+            writer.Write(0UL);
         }
     }
 }

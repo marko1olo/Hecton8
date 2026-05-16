@@ -266,7 +266,7 @@ namespace Hecton8.Physics.KCC
             density = 0.0f;
             if (!encodedSdf.IsCreated ||
                 !TryResolveSdfVoxelCount(gridDimensions, out int voxelCount) ||
-                encodedSdf.Length != voxelCount ||
+                encodedSdf.Length < voxelCount ||
                 sdfRange <= 0.0f ||
                 !math.all(math.isfinite(runtimePosition)) ||
                 !math.all(math.isfinite(volumeOrigin)) ||

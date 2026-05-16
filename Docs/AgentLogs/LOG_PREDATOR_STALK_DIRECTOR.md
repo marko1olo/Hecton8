@@ -59,3 +59,75 @@ Cinematic Cheats used -> Low tier still uses dot-product vision plus triangle-wa
 Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static change adds a few scalar gates, finite clamps, and cold handle metadata paths; the value is correctness, stale-alias defense, NaN containment, and avoiding false motion/VFX/fault work downstream.
 
 Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. `rg '\bif\b|\?|&&|\|\|' Assets/_Project/Scripts/AI/Cognition/LeviathanStalkJob.cs` returns `NO_BRANCH_TOKENS`. Scoped forbidden-token scan over `Assets/_Project/Scripts/AI/Cognition/**` returns `NO_FORBIDDEN_TOKENS`. Public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`. `dotnet build` at project root still fails MSB1011 because multiple projects exist. Unity batch log `Docs/AgentLogs/PREDATOR_STALK_DIRECTOR_UnityCompile_ActionGate.log` reaches editor startup/domain reload, then hangs at IL Post Processor connectivity before a compile result; the batch PID was terminated after timeout.
+
+## 2026-05-16 - Handle-First Integration Polish
+
+What was wrong -> Dormant rows still emitted `RecommendedCadenceSeconds` and could carry `LowTierRadialFallback`, which lets downstream owners infer there is work to tick even when the predator slot has no active tracking anchor. The handle pass also still forced canonical scheduling and fault dumping through raw `AlphaLeviathanVaultBuffers`.
+
+What was done -> Gated `LowTierRadialFallback` behind `eligibleToAct` and zeroed `RecommendedCadenceSeconds` for inactive/non-tracking rows inside `LeviathanStalkJob`. Added `AlphaLeviathanCognitionVault.TryCreateStalkJob(IDataVault, ref AlphaLeviathanVaultHandles, uint, out LeviathanStalkJob)` and a handle-based `TryDumpBlackBoxOnFault(...)` overload so owners can cache generation-checked handles and resolve current views only at schedule or cold dump time.
+
+Cinematic Cheats used -> Low tier still uses 5Hz radial stalking and triangle-wave silhouette flicker, but those fakes now emit only for real tracking rows. High/Ultra SDF contouring, salt, wake silt, SSS, dent, particle, and bioluminescence intent remain silent for dormant slots.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static effect: avoids false downstream scheduling/VFX work from dormant rows and reduces stale raw-view integration risk; hot-path cost is one branchless `math.select` and one gated flag expression.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. `rg '\bif\b|\?|&&|\|\|' Assets/_Project/Scripts/AI/Cognition/LeviathanStalkJob.cs` returns `NO_BRANCH_TOKENS`. Scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`. Public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`. `git diff --check` reports only CRLF normalization warnings on edited files. Root `dotnet build` still fails MSB1011 because the Unity folder contains multiple project/solution files.
+
+## 2026-05-16 - Phase Contract Dedup Pass
+
+What was wrong -> `AlphaLeviathanStalkPhase` duplicated the same byte literals already owned by `AlphaLeviathanPhase`. The values were currently aligned, but separate literals invite drift between the new tangent-orbit job and legacy Fauna consumers.
+
+What was done -> Rewired `AlphaLeviathanStalkPhase` constants to reference `AlphaLeviathanPhase.Hidden`, `Circling`, `FalseCharge`, and `VeerOff`. No public byte values changed.
+
+Cinematic Cheats used -> None. This is interface hygiene, not simulation or presentation work.
+
+Exact Microseconds saved -> 0 us runtime. This removes a future wire-contract drift risk, not measured CPU cost.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst branch scan returns `NO_BRANCH_TOKENS`; scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`. `git diff --check` reports only CRLF normalization warnings on edited code files.
+
+## 2026-05-16 - Blackbox Cursor And Frame-Fault Pass
+
+What was wrong -> The Alpha Leviathan telemetry cursor buffer existed but had no owner-facing heartbeat write path. The existing fault helper scanned the full 19,200-entry telemetry ring, which is unnecessary for normal post-job fault checks and can react to stale historical fault flags.
+
+What was done -> Added `TryRecordTelemetryHeartbeat(...)` overloads that write the latest `frame % 300` cursor into the DataVault-owned cursor buffer after the stalk job completes. Added `TryDumpBlackBoxOnFrameFault(...)` overloads that scan only the current 64-slot telemetry frame and dump the full black box only when that frame contains a `Fault`. Fixed the compiler-caught readonly carrier issue by passing the transient vault view carrier by value for the cursor write.
+
+Cinematic Cheats used -> None. This pass is stability and dump-path pressure reduction.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static cold-scan bound for normal post-job fault checks drops from 19,200 telemetry rows to 64 rows; hot Burst job cost is unchanged.
+
+Verification -> First Bee/Csc pass caught CS8332 on the readonly heartbeat carrier; after the by-value fix, `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped AI/Cognition forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings. Root `dotnet build` still fails MSB1011 because the Unity folder contains multiple project/solution files.
+
+## 2026-05-16 - AUP Fence Blackbox Polish
+
+What was wrong -> Telemetry flagged `ShiftFenceReset`, but the dump did not carry the `ObservedShiftFrameId` that caused the reset. That weakens post-crash diagnosis for the "teleporting beast" class of AUP bugs.
+
+What was done -> `LeviathanStalkJob` now writes `stimulus.ObservedShiftFrameId` into the existing telemetry `Reserved1` field. The dump writer already serializes that field, so no stride expansion, extra buffer, or public method signature change was required.
+
+Cinematic Cheats used -> None. This pass is blackbox/AUP stability work.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static hot-path delta is one uint store replacing a zero literal inside the existing telemetry entry write.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped AI/Cognition forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; corrected public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings. Root `dotnet build` still fails MSB1011 because the Unity folder contains multiple project/solution files.
+
+## 2026-05-16 - Telemetry Contract Hygiene
+
+What was wrong -> The telemetry contract carried public phase bytes, flags, and row fields without enough XML documentation. After assigning `Reserved1` to the observed AUP shift frame, that field needed an explicit contract without changing its binary offset.
+
+What was done -> Added XML summaries to `AlphaLeviathanPhase`, `AlphaLeviathanTelemetryFlags`, and every `AlphaLeviathanTelemetryEntry` field. `Reserved1` is now documented as the observed AUP shift frame ID while preserving the 64-byte row layout.
+
+Cinematic Cheats used -> None. This is public contract hygiene.
+
+Exact Microseconds saved -> 0 us runtime. XML documentation does not change hot-path behavior.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped AI/Cognition forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings. Root `dotnet build` still fails MSB1011 because the Unity folder contains multiple project/solution files.
+
+## 2026-05-16 - Schedule Length Guard Pass
+
+What was wrong -> The vault bridge could create a valid `LeviathanStalkJob`, but it did not return a canonical schedule length. That left owners responsible for manually picking a row count, which is how mismatched DataVault view lengths turn into out-of-bounds Burst execution.
+
+What was done -> Added `GetScheduleLength(...)`, `TryGetScheduleLength(...)`, and guarded `TryCreateStalkJob(...)` overloads for both raw transient views and generation-checked handles. The old handle-first job factory overload remains source-compatible. `TryRecordTelemetryHeartbeat(...)` now refuses to write when the resolved views cannot schedule at least one row.
+
+Cinematic Cheats used -> None. This is integration safety around the existing Dear Lie and high-tier overkill paths.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static runtime impact is cold schedule-path integer min checks; the Burst job hot path is unchanged.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0 after the schedule guard and raw-view overload patches. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped AI/Cognition forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings. Root `dotnet build` still fails MSB1011 because the Unity folder contains multiple project/solution files.

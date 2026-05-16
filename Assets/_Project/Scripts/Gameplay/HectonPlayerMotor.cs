@@ -912,6 +912,14 @@ namespace Hecton8.Gameplay
             Vector3 dominantProbeDirection = ResolveDominantProbeDirection(direction);
 
             EnsureScheduledSweepState();
+            if (!_nativeState.ScheduledSweepCommands.IsCreated ||
+                !_nativeState.ScheduledSweepResults.IsCreated ||
+                _nativeState.ScheduledSweepCommands.Length < ScheduledSweepCommandCount ||
+                _nativeState.ScheduledSweepResults.Length < ScheduledSweepMaxHits)
+            {
+                return false;
+            }
+
             _scheduledSweepShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             _scheduledSweepBodyBindEpoch = _bodyBindEpoch;
             _scheduledSweepState = new ScheduledSweepState
@@ -1014,6 +1022,14 @@ namespace Hecton8.Gameplay
                 return false;
 
             EnsureKinematicRepairTargetState();
+            if (!_nativeState.KinematicRepairTargetCommands.IsCreated ||
+                !_nativeState.KinematicRepairTargetResults.IsCreated ||
+                _nativeState.KinematicRepairTargetCommands.Length < KinematicRepairTargetCommandCount ||
+                _nativeState.KinematicRepairTargetResults.Length < KinematicRepairTargetResultCount)
+            {
+                return false;
+            }
+
             _kinematicRepairTargetShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             _kinematicRepairTargetBodyBindEpoch = _bodyBindEpoch;
             Vector3 safeDirection = SafeNormal(direction, Vector3.forward);
@@ -1496,7 +1512,7 @@ namespace Hecton8.Gameplay
 
             int3 dimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z);
             if (!PlayerKinematicsBodyJob.TryResolveSdfVoxelCount(dimensions, out int expectedLength) ||
-                encodedSdf.Length != expectedLength)
+                encodedSdf.Length < expectedLength)
             {
                 return false;
             }
@@ -1582,7 +1598,7 @@ namespace Hecton8.Gameplay
             if (dataVault != null &&
                 dataVault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> vaultSdf) &&
                 vaultSdf.IsCreated &&
-                vaultSdf.Length == expectedLength)
+                vaultSdf.Length >= expectedLength)
             {
                 return vaultSdf;
             }

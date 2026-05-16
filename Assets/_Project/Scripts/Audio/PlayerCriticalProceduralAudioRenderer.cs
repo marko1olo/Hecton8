@@ -7,6 +7,8 @@ using Hecton8.Audio.Echolocation;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -57,8 +59,9 @@ namespace Hecton8.Audio
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AudioListener))]
     [RequireComponent(typeof(AudioReverbFilter))]
-    public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IProceduralAudioEventListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, ISonarPingEventListener, IAcousticEchoEventListener, ILaserCutterEventListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IProceduralAudioEventListener, IPhysicsImpactEventListener, ISonarPingEventListener, IAcousticEchoEventListener, global::Hecton8.Gameplay.ILaserCutterEventListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
+        private const SystemID VaultOwner = SystemID.AudioPlayerCritical;
         private const float TwoPi = 6.28318530718f;
         private const float InvTwoPi = 0.15915494309f;
         private const float NaturalLogTen = 2.3025851f;
@@ -69,8 +72,8 @@ namespace Hecton8.Audio
         private const float SonarTailAttackSecondsInv = 4.1666665f;
         private const float SonarTailDurationSeconds = 3.8f;
         private const float SonarTotalDurationSeconds = 4.0f;
-        private const float SoundSpeedWaterMetersPerSecond = 1480f;
-        private const float SoundSpeedWaterMetersPerSecondInv = 0.0006756757f;
+        private const float SoundSpeedWaterMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
+        private static readonly float SoundSpeedWaterMetersPerSecondInv = HectonPhysicsContract.OneOverSoundSpeedWaterMetersPerSecond;
         private const float PredatorKillAudioRadiusMeters = 90f;
         private const float PredatorKillAudioRadiusMetersInv = 0.011111111f;
         private const float MeteorBoomAudioRadiusMeters = 42f;
@@ -622,110 +625,111 @@ namespace Hecton8.Audio
         [Tooltip("Optional boiling sample clips assigned to the pool sources in order.")]
         [SerializeField] private AudioClip[] boilingWaterPoolClips;
 
-        // COLD ALLOC: NativeArray<float>[frameCapacity] - hull-stress DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[frameCapacity] - hull-stress DSP scratch - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _hullScratch;
-        // COLD ALLOC: NativeArray<float>[frameCapacity] - sonar DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[frameCapacity] - sonar DSP scratch - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _sonarScratch;
-        // COLD ALLOC: NativeArray<float>[frameCapacity] - transient forward-echo DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[frameCapacity] - transient forward-echo DSP scratch - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _impactEchoScratch;
-        // COLD ALLOC: NativeArray<float>[frameCapacity] - thruster DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[frameCapacity] - thruster DSP scratch - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _thrusterScratch;
-        // COLD ALLOC: NativeArray<float>[frameCapacity] - psychoacoustic heartbeat DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[frameCapacity] - psychoacoustic heartbeat DSP scratch - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _heartbeatScratch;
-        // COLD ALLOC: NativeArray<float>[frameCapacity] - sample-domain sidechain duck coefficients - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[frameCapacity] - sample-domain sidechain duck coefficients - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _heartbeatDuckScratch;
-        // COLD ALLOC: NativeArray<float>[frameCapacity] - procedural bubble burst scratch - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[frameCapacity] - procedural bubble burst scratch - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _bubbleScratch;
-        // COLD ALLOC: NativeArray<float>[frameCapacity] - mixed procedural audio worklet scratch - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[frameCapacity] - mixed procedural audio worklet scratch - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _mixScratch;
-        // COLD ALLOC: NativeArray<float>[frameCapacity*2] - stereo binaural output scratch - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[frameCapacity*2] - stereo binaural output scratch - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _stereoMixScratch;
-        // COLD ALLOC: NativeArray<float>[131072] - sonar linear echo delay ring - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[131072] - sonar linear echo delay ring - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _sonarEchoDelay;
-        // COLD ALLOC: NativeArray<SonarEchoTap>[32] - pending sonar echo tap buffer A - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<SonarEchoTap>[32] - pending sonar echo tap buffer A - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<SonarEchoTap> _pendingSonarEchoTapsA;
-        // COLD ALLOC: NativeArray<SonarEchoTap>[32] - pending sonar echo tap buffer B - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<SonarEchoTap>[32] - pending sonar echo tap buffer B - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<SonarEchoTap> _pendingSonarEchoTapsB;
-        // COLD ALLOC: NativeArray<SonarEchoTap>[32] - worker-owned sonar tap snapshot prevents main-thread tap tearing - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<SonarEchoTap>[32] - worker sonar tap snapshot prevents main-thread tap tearing - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<SonarEchoTap> _workerSonarEchoTaps;
-        // COLD ALLOC: NativeArray<float>[32] - sonar echo read cursors per tap - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[32] - sonar echo read cursors per tap - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _sonarEchoReadCursors;
-        // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass x1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[32] - sonar echo low-pass x1 state per tap - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _sonarEchoFilterInput1;
-        // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass x2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[32] - sonar echo low-pass x2 state per tap - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _sonarEchoFilterInput2;
-        // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass y1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[32] - sonar echo low-pass y1 state per tap - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _sonarEchoFilterOutput1;
-        // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass y2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[32] - sonar echo low-pass y2 state per tap - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _sonarEchoFilterOutput2;
-        // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidate buffer A before AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidate buffer A before AUP hash coalescing - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<SonarEchoCompositeGroup> _sonarEchoCompositeCandidatesA;
-        // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidate buffer B before AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidate buffer B before AUP hash coalescing - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<SonarEchoCompositeGroup> _sonarEchoCompositeCandidatesB;
-        // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[8] - Burst-coalesced active-sonar echo groups by 10m AUP hash - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<SonarEchoCompositeGroup>[8] - Burst-coalesced active-sonar echo groups by 10m AUP hash - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<SonarEchoCompositeGroup> _sonarEchoCompositeGroups;
-        // COLD ALLOC: NativeArray<int>[1] - sonar echo coalesced group count returned by Burst hash job - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<int>[1] - sonar echo coalesced group count returned by Burst hash job - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<int> _sonarEchoCompositeGroupCountNative;
         // COLD ALLOC: NativeParallelMultiHashMap<int,int>[32] - sonar echo AUP cell occupancy before DSP tap publish - owner: PlayerCriticalProceduralAudioRenderer
         private NativeParallelMultiHashMap<int, int> _sonarEchoCompositeSpatialHash;
         // COLD ALLOC: NativeParallelHashMap<int,int>[8] - sonar echo hash-to-output group lookup for coalescing - owner: PlayerCriticalProceduralAudioRenderer
         private NativeParallelHashMap<int, int> _sonarEchoCompositeGroupByHash;
-        // COLD ALLOC: NativeArray<AcousticEcholocationRayHit>[32] - Burst SDF ping ray hit cache - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<AcousticEcholocationRayHit>[32] - Burst SDF ping ray hit cache - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<AcousticEcholocationRayHit> _sonarEcholocationHits;
         // COLD ALLOC: NativeQueue<SonarEchoTap>[32] - late-frame echo tap upload bridge into DSP pending buffers - owner: PlayerCriticalProceduralAudioRenderer
         private NativeQueue<SonarEchoTap> _sonarEchoTapUploadQueue;
-        // COLD ALLOC: NativeArray<float>[1024] - Karplus-Strong delay line for metallic impact synthesis - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[1024] - Karplus-Strong delay line for metallic impact synthesis - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _impactClangDelay;
-        // COLD ALLOC: NativeArray<float>[4096] - thruster comb filter delay ring - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[4096] - thruster comb filter delay ring - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _thrusterCombDelay;
-        // COLD ALLOC: NativeArray<float>[262144] - 1,048,576 bytes fixed four-comb Sabine reverb delay field - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[262144] - 1,048,576 bytes fixed four-comb Sabine reverb delay field - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _sabineReverbDelay;
-        // COLD ALLOC: NativeArray<float>[32] - pre-baked deep-cave early-reflection convolution taps - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[32] - pre-baked deep-cave early-reflection convolution taps - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _caveConvolutionImpulse;
-        // COLD ALLOC: NativeArray<float>[128] - high-tier cave convolution delay ring - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[128] - high-tier cave convolution delay ring - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _caveConvolutionDelay;
-        // COLD ALLOC: NativeArray<float>[8192] - dry BaseModule feedback delay network cache - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[8192] - dry BaseModule feedback delay network cache - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _interiorFdnDelay;
-        // COLD ALLOC: NativeArray<float>[128] - binaural ITD mono delay ring - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[128] - binaural ITD mono delay ring - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _binauralDelayRing;
-        // COLD ALLOC: NativeArray<float>[2] - binaural shadow low-pass history per ear - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[2] - binaural shadow low-pass history per ear - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _binauralShadowHistory;
-        // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state x1 - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[8] - final listener low-pass state x1 - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _lowPassInputHistory1;
-        // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state x2 - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[8] - final listener low-pass state x2 - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _lowPassInputHistory2;
-        // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state y1 - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[8] - final listener low-pass state y1 - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _lowPassOutputHistory1;
-        // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state y2 - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[8] - final listener low-pass state y2 - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _lowPassOutputHistory2;
-        // COLD ALLOC: NativeArray<float>[88200] - 44100Hz two-second raw metallic grain source window - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[88200] - 44100Hz two-second raw metallic grain source window - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _metallicGrainBank;
-        // COLD ALLOC: NativeArray<int>[16] - SOA granular voice active flags - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<int>[16] - SOA granular voice active flags - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<int> _granularVoiceActive;
-        // COLD ALLOC: NativeArray<int>[16] - SOA granular voice elapsed samples - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<int>[16] - SOA granular voice elapsed samples - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<int> _granularVoiceElapsed;
-        // COLD ALLOC: NativeArray<int>[16] - SOA granular voice lengths - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<int>[16] - SOA granular voice lengths - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<int> _granularVoiceLength;
-        // COLD ALLOC: NativeArray<int>[16] - SOA granular voice source starts - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<int>[16] - SOA granular voice source starts - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<int> _granularVoiceStart;
-        // COLD ALLOC: NativeArray<uint>[16] - SOA granular voice deterministic seeds - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<uint>[16] - SOA granular voice deterministic seeds - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<uint> _granularVoiceSeed;
-        // COLD ALLOC: NativeArray<float>[16] - SOA granular voice fractional cursors - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[16] - SOA granular voice fractional cursors - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _granularVoiceCursor;
-        // COLD ALLOC: NativeArray<float>[16] - SOA granular voice pitch scalars - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[16] - SOA granular voice pitch scalars - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _granularVoicePlaybackRate;
-        // COLD ALLOC: NativeArray<float>[16] - SOA granular voice gains - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[16] - SOA granular voice gains - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _granularVoiceGain;
-        // COLD ALLOC: NativeArray<GranularAudioTelemetryEntry>[300] - granular DSP black-box ring - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<GranularAudioTelemetryEntry>[300] - granular DSP black-box ring - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<GranularAudioTelemetryEntry> _granularTelemetryRing;
-        // COLD ALLOC: NativeArray<PrologueAudioTransitionTelemetryEntry>[300] - prologue transition DSP black-box ring - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<PrologueAudioTransitionTelemetryEntry>[300] - prologue transition DSP black-box ring - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<PrologueAudioTransitionTelemetryEntry> _prologueTransitionTelemetryRing;
         // COLD ALLOC: NativeQueue<AudioTransitionState>[32] - prologue visual-sync to DSP command lane - owner: PlayerCriticalProceduralAudioRenderer
         private NativeQueue<AudioTransitionState> _prologueTransitionQueue;
-        // COLD ALLOC: NativeArray<float>[262144] - double-buffered VWS PCM clip lane A - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[262144] - double-buffered VWS PCM clip lane A - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _vwsClipSamplesA;
-        // COLD ALLOC: NativeArray<float>[262144] - double-buffered VWS PCM clip lane B - owner: PlayerCriticalProceduralAudioRenderer
+        // VAULT ALIAS: NativeArray<float>[262144] - double-buffered VWS PCM clip lane B - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _vwsClipSamplesB;
+        private IDataVault _dataVault;
         private float[] _vwsClipManagedScratch;
         private VwsPlaybackState _vwsPlaybackState;
         private int _vwsPendingBufferIndex = -1;
@@ -778,6 +782,7 @@ namespace Hecton8.Audio
         private IAudioService _kineticLowTierAudioService;
         private SpatialAudioManager _spatialAudioManager;
         private int _audioServiceLookupFrame = -4096;
+        private int _lastAcousticImpulseSignalFrame = -4096;
         private int _lastDirectSonarPingFrame = -4096;
         private float _lastDirectSonarPingIntensity;
         private Vector3 _lastDirectSonarPingOrigin;
@@ -1067,7 +1072,7 @@ namespace Hecton8.Audio
             public byte Valid;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct GranularAudioTelemetryEntry
         {
             public uint SampleIndex;
@@ -1083,7 +1088,7 @@ namespace Hecton8.Audio
             public uint Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct PrologueAudioTransitionTelemetryEntry
         {
             public uint Frame;
@@ -1179,7 +1184,7 @@ namespace Hecton8.Audio
             public int PrologueFlags;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 320)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 320)]
         private struct AudioParameterSnapshotSlot
         {
             [FieldOffset(0)]
@@ -1188,7 +1193,7 @@ namespace Hecton8.Audio
             private AudioParameterSnapshotCacheLinePad Padding;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
         private struct AudioParameterSnapshotCacheLinePad
         {
             [FieldOffset(0)] private long _frontFence;
@@ -1666,7 +1671,6 @@ namespace Hecton8.Audio
             TryRegisterScalabilityEvents();
             TryRegisterHotSwapListener();
             PhysicsEvents.Register(this);
-            PhysicsEventBus.Register(this);
             ProceduralAudioEvents.Register(this);
             SpectrumEvents.RegisterSonarPingListener(this);
             SpectrumEvents.RegisterAcousticEchoListener(this);
@@ -1684,7 +1688,6 @@ namespace Hecton8.Audio
             SpectrumEvents.UnregisterAcousticEchoListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
             ProceduralAudioEvents.Unregister(this);
-            PhysicsEventBus.Unregister(this);
             PhysicsEvents.Unregister(this);
             AudioSettings.OnAudioConfigurationChanged -= HandleAudioConfigurationChanged;
             UnsubscribeTransportCoordinator();
@@ -1718,7 +1721,6 @@ namespace Hecton8.Audio
             TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
             LaserCutterEvents.Unregister(this);
-            PhysicsEventBus.Unregister(this);
             SpectrumEvents.UnregisterAcousticEchoListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
             bool producerStopped = StopAudioProducerThread();
@@ -1749,6 +1751,12 @@ namespace Hecton8.Audio
             GlobalRegistryServiceSlot serviceSlot,
             ref object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                RebindDataVault(currentService as IDataVault);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Audio)
                 return;
 
@@ -1760,6 +1768,13 @@ namespace Hecton8.Audio
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                if (!ReferenceEquals(previousService, currentService))
+                    RebindDataVault(currentService as IDataVault);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Audio)
                 return;
 
@@ -2101,6 +2116,7 @@ namespace Hecton8.Audio
 
         public void LateFrameTick()
         {
+            ConsumeAcousticImpulseSignals();
             TryCompleteSdfSonarEchoJob(forceComplete: false);
             FlushSonarEchoCompositeGroups(allowJobCompletion: true);
             PublishPendingDspProducerOverBudgetWarning();
@@ -4067,7 +4083,7 @@ namespace Hecton8.Audio
             const uint primeY = 19349663u;
             const uint primeZ = 83492791u;
             const uint primeMaterial = 2654435761u;
-            double sectorSize = 5000d;
+            double sectorSize = HectonPhysicsContract.AupSectorSizeMetersDouble;
             int cellX = FastFloorToInt(((position.GridX * sectorSize) + position.LocalX) * SonarEchoCompositeCellSizeMetersInv);
             int cellY = FastFloorToInt(((position.GridY * sectorSize) + position.LocalY) * SonarEchoCompositeCellSizeMetersInv);
             int cellZ = FastFloorToInt(((position.GridZ * sectorSize) + position.LocalZ) * SonarEchoCompositeCellSizeMetersInv);
@@ -4435,7 +4451,7 @@ namespace Hecton8.Audio
                 sourceBodyInstanceId,
                 SonarAudioMaterialIdBiological,
                 AcousticImpulseFlags.Leviathan | AcousticImpulseFlags.Large);
-            PhysicsEventBus.NotifyAcousticImpulse(in impulseEvent);
+            PublishAcousticImpulseSignal(in impulseEvent);
         }
 
         private void TryAppendPredatorFleshEchoTapToBuffer(
@@ -4626,19 +4642,19 @@ namespace Hecton8.Audio
         /// Receives deferred laser cutter heat and beam-state events.
         /// </summary>
         /// <param name="payload">Blittable cutter event payload.</param>
-        public void OnLaserCutterEvent(in LaserCutterEventPayload payload)
+        public void OnLaserCutterEvent(in global::Hecton8.Core.Contracts.Signals.LaserCutterEventPayload payload)
         {
             if (!IsBoundPlayerCutterEvent(in payload))
                 return;
 
-            LaserCutterEventType eventType = (LaserCutterEventType)payload.EventType;
-            if (eventType == LaserCutterEventType.HeatChanged)
+            global::Hecton8.Core.Contracts.Signals.LaserCutterEventType eventType = (global::Hecton8.Core.Contracts.Signals.LaserCutterEventType)payload.EventType;
+            if (eventType == global::Hecton8.Core.Contracts.Signals.LaserCutterEventType.HeatChanged)
             {
                 HandleCutterHeatChanged(payload.Heat01);
                 return;
             }
 
-            if (eventType == LaserCutterEventType.BeamStateChanged)
+            if (eventType == global::Hecton8.Core.Contracts.Signals.LaserCutterEventType.BeamStateChanged)
                 HandleCutterBeamStateChanged(in payload);
         }
 
@@ -4647,7 +4663,7 @@ namespace Hecton8.Audio
             _laserCutterHeat01 = math.saturate(heat01);
         }
 
-        private void HandleCutterBeamStateChanged(in LaserCutterEventPayload payload)
+        private void HandleCutterBeamStateChanged(in global::Hecton8.Core.Contracts.Signals.LaserCutterEventPayload payload)
         {
             bool isActive = LaserCutterEvents.IsBeamActive(in payload);
             _laserCutterBeamActive = isActive;
@@ -4655,7 +4671,7 @@ namespace Hecton8.Audio
                 _laserCutterHeat01 = 0f;
         }
 
-        private bool IsBoundPlayerCutterEvent(in LaserCutterEventPayload payload)
+        private bool IsBoundPlayerCutterEvent(in global::Hecton8.Core.Contracts.Signals.LaserCutterEventPayload payload)
         {
             return _boundPlayerRootEntityId != 0 &&
                    payload.CutterRootInstanceId == _boundPlayerRootEntityId;
@@ -4664,11 +4680,6 @@ namespace Hecton8.Audio
         void IPhysicsImpactEventListener.OnPhysicsImpact(in PhysicsImpactSignal impactSignal)
         {
             HandlePhysicsImpact(in impactSignal);
-        }
-
-        void IPhysicsAcousticImpulseEventListener.OnAcousticImpulse(in global::Hecton8.Physics.AcousticImpulseEvent impulseEvent)
-        {
-            HandleAcousticImpulse(in impulseEvent);
         }
 
         private void HandlePhysicsImpact(in PhysicsImpactSignal impactSignal)
@@ -4758,6 +4769,55 @@ namespace Hecton8.Audio
                 echoLowPassCutoffHz,
                 1f);
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, impactStress);
+        }
+
+        private void ConsumeAcousticImpulseSignals()
+        {
+            int frame = Time.frameCount;
+            if (_lastAcousticImpulseSignalFrame == frame)
+                return;
+
+            _lastAcousticImpulseSignalFrame = frame;
+            ReadOnlySpan<PhysicsEventPayload> signals = SignalBus<PhysicsEventPayload>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PhysicsEventPayload payload = signals[i];
+                if (payload.EventType != (ushort)PhysicsEventType.AcousticImpulse)
+                    continue;
+
+                AcousticImpulseEvent impulseEvent = new AcousticImpulseEvent(
+                    payload.RuntimePosition,
+                    payload.Direction,
+                    payload.Scalar0,
+                    payload.Scalar1,
+                    payload.Scalar2,
+                    payload.RadiusMeters,
+                    payload.PrimaryId,
+                    unchecked((byte)payload.DataHash),
+                    (AcousticImpulseFlags)payload.StatusBits);
+                HandleAcousticImpulse(in impulseEvent);
+            }
+        }
+
+        private static void PublishAcousticImpulseSignal(in AcousticImpulseEvent impulseEvent)
+        {
+            PhysicsEventPayload payload = new PhysicsEventPayload
+            {
+                RuntimePosition = impulseEvent.RuntimePosition,
+                Direction = impulseEvent.Direction,
+                ForceVector = default,
+                ImpulseVector = default,
+                RadiusMeters = impulseEvent.RadiusMeters,
+                Scalar0 = impulseEvent.KineticEnergyJoules,
+                Scalar1 = impulseEvent.Volume01,
+                Scalar2 = impulseEvent.PitchScale,
+                PrimaryId = impulseEvent.SourceBodyInstanceId,
+                DataHash = impulseEvent.AudioMaterialId,
+                StatusBits = unchecked((uint)impulseEvent.Flags),
+                EventType = (ushort)PhysicsEventType.AcousticImpulse,
+                Reserved = 0
+            };
+            SignalBus<PhysicsEventPayload>.Push(in payload);
         }
 
         private void HandleAcousticImpulse(in global::Hecton8.Physics.AcousticImpulseEvent impulseEvent)
@@ -4942,7 +5002,7 @@ namespace Hecton8.Audio
             _targetLeviathanRoarAggroValue = math.max(_targetLeviathanRoarAggroValue, aggroLevel);
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, aggroLevel * 0.22f);
             Vector3 directionToPredator = new Vector3(predatorDeltaAup.x, predatorDeltaAup.y, predatorDeltaAup.z);
-            PhysicsEventBus.NotifyAcousticImpulse(new AcousticImpulseEvent(
+            AcousticImpulseEvent impulseEvent = new AcousticImpulseEvent(
                 info.WorldPosition,
                 directionToPredator,
                 0f,
@@ -4951,7 +5011,8 @@ namespace Hecton8.Audio
                 PredatorKillAudioRadiusMeters * 2.5f,
                 0,
                 SonarAudioMaterialIdDefault,
-                AcousticImpulseFlags.Leviathan));
+                AcousticImpulseFlags.Leviathan);
+            PublishAcousticImpulseSignal(in impulseEvent);
         }
 
         private void UpdateLeviathanDopplerCache()
@@ -5334,6 +5395,34 @@ namespace Hecton8.Audio
             _structuralHullLookupFrame = -4096;
         }
 
+        private void RebindDataVault(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            bool hadBuffers = _buffersInitialized;
+            int previousFrameCapacity = _frameCapacity;
+            bool shouldRestartWorker = hadBuffers && isActiveAndEnabled;
+            bool producerStopped = !IsAudioProducerThreadAlive();
+            if (Volatile.Read(ref _audioProducerRunning) != 0 || IsAudioProducerThreadAlive())
+                producerStopped = StopAudioProducerThread();
+
+            if (!producerStopped)
+            {
+                ClearNativeOutputBridge();
+                return;
+            }
+
+            DisposeBuffers(disposeSabineReverbDelay: true);
+            _dataVault = vault;
+            if (!hadBuffers || vault == null || previousFrameCapacity <= 0)
+                return;
+
+            EnsureBuffers(previousFrameCapacity);
+            if (shouldRestartWorker && _buffersInitialized)
+                StartAudioProducerThread();
+        }
+
         private void RefreshAudioConfiguration()
         {
             bool shouldRestartWorker = isActiveAndEnabled;
@@ -5374,6 +5463,251 @@ namespace Hecton8.Audio
             _sabineDelaySamplesD = ResolveSabineDelaySamples(SabineReverbDelayDSeconds, sampleRate);
         }
 
+        private bool BindVaultBackedAudioBuffers(int frameCapacity)
+        {
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            _dataVault = vault;
+            _hullScratch = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalHullScratch, frameCapacity, NativeArrayOptions.UninitializedMemory);
+            _sonarScratch = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalSonarScratch, frameCapacity, NativeArrayOptions.UninitializedMemory);
+            _impactEchoScratch = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalImpactEchoScratch, frameCapacity, NativeArrayOptions.UninitializedMemory);
+            _thrusterScratch = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalThrusterScratch, frameCapacity, NativeArrayOptions.UninitializedMemory);
+            _heartbeatScratch = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalHeartbeatScratch, frameCapacity, NativeArrayOptions.UninitializedMemory);
+            _heartbeatDuckScratch = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalHeartbeatDuckScratch, frameCapacity, NativeArrayOptions.UninitializedMemory);
+            _bubbleScratch = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalBubbleScratch, frameCapacity, NativeArrayOptions.UninitializedMemory);
+            _mixScratch = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalMixScratch, frameCapacity, NativeArrayOptions.UninitializedMemory);
+            _stereoMixScratch = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalStereoMixScratch, frameCapacity * BinauralOutputChannels, NativeArrayOptions.UninitializedMemory);
+            _sonarEchoDelay = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalSonarEchoDelay, SonarEchoDelayCapacity, NativeArrayOptions.ClearMemory);
+            _pendingSonarEchoTapsA = ResolveVaultBuffer<SonarEchoTap>(vault, BufferID.PlayerCriticalPendingSonarEchoTapsA, SonarEchoTapCapacity, NativeArrayOptions.ClearMemory);
+            _pendingSonarEchoTapsB = ResolveVaultBuffer<SonarEchoTap>(vault, BufferID.PlayerCriticalPendingSonarEchoTapsB, SonarEchoTapCapacity, NativeArrayOptions.ClearMemory);
+            _workerSonarEchoTaps = ResolveVaultBuffer<SonarEchoTap>(vault, BufferID.PlayerCriticalWorkerSonarEchoTaps, SonarEchoTapCapacity, NativeArrayOptions.ClearMemory);
+            _sonarEchoReadCursors = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalSonarEchoReadCursors, SonarEchoTapCapacity, NativeArrayOptions.ClearMemory);
+            _sonarEchoFilterInput1 = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalSonarEchoFilterInput1, SonarEchoTapCapacity, NativeArrayOptions.ClearMemory);
+            _sonarEchoFilterInput2 = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalSonarEchoFilterInput2, SonarEchoTapCapacity, NativeArrayOptions.ClearMemory);
+            _sonarEchoFilterOutput1 = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalSonarEchoFilterOutput1, SonarEchoTapCapacity, NativeArrayOptions.ClearMemory);
+            _sonarEchoFilterOutput2 = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalSonarEchoFilterOutput2, SonarEchoTapCapacity, NativeArrayOptions.ClearMemory);
+            _sonarEchoCompositeCandidatesA = ResolveVaultBuffer<SonarEchoCompositeGroup>(vault, BufferID.PlayerCriticalSonarEchoCompositeCandidatesA, SonarEchoCompositeCandidateCapacity, NativeArrayOptions.ClearMemory);
+            _sonarEchoCompositeCandidatesB = ResolveVaultBuffer<SonarEchoCompositeGroup>(vault, BufferID.PlayerCriticalSonarEchoCompositeCandidatesB, SonarEchoCompositeCandidateCapacity, NativeArrayOptions.ClearMemory);
+            _sonarEchoCompositeGroups = ResolveVaultBuffer<SonarEchoCompositeGroup>(vault, BufferID.PlayerCriticalSonarEchoCompositeGroups, SonarEchoCompositeGroupCapacity, NativeArrayOptions.ClearMemory);
+            _sonarEchoCompositeGroupCountNative = ResolveVaultBuffer<int>(vault, BufferID.PlayerCriticalSonarEchoCompositeGroupCount, 1, NativeArrayOptions.ClearMemory);
+            _sonarEcholocationHits = ResolveVaultBuffer<AcousticEcholocationRayHit>(vault, BufferID.PlayerCriticalSonarEcholocationHits, SonarEchoTapCapacity, NativeArrayOptions.ClearMemory);
+            _impactClangDelay = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalImpactClangDelay, ImpactClangDelayCapacity, NativeArrayOptions.ClearMemory);
+            _thrusterCombDelay = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalThrusterCombDelay, ThrusterCombDelayCapacity, NativeArrayOptions.ClearMemory);
+            _sabineReverbDelay = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalSabineReverbDelay, SabineReverbDelayCapacity, NativeArrayOptions.ClearMemory);
+            _caveConvolutionImpulse = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalCaveConvolutionImpulse, CaveConvolutionImpulseLength, NativeArrayOptions.UninitializedMemory);
+            _caveConvolutionDelay = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalCaveConvolutionDelay, CaveConvolutionDelayCapacity, NativeArrayOptions.ClearMemory);
+            _interiorFdnDelay = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalInteriorFdnDelay, InteriorFdnDelayCapacity, NativeArrayOptions.ClearMemory);
+            _binauralDelayRing = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalBinauralDelayRing, BinauralDelayCapacity, NativeArrayOptions.ClearMemory);
+            _binauralShadowHistory = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalBinauralShadowHistory, BinauralOutputChannels, NativeArrayOptions.ClearMemory);
+            _lowPassInputHistory1 = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalLowPassInputHistory1, MaxFilterChannels, NativeArrayOptions.ClearMemory);
+            _lowPassInputHistory2 = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalLowPassInputHistory2, MaxFilterChannels, NativeArrayOptions.ClearMemory);
+            _lowPassOutputHistory1 = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalLowPassOutputHistory1, MaxFilterChannels, NativeArrayOptions.ClearMemory);
+            _lowPassOutputHistory2 = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalLowPassOutputHistory2, MaxFilterChannels, NativeArrayOptions.ClearMemory);
+            _metallicGrainBank = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalMetallicGrainBank, MetallicGrainBankCapacity, NativeArrayOptions.UninitializedMemory);
+            _granularVoiceActive = ResolveVaultBuffer<int>(vault, BufferID.PlayerCriticalGranularVoiceActive, GranularVoiceCapacity, NativeArrayOptions.ClearMemory);
+            _granularVoiceElapsed = ResolveVaultBuffer<int>(vault, BufferID.PlayerCriticalGranularVoiceElapsed, GranularVoiceCapacity, NativeArrayOptions.ClearMemory);
+            _granularVoiceLength = ResolveVaultBuffer<int>(vault, BufferID.PlayerCriticalGranularVoiceLength, GranularVoiceCapacity, NativeArrayOptions.ClearMemory);
+            _granularVoiceStart = ResolveVaultBuffer<int>(vault, BufferID.PlayerCriticalGranularVoiceStart, GranularVoiceCapacity, NativeArrayOptions.ClearMemory);
+            _granularVoiceSeed = ResolveVaultBuffer<uint>(vault, BufferID.PlayerCriticalGranularVoiceSeed, GranularVoiceCapacity, NativeArrayOptions.ClearMemory);
+            _granularVoiceCursor = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalGranularVoiceCursor, GranularVoiceCapacity, NativeArrayOptions.ClearMemory);
+            _granularVoicePlaybackRate = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalGranularVoicePlaybackRate, GranularVoiceCapacity, NativeArrayOptions.ClearMemory);
+            _granularVoiceGain = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalGranularVoiceGain, GranularVoiceCapacity, NativeArrayOptions.ClearMemory);
+            _granularTelemetryRing = ResolveVaultBuffer<GranularAudioTelemetryEntry>(vault, BufferID.PlayerCriticalGranularTelemetryRing, GranularTelemetryCapacity, NativeArrayOptions.ClearMemory);
+            _prologueTransitionTelemetryRing = ResolveVaultBuffer<PrologueAudioTransitionTelemetryEntry>(vault, BufferID.PlayerCriticalPrologueTransitionTelemetryRing, PrologueTransitionTelemetryCapacity, NativeArrayOptions.ClearMemory);
+            _vwsClipSamplesA = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalVwsClipSamplesA, VwsClipSampleCapacity, NativeArrayOptions.ClearMemory);
+            _vwsClipSamplesB = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalVwsClipSamplesB, VwsClipSampleCapacity, NativeArrayOptions.ClearMemory);
+
+            if (!AreVaultBackedAudioBuffersCreated())
+            {
+                ClearVaultBackedAudioBufferAliases(clearSabine: true);
+                return false;
+            }
+
+            ClearVaultBackedAudioBuffers();
+            return true;
+        }
+
+        private void ClearVaultBackedAudioBufferAliases(bool clearSabine)
+        {
+            _hullScratch = default;
+            _sonarScratch = default;
+            _impactEchoScratch = default;
+            _thrusterScratch = default;
+            _heartbeatScratch = default;
+            _heartbeatDuckScratch = default;
+            _bubbleScratch = default;
+            _mixScratch = default;
+            _stereoMixScratch = default;
+            _sonarEchoDelay = default;
+            _pendingSonarEchoTapsA = default;
+            _pendingSonarEchoTapsB = default;
+            _workerSonarEchoTaps = default;
+            _sonarEchoReadCursors = default;
+            _sonarEchoFilterInput1 = default;
+            _sonarEchoFilterInput2 = default;
+            _sonarEchoFilterOutput1 = default;
+            _sonarEchoFilterOutput2 = default;
+            _sonarEchoCompositeCandidatesA = default;
+            _sonarEchoCompositeCandidatesB = default;
+            _sonarEchoCompositeGroups = default;
+            _sonarEchoCompositeGroupCountNative = default;
+            _sonarEcholocationHits = default;
+            _impactClangDelay = default;
+            _thrusterCombDelay = default;
+            if (clearSabine)
+                _sabineReverbDelay = default;
+            _caveConvolutionImpulse = default;
+            _caveConvolutionDelay = default;
+            _interiorFdnDelay = default;
+            _binauralDelayRing = default;
+            _binauralShadowHistory = default;
+            _lowPassInputHistory1 = default;
+            _lowPassInputHistory2 = default;
+            _lowPassOutputHistory1 = default;
+            _lowPassOutputHistory2 = default;
+            _metallicGrainBank = default;
+            _granularVoiceActive = default;
+            _granularVoiceElapsed = default;
+            _granularVoiceLength = default;
+            _granularVoiceStart = default;
+            _granularVoiceSeed = default;
+            _granularVoiceCursor = default;
+            _granularVoicePlaybackRate = default;
+            _granularVoiceGain = default;
+            _granularTelemetryRing = default;
+            _prologueTransitionTelemetryRing = default;
+            _vwsClipSamplesA = default;
+            _vwsClipSamplesB = default;
+        }
+
+        private static NativeArray<T> ResolveVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int length,
+            NativeArrayOptions options) where T : struct
+        {
+            VaultBufferHandle<T> handle = vault.GetBufferHandle<T>(
+                bufferId,
+                math.max(1, length),
+                VaultOwner,
+                options);
+            return handle.Resolve(vault);
+        }
+
+        private bool AreVaultBackedAudioBuffersCreated()
+        {
+            return _hullScratch.IsCreated &&
+                   _sonarScratch.IsCreated &&
+                   _impactEchoScratch.IsCreated &&
+                   _thrusterScratch.IsCreated &&
+                   _heartbeatScratch.IsCreated &&
+                   _heartbeatDuckScratch.IsCreated &&
+                   _bubbleScratch.IsCreated &&
+                   _mixScratch.IsCreated &&
+                   _stereoMixScratch.IsCreated &&
+                   _sonarEchoDelay.IsCreated &&
+                   _pendingSonarEchoTapsA.IsCreated &&
+                   _pendingSonarEchoTapsB.IsCreated &&
+                   _workerSonarEchoTaps.IsCreated &&
+                   _sonarEchoReadCursors.IsCreated &&
+                   _sonarEchoFilterInput1.IsCreated &&
+                   _sonarEchoFilterInput2.IsCreated &&
+                   _sonarEchoFilterOutput1.IsCreated &&
+                   _sonarEchoFilterOutput2.IsCreated &&
+                   _sonarEchoCompositeCandidatesA.IsCreated &&
+                   _sonarEchoCompositeCandidatesB.IsCreated &&
+                   _sonarEchoCompositeGroups.IsCreated &&
+                   _sonarEchoCompositeGroupCountNative.IsCreated &&
+                   _sonarEcholocationHits.IsCreated &&
+                   _impactClangDelay.IsCreated &&
+                   _thrusterCombDelay.IsCreated &&
+                   _sabineReverbDelay.IsCreated &&
+                   _caveConvolutionImpulse.IsCreated &&
+                   _caveConvolutionDelay.IsCreated &&
+                   _interiorFdnDelay.IsCreated &&
+                   _binauralDelayRing.IsCreated &&
+                   _binauralShadowHistory.IsCreated &&
+                   _lowPassInputHistory1.IsCreated &&
+                   _lowPassInputHistory2.IsCreated &&
+                   _lowPassOutputHistory1.IsCreated &&
+                   _lowPassOutputHistory2.IsCreated &&
+                   _metallicGrainBank.IsCreated &&
+                   _granularVoiceActive.IsCreated &&
+                   _granularVoiceElapsed.IsCreated &&
+                   _granularVoiceLength.IsCreated &&
+                   _granularVoiceStart.IsCreated &&
+                   _granularVoiceSeed.IsCreated &&
+                   _granularVoiceCursor.IsCreated &&
+                   _granularVoicePlaybackRate.IsCreated &&
+                   _granularVoiceGain.IsCreated &&
+                   _granularTelemetryRing.IsCreated &&
+                   _prologueTransitionTelemetryRing.IsCreated &&
+                   _vwsClipSamplesA.IsCreated &&
+                   _vwsClipSamplesB.IsCreated;
+        }
+
+        private void ClearVaultBackedAudioBuffers()
+        {
+            ClearNativeBuffer(_hullScratch);
+            ClearNativeBuffer(_sonarScratch);
+            ClearNativeBuffer(_impactEchoScratch);
+            ClearNativeBuffer(_thrusterScratch);
+            ClearNativeBuffer(_heartbeatScratch);
+            ClearNativeBuffer(_heartbeatDuckScratch);
+            ClearNativeBuffer(_bubbleScratch);
+            ClearNativeBuffer(_mixScratch);
+            ClearNativeBuffer(_stereoMixScratch);
+            ClearNativeBuffer(_sonarEchoDelay);
+            ClearNativeBuffer(_pendingSonarEchoTapsA);
+            ClearNativeBuffer(_pendingSonarEchoTapsB);
+            ClearNativeBuffer(_workerSonarEchoTaps);
+            ClearNativeBuffer(_sonarEchoReadCursors);
+            ClearNativeBuffer(_sonarEchoFilterInput1);
+            ClearNativeBuffer(_sonarEchoFilterInput2);
+            ClearNativeBuffer(_sonarEchoFilterOutput1);
+            ClearNativeBuffer(_sonarEchoFilterOutput2);
+            ClearNativeBuffer(_sonarEchoCompositeCandidatesA);
+            ClearNativeBuffer(_sonarEchoCompositeCandidatesB);
+            ClearNativeBuffer(_sonarEchoCompositeGroups);
+            ClearNativeBuffer(_sonarEchoCompositeGroupCountNative);
+            ClearNativeBuffer(_sonarEcholocationHits);
+            ClearNativeBuffer(_impactClangDelay);
+            ClearNativeBuffer(_thrusterCombDelay);
+            ClearNativeBuffer(_sabineReverbDelay);
+            ClearNativeBuffer(_caveConvolutionImpulse);
+            ClearNativeBuffer(_caveConvolutionDelay);
+            ClearNativeBuffer(_interiorFdnDelay);
+            ClearNativeBuffer(_binauralDelayRing);
+            ClearNativeBuffer(_binauralShadowHistory);
+            ClearNativeBuffer(_lowPassInputHistory1);
+            ClearNativeBuffer(_lowPassInputHistory2);
+            ClearNativeBuffer(_lowPassOutputHistory1);
+            ClearNativeBuffer(_lowPassOutputHistory2);
+            ClearNativeBuffer(_granularVoiceActive);
+            ClearNativeBuffer(_granularVoiceElapsed);
+            ClearNativeBuffer(_granularVoiceLength);
+            ClearNativeBuffer(_granularVoiceStart);
+            ClearNativeBuffer(_granularVoiceSeed);
+            ClearNativeBuffer(_granularVoiceCursor);
+            ClearNativeBuffer(_granularVoicePlaybackRate);
+            ClearNativeBuffer(_granularVoiceGain);
+            ClearNativeBuffer(_granularTelemetryRing);
+            ClearNativeBuffer(_prologueTransitionTelemetryRing);
+            ClearNativeBuffer(_vwsClipSamplesA);
+            ClearNativeBuffer(_vwsClipSamplesB);
+        }
+
+        private static void ClearNativeBuffer<T>(NativeArray<T> buffer) where T : struct
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            for (int i = 0; i < buffer.Length; i++)
+                buffer[i] = default;
+        }
+
         private void EnsureBuffers(int frameCapacity)
         {
             if (_buffersInitialized && _frameCapacity == frameCapacity)
@@ -5383,64 +5717,19 @@ namespace Hecton8.Audio
             DisposeBuffers(disposeSabineReverbDelay: false);
 
             _frameCapacity = frameCapacity;
-            _hullScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - hull-stress DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - sonar DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
-            _impactEchoScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - transient forward-echo DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
-            _thrusterScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - thruster DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
-            _heartbeatScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - psychoacoustic heartbeat DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
-            _heartbeatDuckScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - sample-domain sidechain duck coefficients - owner: PlayerCriticalProceduralAudioRenderer
-            _bubbleScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - procedural bubble burst scratch - owner: PlayerCriticalProceduralAudioRenderer
-            _mixScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - mixed procedural audio worklet scratch - owner: PlayerCriticalProceduralAudioRenderer
-            _stereoMixScratch = new NativeArray<float>(_frameCapacity * BinauralOutputChannels, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity*2] - stereo binaural output scratch - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoDelay = new NativeArray<float>(SonarEchoDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[131072] - sonar linear echo delay ring - owner: PlayerCriticalProceduralAudioRenderer
-            _pendingSonarEchoTapsA = new NativeArray<SonarEchoTap>(SonarEchoTapCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoTap>[32] - pending sonar echo taps A - owner: PlayerCriticalProceduralAudioRenderer
-            _pendingSonarEchoTapsB = new NativeArray<SonarEchoTap>(SonarEchoTapCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoTap>[32] - pending sonar echo taps B - owner: PlayerCriticalProceduralAudioRenderer
-            _workerSonarEchoTaps = new NativeArray<SonarEchoTap>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoTap>[32] - worker-owned sonar tap snapshot prevents main-thread tap tearing - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoReadCursors = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - sonar echo read cursors per tap - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoFilterInput1 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass x1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoFilterInput2 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass x2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoFilterOutput1 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass y1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoFilterOutput2 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass y2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoCompositeCandidatesA = new NativeArray<SonarEchoCompositeGroup>(SonarEchoCompositeCandidateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidates A before Burst AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoCompositeCandidatesB = new NativeArray<SonarEchoCompositeGroup>(SonarEchoCompositeCandidateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidates B before Burst AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoCompositeGroups = new NativeArray<SonarEchoCompositeGroup>(SonarEchoCompositeGroupCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[8] - coalesced active-sonar echo groups by 10m AUP hash - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoCompositeGroupCountNative = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - sonar echo coalesced group count from Burst hash job - owner: PlayerCriticalProceduralAudioRenderer
+            if (!BindVaultBackedAudioBuffers(_frameCapacity))
+            {
+                _frameCapacity = 0;
+                return;
+            }
+
             _sonarEchoCompositeSpatialHash = new NativeParallelMultiHashMap<int, int>(SonarEchoCompositeCandidateCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[32] - sonar echo AUP cell occupancy before DSP tap publish - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoCompositeGroupByHash = new NativeParallelHashMap<int, int>(SonarEchoCompositeGroupCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<int,int>[8] - sonar echo hash-to-output group lookup - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEcholocationHits = new NativeArray<AcousticEcholocationRayHit>(SonarEchoTapCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AcousticEcholocationRayHit>[32] - active-ping SDF ray hits - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoTapUploadQueue = new NativeQueue<SonarEchoTap>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SonarEchoTap>[32] - echolocation tap upload lane - owner: PlayerCriticalProceduralAudioRenderer
             PrewarmSonarEchoTapUploadQueue();
-            _impactClangDelay = new NativeArray<float>(ImpactClangDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1024] - Karplus-Strong impact delay line - owner: PlayerCriticalProceduralAudioRenderer
-            _thrusterCombDelay = new NativeArray<float>(ThrusterCombDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[4096] - thruster comb filter delay ring - owner: PlayerCriticalProceduralAudioRenderer
-            if (!_sabineReverbDelay.IsCreated)
-                _sabineReverbDelay = new NativeArray<float>(SabineReverbDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[262144] - 1,048,576 bytes fixed four-comb Sabine reverb delay field - owner: PlayerCriticalProceduralAudioRenderer
-            else
-                ClearScratchBufferCold(_sabineReverbDelay, _sabineReverbDelay.Length);
-            _caveConvolutionImpulse = new NativeArray<float>(CaveConvolutionImpulseLength, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[32] - baked cave convolution impulse response - owner: PlayerCriticalProceduralAudioRenderer
-            _caveConvolutionDelay = new NativeArray<float>(CaveConvolutionDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[128] - high-tier cave convolution delay ring - owner: PlayerCriticalProceduralAudioRenderer
-            _interiorFdnDelay = new NativeArray<float>(InteriorFdnDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[8192] - dry BaseModule feedback delay network cache - owner: PlayerCriticalProceduralAudioRenderer
-            _binauralDelayRing = new NativeArray<float>(BinauralDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[128] - binaural ITD mono delay ring - owner: PlayerCriticalProceduralAudioRenderer
-            _binauralShadowHistory = new NativeArray<float>(BinauralOutputChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[2] - binaural shadow low-pass history per ear - owner: PlayerCriticalProceduralAudioRenderer
-            _lowPassInputHistory1 = new NativeArray<float>(MaxFilterChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state x1 - owner: PlayerCriticalProceduralAudioRenderer
-            _lowPassInputHistory2 = new NativeArray<float>(MaxFilterChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state x2 - owner: PlayerCriticalProceduralAudioRenderer
-            _lowPassOutputHistory1 = new NativeArray<float>(MaxFilterChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state y1 - owner: PlayerCriticalProceduralAudioRenderer
-            _lowPassOutputHistory2 = new NativeArray<float>(MaxFilterChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state y2 - owner: PlayerCriticalProceduralAudioRenderer
-            _metallicGrainBank = new NativeArray<float>(MetallicGrainBankCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[88200] - 44100Hz two-second raw metallic grain source window - owner: PlayerCriticalProceduralAudioRenderer
-            _granularVoiceActive = new NativeArray<int>(GranularVoiceCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[16] - SOA granular voice active flags - owner: PlayerCriticalProceduralAudioRenderer
-            _granularVoiceElapsed = new NativeArray<int>(GranularVoiceCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[16] - SOA granular voice elapsed samples - owner: PlayerCriticalProceduralAudioRenderer
-            _granularVoiceLength = new NativeArray<int>(GranularVoiceCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[16] - SOA granular voice lengths - owner: PlayerCriticalProceduralAudioRenderer
-            _granularVoiceStart = new NativeArray<int>(GranularVoiceCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[16] - SOA granular voice source starts - owner: PlayerCriticalProceduralAudioRenderer
-            _granularVoiceSeed = new NativeArray<uint>(GranularVoiceCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[16] - SOA granular voice deterministic seeds - owner: PlayerCriticalProceduralAudioRenderer
-            _granularVoiceCursor = new NativeArray<float>(GranularVoiceCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[16] - SOA granular voice fractional cursors - owner: PlayerCriticalProceduralAudioRenderer
-            _granularVoicePlaybackRate = new NativeArray<float>(GranularVoiceCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[16] - SOA granular voice pitch scalars - owner: PlayerCriticalProceduralAudioRenderer
-            _granularVoiceGain = new NativeArray<float>(GranularVoiceCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[16] - SOA granular voice gains - owner: PlayerCriticalProceduralAudioRenderer
-            _granularTelemetryRing = new NativeArray<GranularAudioTelemetryEntry>(GranularTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<GranularAudioTelemetryEntry>[300] - fixed granular DSP black-box ring - owner: PlayerCriticalProceduralAudioRenderer
-            _prologueTransitionTelemetryRing = new NativeArray<PrologueAudioTransitionTelemetryEntry>(PrologueTransitionTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PrologueAudioTransitionTelemetryEntry>[300] - fixed prologue transition black-box ring - owner: PlayerCriticalProceduralAudioRenderer
             _prologueTransitionQueue = new NativeQueue<AudioTransitionState>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioTransitionState>[32 soft-cap] - prologue visual-sync to DSP command lane - owner: PlayerCriticalProceduralAudioRenderer
             PrewarmPrologueTransitionQueue();
             WarmPrologueSplashdownBurstProbeCold();
-            _vwsClipSamplesA = new NativeArray<float>(VwsClipSampleCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[262144] - VWS PCM clip lane A - owner: PlayerCriticalProceduralAudioRenderer
-            _vwsClipSamplesB = new NativeArray<float>(VwsClipSampleCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[262144] - VWS PCM clip lane B - owner: PlayerCriticalProceduralAudioRenderer
             _vwsClipManagedScratch ??= new float[VwsClipSampleCapacity]; // COLD ALLOC: float[262144] - VWS AudioClip PCM staging - owner: PlayerCriticalProceduralAudioRenderer
             RegisterNativeBuffers(registerSabineReverbDelay: !retainedSabineReverbDelay);
             BakeCaveConvolutionImpulseResponse(_caveConvolutionImpulse);
@@ -5508,120 +5797,24 @@ namespace Hecton8.Audio
 
         private void RegisterNativeBuffers(bool registerSabineReverbDelay)
         {
-            NativeMemorySentinel.RegisterNativeArray(_hullScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_hullScratch), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarScratch), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_impactEchoScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_impactEchoScratch), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_thrusterScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_thrusterScratch), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_heartbeatScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_heartbeatScratch), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_heartbeatDuckScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_heartbeatDuckScratch), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_bubbleScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_bubbleScratch), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_mixScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_mixScratch), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_stereoMixScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_stereoMixScratch), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarEchoDelay, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoDelay), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_pendingSonarEchoTapsA, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_pendingSonarEchoTapsA), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_pendingSonarEchoTapsB, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_pendingSonarEchoTapsB), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_workerSonarEchoTaps, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_workerSonarEchoTaps), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarEchoReadCursors, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoReadCursors), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarEchoFilterInput1, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoFilterInput1), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarEchoFilterInput2, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoFilterInput2), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarEchoFilterOutput1, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoFilterOutput1), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarEchoFilterOutput2, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoFilterOutput2), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarEchoCompositeCandidatesA, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeCandidatesA), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarEchoCompositeCandidatesB, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeCandidatesB), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarEchoCompositeGroups, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeGroups), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarEchoCompositeGroupCountNative, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeGroupCountNative), NativeAllocationLifetime.Session);
+            _ = registerSabineReverbDelay;
             NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_sonarEchoCompositeSpatialHash, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeSpatialHash), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeParallelHashMap(_sonarEchoCompositeGroupByHash, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeGroupByHash), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarEcholocationHits, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEcholocationHits), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeQueue(_sonarEchoTapUploadQueue, SonarEchoTapCapacity, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoTapUploadQueue), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_impactClangDelay, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_impactClangDelay), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_thrusterCombDelay, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_thrusterCombDelay), NativeAllocationLifetime.Session);
-            if (registerSabineReverbDelay)
-                NativeMemorySentinel.RegisterNativeArray(_sabineReverbDelay, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sabineReverbDelay), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_caveConvolutionImpulse, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_caveConvolutionImpulse), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_caveConvolutionDelay, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_caveConvolutionDelay), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_interiorFdnDelay, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_interiorFdnDelay), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_binauralDelayRing, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_binauralDelayRing), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_binauralShadowHistory, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_binauralShadowHistory), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_lowPassInputHistory1, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_lowPassInputHistory1), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_lowPassInputHistory2, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_lowPassInputHistory2), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_lowPassOutputHistory1, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_lowPassOutputHistory1), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_lowPassOutputHistory2, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_lowPassOutputHistory2), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_metallicGrainBank, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_metallicGrainBank), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_granularVoiceActive, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularVoiceActive), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_granularVoiceElapsed, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularVoiceElapsed), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_granularVoiceLength, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularVoiceLength), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_granularVoiceStart, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularVoiceStart), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_granularVoiceSeed, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularVoiceSeed), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_granularVoiceCursor, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularVoiceCursor), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_granularVoicePlaybackRate, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularVoicePlaybackRate), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_granularVoiceGain, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularVoiceGain), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_granularTelemetryRing, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularTelemetryRing), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_prologueTransitionTelemetryRing, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_prologueTransitionTelemetryRing), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeQueue(_prologueTransitionQueue, PrologueTransitionQueueCapacity, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_prologueTransitionQueue), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_vwsClipSamplesA, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_vwsClipSamplesA), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_vwsClipSamplesB, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_vwsClipSamplesB), NativeAllocationLifetime.Session);
         }
 
         private void UnregisterNativeBuffers(bool unregisterSabineReverbDelay)
         {
-            NativeMemorySentinel.UnregisterNativeArray(_hullScratch);
-            NativeMemorySentinel.UnregisterNativeArray(_sonarScratch);
-            NativeMemorySentinel.UnregisterNativeArray(_impactEchoScratch);
-            NativeMemorySentinel.UnregisterNativeArray(_thrusterScratch);
-            NativeMemorySentinel.UnregisterNativeArray(_heartbeatScratch);
-            NativeMemorySentinel.UnregisterNativeArray(_heartbeatDuckScratch);
-            NativeMemorySentinel.UnregisterNativeArray(_bubbleScratch);
-            NativeMemorySentinel.UnregisterNativeArray(_mixScratch);
-            NativeMemorySentinel.UnregisterNativeArray(_stereoMixScratch);
-            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoDelay);
-            NativeMemorySentinel.UnregisterNativeArray(_pendingSonarEchoTapsA);
-            NativeMemorySentinel.UnregisterNativeArray(_pendingSonarEchoTapsB);
-            NativeMemorySentinel.UnregisterNativeArray(_workerSonarEchoTaps);
-            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoReadCursors);
-            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoFilterInput1);
-            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoFilterInput2);
-            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoFilterOutput1);
-            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoFilterOutput2);
-            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoCompositeCandidatesA);
-            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoCompositeCandidatesB);
-            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoCompositeGroups);
-            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoCompositeGroupCountNative);
+            _ = unregisterSabineReverbDelay;
             if (_sonarEchoCompositeSpatialHash.IsCreated)
                 NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeSpatialHash));
             if (_sonarEchoCompositeGroupByHash.IsCreated)
                 NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeGroupByHash));
-            NativeMemorySentinel.UnregisterNativeArray(_sonarEcholocationHits);
             if (_sonarEchoTapUploadQueue.IsCreated)
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoTapUploadQueue));
-            NativeMemorySentinel.UnregisterNativeArray(_impactClangDelay);
-            NativeMemorySentinel.UnregisterNativeArray(_thrusterCombDelay);
-            if (unregisterSabineReverbDelay)
-                NativeMemorySentinel.UnregisterNativeArray(_sabineReverbDelay);
-            NativeMemorySentinel.UnregisterNativeArray(_caveConvolutionImpulse);
-            NativeMemorySentinel.UnregisterNativeArray(_caveConvolutionDelay);
-            NativeMemorySentinel.UnregisterNativeArray(_interiorFdnDelay);
-            NativeMemorySentinel.UnregisterNativeArray(_binauralDelayRing);
-            NativeMemorySentinel.UnregisterNativeArray(_binauralShadowHistory);
-            NativeMemorySentinel.UnregisterNativeArray(_lowPassInputHistory1);
-            NativeMemorySentinel.UnregisterNativeArray(_lowPassInputHistory2);
-            NativeMemorySentinel.UnregisterNativeArray(_lowPassOutputHistory1);
-            NativeMemorySentinel.UnregisterNativeArray(_lowPassOutputHistory2);
-            NativeMemorySentinel.UnregisterNativeArray(_metallicGrainBank);
-            NativeMemorySentinel.UnregisterNativeArray(_granularVoiceActive);
-            NativeMemorySentinel.UnregisterNativeArray(_granularVoiceElapsed);
-            NativeMemorySentinel.UnregisterNativeArray(_granularVoiceLength);
-            NativeMemorySentinel.UnregisterNativeArray(_granularVoiceStart);
-            NativeMemorySentinel.UnregisterNativeArray(_granularVoiceSeed);
-            NativeMemorySentinel.UnregisterNativeArray(_granularVoiceCursor);
-            NativeMemorySentinel.UnregisterNativeArray(_granularVoicePlaybackRate);
-            NativeMemorySentinel.UnregisterNativeArray(_granularVoiceGain);
-            NativeMemorySentinel.UnregisterNativeArray(_granularTelemetryRing);
-            NativeMemorySentinel.UnregisterNativeArray(_prologueTransitionTelemetryRing);
             if (_prologueTransitionQueue.IsCreated)
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerCriticalProceduralAudioRenderer), nameof(_prologueTransitionQueue));
-            NativeMemorySentinel.UnregisterNativeArray(_vwsClipSamplesA);
-            NativeMemorySentinel.UnregisterNativeArray(_vwsClipSamplesB);
         }
 
         private void DisposeBuffers(bool disposeSabineReverbDelay)
@@ -5632,110 +5825,16 @@ namespace Hecton8.Audio
             _sampleRingBuffer?.Dispose();
             _sampleRingBuffer = null;
             UnregisterNativeBuffers(disposeSabineReverbDelay);
-            if (_hullScratch.IsCreated)
-                _hullScratch.Dispose();
-            if (_sonarScratch.IsCreated)
-                _sonarScratch.Dispose();
-            if (_impactEchoScratch.IsCreated)
-                _impactEchoScratch.Dispose();
-            if (_thrusterScratch.IsCreated)
-                _thrusterScratch.Dispose();
-            if (_heartbeatScratch.IsCreated)
-                _heartbeatScratch.Dispose();
-            if (_heartbeatDuckScratch.IsCreated)
-                _heartbeatDuckScratch.Dispose();
-            if (_bubbleScratch.IsCreated)
-                _bubbleScratch.Dispose();
-            if (_mixScratch.IsCreated)
-                _mixScratch.Dispose();
-            if (_stereoMixScratch.IsCreated)
-                _stereoMixScratch.Dispose();
-            if (_sonarEchoDelay.IsCreated)
-                _sonarEchoDelay.Dispose();
-            if (_pendingSonarEchoTapsA.IsCreated)
-                _pendingSonarEchoTapsA.Dispose();
-            if (_pendingSonarEchoTapsB.IsCreated)
-                _pendingSonarEchoTapsB.Dispose();
-            if (_workerSonarEchoTaps.IsCreated)
-                _workerSonarEchoTaps.Dispose();
-            if (_sonarEchoReadCursors.IsCreated)
-                _sonarEchoReadCursors.Dispose();
-            if (_sonarEchoFilterInput1.IsCreated)
-                _sonarEchoFilterInput1.Dispose();
-            if (_sonarEchoFilterInput2.IsCreated)
-                _sonarEchoFilterInput2.Dispose();
-            if (_sonarEchoFilterOutput1.IsCreated)
-                _sonarEchoFilterOutput1.Dispose();
-            if (_sonarEchoFilterOutput2.IsCreated)
-                _sonarEchoFilterOutput2.Dispose();
-            if (_sonarEchoCompositeCandidatesA.IsCreated)
-                _sonarEchoCompositeCandidatesA.Dispose();
-            if (_sonarEchoCompositeCandidatesB.IsCreated)
-                _sonarEchoCompositeCandidatesB.Dispose();
-            if (_sonarEchoCompositeGroups.IsCreated)
-                _sonarEchoCompositeGroups.Dispose();
-            if (_sonarEchoCompositeGroupCountNative.IsCreated)
-                _sonarEchoCompositeGroupCountNative.Dispose();
             if (_sonarEchoCompositeSpatialHash.IsCreated)
                 _sonarEchoCompositeSpatialHash.Dispose();
             if (_sonarEchoCompositeGroupByHash.IsCreated)
                 _sonarEchoCompositeGroupByHash.Dispose();
-            if (_sonarEcholocationHits.IsCreated)
-                _sonarEcholocationHits.Dispose();
             if (_sonarEchoTapUploadQueue.IsCreated)
                 _sonarEchoTapUploadQueue.Dispose();
-            if (_impactClangDelay.IsCreated)
-                _impactClangDelay.Dispose();
-            if (_thrusterCombDelay.IsCreated)
-                _thrusterCombDelay.Dispose();
-            if (disposeSabineReverbDelay && _sabineReverbDelay.IsCreated)
-                _sabineReverbDelay.Dispose();
-            if (_caveConvolutionImpulse.IsCreated)
-                _caveConvolutionImpulse.Dispose();
-            if (_caveConvolutionDelay.IsCreated)
-                _caveConvolutionDelay.Dispose();
-            if (_interiorFdnDelay.IsCreated)
-                _interiorFdnDelay.Dispose();
-            if (_binauralDelayRing.IsCreated)
-                _binauralDelayRing.Dispose();
-            if (_binauralShadowHistory.IsCreated)
-                _binauralShadowHistory.Dispose();
-            if (_lowPassInputHistory1.IsCreated)
-                _lowPassInputHistory1.Dispose();
-            if (_lowPassInputHistory2.IsCreated)
-                _lowPassInputHistory2.Dispose();
-            if (_lowPassOutputHistory1.IsCreated)
-                _lowPassOutputHistory1.Dispose();
-            if (_lowPassOutputHistory2.IsCreated)
-                _lowPassOutputHistory2.Dispose();
-            if (_metallicGrainBank.IsCreated)
-                _metallicGrainBank.Dispose();
-            if (_granularVoiceActive.IsCreated)
-                _granularVoiceActive.Dispose();
-            if (_granularVoiceElapsed.IsCreated)
-                _granularVoiceElapsed.Dispose();
-            if (_granularVoiceLength.IsCreated)
-                _granularVoiceLength.Dispose();
-            if (_granularVoiceStart.IsCreated)
-                _granularVoiceStart.Dispose();
-            if (_granularVoiceSeed.IsCreated)
-                _granularVoiceSeed.Dispose();
-            if (_granularVoiceCursor.IsCreated)
-                _granularVoiceCursor.Dispose();
-            if (_granularVoicePlaybackRate.IsCreated)
-                _granularVoicePlaybackRate.Dispose();
-            if (_granularVoiceGain.IsCreated)
-                _granularVoiceGain.Dispose();
-            if (_granularTelemetryRing.IsCreated)
-                _granularTelemetryRing.Dispose();
-            if (_prologueTransitionTelemetryRing.IsCreated)
-                _prologueTransitionTelemetryRing.Dispose();
             if (_prologueTransitionQueue.IsCreated)
                 _prologueTransitionQueue.Dispose();
-            if (_vwsClipSamplesA.IsCreated)
-                _vwsClipSamplesA.Dispose();
-            if (_vwsClipSamplesB.IsCreated)
-                _vwsClipSamplesB.Dispose();
+            if (disposeSabineReverbDelay && _dataVault != null)
+                _dataVault.ReleaseOwnerBuffers(VaultOwner, out _);
 
             _hullScratch = default;
             _sonarScratch = default;
@@ -5761,6 +5860,7 @@ namespace Hecton8.Audio
             _sonarEchoCompositeGroupCountNative = default;
             _sonarEchoCompositeSpatialHash = default;
             _sonarEchoCompositeGroupByHash = default;
+            _sonarEcholocationHits = default;
             _impactClangDelay = default;
             _thrusterCombDelay = default;
             if (disposeSabineReverbDelay)
@@ -10351,23 +10451,18 @@ namespace Hecton8.Audio
             }
         }
 
-        private static void WarmPrologueSplashdownBurstProbeCold()
+        private void WarmPrologueSplashdownBurstProbeCold()
         {
-            var output = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[1] - Burst compile probe scratch - owner: PlayerCriticalProceduralAudioRenderer
-            try
+            if (!_mixScratch.IsCreated || _mixScratch.Length <= 0)
+                return;
+
+            var job = new PrologueSplashdownSineSweepProbeJob
             {
-                var job = new PrologueSplashdownSineSweepProbeJob
-                {
-                    Output = output,
-                    NormalizedTime = 0.5f
-                };
-                job.Schedule().Complete();
-            }
-            finally
-            {
-                if (output.IsCreated)
-                    output.Dispose();
-            }
+                Output = _mixScratch,
+                NormalizedTime = 0.5f
+            };
+            job.Schedule().Complete();
+            _mixScratch[0] = 0f;
         }
 
         private void ApplyPrologueTransitionState(in AudioTransitionState state)

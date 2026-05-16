@@ -48,10 +48,10 @@ namespace Hecton8.Core
         public const byte MinimumActiveSlowBucketCount = 1;
 
         /// <summary>Target 60 FPS frame duration in milliseconds.</summary>
-        public const float TargetFrameMilliseconds = 16.667f;
+        public const float TargetFrameMilliseconds = Hecton8.Core.Contracts.ScalabilityContract.TargetFrameMilliseconds;
 
         /// <summary>PRE_SIMULATION hard budget in milliseconds.</summary>
-        public const float PreSimulationBudgetMilliseconds = 1.5f;
+        public const float PreSimulationBudgetMilliseconds = Hecton8.Core.Contracts.ScalabilityContract.PreSimulationBudgetMilliseconds;
 
         /// <summary>High-tier dynamic rebalance cadence in dispatcher frames.</summary>
         public const int RebalanceCadenceFrames = 60;

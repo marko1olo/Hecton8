@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Mathematics;
 
@@ -11,8 +12,8 @@ namespace Hecton8.Physics
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public sealed class FluidMathCore : IFluidSim
     {
-        public const float WaterDensityKgPerCubicMeter = 1025f;
-        private const float DefaultGravityMetersPerSecondSquared = 9.81f;
+        public const float WaterDensityKgPerCubicMeter = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
+        private const float DefaultGravityMetersPerSecondSquared = HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
 
         /// <inheritdoc />
         public bool IsReady => true;
@@ -27,7 +28,7 @@ namespace Hecton8.Physics
             if (safeValue <= 0f)
                 return 0f;
 
-            float magnitude = safeValue * math.rsqrt(math.max(safeValue, 0.000001f));
+            float magnitude = safeValue * math.rsqrt(math.max(safeValue, HectonPhysicsContract.FluidSqrtEpsilon));
             return math.isfinite(magnitude) ? magnitude : 0f;
         }
 
@@ -38,7 +39,7 @@ namespace Hecton8.Physics
             float maxAxis = math.cmax(absValue);
             float minAxis = math.cmin(absValue);
             float midAxis = absValue.x + absValue.y + absValue.z - maxAxis - minAxis;
-            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
+            return maxAxis + (midAxis * HectonPhysicsContract.FluidMagnitudeMidAxisWeight) + (minAxis * HectonPhysicsContract.FluidMagnitudeMinAxisWeight);
         }
 
         /// <inheritdoc />
@@ -73,12 +74,12 @@ namespace Hecton8.Physics
                 return currentVolume;
 
             float ingressVelocity = ResolveTorricelliIngressVelocity(depthMeters, gravityMetersPerSecondSquared);
-            float cd = math.clamp(dischargeCoefficient, 0.05f, 1f);
+            float cd = math.clamp(dischargeCoefficient, HectonPhysicsContract.FluidDischargeCoefficientMin, 1f);
             float deltaVolume = ingressVelocity * breachAreaSquareMeters * cd * math.max(0f, fixedDeltaTime);
             if (!math.isfinite(deltaVolume))
                 deltaVolume = 0f;
 
-            float maxIngressScale = math.max(0.01f, maximumIngressPerSecondNormalized) * math.max(0f, fixedDeltaTime);
+            float maxIngressScale = math.max(HectonPhysicsContract.FluidMaximumIngressScaleMin, maximumIngressPerSecondNormalized) * math.max(0f, fixedDeltaTime);
             float maxIngressThisStep = math.max(0f, maxVolume) * maxIngressScale;
             deltaVolume = math.clamp(deltaVolume, 0f, math.min(remainingCapacity, maxIngressThisStep));
             return currentVolume + deltaVolume;
@@ -108,8 +109,8 @@ namespace Hecton8.Physics
             float transferCoefficient = math.max(0f, bulkheadFlowCoefficient);
             float perTickTransferCap = math.max(0.01f, maxTransferPerTick);
             float safeDoorArea = math.max(epsilon, doorAreaSquareMeters);
-            float characteristicHeightA = math.max(0.1f, SafeCubeRoot(sourceMaxVolume));
-            float characteristicHeightB = math.max(0.1f, SafeCubeRoot(destinationMaxVolume));
+            float characteristicHeightA = math.max(HectonPhysicsContract.FluidCharacteristicHeightMinMeters, SafeCubeRoot(sourceMaxVolume));
+            float characteristicHeightB = math.max(HectonPhysicsContract.FluidCharacteristicHeightMinMeters, SafeCubeRoot(destinationMaxVolume));
             float headDifferenceMeters = (fillA * characteristicHeightA) - (fillB * characteristicHeightB);
             float absHeadDifferenceMeters = math.abs(headDifferenceMeters);
             float dampingHeadMeters = math.max(epsilon, nearZeroHeadDampingMeters);
@@ -201,9 +202,9 @@ namespace Hecton8.Physics
             if (safeValue <= 0f)
                 return 0f;
 
-            float estimate = math.asfloat((math.asint(safeValue) / 3) + 709921077);
-            float estimateSq = math.max(estimate * estimate, 0.000001f);
-            estimate = ((estimate + estimate) + safeValue * math.rcp(estimateSq)) * 0.33333334f;
+            float estimate = math.asfloat((math.asint(safeValue) / 3) + HectonPhysicsContract.CubeRootMagicBias);
+            float estimateSq = math.max(estimate * estimate, HectonPhysicsContract.FluidSqrtEpsilon);
+            estimate = ((estimate + estimate) + safeValue * math.rcp(estimateSq)) * HectonPhysicsContract.CubeRootNewtonOneThird;
             return math.isfinite(estimate) ? estimate : 0f;
         }
 

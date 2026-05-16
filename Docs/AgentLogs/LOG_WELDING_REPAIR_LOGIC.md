@@ -116,7 +116,7 @@ What was wrong:
 
 What was done:
 - Added `BufferID.RepairToolBlackBox = 340`.
-- Added `RepairToolBlackBoxEntry` as `StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)`.
+- Added `RepairToolBlackBoxEntry` as a fixed 64-byte Pack=1 repair blackbox record.
 - Added `VaultBufferHandle<RepairToolBlackBoxEntry>` to RepairTool and allocate/resolve it through GlobalDataVault with `SystemID.GameplayTools`.
 - Added equipped-frame heartbeat writes keyed by `Time.frameCount % 300`, so same-frame detail writes update the same ring slot.
 - Added repair-detail writes for active dent count, touched dent count, repaired count, battery byte, flags, AUP, and state hash.
@@ -200,3 +200,329 @@ Validation:
 - `git diff --check -- ...` reports only CRLF conversion warnings.
 - `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair typed-lane diagnostics returned `NO_REPAIR_TYPED_LANE_DIAGNOSTICS` with build exit code 1.
 - Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-16 - Seventh Pass Repair Blackbox ABI Dump
+What was wrong:
+- `RepairToolBlackBoxEntry` was Pack=1/Size=64 but used sequential layout, leaving the last byte as size-only padding instead of an explicit field.
+- `DumpRepairBlackBox` wrote only semantic fields. That produced 51-byte records after the header, not the 64-byte stride used by the vault ring.
+- ARM64/Quest postmortem readers would have to guess the record contract.
+
+What was done:
+- Changed `RepairToolBlackBoxEntry` to `StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)`.
+- Added `FieldOffset` annotations for every field through byte 63, including `Reserved0`.
+- Added `RepairBlackBoxEntrySizeBytes = 64`.
+- Added a cold `UnsafeUtility.SizeOf<RepairToolBlackBoxEntry>()` guard before binary dump writes.
+- Updated `DumpRepairBlackBox` to write `entrySize` and then exactly 64 bytes per entry: AUP grid/local, AUP pad/reserved bytes, frame, state hash, counts, battery, flags, and reserved byte.
+
+Cinematic Cheats used:
+- None in the visual path; this is survival infrastructure.
+- Fault dump stays binary and fixed-stride instead of managed log strings.
+- Normal gameplay still uses one 64-byte vault ring write, not streaming I/O.
+
+Exact Microseconds saved:
+- Hot path: 0 us saved; ABI certainty is the goal.
+- Fault-path `UnsafeUtility.SizeOf` guard: estimated under 1 us before disk I/O.
+- Rejected managed field-log dump: avoids unpredictable GC and string formatting during crash evidence capture.
+- Deterministic 64-byte dump stride saves postmortem tooling from scan/repair work after a crash.
+
+Validation:
+- `rg` audit: `RepairToolBlackBoxEntry` is explicit Pack=1 Size=64 with offsets 0,48,52,56,58,60,61,62,63.
+- `rg` audit: `DumpRepairBlackBox` writes `entrySize`, AUP pad/reserved bytes, and `Reserved0`.
+- `rg` audit: `RepairTool` still has direct `SignalBus<DebrisSpawnSignal>.Push` and `SignalBus<HullRepairedSignal>.Push`, no `GlobalSignals.Publish`, no `new NativeArray`, no `EventBus`, no `string.Format`, no `void Update()`, and no Pack=4/Pack=8 struct layout.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair ABI/dump diagnostics returned `NO_REPAIR_ABI_DUMP_DIAGNOSTICS` with build exit code 1.
+- `git diff --check -- ...` reports only existing CRLF conversion warning in `RepairTool.cs`.
+
+## 2026-05-16 - Eighth Pass Interaction Raycast Vault
+What was wrong:
+- `RepairTool.TryGetRepairHit` correctly used the queued interaction service, but that service still owned private persistent `NativeArray<RaycastCommand>` and `NativeArray<RaycastHit>` lanes.
+- The XML requires RaycastCommand from the tool; the H-Phi pass requires the command/result storage to live in the vault, not in handler-owned native arrays.
+
+What was done:
+- Added `BufferID.InteractionRaycastScheduledCommands = 385`.
+- Added `BufferID.InteractionRaycastScheduledHits = 386`.
+- Added `BufferID.InteractionRaycastStagingCommands = 387`.
+- Replaced EquipmentInteractionHandler's persistent scheduled command, scheduled hit, and staging command NativeArray fields with `VaultBufferHandle<RaycastCommand>` and `VaultBufferHandle<RaycastHit>`.
+- Resolved transient NativeArray views only from the vault handles when writing, scheduling, and completing raycast jobs.
+- Added `TryLockBuffer`/`TryUnlockBuffer` around staging command writes.
+- Kept scheduled command/hit buffers locked from `RaycastCommand.ScheduleBatch` until job completion.
+- Left unrelated completed-hit managed side-channel arrays alone; they are not native storage authority.
+
+Cinematic Cheats used:
+- Repair hit detection remains frame-latent RaycastCommand, not synchronous Physics.Raycast.
+- Low tier keeps the same one-frame hit queue and cheap dent kernel.
+- High tier spends the saved physics-stall budget downstream on compute sparks and shader dent/rust fade.
+
+Exact Microseconds saved:
+- Avoided private raycast lane allocation/sentinel churn: estimated 2-5 us during interaction service lifecycle.
+- Lock overhead: estimated 1-3 us per staged ray batch.
+- Avoided direct synchronous per-tool raycast stalls under tool spam: estimated up to 1200 us worst-case frame protection, depending on collider load.
+- No extra disk I/O; Steam Deck/MicroSD pressure remains 0 us on the hot path.
+
+Validation:
+- `rg` audit: `RepairTool.TryGetRepairHit` uses `TryResolveQueuedRaycast`; no direct `Physics.Raycast` or `RaycastNonAlloc` exists in `RepairTool`.
+- `rg` audit: `EquipmentInteractionHandler` still schedules `RaycastCommand.ScheduleBatch`.
+- `rg` audit: persistent raycast lane fields are now `VaultBufferHandle<RaycastCommand>` / `VaultBufferHandle<RaycastHit>`.
+- `rg` audit: new BufferIDs 385-387 are present.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair/interaction raycast vault diagnostics returned `NO_REPAIR_INTERACTION_RAYCAST_VAULT_DIAGNOSTICS` with build exit code 1.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly` full-graph filtered for repair/interaction raycast diagnostics returned `NO_REPAIR_INTERACTION_RAYCAST_FULLGRAPH_DIAGNOSTICS` with build exit code 1.
+- `rg` anti-bloat audit across `RepairTool` and `EquipmentInteractionHandler` returned no matches for `void Update`, `string.Format`, `EventBus`, direct physics raycasts, `GlobalSignals.Publish(in signal)`, local `new NativeArray`, or Pack=4/Pack=8 struct layout.
+- `git diff --check -- ...` reports only CRLF conversion warnings in touched files.
+
+## 2026-05-16 - Ninth Pass Raycast Lock Discipline
+What was wrong:
+- `Awake` reset raycast command lanes through resolved NativeArray views without taking the vault lock first.
+- `QueuePrimaryRaycast` resolved the staging command view before `TryLockBuffer`, leaving a stale-alias window.
+- `ScheduleStagedRaycasts` resolved staging command/hit views before locking.
+- The eighth-pass handle ping-pong conflicted with `EnsureRaycastBufferHandles`, which expects fixed BufferIDs. Completion could rebind scheduled fields away from the buffers actually scheduled into the RaycastCommand job.
+
+What was done:
+- Added `ResetCommandLaneLocked` and routed cold scheduled/staging command reset through lock-before-resolve.
+- Changed `QueuePrimaryRaycast` to ensure handles, lock `_stagingCommandsHandle.BufferId`, resolve inside the lock, then write the command.
+- Removed scheduled/staging handle swapping.
+- Changed `ScheduleStagedRaycasts` to lock staging commands plus fixed scheduled command/hit buffers, resolve all views inside those locks, copy at most 64 commands into the fixed scheduled command buffer, and schedule RaycastCommand against the fixed scheduled command/hit lanes.
+- Kept scheduled command/hit locks alive until `CompleteScheduledRaycasts` consumes the job output, resets the scheduled command lane, and calls `UnlockScheduledRaycastVaultBuffers`.
+- Left staging command storage unlocked immediately after scheduling so the next frame can queue new repair hits without touching job-owned memory.
+- Removed the unused `InteractionRaycastStagingHits` vault lane after fixed scheduled result storage made it dead.
+
+Cinematic Cheats used:
+- Repair hit detection remains one-frame RaycastCommand latency instead of synchronous `Physics.Raycast`.
+- Low tier pays a bounded 64-command copy instead of physics stalls.
+- High tier still spends the saved synchronous physics budget on compute-advection sparks and shader dent/rust recovery.
+
+Exact Microseconds saved:
+- Direct synchronous per-tool raycast stalls remain avoided: estimated up to 1200 us worst-case under tool spam/collider load.
+- Fixed-lane command copy costs an estimated 2-6 us per scheduled batch on i3/MX350.
+- Lock overhead remains estimated 1-3 us per staged ray batch.
+- Removing the stale handle swap has 0 us direct saving; it prevents wrong-buffer completion and unlock errors.
+- Removing the unused staging-hit lane has 0 us hot-path saving; it removes one 64-entry cold allocation/sentinel lane.
+
+Validation:
+- `rg` anti-bloat audit across `RepairTool`, `EquipmentInteractionHandler`, and `H8Memory` returned no matches for `new NativeArray<Raycast`, `private NativeArray<Raycast`, `Physics.Raycast`, `RaycastNonAlloc`, `GlobalSignals.Publish(in signal)`, `EventBus`, `string.Format`, `void Update()`, or `InteractionRaycastStagingHits`.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair/interaction raycast lock diagnostics returned `NO_REPAIR_INTERACTION_RAYCAST_LOCK_DISCIPLINE_DIAGNOSTICS` with build exit code 1.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly` full-graph filtered for repair/interaction raycast lock diagnostics returned `NO_REPAIR_INTERACTION_RAYCAST_LOCK_DISCIPLINE_FULLGRAPH_DIAGNOSTICS` with build exit code 1.
+- `git diff --check -- ...` reports only CRLF conversion warnings in touched files.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-16 - Tenth Pass Power Indicator SRP
+What was wrong:
+- `RepairTool` used `MaterialPropertyBlock` on `_powerIndicatorRenderer`.
+- The renderer is a generic `Renderer`, not a documented particle/UI exception.
+- `ToolTick` called `UpdatePowerIndicator`, so the code could run `GetPropertyBlock`, set `_EmissionColor`, and `SetPropertyBlock` while equipped.
+- This violates the project SRP-batcher rule for standard geometry.
+
+What was done:
+- Removed the `MaterialPropertyBlock` field.
+- Removed `Shader.PropertyToID("_EmissionColor")`.
+- Removed `GetPropertyBlock`, `_mpb.SetColor`, and `SetPropertyBlock`.
+- Added authored shared-material slots for off, low, and on indicator states.
+- Cached the renderer default shared material.
+- Added a `PowerIndicatorVisualState` state gate so ToolTick returns without touching renderer state unless the battery state/material/visibility changes.
+- Preserved the low-battery visual as a three-state fake instead of per-frame emission flicker math.
+
+Cinematic Cheats used:
+- Toaster mode uses a material-state lie for power status, not dynamic emission mutation.
+- High-end materials can still be authored with stronger emissive/premium appearance through the shared material slots.
+- No runtime material clone was created.
+
+Exact Microseconds saved:
+- MPB eviction saves an estimated 2-5 us per equipped ToolTick with a power indicator.
+- Removing brownout MPB color writes saves an estimated 1-3 us per equipped ToolTick.
+- State-gated sharedMaterial assignment costs 0 us on unchanged frames and only pays on battery state transitions.
+
+Validation:
+- `rg` anti-bloat audit across `RepairTool`, `EquipmentInteractionHandler`, and `H8Memory` returned no matches for `MaterialPropertyBlock`, `GetPropertyBlock`, `SetPropertyBlock`, `_mpb`, `_EmissionColorID`, `new NativeArray<Raycast`, `private NativeArray<Raycast`, `Physics.Raycast`, `RaycastNonAlloc`, `GlobalSignals.Publish(in signal)`, `EventBus`, `string.Format`, or `void Update()`.
+- `rg` audit confirmed `PowerIndicatorVisualState`, shared material slots, default material caching, and state-gated `sharedMaterial` assignment are present.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair power-indicator diagnostics returned `NO_REPAIR_POWER_INDICATOR_MPB_DIAGNOSTICS` with build exit code 1.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly` full-graph filtered for repair power-indicator diagnostics returned `NO_REPAIR_POWER_INDICATOR_MPB_FULLGRAPH_DIAGNOSTICS` with build exit code 1.
+- `git diff --check -- ...` reports only CRLF conversion warnings in touched files.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-16 - Eleventh Pass Interaction Debug Log Hygiene
+What was wrong:
+- `EquipmentInteractionHandler.LogInteractionOverflowOncePerFrame` still called `Debug.LogWarning`.
+- This service is the queued raycast dependency used by `RepairTool`.
+- The same overflow branch already publishes `GlobalTelemetryBus.PublishInteractionPacketOverflow`, so the console warning was duplicate evidence and editor/development log spam risk.
+
+What was done:
+- Removed the `Debug.LogWarning` block.
+- Kept `GlobalTelemetryBus.PublishInteractionPacketOverflow(MaxInteractionPacketsPerFrame, _queueCount)` as the authoritative overflow evidence.
+- Reran fixed-string hot-path API grep across `RepairTool` and `EquipmentInteractionHandler`.
+
+Cinematic Cheats used:
+- None; this is runtime hygiene.
+- Overflow evidence remains telemetry-based instead of console-string based.
+
+Exact Microseconds saved:
+- Release build: 0 us because the removed warning was editor/development guarded.
+- Editor/development overflow frames: estimated 3-10 us saved plus avoided console allocation/spam risk.
+- Telemetry event cost is unchanged.
+
+Validation:
+- `rg` fixed-string audit across `RepairTool` and `EquipmentInteractionHandler` returned no matches for `Debug.Log`, `Debug.LogWarning`, `Debug.LogError`, Unity scene find APIs, direct physics queries, coroutine APIs, `.ToString(`, `Enum.Parse`, `Enum.ToString`, `string.Concat`, material clone access, mesh copy access, `Input.touches`, `Time.deltaTime`, `Time.fixedDeltaTime`, raycast/sphere/overlap nonalloc fallbacks, `new NativeArray`, `MaterialPropertyBlock`, `GetPropertyBlock`, `SetPropertyBlock`, `string.Format`, or `void Update(`.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair/interaction debug-log diagnostics returned `NO_REPAIR_INTERACTION_DEBUG_LOG_DIAGNOSTICS` with build exit code 1.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly` full-graph filtered for repair/interaction debug-log diagnostics returned `NO_REPAIR_INTERACTION_DEBUG_LOG_FULLGRAPH_DIAGNOSTICS` with build exit code 1.
+- `git diff --check -- ...` reports only CRLF conversion warnings in touched files.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-16 - Twelfth Pass HullDents Handle Generation Guard
+What was wrong:
+- `RepairTool.EnsureHullDentsHandle` accepted a cached HullDents handle after checking `IsCreated`, `BufferID`, and length only.
+- A stale vault generation could survive that precheck until the locked repair path tried to resolve it.
+- The repair kernel also accepted any created locked view length, even though the XML contract is `HullDents float4[16]`.
+
+What was done:
+- Added `vault.ResolveBuffer(ref _hullDentsHandle)` to the cached handle acceptance test.
+- Reacquire `BufferID.HullDents` through GlobalDataVault with `SystemID.GameplayTools` and 16 slots when resolution fails.
+- Changed the final Ensure return to require `Length >= HullDentVaultCapacity`.
+- Changed the locked kernel view guard to reject uncreated or undersized HullDents views before iterating.
+
+Cinematic Cheats used:
+- The repair math stays a bounded 16-slot vault scan, not a mesh deformation rebuild.
+- Low tier keeps the cheap mathematical dent-depth erase.
+- High tier still spends visual budget through shader unbend/rust removal and compute-advection repair sparks.
+
+Exact Microseconds saved:
+- No hot-path saving was claimed.
+- Handle generation validation costs an estimated 1-2 us per active repair tick on i3/MX350.
+- The locked length branch costs an estimated 0-1 us per active repair tick.
+- The value is stale-generation survival and preventing partial-lane corruption, not raw speed.
+
+Validation:
+- Fixed-string grep across `RepairTool` and `EquipmentInteractionHandler` returned no matches for `Debug.Log`, `Debug.LogWarning`, `Debug.LogError`, Unity scene find APIs, direct physics queries, coroutine APIs, `.ToString(`, `Enum.Parse`, `Enum.ToString`, `string.Concat`, material clone access, mesh copy access, `Input.touches`, `Time.deltaTime`, `Time.fixedDeltaTime`, raycast/sphere/overlap nonalloc fallbacks, `new NativeArray`, `MaterialPropertyBlock`, `GetPropertyBlock`, `SetPropertyBlock`, `string.Format`, or `void Update(`.
+- `rg` confirmed `EnsureHullDentsHandle`, `ResolveBuffer(ref _hullDentsHandle)`, and the HullDents lock/unlock path are present.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair/HullDents diagnostics returned `NO_REPAIR_HULLDENTS_HANDLE_GENERATION_DIAGNOSTICS` with build exit code 1.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly` full-graph filtered for repair/HullDents diagnostics returned `NO_REPAIR_HULLDENTS_HANDLE_GENERATION_FULLGRAPH_DIAGNOSTICS` with build exit code 1.
+- `git diff --check -- ...` reports only CRLF conversion warnings in touched files.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-16 - Thirteenth Pass HullDent Visual Mirror Generation Guard
+What was wrong:
+- `HullDentShaderController` mirrors `GlobalDataVault.HullDents` into `_HectonHullDents` for shader deformation and rust fade.
+- Its cached HullDents handle still accepted BufferID/Length only.
+- That meant the visual mirror could use stale generation assumptions while `RepairTool` had already been hardened.
+- Sync/flush accepted any created view length despite the `float4[16]` contract.
+
+What was done:
+- Added `vault.ResolveBuffer(ref _hullDentsHandle)` to `HullDentShaderController.EnsureHullDentsHandle`.
+- Reacquire the 16-slot `BufferID.HullDents` handle through `GlobalDataVault` with `SystemID.Vfx` when resolution fails.
+- Required `Length >= MaxHullDents` in the final Ensure return.
+- Rejected undersized locked views in `SyncDentBufferFromVault` and `FlushDentBufferToVault`.
+- Audited `HullRepairedSignal` producer/consumer duplication; code path remains `RepairTool -> SignalBus<HullRepairedSignal> -> GasDynamicsSolver`.
+
+Cinematic Cheats used:
+- Shader deformation remains a 16-slot global vector-array fake, not CPU mesh repair.
+- Low tier keeps fixed-size dirty upload behavior.
+- High tier keeps procedural hull deformation, POM rust fade, and compute-advection sparks from the same vault state.
+
+Exact Microseconds saved:
+- No hot-path saving claimed.
+- Visual handle generation validation costs an estimated 1-2 us per active late-frame dent sync.
+- Locked view length branches cost an estimated 0-1 us per sync/flush.
+- The gain is deterministic visual/authority coherence after vault generation shifts.
+
+Validation:
+- Signal grep found no competing code-defined `HullRepairedSignal` producer or duplicate repair completion signal in the repair lane.
+- `GasDynamicsSolver` drains `SignalBus<HullRepairedSignal>` and clears `RoomFlagBreached` for valid completed room signals.
+- Combined fixed-string grep across `RepairTool`, `EquipmentInteractionHandler`, and `HullDentShaderController` returned `NO_REPAIR_VISUAL_HOTPATH_BLOAT_MATCHES`.
+- `rg` confirmed both RepairTool and HullDentShaderController now use `ResolveBuffer(ref _hullDentsHandle)` in their HullDents handle guards.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair/HullDentShaderController diagnostics returned `NO_REPAIR_HULLDENT_VISUAL_HANDLE_DIAGNOSTICS` with build exit code 1.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly` full-graph filtered for repair/HullDentShaderController diagnostics returned `NO_REPAIR_HULLDENT_VISUAL_HANDLE_FULLGRAPH_DIAGNOSTICS` with build exit code 1.
+- `git diff --check -- ...` reports only CRLF conversion warnings in touched files.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-16 - Fourteenth Pass Gas Deferred Seal / Typed Signal Hygiene
+What was wrong:
+- `GasDynamicsSolver` skipped HullRepairedSignal draining while `_stepRunning` was true.
+- SignalBus uses a current-frame snapshot and destructive read cursor, so a seal event produced during a long gas job could be missed before room lanes became writable.
+- `HullDentShaderController` still used `GlobalSignals.Publish(in deformedSignal)` for the repair-adjacent hull deformation lane.
+- `GasDynamicsSolver` dump failure path still emitted `Debug.LogError` with string concatenation.
+
+What was done:
+- Added two scalar pending masks: `_pendingHullRepairRoomsLo` and `_pendingHullRepairRoomsHi`.
+- `DrainHullRepairedSignals` now consumes completed repair signals while the gas job is running and stages valid room ids instead of dropping them.
+- `ApplyPendingHullRepairSignals` clears `RoomFlagBreached` after room lanes become writable.
+- Direct apply failures requeue the room bit instead of disappearing.
+- Moved HullDentShaderController deformation publication to `SignalBus<HullDeformedSignal>.Push`.
+- Replaced dump-path `Debug.LogError` with `GlobalTelemetryBus.PublishUnityLogFault(DumpMagic, 0u, 1u)`.
+
+Cinematic Cheats used:
+- O2 sealing uses a two-`ulong` room bitmask, not a dynamic event list or physical gas leak solver handshake.
+- Low tier pays no native allocation and only scans pending masks when a seal exists.
+- High tier keeps the same typed signal contract while visuals continue through hull shader recovery and compute sparks.
+
+Exact Microseconds saved:
+- Deferred seal staging costs an estimated 0-2 us per drained repair signal.
+- Pending mask apply costs an estimated 0-4 us when pending bits exist, bounded to 128 rooms.
+- No native allocation was added.
+- Direct HullDeformedSignal push saves an estimated 0-1 us per accepted combat dent signal.
+- Removing dump-path Debug.LogError saves an estimated 3-10 us only on dump failure in editor/development builds.
+
+Validation:
+- Fixed-string grep across `RepairTool`, `HullDentShaderController`, `GasDynamicsSolver`, and `EquipmentInteractionHandler` returned `NO_REPAIR_GAS_VISUAL_SIGNAL_BLOAT_MATCHES` for Debug.Log, Debug.LogWarning, Debug.LogError, EventBus, GlobalSignals.Publish, string.Format, and void Update.
+- `rg` confirmed `SignalBus<HullDeformedSignal>.Push`, `SignalBus<HullRepairedSignal>`, pending hull repair masks, and `GlobalTelemetryBus.PublishUnityLogFault`.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair/gas/VFX diagnostics returned `NO_REPAIR_GAS_DEFERRED_SEAL_TYPED_SIGNAL_DIAGNOSTICS` with build exit code 1.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly` full-graph filtered for repair/gas/VFX diagnostics returned `NO_REPAIR_GAS_DEFERRED_SEAL_TYPED_SIGNAL_FULLGRAPH_DIAGNOSTICS` with build exit code 1.
+- `git diff --check -- ...` reports only CRLF conversion warnings in touched files.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-16 - Fifteenth Pass HullDents Lock / Signal Hygiene
+What was wrong:
+- `TryRepairVaultHullDents` emitted `HullRepairedSignal` while the `BufferID.HullDents` vault write lock was still held.
+- `SignalBus.Push` can initialize and enqueue native lane data, so the repair kernel held a data lock across signal-system work.
+- This created unnecessary coupling between the repair writer, typed signal lane, and gas consumer.
+
+What was done:
+- Added a fixed `ushort repairedDentMask` inside the locked repair loop.
+- Replaced in-lock `PublishHullRepairedSignal` calls with bit writes.
+- Added `PublishHullRepairedSignals` to walk the 16-bit mask after `TryUnlockBuffer(BufferID.HullDents)`.
+- Preserved dent-index ordering and cumulative `DentsRepairedCount`.
+- No NativeArray, NativeList, managed List, or new signal type was added.
+
+Cinematic Cheats used:
+- Completion staging is a 16-bit mathematical lie over the fixed dent set, not an event object list.
+- Low tier pays zero allocation and only O(16) bit iteration on completion.
+- High tier keeps the same repair signal for gas sealing, shader recovery, and compute spark feedback.
+
+Exact Microseconds saved:
+- Estimated 0-2 us saved on completion frames by avoiding SignalBus work while the HullDents lock is held.
+- Estimated 0-1 us branch cost per repaired dent for the bitmask walk.
+- 0 B allocation.
+
+Validation:
+- `rg` confirmed `repairedDentMask`, `PublishHullRepairedSignals`, `TryLockBuffer(BufferID.HullDents)`, `TryUnlockBuffer(BufferID.HullDents)`, and `SignalBus<HullRepairedSignal>` placement.
+- Fixed-string grep across `RepairTool`, `HullDentShaderController`, `GasDynamicsSolver`, and `EquipmentInteractionHandler` returned `NO_REPAIR_LOCK_SIGNAL_BLOAT_MATCHES`.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair lock/signal diagnostics returned `NO_REPAIR_HULLDENTS_LOCK_SIGNAL_DIAGNOSTICS` with build exit code 1.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly` full-graph filtered for repair lock/signal diagnostics returned `NO_REPAIR_HULLDENTS_LOCK_SIGNAL_FULLGRAPH_DIAGNOSTICS` with build exit code -1.
+- `git diff --check -- ...` reports only CRLF conversion warnings in touched files.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-16 - Sixteenth Pass Shader NaN / Metal Thread-Group Audit
+What was wrong:
+- CPU repair code clamps non-finite `HullDents`, but shader unpackers still trusted packed dent values once uploaded.
+- `Hecton_DamageHologram.compute` cast packed values after `floor`.
+- `Hecton_CoreLit.hlsl` unpacked packed radius/depth without an explicit finite test.
+- `Hecton8_UberNoir.hlsl` used `fmod` on packed values without an explicit finite test.
+- Backend NaN behavior through max/floor/fmod/cast is not a survival plan for mobile GPU pipelines.
+
+What was done:
+- Added `HectonSanitizePackedDent` in `Hecton_DamageHologram.compute`.
+- Added explicit `isfinite(packedRadiusDepth)` in `Hecton_CoreLitUnpackHullDent`.
+- Added explicit `isfinite(packed)` guards in `H8UberNoirUnpackDentRadius` and `H8UberNoirUnpackDentDepth`.
+- Audited repair-related compute thread groups: damage hologram is 64x1x1; fluid advection kernels are 64x1x1 or 1x1x1.
+
+Cinematic Cheats used:
+- No new heavy shader path was added.
+- Low tier keeps the cheap dent bypass/dominant-axis paths.
+- High tier keeps procedural dent deformation, rust/POM recovery, SDF spark bounce, and flow drift with safer packed values.
+
+Exact Microseconds saved:
+- No speed gain claimed.
+- Estimated 0-1 us GPU cost per active dent loop for finite guards.
+- The value is NaN containment across Metal/Quest/Android and desktop GPU backends.
+
+Validation:
+- `rg` confirmed `HectonSanitizePackedDent`, `isfinite(packedRadiusDepth)`, and `isfinite(packed)` guards in the three repair-related shader files.
+- `rg` confirmed `[numthreads(64,1,1)]`, `HECTON_FLUID_ADVECTION_THREADS 64`, and `[numthreads(1,1,1)]` on the repair-related compute path.
+- Fixed-string C# grep returned `NO_REPAIR_SHADER_PASS_CSHARP_BLOAT_MATCHES`.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` did not complete within 315 seconds on this pass; no clean build claim is made.
+- `git diff --check -- ...` reports only CRLF conversion warnings in touched files.

@@ -171,7 +171,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Read-only orbital prologue snapshot for consumers that need telemetry without owning the simulation.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct OrbitalDirectorSnapshot
     {
         public OrbitalDirectorSnapshot(
@@ -232,7 +232,7 @@ namespace Hecton8.Core
     /// Registry-published world streaming IO backpressure read model.
     /// Movement, PDA, and VFX consumers read the dispatcher scalar or this cached service; they do not touch Addressables owners directly.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct StreamingHlodImpostorPoint
     {
         public float3 Center;
@@ -318,7 +318,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Canonical damage packet routed through the global packet-based damage receiver contract.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct DamagePacket
     {
         /// <summary>
@@ -489,7 +489,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Shared current-metadata payload mandated for flow-field-derived systems.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct CurrentMeta
     {
         /// <summary>
@@ -516,7 +516,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable Gerstner-wave component consumed by Burst jobs.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct GerstnerWaveComponent
     {
         /// <summary>
@@ -553,7 +553,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Shared metadata for the global data-vault Gerstner spectrum buffer.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct OceanGerstnerWaveBufferMeta
     {
         public int ActiveWaveCount;
@@ -565,7 +565,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Zero-allocation weather snapshot consumed by physics and VFX systems.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct WeatherRuntimeSnapshot
     {
         /// <summary>
@@ -627,7 +627,7 @@ namespace Hecton8.Core
     /// Blittable celestial runtime payload consumed by rendering, fluid, audio, and gameplay systems.
     /// Double universe time is retained for deterministic sync; spatial presentation data is reduced to float vectors.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct CelestialRuntimeSnapshot
     {
         /// <summary>Authoritative Absolute Universe Time used for the analytical orbit solve.</summary>
@@ -691,7 +691,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable GI relay state published for watchdogs, diagnostics, and low-cost consumers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct GIRelayRuntimeSnapshot
     {
         public double AbsoluteUniverseTime;
@@ -742,7 +742,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable seismic and harmonic-tide payload for systems that need latest deterministic macro-world state.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct SeismicRuntimeSnapshot
     {
         public double AbsoluteUniverseTime;
@@ -997,7 +997,7 @@ namespace Hecton8.Core
     /// Blittable gameplay audio request consumed by the central audio service queue.
     /// EventID maps to an authored clip-table slot owned by the audio runtime.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public readonly struct AudioEvent
     {
         public readonly uint EventID;
@@ -1022,7 +1022,7 @@ namespace Hecton8.Core
     /// Blittable prologue audio transition state routed from visual-sync orchestration into procedural DSP.
     /// Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
     public struct AudioTransitionState
     {
         public const byte StageSpace = 1;
@@ -1765,7 +1765,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable player pose snapshot for systems that need player AUP and view direction without concrete player-runtime access.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct PlayerRuntimePoseSnapshot
     {
         public float3 RuntimePosition;
@@ -2593,7 +2593,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable room gas snapshot expressed as Dalton partial pressures in kPa.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct GasRoomSnapshot
     {
         public GasRoomSnapshot(
@@ -2632,7 +2632,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Cold-path hibernation snapshot for one habitat/base atmosphere island.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct GasBaseHibernationSnapshot
     {
         public GasBaseHibernationSnapshot(
@@ -2674,7 +2674,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Unmanaged gas-to-physiology signal emitted when CO2 toxicity or nitrogen narcosis crosses a scalar threshold.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct ToxicitySignal
     {
         public ToxicitySignal(
@@ -2707,7 +2707,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Cold-path audit snapshot for the Dalton gas solver's persistent native memory.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct GasDynamicsNativeMemoryAudit
     {
         public GasDynamicsNativeMemoryAudit(
@@ -2810,7 +2810,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable hardware profile captured during the bootstrap HardwareCheck phase.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct HectonHardwareProfile
     {
         /// <summary>
@@ -2962,7 +2962,7 @@ namespace Hecton8.Core
     /// Unmanaged registry event payload drained by <see cref="SystemDispatcher"/>.
     /// Managed service references are carried by GlobalRegistry sidecar slots during dispatch only.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct RegistryEventPayload
     {
         public uint PreviousServiceHash;
@@ -3158,6 +3158,7 @@ namespace Hecton8.Core
         ResolutionScalerService = 169,
         AmbientBiotaRuntime = 170,
         DockingAutopilotRuntime = 171,
+        ProceduralLadderClimbRuntime = 172,
         Unknown = 255
     }
 
@@ -3401,7 +3402,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable ecosystem population sample returned by <see cref="IEcosystemDirectorService"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct EcosystemSectorPopulationSample
     {
         /// <summary>
@@ -3463,7 +3464,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Allocation-free fauna genome mutation request passed through the ecosystem service boundary.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct FaunaGenomeMutationRequest
     {
         public Vector3 RuntimePosition;
@@ -3569,7 +3570,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Allocation-free global biomass audit sample returned by <see cref="IEcosystemDirectorService"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct EcosystemBiomassAuditSample
     {
         public float PreyBiomassSum;

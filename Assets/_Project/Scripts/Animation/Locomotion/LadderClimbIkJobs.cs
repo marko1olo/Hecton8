@@ -12,6 +12,9 @@ namespace Hecton8.Animation.Locomotion
     {
         public const int MaxActiveLadders = 32;
         public const int BlackBoxFrameCapacity = 300;
+        public const int TelemetryCursorElementCount = 2;
+        public const int TelemetryCursorNextWriteIndex = 0;
+        public const int TelemetryCursorRetainedCountIndex = 1;
         public const float DefaultRungSpacingMeters = 0.3f;
         public const float DefaultUpperArmMeters = 0.34f;
         public const float DefaultLowerArmMeters = 0.36f;
@@ -79,6 +82,32 @@ namespace Hecton8.Animation.Locomotion
         public int Frame;
         public uint Hash;
         public byte Flags;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    internal struct LadderClimbIkVaultViews
+    {
+        public NativeArray<LadderClimbIkInput> Inputs;
+        public NativeArray<LadderClimbIkOutput> Outputs;
+        public NativeArray<AbsoluteUniversePosition> LadderAups;
+        public NativeArray<LadderClimbTelemetryEntry> TelemetryRing;
+        public NativeArray<int> TelemetryCursor;
+
+        public bool HasSolveCapacity =>
+            Inputs.IsCreated &&
+            Outputs.IsCreated &&
+            LadderAups.IsCreated &&
+            TelemetryRing.IsCreated &&
+            TelemetryCursor.IsCreated &&
+            Inputs.Length >= 1 &&
+            Outputs.Length >= 1 &&
+            LadderAups.Length >= 1 &&
+            TelemetryRing.Length >= LadderClimbIkConstants.BlackBoxFrameCapacity &&
+            TelemetryCursor.Length >= LadderClimbIkConstants.TelemetryCursorElementCount;
+
+        public bool HasOutput => Outputs.IsCreated && Outputs.Length >= 1;
+        public bool HasLadderAup => LadderAups.IsCreated && LadderAups.Length >= 1;
+        public bool HasTelemetry => TelemetryRing.IsCreated && TelemetryRing.Length > 0;
     }
 
     [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -221,14 +250,18 @@ namespace Hecton8.Animation.Locomotion
             if (TelemetryRing.Length <= 0)
                 return;
 
+            int capacity = math.min(TelemetryRing.Length, LadderClimbIkConstants.BlackBoxFrameCapacity);
             int cursor = 0;
-            if (TelemetryCursor.Length > 0)
+            int retainedCount = 0;
+            if (TelemetryCursor.Length >= LadderClimbIkConstants.TelemetryCursorElementCount)
             {
-                cursor = TelemetryCursor[0];
-                TelemetryCursor[0] = PositiveModulo(cursor + 1, LadderClimbIkConstants.BlackBoxFrameCapacity);
+                cursor = PositiveModulo(TelemetryCursor[LadderClimbIkConstants.TelemetryCursorNextWriteIndex], capacity);
+                retainedCount = math.clamp(TelemetryCursor[LadderClimbIkConstants.TelemetryCursorRetainedCountIndex], 0, capacity);
+                TelemetryCursor[LadderClimbIkConstants.TelemetryCursorNextWriteIndex] = PositiveModulo(cursor + 1, capacity);
+                TelemetryCursor[LadderClimbIkConstants.TelemetryCursorRetainedCountIndex] = math.min(retainedCount + 1, capacity);
             }
 
-            int index = PositiveModulo(cursor, TelemetryRing.Length);
+            int index = PositiveModulo(cursor, capacity);
             TelemetryRing[index] = new LadderClimbTelemetryEntry
             {
                 PlayerRoot = SanitizeFinite(input.PlayerRoot, float3.zero),

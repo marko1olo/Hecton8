@@ -80,6 +80,10 @@ namespace Hecton8.Core.Contracts
         public byte PressureLevel;
         [FieldOffset(13)]
         public byte Flags;
+        [FieldOffset(14)]
+        public byte Reserved0;
+        [FieldOffset(15)]
+        public byte Reserved1;
         [FieldOffset(16)]
         public uint Frame;
         [FieldOffset(20)]

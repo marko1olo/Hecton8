@@ -25,8 +25,11 @@ namespace Hecton8.Animation.IK
         /// <summary>Right-hand SOA lane.</summary>
         public const int RightHandIndex = 1;
 
-        /// <summary>Black-box frame history capacity.</summary>
-        public const int TelemetryCapacity = 300;
+        /// <summary>Required black-box frame history depth.</summary>
+        public const int TelemetryFrameCapacity = 300;
+
+        /// <summary>Two hand entries per frame, preserving 300 complete frames after wrap.</summary>
+        public const int TelemetryCapacity = TelemetryFrameCapacity * HandCount;
 
         public const uint RuntimeFlagVrActive = 1u << 0;
         public const uint RuntimeFlagGrip = 1u << 1;
@@ -274,7 +277,7 @@ namespace Hecton8.Animation.IK
     }
 
     /// <summary>
-    /// Cold-path serializer for the 300-frame hand IK black-box ring.
+    /// Cold-path serializer for the 300-frame, two-hand IK black-box ring.
     /// </summary>
     public static class VRPhysicalHandPresenceBlackBox
     {
@@ -289,8 +292,15 @@ namespace Hecton8.Animation.IK
             NativeArray<VRHandIkTelemetryEntry> telemetryRing,
             NativeArray<int> telemetryCursor)
         {
-            if (string.IsNullOrEmpty(path) || !telemetryRing.IsCreated || telemetryRing.Length <= 0)
+            if (string.IsNullOrEmpty(path) ||
+                !VRPhysicalHandPresenceLayout.Validate() ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length < VRPhysicalHandPresenceConstants.TelemetryCapacity ||
+                !telemetryCursor.IsCreated ||
+                telemetryCursor.Length <= 0)
+            {
                 return false;
+            }
 
             try
             {
@@ -303,8 +313,10 @@ namespace Hecton8.Animation.IK
                 {
                     writer.Write(0x4752494Bu);
                     writer.Write(VRPhysicalHandPresenceConstants.TelemetryMarkerIKLockState);
-                    int cursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : 0;
-                    int startIndex = PositiveModulo(cursor, telemetryRing.Length);
+                    int cursor = telemetryCursor[0];
+                    int startIndex = cursor >= telemetryRing.Length
+                        ? PositiveModulo(cursor, telemetryRing.Length)
+                        : 0;
 
                     writer.Write(telemetryRing.Length);
                     writer.Write(cursor);
@@ -337,6 +349,28 @@ namespace Hecton8.Animation.IK
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Writes the telemetry ring only when the latest solved hand output reports a NaN fallback fault.
+        /// </summary>
+        public static bool TryDumpTelemetryOnFault(
+            string path,
+            NativeArray<VRHandPresenceOutput> outputs,
+            NativeArray<VRHandIkTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryCursor)
+        {
+            if (!outputs.IsCreated)
+                return false;
+
+            int handCount = Math.Min(outputs.Length, VRPhysicalHandPresenceConstants.HandCount);
+            for (int hand = 0; hand < handCount; hand++)
+            {
+                if ((outputs[hand].Flags & VRPhysicalHandPresenceConstants.OutputFlagNanFallback) != 0u)
+                    return TryDumpTelemetry(path, telemetryRing, telemetryCursor);
+            }
+
+            return false;
         }
 
         private static int PositiveModulo(int value, int length)
@@ -388,6 +422,9 @@ namespace Hecton8.Animation.IK
         private const float DefaultScrapeVelocityThreshold = 0.08f;
         private const float DefaultLockBlendSharpness = 18f;
         private const float InvEncodedByteMax = 0.0039215686274509803f;
+        private const float MillimeterScale = 1000f;
+        private const float InvMillimeterScale = 0.001f;
+        private const float MaxQuantizedLocalMeters = 1048576f;
 
         [ReadOnly] public NativeArray<VRHandPresenceInput> Inputs;
         [ReadOnly] public NativeArray<byte> EncodedSdf;
@@ -443,6 +480,7 @@ namespace Hecton8.Animation.IK
                 math.all(math.isfinite(SdfOrigin)) &&
                 math.all(math.isfinite(SdfCellSize)) &&
                 math.all(SdfCellSize > new float3(0.0001f)) &&
+                math.isfinite(SdfRange) &&
                 SdfRange > 0.0001f;
             float3 invCellSize = canUseSdf ? math.rcp(SdfCellSize) : float3.zero;
             float3 gradientStep = canUseSdf ? math.max(SdfCellSize, new float3(0.025f)) : new float3(0.025f);
@@ -656,7 +694,7 @@ namespace Hecton8.Animation.IK
                 return;
             }
 
-            pose.LocalMeters = SanitizeFinite(pose.LocalMeters - AupShiftMeters, pose.LocalMeters);
+            pose.LocalMeters = QuantizeMillimeters(SanitizeFinite(pose.LocalMeters - AupShiftMeters, pose.LocalMeters));
             pose.ShiftFrameId = ShiftFrameId;
             pose.Flags |= VRPhysicalHandPresenceConstants.AupFlagShiftRebased;
         }
@@ -672,17 +710,30 @@ namespace Hecton8.Animation.IK
             byte grabState)
         {
             bool hasInteractableAup = (input.RuntimeFlags & VRPhysicalHandPresenceConstants.RuntimeFlagInteractableAupValid) != 0u;
-            VRHandAupPose targetAup = hasInteractableAup ? input.InteractableAUP : HandTargetAUP[hand];
-            targetAup.LocalMeters = SanitizeFinite(hasInteractableAup ? targetAup.LocalMeters : projectedTarget, projectedTarget);
+            VRHandAupPose previousTargetAup = HandTargetAUP[hand];
+            VRHandAupPose previousActualAup = HandActualAUP[hand];
+            VRHandAupPose targetAup = hasInteractableAup ? input.InteractableAUP : previousTargetAup;
+            if (!hasInteractableAup &&
+                (targetAup.Flags & VRPhysicalHandPresenceConstants.AupFlagValid) == 0)
+            {
+                targetAup.GridX = previousActualAup.GridX;
+                targetAup.GridY = previousActualAup.GridY;
+                targetAup.GridZ = previousActualAup.GridZ;
+            }
+
+            targetAup.LocalMeters = QuantizeMillimeters(SanitizeFinite(hasInteractableAup ? targetAup.LocalMeters : projectedTarget, projectedTarget));
             targetAup.ShiftFrameId = ShiftFrameId;
-            targetAup.SourceHash = ComposeStateHash(projectedTarget, output.ActualHandPosition, controller, output.Flags, hand);
+            targetAup.SourceHash = ComposeAupStateHash(in targetAup, output.ActualHandPosition, controller, output.Flags, hand);
             targetAup.Flags = (byte)(VRPhysicalHandPresenceConstants.AupFlagValid | (hasInteractableAup ? VRPhysicalHandPresenceConstants.AupFlagInteractable : 0));
             targetAup.HandIndex = (byte)hand;
 
-            VRHandAupPose actualAup = HandActualAUP[hand];
-            actualAup.LocalMeters = SanitizeFinite(output.ActualHandPosition, projectedTarget);
+            VRHandAupPose actualAup = previousActualAup;
+            actualAup.GridX = targetAup.GridX;
+            actualAup.GridY = targetAup.GridY;
+            actualAup.GridZ = targetAup.GridZ;
+            actualAup.LocalMeters = QuantizeMillimeters(SanitizeFinite(output.ActualHandPosition, projectedTarget));
             actualAup.ShiftFrameId = ShiftFrameId;
-            actualAup.SourceHash = output.StateHash;
+            actualAup.SourceHash = ComposeAupStateHash(in actualAup, projectedTarget, controller, output.Flags, hand);
             actualAup.Flags = VRPhysicalHandPresenceConstants.AupFlagValid;
             actualAup.HandIndex = (byte)hand;
 
@@ -737,7 +788,7 @@ namespace Hecton8.Animation.IK
                 ControllerSeparation = separation
             };
 
-            TelemetryCursor[0] = cursor == int.MaxValue
+            TelemetryCursor[0] = cursor < 0 || cursor == int.MaxValue
                 ? PositiveModulo(index + 1, TelemetryRing.Length)
                 : cursor + 1;
         }
@@ -853,6 +904,9 @@ namespace Hecton8.Animation.IK
                 SdfDimensions.x <= 1 ||
                 SdfDimensions.y <= 1 ||
                 SdfDimensions.z <= 1 ||
+                !math.all(math.isfinite(worldPosition)) ||
+                !math.all(math.isfinite(invCellSize)) ||
+                !math.isfinite(sdfRange) ||
                 sdfRange <= 0.0001f)
             {
                 return false;
@@ -894,18 +948,64 @@ namespace Hecton8.Animation.IK
             return math.isfinite(density);
         }
 
+        private bool TrySampleSdfTrilinearClamped(float3 worldPosition, float3 invCellSize, float sdfRange, out float density)
+        {
+            density = 0f;
+            if (!EncodedSdf.IsCreated ||
+                SdfDimensions.x <= 1 ||
+                SdfDimensions.y <= 1 ||
+                SdfDimensions.z <= 1 ||
+                !math.all(math.isfinite(worldPosition)) ||
+                !math.all(math.isfinite(invCellSize)) ||
+                !math.isfinite(sdfRange) ||
+                sdfRange <= 0.0001f)
+            {
+                return false;
+            }
+
+            float3 sample = math.clamp(
+                (worldPosition - SdfOrigin) * invCellSize,
+                float3.zero,
+                new float3(SdfDimensions.x - 1.001f, SdfDimensions.y - 1.001f, SdfDimensions.z - 1.001f));
+            int x0 = (int)math.floor(sample.x);
+            int y0 = (int)math.floor(sample.y);
+            int z0 = (int)math.floor(sample.z);
+            int x1 = math.min(x0 + 1, SdfDimensions.x - 1);
+            int y1 = math.min(y0 + 1, SdfDimensions.y - 1);
+            int z1 = math.min(z0 + 1, SdfDimensions.z - 1);
+            float3 f = sample - new float3(x0, y0, z0);
+
+            float c000 = DecodeSdf(SdfIndex(x0, y0, z0), sdfRange);
+            float c100 = DecodeSdf(SdfIndex(x1, y0, z0), sdfRange);
+            float c010 = DecodeSdf(SdfIndex(x0, y1, z0), sdfRange);
+            float c110 = DecodeSdf(SdfIndex(x1, y1, z0), sdfRange);
+            float c001 = DecodeSdf(SdfIndex(x0, y0, z1), sdfRange);
+            float c101 = DecodeSdf(SdfIndex(x1, y0, z1), sdfRange);
+            float c011 = DecodeSdf(SdfIndex(x0, y1, z1), sdfRange);
+            float c111 = DecodeSdf(SdfIndex(x1, y1, z1), sdfRange);
+            float c00 = math.lerp(c000, c100, f.x);
+            float c10 = math.lerp(c010, c110, f.x);
+            float c01 = math.lerp(c001, c101, f.x);
+            float c11 = math.lerp(c011, c111, f.x);
+            float c0 = math.lerp(c00, c10, f.y);
+            float c1 = math.lerp(c01, c11, f.y);
+            density = math.lerp(c0, c1, f.z);
+            return math.isfinite(density);
+        }
+
         private bool TryResolveSdfGradient(float3 worldPosition, float3 invCellSize, float sdfRange, float3 step, out float3 normal)
         {
             normal = new float3(0f, 1f, 0f);
-            float3 sx = new float3(step.x, 0f, 0f);
-            float3 sy = new float3(0f, step.y, 0f);
-            float3 sz = new float3(0f, 0f, step.z);
-            if (!TrySampleSdfTrilinear(worldPosition + sx, invCellSize, sdfRange, out float px) ||
-                !TrySampleSdfTrilinear(worldPosition - sx, invCellSize, sdfRange, out float nx) ||
-                !TrySampleSdfTrilinear(worldPosition + sy, invCellSize, sdfRange, out float py) ||
-                !TrySampleSdfTrilinear(worldPosition - sy, invCellSize, sdfRange, out float ny) ||
-                !TrySampleSdfTrilinear(worldPosition + sz, invCellSize, sdfRange, out float pz) ||
-                !TrySampleSdfTrilinear(worldPosition - sz, invCellSize, sdfRange, out float nz))
+            float3 safeStep = SanitizePositiveFinite(step, new float3(0.025f), new float3(0.0001f));
+            float3 sx = new float3(safeStep.x, 0f, 0f);
+            float3 sy = new float3(0f, safeStep.y, 0f);
+            float3 sz = new float3(0f, 0f, safeStep.z);
+            if (!TrySampleSdfTrilinearClamped(worldPosition + sx, invCellSize, sdfRange, out float px) ||
+                !TrySampleSdfTrilinearClamped(worldPosition - sx, invCellSize, sdfRange, out float nx) ||
+                !TrySampleSdfTrilinearClamped(worldPosition + sy, invCellSize, sdfRange, out float py) ||
+                !TrySampleSdfTrilinearClamped(worldPosition - sy, invCellSize, sdfRange, out float ny) ||
+                !TrySampleSdfTrilinearClamped(worldPosition + sz, invCellSize, sdfRange, out float pz) ||
+                !TrySampleSdfTrilinearClamped(worldPosition - sz, invCellSize, sdfRange, out float nz))
             {
                 return false;
             }
@@ -1033,6 +1133,12 @@ namespace Hecton8.Animation.IK
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 SanitizePositiveFinite(float3 value, float3 fallback, float3 minValue)
+        {
+            return math.all(math.isfinite(value)) && math.all(value > minValue) ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float SanitizeFiniteClamp(float value, float fallback, float minValue, float maxValue)
         {
             return math.isfinite(value) ? math.clamp(value, minValue, maxValue) : fallback;
@@ -1051,6 +1157,14 @@ namespace Hecton8.Animation.IK
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 QuantizeMillimeters(float3 value)
+        {
+            float3 finite = SanitizeFinite(value, float3.zero);
+            float3 clamped = math.clamp(finite, new float3(-MaxQuantizedLocalMeters), new float3(MaxQuantizedLocalMeters));
+            return math.round(clamped * MillimeterScale) * InvMillimeterScale;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int PositiveModulo(int value, int length)
         {
             int safeLength = math.max(1, length);
@@ -1066,6 +1180,18 @@ namespace Hecton8.Animation.IK
             hash = HashFloat3(hash, controller);
             hash = Mix(hash, flags);
             hash = Mix(hash, (uint)hand);
+            return hash != 0u ? hash : 1u;
+        }
+
+        private static uint ComposeAupStateHash(in VRHandAupPose aup, float3 actual, float3 controller, uint flags, int hand)
+        {
+            uint hash = ComposeStateHash(aup.LocalMeters, actual, controller, flags, hand);
+            hash = Mix(hash, (uint)aup.GridX);
+            hash = Mix(hash, (uint)((ulong)aup.GridX >> 32));
+            hash = Mix(hash, (uint)aup.GridY);
+            hash = Mix(hash, (uint)((ulong)aup.GridY >> 32));
+            hash = Mix(hash, (uint)aup.GridZ);
+            hash = Mix(hash, (uint)((ulong)aup.GridZ >> 32));
             return hash != 0u ? hash : 1u;
         }
 

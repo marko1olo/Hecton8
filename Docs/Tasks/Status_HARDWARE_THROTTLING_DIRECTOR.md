@@ -4,7 +4,7 @@
 - Prompt: HARDWARE_THROTTLING_DIRECTOR
 - Domain: CORE/HARDWARE
 - Task Count: 18
-- Active Phase: OMEGA PASS 2 - HOMEOSTASIS PATCH APPLIED, CURRENT VALIDATION BLOCKED BY EXTERNAL COMPILE WALL
+- Active Phase: OMEGA PASS 9 - ANDROID JNI OWNERSHIP CENTRALIZED, CURRENT BUILD BLOCKED BY EXTERNAL ECOSYSTEM WALL
 - Microsecond Policy: values below are static DOD budget estimates unless marked build/tool measured. No profiler capture was run in this pass.
 
 ## Mandates Read
@@ -36,12 +36,12 @@
 
 ## Phase 4 - Stability, Telemetry, Blackbox
 - [x] 12. NAN_VACCINATION | DOD: SHI, metrics, battery data, time dilation, and scale paths use finite clamps/guards before publishing or blackbox writes. Rejected: trusting invalid `SystemInfo` or divide results. Estimate: 2 us/frame guard budget; prevents unbounded GPU/CPU fault propagation.
-- [x] 13. BLACKBOX_LOGGING | DOD: `HomeostasisBlackBoxEntry[300]` in DataVault records `PeakSystemHealthIndex01` and `LastThermalAction`; NaN/fault dump path is `Docs/AgentLogs/Dump_HARDWARE_THROTTLING_DIRECTOR.bin`. Rejected: managed per-frame logs. Estimate: 1 us/frame fixed ring write, 0 GC.
+- [x] 13. BLACKBOX_LOGGING | DOD: `HomeostasisBlackBoxEntry[300]` in DataVault records `PeakSystemHealthIndex01` and `LastThermalAction`; NaN/fault dump path is `Docs/AgentLogs/Dump_HARDWARE_THROTTLING_DIRECTOR.bin`; thermal cold-service emergency dump path is `Docs/AgentLogs/Dump_HARDWARE_THROTTLING_DIRECTOR_ThermalService.bin`; both owned dump writers now use fixed little-endian `Span<byte>` serialization instead of managed binary writer objects. Rejected: managed per-frame logs, stale agent-ID dump names, and managed binary formatter objects in fault-path blackbox dumps. Estimate: 1 us/frame fixed ring write, 0 GC; emergency dump allocation risk reduced, not frame-time measured.
 - [x] 14. TRIPLE_STRIKE_REPAIR | DOD: Android bridge fault path falls back to `SystemInfo.processorFrequency` pressure bias. Rejected: failed JNI equals blind thermal policy. Estimate: 1 us cold fallback sample, 0 us/frame hot path.
 - [x] 15. HOMEOSTASIS_SIGNAL | DOD: `SystemHealthSignal(Level)` and related health/index/kill-switch lanes publish through `SignalBus<T>.Push`; hardware/DRS legacy `GlobalSignals.Publish` calls were removed from the owned paths. Rejected: legacy EventBus, managed delegates, duplicate signal invention. Estimate: 6 us/frame and 0.5 KB/frame allocation risk avoided versus managed broadcast assumptions.
 - [x] 16. MAC_METAL_THERMALS | DOD: `UNITY_OSX && !UNITY_EDITOR` path uses cached Objective-C selectors for `NSProcessInfo.thermalState`; shader audit found no compute `numthreads` product over 1024 and no Metal exclusion in the scanned shader set. Rejected: DirectX-only thermal/render shortcuts. Estimate: 0 us/frame hot path, 5-second cold sample only.
 - [x] 17. VR_REFRESH_SYNC | DOD: XR active plus Level 2+ pressure requests 72 Hz through `HectonXRRuntimeState.TryRequestDisplayRefreshRateHz(72f)` and caps `Application.targetFrameRate` when runtime API is unavailable. Rejected: forcing Quest to hold 90 Hz while thermally constrained. Estimate: 0 us CPU hot path, GPU power reduction only.
-- [ ] 18. FINAL_VALIDATION | [BLOCKED BY DEPENDENCY] Phase4 validation previously exited 0, but Omega Pass 2 rebuild now fails on external `GameBootstrapper.cs` and `ToolDurabilitySystem.cs` errors not introduced by the hardware mask patch. Rejected: claiming current green build with unrelated compile wall active. Current log: `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass2.txt`.
+- [BLOCKED BY DEPENDENCY] 18. FINAL_VALIDATION | DOD: Omega Pass 7 clean-output build exited 0 before Pass 8/9. Omega Pass 9 clean-output build now fails only on external `World/EcosystemDirector.cs` missing index helper/state members; no current error names `HardwareThermalService`, `HomeostasisBrain`, `ThermalDynamicResolutionAdapter`, `CoreContractsAssemblyMarker`, or `GlobalSignals`. Rejected: claiming green after post-Pass7 code patches. Last verified green log: `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass7_CleanOutDir.txt` at 00:02:03.55. Current blocked log: `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass9_CleanOutDir.txt`.
 
 ## Iterative Loops
 - [x] Loop 1: prompt extracted, mandates/domain read, singleton/data ownership purge verified.
@@ -49,23 +49,49 @@
 - [x] Loop 3: Phase 3 sacrifice masks, DRS 0.75 cap, AI 1 Hz, time dilation, and 3000-frame restoration verified.
 - [x] Loop 4: Phase 4 NaN, blackbox, fallback, signal, Mac, and XR refresh paths verified.
 - [x] Loop 5: Omega polish performed: JNI cache check, bitwise mask check, typed signal purge, Pack=1 interface patch, shader thread-group audit, final build.
+- [x] Loop 6: Omega pass 3 performed: owned blackbox dump names rechecked; stale thermal-director dump path removed from `HardwareThermalService`.
+- [x] Loop 7: Omega pass 4 performed: unnamed padding removed from the 24-byte thermal blackbox entry and 24-byte DRS runtime snapshot contract without changing ABI sizes.
+- [x] Loop 8: Omega pass 5 performed: managed binary writer usage removed from owned homeostasis/thermal blackbox dump paths and replaced with fixed little-endian span serialization.
+- [x] Loop 9: Omega pass 6 performed: SHI dump order changed to oldest-to-newest ring order and fresh build validation exited 0.
+- [x] Loop 10: Omega pass 7 performed: owned surface re-audited for singleton/event/local NativeArray/Update/string-format/managed-writer/Pack debt; shared-output build warning isolated; clean-output build validation exited 0 with 0 warnings.
+- [x] Loop 11: Omega pass 8 performed: DRS blackbox raw native-memory dump was replaced with chronological explicit little-endian serialization; hardware profile guard and static owned scans passed; clean-output build is blocked by external determinism compile wall.
+- [x] Loop 12: Omega pass 9 performed: Android JNI thermal ownership centralized in `HardwareThermalService`; HomeostasisBrain no longer owns a parallel Android `PowerManager` bridge and consumes the registry snapshot instead.
 
 ## Static Audit Evidence
 - `rg 'GlobalSignals\.Publish|EventBus|Action<|Func<|event\s|new NativeArray|H8Memory\.Allocate|Update\(|LateUpdate\(|FixedUpdate\(|string\.Format|\.ToString\(' Assets/_Project/Scripts/Core/Hardware Assets/_Project/Scripts/Core/HomeostasisBrain.cs Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs` returned no owned violations.
 - `rg '\$"' Assets/_Project/Scripts/Core/Hardware Assets/_Project/Scripts/Core/HomeostasisBrain.cs Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs` returned no interpolated strings.
-- Hardware/homeostasis structs and the hardware-adjacent signal lanes `ResolutionChangedSignal`, `SystemHealthIndexSignal`, `HUDNotificationSignal`, `ThermalStateChangedSignal`, and `BatteryLevelSignal` now declare `Pack = 1`.
+- Hardware/homeostasis structs and the hardware-adjacent signal lanes `ResolutionChangedSignal`, `SystemHealthIndexSignal`, `HUDNotificationSignal`, `ThermalStateChangedSignal`, and `BatteryLevelSignal` now declare `Pack = 1`; the 24-byte thermal blackbox entry and 24-byte DRS runtime snapshot now name all reserved bytes instead of relying on unnamed padding.
 - Shader audit: no scanned compute shader has `numthreads(x,y,z)` product over 1024. `#pragma require compute` exists, but no `only_renderers d3d` or `exclude_renderers metal` hit was found.
-- Hardware profile mask audit: no stale `0x0000000000000070` or `0x00000000002007F0` remains in the hardware profile data/catalog rows after Level 1/2 tightening.
+- Hardware profile mask audit: no stale pre-tightening Level 1/2 mask remains in the hardware profile data/catalog rows after Level 1/2 tightening.
+- Blackbox dump audit: no owned legacy thermal-director dump path remains in code; homeostasis and thermal service dumps now carry the `HARDWARE_THROTTLING_DIRECTOR` agent ID.
+- Managed writer audit: no managed binary writer class usage remains in `HardwareThermalService`, `HomeostasisBrain`, the hardware contracts, or the thermal DRS adapter.
+- Omega pass 7 re-audit: `GlobalSignals.Publish`, `EventBus`, managed delegate lanes, local `new NativeArray`, direct allocator calls, standard Unity `Update` methods, string formatting, managed binary writers, non-`Pack = 1` struct layouts, stale mask constants, stale dump IDs, and singleton manager references returned no owned violations. The only `Application.targetFrameRate` hits are cadence/jitter reads inside `HomeostasisBrain.ResolveTargetFrameRate`, not scattered UI writers.
+- Omega pass 8 re-audit: DRS blackbox no longer writes `ReadOnlySpan<byte>` over raw native telemetry memory; SHI, thermal-service, and DRS fault dumps now all use explicit little-endian span serialization. Static scans for raw memory dump writers, managed binary writers, legacy event buses, local `new NativeArray`, direct allocator calls, standard Unity `Update` methods, string formatting, and non-`Pack = 1` layouts returned no owned violations.
+- Omega pass 9 re-audit: `getThermalHeadroom(30)` is now owned by `HardwareThermalService` on FrostTick/API 30+ and is combined with `getCurrentThermalStatus`; HomeostasisBrain has no remaining `AndroidJava*`, `TrySampleAndroidThermals`, `EnsureAndroidThermalBridge`, or `DisposeAndroidThermalBridge` code. Snapshot-derived SHI CPU temperature now takes the max of raw battery/thermal temperature and severity-derived synthetic pressure temperature, so severe Android headroom cannot be masked by a cool battery thermistor.
 
 ## Compile State
 - [x] HISTORICAL PHASE4 BUILD GREEN: `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_Phase4_Strike3.txt`.
 - Historical output: `Build succeeded. 0 Warning(s). 0 Error(s).`
 - [BLOCKED BY DEPENDENCY] CURRENT OMEGA PASS 2 BUILD: `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass2.txt`.
 - Current blockers: `HectonUnderwaterVisuals.cs` missing `_biomeFog*` fields, `GameBootstrapper.cs(2761,34)` invalid `Initialize` overload, and `ToolDurabilitySystem.cs` missing native-state resolver/field members. No current error is in the hardware/homeostasis mask patch.
+- [BLOCKED BY DEPENDENCY] CURRENT OMEGA PASS 3 BUILD: `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass3.txt`.
+- Current blockers: `PredatorCognitionDomain.cs` missing predator species target/tuning job fields and a `NativeArray<float3>` versus `NativeParallelHashMap<int,float3>` mismatch. No current error is in `HardwareThermalService`, `HomeostasisBrain`, `HardwareProfileCatalog`, `HardwareTierDetector`, `ThermalDynamicResolutionAdapter`, or hardware profile JSON.
+- [BLOCKED BY DEPENDENCY] CURRENT OMEGA PASS 4 BUILD: `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass4.txt`.
+- Current blockers: `TetherManager.cs(264,58)` references missing `TetherSignals.TetherFireRequest`; `Physics/TetherSignals.cs(167,82)` cannot resolve `TetherFireRequest`. No current error is in `HardwareThermalService`, `HomeostasisBrain`, `CoreContractsAssemblyMarker`, `HardwareProfileCatalog`, `HardwareTierDetector`, `ThermalDynamicResolutionAdapter`, or hardware profile JSON.
+- [BLOCKED BY DEPENDENCY] CURRENT OMEGA PASS 5 BUILD: `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass5.txt`.
+- Current blockers: `SubmarineFluidDynamics.cs(2051..2094)` syntax errors and missing closing brace. No current error is in `HardwareThermalService`, `HomeostasisBrain`, `CoreContractsAssemblyMarker`, `HardwareProfileCatalog`, `HardwareTierDetector`, `ThermalDynamicResolutionAdapter`, or hardware profile JSON.
+- [x] CURRENT OMEGA PASS 6 RETRY BUILD GREEN: `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass6_Retry.txt`.
+- Current output: `Build succeeded. 0 Warning(s). 0 Error(s). Time Elapsed 00:02:46.41.`
+- [x] CURRENT OMEGA PASS 7 CLEAN OUTDIR BUILD GREEN: `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass7_CleanOutDir.txt`.
+- Current output: `Build succeeded. 0 Warning(s). 0 Error(s). Time Elapsed 00:02:03.55.`
+- [BLOCKED BY DEPENDENCY] CURRENT OMEGA PASS 8 CLEAN OUTDIR BUILD: `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass8_CleanOutDir_Retry2.txt`.
+- Current blockers: `LockstepStateValidator.cs(279,36)` references missing `ValidateBinaryLayout`. Earlier Pass 8 first attempt hit transient/external `H8Memory.cs` duplicate `PhysicsForce*` BufferID errors that disappeared after clean; no Pass 8 compiler error names the hardware/homeostasis/DRS files.
+- [BLOCKED BY DEPENDENCY] CURRENT OMEGA PASS 9 CLEAN OUTDIR BUILD: `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass9_CleanOutDir.txt`.
+- Current blockers: `World/EcosystemDirector.cs` missing `ClearIndexEntries`, `TryUpsertIndexEntry`, `TryFindIndexEntry`, `ResolveVaultIndexCapacity`, `_sectorIndexByKey`, and `_biomassIndexByKey`. No Pass 9 compiler error names the hardware/homeostasis/DRS files.
 
 ## Phase Ownership Record
 - Phase: PRE_SIMULATION for SHI policy, FrostTick for hardware API sampling, POST_SIMULATION for blackbox/signal writes.
 - Owner Assembly: Hecton8.Core plus Core/Hardware service boundary.
 - DataVault Buffers Written: `BufferID.HardwareMetrics`, `BufferID.HardwareFrameTimes`, `BufferID.HomeostasisBlackBox`, `BufferID.HardwareThermalSeverity`, `BufferID.HardwareThermalBlackBox`.
 - Signal Lanes Published: `SystemHealthSignal`, `FrameTimeSignal`, `KillSwitchSignal`, `SystemHealthIndexSignal`, `HUDNotificationSignal`, `ResolutionChangedSignal`, `BatteryLevelSignal`, `ThermalStateChangedSignal`.
-- Status: HOMEOSTASIS PATCH ACTIVE; CURRENT GREEN BUILD BLOCKED BY EXTERNAL NON-HARDWARE COMPILE WALL.
+- Status: HOMEOSTASIS PATCH ACTIVE; CURRENT PASS 9 GREEN BUILD BLOCKED BY EXTERNAL ECOSYSTEM COMPILE WALL. Last verified green: OMEGA PASS 7.

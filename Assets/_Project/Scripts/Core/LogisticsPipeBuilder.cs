@@ -19,7 +19,7 @@ namespace Hecton8.Core
         Line = 2
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct SplineDescriptor
     {
         public float3 Start;

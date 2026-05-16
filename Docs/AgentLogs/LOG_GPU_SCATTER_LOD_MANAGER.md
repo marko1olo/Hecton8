@@ -253,3 +253,199 @@ Validation:
 - Symbol scan confirmed safe-bounds methods, CPU audit wiring, compute constant wiring, fallback bounds usage, and Burst `HasFiniteMatrix`.
 - Forbidden-pattern scan over the scatter domain returned no `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `EventBus`, `Debug.Log`, scene search, local private `NativeArray`, or direct `H8Memory.Allocate/Release`.
 - `git diff --check` reported only LF-to-CRLF warnings.
+
+## 2026-05-16 Continued Pass: DataVault Visual Payload
+
+What was wrong:
+- High/Ultra flora had material-wide SSS/caustic/bloom boosts but no DataVault-owned per-instance visual payload.
+- The next obvious shortcuts were all bad: private renderer `NativeArray<Vector4>`, extra shader interpolators, or shared material randomization.
+
+What was done:
+- Added `BufferID.FloraScatterVisualPayload = 382` without shifting existing memory IDs.
+- Added a `VaultBufferHandle<Vector4>` and `_floraVisualPayloadBuffer` to `GpuScatterLodManager`.
+- Wired the payload through Vault handle resolution, active-count clamp, generation change detection, upload, draw-local binding, teardown, and lease invalidation.
+- Added cold deterministic defaults only when the Vault lane is missing or undersized.
+- Added `_HectonFloraScatterVisualPayload` and `_HectonFloraScatterVisualPayloadEnabled` to `Hecton_IndirectVegetation.shader`.
+- In `_QUALITY_HIGH`, the shader now uses the payload to modulate existing edge, curvature/SSS, flow/caustic, and biolum channels. No extra TEXCOORD was added.
+
+Cinematic cheats used:
+- Low/MX350 binds the lane but disables consumption, returning a zero payload and preserving the cheap shader path.
+- High/Ultra spends the same source-index-stable payload on visual variation instead of simulating more flora physics.
+- The shader reuses existing varyings instead of adding another interpolator path for Quest/mobile.
+
+Exact Microseconds saved:
+- No measured microseconds claimed.
+- Added payload memory: 16 bytes per instance, about 1.6MB for 100k active flora before allocator overhead.
+- Default payload generation is cold only.
+- Normal-frame upload uses existing Vault generation/dirty checks; unchanged generations skip upload.
+
+Validation:
+- Symbol scan confirmed `FloraScatterVisualPayload`, `_HectonFloraScatterVisualPayload`, `ResolveScatterVisualPayload`, generation checks, upload, binding, and release paths.
+- Focused static scan found no `SetVectorArray`, `Debug.Log`, local private `NativeArray`, `H8Memory.Allocate/Release`, `Allocator.Persistent`, legacy `EventBus`, scene search, Unity `Update` methods, `string.Format`, or shared `material.Set*` calls in the scatter manager / compute path.
+- `git diff --check` reported only LF-to-CRLF warnings for touched files.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1` is dependency-blocked outside scatter: `ArchitectEyeVisualizer` duplicate `ValidatePackedStructSizes`, plus ambiguous `LaserCutterEventPayload` references in audio/world systems.
+- `dotnet build Assembly-CSharp.csproj --no-dependencies -m:1` is dependency-blocked before scatter on missing `Temp/bin/Debug/Assembly-CSharp-firstpass.dll` and `Temp/bin/Debug/RealtimeCSG.dll`.
+
+## 2026-05-16 Continued Pass: Shared-Material Mutation Purge
+
+What was wrong:
+- `GpuScatterLodManager.Render` still mutated `floraMaterial.enableInstancing` and toggled material keywords at draw time.
+- That contaminates shared material state and makes high/low tier selection depend on the last renderer that touched the asset.
+
+What was done:
+- Added optional pre-authored `lowTierFloraMaterial` and `highTierFloraMaterial` fields.
+- Added `ResolveRenderMaterial()` and `HasAnyConfiguredMaterial()`.
+- Removed runtime `enableInstancing`, `EnableKeyword`, and `DisableKeyword` calls from the scatter render path.
+- Kept tier scalar values draw-local in the reused `MaterialPropertyBlock`.
+- Added the visual-payload Vault handle to the GPU-readiness and buffer-resolution gate.
+
+Cinematic cheats used:
+- Low/MX350 now relies on an authored `_QUALITY_MX350` material variant and keeps high-tier payload disabled.
+- High/Ultra relies on an authored `_QUALITY_HIGH` material variant and spends the DataVault payload on visual overkill.
+- No shader dynamic branch expansion was added for quality keywords.
+
+Exact Microseconds saved:
+- No measured microseconds claimed.
+- Removed per-frame material keyword churn and instancing flag writes from this renderer.
+- Expected timing is PENDING PROFILER; the confirmed gain is deterministic material-state isolation.
+
+Validation:
+- Stricter static scan found no `EnableKeyword`, `DisableKeyword`, `enableInstancing`, `renderer.material`, `.materials`, shared `material.Set*`, `SetVectorArray`, `Debug.Log`, local private `NativeArray`, `H8Memory.Allocate/Release`, `Allocator.Persistent`, legacy `EventBus`, scene search, Unity `Update` methods, or `string.Format` in the scatter domain.
+- `git diff --check` reported only LF-to-CRLF warnings for touched files.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore -m:1` is dependency-blocked outside scatter in `HectonMarineSnowRenderer`: missing `CeilDivide` at lines 1917 and 1918.
+- `dotnet build Assembly-CSharp.csproj --no-dependencies -m:1` is dependency-blocked before scatter on 63 missing `Temp/bin/Debug` metadata DLLs.
+
+## 2026-05-16 Continued Pass: Blackbox / Payload NaN Polish
+
+What was wrong:
+- The new visual-payload lane was not visible in the scatter blackbox dump.
+- `ResolveScatterVisualPayload` saturated high-tier payload values without proving they were finite.
+
+What was done:
+- Bumped scatter blackbox packet version from 1 to 2.
+- Kept `ScatterBlackBoxEntry` at 64 bytes.
+- Replaced separate age/phase generation dump fields with `AuxiliaryGenerationHash` and `VisualPayloadGeneration`.
+- Added `CombineGenerationHash()` for age/phase auxiliary telemetry.
+- Added `all(isfinite(payload))` guard in the shader before applying high-tier visual-payload modulation.
+
+Cinematic cheats used:
+- None added. This pass is crash forensics and NaN containment.
+
+Exact Microseconds saved:
+- No measured microseconds claimed.
+- Blackbox write size and cadence are unchanged.
+- High-tier shader adds one finite check; exact GPU cost is PENDING PROFILER.
+
+Validation:
+- Symbol scan confirmed `BlackBoxVersion = 2`, `AuxiliaryGenerationHash`, `VisualPayloadGeneration`, `CombineGenerationHash`, and shader `isfinite(payload)` guard.
+- Forbidden scatter-domain scan stayed clean.
+- `git diff --check` reported only LF-to-CRLF warnings for touched files.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1` is dependency-blocked outside scatter: `PlayerCriticalProceduralAudioRenderer` missing `ClearVaultBackedAudioBufferAliases`, and `TetherManager` missing `_fixedStepClockSeconds` / `TetherFixedClockWrapSeconds`.
+- `dotnet build Assembly-CSharp.csproj --no-dependencies -m:1` is dependency-blocked before scatter on 55 missing `Temp/bin/Debug` metadata DLLs.
+
+## 2026-05-16 Continued Pass: Material Variant Fail-Closed
+
+What was wrong:
+- After removing runtime keyword mutation, `GpuScatterLodManager` still trusted authored material variants.
+- A missing `HECTON_GPU_INDIRECT` keyword could draw the wrong shader path.
+- A missing `_QUALITY_HIGH` keyword on High/Ultra could silently downgrade the 4090 path to the wrong visual tier.
+
+What was done:
+- Added cached material-variant validation in `GpuScatterLodManager`.
+- Required `HECTON_GPU_INDIRECT` for every indirect flora draw material.
+- Required `_QUALITY_HIGH` when `_cachedHighTier` is true.
+- Accepted low-tier materials only when `_QUALITY_MX350` is enabled or `_QUALITY_HIGH` is absent.
+- On invalid variant, the renderer clears indirect args before cull dispatch, skips `Graphics.RenderMeshIndirect`, and records `BlackBoxFlagInvalidMaterialVariant`.
+- Kept runtime behavior mutation-free: no `EnableKeyword`, no `DisableKeyword`, no `enableInstancing` write.
+
+Cinematic cheats used:
+- Low/MX350 keeps a cheap authored path and prevents accidental high-variant use.
+- High/Ultra now proves the authored high shader variant before spending the 500m residency and visual payload.
+
+Exact Microseconds saved:
+- No measured microseconds claimed.
+- Normal-frame cost is a cached material instance/tier validity read after first validation.
+- Fault path avoids cull dispatch, clears stale indirect args, and avoids an invalid draw.
+
+Validation:
+- Forbidden scatter-domain scan found no `EnableKeyword`, `DisableKeyword`, `enableInstancing`, `renderer.material`, `.materials`, shared `material.Set*`, `SetVectorArray`, `Debug.Log`, local private `NativeArray`, `H8Memory.Allocate/Release`, `Allocator.Persistent`, legacy `EventBus`, scene search, Unity `Update` methods, or `string.Format`.
+- `git diff --check` reported only LF-to-CRLF warnings for touched files.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1` was externally unstable: one probe succeeded with four unrelated `ArchitectEyeVisualizer` CS0649 warnings, then later probes failed outside scatter in tether/physics contracts and finally `SargassumMicroFaunaBoids` missing `SaturateFinite01` at 9 callsites.
+- `dotnet build Assembly-CSharp.csproj --no-dependencies -m:1` remains dependency-blocked before scatter on 3 missing generated/plugin metadata DLLs under `Temp/bin/Debug`.
+
+## 2026-05-16 Continued Pass: Compute Constant NaN Vaccination
+
+What was wrong:
+- The compute shader rejected poisoned matrices and bounds, but packed scalar constants still used direct `max` before uint casts and threshold math.
+- A NaN instance count, frame index, max distance, motion strength, or crossfade scalar should not depend on backend-specific clamp behavior.
+
+What was done:
+- Added `SanitizeNonNegative` in `GpuScatterLodCull.compute`.
+- Routed instance count, frame index, max distance squared, motion strength, and crossfade scalar through finite-checked resolvers.
+- Preserved 64-thread `numthreads`; no groupshared or wave-specific path was added.
+
+Cinematic cheats used:
+- None added. This pass is GPU fault containment.
+
+Exact Microseconds saved:
+- No measured microseconds claimed.
+- Added scalar finite checks in the compute kernel; exact GPU cost is PENDING PROFILER.
+- Fault value now fails closed before append/cast/motion-vector corruption.
+
+Validation:
+- Symbol scan confirmed `SanitizeNonNegative`, `ResolveMaxDistanceSq`, `ResolveMotionStrength`, and `ResolveCrossfadeEnabled` use.
+- Shader scan found no groupshared barriers, wave intrinsics, or group-memory barriers.
+- Forbidden scatter-domain scan stayed clean.
+- `git diff --check` reported only LF-to-CRLF warnings for touched files.
+
+## 2026-05-16 Continued Pass: Shared-Material Revalidation
+
+What was wrong:
+- Material variant validation cached the previous valid result and could miss a shared-material keyword mutation made by another renderer.
+- That could let an invalid `HECTON_GPU_INDIRECT` or quality variant reach cull/draw after one valid frame.
+
+What was done:
+- Removed the early-return keyword cache from `IsRenderMaterialVariantValid`.
+- The renderer now re-reads `HECTON_GPU_INDIRECT`, `_QUALITY_HIGH`, and `_QUALITY_MX350` every validation pass before cull dispatch.
+- Cache fields remain only as last-observed telemetry for `BlackBoxFlagInvalidMaterialVariant`.
+
+Cinematic cheats used:
+- None added. This is render-state fault containment.
+
+Exact Microseconds saved:
+- No measured microseconds claimed.
+- Added three material keyword checks per validation pass; exact CPU cost is PENDING PROFILER.
+- Invalid variants still fail before compute dispatch and draw.
+
+Validation:
+- Forbidden scatter-domain scan found no shared-material mutation, legacy events, local private `NativeArray`, direct `H8Memory.Allocate/Release`, Unity `Update` methods, `Debug.Log`, or `string.Format`.
+- `git diff --check` reported only LF-to-CRLF warnings for touched files.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1` remains dependency-blocked outside scatter with 41 UI/core errors in `DiegeticGyroCompassRuntime`/`CompassStateDTO`, `ArchitectEyeVisualizer`, and `SystemDispatcher`.
+- `dotnet build Assembly-CSharp.csproj --no-dependencies -m:1` remains dependency-blocked before scatter on missing `Assembly-CSharp-firstpass.dll` and `RealtimeCSG.dll`.
+
+## 2026-05-16 Continued Pass: Companion Pass NaN Vaccination
+
+What was wrong:
+- Depth, shadow, and motion-vector vegetation passes still used raw optional VFX radius/speed lanes.
+- NaN player enable flags or radii can bypass `<=` checks and poison radius-squared division or `smoothstep` thresholds.
+- The lit pass had the same risk in submarine wash, interaction, impact, predator dim, and flash radius lanes.
+
+What was done:
+- Added `SanitizeNonNegativeFinite` and `SanitizePositiveFinite` to the lit, depth, shadow, and motion-vector vegetation passes.
+- Guarded player interaction enable/radius/speed/push.
+- Guarded interaction point speed/radius and impact radius.
+- Guarded submarine wash radius/speed, predator dim radius, and flash radius in the lit pass.
+
+Cinematic cheats used:
+- Kept cheap current/interaction deformation; invalid optional VFX lanes now collapse to zero/fallback instead of disabling the visual feature globally.
+
+Exact Microseconds saved:
+- No measured microseconds claimed.
+- Added scalar finite checks on optional interaction/wash branches; exact GPU cost is PENDING PROFILER.
+- Fault path prevents NaN propagation into depth, shadow, and motion-vector outputs.
+
+Validation:
+- Shader scans found no raw player enable comparisons and no unsanitized radius max patterns except the already-sanitized predator dim expression.
+- Shader scans found no groupshared memory, wave intrinsics, or group-memory barriers.
+- Forbidden scatter-domain C# scan stayed clean.
+- `git diff --check` reported only LF-to-CRLF warnings for touched files.

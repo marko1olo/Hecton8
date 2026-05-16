@@ -238,7 +238,7 @@ What was wrong:
 
 What was done:
 - Updated the fallback runtime GameObject comment to include `GameObject[1]`, reason, and owner.
-- Verified the LUT scratch byte-array comment already uses capacity/reason/owner form with ASCII separators; no codegen-relevant change was kept there.
+- Verified the LUT scratch byte-array comment already uses canonical capacity/reason/owner form with ASCII separators; no source change was needed there.
 
 Cinematic cheats used:
 - None. Documentation hygiene only.
@@ -248,3 +248,421 @@ Exact microseconds saved:
 
 Verification:
 - Touched-file COLD ALLOC comments now use the mandated owner/capacity shape.
+
+## 2026-05-16 Loop 18 - Partial Core C# Validation
+
+What was wrong:
+- Full Unity shader/player validation remains blocked by the recorded project compile/stall state.
+
+What was done:
+- Ran `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`.
+- Captured output in `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_latest.log`.
+- Re-ran after the shared-include reciprocal patch and captured `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop20_shared_include.log`.
+
+Cinematic cheats used:
+- None. Validation only.
+
+Exact microseconds saved:
+- 0 us. Validation only.
+
+Verification:
+- `Hecton8.Core` build succeeded with 0 warnings and 0 errors.
+- `Build_UBER_NOIR_INTEGRATOR_core_loop20_shared_include.log` ended with `EXIT=0`.
+- This does not prove Unity shader import, Vulkan, DX12, material consolidation, or player build readiness.
+
+## 2026-05-16 Loop 19 - Shared Include NaN Audit
+
+What was wrong:
+- The UberNoir include chain still had raw `rcp` calls in `Hecton_WaterExtinction.hlsl` and `Post/Hecton_SnellRefractionCore.hlsl`.
+- Denominators were clamped, but the audit surface was inconsistent with the safe-helper rule used in the Uber shader.
+
+What was done:
+- Added `H8WaterExtinctionSafeRcp` and routed turbidity/depth normalization through it.
+- Added `HectonSnellSafeRcp` and reused one inverse-glass-IOR value for eta and exit contrast.
+
+Cinematic cheats used:
+- Beer-Lambert LUT and Snell refraction remain the same visual fakes; only safe-math plumbing changed.
+
+Exact microseconds saved:
+- None claimed. This is NaN vaccination/auditability work.
+
+Verification:
+- Raw `rcp`, `rsqrt`, and `pow` now appear only inside safe helper implementations across `Hecton8_UberNoir.hlsl`, `Hecton_WaterExtinction.hlsl`, and `Hecton_SnellRefractionCore.hlsl`.
+- Both edited include files have balanced braces and preprocessor guards.
+- Core C# build revalidation passed in `Build_UBER_NOIR_INTEGRATOR_core_loop20_shared_include.log`; shader import/player validation was not run.
+
+## 2026-05-16 Loop 20 - Low-Memory LUT I/O Shed
+
+What was wrong:
+- `LutArrayResolver` always attempted to resolve and stream the 32 MB packed water-extinction matrix before gameplay.
+- Toaster/mobile-class devices already have the analytical Beer-Lambert fallback in UberNoir and should not pay that startup I/O/texture residency by default.
+
+What was done:
+- Added a player-only low graphics-memory gate at `<=2048 MB`.
+- On gated devices, fallback globals remain published and the resolver skips path probing, StreamingAssets URI staging, cache writes, texture allocation, and file reads.
+- Editor and higher-memory devices still keep the packed LUT path for validation and High/Ultra water response.
+
+Cinematic cheats used:
+- Dear Lie Beer-Lambert fallback replaces the packed extinction matrix on low-memory devices.
+
+Exact microseconds saved:
+- None measured. Static saving on gated devices is the 32 MB matrix stream plus 4096x4096 RHalf texture allocation/residency.
+
+Verification:
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` succeeded with 0 warnings and 0 errors after this patch.
+- Unity shader/player validation remains blocked by unrelated project state.
+
+## 2026-05-16 Loop 21 - Android/Quest LUT Bootstrap Bypass
+
+What was wrong:
+- The low-memory LUT gate did not cover Android/Quest builds that report graphics memory above 2048 MB.
+- Those builds could still enter synchronous StreamingAssets URI staging and block before scene load on a 32 MB matrix transfer.
+
+What was done:
+- Added a player-only `UNITY_ANDROID || UNITY_VISIONOS` analytical-fallback gate in `LutArrayResolver`.
+- Updated the gated diagnostic text to describe portable or low-memory targets rather than memory only.
+- Desktop high-memory and Editor paths still keep the packed LUT for High/Ultra water response.
+
+Cinematic cheats used:
+- Dear Lie Beer-Lambert fallback replaces the packed extinction matrix on mobile/portable player builds.
+
+Exact microseconds saved:
+- None measured. Static avoided work on gated targets is URI staging wait, temporary cache write, 32 MB matrix stream, and 4096x4096 texture allocation/residency.
+
+Verification:
+- `git diff --check` passed for the touched shader/include/C# files, with only existing line-ending warnings.
+- First `Hecton8.Core` build attempt failed in unrelated `ArchitectEyeVisualizer` missing-method symbols during concurrent workspace changes.
+- Immediate retry passed with 0 warnings and 0 errors in `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop21_retry.log`.
+- Unity shader import, Vulkan, DX12, and material consolidation remain blocked/pending; no Master Grade claim.
+
+## 2026-05-16 Loop 22 - Fragment Branch Intent and Domain Inquisition
+
+What was wrong:
+- Two retained fragment branches were legitimate texture-work gates but did not explicitly tell the compiler they should branch.
+- The domain needed another cross-platform static sweep after the mobile LUT patch.
+
+What was done:
+- Added `[branch]` to the POM-disabled return in `Hecton8_UberNoir.hlsl`.
+- Added `[branch]` to the inactive extinction-LUT return in `Hecton_WaterExtinction.hlsl`.
+- Re-scanned `Assets/_Project/Scripts/Rendering` for non-packed structs, local native allocation markers, standard Unity update loops, managed event/delegate drift, and string formatting.
+- Parsed all compute shader `numthreads` declarations under `Assets/_Project/Art/Shaders`.
+
+Cinematic cheats used:
+- Retained branch-gated Dear Lie paths instead of branchless fake disables that still spend texture bandwidth.
+
+Exact microseconds saved:
+- None measured. Static avoided work remains up to 16 POM height taps and three packed extinction LUT loads on disabled paths.
+
+Verification:
+- `git diff --check` passed for the touched shader files, with only line-ending warnings.
+- `Hecton8_UberNoir.hlsl` and `Hecton_WaterExtinction.hlsl` both report `brace_delta=0` and `pp_delta=0`.
+- Raw `rcp`, `rsqrt`, and `pow` remain confined to safe helper implementations across the UberNoir include chain.
+- Rendering C# scan found no non-`Pack=1` `StructLayout`, no `Update`/`LateUpdate`/`FixedUpdate`, and no `string.Format`.
+- Compute thread-group parse found max product 512, below Metal's 1024 thread-group limit.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` passed with 0 warnings and 0 errors in `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop22_final.log`.
+- Unity shader import/player validation remains pending.
+
+## 2026-05-16 Loop 23 - Unity Batch Validation Refresh
+
+What was wrong:
+- Unity shader/material validation had not been reattempted after the C# core slice passed.
+- Task 18 still cannot be closed as Vulkan/DX12 verified without Unity import/build proof.
+
+What was done:
+- Ran Unity 6000.4.1f1 batch mode with `Hecton8.Rendering.Editor.HectonUberNoirMaterialConsolidator.ConsolidateProjectMaterials`.
+- Captured the log in `Docs/AgentLogs/Unity_UBER_NOIR_INTEGRATOR_loop23.log`.
+- Searched the log for UberNoir shader/runtime diagnostics and checked for the consolidation report.
+- Confirmed no Unity process remained running after the failed batch.
+
+Cinematic cheats used:
+- None. Validation only.
+
+Exact microseconds saved:
+- 0 us. Validation only.
+
+Verification:
+- Unity exited with compile errors before material conversion/shader import.
+- Blocking diagnostics are outside this Rendering/URP prompt: `ModuloSimulationBucketer.cs`, `BurstTokenBucketJobAdmissionService.cs`, `AudioVirtualizationJobs.cs`, and legacy Editor tools with missing cross-assembly types.
+- No `Hecton8_UberNoir`, `Hecton_WaterExtinction`, `LutArrayResolver`, or Snell shader/runtime diagnostics were found in the Unity log.
+- `Docs/AgentLogs/UberNoirMaterialConsolidationReport.md` was not produced.
+- Task 18 remains blocked; no Master Grade or Vulkan/DX12 success claim.
+
+## 2026-05-16 Loop 24 - Blackbox Ownership and Low-Tier Variant Debt
+
+What was wrong:
+- `HectonUberNoirRuntimeBridge` fault dumps wrote an extra `Dump_EXTINCTION_LUT_SAMPLER.bin`, which is cross-agent evidence contamination.
+- `Hecton8_UberNoir.shader` still compiled `_SCREEN_SPACE_OCCLUSION` variants despite no UberNoir SSAO consumption and project policy forbidding URP SSAO.
+- `_MATH_LOD_LOW` and mobile shader targets still saw the shared `_ExtinctionLUT` declaration in the water-extinction include, even though low/mobile now rely on analytical Beer-Lambert.
+
+What was done:
+- Removed the extra cross-agent dump file path; this agent now writes only `Dump_UBER_NOIR_INTEGRATOR.bin`.
+- Removed the dead `_SCREEN_SPACE_OCCLUSION` `multi_compile` from ForwardLit and added it to `skip_variants`.
+- Wrapped `_ExtinctionLUT` declaration and packed-load path behind `H8_WATER_EXTINCTION_LUT_ENABLED`, which is absent on `_MATH_LOD_LOW` and `SHADER_API_MOBILE`.
+
+Cinematic cheats used:
+- Low/mobile tiers keep the deterministic analytical Beer-Lambert fog fake instead of carrying the packed LUT descriptor.
+
+Exact microseconds saved:
+- None measured. Static savings: one duplicate fault-path file write removed, one dead ForwardLit binary keyword dimension removed, and low-tier extinction LUT binding/load surface compiled out.
+
+Verification:
+- Braces and preprocessor deltas are zero for `Hecton_WaterExtinction.hlsl`, `Hecton8_UberNoir.hlsl`, and `Hecton8_UberNoir.shader`.
+- `git diff --check` passed for the touched files, with line-ending warnings only.
+- Raw `rcp`, `rsqrt`, and `pow` remain confined to named safe helper implementations.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` is blocked in `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop24.log` by unrelated Physics/Tether/Bootstrap/PlayerTool/Determinism/Core signal errors. No rendering/UberNoir diagnostics were emitted.
+- Unity shader import, Vulkan, DX12, and material consolidation remain blocked by the external compile wall. No Master Grade claim.
+
+## 2026-05-16 Loop 25 - Fixed Blackbox Window and Deck I/O Gate
+
+What was wrong:
+- The UberNoir fault dump writer used `ring.Length`, not the mandated 300-frame active telemetry window. An oversized DataVault buffer would dump spare capacity instead of the strict blackbox contract.
+- Steam Deck-like hardware could still load the 32 MB extinction matrix when reported graphics memory was above the old 2048 MB fallback threshold.
+- Two inactive-LUT exits in `Hecton_WaterExtinction.hlsl` still lacked explicit `[branch]` intent.
+
+What was done:
+- Capped `WriteBlackBoxFile` to `TelemetryCapacity` and wrapped the exported cursor inside that active 300-entry window.
+- Treat undersized telemetry resolves as unavailable and write the existing reason-coded empty dump header instead of partial binary evidence.
+- Routed `LutArrayResolver.ShouldUseAnalyticalFallbackOnly()` through `HardwareTierDetector.IsSteamDeckLike`, preserving the high-fidelity desktop path while forcing Steam Deck-like players to analytical Beer-Lambert fallback.
+- Added `[branch]` on both remaining inactive-LUT early-outs in the water-extinction resolver path.
+
+Cinematic cheats used:
+- Steam Deck keeps deterministic analytical Beer-Lambert fog rather than reading and resident-binding the packed LUT.
+
+Exact microseconds saved:
+- None measured. Static savings on Deck-like players: no 32 MB matrix read, no URI staging/cache write, and no 4096x4096 texture allocation. Fault-path binary dump remains bounded to the single 300-entry UberNoir blackbox.
+
+Verification:
+- `Hecton_WaterExtinction.hlsl`, `Hecton8_UberNoir.hlsl`, and `Hecton8_UberNoir.shader` report `brace_delta=0` and `pp_delta=0` with a preprocessor scanner that counts `#if/#ifdef/#ifndef`.
+- Raw `rcp`, `rsqrt`, and `pow` are still confined to named safe helper bodies across the UberNoir include chain.
+- Static Rendering-domain scan still shows only `Pack=1` `StructLayout` hits and no `Update`/`LateUpdate`/`FixedUpdate` or `string.Format` in `Assets/_Project/Scripts/Rendering`.
+- `git diff --check` passed on the touched shader/runtime/docs files, with line-ending warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` failed in `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop25.log` with 40 unrelated errors in `UI/Navigation/DiegeticGyroCompassRuntime.cs` and `World/EcosystemDirector.cs`; no UberNoir/Rendering diagnostics were emitted.
+- Unity shader import, Vulkan, DX12, and material consolidation remain blocked by the external compile wall. No Master Grade claim.
+
+## 2026-05-16 Loop 26 - Construction Material Projection Coverage
+
+What was wrong:
+- `HectonUberNoirMaterialConsolidator` only recognized `Hecton_DryZoneLit`, so construction seep and wet-glass materials stayed on separate shader families.
+- `Mat_LeakWetSheen` points at third-party `Triplebrick/Glass`, which carries five passes and legacy `tex2D`/Amplify output debt.
+- No converted material path was setting the UberNoir local refraction or textured-caustic shader keywords.
+
+What was done:
+- Expanded the consolidator to recognize `Hecton8/Environment/Hecton_DryZoneLit`, `HECTON/Environment/RuinSeepSheen`, and `Triplebrick/Glass`.
+- Added source-specific projection for base/mask/normal textures, tint, opacity, wet smoothness, rust/salt wear, dither alpha, caustic vectors, and screen-space refraction vectors.
+- Added keyword writes for `H8_UBERNOIR_CAUSTICS_TEXTURED` and `H8_UBERNOIR_SCREEN_REFRACTION`, and enabled instancing on converted construction materials.
+- Kept material mutation in Unity Editor API code; no raw `.mat` YAML was edited.
+
+Cinematic cheats used:
+- Ruin seep and wet-glass surfaces become UberNoir dither/refraction fakes instead of separate transparent shader stacks.
+- High/Ultra gets Snell screen refraction and chromatic taps through the existing guarded UberNoir path; low tier keeps the compiled-out refraction path and cutout/dither fallback.
+
+Exact microseconds saved:
+- None measured. Static target: 5 DryZone materials plus `Mat_RuinSeepSheen` and `Mat_LeakWetSheen` move into one UberNoir material family when Unity compile allows the converter to run. The wet-glass source is a five-pass shader; exact SetPass and GPU savings require Unity material conversion plus Frame Debugger proof.
+
+Verification:
+- `git diff --check` passed on touched rendering files with line-ending warnings only.
+- Direct Roslyn syntax compile of `Assets/_Project/Scripts/Rendering/Editor/HectonUberNoirMaterialConsolidator.cs` passed with `EXIT=0` in `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_material_consolidator_roslyn_refs2_loop26.log`.
+- `dotnet build .\Assembly-CSharp-Editor.csproj` remains blocked by missing RealtimeCSG source files; no `HectonUberNoirMaterialConsolidator` diagnostic was emitted before the dependency failure.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` remains blocked by unrelated `PhysicsApplySystem.cs` errors in `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop26.log`; no UberNoir/Rendering diagnostics were emitted.
+- Unity shader import, Vulkan, DX12, and actual material conversion remain blocked by the external compile wall. No Master Grade claim.
+
+## 2026-05-16 Loop 27 - Tool Decay Shader Family Eviction
+
+What was wrong:
+- Twelve tool placeholder materials still point to `Hecton8/Tools/DecayLit`.
+- `ToolDecayLit` has two passes, but it duplicates wear/rust/POM-style surface work outside the UberNoir shader family.
+
+What was done:
+- Added `Hecton8/Tools/DecayLit` as a supported source shader in `HectonUberNoirMaterialConsolidator`.
+- Added `Assets/_Project/Art/Materials/Tools` to the Editor conversion roots.
+- Added `ToolDecaySurface` projection: POM/rust stays enabled, caustics stay enabled, hull bending and refraction stay disabled, and opaque tool materials avoid blue-noise dither.
+- No tool gameplay code and no raw `.mat` YAML were touched.
+
+Cinematic cheats used:
+- Tool rust/wear is projected into UberNoir's existing salt-crust/POM path instead of preserving a second tool-only decay shader.
+
+Exact microseconds saved:
+- None measured. Static target: 12 tool placeholder materials can move from `ToolDecayLit` to the UberNoir material family once Unity compile allows the converter to run. Runtime SetPass/GPU proof remains blocked.
+
+Verification:
+- Direct Roslyn syntax compile of `HectonUberNoirMaterialConsolidator.cs` passed with `EXIT=0` in `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_material_consolidator_roslyn_refs3_loop27.log`.
+- `git diff --check` and brace balance passed for the touched consolidator source.
+- Full Unity/editor/player validation remains blocked by unrelated compile failures already logged in Loop 26. No Master Grade claim.
+
+## 2026-05-16 Loop 28 - URP Lit Placeholder Gate
+
+What was wrong:
+- Package `Universal Render Pipeline/Lit` was still present inside the construction material root.
+- Static GUID resolution found 9 construction materials on URP Lit: 7 opaque `Mat_ToolTrial_*` placeholders and 2 transparent build ghosts.
+- Bulk conversion would have corrupted the transparent build-preview materials because UberNoir is opaque/dithered, not alpha-blended preview glass.
+
+What was done:
+- Added `Universal Render Pipeline/Lit` as a supported source shader in the Editor consolidator.
+- Added `UrpLitOpaqueConstructionSurface` projection for opaque construction placeholders only.
+- Added an opacity/render-queue guard that skips and reports transparent URP Lit build ghosts.
+- Kept terrain, flora, VFX, sky, water, and world-support URP Lit materials out of scope.
+
+Cinematic cheats used:
+- Opaque construction placeholders inherit UberNoir salt-crust, rust POM, analytical noir fog, and caustic response instead of staying on package Lit.
+- Transparent build ghosts remain on their preview path because their alpha-blended feedback is a UI/construction authoring signal, not a hard-surface noir material.
+
+Exact microseconds saved:
+- None measured. Static target: 7 additional opaque construction placeholders can move from package URP Lit to UberNoir once Unity compile allows the converter to run. Runtime SetPass/GPU proof remains blocked.
+
+Verification:
+- Direct Roslyn syntax compile of `HectonUberNoirMaterialConsolidator.cs` passed with `EXIT=0` in `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_material_consolidator_roslyn_refs7_loop28.log`.
+- `git diff --check` passed for the touched consolidator source with line-ending warnings only.
+- Brace balance for the consolidator reports `Delta=0`.
+- Rendering-domain scan still shows no `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, or `new NativeArray` in `Assets/_Project/Scripts/Rendering`; remaining `StructLayout` hits are `Pack=1`.
+- Full Unity/material conversion/Vulkan/DX12 validation remains blocked by unrelated project compile state. No Master Grade claim.
+
+## 2026-05-16 Loop 29 - URP Lit Alpha Guard
+
+What was wrong:
+- The URP Lit conversion guard did not inspect serialized color alpha.
+- A future semitransparent package Lit material could pass queue/surface checks and then be converted into UberNoir dither behavior by accident.
+
+What was done:
+- Added `HasOpaqueColorAlpha()` to require `_BaseColor`/`_Color` alpha >= 0.995 before URP Lit materials are eligible.
+- Rechecked construction material YAML: all 7 `Mat_ToolTrial_*` candidates are alpha 1, queue -1, RenderType Opaque; both `Mat_BuildGhost_*` materials are alpha 0.32, queue 3000, RenderType Transparent.
+
+Cinematic cheats used:
+- None new. This is a migration safety guard so explicit wet-glass/seep projections keep ownership of semitransparent/refraction fakes.
+
+Exact microseconds saved:
+- None measured. Runtime savings are unchanged; the value is preventing wrong material migration.
+
+Verification:
+- Direct Roslyn syntax compile of `HectonUberNoirMaterialConsolidator.cs` passed with `EXIT=0` in `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_material_consolidator_roslyn_refs8_loop29.log`.
+- Static YAML audit confirms the 7/2 opaque-versus-transparent split in the construction URP Lit set.
+- Brace balance remains `Delta=0`; `git diff --check` passes with line-ending warnings only.
+
+## 2026-05-16 Loop 30 - Visor Refraction Boundary Audit
+
+What was wrong:
+- `Mat_Visor_Glass` still uses `NASAPunk/SuitVisor`, so Task 09 needed explicit proof that visor-glass refraction is covered without forcing it through UberNoir.
+
+What was done:
+- Resolved the SuitVisor GUID and found `Mat_Visor_Glass` is the only material using it.
+- Audited `SuitVisor.shader`: 2 passes, 0 `GrabPass`, includes `Hecton_SnellRefractionCore.hlsl`, and samples `_CameraOpaqueTexture`.
+- Recorded the shader as a visor/HUD boundary exception rather than a hard-surface material-consolidation target.
+
+Cinematic cheats used:
+- Existing visor path already uses screen-space Snell refraction through `_CameraOpaqueTexture`; no `GrabPass` is present.
+
+Exact microseconds saved:
+- None measured. This loop prevents a bad conversion, not a runtime optimization.
+
+Verification:
+- Static scan found 1 material using SuitVisor GUID: `Assets/_Project/Art/Materials/Mat_Visor_Glass.mat`.
+- Static scan found 2 `Pass` blocks, 0 `GrabPass`, 6 `_CameraOpaqueTexture` references, and 9 raw guarded `rcp` calls in `SuitVisor.shader`.
+- No SuitVisor source was edited; reciprocal cleanup remains Visor-domain work.
+
+## 2026-05-16 Loop 31 - Multiplatform and Data Sovereignty Audit
+
+What was wrong:
+- The disk status needed a fresh evidence pass for Quest/Android alignment, Metal-safe shader syntax, Steam Deck I/O pressure, and GlobalDataVault ownership after material consolidation grew beyond DryZone.
+- Task 06 status still referenced the old `H8UberNoirBeerLambertFallback` helper even though fog fallback ownership now lives in `Hecton_WaterExtinction.hlsl`.
+
+What was done:
+- Corrected Task 06 status to name `H8WaterExtinctionResolveRgbByWorld` as the current Beer-Lambert/LUT resolver.
+- Re-scanned the UberNoir shader chain for `GrabPass`, `tex2D`, `sampler2D`, DirectX-only macros, UAVs, and compute thread groups; none were found.
+- Re-scanned `Assets/_Project/Scripts/Rendering` for `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, local `new NativeArray`, and non-`Pack=1` structs; no UberNoir-owned violation was found.
+- Rebuilt the material inventory for converter roots: 5 DryZone, 1 RuinSeep, 1 wet-glass, 12 ToolDecay, 7 opaque URP Lit placeholders, and 2 transparent URP Lit build ghosts skipped by design.
+
+Cinematic cheats used:
+- No new visual code. The audit confirms existing Dear Lie paths: analytical Beer-Lambert on low/mobile/Deck, texture-work shedding for POM/caustics/refraction/dither, and screen-space Snell instead of `GrabPass`.
+
+Exact microseconds saved:
+- None measured. Static savings already logged remain: low/mobile variants avoid the extinction LUT descriptor/loads, Deck-like players skip the 32 MB matrix path, and stress/low gates skip POM and optional texture taps.
+
+Verification:
+- `rg` scan over `Hecton8_UberNoir.shader`, `Hecton8_UberNoir.hlsl`, `Hecton_WaterExtinction.hlsl`, `Hecton_SnellRefractionCore.hlsl`, and Rendering C# found no forbidden shader portability tokens in the UberNoir chain.
+- Rendering C# scan found only `StructLayout(... Pack = 1 ...)` entries for layout-sensitive structs and no local `new NativeArray`.
+- Full Unity shader import, material conversion, Vulkan, and DX12 validation remain blocked by unrelated project compile state. No Master Grade claim.
+
+## 2026-05-16 Loop 32 - Core Compile Wall Refresh
+
+What was wrong:
+- Runtime/player proof was still blocked, so the current Core build state needed fresh evidence after the audit.
+
+What was done:
+- Ran `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` and captured `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop31_refresh.log`.
+- The build failed before Rendering with six missing Core contract symbols in `Assets/_Project/Scripts/Core/Contracts/HectonContractValidator.cs`: `HectonPlatformContract`, `HectonDataSovereigntyContract`, and `HectonVisualOverkillContract`.
+- Log search found no UberNoir, `LutArrayResolver`, `HectonShaderGlobalDataVaultBridge`, or Rendering diagnostics.
+
+Cinematic cheats used:
+- None. This was validation boundary work.
+
+Exact microseconds saved:
+- None. Compile validation remains blocked.
+
+Verification:
+- Build log ends with `EXIT=1`.
+- `Get-CimInstance Win32_Process` showed remaining `dotnet` processes are separate concurrent build commands (`Assembly-CSharp.csproj`, `Hecton8.Core.csproj` with different flags, and `Hecton8.Editor.csproj`), so this task did not terminate them.
+- Full Unity shader import, material conversion, Vulkan, and DX12 validation remain blocked by the Core contract compile wall. No Master Grade claim.
+
+## 2026-05-16 Loop 33 - Blackbox Single-Owner Repair
+
+What was wrong:
+- `HectonUberNoirRuntimeBridge` still wrote `Dump_EXTINCTION_LUT_SAMPLER.bin` in full and empty fault-dump paths.
+- That contradicted the single-owner blackbox rationale and could create false crash evidence for another domain.
+- The telemetry handle path could call `GetBufferHandle` while the DataVault allocation lock was active.
+
+What was done:
+- Removed the cross-agent dump filename constant and duplicate writes.
+- Fault dumps now target only `Docs/AgentLogs/Dump_UBER_NOIR_INTEGRATOR.bin`.
+- `EnsureTelemetryBuffer()` now tries `TryGetBufferHandle(BufferID.ShaderFeatureTelemetryRing, ...)` before allocating, and returns false while `vault.IsAllocationLocked` is true instead of forcing a grow/allocation attempt.
+
+Cinematic cheats used:
+- None. This is stability and data-sovereignty repair.
+
+Exact microseconds saved:
+- None measured. Fault path writes one binary file instead of two; hot path adds only an existing-handle probe when the cached handle is invalid.
+
+Verification:
+- Static scan confirms no `Dump_EXTINCTION_LUT_SAMPLER` or `ExtinctionDumpFileName` remains in `HectonUberNoirRuntimeBridge.cs`.
+- Static scan confirms `IntegratorDumpFileName` is the only dump filename in the bridge.
+- Brace balance for `HectonUberNoirRuntimeBridge.cs` is `Delta=0`.
+
+## 2026-05-16 Loop 34 - Post-Repair Core Compile Refresh
+
+What was wrong:
+- Runtime C# changed in the blackbox bridge, so a fresh Core build attempt was needed to separate Rendering failures from external compile-wall failures.
+
+What was done:
+- Ran `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` and captured `Docs/AgentLogs/Build_UBER_NOIR_INTEGRATOR_core_loop33_blackbox.log`.
+- The build failed before Rendering with 14 missing helper-symbol errors in `Assets/_Project/Scripts/World/EcosystemDirector.cs`.
+- The build also reports duplicate source-file warnings for the Core contract files, but no touched Rendering file diagnostics.
+
+Cinematic cheats used:
+- None. This was validation boundary work.
+
+Exact microseconds saved:
+- None. Compile validation remains blocked.
+
+Verification:
+- Build log ends with `EXIT=1`.
+- Log search found no `HectonUberNoir`, `LutArrayResolver`, `HectonShaderGlobalDataVaultBridge`, or Rendering diagnostics.
+- Full Unity shader import, material conversion, Vulkan, and DX12 validation remain blocked by unrelated Ecosystem/Core compile state. No Master Grade claim.
+
+## 2026-05-16 Loop 35 - Extinction Active-Flag Hoist
+
+What was wrong:
+- Packed extinction resolve checked `H8WaterExtinctionActive()` before leaving analytical fallback, then each RGB channel sample checked the same flag again.
+
+What was done:
+- Added `H8WaterExtinctionSamplePackedActive()` and `H8WaterExtinctionSampleRgbActive()`.
+- `H8WaterExtinctionResolveRgbByWorld()` and `H8WaterExtinctionResolveRgbByDepthMeters()` now perform one active early-out, then pass the active scalar through the RGB sample path.
+- Public direct sample helpers keep a single active early-out so future direct callers still avoid LUT loads when fallback is active.
+
+Cinematic cheats used:
+- No new effect. This keeps the Dear Lie analytical fallback intact while trimming redundant control work from the High/Ultra packed LUT path.
+
+Exact microseconds saved:
+- None measured. Static saving is three redundant active checks removed per active RGB LUT resolve.
+
+Verification:
+- `Hecton_WaterExtinction.hlsl` brace and preprocessor deltas are zero.
+- `git diff --check` passes for `Hecton_WaterExtinction.hlsl` with line-ending warning only.
+- Project scan shows no external caller uses the direct `H8WaterExtinctionSampleRgbByWorld`, `H8WaterExtinctionSampleRgbByDepthMeters`, or `H8WaterExtinctionSamplePacked` helpers outside the water-extinction include.
