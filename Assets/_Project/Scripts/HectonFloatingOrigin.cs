@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Hecton8.Bootstrap;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.Physics;
@@ -73,8 +73,6 @@ namespace Hecton8.Core
             public bool Initialized;
         }
 
-        private static readonly int _HectonFloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
-        private static readonly int _TotalUniverseOffsetId = Shader.PropertyToID("_TotalUniverseOffset");
         private static readonly int _AupJitterMaskId = Shader.PropertyToID("_AupJitterMask");
         private const int OriginShiftListenerCapacity = 128;
         private static readonly RegistryBucket<IOriginShiftListener> _originShiftListeners = new RegistryBucket<IOriginShiftListener>(OriginShiftListenerCapacity);
@@ -279,9 +277,7 @@ namespace Hecton8.Core
         {
             _lastShiftEvent = default;
             _originShiftListeners.Clear();
-            Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, Vector4.zero);
-            Shader.SetGlobalVector(_TotalUniverseOffsetId, Vector4.zero);
-            Shader.SetGlobalFloat(_AupJitterMaskId, 0f);
+            HectonShaderGlobalDataVaultBridge.ResetAupShaderGlobals();
             HectonXRRuntimeState.ResetShaderGlobals();
         }
 
@@ -1570,9 +1566,7 @@ namespace Hecton8.Core
         private void PublishGlobalOffsets()
         {
             Vector4 offset = new Vector4(TotalOffset.x, TotalOffset.y, TotalOffset.z, 0f);
-            Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, offset);
-            Shader.SetGlobalVector(_TotalUniverseOffsetId, offset);
-            Shader.SetGlobalFloat(_AupJitterMaskId, ResolveAupJitterMask());
+            HectonShaderGlobalDataVaultBridge.PublishAupShaderGlobals(offset, ResolveAupShiftOffsetForCurrentFrame(), ResolveAupJitterMask());
             HectonXRRuntimeState.PublishOriginShiftState(_shiftSequence, ResolveFixedInterpolationAlpha());
         }
 
@@ -1585,10 +1579,17 @@ namespace Hecton8.Core
                 return;
             }
 
-            Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, Vector4.zero);
-            Shader.SetGlobalVector(_TotalUniverseOffsetId, Vector4.zero);
-            Shader.SetGlobalFloat(_AupJitterMaskId, 0f);
+            HectonShaderGlobalDataVaultBridge.ResetAupShaderGlobals();
             HectonXRRuntimeState.PublishOriginShiftState(0u, 0f);
+        }
+
+        private static Vector4 ResolveAupShiftOffsetForCurrentFrame()
+        {
+            if (_lastShiftEvent.Sequence == 0u || _lastShiftEvent.Frame != Time.frameCount)
+                return Vector4.zero;
+
+            Vector3 runtimeOffset = -_lastShiftEvent.ShiftOffset;
+            return new Vector4(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z, 0f);
         }
 
         private void ArmAupJitterMask(int frame)

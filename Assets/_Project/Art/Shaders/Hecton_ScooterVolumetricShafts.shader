@@ -18,6 +18,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+        #include "Hecton_WaterExtinction.hlsl"
 
         #define HECTON_MAX_SCOOTER_HEADLIGHTS 2
         #define HECTON_RECENT_CUT_HEAT_MAX 16
@@ -1090,6 +1091,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             if (_HectonShaftIntensity > 0.0001)
                 shafts = BilateralUpsampleShafts(screenUV, linearEyeDepth) * exposureMultiplier;
 
+            half3 extinctionColor = half3(1.0h, 1.0h, 1.0h);
             half3 biolumProjection = half3(0.0h, 0.0h, 0.0h);
             half3 lensGhosts = half3(0.0h, 0.0h, 0.0h);
             if (_HectonLensGhostIntensity > 0.0001)
@@ -1102,6 +1104,8 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             half3 acousticSonarOverlay = EvaluateAcousticSonarOverlay(screenUV, depthValid, scenePositionWS, rawDepth, linearEyeDepth) * exposureMultiplier;
             if (depthValid > 0.5)
             {
+                extinctionColor = H8WaterExtinctionSampleRgbByDepthMeters(linearEyeDepth, (half)_ExtinctionLUTRuntime.y);
+                shafts *= extinctionColor;
                 float3 normalWS = ApproximateWorldNormal(screenUV, scenePositionWS);
                 biolumProjection = EvaluateBiolumFloorProjection(screenUV, depthValid, scenePositionWS, linearEyeDepth, normalWS) * exposureMultiplier;
                 float headlightMask = EvaluateSurfaceHeadlightMask(scenePositionWS, normalWS);

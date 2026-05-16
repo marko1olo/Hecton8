@@ -1,4 +1,4 @@
-using Hecton8.AI.Ecology.Migration;
+using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;

@@ -1,7 +1,7 @@
 using Hecton8.Bootstrap;
 using Hecton8.AI;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Physics;

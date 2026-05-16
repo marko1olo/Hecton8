@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Data;
 using Hecton8.AI;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.World;
 using Unity.Burst;

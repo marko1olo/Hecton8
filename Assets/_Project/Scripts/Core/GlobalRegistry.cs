@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using Hecton.Localization;
+using Hecton8.Animation.Locomotion;
 using Hecton8.AtlasSignal;
 using Hecton8.Atmosphere;
 using Hecton8.Audio;
@@ -34,6 +35,7 @@ using Hecton8.Tools;
 using Hecton8.UI;
 using Hecton8.Visor;
 using Hecton8.VFX;
+using Hecton8.Vehicles.Automation;
 using Hecton8.World;
 using Unity.Collections;
 using UnityEngine;
@@ -97,7 +99,7 @@ namespace Hecton8.Core
         private static readonly long[] _requestedServiceSlotMask = new long[ServiceSlotMaskWordCount];
         // COLD ALLOC: long[4] - registered service-slot bitset for ghost-service detection - owner: GlobalRegistry
         private static readonly long[] _registeredServiceSlotMask = new long[ServiceSlotMaskWordCount];
-        // COLD ALLOC: string[168] - allocation-free ghost-service slot names; index matches GlobalRegistryServiceSlot numeric value - owner: GlobalRegistry
+        // COLD ALLOC: string[172] - allocation-free ghost-service slot names; index matches GlobalRegistryServiceSlot numeric value - owner: GlobalRegistry
         private static readonly string[] _serviceSlotNames =
         {
             nameof(GlobalRegistryServiceSlot.Input),
@@ -267,7 +269,11 @@ namespace Hecton8.Core
             nameof(GlobalRegistryServiceSlot.HardwareThermalService),
             nameof(GlobalRegistryServiceSlot.AudioVirtualization),
             nameof(GlobalRegistryServiceSlot.OutpostGenerationRuntime),
-            nameof(GlobalRegistryServiceSlot.PrologueSequenceRuntime)
+            nameof(GlobalRegistryServiceSlot.PrologueSequenceRuntime),
+            nameof(GlobalRegistryServiceSlot.DebrisComputeRuntime),
+            nameof(GlobalRegistryServiceSlot.ResolutionScalerService),
+            nameof(GlobalRegistryServiceSlot.AmbientBiotaRuntime),
+            nameof(GlobalRegistryServiceSlot.DockingAutopilotRuntime)
         };
         private static int _registryPhase = (int)RegistryPhase.Uninitialized;
         private static int _systemKillSwitchMask;
@@ -445,8 +451,11 @@ namespace Hecton8.Core
         private static ISubmarineState _submarineState;
         private static ISubmarineHullBreachReadModel _submarineHullBreach;
         private static IInertialNavigationService _inertialNavigation;
+        private static IDockingAutopilotService _dockingAutopilot;
         private static IInteractionSignalService _interactionSignals;
         private static IDebrisService _debris;
+        private static IDebrisComputeService _debrisCompute;
+        private static IAmbientBiotaService _ambientBiotaRuntime;
         private static IEcosystemDirectorService _ecosystemDirector;
         private static IFaunaSim _faunaSimulation;
         private static IThermodynamicsService _thermodynamicsService;
@@ -487,6 +496,7 @@ namespace Hecton8.Core
         private static CullingManager _cullingRuntime;
         private static LODSystemManager _lodSystemRuntime;
         private static DynamicResolutionScaler _dynamicResolutionRuntime;
+        private static IResolutionScalerService _resolutionScalerService;
         private static ImpostorSystem _impostorRuntime;
         private static DepthZoneDirector _depthZoneRuntime;
         private static HectonBiolumManager _biolumManagerRuntime;
@@ -570,6 +580,7 @@ namespace Hecton8.Core
         private static CrashTelemetryBuffer _crashTelemetryRuntime;
         private static PlayerCriticalProceduralAudioRenderer _playerCriticalAudioRuntime;
         private static ContextualPhysicalIkRuntime _contextualPhysicalIkRuntime;
+        private static ProceduralLadderClimbRuntime _proceduralLadderClimbRuntime;
         private static GameTickManager _tickManager;
         private static SystemDispatcher _dispatcher;
         private static RenderDispatcher _renderDispatcher;
@@ -980,6 +991,11 @@ namespace Hecton8.Core
         internal static ContextualPhysicalIkRuntime ContextualPhysicalIkRuntime => _contextualPhysicalIkRuntime;
 
         /// <summary>
+        /// Registry-owned procedural ladder climb IK runtime owner.
+        /// </summary>
+        internal static ProceduralLadderClimbRuntime ProceduralLadderClimbRuntime => _proceduralLadderClimbRuntime;
+
+        /// <summary>
         /// Registered scene service slot.
         /// </summary>
         public static ISceneService Scene => _scene;
@@ -1157,6 +1173,11 @@ namespace Hecton8.Core
         public static IInertialNavigationService InertialNavigation => _inertialNavigation;
 
         /// <summary>
+        /// Registered autonomous vehicle docking spline service slot.
+        /// </summary>
+        public static IDockingAutopilotService DockingAutopilot => _dockingAutopilot;
+
+        /// <summary>
         /// Registered interaction signal service slot.
         /// </summary>
         public static IInteractionSignalService InteractionSignals => _interactionSignals;
@@ -1165,6 +1186,16 @@ namespace Hecton8.Core
         /// Registered debris service slot.
         /// </summary>
         public static IDebrisService Debris => _debris;
+
+        /// <summary>
+        /// Registered GPU-resident debris shard service slot.
+        /// </summary>
+        public static IDebrisComputeService DebrisCompute => _debrisCompute;
+
+        /// <summary>
+        /// Registered GPU-resident ambient biota service slot.
+        /// </summary>
+        public static IAmbientBiotaService AmbientBiota => _ambientBiotaRuntime;
 
         /// <summary>
         /// Registered ecosystem sector simulation service slot.
@@ -1277,6 +1308,11 @@ namespace Hecton8.Core
         public static IProceduralSwayDirector ProceduralSwayDirector => _proceduralSwayDirectorRuntime;
 
         /// <summary>
+        /// Registered mathematical wake displacement service.
+        /// </summary>
+        public static IWakeDisplacementService WakeDisplacement => _proceduralSwayDirectorRuntime;
+
+        /// <summary>
         /// Registered encounter-direction service slot.
         /// </summary>
         public static IEncounterDirectorService EncounterDirector => _encounterDirector;
@@ -1360,6 +1396,11 @@ namespace Hecton8.Core
         /// Contract-facing dynamic-resolution runtime owner.
         /// </summary>
         public static IDynamicResolutionRuntime DynamicResolutionRuntime => _dynamicResolutionRuntime;
+
+        /// <summary>
+        /// Contract-facing STP render-scale policy service.
+        /// </summary>
+        public static IResolutionScalerService ResolutionScaler => _resolutionScalerService;
 
         /// <summary>
         /// Registered impostor runtime owner.
@@ -2128,8 +2169,11 @@ namespace Hecton8.Core
             _submarine = null;
             _submarineState = null;
             _submarineHullBreach = null;
+            _dockingAutopilot = null;
             _interactionSignals = null;
             _debris = null;
+            _debrisCompute = null;
+            _ambientBiotaRuntime = null;
             _ecosystemDirector = null;
             _faunaSimulation = null;
             _thermodynamicsService = null;
@@ -2168,6 +2212,7 @@ namespace Hecton8.Core
             _cullingRuntime = null;
             _lodSystemRuntime = null;
             _dynamicResolutionRuntime = null;
+            _resolutionScalerService = null;
             _impostorRuntime = null;
             _depthZoneRuntime = null;
             _biolumManagerRuntime = null;
@@ -2736,6 +2781,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative autonomous vehicle docking spline service.
+        /// </summary>
+        /// <param name="instance">Docking autopilot service instance.</param>
+        public static void RegisterDockingAutopilotService(IDockingAutopilotService instance)
+        {
+            RegisterService(ref _dockingAutopilot, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative interaction signal service.
         /// </summary>
         /// <param name="instance">Interaction signal service instance.</param>
@@ -2751,6 +2805,24 @@ namespace Hecton8.Core
         public static void RegisterDebrisService(IDebrisService instance)
         {
             RegisterService(ref _debris, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative GPU-resident debris shard service.
+        /// </summary>
+        /// <param name="instance">GPU debris service instance.</param>
+        public static void RegisterDebrisComputeService(IDebrisComputeService instance)
+        {
+            RegisterService(ref _debrisCompute, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative GPU-resident ambient biota service.
+        /// </summary>
+        /// <param name="instance">Ambient biota service instance.</param>
+        public static void RegisterAmbientBiotaRuntime(IAmbientBiotaService instance)
+        {
+            RegisterServiceAllowSameInstance(ref _ambientBiotaRuntime, instance);
         }
 
         /// <summary>
@@ -2942,6 +3014,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative mathematical wake displacement service.
+        /// </summary>
+        public static void RegisterWakeDisplacementService(IWakeDisplacementService instance)
+        {
+            if (instance is IProceduralSwayDirector proceduralSwayDirector)
+                RegisterProceduralSwayDirector(proceduralSwayDirector);
+        }
+
+        /// <summary>
         /// Registers the authoritative encounter-direction service.
         /// </summary>
         /// <param name="instance">Encounter-direction service instance.</param>
@@ -3102,6 +3183,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative STP render-scale policy service.
+        /// </summary>
+        public static void RegisterResolutionScalerService(IResolutionScalerService instance)
+        {
+            RegisterServiceAllowSameInstance(ref _resolutionScalerService, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative impostor runtime owner.
         /// </summary>
         public static void RegisterImpostorRuntime(ImpostorSystem instance)
@@ -3188,6 +3277,23 @@ namespace Hecton8.Core
         {
             if (instance == null || ReferenceEquals(_contextualPhysicalIkRuntime, instance))
                 _contextualPhysicalIkRuntime = null;
+        }
+
+        /// <summary>
+        /// Registers the authoritative procedural ladder climb IK runtime owner.
+        /// </summary>
+        internal static void RegisterProceduralLadderClimbRuntime(ProceduralLadderClimbRuntime instance)
+        {
+            RegisterServiceAllowSameInstance(ref _proceduralLadderClimbRuntime, instance);
+        }
+
+        /// <summary>
+        /// Clears the authoritative procedural ladder climb IK runtime owner.
+        /// </summary>
+        internal static void ClearProceduralLadderClimbRuntime(ProceduralLadderClimbRuntime instance)
+        {
+            if (instance == null || ReferenceEquals(_proceduralLadderClimbRuntime, instance))
+                _proceduralLadderClimbRuntime = null;
         }
 
         /// <summary>
@@ -4403,6 +4509,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current autonomous vehicle docking spline service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterDockingAutopilotService(IDockingAutopilotService instance)
+        {
+            UnregisterService(ref _dockingAutopilot, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current interaction signal service if the owner matches.
         /// </summary>
         /// <param name="instance">Service owner requesting unregistration.</param>
@@ -4418,6 +4533,24 @@ namespace Hecton8.Core
         public static void UnregisterDebrisService(IDebrisService instance)
         {
             UnregisterService(ref _debris, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current GPU debris service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterDebrisComputeService(IDebrisComputeService instance)
+        {
+            UnregisterService(ref _debrisCompute, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current ambient biota service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterAmbientBiotaRuntime(IAmbientBiotaService instance)
+        {
+            UnregisterService(ref _ambientBiotaRuntime, instance);
         }
 
         /// <summary>
@@ -4600,6 +4733,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the mathematical wake displacement service if the owner matches.
+        /// </summary>
+        public static void UnregisterWakeDisplacementService(IWakeDisplacementService instance)
+        {
+            if (instance is IProceduralSwayDirector proceduralSwayDirector)
+                UnregisterProceduralSwayDirector(proceduralSwayDirector);
+        }
+
+        /// <summary>
         /// Unregisters the current encounter-direction service if the owner matches.
         /// </summary>
         /// <param name="instance">Service owner requesting unregistration.</param>
@@ -4757,6 +4899,14 @@ namespace Hecton8.Core
         public static void UnregisterDynamicResolutionRuntime(DynamicResolutionScaler instance)
         {
             UnregisterService(ref _dynamicResolutionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current STP render-scale policy service if the owner matches.
+        /// </summary>
+        public static void UnregisterResolutionScalerService(IResolutionScalerService instance)
+        {
+            UnregisterService(ref _resolutionScalerService, instance);
         }
 
         /// <summary>
@@ -6432,6 +6582,10 @@ namespace Hecton8.Core
                     return SystemID.CoreDataVault;
                 case GlobalRegistryServiceSlot.CausticsRuntime:
                     return SystemID.Vfx;
+                case GlobalRegistryServiceSlot.AmbientBiotaRuntime:
+                    return SystemID.AmbientBiota;
+                case GlobalRegistryServiceSlot.ResolutionScalerService:
+                    return SystemID.GraphicsScalability;
                 default:
                     if (serviceSlot == GlobalRegistryServiceSlot.Unknown)
                         return SystemID.Unknown;
@@ -6743,8 +6897,11 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.SubmarineState: return _submarineState;
                 case GlobalRegistryServiceSlot.SubmarineHullBreach: return _submarineHullBreach;
                 case GlobalRegistryServiceSlot.InertialNavigationRuntime: return _inertialNavigation;
+                case GlobalRegistryServiceSlot.DockingAutopilotRuntime: return _dockingAutopilot;
                 case GlobalRegistryServiceSlot.InteractionSignals: return _interactionSignals;
                 case GlobalRegistryServiceSlot.Debris: return _debris;
+                case GlobalRegistryServiceSlot.DebrisComputeRuntime: return _debrisCompute;
+                case GlobalRegistryServiceSlot.AmbientBiotaRuntime: return _ambientBiotaRuntime;
                 case GlobalRegistryServiceSlot.EcosystemDirector: return _ecosystemDirector;
                 case GlobalRegistryServiceSlot.ThermodynamicsService: return _thermodynamicsService;
                 case GlobalRegistryServiceSlot.Logistics: return _logistics;
@@ -6774,6 +6931,7 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.CullingRuntime: return _cullingRuntime;
                 case GlobalRegistryServiceSlot.LODSystemRuntime: return _lodSystemRuntime;
                 case GlobalRegistryServiceSlot.DynamicResolutionRuntime: return _dynamicResolutionRuntime;
+                case GlobalRegistryServiceSlot.ResolutionScalerService: return _resolutionScalerService;
                 case GlobalRegistryServiceSlot.ImpostorRuntime: return _impostorRuntime;
                 case GlobalRegistryServiceSlot.DepthZoneRuntime: return _depthZoneRuntime;
                 case GlobalRegistryServiceSlot.LocalizationRuntime: return _localizationRuntime;
@@ -7027,8 +7185,11 @@ namespace Hecton8.Core
             if (serviceType == typeof(ISubmarineState)) return GlobalRegistryServiceSlot.SubmarineState;
             if (serviceType == typeof(ISubmarineHullBreachReadModel)) return GlobalRegistryServiceSlot.SubmarineHullBreach;
             if (serviceType == typeof(IInertialNavigationService)) return GlobalRegistryServiceSlot.InertialNavigationRuntime;
+            if (serviceType == typeof(IDockingAutopilotService)) return GlobalRegistryServiceSlot.DockingAutopilotRuntime;
             if (serviceType == typeof(IInteractionSignalService)) return GlobalRegistryServiceSlot.InteractionSignals;
             if (serviceType == typeof(IDebrisService)) return GlobalRegistryServiceSlot.Debris;
+            if (serviceType == typeof(IDebrisComputeService)) return GlobalRegistryServiceSlot.DebrisComputeRuntime;
+            if (serviceType == typeof(IAmbientBiotaService)) return GlobalRegistryServiceSlot.AmbientBiotaRuntime;
             if (serviceType == typeof(IEcosystemDirectorService)) return GlobalRegistryServiceSlot.EcosystemDirector;
             if (serviceType == typeof(IFaunaSim)) return GlobalRegistryServiceSlot.FaunaSimulation;
             if (serviceType == typeof(IThermodynamicsService)) return GlobalRegistryServiceSlot.ThermodynamicsService;
@@ -7049,6 +7210,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(BiomeMatrixDirector)) return GlobalRegistryServiceSlot.BiomeMatrixRuntime;
             if (serviceType == typeof(HectonUnderwaterVisuals)) return GlobalRegistryServiceSlot.UnderwaterVisualsRuntime;
             if (serviceType == typeof(IGIRelaySystem)) return GlobalRegistryServiceSlot.GIRelayRuntime;
+            if (serviceType == typeof(IWakeDisplacementService)) return GlobalRegistryServiceSlot.ProceduralSwayDirectorRuntime;
             if (serviceType == typeof(IProceduralSwayDirector)) return GlobalRegistryServiceSlot.ProceduralSwayDirectorRuntime;
             if (serviceType == typeof(IEncounterDirectorService)) return GlobalRegistryServiceSlot.EncounterDirector;
             if (serviceType == typeof(IQuestSystem)) return GlobalRegistryServiceSlot.QuestSystem;
@@ -7070,6 +7232,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(LODSystemManager)) return GlobalRegistryServiceSlot.LODSystemRuntime;
             if (serviceType == typeof(IDynamicResolutionRuntime)) return GlobalRegistryServiceSlot.DynamicResolutionRuntime;
             if (serviceType == typeof(DynamicResolutionScaler)) return GlobalRegistryServiceSlot.DynamicResolutionRuntime;
+            if (serviceType == typeof(IResolutionScalerService)) return GlobalRegistryServiceSlot.ResolutionScalerService;
             if (serviceType == typeof(ImpostorSystem)) return GlobalRegistryServiceSlot.ImpostorRuntime;
             if (serviceType == typeof(DepthZoneDirector)) return GlobalRegistryServiceSlot.DepthZoneRuntime;
             if (serviceType == typeof(HectonBiolumManager)) return GlobalRegistryServiceSlot.BiolumManagerRuntime;

@@ -1,8 +1,9 @@
 using System;
+using Hecton8.AI.Sensory;
 using Hecton8.Ecosystem;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -276,7 +277,10 @@ namespace Hecton8.AI
             bool shouldAttack,
             bool emitThreatPulse,
             int packRoleCode,
-            bool flankingManeuverDetected)
+            bool flankingManeuverDetected,
+            bool hasAcousticHeadLook,
+            Vector3 acousticHeadLookTarget,
+            float acousticHeadLookWeight)
         {
             DesiredDirection = desiredDirection;
             StateMask = stateMask;
@@ -291,6 +295,9 @@ namespace Hecton8.AI
             EmitThreatPulse = emitThreatPulse;
             PackRoleCode = packRoleCode;
             FlankingManeuverDetected = flankingManeuverDetected;
+            HasAcousticHeadLook = hasAcousticHeadLook;
+            AcousticHeadLookTarget = acousticHeadLookTarget;
+            AcousticHeadLookWeight = acousticHeadLookWeight;
         }
 
         public Vector3 DesiredDirection { get; }
@@ -306,6 +313,9 @@ namespace Hecton8.AI
         public bool EmitThreatPulse { get; }
         public int PackRoleCode { get; }
         public bool FlankingManeuverDetected { get; }
+        public bool HasAcousticHeadLook { get; }
+        public Vector3 AcousticHeadLookTarget { get; }
+        public float AcousticHeadLookWeight { get; }
     }
 
     /// <summary>
@@ -491,6 +501,7 @@ namespace Hecton8.AI
         public float AggressionScore { get; private set; }
         public float FearScore { get; private set; }
         public bool IsRegistered => _initialized && _slot >= 0;
+        public int Slot => _initialized ? _slot : -1;
         public float CurrentHunger01 => _initialized ? PredatorCognitionDomain.GetHunger01(_slot) : HungerScore;
 
         public void Initialize(Vector3 spawnAnchor, FaunaSpeciesProfile speciesProfile, CreatureArchetypeData archetype, FaunaDataTemplate dataTemplate)
@@ -629,60 +640,43 @@ namespace Hecton8.AI
             Vector3 noisePlayerPosition = default;
             AbsoluteUniversePosition noisePlayerAup = default;
             bool hasNoisePlayerAup = false;
+            AcousticEchoHuntResult acousticEchoHunt = default;
+            bool hasAcousticEchoBreadcrumb = false;
             if (NoiseSystem.TryGetPlayerSignal(out NoiseSystem.PlayerNoiseSignal playerNoise))
             {
-                noisePlayerPosition = playerNoise.Position;
-                noisePlayerAup = playerNoise.PositionAup;
-                hasNoisePlayerAup = true;
                 float movement01 = math.saturate(math.max(0f, playerNoise.MovementSpeedSqr) / PlayerNoiseReferenceSpeedSqr);
                 float tool01 = math.saturate(playerNoise.ToolUseNoise01);
                 float transport01 = math.saturate(playerNoise.TransportBoost01 * math.max(1f, playerNoise.TransportSignature));
                 float flashlight01 = playerNoise.FlashlightOn ? 0.2f : 0f;
                 acousticPingStrength01 = math.saturate(math.max(movement01, math.max(tool01, transport01)) + flashlight01);
                 acousticTransmission01 = math.saturate(playerNoise.AcousticTransmission01);
-                float acousticDistanceSq = math.lengthsq((float3)(playerNoise.Position - context.SelfPosition));
-                hasNoisePlayerTarget = UsesPredatorRole &&
-                                       acousticPingStrength01 >= PredatorAcousticSightThreshold01 &&
-                                       acousticDistanceSq <= PredatorAcousticSightRadiusMetersSqr;
+                if (!UsesPredatorRole)
+                {
+                    noisePlayerPosition = playerNoise.Position;
+                    noisePlayerAup = playerNoise.PositionAup;
+                    hasNoisePlayerAup = true;
+                }
             }
 
-            if (UsesPredatorRole &&
-                GlobalSignals.TryGetLatestAcousticPingSignal(out AcousticPingSignal acousticSignal, out int acousticSequence) &&
-                acousticSequence != 0 &&
-                acousticSequence != _lastConsumedAcousticPingSignalSequence)
+            if (UsesPredatorRole)
             {
-                _lastConsumedAcousticPingSignalSequence = acousticSequence;
-                bool leviathanSelfRoar = acousticSignal.Channel == AcousticPingSignal.ChannelLeviathanRoar ||
-                                         (acousticSignal.Flags & AcousticPingSignal.FlagLeviathanRoar) != 0;
-                if (!leviathanSelfRoar)
+                AbsoluteUniversePosition predatorAup = AbsoluteUniversePosition.FromRuntimePosition(context.SelfPosition);
+                if (AcousticEchoLocationRuntime.TryResolvePredatorEcho(
+                        frameId,
+                        in predatorAup,
+                        currentTime,
+                        out acousticEchoHunt))
                 {
-                    float radius = math.max(0.1f, acousticSignal.RadiusMeters);
-                    float radiusSq = radius * radius;
-                    float3 signalPosition3 = AUPMath.ToRuntimeFloat3(
-                        in acousticSignal.PositionAup,
-                        floatingOriginOffset);
-                    float3 delta = signalPosition3 - (float3)context.SelfPosition;
-                    float distanceSq = math.lengthsq(delta);
-                    if (distanceSq <= radiusSq)
-                    {
-                        float distance01 = 1f - math.saturate(distanceSq * math.rcp(math.max(radiusSq, 0.1f)));
-                        float signalStrength01 = math.saturate(math.max(0f, acousticSignal.Intensity01) * distance01);
-                        if ((acousticSignal.Flags & AcousticPingSignal.FlagActiveSonar) != 0 ||
-                            acousticSignal.Channel == AcousticPingSignal.ChannelActiveSonar)
-                        {
-                            signalStrength01 = math.max(signalStrength01, math.saturate(acousticSignal.Intensity01));
-                        }
-
-                        if (signalStrength01 > acousticPingStrength01)
-                        {
-                            noisePlayerPosition = new Vector3(signalPosition3.x, signalPosition3.y, signalPosition3.z);
-                            noisePlayerAup = acousticSignal.PositionAup;
-                            hasNoisePlayerAup = true;
-                            acousticPingStrength01 = signalStrength01;
-                            acousticTransmission01 = math.max(acousticTransmission01, 0.35f + (distance01 * 0.65f));
-                            hasNoisePlayerTarget = signalStrength01 >= PredatorAcousticSightThreshold01;
-                        }
-                    }
+                    noisePlayerPosition = new Vector3(
+                        acousticEchoHunt.RuntimePosition.x,
+                        acousticEchoHunt.RuntimePosition.y,
+                        acousticEchoHunt.RuntimePosition.z);
+                    noisePlayerAup = acousticEchoHunt.InvestigateAup;
+                    hasNoisePlayerAup = true;
+                    acousticPingStrength01 = math.max(acousticPingStrength01, acousticEchoHunt.Intensity01);
+                    acousticTransmission01 = math.max(acousticTransmission01, 0.35f);
+                    hasNoisePlayerTarget = acousticEchoHunt.Intensity01 >= PredatorAcousticSightThreshold01;
+                    hasAcousticEchoBreadcrumb = hasNoisePlayerTarget;
                 }
             }
 
@@ -872,6 +866,13 @@ namespace Hecton8.AI
             PredatorCognitionDomain.SubmitInput(_slot, in input);
 
             Vector3 desiredDirection = new Vector3(output.DesiredDirection.x, output.DesiredDirection.y, output.DesiredDirection.z);
+            ResolveAcousticHeadSweepTarget(
+                in context,
+                in acousticEchoHunt,
+                hasAcousticEchoBreadcrumb && !context.HasPlayerTarget,
+                out bool hasAcousticHeadLook,
+                out Vector3 acousticHeadLookTarget,
+                out float acousticHeadLookWeight);
             return new CreatureUtilityEvaluation(
                 desiredDirection,
                 CurrentStateMask,
@@ -885,7 +886,46 @@ namespace Hecton8.AI
                 output.ShouldAttack != 0,
                 output.EmitThreatPulse != 0,
                 output.PackRoleCode,
-                output.FlankingManeuverDetected != 0);
+                output.FlankingManeuverDetected != 0,
+                hasAcousticHeadLook,
+                acousticHeadLookTarget,
+                acousticHeadLookWeight);
+        }
+
+        private static void ResolveAcousticHeadSweepTarget(
+            in CreatureUtilityContext context,
+            in AcousticEchoHuntResult hunt,
+            bool active,
+            out bool hasHeadLook,
+            out Vector3 target,
+            out float weight)
+        {
+            hasHeadLook = false;
+            target = default;
+            weight = 0f;
+            if (!active || math.abs(hunt.HeadSweep01) <= 0.001f)
+                return;
+
+            float3 forward = (float3)context.SelfForward;
+            if (!math.all(math.isfinite(forward)) || math.lengthsq(forward) <= 0.0001f)
+                forward = new float3(0f, 0f, 1f);
+            else
+                forward = math.normalize(forward);
+
+            float3 right = math.cross(new float3(0f, 1f, 0f), forward);
+            if (!math.all(math.isfinite(right)) || math.lengthsq(right) <= 0.0001f)
+                right = new float3(1f, 0f, 0f);
+            else
+                right = math.normalize(right);
+
+            float sweepMeters = 2.25f + (math.saturate(hunt.Intensity01) * 2.75f);
+            float3 sweptTarget = hunt.RuntimePosition + (right * (hunt.HeadSweep01 * sweepMeters));
+            if (!math.all(math.isfinite(sweptTarget)))
+                return;
+
+            target = new Vector3(sweptTarget.x, sweptTarget.y, sweptTarget.z);
+            weight = math.saturate(math.abs(hunt.HeadSweep01) + hunt.Intensity01);
+            hasHeadLook = weight > 0.01f;
         }
 
         private static bool UsesHighTierApexCognitionSteering(bool isApexPredator)

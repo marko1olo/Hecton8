@@ -22,7 +22,7 @@ using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Audio;
 using Hecton8.Environment;
 using Hecton8.Environment.Fluids;
@@ -47,6 +47,7 @@ using Unity.Jobs;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Serialization;
+using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
 
 namespace Hecton8.Gameplay
 {
@@ -2631,7 +2632,8 @@ namespace Hecton8.Gameplay
             if (_cinematicFocusBlackBox.IsCreated)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            _dataVault = vault;
             if (vault != null)
             {
                 NativeArray<CinematicFocusTelemetryEntry> vaultArray = vault.GetBuffer<CinematicFocusTelemetryEntry>(
@@ -2648,19 +2650,6 @@ namespace Hecton8.Gameplay
             }
 
             _cinematicFocusBlackBoxVaultOwned = false;
-            _cinematicFocusBlackBox = H8Memory.Allocate<CinematicFocusTelemetryEntry>(
-                CinematicFocusBlackBoxCapacity,
-                SystemID.GameplayPlayer,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CinematicFocusTelemetryEntry>[300] - narrative focus black-box ring - owner: HectonPlayerMovement
-            if (!_cinematicFocusBlackBox.IsCreated)
-                return;
-
-            NativeMemorySentinel.RegisterNativeArray(
-                _cinematicFocusBlackBox,
-                nameof(HectonPlayerMovement),
-                nameof(_cinematicFocusBlackBox),
-                NativeAllocationLifetime.Scene);
         }
 
         private void DisposeCinematicFocusBlackBox()
@@ -4165,7 +4154,7 @@ namespace Hecton8.Gameplay
             if (_cameraComponent != null)
                 baseFov = _cameraComponent.fieldOfView;
 
-            _cachedGravity = UnityEngine.Physics.gravity;
+            _cachedGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
             _cachedGravityMagnitude = MagnitudeFromRsqrt(_cachedGravity);
             _smoothedGroundNormal = Vector3.up;
             RefreshGroundSlopeCache();
@@ -8278,7 +8267,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                _cachedGravity = UnityEngine.Physics.gravity;
+                _cachedGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
                 _localGravityOverrideActive = false;
                 _localGravityOverrideBlendTimer = 0f;
                 _localGravityOverrideBlendStart = _cachedGravity;
@@ -8287,12 +8276,39 @@ namespace Hecton8.Gameplay
             _cachedGravityMagnitude = MagnitudeFromRsqrt(_cachedGravity);
             if (_cachedGravityMagnitude <= 0.0001f)
             {
-                _cachedGravity = UnityEngine.Physics.gravity;
+                _cachedGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
                 _cachedGravityMagnitude = MagnitudeFromRsqrt(_cachedGravity);
             }
 
             if (_localGravityOverrideActive && _cachedGravityMagnitude > 0.0001f)
                 _smoothedGroundNormal = -_cachedGravity / _cachedGravityMagnitude;
+        }
+
+        private Vector3 ResolveAupCenterGravity(Vector3 fallbackGravity)
+        {
+            Vector3 safeFallback = HectonPlayerMotor.SafeVelocity(fallbackGravity);
+            float gravityMagnitude = MagnitudeFromRsqrt(safeFallback);
+            if (gravityMagnitude <= 0.0001f)
+                gravityMagnitude = 9.81f;
+
+            double3 absolutePosition = _playerState.PredictedAbsolutePosition.ToAbsoluteDouble3();
+            double3 toAupCenter = -absolutePosition;
+            double distanceSq = math.lengthsq(toAupCenter);
+            if (!math.isfinite(distanceSq) || distanceSq <= 0.0001d)
+                return safeFallback.sqrMagnitude > MinLocalGravitySqr ? safeFallback : Vector3.down * gravityMagnitude;
+
+            double inverseDistance = math.rsqrt(math.max(distanceSq, 0.0001d));
+            double3 gravityDirection = toAupCenter * inverseDistance;
+            if (!math.all(math.isfinite(gravityDirection)))
+                return safeFallback.sqrMagnitude > MinLocalGravitySqr ? safeFallback : Vector3.down * gravityMagnitude;
+
+            Vector3 radialGravity = new Vector3(
+                (float)(gravityDirection.x * gravityMagnitude),
+                (float)(gravityDirection.y * gravityMagnitude),
+                (float)(gravityDirection.z * gravityMagnitude));
+            return IsFiniteVector(radialGravity) && radialGravity.sqrMagnitude > MinLocalGravitySqr
+                ? radialGravity
+                : (safeFallback.sqrMagnitude > MinLocalGravitySqr ? safeFallback : Vector3.down * gravityMagnitude);
         }
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -8362,7 +8378,7 @@ namespace Hecton8.Gameplay
             if (currentGravity.sqrMagnitude > MinLocalGravitySqr)
                 return currentGravity;
 
-            currentGravity = HectonPlayerMotor.SafeVelocity(UnityEngine.Physics.gravity);
+            currentGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
             if (currentGravity.sqrMagnitude > MinLocalGravitySqr)
                 return currentGravity;
 

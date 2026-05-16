@@ -1,0 +1,21 @@
+{
+    "name": "Hecton8.AI.Pathfinding",
+    "rootNamespace": "Hecton8.AI.Pathfinding",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

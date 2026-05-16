@@ -1628,13 +1628,16 @@ namespace Hecton8.Core
             float activeLoadMs = math.isfinite(frameState.ActiveBucketLoadMs)
                 ? math.max(0f, frameState.ActiveBucketLoadMs)
                 : 0f;
+            float jitterVarianceMs = math.isfinite(frameState.JitterVarianceMs)
+                ? math.max(0f, frameState.JitterVarianceMs)
+                : 0f;
 
             TelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Scheduler;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = activeLoadMs;
-            entry.GpuFrameTime = frameState.ActiveSlowBucketCount;
+            entry.GpuFrameTime = jitterVarianceMs;
             entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = unchecked((uint)Math.Max(0, frameState.CurrentFrameCount));

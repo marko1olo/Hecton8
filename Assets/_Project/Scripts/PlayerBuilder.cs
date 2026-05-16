@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;

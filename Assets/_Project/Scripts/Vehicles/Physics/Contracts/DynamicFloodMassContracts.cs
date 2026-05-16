@@ -9,21 +9,23 @@ namespace Hecton8.Vehicles.Physics.Contracts
         public const float CriticalFloodMassBaseRatio = 0.4f;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DynamicFloodRoomMassSample
     {
-        public float WaterLevel01;
-        public float VolumeM3;
-        public float3 LocalAup;
+        [FieldOffset(0)] public float WaterLevel01;
+        [FieldOffset(4)] public float VolumeM3;
+        [FieldOffset(8)] public float3 LocalAup;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct DynamicFloodMassSolveResult
     {
-        public float3 DynamicCenterOfMassLocal;
-        public float3 DynamicCenterOfMassOffsetLocal;
-        public float TotalWaterMassKg;
-        public float AngularDragMultiplier;
-        public uint Flags;
+        [FieldOffset(0)] public float3 DynamicCenterOfMassLocal;
+        [FieldOffset(12)] public float3 DynamicCenterOfMassOffsetLocal;
+        [FieldOffset(24)] public float3 InertiaTensorMultiplier;
+        [FieldOffset(40)] public double3 GlobalPivotAnchor;
+        [FieldOffset(64)] public float TotalWaterMassKg;
+        [FieldOffset(68)] public float AngularDragMultiplier;
+        [FieldOffset(72)] public uint Flags;
     }
 }

@@ -200,3 +200,97 @@ External source verification, 2026-05-16:
 - QModManager GitHub API repository state: archived=True, pushed_at=2023-05-09T23:22:51Z.
 - Nautilus GitHub API latest release endpoint currently returns sml/2.15.0.1 from 2023; current handler taxonomy must be treated as source/docs evidence, not release-fresh proof.
 - BepInEx.Subnautica GitHub API repository state: archived=False, pushed_at=2026-05-14T12:12:36Z.
+---
+
+## 2026-05-16 - Fourth Research Pass: What To Dig Out Next
+
+Agent: SUBNAUTICA_RESEARCHER
+Scope: research-only. Runtime code/assets were not changed.
+
+What was wrong:
+- The prior Addressables argument was framed too broadly. The useful Subnautica evidence is not "use Unity Addressables for everything"; it is catalog + bundle lanes + AOT/link preservation + baked cache families.
+- The statement "H8 has no packer" was wrong. `H8DataMonolithCompiler` exists. The real failure is source data and enforcement: `_SourceData` exists but is empty, `Assets/StreamingAssets` is absent, and `static_data.h8bin` is absent.
+- H8 world pager payload names are still save/delta-oriented: `VoxelDeltaRle`, `InventoryState`, `ChunkDehydratedMetadata`, `WfcOutpostState`. Subnautica proves base-world cache must be named separately from player save state.
+- Audio policy exists as `HectonAudioPostprocessor`, but it is not a build gate and misses the largest root-level `Atmos *.wav` sources.
+- H8 modding has a good DOD boundary, but not enough content handler overlays for practical community mods: PDA/databank, scan/fragment, known-tech/unlock, loot distribution, audio registry.
+- ContentSanity validates many references, but it is a menu action. First-hour route density is not a build-blocking acceptance contract.
+
+What was done:
+- Parsed local Subnautica Addressables data:
+  - `catalog.json`: 12,016,061 bytes.
+  - `settings.json`: build target `StandaloneWindows64`, Addressables version `1.19.11`, locator `AddressablesMainContentCatalog`, max concurrent web requests 500.
+  - Catalog internals: 21,090 internal IDs, 4 provider IDs, 2,624,036 key-data chars, 836,236 entry-data chars, 5,546,380 extra-data chars.
+  - Addressables bundle lane counts: `assets_bundle` 1,717 files / 2,016.50 MB, `prefab` 3,727 / 1,887.47 MB, `unity` 13 / 298.08 MB, `worldmeshes` 1 / 191.79 MB.
+  - Top bundles include `main-discrete_assets_worldmeshes` 191.79 MB, `main.unity` 163.26 MB, duplicate assets bundle 83.84 MB, and large precursor/gun/rocket prefab or scene bundles.
+- Parsed Subnautica `AddressablesLink/link.xml`:
+  - 1,243 preserved `Assembly-CSharp` types, file size 74,252 bytes.
+  - High-frequency preserved families include Cyclops 50, Base 44, Water 31, Spawn 24, Damage 22, Sound 20, Story 18, Creature 17, PDA 15, Vehicle 12, Power 11, Prefab 10, Terrain/FMOD/Resource 9 each.
+  - Tactical meaning: even a custom H8 monolith still needs a generated prefab/component preservation contract for IL2CPP and bundle instantiation.
+- Quantified Subnautica baked world cache:
+  - `CompiledOctreesCache`: 5,416 files / 1,147.35 MB, max 9.73 MB.
+  - `CellsCache`: 1,606 files / 159.80 MB, max 1.216 MB.
+  - `BatchObjectsCache`: 2,975 files / 3.07 MB, max 16.9 KB.
+  - Sidecars: `biomeMap.bin` 1 MB, `index.txt`, `meta.txt`, `biomes.csv`, `signals.csv`.
+  - Saved slot `slot0000`: cell cache zips plus `global-objects.bin`, `scene-objects.bin`, `gameinfo.json`, screenshot and timecapsules. `gameinfo.json` confirms separate durable game flags such as exosuit/base presence and corruption state.
+- Re-audited H8 DataMonolith:
+  - `H8DataMonolithCompiler` bakes `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` from `Assets/_SourceData`.
+  - Sections include Items, Creatures, Biomes, Recipes, BiomeHeatmap, QuestNodes, QuestEdges, LootCdf, VoxelMaterials, AudioClipRegistry, NarrativeTriggers, SectorPageDirectory, LocalizationUtf8, and others.
+  - It has source watchers and hot reload. It validates blittable layout and duplicate item/creature/biome hashes.
+  - `_SourceData` exists but has no files. `Assets/StreamingAssets` and `static_data.h8bin` do not exist.
+  - `Assets/_Project/Data` holds 1,236 `.asset` files, so there is a ScriptableObject lake but no populated monolith source-of-truth.
+- Re-audited H8 audio:
+  - Audio source totals under `Assets/_Project/Audio`: 45 WAV / 291.90 MB, 89 OGG / 171.57 MB, 3 MP3 / 2.22 MB.
+  - Postprocessor-managed by current root rules: 121 files / 230.27 MB.
+  - Unmanaged: 16 files / 235.41 MB, dominated by root-level `Atmos 1.wav` through `Atmos 5 Loop.wav`, each roughly 21.97-25.27 MB.
+  - `Underwater Ambient.wav` is managed only by name fallback; root `Atmos` files are not.
+  - Managed SFX policy forces ADPCM, mono, 22050 Hz, but `ResolveSfxLoadType()` always returns `DecompressOnLoad`.
+  - Managed ambient/music policy forces Vorbis, 44100 Hz, Q0.7, `CompressedInMemory`.
+  - Validators are menu items, not `IPreprocessBuildWithReport`.
+- Compared H8 mod API to public Nautilus handler taxonomy:
+  - H8 public API covers Events, Input, Commands, Resources, Telemetry, Items, Crafting, Recycling, Construction, Ecosystem, Localization, UI, World hash query, SaveState, Mods diagnostics.
+  - H8 correctly blocks direct Unity prefab/audio/texture/GameObject/Transform access from mods and pushes mods toward hashes/commands.
+  - Missing data-overlay handler lanes: PDA/databank entries, scanner/fragment entries, known-tech or blueprint unlock gates, loot CDF overlays, audio registry overlays.
+  - Existing mismatch remains: `ModBuilderWindow` writes `EntryAssembly` but no `RequiredAPIVersion`; `ModLoader` rejects `RequiredAPIVersion <= 0`; IL2CPP path refuses dynamic external managed assembly loading; factory registration is required but not what the builder advertises.
+- Rechecked H8 first-hour/lore skeleton:
+  - Authored assets include 11 QuestData assets, 5 AudioLogData assets, 5 depth zones, 13 research assets, scanner item/recipe/tool metadata, and lore registries.
+  - `ContentSanityValidator` checks quest references, item/catalog route errors, PDA shell risks, prefab contracts, tool data, flora/fauna/resource/base templates, but is launched through `Hecton-8/Validate Content`.
+  - `LoreHashBuildPreprocessor` rebakes lore hashes before build, but that is not first-hour route density acceptance.
+
+Cinematic Cheats used / recommended:
+- Split truth from presentation:
+  - `TerrainCellBase`: base terrain/SDF/voxel cell data.
+  - `ObjectBatchBase`: tiny static debris/resource transform+hash batches, no GameObject spawn storm.
+  - `VisibilityPhysicsProxyBase`: PVS/SDF/physics visibility proxy, independently resident.
+  - `AudioBiomeBank`: per-biome audio keys/residency, not giant preload.
+  - `DiscoveryRouteBase`: scanner/PDA/quest route graph for validation and onboarding density.
+- Keep H8 DOD mod API boundary. Borrow Nautilus handler categories, not loader design or GPL code.
+- Treat Subnautica FMOD bank split as taxonomy: music, player, creatures, environment, vehicles, tools, loot, interface. Do not copy banks.
+- Add a generated H8 prefab/component preservation manifest; this is the AOT equivalent of Subnautica's link preservation lane.
+
+Exact Microseconds saved:
+- Current pass: 0us, research-only.
+- Expected future savings are not claimed as measured. Target categories:
+  - fewer main-thread activation spikes from ObjectBatchBase instead of spawned static GameObjects;
+  - lower audio memory pressure after root `Atmos` WAV governance and tiered load policy;
+  - less boot/runtime managed data scanning after populated `static_data.h8bin`;
+  - fewer IL2CPP/mod/bundle failures from generated type and manifest contracts.
+
+P0 Batch007 recommendations:
+1. DataMonolith Source Gate: decide source of truth and implement either SO -> `_SourceData` exporter or `_SourceData` as authoritative. Fail build if required sections are empty or `static_data.h8bin` is missing/stale.
+2. World Payload Taxonomy: extend payload constants/manifest to include `TerrainCellBase`, `ObjectBatchBase`, `VisibilityPhysicsProxyBase`, `AudioBiomeBank`, `DiscoveryRouteBase`. Keep save deltas separate.
+3. Prefab Type Manifest: generate a first-party/mod-safe component preserve list or `link.xml` equivalent for bundled prefabs. Do not rely on incidental `[Preserve]` attributes.
+4. AudioImportPolicyGate: convert menu validation into build gate. Cover all audio under `Assets/_Project/Audio`, including root `Atmos` and UI/VO. Platform/tier rule: SFX never streaming; long music/large ambience can be Streaming on low-memory/mobile, CompressedInMemory where budget allows.
+5. Mod SDK Manifest Fix: builder must write `RequiredAPIVersion = 2`; UI must stop implying arbitrary DLLs work under IL2CPP. Add package validation for content-only vs explicit factory mods.
+6. Mod Overlay Handlers: add data-only overlays for PDA/databank, scan entries/fragments, known-tech/quest flags, loot CDF, audio registry. Merge via MacroDB/DataMonolith/mod overlay, not direct SO mutation.
+7. FirstHourRouteDensityGate: build-block route acceptance after content pipeline is stable: pod exit, resource collection, scanner craft, scan targets, one unlock, one PDA/audio log, one danger/biome beat.
+
+P1/P2 recommendations:
+- Addressables/custom bundle decision doc: H8 may keep custom monolith for world data, but Unity prefab/resource lanes still need a catalog/manifest and runtime smoke load.
+- Convert selected ContentSanity checks into CI/prebuild gate or wrap them in one strict build validator.
+- Add saved-game cache semantics: authoritative save payloads vs repairable/generated caches. Subnautica's slot layout separates game info/global/scene state from cached cells.
+- Add per-zone bundle/payload size budgets. Subnautica has some huge legal bundles; H8 should not let a single low-tier mandatory payload become an 80-190 MB choke point.
+
+Proof limits:
+- Local Subnautica files were inspected only as taxonomy/metadata. No proprietary asset/code extraction, decompilation, mesh/audio/text copying, or binary reverse engineering was performed.
+- Public mod repositories/docs were used as clean-room handler/source taxonomy. GPL/AGPL/LGPL code is not reusable in H8 without an explicit licensing decision.
+- No Unity compile or playmode test was run because no runtime code was changed.

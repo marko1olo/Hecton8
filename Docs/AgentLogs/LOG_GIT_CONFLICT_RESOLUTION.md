@@ -713,3 +713,15 @@ Cinematic Cheats used -> None. Documentation and Git hygiene only.
 Exact Microseconds saved -> 0 runtime us.
 
 Verification -> GitHub API confirms TerrainPatcher latest `v1.2.5` published `2026-05-01T22:15:08Z`, Nitrox latest `1.8.1.0` published `2026-01-07T18:50:51Z`, QModManager `archived=True` with last push `2023-05-09T23:22:51Z`, Nautilus release endpoint returns `sml/2.15.0.1`, and BepInEx.Subnautica is not archived with last push `2026-05-14T12:12:36Z`. Runtime build, Unity Editor import, Play Mode, profiler, GCMonitor, player build, and visuals are not claimed.
+
+## 2026-05-16 - Loop 49 Current Batch Audit
+
+What was wrong -> A new active `Docs/Tasks/CURRENT_BATCH.md` appeared, and the archived Batch005 `CURRENT_BATCH.md` was locally emptied. The companion instruction file lists 40 Prompt IDs, while the active batch has 36 prompt blocks, one duplicate ID, 13 instruction IDs missing from the batch, 8 batch-only IDs, and no `<POLISH_MANDATE>` tag.
+
+What was done -> Restored the archive file from `HEAD` to prevent data loss, left the active batch and instruction file in place, and wrote `Docs/Tasks/CURRENT_BATCH_AUDIT_20260516.md` with the full mismatch list.
+
+Cinematic Cheats used -> None. Documentation/Git hygiene only.
+
+Exact Microseconds saved -> 0 runtime us.
+
+Verification -> `CURRENT_BATCH.md` has 1480 lines, 106637 bytes, 36 open prompt tags, and 36 close prompt tags. The instruction file has 40 Prompt IDs. Runtime build, Unity Editor import, Play Mode, profiler, GCMonitor, player build, and visuals are not claimed.

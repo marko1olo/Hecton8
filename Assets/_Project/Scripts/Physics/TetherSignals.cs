@@ -1,14 +1,33 @@
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.World;
-using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
-namespace Hecton8.Physics
+namespace Hecton8.Core.Contracts.Signals
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 72)]
-    public struct TetherSnappedSignal
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 144)]
+    public struct TetherTensionSignal : ISignal
+    {
+        public AbsoluteUniversePosition AnchorAup;
+        public AbsoluteUniversePosition PayloadAup;
+        public float3 DirectionToPayload;
+        public uint TetherId;
+        public uint FrameIndex;
+        public float TensionForce;
+        public float SnapThreshold;
+        public float Tension01;
+        public float ReactiveVfx01;
+        public ushort NodeCount;
+        public byte Flags;
+        public byte Reserved;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 72)]
+    public struct TetherSnappedSignal : ISignal
     {
         public AbsoluteUniversePosition SnapAup;
         public uint TetherId;
@@ -20,21 +39,21 @@ namespace Hecton8.Physics
         public byte Reason;
         public byte Flags;
     }
+}
 
+namespace Hecton8.Physics
+{
     public static class TetherSignals
     {
-        private const int SnapSignalCapacity = 64;
         private const int FireSignalCapacity = 16;
         private const uint FireSignalMaxAgeFrames = 8u;
-        private const string NativeMemoryOwner = nameof(TetherSignals);
         // COLD ALLOC: TetherFireRequest[16] - managed resolver sidecar for fire signals - owner: TetherSignals
         private static readonly TetherFireRequest[] _fireRequests = new TetherFireRequest[FireSignalCapacity];
-        private static NativeQueue<TetherSnappedSignal> _snappedSignals;
-        private static NativeQueue<TetherFiredSignal> _firedSignals;
-        private static int _snapSignalCount;
-        private static int _fireSignalCount;
+        private static int _fireRequestCount;
         private static int _nextFireRequestSlot;
         private static uint _nextFireRequestVersion;
+        private static int _snapSnapshotReadFrame = -1;
+        private static int _snapSnapshotReadCursor;
         private static bool _initialized;
 
         internal struct TetherFireRequest
@@ -47,63 +66,31 @@ namespace Hecton8.Physics
             public Collider PayloadCollider;
             public float InitialDistance;
             public uint Version;
+            public uint FrameIndex;
             public bool Active;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetForDomainReload()
         {
-            if (_snappedSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(_snappedSignals));
-                _snappedSignals.Dispose();
-            }
-
-            if (_firedSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(_firedSignals));
-                _firedSignals.Dispose();
-            }
-
-            _snappedSignals = default;
-            _firedSignals = default;
             for (int i = 0; i < _fireRequests.Length; i++)
                 _fireRequests[i] = default;
 
-            _snapSignalCount = 0;
-            _fireSignalCount = 0;
+            _fireRequestCount = 0;
             _nextFireRequestSlot = 0;
             _nextFireRequestVersion = 0u;
+            _snapSnapshotReadFrame = -1;
+            _snapSnapshotReadCursor = 0;
             _initialized = false;
         }
 
         public static void EnsureInitialized()
         {
-            if (_initialized && _snappedSignals.IsCreated && _firedSignals.IsCreated)
+            if (_initialized)
                 return;
 
-            if (!_snappedSignals.IsCreated)
-            {
-                _snappedSignals = new NativeQueue<TetherSnappedSignal>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _snappedSignals,
-                    SnapSignalCapacity,
-                    NativeMemoryOwner,
-                    nameof(_snappedSignals),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_firedSignals.IsCreated)
-            {
-                _firedSignals = new NativeQueue<TetherFiredSignal>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _firedSignals,
-                    FireSignalCapacity,
-                    NativeMemoryOwner,
-                    nameof(_firedSignals),
-                    NativeAllocationLifetime.Session);
-            }
-
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<TetherFiredSignal>.EnsureInitialized();
             _initialized = true;
         }
 
@@ -121,8 +108,8 @@ namespace Hecton8.Physics
 
             EnsureInitialized();
             uint currentFrame = (uint)Time.frameCount;
-            PruneExpiredFireSignals(currentFrame);
-            if (_fireSignalCount >= FireSignalCapacity)
+            PruneExpiredFireRequests(currentFrame);
+            if (_fireRequestCount >= FireSignalCapacity)
                 return false;
 
             int slot = ReserveFireRequestSlot();
@@ -143,6 +130,7 @@ namespace Hecton8.Physics
                 PayloadCollider = payloadCollider,
                 InitialDistance = initialDistance,
                 Version = version,
+                FrameIndex = currentFrame,
                 Active = true
             };
 
@@ -159,73 +147,62 @@ namespace Hecton8.Physics
                 Flags = 0
             };
 
-            _firedSignals.Enqueue(signal);
-            _fireSignalCount++;
+            SignalBus<TetherFiredSignal>.Push(in signal);
+            _fireRequestCount++;
             return true;
         }
 
         public static bool PublishSnap(in TetherSnappedSignal signal)
         {
             EnsureInitialized();
-            if (_snapSignalCount >= SnapSignalCapacity)
-                return false;
-
-            _snappedSignals.Enqueue(signal);
-            _snapSignalCount++;
+            SignalBus<TetherSnappedSignal>.Push(in signal);
             return true;
+        }
+
+        public static void PublishTension(in TetherTensionSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<TetherTensionSignal>.Push(in signal);
         }
 
         public static bool TryDequeueSnap(out TetherSnappedSignal signal)
         {
             EnsureInitialized();
-            if (_snapSignalCount <= 0)
+            int currentFrame = Time.frameCount;
+            if (_snapSnapshotReadFrame != currentFrame)
+            {
+                _snapSnapshotReadFrame = currentFrame;
+                _snapSnapshotReadCursor = 0;
+            }
+
+            ReadOnlySpan<TetherSnappedSignal> snapshot = SignalBus<TetherSnappedSignal>.GetFrameSnapshot();
+            if (_snapSnapshotReadCursor >= snapshot.Length)
             {
                 signal = default;
                 return false;
             }
 
-            if (!_snappedSignals.TryDequeue(out signal))
-            {
-                _snapSignalCount = 0;
-                return false;
-            }
-
-            _snapSignalCount--;
+            signal = snapshot[_snapSnapshotReadCursor++];
             return true;
         }
 
         internal static bool TryConsumeFireForManager(TetherManager manager, out TetherFireRequest request)
         {
             request = default;
-            if (manager == null || _fireSignalCount <= 0)
+            if (manager == null || _fireRequestCount <= 0)
                 return false;
 
             EnsureInitialized();
-            PruneExpiredFireSignals((uint)Time.frameCount);
-            if (_fireSignalCount <= 0)
+            uint currentFrame = (uint)Time.frameCount;
+            PruneExpiredFireRequests(currentFrame);
+            if (_fireRequestCount <= 0)
                 return false;
 
             int managerId = ResolveStableObjectId(manager);
-            int scanCount = _fireSignalCount;
-            for (int i = 0; i < scanCount; i++)
-            {
-                if (!_firedSignals.TryDequeue(out TetherFiredSignal signal))
-                    break;
+            if (TryConsumeFireFromSnapshot(manager, managerId, out request))
+                return true;
 
-                _fireSignalCount--;
-                if (signal.ManagerInstanceId == managerId)
-                {
-                    if (TryConsumeFireRequest(in signal, manager, out request))
-                        return true;
-
-                    continue;
-                }
-
-                _firedSignals.Enqueue(signal);
-                _fireSignalCount++;
-            }
-
-            return false;
+            return TryConsumeImmediateFireRequest(manager, managerId, currentFrame, out request);
         }
 
         private static int ResolveStableObjectId(UnityEngine.Object unityObject)
@@ -248,27 +225,23 @@ namespace Hecton8.Physics
             return -1;
         }
 
-        private static void PruneExpiredFireSignals(uint currentFrame)
+        private static void PruneExpiredFireRequests(uint currentFrame)
         {
-            if (!_firedSignals.IsCreated || _fireSignalCount <= 0)
+            if (_fireRequestCount <= 0)
                 return;
 
-            int scanCount = _fireSignalCount;
-            for (int i = 0; i < scanCount; i++)
+            for (int i = 0; i < _fireRequests.Length; i++)
             {
-                if (!_firedSignals.TryDequeue(out TetherFiredSignal signal))
-                    break;
-
-                _fireSignalCount--;
-                if (IsFireSignalLive(in signal, currentFrame))
-                {
-                    _firedSignals.Enqueue(signal);
-                    _fireSignalCount++;
-                    continue;
-                }
-
-                ClearFireRequestIfVersionMatches(in signal);
+                TetherFireRequest request = _fireRequests[i];
+                if (request.Active && !IsFireRequestLive(in request, currentFrame))
+                    ClearFireRequestSlot(i);
             }
+        }
+
+        private static bool IsFireRequestLive(in TetherFireRequest request, uint currentFrame)
+        {
+            return request.Active &&
+                   currentFrame - request.FrameIndex <= FireSignalMaxAgeFrames;
         }
 
         private static bool IsFireSignalLive(in TetherFiredSignal signal, uint currentFrame)
@@ -283,15 +256,73 @@ namespace Hecton8.Physics
                    currentFrame - signal.FrameIndex <= FireSignalMaxAgeFrames;
         }
 
-        private static void ClearFireRequestIfVersionMatches(in TetherFiredSignal signal)
+        private static void ClearFireRequestSlot(int slot)
         {
-            int slot = signal.RequestSlot;
             if ((uint)slot >= (uint)_fireRequests.Length)
                 return;
 
-            TetherFireRequest request = _fireRequests[slot];
-            if (request.Active && request.Version == signal.RequestVersion)
-                _fireRequests[slot] = default;
+            if (_fireRequests[slot].Active && _fireRequestCount > 0)
+                _fireRequestCount--;
+
+            _fireRequests[slot] = default;
+        }
+
+        private static bool TryConsumeFireFromSnapshot(
+            TetherManager manager,
+            int managerId,
+            out TetherFireRequest request)
+        {
+            request = default;
+            ReadOnlySpan<TetherFiredSignal> snapshot = SignalBus<TetherFiredSignal>.GetFrameSnapshot();
+            uint currentFrame = (uint)Time.frameCount;
+            for (int i = 0; i < snapshot.Length; i++)
+            {
+                TetherFiredSignal signal = snapshot[i];
+                if (signal.ManagerInstanceId != managerId || !IsFireSignalLive(in signal, currentFrame))
+                    continue;
+
+                if (TryConsumeFireRequest(in signal, manager, out request))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryConsumeImmediateFireRequest(
+            TetherManager manager,
+            int managerId,
+            uint currentFrame,
+            out TetherFireRequest request)
+        {
+            request = default;
+            for (int slot = 0; slot < _fireRequests.Length; slot++)
+            {
+                TetherFireRequest candidate = _fireRequests[slot];
+                if (!candidate.Active ||
+                    !ReferenceEquals(candidate.Manager, manager) ||
+                    currentFrame - candidate.FrameIndex > FireSignalMaxAgeFrames)
+                {
+                    continue;
+                }
+
+                TetherFiredSignal signal = new TetherFiredSignal
+                {
+                    ManagerInstanceId = managerId,
+                    OwnerInstanceId = ResolveStableObjectId(candidate.Owner),
+                    PayloadBodyInstanceId = ResolveStableObjectId(candidate.PayloadBody),
+                    PayloadColliderInstanceId = ResolveStableObjectId(candidate.PayloadCollider),
+                    RequestSlot = slot,
+                    RequestVersion = candidate.Version,
+                    FrameIndex = candidate.FrameIndex,
+                    InitialDistance = candidate.InitialDistance,
+                    Flags = 0
+                };
+
+                if (TryConsumeFireRequest(in signal, manager, out request))
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool TryConsumeFireRequest(
@@ -310,12 +341,12 @@ namespace Hecton8.Physics
 
             if (!ReferenceEquals(candidate.Manager, manager))
             {
-                _fireRequests[slot] = default;
+                ClearFireRequestSlot(slot);
                 return false;
             }
 
             request = candidate;
-            _fireRequests[slot] = default;
+            ClearFireRequestSlot(slot);
             return true;
         }
     }

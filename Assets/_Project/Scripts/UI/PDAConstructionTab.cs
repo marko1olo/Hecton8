@@ -9,7 +9,7 @@ using Hecton8.Building;
 using Hecton8.Bootstrap;
 using Hecton8.Construction;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Quest;

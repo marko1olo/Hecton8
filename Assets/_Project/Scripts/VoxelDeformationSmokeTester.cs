@@ -1,5 +1,6 @@
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;

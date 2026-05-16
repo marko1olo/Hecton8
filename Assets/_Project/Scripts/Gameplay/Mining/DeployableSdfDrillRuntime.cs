@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Hecton8.Caves;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Gameplay.Mining.Contracts;
 using Hecton8.World;
@@ -1081,7 +1081,7 @@ namespace Hecton8.Gameplay.Mining
         {
             float3 point = new float3(hitPoint.x, hitPoint.y, hitPoint.z);
             float3 direction = NormalizeSafe(point - _anchorRuntimePosition, math.up());
-            Hecton8.Core.Signals.CombatDamageSignal signal = new Hecton8.Core.Signals.CombatDamageSignal
+            Hecton8.Core.Contracts.Signals.CombatDamageSignal signal = new Hecton8.Core.Contracts.Signals.CombatDamageSignal
             {
                 WorldPoint = point,
                 Direction = direction,
@@ -1093,7 +1093,7 @@ namespace Hecton8.Gameplay.Mining
                 SourceId = unchecked((ushort)(sourceHash & 0xFFFFu)),
                 TargetId = unchecked((ushort)(_sourceId & 0xFFFFu)),
                 Channel = 7,
-                Flags = Hecton8.Core.Signals.CombatDamageSignal.DirectRuntimeFlag,
+                Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag,
                 IntegrityDelta = (byte)math.clamp((int)math.ceil(damage * math.rcp(math.max(1f, maxHealth)) * 255f), 1, 255)
             };
             GlobalSignals.Publish(in signal);
@@ -1117,7 +1117,7 @@ namespace Hecton8.Gameplay.Mining
                 SourceEntityId = _sourceId,
                 Intensity01 = 1f,
                 DebrisKind = 9,
-                Flags = 1,
+                Flags = DebrisSpawnSignal.FlagComputeShard | 1,
                 Quantity = 7
             };
             GlobalSignals.Publish(in signal);

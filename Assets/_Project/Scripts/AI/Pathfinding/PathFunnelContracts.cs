@@ -1,0 +1,156 @@
+using System.Runtime.InteropServices;
+using Unity.Mathematics;
+
+namespace Hecton8.AI.Pathfinding
+{
+    /// <summary>
+    /// Math LOD used by the funnel smoother. Higher tiers inspect more portals per smoothing pass.
+    /// </summary>
+    public enum PathFunnelMathLod : byte
+    {
+        Stressed = 0,
+        Low = 1,
+        Middle = 2,
+        High = 3,
+        Ultra = 4
+    }
+
+    /// <summary>
+    /// Shared constants for the Burst funnel smoother and its WFC invalidation owner.
+    /// </summary>
+    public static class PathFunnelConstants
+    {
+        public const int TelemetryFrames = 300;
+        public const int WfcOutpostCellCount = 500;
+        public const int WfcCellMaskWordCount = 8;
+        public const float Epsilon = 0.00001f;
+        public const byte PortalFlagWfcDoor = 1 << 0;
+        public const byte PortalFlagNoRadiusShrink = 1 << 1;
+        public const byte WfcDoorOpenFlag = 1 << 0;
+        public const uint SourceHash = 0x50464E4Cu; // PFNL
+    }
+
+    /// <summary>
+    /// One corridor portal edge in sector-local meters. Left and right are ordered around the path corridor.
+    /// ClearanceMeters is pre-eroded SDF clearance from the navgrid owner; zero means unknown.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    public struct NavPortal
+    {
+        public float3 Left;
+        public float3 Right;
+        public float ClearanceMeters;
+        public ushort LeftCellIndex;
+        public ushort RightCellIndex;
+        public byte Flags;
+        public byte Reserved0;
+        public ushort Reserved1;
+    }
+
+    /// <summary>
+    /// Status codes returned by <see cref="FunnelSmoothingJob"/>.
+    /// </summary>
+    public static class PathFunnelStatus
+    {
+        public const byte None = 0;
+        public const byte Complete = 1;
+        public const byte PartialLookAhead = 2;
+        public const byte BlockedByWfcDoor = 3;
+        public const byte FallbackRaw = 4;
+        public const byte InvalidInput = 5;
+        public const byte OutputCapacityExceeded = 6;
+    }
+
+    /// <summary>
+    /// Bit flags emitted with a funnel result.
+    /// </summary>
+    public static class PathFunnelResultFlags
+    {
+        public const uint NonFiniteInput = 1u << 0;
+        public const uint CollinearPortal = 1u << 1;
+        public const uint NarrowPortalClamped = 1u << 2;
+        public const uint WfcDoorBlocked = 1u << 3;
+        public const uint IterationGuardTripped = 1u << 4;
+        public const uint OutputOverflow = 1u << 5;
+        public const uint AupFallback = 1u << 6;
+        public const uint PartialLookAhead = 1u << 7;
+        public const uint SdfClearanceClamped = 1u << 8;
+    }
+
+    /// <summary>
+    /// Single-slot result payload written by the Burst funnel job.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct PathFunnelResult
+    {
+        [FieldOffset(0)] public int WaypointCount;
+        [FieldOffset(4)] public int ProcessedPortalCount;
+        [FieldOffset(8)] public int Iterations;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public byte Status;
+        [FieldOffset(17)] public byte MathLod;
+        [FieldOffset(18)] public ushort BlockedCellIndex;
+        [FieldOffset(20)] public uint CorridorHash;
+        [FieldOffset(24)] public uint Frame;
+    }
+
+    /// <summary>
+    /// Fixed active-path record used by the WFC door invalidation owner.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct PathFunnelActivePath
+    {
+        [FieldOffset(0)] public ulong SectorHash;
+        [FieldOffset(8)] public uint PathId;
+        [FieldOffset(12)] public uint CorridorHash;
+        [FieldOffset(16)] public ushort CellCount;
+        [FieldOffset(18)] public ushort Flags;
+        [FieldOffset(20)] public uint LastTouchedFrame;
+        [FieldOffset(24)] public uint InvalidatedFrame;
+    }
+
+    /// <summary>
+    /// Active-path record flags.
+    /// </summary>
+    public static class PathFunnelActivePathFlags
+    {
+        public const ushort InUse = 1 << 0;
+        public const ushort Invalidated = 1 << 1;
+    }
+
+    /// <summary>
+    /// Bounded invalidation payload for consumers polling the runtime owner.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct PathFunnelInvalidation
+    {
+        [FieldOffset(0)] public ulong SectorHash;
+        [FieldOffset(8)] public uint PathId;
+        [FieldOffset(12)] public uint CorridorHash;
+        [FieldOffset(16)] public uint Frame;
+        [FieldOffset(20)] public ushort CellIndex;
+        [FieldOffset(22)] public ushort Flags;
+        [FieldOffset(24)] public byte PreviousCellFlags;
+        [FieldOffset(25)] public byte CurrentCellFlags;
+    }
+
+    /// <summary>
+    /// Fixed black-box entry. The runtime writes one entry per late-frame flush.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    public struct PathFunnelTelemetryEntry
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint PathInvalidationCount;
+        [FieldOffset(8)] public ulong LastSectorHash;
+        [FieldOffset(16)] public uint LastPathId;
+        [FieldOffset(20)] public uint LastCorridorHash;
+        [FieldOffset(24)] public ushort LastCellIndex;
+        [FieldOffset(26)] public ushort ActivePathCount;
+        [FieldOffset(28)] public ushort InvalidatedPathCount;
+        [FieldOffset(30)] public ushort Flags;
+        [FieldOffset(32)] public float Stress01;
+        [FieldOffset(36)] public uint Reserved0;
+        [FieldOffset(40)] public ulong Reserved1;
+    }
+}

@@ -1,0 +1,150 @@
+using System.Runtime.CompilerServices;
+using Hecton8.Core.Memory;
+using Unity.Collections;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Hecton8.Core
+{
+    /// <summary>
+    /// DataVault-backed bridge for frame shader globals shared by the noir material path.
+    /// </summary>
+    public static class HectonShaderGlobalDataVaultBridge
+    {
+        private const int BiolumMasterPhaseSlot = 0;
+        private const int AupShiftOffsetSlot = 1;
+        private const int SlotCount = 2;
+
+        private static readonly int _BiolumMasterPhaseId = Shader.PropertyToID("_BiolumMasterPhase");
+        private static readonly int _GlobalBiolumPhaseId = Shader.PropertyToID("_GlobalBiolumPhase");
+        private static readonly int _HectonFloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
+        private static readonly int _TotalUniverseOffsetId = Shader.PropertyToID("_TotalUniverseOffset");
+        private static readonly int _AupShiftOffsetId = Shader.PropertyToID("_AupShiftOffset");
+        private static readonly int _AupJitterMaskId = Shader.PropertyToID("_AupJitterMask");
+
+        private static IDataVault _cachedVault;
+        private static uint _cachedVaultGeneration;
+        private static NativeArray<float4> _slots;
+        private static float4 _fallbackBiolumMasterPhase;
+        private static float4 _fallbackAupShiftOffset;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _cachedVault = null;
+            _cachedVaultGeneration = 0u;
+            _slots = default;
+            _fallbackBiolumMasterPhase = default;
+            _fallbackAupShiftOffset = default;
+        }
+
+        public static void PublishBiolumMasterPhase(Vector4 phaseVector)
+        {
+            float4 storedPhase = WriteReadSlot(
+                BiolumMasterPhaseSlot,
+                ToFiniteFloat4(phaseVector),
+                ref _fallbackBiolumMasterPhase);
+            Vector4 bridgedPhase = ToVector4(storedPhase);
+            Shader.SetGlobalVector(_BiolumMasterPhaseId, bridgedPhase);
+            Shader.SetGlobalFloat(_GlobalBiolumPhaseId, bridgedPhase.x);
+        }
+
+        public static void PublishAupShaderGlobals(Vector4 totalUniverseOffset, Vector4 aupShiftOffset, float aupJitterMask)
+        {
+            float4 storedShift = WriteReadSlot(
+                AupShiftOffsetSlot,
+                ToFiniteFloat4(aupShiftOffset),
+                ref _fallbackAupShiftOffset);
+            Vector4 bridgedTotal = ToVector4(ToFiniteFloat4(totalUniverseOffset));
+            Vector4 bridgedShift = ToVector4(storedShift);
+            Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, bridgedTotal);
+            Shader.SetGlobalVector(_TotalUniverseOffsetId, bridgedTotal);
+            Shader.SetGlobalVector(_AupShiftOffsetId, bridgedShift);
+            Shader.SetGlobalFloat(_AupJitterMaskId, math.saturate(aupJitterMask));
+        }
+
+        public static void ResetAupShaderGlobals()
+        {
+            PublishAupShaderGlobals(Vector4.zero, Vector4.zero, 0f);
+        }
+
+        private static float4 WriteReadSlot(int slot, float4 value, ref float4 fallback)
+        {
+            if (TryResolveSlots(out NativeArray<float4> slots))
+            {
+                slots[slot] = value;
+                return slots[slot];
+            }
+
+            fallback = value;
+            return fallback;
+        }
+
+        private static bool TryResolveSlots(out NativeArray<float4> slots)
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+            {
+                slots = default;
+                return false;
+            }
+
+            uint generation = vault.VaultGenerationID;
+            if (ReferenceEquals(vault, _cachedVault) &&
+                _cachedVaultGeneration == generation &&
+                _slots.IsCreated &&
+                _slots.Length >= SlotCount)
+            {
+                slots = _slots;
+                return true;
+            }
+
+            if (vault.TryGetBuffer(BufferID.ShaderGlobalState, out NativeArray<float4> existing) &&
+                existing.IsCreated &&
+                existing.Length >= SlotCount)
+            {
+                _cachedVault = vault;
+                _cachedVaultGeneration = generation;
+                _slots = existing;
+                slots = existing;
+                return true;
+            }
+
+            if (vault.IsAllocationLocked)
+            {
+                slots = default;
+                return false;
+            }
+
+            NativeArray<float4> allocated = vault.GetBuffer<float4>(
+                BufferID.ShaderGlobalState,
+                SlotCount,
+                SystemID.GraphicsScalability,
+                NativeArrayOptions.ClearMemory);
+            if (!allocated.IsCreated || allocated.Length < SlotCount)
+            {
+                slots = default;
+                return false;
+            }
+
+            _cachedVault = vault;
+            _cachedVaultGeneration = generation;
+            _slots = allocated;
+            slots = allocated;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float4 ToFiniteFloat4(Vector4 value)
+        {
+            float4 packed = new float4(value.x, value.y, value.z, value.w);
+            return math.all(math.isfinite(packed)) ? packed : default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector4 ToVector4(float4 value)
+        {
+            return new Vector4(value.x, value.y, value.z, value.w);
+        }
+    }
+}

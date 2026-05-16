@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Tools;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -46,7 +46,6 @@ namespace Hecton8.Core.Hardware
         private const string DumpFileName = "Dump_THERMAL_THROTTLING_DIRECTOR.bin";
 
         private static bool s_sceneHooked;
-        private static HardwareThermalService s_runtimeInstance;
 
         private NativeArray<byte> _thermalSeverity;
         private NativeArray<ThermalTelemetryEntry> _blackBox;
@@ -96,7 +95,6 @@ namespace Hecton8.Core.Hardware
         private static void ResetStaticState()
         {
             s_sceneHooked = false;
-            s_runtimeInstance = null;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
         }
 
@@ -120,9 +118,6 @@ namespace Hecton8.Core.Hardware
         private static void EnsureRuntimeInstanceCold()
         {
             if (GlobalRegistry.HardwareThermal != null)
-                return;
-
-            if (s_runtimeInstance != null)
                 return;
 
             GameObject serviceObject = new GameObject("[HardwareThermalService]");
@@ -155,13 +150,13 @@ namespace Hecton8.Core.Hardware
             if (!Application.isPlaying)
                 return;
 
-            if (s_runtimeInstance != null && !ReferenceEquals(s_runtimeInstance, this))
+            IHardwareThermalService registered = GlobalRegistry.HardwareThermal;
+            if (registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(gameObject);
                 return;
             }
 
-            s_runtimeInstance = this;
             EnsureNativeState();
         }
 
@@ -194,8 +189,6 @@ namespace Hecton8.Core.Hardware
         private void OnDestroy()
         {
             Dispose();
-            if (ReferenceEquals(s_runtimeInstance, this))
-                s_runtimeInstance = null;
         }
 
         public void Dispose()

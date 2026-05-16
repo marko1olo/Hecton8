@@ -1,6 +1,6 @@
 using System;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using UnityEngine;
 
 namespace Hecton8.Graphics.Materials

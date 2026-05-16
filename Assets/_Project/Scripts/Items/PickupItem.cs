@@ -6,7 +6,6 @@
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;
-using Hecton8.Modding;
 using Hecton8.Physics;
 using Hecton8.Gameplay;
 
@@ -43,6 +42,8 @@ namespace Hecton8.Interaction
         private const float LooseItemUnderwaterAngularDamping = 6.5f;
         private const float LooseItemBuoyancyAngularDragMultiplier = 2.75f;
         private const ushort DefaultQualityMilli = 1000;
+        private const byte ItemSourceManualPickup = 9;
+        private const byte SignalFlagManualPickup = 1 << 1;
 
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
@@ -56,6 +57,8 @@ namespace Hecton8.Interaction
         private Rigidbody _rigidbody;
         private BuoyancyObject _buoyancy;
         private Collider _collider;
+        private Renderer _lootMagnetRenderer;
+        private MotionVectorGenerationMode _defaultMotionVectorMode;
         private PhysicsMaterial _defaultColliderMaterial;
         private float _defaultLinearDamping;
         private float _defaultAngularDamping;
@@ -77,6 +80,7 @@ namespace Hecton8.Interaction
         private bool _registeredToWorldStateRegistry;
         private ulong _geneticsMask;
         private ushort _qualityMilli = DefaultQualityMilli;
+        private bool _lootMagnetMotionVectorForced;
 
         public ItemData ItemData => itemData;
         public int Quantity => quantity;
@@ -93,6 +97,29 @@ namespace Hecton8.Interaction
         public static PickupItem GetWorldStateRegistryAt(int index)
         {
             return _worldStateRegistry.GetAt(index);
+        }
+
+        /// <summary>Applies deterministic loot magnet presentation without Unity trigger callbacks.</summary>
+        public void ApplyLootMagnetPose(Vector3 runtimePosition, float3 velocity, float motionVectorThresholdSq)
+        {
+            transform.position = runtimePosition;
+
+            Renderer renderer = _lootMagnetRenderer;
+            if (renderer == null)
+                return;
+
+            float velocitySq = math.lengthsq(velocity);
+            if (!math.isfinite(velocitySq) || velocitySq <= motionVectorThresholdSq)
+            {
+                RestoreLootMagnetMotionVectorMode();
+                return;
+            }
+
+            if (_lootMagnetMotionVectorForced)
+                return;
+
+            renderer.motionVectorGenerationMode = MotionVectorGenerationMode.Object;
+            _lootMagnetMotionVectorForced = true;
         }
 
         public void Configure(ItemData data, int itemQuantity)
@@ -131,13 +158,26 @@ namespace Hecton8.Interaction
             _persistentWorldRecordIndex = -1;
         }
 
+        private void RestoreLootMagnetMotionVectorMode()
+        {
+            if (!_lootMagnetMotionVectorForced || _lootMagnetRenderer == null)
+                return;
+
+            _lootMagnetRenderer.motionVectorGenerationMode = _defaultMotionVectorMode;
+            _lootMagnetMotionVectorForced = false;
+        }
+
         private void Awake()
         {
             TryGetComponent(out _highlighter);
             TryGetComponent(out _rigidbody);
             TryGetComponent(out _buoyancy);
             TryGetComponent(out _collider);
+            TryGetComponent(out _lootMagnetRenderer);
             _defaultColliderMaterial = _collider != null ? _collider.sharedMaterial : null;
+            _defaultMotionVectorMode = _lootMagnetRenderer != null
+                ? _lootMagnetRenderer.motionVectorGenerationMode
+                : MotionVectorGenerationMode.Camera;
             if (_rigidbody != null)
             {
                 _defaultLinearDamping = _rigidbody.linearDamping;
@@ -211,6 +251,7 @@ namespace Hecton8.Interaction
             UnregisterWorldStateRegistry();
             ClearPersistentWorldRecord();
             RestoreDamping();
+            RestoreLootMagnetMotionVectorMode();
             if (_rigidbody != null)
                 GlobalPhysicsStateManager.UnregisterTrackedBody(_rigidbody);
 
@@ -225,6 +266,7 @@ namespace Hecton8.Interaction
             TryUnregisterFixedTick();
             UnregisterSpatialHandle();
             UnregisterWorldStateRegistry();
+            RestoreLootMagnetMotionVectorMode();
             if (_rigidbody != null)
                 GlobalPhysicsStateManager.UnregisterTrackedBody(_rigidbody);
 
@@ -384,6 +426,11 @@ namespace Hecton8.Interaction
 
         public bool TryHandleInventoryPickup(PlayerInventory inventory, Transform interactor)
         {
+            return TryHandleInventoryPickup(inventory, interactor, publishAcquiredSignal: true);
+        }
+
+        public bool TryHandleInventoryPickup(PlayerInventory inventory, Transform interactor, bool publishAcquiredSignal)
+        {
             if (itemData == null || quantity <= 0 || _cachedItemHashId == 0)
                 return false;
 
@@ -400,17 +447,8 @@ namespace Hecton8.Interaction
                 return true;
             }
 
-            InteractionEvents.RaiseItemCollected(itemData, attempt.AddedQuantity, interactor);
-            bool hasInteractorPosition = interactor != null;
-            ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(interactor.GetEntityId()) : 0ul;
-            Vector3 interactorPosition = hasInteractorPosition ? interactor.position : Vector3.zero;
-            HectonEventBus.Publish(new ItemCollectedEvent(
-                itemData,
-                _cachedItemHashId,
-                attempt.AddedQuantity,
-                interactorEntityId,
-                interactorPosition,
-                hasInteractorPosition));
+            if (publishAcquiredSignal)
+                PublishItemAcquiredSignal(attempt.AddedQuantity, interactor);
 
             quantity = attempt.RejectedQuantity;
             if (quantity > 0)
@@ -426,6 +464,30 @@ namespace Hecton8.Interaction
             _persistentWorldRegistry?.MarkRecordCollected(_persistentWorldRecordIndex);
             ConsumeWorldProxy();
             return true;
+        }
+
+        private void PublishItemAcquiredSignal(int addedQuantity, Transform interactor)
+        {
+            if (addedQuantity <= 0 || _cachedItemHashId == 0)
+                return;
+
+            Vector3 signalPosition = transform.position;
+            if (interactor != null && IsFiniteVector(interactor.position))
+                signalPosition = interactor.position;
+
+            ItemAcquiredSignal signal = new ItemAcquiredSignal
+            {
+                PositionAup = IsFiniteVector(signalPosition)
+                    ? AbsoluteUniversePosition.FromRuntimePosition(signalPosition)
+                    : default,
+                ItemHash = unchecked((uint)_cachedItemHashId),
+                OreHash = unchecked((uint)_cachedItemHashId),
+                Quantity = (ushort)math.min(addedQuantity, (int)ushort.MaxValue),
+                SourceKind = ItemSourceManualPickup,
+                Flags = SignalFlagManualPickup,
+                Frame = unchecked((uint)Time.frameCount)
+            };
+            GlobalSignals.Publish(in signal);
         }
 
         private static ushort NormalizeQualityMilli(ushort qualityMilli)

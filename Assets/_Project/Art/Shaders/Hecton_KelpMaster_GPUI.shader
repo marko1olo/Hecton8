@@ -163,6 +163,10 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
             half _HectonFloorBiolumStrength;
             float4 _BiolumMasterPhase;
             float4 _BiolumIntensity;
+            float4 _GlobalBiolumStates[16];
+            float4 _GlobalBiolumParams;
+            float4 _GlobalBiolumClock;
+            float4 _GlobalBiolumAupOffset;
 
             float4 _HectonPropWashPosition; // xyz: position, w: radius
             half _HectonPropWashForce;
@@ -320,6 +324,21 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                     return 1.0h;
 
                 return absNormal.x >= absNormal.z ? 0.0h : 2.0h;
+            }
+
+            half4 ResolveKelpGlobalBiolum(float3 positionWS)
+            {
+                int activeCount = min(max((int)_GlobalBiolumParams.x, 0), 16);
+                if (activeCount <= 0)
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+                float selector = frac(abs(positionWS.x * 0.029 + positionWS.z * 0.047 + _GlobalBiolumAupOffset.x * 0.0011 + _GlobalBiolumAupOffset.z * 0.0019));
+                int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
+                float4 state = _GlobalBiolumStates[stateIndex];
+                half strobe = saturate((half)_GlobalBiolumParams.z);
+                half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
+                half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
+                return half4(color, intensity);
             }
 
             float2 ResolveFloraAxisUv(float3 positionWS, half axis)
@@ -510,13 +529,16 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                     half biolumMask = saturate((edgeMask * 0.42h + thicknessMask * 0.38h + proceduralBiolumMask * 0.20h) * _BiolumMaskStrength);
                     half biolumField = lerp(1.0h, currentWave, saturate(_BiolumCurrentResponse));
                     half celestialBiolum = max((half)_HectonCelestialBiolumMultiplier, 1.0h);
-                    half masterBiolum = max((half)_BiolumIntensity.x, 0.0h);
+                    half4 globalBiolumState = ResolveKelpGlobalBiolum(samplePositionWS);
+                    half globalBiolumMask = step(0.001h, globalBiolumState.w);
+                    half masterBiolum = max(max((half)_BiolumIntensity.x, 0.0h), globalBiolumState.w);
                     half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * masterBiolum * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField;
                     [branch]
                     if (authoredBiolumEnergy > 0.0001h)
                     {
                         half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
                         zoneBiolumColor = lerp(zoneBiolumColor, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
+                        zoneBiolumColor = lerp(zoneBiolumColor, globalBiolumState.rgb, globalBiolumMask);
                         half3 authoredBiolum = zoneBiolumColor * authoredBiolumEnergy;
                         authoredBiolum *= HectonCoreLitResolveFlashlightPhotophobia(samplePositionWS);
                         biolum += authoredBiolum;

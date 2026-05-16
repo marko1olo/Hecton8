@@ -7,7 +7,7 @@ using Hecton8.Audio.Echolocation;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Physics;

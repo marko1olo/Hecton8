@@ -1,19 +1,11 @@
 using System.Runtime.InteropServices;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Mathematics;
 
-namespace Hecton8.Vehicles.Automation
+namespace Hecton8.Core.Contracts.Signals
 {
-    public enum DockingFailureReason : byte
-    {
-        None = 0,
-        ObstacleBlocked = 1,
-        InvalidRequest = 2,
-        LostHub = 3
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
     public struct DockingRequestSignal : ISignal
     {
         public int DroneId;
@@ -27,7 +19,7 @@ namespace Hecton8.Vehicles.Automation
         public byte Reserved2;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
     public struct DockingCompleteSignal : ISignal
     {
         public int DroneId;
@@ -41,7 +33,7 @@ namespace Hecton8.Vehicles.Automation
         public byte Reserved2;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
     public struct DockingFailedSignal : ISignal
     {
         public int DroneId;
@@ -53,5 +45,16 @@ namespace Hecton8.Vehicles.Automation
         public byte Flags;
         public byte Reserved0;
         public byte Reserved1;
+    }
+}
+
+namespace Hecton8.Vehicles.Automation
+{
+    public enum DockingFailureReason : byte
+    {
+        None = 0,
+        ObstacleBlocked = 1,
+        InvalidRequest = 2,
+        LostHub = 3
     }
 }

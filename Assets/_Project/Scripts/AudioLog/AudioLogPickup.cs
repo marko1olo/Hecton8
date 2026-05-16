@@ -6,7 +6,7 @@
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Interaction;
 using Hecton8.Quest;
 using UnityEngine;

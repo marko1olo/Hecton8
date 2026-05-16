@@ -2,7 +2,8 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Ecosystem;
 using Hecton8.Physics;
 using Hecton8.Environment;
@@ -54,8 +55,8 @@ namespace Hecton8.World
         private const int ComputeDisableReasonZeroThreadGroup = 7;
         private const int ComputeDisableReasonKernelValidationFailure = 8;
         private const int ComputeDisableReasonOriginShiftFailure = 9;
-        private const int FaunaSimulationBucketMask = 15;
-        private const float FaunaSimulationBucketInvCount = 1f / (FaunaSimulationBucketMask + 1);
+        private const int FaunaSimulationBucketMask = SimulationBucketConstants.StandardSlowBucketMask;
+        private const float FaunaSimulationBucketInvCount = 1f / SimulationBucketConstants.StandardSlowBucketCount;
         private const uint FaunaAmbientDriftKillSwitchMask = GlobalRegistry.SystemKillSwitchLane4VfxMask;
         private const uint FaunaBucketedSimulationCostHash = 0x46534255u; // FSBU
 #if UNITY_EDITOR
@@ -125,17 +126,18 @@ namespace Hecton8.World
             public int Count => _count;
             public bool IsCreated => _items.IsCreated;
 
-            public void EnsureCapacity(int capacity, string label)
+            public void EnsureCapacity(IDataVault vault, BufferID bufferId, int capacity, string label)
             {
-                if (capacity <= 0)
+                if (capacity <= 0 || vault == null || bufferId == BufferID.Unknown)
                     return;
 
                 if (_items.IsCreated && _items.Length == capacity)
                     return;
 
                 Dispose();
-                _items = new NativeArray<T>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<T>[capacity] - persistent statistical swarm ring buffer - owner: SargassumMicroFaunaBoids
-                NativeMemorySentinel.RegisterNativeArray(_items, NativeMemoryOwner, label, NativeAllocationLifetime.Scene);
+                _items = vault.GetBuffer<T>(bufferId, capacity, SystemID.WorldSargassum, NativeArrayOptions.ClearMemory);
+                if (_items.IsCreated)
+                    NativeMemorySentinel.RegisterNativeArray(_items, NativeMemoryOwner, label, NativeAllocationLifetime.Scene);
                 _head = 0;
                 _count = 0;
             }
@@ -169,7 +171,6 @@ namespace Hecton8.World
                     return;
 
                 NativeMemorySentinel.UnregisterNativeArray(_items);
-                _items.Dispose(dependency);
                 _items = default;
                 _head = 0;
                 _count = 0;
@@ -185,7 +186,8 @@ namespace Hecton8.World
             Fleeing = 1u << 2,
             Consumed = 1u << 3,
             AggressiveMutation = 1u << 4,
-            VisualMutationResolved = 1u << 5
+            VisualMutationResolved = 1u << 5,
+            LightStimulus = 1u << 6
         }
 
         [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = false)]
@@ -613,6 +615,23 @@ namespace Hecton8.World
         private const int PredatorAupBufferCapacity = 16;
         private const int PredatorAupStride = sizeof(float) * 4;
         private const int PredatorAupLowTierThreatLoopCap = 4;
+        private const int SensoryThreatSlotSubmarine = 0;
+        private const int SensoryThreatSlotFlashlight = 1;
+        private const int SensoryThreatFirstPingSlot = 2;
+        private const int SensoryThreatLastPingSlot = 4;
+        private const int SensoryThreatReservedSlots = SensoryThreatLastPingSlot + 1;
+        private const float SensoryThreatMinRadiusMeters = 0.1f;
+        private const float SensorySubmarineThreatRadiusMeters = 32f;
+        private const float SensoryFlashlightDefaultRangeMeters = 24f;
+        private const float SensoryFlashlightEndpointScale = 0.72f;
+        private const float SensoryFlashlightRadiusScale = 0.28f;
+        private const float SensoryFlashlightGrowMetersPerSecond = 42f;
+        private const float SensoryFlashlightShrinkMetersPerSecond = 56f;
+        private const float SensoryAcousticPingDecayMetersPerSecond = 34f;
+        private const float SensoryAcousticPingMinRadiusMeters = 8f;
+        private const float SensoryAcousticPingMaxRadiusMeters = 120f;
+        private const int SensorySubmarineLightSignalConsumeLimit = 8;
+        private const uint SensoryThreatFlagFlashlightCapsule = 1u << 0;
         private const int SwarmAcousticSignalConsumeLimit = 4;
         private const int SwarmMovementSignalConsumeLimit = 8;
         private const float SwarmAcousticShockDurationSeconds = 1f / 60f;
@@ -730,6 +749,7 @@ namespace Hecton8.World
         private static readonly int _CameraAvoidWeightId = Shader.PropertyToID("_CameraAvoidWeight");
         private static readonly int _MassiveThreatsId = Shader.PropertyToID("_MassiveThreats");
         private static readonly int _PredatorAUPBufferId = Shader.PropertyToID("_PredatorAUPBuffer");
+        private static readonly int _EncounterPredatorAUPBufferId = Shader.PropertyToID("_EncounterPredatorAUPBuffer");
         private static readonly int _MassiveThreatCountId = Shader.PropertyToID("_MassiveThreatCount");
         private static readonly int _MassiveThreatWeightId = Shader.PropertyToID("_MassiveThreatWeight");
         private static readonly int _VatEnabledId = Shader.PropertyToID("_VatEnabled");
@@ -1455,6 +1475,14 @@ namespace Hecton8.World
         private int _debugPredatorAupThreatCount;
 
         [SerializeField]
+        [Tooltip("Active fixed-slot sensory threat count uploaded to the boid compute shader.")]
+        private int _debugBoidSensoryThreatCount;
+
+        [SerializeField]
+        [Tooltip("Current flashlight sensory threat radius in the fixed-slot threat buffer.")]
+        private float _debugBoidFlashlightThreatRadius;
+
+        [SerializeField]
         [Tooltip("CPU-side consumed GPU boid count emitted by predator bite jobs this session.")]
         private int _debugConsumedBoidCount;
 
@@ -1482,6 +1510,7 @@ namespace Hecton8.World
         private NativeArray<FoveatedSimulationDecision> _foveatedSimulationFrontNative;
         private NativeArray<FoveatedSimulationDecision> _foveatedSimulationBackNative;
         private NativeArray<SimulationFrameConstants> _simulationFrameNative;
+        private NativeArray<float4> _boidSensoryThreatsNative;
         private NativeArray<uint> _threatGridUploadNative;
         private NativeArray<uint> _threatVoxelUploadNative;
         private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _boidIndirectArgsUpload =
@@ -1502,6 +1531,7 @@ namespace Hecton8.World
         private GraphicsBuffer _spatialGridCellBuffer;
         private GraphicsBuffer _simulationFrameBuffer;
         private GraphicsBuffer _predatorAupFallbackBuffer;
+        private GraphicsBuffer _boidSensoryThreatBuffer;
         private bool _latchStatsBufferRawTarget;
         private bool _pbdCorrectionBufferRawTarget;
         private bool _spatialGridCountBufferRawTarget;
@@ -1598,6 +1628,7 @@ namespace Hecton8.World
         private WorldZoneDirector _worldZoneDirector;
         private BiomeMatrixDirector _biomeMatrixDirector;
         private HectonMapMagicVegetationBridge _mapMagicVegetationBridge;
+        private IDataVault _dataVault;
         private HectonFluidEngine _fluidEngine;
         private ISubmarineRuntimeContext _submarineRuntime;
         private IEncounterDirectorService _encounterDirector;
@@ -1646,6 +1677,14 @@ namespace Hecton8.World
         private float _acousticPanicStrength01;
         private float _acousticPanicExpireTime = float.NegativeInfinity;
         private uint _acousticPanicSeed;
+        private int _activeBoidSensoryThreatCount;
+        private int _boidSensoryPingWriteCursor;
+        private float _boidFlashlightThreatRadiusWS;
+        private float _boidFlashlightThreatTargetRadiusWS;
+        private float _boidFlashlightThreatRangeWS = SensoryFlashlightDefaultRangeMeters;
+        private float _boidFlashlightThreatIntensity01;
+        private Vector3 _boidFlashlightThreatOriginWS;
+        private Vector3 _boidFlashlightThreatForwardWS = Vector3.forward;
         private float _lastSwarmDispersedSignalTime = float.NegativeInfinity;
         private uint _swarmDispersedSequence;
         private uint _lastMaelstromThreatHash;
@@ -1775,6 +1814,8 @@ namespace Hecton8.World
             _debugFragmentation01 = 0f;
             _debugSonarScatter01 = 0f;
             _debugPredatorAupThreatCount = 0;
+            _debugBoidSensoryThreatCount = 0;
+            _debugBoidFlashlightThreatRadius = 0f;
             _parasiteLatchReadbackTimer = 0f;
             _parasiteLatchReadbackPending = false;
             _reportedParasiteCenterOfMassLS = Vector3.zero;
@@ -1814,6 +1855,14 @@ namespace Hecton8.World
             _acousticPanicStrength01 = 0f;
             _acousticPanicOriginWS = Vector3.zero;
             _acousticPanicSeed = 0u;
+            _activeBoidSensoryThreatCount = 0;
+            _boidSensoryPingWriteCursor = 0;
+            _boidFlashlightThreatRadiusWS = 0f;
+            _boidFlashlightThreatTargetRadiusWS = 0f;
+            _boidFlashlightThreatRangeWS = SensoryFlashlightDefaultRangeMeters;
+            _boidFlashlightThreatIntensity01 = 0f;
+            _boidFlashlightThreatOriginWS = Vector3.zero;
+            _boidFlashlightThreatForwardWS = Vector3.forward;
             _lastSwarmDispersedSignalTime = float.NegativeInfinity;
             _swarmDispersedSequence = 0u;
             ResetThreatVoxelSnapshot();
@@ -2072,6 +2121,8 @@ namespace Hecton8.World
 
         private void ResolveDependencies()
         {
+            _dataVault ??= GlobalRegistry.DataVault;
+
             bool missingRuntimeServices = biolumManager == null ||
                                           dragManager == null ||
                                           cutManager == null ||
@@ -2378,21 +2429,25 @@ namespace Hecton8.World
             buffersChanged |= EnsureBuffer(ref _spatialGridCellBuffer, SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell, SpatialGridCellEntryStride);
             buffersChanged |= EnsureBuffer(ref _simulationFrameBuffer, 1, SimulationFrameConstantsStride);
             buffersChanged |= EnsurePredatorAupFallbackBuffer();
+            buffersChanged |= EnsureBuffer(ref _boidSensoryThreatBuffer, PredatorAupBufferCapacity, PredatorAupStride);
             EnsureFallbackAbyssalFlowTexture();
             if (buffersChanged)
                 _computeStaticBuffersBound = false;
-            EnsureNativeArrayCapacity(ref _staticObstacleCache, math.max(formationObstacleCapacity * 8, formationObstacleCapacity), nameof(_staticObstacleCache));
-            EnsureNativeArrayCapacity(ref _boidStateNative, boidCount, nameof(_boidStateNative));
-            EnsureNativeArrayCapacity(ref _leviathanNodeFrontNative, leviathanNodeCapacity, nameof(_leviathanNodeFrontNative));
-            EnsureNativeArrayCapacity(ref _leviathanNodeBackNative, leviathanNodeCapacity, nameof(_leviathanNodeBackNative));
-            EnsureNativeArrayCapacity(ref _leviathanNodeCountNative, 1, nameof(_leviathanNodeCountNative));
-            EnsureNativeArrayCapacity(ref _foveatedSimulationInputNative, 1, nameof(_foveatedSimulationInputNative));
-            EnsureNativeArrayCapacity(ref _foveatedSimulationFrontNative, 1, nameof(_foveatedSimulationFrontNative));
-            EnsureNativeArrayCapacity(ref _foveatedSimulationBackNative, 1, nameof(_foveatedSimulationBackNative));
-            EnsureNativeArrayCapacity(ref _simulationFrameNative, 1, nameof(_simulationFrameNative));
-            EnsureNativeArrayCapacity(ref _foodChainTelemetryRing, FoodChainTelemetryCapacity, nameof(_foodChainTelemetryRing));
-            _inactiveStatisticalSwarmRing.EnsureCapacity(InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmRing));
-            _inactiveStatisticalSwarmCenterRing.EnsureCapacity(InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmCenterRing));
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            _dataVault = vault;
+            EnsureNativeArrayCapacity(vault, ref _staticObstacleCache, BufferID.SargassumStaticObstacleCache, math.max(formationObstacleCapacity * 8, formationObstacleCapacity), nameof(_staticObstacleCache));
+            EnsureNativeArrayCapacity(vault, ref _boidStateNative, BufferID.SargassumBoidState, boidCount, nameof(_boidStateNative));
+            EnsureNativeArrayCapacity(vault, ref _leviathanNodeFrontNative, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity, nameof(_leviathanNodeFrontNative));
+            EnsureNativeArrayCapacity(vault, ref _leviathanNodeBackNative, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity, nameof(_leviathanNodeBackNative));
+            EnsureNativeArrayCapacity(vault, ref _leviathanNodeCountNative, BufferID.SargassumLeviathanNodeCount, 1, nameof(_leviathanNodeCountNative));
+            EnsureNativeArrayCapacity(vault, ref _foveatedSimulationInputNative, BufferID.SargassumFoveatedSimulationInput, 1, nameof(_foveatedSimulationInputNative));
+            EnsureNativeArrayCapacity(vault, ref _foveatedSimulationFrontNative, BufferID.SargassumFoveatedSimulationFront, 1, nameof(_foveatedSimulationFrontNative));
+            EnsureNativeArrayCapacity(vault, ref _foveatedSimulationBackNative, BufferID.SargassumFoveatedSimulationBack, 1, nameof(_foveatedSimulationBackNative));
+            EnsureNativeArrayCapacity(vault, ref _simulationFrameNative, BufferID.SargassumSimulationFrame, 1, nameof(_simulationFrameNative));
+            EnsureNativeArrayCapacity(vault, ref _boidSensoryThreatsNative, BufferID.SargassumBoidSensoryThreats, PredatorAupBufferCapacity, nameof(_boidSensoryThreatsNative));
+            EnsureNativeArrayCapacity(vault, ref _foodChainTelemetryRing, BufferID.SargassumFoodChainTelemetryRing, FoodChainTelemetryCapacity, nameof(_foodChainTelemetryRing));
+            _inactiveStatisticalSwarmRing.EnsureCapacity(vault, BufferID.SargassumInactiveSwarmRing, InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmRing));
+            _inactiveStatisticalSwarmCenterRing.EnsureCapacity(vault, BufferID.SargassumInactiveSwarmCenterRing, InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmCenterRing));
             if (!_killSignals.IsCreated)
             {
                 _killSignals = new NativeQueue<BoidKillSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BoidKillSignal>[8] - predator bite job lane drained in late-frame swap - owner: SargassumMicroFaunaBoids
@@ -2635,7 +2690,7 @@ namespace Hecton8.World
             int cellCount = (int)cellCountLong;
             if (EnsureBufferCapacity(ref _threatGridBuffer, cellCount, ThreatGridStride))
                 _computeStaticBuffersBound = false;
-            EnsureNativeArrayCapacity(ref _threatGridUploadNative, cellCount, nameof(_threatGridUploadNative));
+            EnsureNativeArrayCapacity(_dataVault ?? GlobalRegistry.DataVault, ref _threatGridUploadNative, BufferID.SargassumThreatGridUpload, cellCount, nameof(_threatGridUploadNative));
 
             for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
                 _threatGridUploadNative[cellIndex] = threatGrid[cellIndex];
@@ -3416,7 +3471,7 @@ namespace Hecton8.World
             if (_leviathanNodeBuildScheduled)
                 return;
 
-            EnsureNativeArrayCapacity(ref _leviathanPathScratchNative, safePathCount, nameof(_leviathanPathScratchNative));
+            EnsureNativeArrayCapacity(_dataVault ?? GlobalRegistry.DataVault, ref _leviathanPathScratchNative, BufferID.SargassumLeviathanPathScratch, safePathCount, nameof(_leviathanPathScratchNative));
             for (int i = 0; i < safePathCount; i++)
                 _leviathanPathScratchNative[i] = path[i];
 
@@ -3880,6 +3935,7 @@ namespace Hecton8.World
                 _leviathanNodeBuffer == null ||
                 _massiveThreatBuffer == null ||
                 _predatorAupFallbackBuffer == null ||
+                _boidSensoryThreatBuffer == null ||
                 _threatGridBuffer == null ||
                 _threatVoxelBuffer == null)
             {
@@ -3897,7 +3953,8 @@ namespace Hecton8.World
                 boidCompute.SetBuffer(_kernelIndex, _FormationObstaclesId, _formationObstacleBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _LeviathanNodesId, _leviathanNodeBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _MassiveThreatsId, _massiveThreatBuffer);
-                boidCompute.SetBuffer(_kernelIndex, _PredatorAUPBufferId, _predatorAupFallbackBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _PredatorAUPBufferId, _boidSensoryThreatBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _EncounterPredatorAUPBufferId, _predatorAupFallbackBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _ThreatGridId, _threatGridBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _ThreatVoxelGridId, _threatVoxelBuffer);
 
@@ -3968,6 +4025,286 @@ namespace Hecton8.World
             return simulationLodTier == SimulationLodTier.Full
                 ? safeCount
                 : math.min(safeCount, PredatorAupLowTierThreatLoopCap);
+        }
+
+        private static int ResolveBoidSensoryThreatFlags(SimulationLodTier simulationLodTier)
+        {
+            return simulationLodTier == SimulationLodTier.Full
+                ? unchecked((int)SensoryThreatFlagFlashlightCapsule)
+                : 0;
+        }
+
+        private int UpdateBoidSensoryThreats(
+            float simulationDt,
+            Vector3 playerPosition,
+            Vector3 playerForward,
+            Vector3 submarineThreatPosition,
+            float submarineThreatRadius,
+            SimulationLodTier simulationLodTier)
+        {
+            if (!_boidSensoryThreatsNative.IsCreated || _boidSensoryThreatBuffer == null)
+            {
+                _activeBoidSensoryThreatCount = 0;
+                return 0;
+            }
+
+            ClearBoidSensoryStaticThreatSlots();
+            DecayBoidSensoryAcousticPingThreats(simulationDt);
+            Vector3 playerAupPosition = ResolvePlayerAupRuntimePosition(playerPosition);
+            WriteBoidSensoryThreatSlot(
+                SensoryThreatSlotSubmarine,
+                submarineThreatPosition,
+                math.max(submarineThreatRadius, SensorySubmarineThreatRadiusMeters));
+            ConsumeSubmarineLightSignals(playerAupPosition, playerForward);
+            UpdateFlashlightSensoryThreat(simulationDt, playerAupPosition, playerForward, simulationLodTier);
+            ConsumeBoidSensoryAcousticPingSignals();
+
+            int activeThreatCount = ResolveActiveBoidSensoryThreatCount();
+            _activeBoidSensoryThreatCount = activeThreatCount;
+            GraphicsBufferUploadUtility.UploadNativeArray(
+                _boidSensoryThreatBuffer,
+                _boidSensoryThreatsNative,
+                PredatorAupBufferCapacity);
+            return activeThreatCount;
+        }
+
+        private void ClearBoidSensoryStaticThreatSlots()
+        {
+            _boidSensoryThreatsNative[SensoryThreatSlotSubmarine] = float4.zero;
+            _boidSensoryThreatsNative[SensoryThreatSlotFlashlight] = float4.zero;
+            for (int i = SensoryThreatReservedSlots; i < PredatorAupBufferCapacity; i++)
+                _boidSensoryThreatsNative[i] = float4.zero;
+        }
+
+        private Vector3 ResolvePlayerAupRuntimePosition(Vector3 fallbackPosition)
+        {
+            if (!TryResolvePlayerRuntimeSnapshot(
+                    out PlayerMovementRuntimeState movementState,
+                    out PlayerLookState _))
+            {
+                return fallbackPosition;
+            }
+
+            if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
+                return fallbackPosition;
+
+            float3 runtimePosition = movementState.PredictedAup.ToRuntimeFloat3();
+            return math.all(math.isfinite(runtimePosition))
+                ? ToVector3(runtimePosition)
+                : fallbackPosition;
+        }
+
+        private void ConsumeSubmarineLightSignals(Vector3 fallbackOriginWS, Vector3 fallbackForwardWS)
+        {
+            ReadOnlySpan<SubmarineLightsChangedSignal> lightSignals = SignalBus<SubmarineLightsChangedSignal>.GetFrameSnapshot();
+            int signalCount = math.min(lightSignals.Length, SensorySubmarineLightSignalConsumeLimit);
+            float bestSignalScore = -1f;
+            Vector3 bestOriginWS = fallbackOriginWS;
+            Vector3 bestForwardWS = fallbackForwardWS;
+            float bestRangeMeters = 0f;
+            float bestIntensity01 = 0f;
+            bool shrinkRequested = false;
+
+            for (int i = 0; i < signalCount; i++)
+            {
+                SubmarineLightsChangedSignal signal = lightSignals[i];
+                bool powered = (signal.Flags & SubmarineLightsChangedSignalFlags.Powered) != 0 &&
+                               (signal.Flags & SubmarineLightsChangedSignalFlags.BrownoutSuppressed) == 0;
+                if (signal.Operation == SubmarineLightsChangedSignalOperations.Remove ||
+                    signal.Operation == SubmarineLightsChangedSignalOperations.ClearSource ||
+                    !powered)
+                {
+                    shrinkRequested = true;
+                    continue;
+                }
+
+                float intensity01 = math.saturate(signal.Intensity);
+                if (intensity01 <= 0.001f)
+                    continue;
+
+                float rangeMeters = math.clamp(
+                    math.isfinite(signal.RangeMeters) ? signal.RangeMeters : SensoryFlashlightDefaultRangeMeters,
+                    SensoryThreatMinRadiusMeters,
+                    SensoryAcousticPingMaxRadiusMeters);
+                float3 runtimePosition = signal.PositionAup.ToRuntimeFloat3();
+                if (!math.all(math.isfinite(runtimePosition)))
+                    continue;
+
+                float3 signalForward = signal.Forward;
+                Vector3 forwardWS = math.lengthsq(signalForward) > 0.0001f && math.all(math.isfinite(signalForward))
+                    ? FastNormalizeVector3(ToVector3(signalForward), fallbackForwardWS)
+                    : fallbackForwardWS;
+                float signalScore = rangeMeters * intensity01;
+                if (signalScore <= bestSignalScore)
+                    continue;
+
+                bestSignalScore = signalScore;
+                bestOriginWS = ToVector3(runtimePosition);
+                bestForwardWS = forwardWS;
+                bestRangeMeters = rangeMeters;
+                bestIntensity01 = intensity01;
+            }
+
+            if (bestSignalScore > 0f)
+            {
+                _boidFlashlightThreatOriginWS = bestOriginWS;
+                _boidFlashlightThreatForwardWS = FastNormalizeVector3(bestForwardWS, fallbackForwardWS);
+                _boidFlashlightThreatRangeWS = bestRangeMeters;
+                _boidFlashlightThreatIntensity01 = bestIntensity01;
+                return;
+            }
+
+            if (shrinkRequested && !_flashlightOn)
+                _boidFlashlightThreatIntensity01 = 0f;
+        }
+
+        private void UpdateFlashlightSensoryThreat(
+            float simulationDt,
+            Vector3 playerPosition,
+            Vector3 playerForward,
+            SimulationLodTier simulationLodTier)
+        {
+            bool hasSignalLight = _boidFlashlightThreatIntensity01 > 0.001f;
+            float playerLightIntensity01 = _flashlightOn ? math.max(0.35f, ResolveHeadlightPanic01()) : 0f;
+            float effectiveIntensity01 = math.max(_boidFlashlightThreatIntensity01, playerLightIntensity01);
+            if (effectiveIntensity01 <= 0.001f)
+            {
+                _boidFlashlightThreatTargetRadiusWS = 0f;
+            }
+            else
+            {
+                float rangeMeters = hasSignalLight ? _boidFlashlightThreatRangeWS : SensoryFlashlightDefaultRangeMeters;
+                float targetRadius = math.max(
+                    SensoryThreatMinRadiusMeters,
+                    rangeMeters * SensoryFlashlightRadiusScale * effectiveIntensity01);
+                _boidFlashlightThreatTargetRadiusWS = targetRadius;
+            }
+
+            float maxDelta = (_boidFlashlightThreatTargetRadiusWS > _boidFlashlightThreatRadiusWS
+                    ? SensoryFlashlightGrowMetersPerSecond
+                    : SensoryFlashlightShrinkMetersPerSecond) *
+                math.max(0f, simulationDt);
+            _boidFlashlightThreatRadiusWS = MoveTowardsFinite(
+                _boidFlashlightThreatRadiusWS,
+                _boidFlashlightThreatTargetRadiusWS,
+                maxDelta);
+
+            if (_boidFlashlightThreatRadiusWS <= SensoryThreatMinRadiusMeters &&
+                _boidFlashlightThreatTargetRadiusWS <= SensoryThreatMinRadiusMeters)
+            {
+                ClearBoidSensoryThreatSlot(SensoryThreatSlotFlashlight);
+                return;
+            }
+
+            Vector3 originWS = hasSignalLight ? _boidFlashlightThreatOriginWS : playerPosition;
+            Vector3 forwardWS = hasSignalLight ? _boidFlashlightThreatForwardWS : playerForward;
+            if (!IsFiniteVector3(originWS))
+                originWS = playerPosition;
+            forwardWS = FastNormalizeVector3(forwardWS, playerForward);
+            float range = hasSignalLight ? _boidFlashlightThreatRangeWS : SensoryFlashlightDefaultRangeMeters;
+            float endpointScale = simulationLodTier == SimulationLodTier.Full ? 1f : SensoryFlashlightEndpointScale;
+            Vector3 endpointWS = originWS + forwardWS * math.max(2f, range * endpointScale);
+            WriteBoidSensoryThreatSlot(SensoryThreatSlotFlashlight, endpointWS, _boidFlashlightThreatRadiusWS);
+        }
+
+        private void DecayBoidSensoryAcousticPingThreats(float simulationDt)
+        {
+            float decay = math.max(0f, simulationDt) * SensoryAcousticPingDecayMetersPerSecond;
+            for (int slot = SensoryThreatFirstPingSlot; slot <= SensoryThreatLastPingSlot; slot++)
+            {
+                float4 threat = _boidSensoryThreatsNative[slot];
+                if (threat.w <= 0f)
+                    continue;
+
+                threat.w = math.max(0f, threat.w - decay);
+                _boidSensoryThreatsNative[slot] = threat.w >= SensoryThreatMinRadiusMeters ? threat : float4.zero;
+            }
+        }
+
+        private void ConsumeBoidSensoryAcousticPingSignals()
+        {
+            ReadOnlySpan<AcousticPingSignal> pingSignals = SignalBus<AcousticPingSignal>.GetFrameSnapshot();
+            int signalCount = math.min(pingSignals.Length, SwarmAcousticSignalConsumeLimit);
+            for (int i = 0; i < signalCount; i++)
+            {
+                AcousticPingSignal signal = pingSignals[i];
+                float intensity01 = math.saturate(signal.Intensity01);
+                if (intensity01 <= 0.001f)
+                    continue;
+
+                float3 runtimePosition = signal.PositionAup.ToRuntimeFloat3();
+                if (!math.all(math.isfinite(runtimePosition)))
+                    continue;
+
+                float radius = math.clamp(
+                    math.isfinite(signal.RadiusMeters) ? signal.RadiusMeters : 0f,
+                    SensoryAcousticPingMinRadiusMeters,
+                    SensoryAcousticPingMaxRadiusMeters);
+                radius *= math.lerp(0.35f, 1f, intensity01);
+                int slot = SensoryThreatFirstPingSlot +
+                           (_boidSensoryPingWriteCursor % (SensoryThreatLastPingSlot - SensoryThreatFirstPingSlot + 1));
+                _boidSensoryPingWriteCursor++;
+                WriteBoidSensoryThreatSlot(slot, ToVector3(runtimePosition), radius);
+            }
+        }
+
+        private int ResolveActiveBoidSensoryThreatCount()
+        {
+            int lastActiveSlot = -1;
+            for (int i = 0; i < PredatorAupBufferCapacity; i++)
+            {
+                float4 threat = _boidSensoryThreatsNative[i];
+                if (threat.w >= SensoryThreatMinRadiusMeters && math.all(math.isfinite(threat)))
+                    lastActiveSlot = i;
+            }
+
+            return math.max(0, lastActiveSlot + 1);
+        }
+
+        private bool WriteBoidSensoryThreatSlot(int slot, Vector3 runtimePosition, float radius)
+        {
+            if ((uint)slot >= (uint)PredatorAupBufferCapacity)
+                return false;
+
+            if (!IsFiniteVector3(runtimePosition) || !float.IsFinite(radius))
+            {
+                _boidSensoryThreatsNative[slot] = float4.zero;
+                return false;
+            }
+
+            AbsoluteUniversePosition threatAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            float3 shiftedRuntime = threatAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(shiftedRuntime)))
+            {
+                _boidSensoryThreatsNative[slot] = float4.zero;
+                return false;
+            }
+
+            float safeRadius = math.max(radius, SensoryThreatMinRadiusMeters);
+            _boidSensoryThreatsNative[slot] = new float4(
+                shiftedRuntime.x,
+                shiftedRuntime.y,
+                shiftedRuntime.z,
+                safeRadius);
+            return true;
+        }
+
+        private void ClearBoidSensoryThreatSlot(int slot)
+        {
+            if ((uint)slot < (uint)PredatorAupBufferCapacity)
+                _boidSensoryThreatsNative[slot] = float4.zero;
+        }
+
+        private static float MoveTowardsFinite(float current, float target, float maxDelta)
+        {
+            current = float.IsFinite(current) ? current : 0f;
+            target = float.IsFinite(target) ? target : 0f;
+            maxDelta = math.max(0f, float.IsFinite(maxDelta) ? maxDelta : 0f);
+            float delta = target - current;
+            if (math.abs(delta) <= maxDelta)
+                return target;
+
+            return current + math.sign(delta) * maxDelta;
         }
 
         private bool EnsurePredatorAupFallbackBuffer()
@@ -4071,8 +4408,13 @@ namespace Hecton8.World
             float submarineWakeHalfLength = 0f;
             ISubmarineRuntimeContext submarine = _submarineRuntime;
             Rigidbody submarineHull = submarine != null ? submarine.HullRigidbody : null;
+            Vector3 submarineThreatPosition = playerPosition;
+            float submarineThreatRadius = math.max(SensorySubmarineThreatRadiusMeters, panicPlayerRadius * panicPlayerRadiusScale);
             if (submarineHull != null)
             {
+                Vector3 submarineCenter = submarineHull.worldCenterOfMass;
+                if (IsFiniteVector3(submarineCenter))
+                    submarineThreatPosition = submarineCenter;
                 submarineWakeVelocity = submarineHull.linearVelocity;
                 float submarineSpeedSq = submarineWakeVelocity.sqrMagnitude;
                 if (submarineSpeedSq > SubmarineWakeMinimumSpeedMetersPerSecond * SubmarineWakeMinimumSpeedMetersPerSecond)
@@ -4116,6 +4458,14 @@ namespace Hecton8.World
                 _acousticPanicStrength01 = 0f;
             }
             float acousticPanicTimeRemaining = math.max(0f, _acousticPanicExpireTime - absoluteSimulationTime);
+            int boidSensoryThreatCount = UpdateBoidSensoryThreats(
+                simulationDt,
+                playerPosition,
+                playerForward,
+                submarineThreatPosition,
+                submarineThreatRadius,
+                simulationLodTier);
+            int boidSensoryThreatFlags = ResolveBoidSensoryThreatFlags(simulationLodTier);
 
             SimulationFrameConstants frameConstants = default;
             frameConstants.Simulation0 = new float4(simulationDt, waterLevel, minDepthBelowSurface, maxDepthBelowSurface);
@@ -4194,8 +4544,8 @@ namespace Hecton8.World
             frameConstants.ThreatGridMeta = new int4(
                 _threatGridResolution,
                 _threatGridDataValid ? 1 : 0,
-                0,
-                0);
+                boidSensoryThreatCount,
+                boidSensoryThreatFlags);
             frameConstants.ThreatGridCenter = new float4(
                 _threatGridCenterWS.x,
                 _threatGridCenterWS.y,
@@ -4290,7 +4640,9 @@ namespace Hecton8.World
                 boidCompute.SetBuffer(_kernelIndex, _BoidsBufferReadId, readBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _BoidsBufferWriteId, writeBuffer);
                 if (predatorAupBuffer != null && predatorAupThreatLoopCap > 0)
-                    boidCompute.SetBuffer(_kernelIndex, _PredatorAUPBufferId, predatorAupBuffer);
+                    boidCompute.SetBuffer(_kernelIndex, _EncounterPredatorAUPBufferId, predatorAupBuffer);
+                else
+                    boidCompute.SetBuffer(_kernelIndex, _EncounterPredatorAUPBufferId, _predatorAupFallbackBuffer);
 
                 SetMainKernelTextureIfChanged(_DensityTexId, densityTexture, ref _boundComputeDensityTexture);
                 SetMainKernelTextureIfChanged(_CutMaskTexId, activeCutMaskTexture, ref _boundComputeCutMaskTexture);
@@ -4319,15 +4671,23 @@ namespace Hecton8.World
             _debugFragmentation01 = fragmentation01;
             _debugSonarScatter01 = sonarScatterStrength01;
             _debugPredatorAupThreatCount = predatorAupThreatLoopCap;
+            _debugBoidSensoryThreatCount = boidSensoryThreatCount;
+            _debugBoidFlashlightThreatRadius = _boidFlashlightThreatRadiusWS;
             return true;
         }
 
         private void ResolveSimulationBucketUniforms(out int simulationBucketIndex, out int simulationBucketMask)
         {
             ISimulationBucketer bucketer = _simulationBucketer;
-            int frameCount = bucketer != null && bucketer.IsInitialized
-                ? bucketer.CurrentFrameCount
-                : Time.frameCount;
+            if (bucketer != null && bucketer.IsInitialized)
+            {
+                simulationBucketMask = bucketer.SlowBucketMask;
+                simulationBucketIndex = bucketer.ActiveSlowBucket;
+                _simulationInterpolationAlpha = math.saturate(bucketer.SimulationBucketInterpolationAlpha);
+                return;
+            }
+
+            int frameCount = Time.frameCount;
             simulationBucketMask = FaunaSimulationBucketMask;
             simulationBucketIndex = frameCount & simulationBucketMask;
             _simulationInterpolationAlpha = (simulationBucketIndex + 1) * FaunaSimulationBucketInvCount;
@@ -6157,6 +6517,7 @@ namespace Hecton8.World
             ReleaseBuffer(ref _spatialGridCellBuffer);
             ReleaseBuffer(ref _simulationFrameBuffer);
             ReleaseBuffer(ref _predatorAupFallbackBuffer);
+            ReleaseBuffer(ref _boidSensoryThreatBuffer);
             _latchStatsBufferRawTarget = false;
             _pbdCorrectionBufferRawTarget = false;
             _spatialGridCountBufferRawTarget = false;
@@ -6202,6 +6563,7 @@ namespace Hecton8.World
             ResetThreatGridSnapshot();
             ResetThreatVoxelSnapshot();
             DisposeNativeArrayDeferred(ref _simulationFrameNative, disposeDependency);
+            DisposeNativeArrayDeferred(ref _boidSensoryThreatsNative, disposeDependency);
             DisposeNativeArrayDeferred(ref _foodChainTelemetryRing, disposeDependency);
             _inactiveStatisticalSwarmRing.Dispose(disposeDependency);
             _inactiveStatisticalSwarmCenterRing.Dispose(disposeDependency);
@@ -6236,9 +6598,11 @@ namespace Hecton8.World
 
         private void PrimeFoveatedSimulationDecision(float frameDeltaTime, float cameraDistanceSq)
         {
-            EnsureNativeArrayCapacity(ref _foveatedSimulationInputNative, 1, nameof(_foveatedSimulationInputNative));
-            EnsureNativeArrayCapacity(ref _foveatedSimulationFrontNative, 1, nameof(_foveatedSimulationFrontNative));
-            EnsureNativeArrayCapacity(ref _foveatedSimulationBackNative, 1, nameof(_foveatedSimulationBackNative));
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            _dataVault = vault;
+            EnsureNativeArrayCapacity(vault, ref _foveatedSimulationInputNative, BufferID.SargassumFoveatedSimulationInput, 1, nameof(_foveatedSimulationInputNative));
+            EnsureNativeArrayCapacity(vault, ref _foveatedSimulationFrontNative, BufferID.SargassumFoveatedSimulationFront, 1, nameof(_foveatedSimulationFrontNative));
+            EnsureNativeArrayCapacity(vault, ref _foveatedSimulationBackNative, BufferID.SargassumFoveatedSimulationBack, 1, nameof(_foveatedSimulationBackNative));
             PopulateFoveatedSimulationInput(frameDeltaTime, cameraDistanceSq, previousAccumulator: 0f);
             var primeJob = new EvaluateSimulationLodJob
             {
@@ -6499,9 +6863,14 @@ namespace Hecton8.World
             _debugLeviathanNodeCount = 0;
         }
 
-        private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredLength, string label) where T : struct
+        private static void EnsureNativeArrayCapacity<T>(
+            IDataVault vault,
+            ref NativeArray<T> array,
+            BufferID bufferId,
+            int requiredLength,
+            string label) where T : struct
         {
-            if (requiredLength <= 0)
+            if (requiredLength <= 0 || vault == null || bufferId == BufferID.Unknown)
                 return;
 
             if (array.IsCreated && array.Length >= requiredLength)
@@ -6510,11 +6879,12 @@ namespace Hecton8.World
             if (array.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
+                array = default;
             }
 
-            array = new NativeArray<T>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<T>[requiredLength] - persistent sargassum job/GPU staging buffer - owner: SargassumMicroFaunaBoids
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Scene);
+            array = vault.GetBuffer<T>(bufferId, requiredLength, SystemID.WorldSargassum, NativeArrayOptions.ClearMemory);
+            if (array.IsCreated)
+                NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Scene);
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
@@ -6523,7 +6893,6 @@ namespace Hecton8.World
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
             array = default;
         }
 
@@ -6533,7 +6902,6 @@ namespace Hecton8.World
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(dependency);
             array = default;
         }
 

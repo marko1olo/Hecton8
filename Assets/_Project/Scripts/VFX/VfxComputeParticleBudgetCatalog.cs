@@ -20,28 +20,28 @@ namespace Hecton8.VFX
         public const int Mx350SoftGroupsPerDispatch = 512;
 
         /// <summary>Low-tier total particle ceiling.</summary>
-        public const int LowParticleCount = 4096;
+        public const int LowParticleCount = 8512;
 
         /// <summary>Mid-tier total particle ceiling.</summary>
         public const int MidParticleCount = 16384;
 
         /// <summary>High-tier total particle ceiling.</summary>
-        public const int HighParticleCount = 32768;
+        public const int HighParticleCount = 104096;
 
         /// <summary>Ultra-tier total particle ceiling.</summary>
-        public const int UltraParticleCount = 37888;
+        public const int UltraParticleCount = 105120;
 
         /// <summary>Low-tier marine-snow pool ceiling.</summary>
-        public const int LowMarineSnowCount = 3584;
+        public const int LowMarineSnowCount = 8000;
 
         /// <summary>Mid-tier marine-snow pool ceiling.</summary>
         public const int MidMarineSnowCount = 14336;
 
         /// <summary>High-tier marine-snow pool ceiling.</summary>
-        public const int HighMarineSnowCount = 28672;
+        public const int HighMarineSnowCount = 100000;
 
         /// <summary>Ultra-tier marine-snow pool ceiling.</summary>
-        public const int UltraMarineSnowCount = 32768;
+        public const int UltraMarineSnowCount = 100000;
 
         /// <summary>Low-tier bubble pool ceiling.</summary>
         public const int LowBubbleCount = 384;

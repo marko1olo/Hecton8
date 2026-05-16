@@ -20,6 +20,7 @@
 //   4. Player interacts to teleport to exit point.
 // ============================================================================
 
+using Hecton8.Animation.Locomotion;
 using Hecton8.Audio;
 using Hecton8.Interaction;
 using Hecton.Localization;
@@ -183,7 +184,7 @@ namespace Hecton8.Gameplay
             bool goingUp = (interactorPosition - entryPoint.position).sqrMagnitude <
                            (interactorPosition - exitPoint.position).sqrMagnitude;
 
-            TeleportPlayer(interactor, goingUp);
+            RequestProceduralClimb(interactor, goingUp);
         }
 
         string IInteractable.GetInteractText()
@@ -231,9 +232,25 @@ namespace Hecton8.Gameplay
         //  TELEPORTATION
         // ══════════════════════════════════════════════════════════
 
-        private void TeleportPlayer(Transform player, bool goingUp)
+        private bool RequestProceduralClimb(Transform player, bool goingUp)
         {
+            if (player == null)
+                return false;
+
             _isTransitioning = true;
+            bool accepted = ProceduralLadderClimbRuntime.TryBeginClimb(
+                _transform,
+                entryPoint,
+                exitPoint,
+                player,
+                goingUp,
+                matchRotation);
+
+            if (!accepted)
+            {
+                _isTransitioning = false;
+                return false;
+            }
 
             // Fire start event
             OnClimbStart?.Invoke();
@@ -244,52 +261,8 @@ namespace Hecton8.Gameplay
                 audio.PlayAtPoint(climbSound, player.position, climbVolume);
             }
 
-            // Determine target position
-            Vector3 targetPosition = goingUp ? exitPoint.position : entryPoint.position;
-            Quaternion targetRotation = goingUp ? exitPoint.rotation : entryPoint.rotation;
-
-            // Simple teleport (no fade for now - can be extended)
-            if (useScreenFade)
-            {
-                // TODO: Integrate with screen fade system
-                // For now, just teleport immediately
-                PerformTeleport(player, targetPosition, targetRotation);
-            }
-            else
-            {
-                PerformTeleport(player, targetPosition, targetRotation);
-            }
-
-            // Fire end event
-            OnClimbEnd?.Invoke();
-
-            // Fire player teleported event
-            OnPlayerTeleported?.Invoke(player);
-
             _isTransitioning = false;
-        }
-
-        private void PerformTeleport(Transform player, Vector3 position, Quaternion rotation)
-        {
-            // Teleport player
-            player.position = position;
-
-            if (matchRotation)
-            {
-                player.rotation = rotation;
-            }
-
-            // Also teleport any character controller
-            if (player.TryGetComponent(out CharacterController controller))
-            {
-                controller.enabled = false;
-                player.position = position;
-                if (matchRotation)
-                {
-                    player.rotation = rotation;
-                }
-                controller.enabled = true;
-            }
+            return true;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -302,7 +275,7 @@ namespace Hecton8.Gameplay
         /// <param name="player">Player transform.</param>
         public void TeleportToExit(Transform player)
         {
-            TeleportPlayer(player, true);
+            RequestProceduralClimb(player, true);
         }
 
         /// <summary>
@@ -311,7 +284,7 @@ namespace Hecton8.Gameplay
         /// <param name="player">Player transform.</param>
         public void TeleportToEntry(Transform player)
         {
-            TeleportPlayer(player, false);
+            RequestProceduralClimb(player, false);
         }
 
         /// <summary>

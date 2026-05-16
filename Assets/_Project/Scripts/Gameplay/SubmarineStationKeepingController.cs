@@ -71,13 +71,14 @@ namespace Hecton8.Gameplay
                 return;
 
             double3 currentAbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(_hullRigidbody.worldCenterOfMass).ToAbsoluteDouble3();
-            float3 offsetToTarget = (float3)(_targetAbsolutePosition - currentAbsolutePosition);
-            if (!math.all(math.isfinite(offsetToTarget)))
+            double3 offsetToTarget = _targetAbsolutePosition - currentAbsolutePosition;
+            double offsetToTargetSq = math.lengthsq(offsetToTarget);
+            if (!math.all(math.isfinite(offsetToTarget)) || !math.isfinite(offsetToTargetSq))
                 return;
 
             Vector3 hullPosition = _hullRigidbody.position;
             Quaternion currentRotation = _hullRigidbody.rotation;
-            if (math.lengthsq(offsetToTarget) <= PositionHoldEpsilonMetersSq &&
+            if (offsetToTargetSq <= PositionHoldEpsilonMetersSq &&
                 IsRotationClose(currentRotation, _targetRotation))
             {
                 if (!_hullRigidbody.isKinematic)
@@ -90,12 +91,17 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Vector3 offsetToTargetVector = new Vector3(offsetToTarget.x, offsetToTarget.y, offsetToTarget.z);
-            Vector3 targetRuntimePosition = hullPosition + offsetToTargetVector;
-            Vector3 nextRuntimePosition = Vector3.MoveTowards(
-                hullPosition,
-                targetRuntimePosition,
-                ResolvePositionStepMeters(offsetToTarget, fixedDeltaTime));
+            double stepMeters = ResolvePositionStepMeters(offsetToTarget, fixedDeltaTime);
+            double3 stepDelta = offsetToTarget;
+            double safeStepMeters = math.max(0.0d, stepMeters);
+            double safeStepSq = safeStepMeters * safeStepMeters;
+            if (safeStepSq > 0.0d && safeStepSq < offsetToTargetSq)
+            {
+                double inverseDistance = math.rsqrt(math.max(offsetToTargetSq, 0.0001d));
+                stepDelta = offsetToTarget * (safeStepMeters * inverseDistance);
+            }
+
+            Vector3 nextRuntimePosition = hullPosition + ToVector3(stepDelta);
             if (!IsFinite(nextRuntimePosition))
                 return;
 
@@ -202,14 +208,14 @@ namespace Hecton8.Gameplay
                 _hullRigidbody = _submarineCore.HullRigidbody;
         }
 
-        private float ResolvePositionStepMeters(float3 offsetToTarget, float fixedDeltaTime)
+        private double ResolvePositionStepMeters(double3 offsetToTarget, float fixedDeltaTime)
         {
             float safeDeltaTime = math.max(0f, fixedDeltaTime);
-            float offsetSq = math.lengthsq(offsetToTarget);
+            double offsetSq = math.lengthsq(offsetToTarget);
             if (offsetSq <= 0.000001f)
             {
                 _stationKeepingSpeedMetersPerSecond = 0f;
-                return 0f;
+                return 0.0d;
             }
 
             float authoredSpeed = math.max(0.01f, positionLockSpeedMetersPerSecond);
@@ -247,6 +253,11 @@ namespace Hecton8.Gameplay
         private static bool IsFinite(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
         }
 
         private static Vector3 ClampMagnitude(Vector3 value, float maxMagnitude)

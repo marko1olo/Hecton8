@@ -8,7 +8,8 @@ using Hecton8.Bootstrap;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Contracts;
 using Hecton8.Environment.Fluids;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -19,29 +20,30 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
 
 namespace Hecton8.Physics
 {
     /// <summary>
     /// Deferred exterior water-entry payload emitted by sampled hull buoyancy points.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SplashEvent
     {
         /// <summary>Camera-relative world position of the splash contact point.</summary>
-        public float3 RuntimePosition;
+        [FieldOffset(0)] public float3 RuntimePosition;
         /// <summary>Absolute universe position (AUP) of the splash for persistent VFX anchoring.</summary>
-        public float3 AbsoluteUniversePosition;
+        [FieldOffset(12)] public float3 AbsoluteUniversePosition;
         /// <summary>Water surface normal at the splash point.</summary>
-        public float3 SurfaceNormal;
+        [FieldOffset(24)] public float3 SurfaceNormal;
         /// <summary>Vertical impact speed at the moment of water entry.</summary>
-        public float ImpactSpeedMetersPerSecond;
+        [FieldOffset(36)] public float ImpactSpeedMetersPerSecond;
         /// <summary>Kinetic energy of the impact in joules, used to scale splash VFX intensity.</summary>
-        public float KineticEnergyJoules;
+        [FieldOffset(40)] public float KineticEnergyJoules;
         /// <summary>0â€“1 ratio of the sample point submerged below the waterline at impact.</summary>
-        public float SubmersionFactor;
+        [FieldOffset(44)] public float SubmersionFactor;
         /// <summary>Index of the exterior buoyancy sample point that detected the splash.</summary>
-        public int SampleIndex;
+        [FieldOffset(48)] public int SampleIndex;
     }
 
     /// <summary>
@@ -551,6 +553,8 @@ namespace Hecton8.Physics
         private float _dockedExternalMassKilograms;
         private float _damageControlLeakAddedMassKilograms;
         private float _cargoMassScalar;
+        private float3 _externalFloodLinearDragTensor = new float3(1f);
+        private float3 _externalFloodAngularDragTensor = new float3(1f);
         private float _lastResolvedCargoMassKilograms = -1f;
         private float _lastResolvedCargoScalar = -1f;
         private int _lastCargoMassFallbackPollFrame = -1;
@@ -638,62 +642,63 @@ namespace Hecton8.Physics
         private bool _wasBrineSubmerged;
         private float _brineSubmersionTime;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 160)]
         private struct HydroKinematicJobInput
         {
-            public float3 Velocity;
-            public float3 AngularVelocity;
-            public float3 Forward;
-            public float3 Right;
-            public float3 Up;
-            public float3 WorldUp;
-            public float3 TowingAcceleration;
-            public float3 FlowVelocityWS;
-            public float MassKilograms;
-            public float AddedMassKilograms;
-            public float WaterDensity;
-            public float SubmersionFactor;
-            public float ForwardDragCoefficient;
-            public float LateralDragCoefficient;
-            public float VerticalDragCoefficient;
-            public float AngularDragCoefficient;
-            public float RightingTorqueCoefficient;
-            public float BallastUpAcceleration;
-            public float MaxAcceleration;
-            public float MaxTorque;
+            [FieldOffset(0)] public float3 Velocity;
+            [FieldOffset(12)] public float3 AngularVelocity;
+            [FieldOffset(24)] public float3 Forward;
+            [FieldOffset(36)] public float3 Right;
+            [FieldOffset(48)] public float3 Up;
+            [FieldOffset(60)] public float3 WorldUp;
+            [FieldOffset(72)] public float3 TowingAcceleration;
+            [FieldOffset(84)] public float3 FlowVelocityWS;
+            [FieldOffset(96)] public float MassKilograms;
+            [FieldOffset(100)] public float AddedMassKilograms;
+            [FieldOffset(104)] public float WaterDensity;
+            [FieldOffset(108)] public float SubmersionFactor;
+            [FieldOffset(112)] public float ForwardDragCoefficient;
+            [FieldOffset(116)] public float LateralDragCoefficient;
+            [FieldOffset(120)] public float VerticalDragCoefficient;
+            [FieldOffset(124)] public float AngularDragCoefficient;
+            [FieldOffset(128)] public float3 AngularDragTensorMultiplier;
+            [FieldOffset(140)] public float RightingTorqueCoefficient;
+            [FieldOffset(144)] public float BallastUpAcceleration;
+            [FieldOffset(148)] public float MaxAcceleration;
+            [FieldOffset(152)] public float MaxTorque;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct HydroKinematicJobOutput
         {
-            public float3 DragAcceleration;
-            public float3 Torque;
-            public float ForwardSpeed;
-            public float LateralSpeed;
-            public float VerticalSpeed;
+            [FieldOffset(0)] public float3 DragAcceleration;
+            [FieldOffset(12)] public float3 Torque;
+            [FieldOffset(24)] public float ForwardSpeed;
+            [FieldOffset(28)] public float LateralSpeed;
+            [FieldOffset(32)] public float VerticalSpeed;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 128)]
         private struct HydroBlackBoxEntry
         {
-            public int Frame;
-            public float FixedTime;
-            public float3 Position;
-            public float3 Velocity;
-            public float3 AngularVelocity;
-            public float MassKilograms;
-            public float CargoMassKilograms;
-            public float CargoMassScalar;
-            public float SubmersionFactor;
-            public float DepthMeters;
-            public float FloodRatio;
-            public float BallastBias01;
-            public float3 HydroAcceleration;
-            public float3 HydroTorque;
-            public float3 TowingTension;
-            public float BrineSubmersionTime;
-            public uint Flags;
-            public uint StateHash;
+            [FieldOffset(0)] public int Frame;
+            [FieldOffset(4)] public float FixedTime;
+            [FieldOffset(8)] public float3 Position;
+            [FieldOffset(20)] public float3 Velocity;
+            [FieldOffset(32)] public float3 AngularVelocity;
+            [FieldOffset(44)] public float MassKilograms;
+            [FieldOffset(48)] public float CargoMassKilograms;
+            [FieldOffset(52)] public float CargoMassScalar;
+            [FieldOffset(56)] public float SubmersionFactor;
+            [FieldOffset(60)] public float DepthMeters;
+            [FieldOffset(64)] public float FloodRatio;
+            [FieldOffset(68)] public float BallastBias01;
+            [FieldOffset(72)] public float3 HydroAcceleration;
+            [FieldOffset(84)] public float3 HydroTorque;
+            [FieldOffset(96)] public float3 TowingTension;
+            [FieldOffset(108)] public float BrineSubmersionTime;
+            [FieldOffset(112)] public uint Flags;
+            [FieldOffset(116)] public uint StateHash;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -732,7 +737,16 @@ namespace Hecton8.Physics
                 acceleration += worldUp * (math.max(0f, input.BallastUpAcceleration) * submersion);
                 acceleration = ClampFiniteMagnitude(acceleration, math.max(0f, input.MaxAcceleration));
 
-                float3 torque = -angularVelocity * math.max(0f, input.AngularDragCoefficient) * waterDensity * submersion;
+                float3 angularTensor = math.max(new float3(0.1f), SelectFinite(input.AngularDragTensorMultiplier, new float3(1f)));
+                float angularDrag = math.max(0f, input.AngularDragCoefficient);
+                float pitchSpeed = math.dot(angularVelocity, right);
+                float yawSpeed = math.dot(angularVelocity, up);
+                float rollSpeed = math.dot(angularVelocity, forward);
+                float3 torque =
+                    (-right * pitchSpeed * angularDrag * angularTensor.x) +
+                    (-up * yawSpeed * angularDrag * angularTensor.y) +
+                    (-forward * rollSpeed * angularDrag * angularTensor.z);
+                torque *= waterDensity * submersion;
                 float3 rightingAxis = math.cross(up, worldUp);
                 float rightingAxisLengthSq = math.lengthsq(rightingAxis);
                 if (rightingAxisLengthSq > 0.000001f)
@@ -1312,6 +1326,16 @@ namespace Hecton8.Physics
         {
             _ballastWaterMassKilograms = math.isfinite(massKg) ? math.max(0f, massKg) : 0f;
             _debugBallastWaterMassKilograms = _ballastWaterMassKilograms;
+        }
+
+        public void SetExternalFloodDragTensor(float3 linearMultiplier, float3 angularMultiplier)
+        {
+            _externalFloodLinearDragTensor = math.all(math.isfinite(linearMultiplier))
+                ? math.clamp(linearMultiplier, new float3(0.1f), new float3(4f))
+                : new float3(1f);
+            _externalFloodAngularDragTensor = math.all(math.isfinite(angularMultiplier))
+                ? math.clamp(angularMultiplier, new float3(0.1f), new float3(4f))
+                : new float3(1f);
         }
 
         public void SetDockedExternalMassKilograms(float massKg)
@@ -2504,6 +2528,12 @@ namespace Hecton8.Physics
 
             float mass = math.isfinite(_rigidbody.mass) ? math.max(_rigidbody.mass, Epsilon) : Epsilon;
             float lateralCoefficient = math.max(0f, forwardHydroDragCoefficient) * math.max(1f, lateralHydroDragMultiplier);
+            float3 linearDragTensor = math.all(math.isfinite(_externalFloodLinearDragTensor))
+                ? math.max(new float3(0.1f), _externalFloodLinearDragTensor)
+                : new float3(1f);
+            float3 angularDragTensor = math.all(math.isfinite(_externalFloodAngularDragTensor))
+                ? math.max(new float3(0.1f), _externalFloodAngularDragTensor)
+                : new float3(1f);
             float3 velocityFloat = new float3(velocity.x, velocity.y, velocity.z);
             float3 localFlowVelocity = ResolveAnalyticalFlowVelocity(_rigidbody.worldCenterOfMass);
             _hydroKinematicInput[0] = new HydroKinematicJobInput
@@ -2520,10 +2550,11 @@ namespace Hecton8.Physics
                 AddedMassKilograms = 0f,
                 WaterDensity = WaterDensityKgPerCubicMeter,
                 SubmersionFactor = math.saturate(_submersionFactor),
-                ForwardDragCoefficient = forwardHydroDragCoefficient,
-                LateralDragCoefficient = lateralCoefficient,
-                VerticalDragCoefficient = verticalHydroDragCoefficient,
+                ForwardDragCoefficient = forwardHydroDragCoefficient * linearDragTensor.z,
+                LateralDragCoefficient = lateralCoefficient * linearDragTensor.x,
+                VerticalDragCoefficient = verticalHydroDragCoefficient * linearDragTensor.y,
                 AngularDragCoefficient = angularHydroDragCoefficient,
+                AngularDragTensorMultiplier = angularDragTensor,
                 RightingTorqueCoefficient = pitchRollRightingTorqueCoefficient,
                 BallastUpAcceleration = ResolveBallastUpAcceleration(),
                 MaxAcceleration = hydroSolverMaxAcceleration,
@@ -5612,31 +5643,25 @@ namespace Hecton8.Physics
             int vaultFlag) where T : struct
         {
             IDataVault vault = _dataVault;
-            if (vault != null)
+            if (vault == null)
             {
-                NativeArray<T> vaultArray = vault.GetBuffer<T>(
-                    bufferId,
-                    length,
-                    SystemID.VehiclesPhysics,
-                    NativeArrayOptions.ClearMemory);
-                if (vaultArray.IsCreated)
-                {
-                    _vaultNativeStateMask |= vaultFlag;
-                    return vaultArray;
-                }
+                _vaultNativeStateMask &= ~vaultFlag;
+                return default;
+            }
+
+            NativeArray<T> vaultArray = vault.GetBuffer<T>(
+                bufferId,
+                length,
+                SystemID.VehiclesPhysics,
+                NativeArrayOptions.ClearMemory);
+            if (vaultArray.IsCreated)
+            {
+                _vaultNativeStateMask |= vaultFlag;
+                return vaultArray;
             }
 
             _vaultNativeStateMask &= ~vaultFlag;
-            NativeArray<T> array = H8Memory.Allocate<T>(
-                length,
-                SystemID.VehiclesPhysics,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            if (!array.IsCreated)
-                return default;
-
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
-            return array;
+            return default;
         }
 
         private void RegisterNativeStateBuffers()

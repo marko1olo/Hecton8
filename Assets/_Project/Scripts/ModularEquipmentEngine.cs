@@ -1,7 +1,8 @@
 namespace Hecton8.Tools
 {
     using Hecton8.Core;
-    using Hecton8.Core.Signals;
+    using Hecton8.Core.Memory;
+    using Hecton8.Core.Contracts.Signals;
     using Hecton8.Gameplay;
     using Hecton8.Power;
     using Hecton8.World;
@@ -63,6 +64,8 @@ namespace Hecton8.Tools
         private NativeArray<float> _batteryDrainRates;
         private NativeArray<float> _batteryDrainDeltaSeconds;
         private NativeHashMap<uint, int> _toolIndexById;
+        private bool _currentHeatFromDataVault;
+        private bool _batteryChargeFromDataVault;
         private bool _isInitialized;
         private bool _registeredService;
         private bool _registeredUpdatable;
@@ -159,24 +162,52 @@ namespace Hecton8.Tools
 
             if (!_currentHeat.IsCreated)
             {
-                // COLD ALLOC: NativeArray<float>[16] - SOA current heat values mirrored by active equipment slot - owner: ModularEquipmentEngine
-                _currentHeat = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _currentHeat,
-                    nameof(ModularEquipmentEngine),
-                    nameof(_currentHeat),
-                    NativeAllocationLifetime.Scene);
+                IDataVault dataVault = GlobalRegistry.DataVault;
+                if (dataVault != null)
+                {
+                    _currentHeat = dataVault.GetBuffer<float>(
+                        BufferID.ToolRuntimeHeat01,
+                        MaxTrackedTools,
+                        SystemID.GameplayTools,
+                        NativeArrayOptions.ClearMemory);
+                    _currentHeatFromDataVault = _currentHeat.IsCreated && _currentHeat.Length >= MaxTrackedTools;
+                }
+
+                if (!_currentHeatFromDataVault)
+                {
+                    // COLD ALLOC: NativeArray<float>[16] - fallback SOA current heat values mirrored by active equipment slot - owner: ModularEquipmentEngine
+                    _currentHeat = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    NativeMemorySentinel.RegisterNativeArray(
+                        _currentHeat,
+                        nameof(ModularEquipmentEngine),
+                        nameof(_currentHeat),
+                        NativeAllocationLifetime.Scene);
+                }
             }
 
             if (!_batteryCharge.IsCreated)
             {
-                // COLD ALLOC: NativeArray<float>[16] - SOA absolute battery charge values mirrored by active equipment slot - owner: ModularEquipmentEngine
-                _batteryCharge = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _batteryCharge,
-                    nameof(ModularEquipmentEngine),
-                    nameof(_batteryCharge),
-                    NativeAllocationLifetime.Scene);
+                IDataVault dataVault = GlobalRegistry.DataVault;
+                if (dataVault != null)
+                {
+                    _batteryCharge = dataVault.GetBuffer<float>(
+                        BufferID.ToolRuntimeBatteryCharge,
+                        MaxTrackedTools,
+                        SystemID.GameplayTools,
+                        NativeArrayOptions.ClearMemory);
+                    _batteryChargeFromDataVault = _batteryCharge.IsCreated && _batteryCharge.Length >= MaxTrackedTools;
+                }
+
+                if (!_batteryChargeFromDataVault)
+                {
+                    // COLD ALLOC: NativeArray<float>[16] - fallback SOA absolute battery charge values mirrored by active equipment slot - owner: ModularEquipmentEngine
+                    _batteryCharge = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    NativeMemorySentinel.RegisterNativeArray(
+                        _batteryCharge,
+                        nameof(ModularEquipmentEngine),
+                        nameof(_batteryCharge),
+                        NativeAllocationLifetime.Scene);
+                }
             }
 
             if (!_statusMasks.IsCreated)
@@ -1212,14 +1243,20 @@ namespace Hecton8.Tools
 
             if (_currentHeat.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_currentHeat);
-                _currentHeat.Dispose();
+                if (!_currentHeatFromDataVault)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_currentHeat);
+                    _currentHeat.Dispose();
+                }
             }
 
             if (_batteryCharge.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_batteryCharge);
-                _batteryCharge.Dispose();
+                if (!_batteryChargeFromDataVault)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_batteryCharge);
+                    _batteryCharge.Dispose();
+                }
             }
 
             if (_statusMasks.IsCreated)
@@ -1263,6 +1300,8 @@ namespace Hecton8.Tools
             _toolIndexById = default;
             _batteryDrainRates = default;
             _batteryDrainDeltaSeconds = default;
+            _currentHeatFromDataVault = false;
+            _batteryChargeFromDataVault = false;
             _pendingBatteryDrainMask = 0u;
             _lastPublishedEquippedMask = 0u;
             _thermalProbeFrameIndex = 0;

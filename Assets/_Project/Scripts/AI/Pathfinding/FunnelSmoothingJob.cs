@@ -1,0 +1,411 @@
+using System.Runtime.CompilerServices;
+using Hecton8.World;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+
+namespace Hecton8.AI.Pathfinding
+{
+    /// <summary>
+    /// Burst string-pulling funnel over sector-local portal edges.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct FunnelSmoothingJob : IJob
+    {
+        [ReadOnly] public NativeArray<NavPortal> Portals;
+        [ReadOnly] public NativeArray<byte> WfcGridBitmasks;
+        public NativeArray<float3> Waypoints;
+        public NativeArray<AbsoluteUniversePositionBlit> WaypointAups;
+        public NativeArray<PathFunnelResult> Result;
+        public float3 StartPosition;
+        public float3 GoalPosition;
+        public double3 SectorOriginAbsoluteMeters;
+        public int PortalCount;
+        public float AgentRadiusMeters;
+        public uint CorridorHash;
+        public uint Frame;
+        public byte MathLod;
+        public byte Stressed;
+
+        /// <inheritdoc />
+        public void Execute()
+        {
+            PathFunnelResult result = default;
+            result.CorridorHash = CorridorHash;
+            result.Frame = Frame;
+            result.MathLod = MathLod;
+
+            if (!Waypoints.IsCreated || Waypoints.Length <= 0)
+            {
+                result.Status = PathFunnelStatus.InvalidInput;
+                WriteResult(result);
+                return;
+            }
+
+            uint flags = 0u;
+            float3 start = SanitizePoint(StartPosition, float3.zero, ref flags);
+            float3 goal = SanitizePoint(GoalPosition, start, ref flags);
+            int portalCount = ResolvePortalCount();
+            int lookAhead = ResolveLookAhead();
+            int portalLimit = math.min(portalCount, lookAhead);
+            ushort blockedCell = 0;
+
+            for (int i = 0; i < portalLimit; i++)
+            {
+                NavPortal portal = Portals[i];
+                if (!IsWfcDoorBlocked(in portal, out blockedCell))
+                    continue;
+
+                flags |= PathFunnelResultFlags.WfcDoorBlocked;
+                result.BlockedCellIndex = blockedCell;
+                result.Status = PathFunnelStatus.BlockedByWfcDoor;
+                int blockedCount = 0;
+                AppendWaypoint(ref blockedCount, start, ref flags);
+                result.WaypointCount = blockedCount;
+                result.ProcessedPortalCount = i;
+                result.Flags = flags;
+                ConvertWaypointsToAup(blockedCount, ref flags);
+                result.Flags = flags;
+                WriteResult(result);
+                return;
+            }
+
+            bool partialLookAhead = portalLimit < portalCount;
+            if (partialLookAhead)
+                flags |= PathFunnelResultFlags.PartialLookAhead;
+
+            float3 effectiveGoal = ResolveEffectiveGoal(goal, portalLimit, portalCount, ref flags);
+            int waypointCount = 0;
+            AppendWaypoint(ref waypointCount, start, ref flags);
+
+            if (portalLimit <= 0)
+            {
+                AppendWaypoint(ref waypointCount, effectiveGoal, ref flags);
+                result.WaypointCount = waypointCount;
+                result.ProcessedPortalCount = 0;
+                result.Status = partialLookAhead ? PathFunnelStatus.PartialLookAhead : PathFunnelStatus.Complete;
+                result.Flags = flags;
+                ConvertWaypointsToAup(waypointCount, ref flags);
+                result.Flags = flags;
+                WriteResult(result);
+                return;
+            }
+
+            NavPortal first = LoadPortal(0, start, ref flags);
+            float3 apex = start;
+            float3 left = first.Left;
+            float3 right = first.Right;
+            int leftIndex = 0;
+            int rightIndex = 0;
+            int iterations = 0;
+            int maxIterations = math.max(8, portalLimit * 3);
+
+            for (int i = 1; i < portalLimit;)
+            {
+                iterations++;
+                if (iterations > maxIterations)
+                {
+                    flags |= PathFunnelResultFlags.IterationGuardTripped;
+                    waypointCount = EmitRawFallback(start, effectiveGoal, portalLimit, ref flags);
+                    result.Status = PathFunnelStatus.FallbackRaw;
+                    break;
+                }
+
+                NavPortal portal = LoadPortal(i, apex, ref flags);
+                float3 newLeft = portal.Left;
+                float3 newRight = portal.Right;
+
+                float rightTighten = CrossXZ(apex, right, newRight);
+                if (rightTighten <= PathFunnelConstants.Epsilon)
+                {
+                    if (SamePoint(apex, right) || CrossXZ(apex, left, newRight) > PathFunnelConstants.Epsilon)
+                    {
+                        right = newRight;
+                        rightIndex = i;
+                    }
+                    else
+                    {
+                        AppendWaypoint(ref waypointCount, left, ref flags);
+                        apex = left;
+                        int restart = leftIndex;
+                        left = apex;
+                        right = apex;
+                        leftIndex = restart;
+                        rightIndex = restart;
+                        i = restart + 1;
+                        continue;
+                    }
+                }
+
+                float leftTighten = CrossXZ(apex, left, newLeft);
+                if (leftTighten >= -PathFunnelConstants.Epsilon)
+                {
+                    if (SamePoint(apex, left) || CrossXZ(apex, right, newLeft) < -PathFunnelConstants.Epsilon)
+                    {
+                        left = newLeft;
+                        leftIndex = i;
+                    }
+                    else
+                    {
+                        AppendWaypoint(ref waypointCount, right, ref flags);
+                        apex = right;
+                        int restart = rightIndex;
+                        left = apex;
+                        right = apex;
+                        leftIndex = restart;
+                        rightIndex = restart;
+                        i = restart + 1;
+                        continue;
+                    }
+                }
+
+                if (math.abs(CrossXZ(apex, left, right)) <= PathFunnelConstants.Epsilon)
+                    flags |= PathFunnelResultFlags.CollinearPortal;
+
+                i++;
+            }
+
+            if (result.Status == PathFunnelStatus.None)
+            {
+                AppendWaypoint(ref waypointCount, effectiveGoal, ref flags);
+                result.Status = partialLookAhead ? PathFunnelStatus.PartialLookAhead : PathFunnelStatus.Complete;
+            }
+
+            result.WaypointCount = waypointCount;
+            result.ProcessedPortalCount = portalLimit;
+            result.Iterations = iterations;
+            result.Flags = flags;
+            ConvertWaypointsToAup(waypointCount, ref flags);
+            result.Flags = flags;
+            WriteResult(result);
+        }
+
+        private int ResolvePortalCount()
+        {
+            if (!Portals.IsCreated || PortalCount <= 0)
+                return 0;
+
+            return math.min(PortalCount, Portals.Length);
+        }
+
+        private int ResolveLookAhead()
+        {
+            if (Stressed != 0 || MathLod == (byte)PathFunnelMathLod.Stressed)
+                return 1;
+
+            switch ((PathFunnelMathLod)MathLod)
+            {
+                case PathFunnelMathLod.Low:
+                    return 2;
+                case PathFunnelMathLod.Middle:
+                    return 8;
+                case PathFunnelMathLod.High:
+                case PathFunnelMathLod.Ultra:
+                    return 16;
+                default:
+                    return 2;
+            }
+        }
+
+        private NavPortal LoadPortal(int index, float3 fallback, ref uint flags)
+        {
+            NavPortal portal = Portals[index];
+            portal.Left = SanitizePoint(portal.Left, fallback, ref flags);
+            portal.Right = SanitizePoint(portal.Right, fallback, ref flags);
+            TightenPortalForRadius(ref portal, ref flags);
+            return portal;
+        }
+
+        private float3 ResolveEffectiveGoal(float3 goal, int portalLimit, int portalCount, ref uint flags)
+        {
+            if (portalLimit > 0 && portalLimit < portalCount)
+            {
+                NavPortal portal = LoadPortal(portalLimit - 1, goal, ref flags);
+                return (portal.Left + portal.Right) * 0.5f;
+            }
+
+            return goal;
+        }
+
+        private void TightenPortalForRadius(ref NavPortal portal, ref uint flags)
+        {
+            if ((portal.Flags & PathFunnelConstants.PortalFlagNoRadiusShrink) != 0)
+                return;
+
+            float radius = math.max(0f, AgentRadiusMeters);
+            if (radius <= PathFunnelConstants.Epsilon)
+                return;
+
+            if (math.isfinite(portal.ClearanceMeters) &&
+                portal.ClearanceMeters > PathFunnelConstants.Epsilon &&
+                portal.ClearanceMeters < radius)
+            {
+                float3 midpoint = (portal.Left + portal.Right) * 0.5f;
+                portal.Left = midpoint;
+                portal.Right = midpoint;
+                flags |= PathFunnelResultFlags.NarrowPortalClamped | PathFunnelResultFlags.SdfClearanceClamped;
+                return;
+            }
+
+            float3 edge = portal.Right - portal.Left;
+            float widthSq = math.lengthsq(edge);
+            float minimumWidth = radius + radius;
+            float minimumWidthSq = minimumWidth * minimumWidth;
+            if (!math.isfinite(widthSq) || widthSq <= minimumWidthSq)
+            {
+                float3 midpoint = (portal.Left + portal.Right) * 0.5f;
+                portal.Left = midpoint;
+                portal.Right = midpoint;
+                flags |= PathFunnelResultFlags.NarrowPortalClamped;
+                return;
+            }
+
+            float invWidth = math.rsqrt(math.max(widthSq, PathFunnelConstants.Epsilon));
+            float3 edgeDir = edge * invWidth;
+            portal.Left += edgeDir * radius;
+            portal.Right -= edgeDir * radius;
+        }
+
+        private bool IsWfcDoorBlocked(in NavPortal portal, out ushort blockedCell)
+        {
+            blockedCell = 0;
+            if ((portal.Flags & PathFunnelConstants.PortalFlagWfcDoor) == 0 ||
+                !WfcGridBitmasks.IsCreated ||
+                WfcGridBitmasks.Length <= 0)
+            {
+                return false;
+            }
+
+            if (IsDoorCellBlocked(portal.LeftCellIndex))
+            {
+                blockedCell = portal.LeftCellIndex;
+                return true;
+            }
+
+            if (portal.RightCellIndex != portal.LeftCellIndex && IsDoorCellBlocked(portal.RightCellIndex))
+            {
+                blockedCell = portal.RightCellIndex;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsDoorCellBlocked(ushort cellIndex)
+        {
+            if (cellIndex >= WfcGridBitmasks.Length)
+                return false;
+
+            byte flags = WfcGridBitmasks[cellIndex];
+            return (flags & PathFunnelConstants.WfcDoorOpenFlag) == 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float CrossXZ(float3 apex, float3 b, float3 c)
+        {
+            float3 ab = b - apex;
+            float3 ac = c - apex;
+            return (ab.x * ac.z) - (ab.z * ac.x);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SamePoint(float3 a, float3 b)
+        {
+            return math.lengthsq(a - b) <= PathFunnelConstants.Epsilon * PathFunnelConstants.Epsilon;
+        }
+
+        private static float3 SanitizePoint(float3 point, float3 fallback, ref uint flags)
+        {
+            if (math.all(math.isfinite(point)))
+                return point;
+
+            flags |= PathFunnelResultFlags.NonFiniteInput;
+            return math.all(math.isfinite(fallback)) ? fallback : float3.zero;
+        }
+
+        private void AppendWaypoint(ref int waypointCount, float3 point, ref uint flags)
+        {
+            point = SanitizePoint(point, float3.zero, ref flags);
+            if (waypointCount > 0 && waypointCount <= Waypoints.Length)
+            {
+                float3 previous = Waypoints[waypointCount - 1];
+                if (math.lengthsq(previous - point) <= PathFunnelConstants.Epsilon * PathFunnelConstants.Epsilon)
+                    return;
+            }
+
+            if (waypointCount >= Waypoints.Length)
+            {
+                flags |= PathFunnelResultFlags.OutputOverflow;
+                return;
+            }
+
+            Waypoints[waypointCount] = point;
+            waypointCount++;
+        }
+
+        private int EmitRawFallback(float3 start, float3 goal, int portalLimit, ref uint flags)
+        {
+            int waypointCount = 0;
+            AppendWaypoint(ref waypointCount, start, ref flags);
+            for (int i = 0; i < portalLimit; i++)
+            {
+                NavPortal portal = LoadPortal(i, start, ref flags);
+                AppendWaypoint(ref waypointCount, (portal.Left + portal.Right) * 0.5f, ref flags);
+            }
+
+            AppendWaypoint(ref waypointCount, goal, ref flags);
+            return waypointCount;
+        }
+
+        private void ConvertWaypointsToAup(int waypointCount, ref uint flags)
+        {
+            if (!WaypointAups.IsCreated || waypointCount <= 0)
+                return;
+
+            int count = math.min(waypointCount, math.min(Waypoints.Length, WaypointAups.Length));
+            for (int i = 0; i < count; i++)
+            {
+                float3 local = Waypoints[i];
+                double3 absolute = SectorOriginAbsoluteMeters + new double3(local.x, local.y, local.z);
+                WaypointAups[i] = ToAupBlit(absolute, ref flags);
+            }
+        }
+
+        private static AbsoluteUniversePositionBlit ToAupBlit(double3 absolute, ref uint flags)
+        {
+            if (!math.all(math.isfinite(absolute)))
+            {
+                flags |= PathFunnelResultFlags.AupFallback;
+                absolute = double3.zero;
+            }
+
+            const double cellSize = 5000.0d;
+            long gridX = (long)math.floor(absolute.x / cellSize);
+            long gridY = (long)math.floor(absolute.y / cellSize);
+            long gridZ = (long)math.floor(absolute.z / cellSize);
+            return new AbsoluteUniversePositionBlit
+            {
+                GridX = gridX,
+                GridY = gridY,
+                GridZ = gridZ,
+                Local = new float3(
+                    (float)(absolute.x - (gridX * cellSize)),
+                    (float)(absolute.y - (gridY * cellSize)),
+                    (float)(absolute.z - (gridZ * cellSize))),
+                Reserved0 = 0u,
+                Reserved1 = 0UL
+            };
+        }
+
+        private void WriteResult(PathFunnelResult result)
+        {
+            if (Result.IsCreated && Result.Length > 0)
+            {
+                if ((result.Flags & PathFunnelResultFlags.OutputOverflow) != 0)
+                    result.Status = PathFunnelStatus.OutputCapacityExceeded;
+                Result[0] = result;
+            }
+        }
+    }
+}

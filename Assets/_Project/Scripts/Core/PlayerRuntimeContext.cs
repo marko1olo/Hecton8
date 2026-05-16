@@ -4,7 +4,7 @@ using Hecton8.Building;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.UI;
 using Hecton8.World;
 using NASAPunk.Visor;
@@ -247,7 +247,7 @@ namespace Hecton8.Core
             if (!math.all(math.isfinite(worldPoint)))
                 worldPoint = float3.zero;
 
-            Hecton8.Core.Signals.CombatDamageSignal signal = new Hecton8.Core.Signals.CombatDamageSignal
+            Hecton8.Core.Contracts.Signals.CombatDamageSignal signal = new Hecton8.Core.Contracts.Signals.CombatDamageSignal
             {
                 WorldPoint = worldPoint,
                 Direction = float3.zero,
@@ -259,9 +259,9 @@ namespace Hecton8.Core
                 SourceId = 0,
                 TargetId = 0,
                 Channel = 0,
-                Flags = Hecton8.Core.Signals.CombatDamageSignal.DirectRuntimeFlag
+                Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag
             };
-            SignalBus<Hecton8.Core.Signals.CombatDamageSignal>.Push(in signal);
+            SignalBus<Hecton8.Core.Contracts.Signals.CombatDamageSignal>.Push(in signal);
         }
     }
 }

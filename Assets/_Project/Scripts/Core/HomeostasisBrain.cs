@@ -4,13 +4,13 @@ using System.Runtime.InteropServices;
 using AOT;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace Hecton8.Core.Signals
+namespace Hecton8.Core.Contracts.Signals
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     public struct SystemHealthSignal : ISignal
@@ -72,17 +72,21 @@ namespace Hecton8.Core
     {
         None = 0UL,
         SecondaryCaustics = 1UL << 4,
-        ParticleAdvection = 1UL << 5,
+        MicroDebrisAdvection = 1UL << 5,
+        ParticleAdvection = MicroDebrisAdvection,
         VolumetricFogHighRes = 1UL << 6,
         DistantFaunaSteering = 1UL << 7,
         ProceduralSway = 1UL << 8,
-        IKBracing = 1UL << 9,
+        HighQualityIK = 1UL << 9,
+        IKBracing = HighQualityIK,
         SSR = 1UL << 10,
         BoidBrain = 1UL << 12,
         NonCriticalVfx = 1UL << 20,
         FoveatedSimulationTier3 = 1UL << 21,
-        SlowTick2Hz = 1UL << 22,
-        TimeDilation08 = 1UL << 23
+        AiOneHz = 1UL << 22,
+        SlowTick2Hz = AiOneHz,
+        TimeDilation09 = 1UL << 23,
+        TimeDilation08 = TimeDilation09
     }
 
     [Flags]
@@ -96,7 +100,11 @@ namespace Hecton8.Core
         WindowsFallback = 1 << 4,
         LowTierBatteryWeight = 1 << 5,
         Emergency = 1 << 6,
-        HardwareThermalSnapshot = 1 << 7
+        HardwareThermalSnapshot = 1 << 7,
+        VisualOverkillBudgetOpen = 1 << 8,
+        MacThermalBridge = 1 << 9,
+        PlatformFallback = 1 << 10,
+        XrRefreshRateShed = 1 << 11
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
@@ -114,7 +122,8 @@ namespace Hecton8.Core
         public byte FoveatedPressureTier;
         public ushort Flags;
         public float TimeDilationScalar;
-        public uint Reserved0;
+        public float PeakSystemHealthIndex01;
+        public uint LastThermalAction;
         public uint Reserved1;
     }
 
@@ -127,11 +136,11 @@ namespace Hecton8.Core
         private const int FrameTimeWindow = 120;
         private const int BlackBoxCapacity = 300;
         private const int TelemetryCadenceFrames = 60;
-        private const int RecoveryArmFrames = 300;
+        private const int RecoveryArmFrames = 3000;
         private const int RecoveryStepFrames = 60;
-        private const int AndroidThermalPollFrames = 30;
-        private const int BatteryPollFrames = 60;
+        private const float FrostPollSeconds = 5f;
         private const float FpsEwmaAlpha = 0.1f;
+        private const float ShiEwmaAlpha = 0.12f;
         private const float JitterUnstableSigmaMs = 2.0f;
         private const float Level1ActivateShi = 0.60f;
         private const float Level1RestoreShi = 0.50f;
@@ -140,42 +149,41 @@ namespace Hecton8.Core
         private const float Level3ActivateShi = 0.95f;
         private const float Level3RestoreShi = 0.90f;
         private const float SequentialRecoveryShi = 0.30f;
-        private const float EmergencyTimeDilationScalar = 0.8f;
+        private const float EmergencyTimeDilationScalar = 0.9f;
         private const long PersistentNativeBudgetBytes = 8192L;
         private const string OwnerName = nameof(HomeostasisBrain);
         private const string BlackBoxDumpFileName = "Dump_AGENT_HOMEOSTASIS_BRAIN.bin";
         private const uint ReasonHash = 0x484F4D45u; // HOME
-        private const uint MetricsSignalHash = 0x48484C54u; // HHLT
-        private const uint FrameTimeSignalHash = 0x46544D53u; // FTMS
-        private const uint KillSwitchSignalHash = 0x4B534857u; // KSHW
 
         private const ulong Level1Mask =
             (ulong)(SystemBit.SecondaryCaustics |
-                    SystemBit.ParticleAdvection |
-                    SystemBit.VolumetricFogHighRes);
+                    SystemBit.MicroDebrisAdvection);
 
         private const ulong Level2Mask =
             Level1Mask |
             (ulong)(SystemBit.DistantFaunaSteering |
                     SystemBit.ProceduralSway |
-                    SystemBit.IKBracing |
+                    SystemBit.HighQualityIK |
                     SystemBit.SSR |
+                    SystemBit.VolumetricFogHighRes |
                     SystemBit.FoveatedSimulationTier3);
 
         private const ulong Level3Mask =
             Level2Mask |
             (ulong)(SystemBit.BoidBrain |
                     SystemBit.NonCriticalVfx |
-                    SystemBit.SlowTick2Hz |
-                    SystemBit.TimeDilation08);
+                    SystemBit.AiOneHz |
+                    SystemBit.TimeDilation09);
 
-        private static NativeArray<float> _globalHardwareMetrics;
-        private static NativeArray<float> _frameTimeMs;
-        private static NativeArray<HomeostasisBlackBoxEntry> _blackBox;
+        private static IDataVault _dataVault;
+        private static VaultBufferHandle<float> _globalHardwareMetricsHandle;
+        private static VaultBufferHandle<float> _frameTimeMsHandle;
+        private static VaultBufferHandle<HomeostasisBlackBoxEntry> _blackBoxHandle;
         private static FunctionPointer<ComputeSystemHealthIndexDelegate> _computeShi;
 
         private static bool _initialized;
         private static bool _blackBoxDumped;
+        private static bool _shiEwmaSeeded;
         private static int _frameTimeCursor;
         private static int _frameTimeSampleCount;
         private static int _blackBoxCursor;
@@ -186,11 +194,13 @@ namespace Hecton8.Core
         private static int _lastTelemetryFrame = -TelemetryCadenceFrames;
         private static float _fpsEwma;
         private static float _systemHealthIndex01;
+        private static float _peakSystemHealthIndex01;
         private static float _fallbackHardwareBias;
         private static float _cachedBatteryLife01 = 1f;
         private static bool _usingHardwareSnapshot;
         private static ulong _currentKillSwitchMask;
         private static byte _currentPressureLevel;
+        private static uint _lastThermalAction;
         private static uint _frameTimeSignalSequence;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -206,6 +216,15 @@ namespace Hecton8.Core
         private static float _androidCpuTempC = 45f;
 #endif
 
+#if UNITY_OSX && !UNITY_EDITOR
+        private static IntPtr _macProcessInfoClass;
+        private static IntPtr _macProcessInfoSelector;
+        private static IntPtr _macThermalStateSelector;
+        private static IntPtr _macProcessInfo;
+        private static bool _macBridgeReady;
+        private static bool _macBridgeFaulted;
+#endif
+
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate float ComputeSystemHealthIndexDelegate(
             float jitterSigmaMs,
@@ -213,7 +232,13 @@ namespace Hecton8.Core
             float batteryLife01,
             int lowTier);
 
-        public static NativeArray<float> GlobalHardwareMetrics => _globalHardwareMetrics;
+        public static NativeArray<float> GlobalHardwareMetrics
+        {
+            get
+            {
+                return TryResolveHardwareMetrics(out NativeArray<float> metrics) ? metrics : default;
+            }
+        }
 
         public static float SystemHealthIndex01 => _systemHealthIndex01;
 
@@ -243,19 +268,15 @@ namespace Hecton8.Core
             if (_initialized)
                 return;
 
-            _globalHardwareMetrics = H8Memory.Allocate<float>(
-                (int)HardwareMetricSlot.Count,
-                SystemID.SystemDispatcher,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
+            _globalHardwareMetrics = ResolveHardwareMetricsBuffer();
             _frameTimeMs = H8Memory.Allocate<float>(
                 FrameTimeWindow,
-                SystemID.SystemDispatcher,
+                SystemID.HardwareHomeostasis,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
             _blackBox = H8Memory.Allocate<HomeostasisBlackBoxEntry>(
                 BlackBoxCapacity,
-                SystemID.SystemDispatcher,
+                SystemID.HardwareHomeostasis,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
             if (!_globalHardwareMetrics.IsCreated || !_frameTimeMs.IsCreated || !_blackBox.IsCreated)
@@ -264,11 +285,15 @@ namespace Hecton8.Core
                 return;
             }
 
-            NativeMemorySentinel.RegisterNativeArray(
-                _globalHardwareMetrics,
-                OwnerName,
-                nameof(_globalHardwareMetrics),
-                NativeAllocationLifetime.Session);
+            if (!_globalHardwareMetricsVaultOwned)
+            {
+                NativeMemorySentinel.RegisterNativeArray(
+                    _globalHardwareMetrics,
+                    OwnerName,
+                    nameof(_globalHardwareMetrics),
+                    NativeAllocationLifetime.Session);
+            }
+
             NativeMemorySentinel.RegisterNativeArray(
                 _frameTimeMs,
                 OwnerName,
@@ -281,12 +306,7 @@ namespace Hecton8.Core
                 NativeAllocationLifetime.Session);
             MemoryBudgetTracker.Register(OwnerName, ResolvePersistentBytes(), PersistentNativeBudgetBytes);
 
-            SignalBus<SystemHealthSignal>.Configure(16, maxFrameSignals: 64, lowTierFrameSignals: 16, laneHash: MetricsSignalHash);
-            SignalBus<FrameTimeSignal>.Configure(32, maxFrameSignals: 64, lowTierFrameSignals: 16, laneHash: FrameTimeSignalHash);
-            SignalBus<KillSwitchSignal>.Configure(8, maxFrameSignals: 32, lowTierFrameSignals: 8, laneHash: KillSwitchSignalHash);
-            SignalBus<SystemHealthSignal>.EnsureInitialized();
-            SignalBus<FrameTimeSignal>.EnsureInitialized();
-            SignalBus<KillSwitchSignal>.EnsureInitialized();
+            GlobalSignals.InitializeAllQueues();
 
             _computeShi = BurstCompiler.CompileFunctionPointer<ComputeSystemHealthIndexDelegate>(ComputeSystemHealthIndexBurst);
             _fpsEwma = ResolveTargetFrameRate();
@@ -316,23 +336,28 @@ namespace Hecton8.Core
             if (_blackBox.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_blackBox);
-                H8Memory.Release(ref _blackBox, SystemID.SystemDispatcher);
+                H8Memory.Release(ref _blackBox, SystemID.HardwareHomeostasis);
             }
 
             if (_frameTimeMs.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_frameTimeMs);
-                H8Memory.Release(ref _frameTimeMs, SystemID.SystemDispatcher);
+                H8Memory.Release(ref _frameTimeMs, SystemID.HardwareHomeostasis);
             }
 
             if (_globalHardwareMetrics.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_globalHardwareMetrics);
-                H8Memory.Release(ref _globalHardwareMetrics, SystemID.SystemDispatcher);
+                if (!_globalHardwareMetricsVaultOwned)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_globalHardwareMetrics);
+                    H8Memory.Release(ref _globalHardwareMetrics, SystemID.HardwareHomeostasis);
+                }
             }
 
             MemoryBudgetTracker.Unregister(OwnerName);
             _computeShi = default;
+            _globalHardwareMetrics = default;
+            _globalHardwareMetricsVaultOwned = false;
             _initialized = false;
             _blackBoxDumped = false;
             _frameTimeCursor = 0;
@@ -935,9 +960,37 @@ namespace Hecton8.Core
 
         private static long ResolvePersistentBytes()
         {
-            return ((long)HardwareMetricSlot.Count * sizeof(float)) +
+            long hardwareMetricsBytes = _globalHardwareMetricsVaultOwned
+                ? 0L
+                : (long)HardwareMetricSlot.Count * sizeof(float);
+            return hardwareMetricsBytes +
                    ((long)FrameTimeWindow * sizeof(float)) +
                    ((long)BlackBoxCapacity * Marshal.SizeOf<HomeostasisBlackBoxEntry>());
+        }
+
+        private static NativeArray<float> ResolveHardwareMetricsBuffer()
+        {
+            _globalHardwareMetricsVaultOwned = false;
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            if (dataVault != null)
+            {
+                NativeArray<float> vaultMetrics = dataVault.GetBuffer<float>(
+                    BufferID.HardwareMetrics,
+                    (int)HardwareMetricSlot.Count,
+                    SystemID.HardwareHomeostasis,
+                    NativeArrayOptions.ClearMemory);
+                if (vaultMetrics.IsCreated)
+                {
+                    _globalHardwareMetricsVaultOwned = true;
+                    return vaultMetrics;
+                }
+            }
+
+            return H8Memory.Allocate<float>(
+                (int)HardwareMetricSlot.Count,
+                SystemID.HardwareHomeostasis,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
         }
 
         private static uint FoldMaskToUInt(ulong mask)

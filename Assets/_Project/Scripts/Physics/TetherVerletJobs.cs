@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -12,15 +13,21 @@ namespace Hecton8.Physics
         public const int ConstraintNonFinite = 2;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     internal struct TetherVerletTelemetryEntry
     {
         public uint FrameIndex;
         public int NodeCount;
         public int IterationCount;
         public float PeakConstraintDelta;
+        public float PeakCableTension;
         public float3 AnchorPosition;
         public float3 PayloadPosition;
         public uint Flags;
+        public uint Pad0;
+        public uint Pad1;
+        public uint Pad2;
+        public uint Pad3;
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -30,6 +37,7 @@ namespace Hecton8.Physics
 
         public NativeArray<float3> Positions;
         public NativeArray<float3> PreviousPositions;
+        public NativeArray<float3> Velocities;
         public NativeArray<byte> NodeFaultFlags;
 
         [ReadOnly] public NativeArray<float3> PinnedPositions;
@@ -38,6 +46,7 @@ namespace Hecton8.Physics
         public float3 Acceleration;
         public float DeltaTimeSq;
         public float VelocityDamping;
+        public float MaxCableVelocity;
         public float FloorY;
         public float NodeRadius;
 
@@ -54,6 +63,8 @@ namespace Hecton8.Physics
                 float3 pinned = PinnedPositions[index];
                 Positions[index] = pinned;
                 PreviousPositions[index] = pinned;
+                if (Velocities.IsCreated && index < Velocities.Length)
+                    Velocities[index] = float3.zero;
                 return;
             }
 
@@ -64,12 +75,30 @@ namespace Hecton8.Physics
                 float3 recovered = math.all(math.isfinite(position)) ? position : float3.zero;
                 Positions[index] = recovered;
                 PreviousPositions[index] = recovered;
+                if (Velocities.IsCreated && index < Velocities.Length)
+                    Velocities[index] = float3.zero;
                 if (NodeFaultFlags.IsCreated && index < NodeFaultFlags.Length)
                     NodeFaultFlags[index] = (byte)TetherVerletFaultFlags.NonFiniteNode;
                 return;
             }
 
             float3 velocity = (position - previous) * VelocityDamping;
+            float maxVelocity = math.max(0f, MaxCableVelocity);
+            float velocityLengthSq = math.lengthsq(velocity);
+            float maxVelocitySq = maxVelocity * maxVelocity;
+            if (maxVelocity > 0f && velocityLengthSq > maxVelocitySq)
+                velocity *= maxVelocity * math.rsqrt(math.max(velocityLengthSq, 0.000001f));
+
+            if (!math.all(math.isfinite(velocity)))
+            {
+                velocity = float3.zero;
+                if (NodeFaultFlags.IsCreated && index < NodeFaultFlags.Length)
+                    NodeFaultFlags[index] = (byte)TetherVerletFaultFlags.NonFiniteNode;
+            }
+
+            if (Velocities.IsCreated && index < Velocities.Length)
+                Velocities[index] = velocity;
+
             float3 next = position + velocity + (Acceleration * DeltaTimeSq);
             float floor = FloorY + math.max(0f, NodeRadius);
             if (next.y < floor)
@@ -81,7 +110,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct TetherVerletJacobiConstraintJob : IJob
+    internal struct VerletCableSolverJob : IJob
     {
         private const float MinLengthSq = 0.000001f;
         private const byte PinnedNodeMask = 1;
@@ -262,6 +291,7 @@ namespace Hecton8.Physics
         public uint FrameIndex;
         public int NodeCount;
         public int IterationCount;
+        public float PeakCableTension;
         public float3 AnchorPosition;
         public float3 PayloadPosition;
         public uint Flags;
@@ -279,9 +309,14 @@ namespace Hecton8.Physics
                 NodeCount = NodeCount,
                 IterationCount = IterationCount,
                 PeakConstraintDelta = SolverStats.IsCreated && SolverStats.Length > 0 ? SolverStats[0] : 0f,
+                PeakCableTension = math.isfinite(PeakCableTension) ? math.max(0f, PeakCableTension) : 0f,
                 AnchorPosition = AnchorPosition,
                 PayloadPosition = PayloadPosition,
-                Flags = Flags | solverFlags
+                Flags = Flags | solverFlags,
+                Pad0 = 0u,
+                Pad1 = 0u,
+                Pad2 = 0u,
+                Pad3 = 0u
             };
 
             TelemetryHead[0] = (index + 1) % TelemetryRing.Length;

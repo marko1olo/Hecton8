@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using System.IO;
 using System.Collections.Generic;
 using Hecton8.Gameplay;
@@ -26,9 +27,24 @@ namespace Hecton8.Physics
         private static readonly int _TetherSegmentStressScaleId = Shader.PropertyToID("_TetherSegmentStressScale");
         private static readonly int _TetherPointCountId = Shader.PropertyToID("_TetherPointCount");
         private static readonly int _TetherRadiusId = Shader.PropertyToID("_TetherRadius");
+        private static readonly int _TetherIndirectModeId = Shader.PropertyToID("_TetherIndirectMode");
         private const int TetherBlackBoxCapacity = 300;
-        private const string TetherBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_KINEMATIC_TETHER_EXPERT.bin";
+        private const string TetherBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_VERLET_TOW_WINCH.bin";
         private const uint TetherBlackBoxMagic = 0x54455448u;
+
+        // COLD ALLOC: Vector3[6] - canonical six-vertex segment impostor mesh for RenderMeshIndirect - owner: TetherManager
+        private static readonly Vector3[] s_TetherIndirectSegmentVertices =
+        {
+            Vector3.zero,
+            Vector3.zero,
+            Vector3.zero,
+            Vector3.zero,
+            Vector3.zero,
+            Vector3.zero
+        };
+
+        // COLD ALLOC: int[6] - one triangle pair index stream preserving SV_VertexID 0..5 - owner: TetherManager
+        private static readonly int[] s_TetherIndirectSegmentIndices = { 0, 1, 2, 3, 4, 5 };
 
         [Header("Tether Rendering")]
         [Tooltip("Optional explicit material for tether line rendering. When omitted the manager creates a runtime material from the built-in tether shader.")]
@@ -72,6 +88,10 @@ namespace Hecton8.Physics
         private MaterialPropertyBlock _renderPropertyBlock;
         private Material _runtimeRenderMaterial;
         private bool _ownsRuntimeMaterial;
+        private Mesh _indirectTetherSegmentMesh;
+        private GraphicsBuffer _indirectTetherArgsBuffer;
+        private Mesh _indirectArgsMesh;
+        private int _indirectArgsSegmentCount = -1;
         private bool _registeredFixedTick;
         private bool _registeredLateFrameTick;
         private bool _registeredOriginShiftListener;
@@ -79,6 +99,7 @@ namespace Hecton8.Physics
         private int _telemetryHead;
         private bool _telemetryDumped;
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 1, Size = 16)]
         private struct TetherManagerTelemetryEntry
         {
             public uint FrameIndex;
@@ -137,8 +158,8 @@ namespace Hecton8.Physics
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
-            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
+            _registeredFixedTick = SystemDispatcher.GetFixedLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryUnregisterFixedTickable()
@@ -146,7 +167,7 @@ namespace Hecton8.Physics
             if (!_registeredFixedTick)
                 return;
 
-            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registeredFixedTick = false;
         }
 
@@ -200,11 +221,12 @@ namespace Hecton8.Physics
                 _ownsRuntimeMaterial = false;
             }
 
+            ReleaseIndirectTetherRenderResources();
+
             if (_telemetryRing.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
-                _telemetryRing.Dispose();
-                _telemetryRing = default;
+                H8Memory.Release(ref _telemetryRing, SystemID.Physics);
             }
         }
 
@@ -371,6 +393,7 @@ namespace Hecton8.Physics
                 layer = gameObject.layer,
                 receiveShadows = false,
                 shadowCastingMode = ShadowCastingMode.Off,
+                motionVectorMode = MotionVectorGenerationMode.Camera,
                 renderingLayerMask = 1u
             };
 
@@ -385,6 +408,11 @@ namespace Hecton8.Physics
                 if (!instance.IsVisualReady)
                     continue;
 
+                int segmentCount = math.max(0, instance.VisualPointCount - 1);
+                if (segmentCount <= 0)
+                    continue;
+
+                bool useIndirect = ShouldUseIndirectTetherRendering();
                 _renderPropertyBlock.Clear();
                 _renderPropertyBlock.SetBuffer(_TetherPositionsId, instance.VisualSegmentBuffer);
                 _renderPropertyBlock.SetBuffer(_TetherSegmentTensionsId, instance.VisualSegmentTensionBuffer);
@@ -394,9 +422,110 @@ namespace Hecton8.Physics
                 _renderPropertyBlock.SetFloat(_TetherSegmentStressScaleId, tetherSegmentStressScale);
                 _renderPropertyBlock.SetInt(_TetherPointCountId, instance.VisualPointCount);
                 _renderPropertyBlock.SetFloat(_TetherRadiusId, tetherRenderRadius);
+                _renderPropertyBlock.SetInt(_TetherIndirectModeId, useIndirect ? 1 : 0);
                 renderParams.worldBounds = instance.GetVisualBounds(tetherBoundsPadding);
-                Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, math.max(0, instance.VisualPointCount - 1) * 6, 1);
+                if (useIndirect && TryRenderIndirectTether(renderParams, segmentCount))
+                    continue;
+
+                _renderPropertyBlock.SetInt(_TetherIndirectModeId, 0);
+                Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, segmentCount * 6, 1);
             }
+        }
+
+        private bool ShouldUseIndirectTetherRendering()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
+        }
+
+        private bool TryRenderIndirectTether(RenderParams renderParams, int segmentCount)
+        {
+            if (segmentCount <= 0)
+                return false;
+
+            Mesh mesh = ResolveIndirectTetherSegmentMesh();
+            if (mesh == null)
+                return false;
+
+            EnsureIndirectTetherArgsBuffer();
+            if (_indirectTetherArgsBuffer == null)
+                return false;
+
+            UploadIndirectTetherArgs(mesh, segmentCount);
+            Graphics.RenderMeshIndirect(renderParams, mesh, _indirectTetherArgsBuffer, 1, 0);
+            return true;
+        }
+
+        private Mesh ResolveIndirectTetherSegmentMesh()
+        {
+            if (_indirectTetherSegmentMesh != null)
+                return _indirectTetherSegmentMesh;
+
+            _indirectTetherSegmentMesh = new Mesh
+            {
+                name = "MESH_TetherIndirectSegment",
+                hideFlags = HideFlags.DontSave
+            }; // COLD ALLOC: Mesh[1] - canonical tether impostor segment mesh for indirect draw - owner: TetherManager
+            _indirectTetherSegmentMesh.SetVertices(s_TetherIndirectSegmentVertices);
+            _indirectTetherSegmentMesh.SetIndices(s_TetherIndirectSegmentIndices, MeshTopology.Triangles, 0, false);
+            _indirectTetherSegmentMesh.bounds = new Bounds(Vector3.zero, Vector3.one * 2f);
+            _indirectTetherSegmentMesh.UploadMeshData(false);
+            return _indirectTetherSegmentMesh;
+        }
+
+        private void EnsureIndirectTetherArgsBuffer()
+        {
+            if (_indirectTetherArgsBuffer != null)
+                return;
+
+            _indirectTetherArgsBuffer = new GraphicsBuffer(
+                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                1,
+                GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - tether RenderMeshIndirect draw args - owner: TetherManager
+            _indirectArgsMesh = null;
+            _indirectArgsSegmentCount = -1;
+        }
+
+        private void UploadIndirectTetherArgs(Mesh mesh, int segmentCount)
+        {
+            if (_indirectTetherArgsBuffer == null || mesh == null || segmentCount <= 0)
+                return;
+
+            if (_indirectArgsMesh == mesh && _indirectArgsSegmentCount == segmentCount)
+                return;
+
+            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
+                _indirectTetherArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            {
+                indexCountPerInstance = mesh.GetIndexCount(0),
+                instanceCount = (uint)segmentCount,
+                startIndex = mesh.GetIndexStart(0),
+                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                startInstance = 0u
+            };
+            _indirectTetherArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            _indirectArgsMesh = mesh;
+            _indirectArgsSegmentCount = segmentCount;
+        }
+
+        private void ReleaseIndirectTetherRenderResources()
+        {
+            if (_indirectTetherArgsBuffer != null)
+            {
+                _indirectTetherArgsBuffer.Release();
+                _indirectTetherArgsBuffer = null;
+            }
+
+            if (_indirectTetherSegmentMesh != null)
+            {
+                Destroy(_indirectTetherSegmentMesh);
+                _indirectTetherSegmentMesh = null;
+            }
+
+            _indirectArgsMesh = null;
+            _indirectArgsSegmentCount = -1;
         }
 
         private TetherInstance RentInstance()
@@ -496,10 +625,14 @@ namespace Hecton8.Physics
                 return;
 
             // COLD ALLOC: NativeArray<TetherManagerTelemetryEntry>[300] - tether blackbox ring - owner: TetherManager
-            _telemetryRing = new NativeArray<TetherManagerTelemetryEntry>(
+            _telemetryRing = H8Memory.Allocate<TetherManagerTelemetryEntry>(
                 TetherBlackBoxCapacity,
+                SystemID.Physics,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
+            if (!_telemetryRing.IsCreated)
+                return;
+
             NativeMemorySentinel.RegisterNativeArray(
                 _telemetryRing,
                 nameof(TetherManager),

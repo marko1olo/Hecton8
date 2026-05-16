@@ -22,7 +22,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Building;
     using Hecton8.Construction;
     using Hecton8.Core;
-    using Hecton8.Core.Signals;
+    using Hecton8.Core.Contracts.Signals;
     using Hecton8.Interaction;
     using Hecton8.Inventory;
     using Hecton8.Input;
@@ -553,6 +553,15 @@ namespace Hecton8.Gameplay
         [Tooltip("ParticleSystem for impact sparks.")]
         [SerializeField] private ParticleSystem sparksVFX;
 
+        [Tooltip("Optional low-tier glowing decal proxy for WFC sealed-door cuts.")]
+        [SerializeField] private Transform wfcCutDecalProxy;
+
+        [Tooltip("Optional renderer on the low-tier WFC cut decal proxy.")]
+        [SerializeField] private Renderer wfcCutDecalRenderer;
+
+        [Tooltip("Maximum decal scale for completed WFC sealed-door cuts.")]
+        [SerializeField, Range(0.05f, 1.25f)] private float wfcCutDecalMaxScale = 0.55f;
+
         [Header("── Audio ─────────────────────────────────────")]
         [Tooltip("Looping AudioSource for cutting sound.")]
         [SerializeField] private AudioSource cutAudio;
@@ -653,6 +662,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>Base emission rate from prefab (for scaling).</summary>
         private float _baseSparksRate;
+        private float _latestSystemStress01;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -718,6 +728,7 @@ namespace Hecton8.Gameplay
             CacheSparksEmission();
             CacheToolId();
             CacheRaycastRequesterId();
+            CacheWfcCutDecalRenderer();
             SetVisualsActive(false);
             TryAssignCutAudioMixerRoute();
             EnsurePlayerBindings();
@@ -1127,8 +1138,8 @@ namespace Hecton8.Gameplay
             else
                 direction *= math.rsqrt(directionSqrMagnitude);
 
-            Vector3 absoluteOrigin = ResolveAbsoluteUniversePoint(_cachedTransform.position);
-            Vector3 absoluteHitPoint = ResolveAbsoluteUniversePoint(_hitInfo.point);
+            double3 absoluteOriginAup = ResolveAbsoluteUniversePointDouble3(_cachedTransform.position);
+            double3 absoluteHitAup = ResolveAbsoluteUniversePointDouble3(_hitInfo.point);
             float normalizedPower = ResolveNormalizedPower((runtimePower * math.rcp(math.max(damagePerSecond, 0.0001f))) * powerScale, heatMultiplier);
             if (normalizedPower < MinEffectiveBeamPower)
             {
@@ -1137,6 +1148,14 @@ namespace Hecton8.Gameplay
             }
 
             ClearFlag(LowPowerState);
+            if (TryApplyWfcDoorCut(deltaTime, normalizedPower, absoluteOriginAup, absoluteHitAup, direction, out _, out _))
+            {
+                ApplyRecoilImpulse(direction, normalizedPower);
+                return;
+            }
+
+            Vector3 absoluteOrigin = ToFloatVector(absoluteOriginAup);
+            Vector3 absoluteHitPoint = ToFloatVector(absoluteHitAup);
             EquipmentInteractionPacket packet = new EquipmentInteractionPacket(
                 _cachedToolId,
                 new float3(absoluteOrigin.x, absoluteOrigin.y, absoluteOrigin.z),
@@ -1171,7 +1190,53 @@ namespace Hecton8.Gameplay
                     organicManager.TryApplyToolHit(_hitInfo.point, _hitInfo.normal, direction, damage, normalizedPower, GetCapabilityMask());
 
                 ApplyRecoilImpulse(direction, normalizedPower);
+                PublishHeatMicroVibration(normalizedPower);
             }
+        }
+
+        private bool TryApplyWfcDoorCut(
+            float deltaTime,
+            float normalizedPower,
+            double3 absoluteOriginAup,
+            double3 absoluteHitAup,
+            Vector3 direction,
+            out float progress01,
+            out bool completed)
+        {
+            progress01 = 0f;
+            completed = false;
+            if (_hitInfo.collider == null)
+                return false;
+
+            if (!_hitInfo.collider.TryGetComponent(out SealedDoor door))
+                door = _hitInfo.collider.GetComponentInParent<SealedDoor>();
+
+            if (door == null)
+            {
+                SetWfcCutDecalActive(false);
+                return false;
+            }
+
+            float progressDelta01 = math.max(0f, deltaTime) * math.saturate(normalizedPower);
+            bool handled = WfcLaserCutRuntime.TryApplyDoorCut(
+                door,
+                _cachedToolId,
+                absoluteOriginAup,
+                absoluteHitAup,
+                _hitInfo.point,
+                _hitInfo.normal,
+                progressDelta01,
+                normalizedPower,
+                _heatLevel,
+                out progress01,
+                out completed);
+
+            if (handled)
+                UpdateWfcCutDecalVisual(progress01);
+            else
+                SetWfcCutDecalActive(false);
+
+            return handled;
         }
 
         private void ApplyOpenWaterBoil(float deltaTime)
@@ -1609,7 +1674,8 @@ namespace Hecton8.Gameplay
 
                 if (_sparksEmissionCached)
                 {
-                    float heatScaledRate = _baseSparksRate * (1f + _heatLevel * 3f);
+                    float stressScale = ResolveSystemStress01() > 0.7f ? 0.35f : 1f;
+                    float heatScaledRate = _baseSparksRate * (1f + _heatLevel * 3f) * stressScale;
                     _sparksEmission.rateOverTimeMultiplier = heatScaledRate;
                 }
 
@@ -1660,6 +1726,7 @@ namespace Hecton8.Gameplay
                     cutAudio.Play();
 
                 cutAudio.pitch = math.lerp(basePitch, maxPitch, _heatLevel);
+                PublishLaserLoopAcoustic(math.saturate(_heatLevel));
             }
             else
             {
@@ -1668,6 +1735,85 @@ namespace Hecton8.Gameplay
 
                 cutAudio.pitch = basePitch;
             }
+        }
+
+        private float ResolveSystemStress01()
+        {
+            ReadOnlySpan<SystemHealthIndexSignal> signals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
+            if (signals.Length <= 0)
+                return math.saturate(_latestSystemStress01);
+
+            float stress01 = 0f;
+            for (int i = 0; i < signals.Length; i++)
+            {
+                SystemHealthIndexSignal signal = signals[i];
+                float pressure = math.saturate(signal.Pressure01);
+                float healthStress = 1f - math.saturate(signal.Health01);
+                float stateStress = signal.State == SystemHealthIndexSignal.StateCritical ? 1f :
+                    signal.State == SystemHealthIndexSignal.StateWarning ? 0.72f : 0f;
+                stress01 = math.max(stress01, math.max(pressure, math.max(healthStress, stateStress)));
+            }
+
+            _latestSystemStress01 = math.saturate(stress01);
+            return _latestSystemStress01;
+        }
+
+        private void PublishLaserLoopAcoustic(float progress01)
+        {
+            uint targetHash = _hitInfo.collider != null
+                ? unchecked((uint)EntityId.ToULong(_hitInfo.collider.GetEntityId()))
+                : 0u;
+
+            ToolAcousticSignal signal = new ToolAcousticSignal
+            {
+                ToolHash = _cachedToolId,
+                TargetHash = targetHash,
+                Progress01 = math.saturate(progress01),
+                PitchScale = math.lerp(basePitch, maxPitch, _heatLevel),
+                Intensity01 = math.saturate(0.35f + _heatLevel * 0.65f),
+                Frame = unchecked((uint)Time.frameCount),
+                State = ToolAcousticSignal.StateLaserLoop,
+                Flags = ToolAcousticSignal.FlagLooping
+            };
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void PublishHeatMicroVibration(float normalizedPower)
+        {
+            float intensity = math.saturate(normalizedPower * (0.25f + _heatLevel * 0.75f));
+            if (intensity <= 0.0001f)
+                return;
+
+            HapticRequest request = new HapticRequest
+            {
+                Intensity01 = intensity,
+                DurationSeconds = 0.04f,
+                Frequency01 = math.saturate(0.55f + _heatLevel * 0.45f),
+                SourceHash = _cachedToolId,
+                Frame = unchecked((uint)Time.frameCount),
+                Channel = HapticRequest.ChannelMicroVibration,
+                Flags = HapticRequest.FlagMicroVibration
+            };
+            GlobalSignals.Publish(in request);
+        }
+
+        private void UpdateWfcCutDecalVisual(float progress01)
+        {
+            if (wfcCutDecalProxy == null)
+                return;
+
+            float clampedProgress = math.saturate(progress01);
+            float scale = math.lerp(0.04f, math.max(0.05f, wfcCutDecalMaxScale), clampedProgress);
+            wfcCutDecalProxy.position = _hitInfo.point + _hitInfo.normal * 0.006f;
+            wfcCutDecalProxy.rotation = ResolveDominantAxisRotation(_hitInfo.normal);
+            wfcCutDecalProxy.localScale = new Vector3(scale, scale, scale);
+            SetWfcCutDecalActive(true);
+        }
+
+        private void SetWfcCutDecalActive(bool active)
+        {
+            if (wfcCutDecalRenderer != null && wfcCutDecalRenderer.enabled != active)
+                wfcCutDecalRenderer.enabled = active;
         }
 
         private void SetVisualsActive(bool active)
@@ -1686,6 +1832,9 @@ namespace Hecton8.Gameplay
 
             if (!active)
                 UpdateAudioState(false);
+
+            if (!active)
+                SetWfcCutDecalActive(false);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1700,6 +1849,14 @@ namespace Hecton8.Gameplay
                 _baseSparksRate = _sparksEmission.rateOverTimeMultiplier;
                 _sparksEmissionCached = true;
             }
+        }
+
+        private void CacheWfcCutDecalRenderer()
+        {
+            if (wfcCutDecalRenderer == null && wfcCutDecalProxy != null)
+                wfcCutDecalProxy.TryGetComponent(out wfcCutDecalRenderer);
+
+            SetWfcCutDecalActive(false);
         }
 
         private void ResetAllState()
@@ -1899,8 +2056,17 @@ namespace Hecton8.Gameplay
 
         private static Vector3 ResolveAbsoluteUniversePoint(Vector3 runtimePoint)
         {
-            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePoint);
-            return new Vector3((float)absolute.x, (float)absolute.y, (float)absolute.z);
+            return ToFloatVector(ResolveAbsoluteUniversePointDouble3(runtimePoint));
+        }
+
+        private static double3 ResolveAbsoluteUniversePointDouble3(Vector3 runtimePoint)
+        {
+            return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePoint);
+        }
+
+        private static Vector3 ToFloatVector(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
         }
 
         private void ApplyRecoilImpulse(Vector3 direction, float normalizedPower)

@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Hecton8.Core.Memory
 {
@@ -19,6 +21,7 @@ namespace Hecton8.Core.Memory
         Bootstrap = 3,
         CoreDeterminism = 4,
         SystemDispatcher = 30,
+        HardwareHomeostasis = 31,
         GlobalPhysicsStateManager = 32,
         Physics = 64,
         VehiclesPhysics = 65,
@@ -26,10 +29,16 @@ namespace Hecton8.Core.Memory
         GameplayLoot = 67,
         HabitatAtmosphere = 68,
         GameplayPlayer = 69,
+        GameplayTools = 70,
         WorldStreaming = 128,
         TerrainSeams = 129,
+        WorldSargassum = 130,
+        AICognition = 144,
+        AnimationFauna = 145,
         SimulationBucketer = 161,
+        AmbientBiota = 162,
         Vfx = 192,
+        GraphicsScalability = 193,
         UI = 224,
         External = 65534
     }
@@ -73,6 +82,7 @@ namespace Hecton8.Core.Memory
         EntityItemHashes = 31,
         EntityQuantities = 32,
         EntityLootMagnetTelemetry = 33,
+        EntityLootMagnetSignalEvents = 34,
         SubmarineFluidCompartmentFloodVolumes = 35,
         SubmarineFluidCompartmentViscosity01 = 36,
         SubmarineFluidCompartmentBaseMaxVolumes = 37,
@@ -104,7 +114,126 @@ namespace Hecton8.Core.Memory
         HabitatBaseAwakeState = 63,
         CarveDebrisJobState = 64,
         CarveDebrisRequests = 65,
-        CarveDebrisBlackBox = 66
+        CarveDebrisBlackBox = 66,
+        TetherCablePositions = 67,
+        TetherCablePreviousPositions = 68,
+        TetherCableVelocities = 69,
+        TetherCableMasses = 70,
+        TetherCableSegmentTensions = 71,
+        TetherCableBlackBox = 72,
+        FloraScatterMatrices = 73,
+        FloraScatterMetadata = 74,
+        FloraScatterMotionVectors = 75,
+        HullDents = 76,
+        CompassState = 77,
+        CompassHeadingOutput = 78,
+        CompassBlackBox = 79,
+        JawIkTargets = 80,
+        CurrentJawPos = 81,
+        BiteIkSolveEvents = 82,
+        BiteIkTelemetryCursor = 83,
+        WakeSources = 84,
+        AlphaLeviathanCognitionState = 85,
+        AlphaLeviathanSensoryStimulus = 86,
+        AlphaLeviathanSteeringOutput = 87,
+        AlphaLeviathanTelemetryRing = 88,
+        AlphaLeviathanTelemetryCursor = 89,
+        ResolutionScaleState = 90,
+        BiotaAUPs = 91,
+        BiotaVelocities = 92,
+        BiotaStates = 93,
+        ToolRuntimeHeat01 = 94,
+        ToolRuntimeBatteryCharge = 95,
+        WfcDoorCutProgress01 = 96,
+        WfcLaserCutBlackBox = 97,
+        SimulationBucketEntityFront = 98,
+        SimulationBucketEntityWork = 99,
+        SimulationBucketEntityCostEwma = 100,
+        SimulationBucketLoadEwma = 101,
+        SimulationBucketRebalanceResult = 102,
+        SimulationBucketFrameState = 103,
+        SimulationBucketRebalanceLoads = 104,
+        SargassumStaticObstacleCache = 105,
+        SargassumBoidState = 106,
+        SargassumLeviathanPathScratch = 107,
+        SargassumLeviathanNodeFront = 108,
+        SargassumLeviathanNodeBack = 109,
+        SargassumLeviathanNodeCount = 110,
+        SargassumFoveatedSimulationInput = 111,
+        SargassumFoveatedSimulationFront = 112,
+        SargassumFoveatedSimulationBack = 113,
+        SargassumSimulationFrame = 114,
+        SargassumFoodChainTelemetryRing = 115,
+        SargassumThreatGridUpload = 116,
+        SargassumThreatVoxelUpload = 117,
+        SargassumInactiveSwarmRing = 118,
+        SargassumInactiveSwarmCenterRing = 119,
+        SargassumBoidSensoryThreats = 120,
+        LadderAUPs = 121,
+        HardwareMetrics = 122,
+        ShaderGlobalState = 123,
+        HandTargetAUP = 124,
+        HandActualAUP = 125,
+        HandGrabState = 126,
+        HandIkTelemetryRing = 127,
+        HandIkTelemetryCursor = 128,
+        FoveatedRenderBlackBox = 129,
+        PredatorRetinalExposure = 130,
+        PredatorRetinalBlindnessState = 131,
+        PredatorRetinalLastPublishedBlindnessState = 132,
+        PredatorRetinalLightSources = 133,
+        PredatorRetinalTelemetryRing = 134,
+        LockstepArrayHashes = 135,
+        LockstepMasterStateHash = 136,
+        LockstepMasterFlags = 137,
+        LockstepTelemetryRing = 138,
+        LockstepReplayInputRing = 139,
+        LockstepRigidbodyElementHashes = 140,
+        LockstepPlayerElementHashes = 141,
+        LockstepRoomElementHashes = 142,
+        LockstepEntityElementHashes = 143,
+        LockstepRigidbodyElementFlags = 144,
+        LockstepPlayerElementFlags = 145,
+        LockstepRoomElementFlags = 146,
+        LockstepEntityElementFlags = 147,
+        LockstepGhostReplayHeaders = 148,
+        LockstepGhostReplayInputs = 149,
+        VehicleDockingActiveSplines = 150,
+        VisorRefractionBlackBox = 151,
+        WakeGlobalBuffer = 152,
+        WakeVectorBuffer = 153,
+        WakeBlackBox = 154,
+        LadderClimbIkInput = 155,
+        LadderClimbIkOutput = 156,
+        LadderClimbIkTelemetryRing = 157,
+        LadderClimbIkTelemetryCursor = 158,
+        BiotaTelemetryRing = 159,
+        BiotaTelemetryCursor = 160,
+        FloraScatterBlackBox = 161,
+        FloraScatterCpuFrustumPlanes = 162,
+        FloraScatterCpuVisibilityMask = 163,
+        HardwareFrameTimes = 164,
+        HomeostasisBlackBox = 165,
+        HardwareThermalSeverity = 166,
+        HardwareThermalBlackBox = 167,
+        PlayerKinematicFlowVelocity = 168,
+        PlayerKinematicLastValidPositions = 169,
+        PlayerKinematicSyncReadState = 170,
+        PlayerKinematicSyncWriteState = 171,
+        PlayerKinematicHandTargets = 172,
+        PlayerKinematicSmoothedHandTargets = 173,
+        PlayerKinematicRuntimeTelemetryRing = 174,
+        PlayerKinematicRuntimeTelemetryCursor = 175,
+        PlayerKinematicFaultFlags = 176,
+        PlayerKinematicHandProbeCommands = 177,
+        PlayerKinematicHandProbeHits = 178,
+        PlayerKinematicSdfSqueezeResults = 179,
+        LeviathanSegmentPositions = 180,
+        LeviathanPreviousSegmentPositions = 181,
+        LeviathanBoneMatrices = 182,
+        LeviathanTerrainIkTelemetryRing = 183,
+        LeviathanTerrainIkTelemetryCursor = 184,
+        SargassumBoidSensoryBlackBox = 185
     }
 
     [Flags]
@@ -125,10 +254,25 @@ namespace Hecton8.Core.Memory
         Occupied = 1
     }
 
+    [Flags]
+    internal enum H8MemoryTelemetryFlags : ushort
+    {
+        None = 0,
+        Initialized = 1 << 0,
+        Allocated = 1 << 1,
+        Released = 1 << 2,
+        ForcedRelease = 1 << 3,
+        SceneTransition = 1 << 4,
+        BaselineMismatch = 1 << 5,
+        Shutdown = 1 << 6,
+        Fault = 1 << 7,
+        Heartbeat = 1 << 8
+    }
+
     /// <summary>
     /// Native memory-map descriptor for occupied/free regions owned by <see cref="H8Memory"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BlockDescriptor
     {
         public IntPtr BasePointer;
@@ -140,12 +284,13 @@ namespace Hecton8.Core.Memory
         public ushort Flags;
         public byte State;
         public byte Reserved;
+        public ushort Reserved2;
     }
 
     /// <summary>
     /// Blittable record copied to crash dumps and leak-reap passes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct H8AllocationRecord
     {
         public IntPtr Pointer;
@@ -154,10 +299,34 @@ namespace Hecton8.Core.Memory
         public int Stride;
         public int Alignment;
         public int AllocationIndex;
-        public SystemID Owner;
+        public int Generation;
         public Allocator Allocator;
+        public SystemID Owner;
         public ushort Flags;
         public ushort Reserved;
+        public ushort Reserved2;
+    }
+
+    /// <summary>
+    /// Fixed-size sentinel heartbeat copied into fatal memory dumps.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct H8MemoryTelemetryEntry
+    {
+        public long TotalBytes;
+        public long TransitionBaselineBytes;
+        public long LastTransitionReleasedBytes;
+        public uint Sequence;
+        public int ActiveAllocationCount;
+        public int BlockDescriptorCount;
+        public int AllocationGeneration;
+        public int TransitionCutoffGeneration;
+        public int TransitionSequence;
+        public int LastTransitionReleasedCount;
+        public int FatalLeakPreventedCount;
+        public ushort Owner;
+        public ushort Flags;
+        public uint Frame;
     }
 
     public sealed class FatalMemoryException : InvalidOperationException
@@ -220,16 +389,39 @@ namespace Hecton8.Core.Memory
         private const int DefaultCapacity = 4096;
         private const int MaxTrackingCapacity = 65536;
         private const int OwnerByteSlots = 65536;
+        private const int OwnerRegistryCapacity = 256;
+        private const int DefaultOwnerPointerCapacity = 16;
+        private const int BlackBoxFrameCount = 300;
+        private const int MinimumRawAlignment = 16;
+        private const int MaximumRawAlignment = 4096;
         private const long LowTierPoolCapBytes = 512L * 1024L * 1024L;
+        private const int NoTransitionCutoffGeneration = -1;
+        private const string AgentDumpFileName = "Dump_SENTINEL_DISPOSAL_GUARD.bin";
 
         private static NativeParallelHashMap<long, SystemID> _allocationOwners;
+        private static NativeParallelHashMap<long, int> _allocationRecordIndices;
+        private static NativeParallelHashMap<ushort, NativeList<IntPtr>> _ownerPointers;
+        private static NativeParallelHashMap<ushort, JobHandle> _ownerJobHandles;
+        private static NativeList<ushort> _ownerPointerKeys;
+        private static NativeList<ushort> _ownerJobKeys;
         private static NativeArray<H8AllocationRecord> _records;
         private static NativeArray<long> _ownerBytes;
         private static NativeList<BlockDescriptor> _blockDescriptors;
+        private static NativeArray<H8MemoryTelemetryEntry> _blackBox;
         private static int _recordCount;
         private static long _totalBytes;
         private static long _poolCapBytes = LowTierPoolCapBytes;
         private static int _fatalLeakPreventedCount;
+        private static int _blackBoxCursor;
+        private static uint _blackBoxSequence;
+        private static int _allocationGeneration = 1;
+        private static int _transitionCutoffGeneration = NoTransitionCutoffGeneration;
+        private static int _transitionSequence;
+        private static int _lastTransitionReleasedCount;
+        private static long _lastTransitionReleasedBytes;
+        private static long _transitionBaselineBytes;
+        private static bool _lastTransitionBaselineVerified = true;
+        private static bool _sceneHooksRegistered;
         private static bool _initialized;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -243,6 +435,9 @@ namespace Hecton8.Core.Memory
         /// <summary>Total tracked bytes.</summary>
         public static long TotalBytes => _totalBytes;
 
+        /// <summary>Total tracked bytes. Scene-transition verification uses this alias.</summary>
+        public static long TotalAllocatedBytes => _totalBytes;
+
         /// <summary>Tracked memory-map descriptor count.</summary>
         public static int BlockDescriptorCount => _blockDescriptors.IsCreated ? _blockDescriptors.Length : 0;
 
@@ -251,6 +446,29 @@ namespace Hecton8.Core.Memory
 
         /// <summary>Number of owner-unregister leaks force-reaped by the sentinel.</summary>
         public static int FatalLeakPreventedCount => _fatalLeakPreventedCount;
+
+        /// <summary>True while a scene transition generation cutoff is awaiting verification.</summary>
+        public static bool HasPendingSceneTransition => _transitionCutoffGeneration != NoTransitionCutoffGeneration;
+
+        /// <summary>True when the last scene transition purge reached the exact computed baseline.</summary>
+        public static bool LastTransitionBaselineVerified => _lastTransitionBaselineVerified;
+
+        /// <summary>Bytes released by the last scene transition leak purge.</summary>
+        public static long LastTransitionReleasedBytes => _lastTransitionReleasedBytes;
+
+        /// <summary>Allocation records released by the last scene transition leak purge.</summary>
+        public static int LastTransitionReleasedCount => _lastTransitionReleasedCount;
+
+        /// <summary>
+        /// Records the per-frame memory sentinel heartbeat into the fixed 300-entry blackbox ring.
+        /// </summary>
+        public static void RecordHeartbeat()
+        {
+            if (!_initialized)
+                return;
+
+            RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.Heartbeat);
+        }
 
 #if UNITY_EDITOR
         [UnityEditor.InitializeOnLoadMethod]
@@ -271,6 +489,18 @@ namespace Hecton8.Core.Memory
         }
 #endif
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForSubsystemRegistration()
+        {
+            Shutdown();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void RegisterSceneHooksAfterSceneLoad()
+        {
+            RegisterSceneHooks();
+        }
+
         /// <summary>
         /// Initializes native tracking tables. Safe to call more than once.
         /// </summary>
@@ -280,19 +510,64 @@ namespace Hecton8.Core.Memory
                 return;
 
             int safeCapacity = ResolveTrackingCapacity(capacity);
+            // COLD ALLOC: NativeParallelHashMap<long,SystemID>[capacity] - pointer to owner registry - owner: H8Memory
             _allocationOwners = new NativeParallelHashMap<long, SystemID>(safeCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeParallelHashMap<long,int>[capacity] - pointer to allocation record index - owner: H8Memory
+            _allocationRecordIndices = new NativeParallelHashMap<long, int>(safeCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeParallelHashMap<ushort,NativeList<IntPtr>>[256] - SystemID value to allocation pointer registry - owner: H8Memory
+            _ownerPointers = new NativeParallelHashMap<ushort, NativeList<IntPtr>>(OwnerRegistryCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeParallelHashMap<ushort,JobHandle>[256] - SystemID value teardown job fences - owner: H8Memory
+            _ownerJobHandles = new NativeParallelHashMap<ushort, JobHandle>(OwnerRegistryCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeList<ushort>[256] - SystemID value owner pointer registry keys for deterministic disposal - owner: H8Memory
+            _ownerPointerKeys = new NativeList<ushort>(OwnerRegistryCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeList<ushort>[256] - SystemID value job fence registry keys for deterministic shutdown - owner: H8Memory
+            _ownerJobKeys = new NativeList<ushort>(OwnerRegistryCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeArray<H8AllocationRecord>[capacity] - allocation table for leak reaping - owner: H8Memory
             _records = new NativeArray<H8AllocationRecord>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<long>[65536] - bytes per SystemID slot - owner: H8Memory
             _ownerBytes = new NativeArray<long>(OwnerByteSlots, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeList<BlockDescriptor>[capacity] - native memory map descriptors - owner: H8Memory
             _blockDescriptors = new NativeList<BlockDescriptor>(safeCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeArray<H8MemoryTelemetryEntry>[300] - sentinel heartbeat ring - owner: H8Memory
+            _blackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _recordCount = 0;
             _totalBytes = 0L;
             _poolCapBytes = poolCapBytes > 0L ? poolCapBytes : LowTierPoolCapBytes;
             _fatalLeakPreventedCount = 0;
+            _blackBoxCursor = 0;
+            _blackBoxSequence = 0u;
+            _allocationGeneration = 1;
+            _transitionCutoffGeneration = NoTransitionCutoffGeneration;
+            _transitionSequence = 0;
+            _lastTransitionReleasedCount = 0;
+            _lastTransitionReleasedBytes = 0L;
+            _transitionBaselineBytes = 0L;
+            _lastTransitionBaselineVerified = true;
             _initialized = true;
+            RegisterSceneHooks();
+            RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.Initialized);
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             _aliasSafetyHandle = AtomicSafetyHandle.Create();
             _aliasSafetyHandleCreated = true;
 #endif
+        }
+
+        /// <summary>
+        /// Applies the bootstrap memory ceiling after hardware classification without reallocating tracking tables.
+        /// </summary>
+        public static void ConfigurePoolCap(long poolCapBytes)
+        {
+            if (poolCapBytes <= 0L)
+                poolCapBytes = LowTierPoolCapBytes;
+
+            if (!_initialized)
+            {
+                Initialize(DefaultCapacity, poolCapBytes);
+                return;
+            }
+
+            if (poolCapBytes >= _totalBytes)
+                _poolCapBytes = poolCapBytes;
         }
 
         /// <summary>
@@ -385,6 +660,90 @@ namespace Hecton8.Core.Memory
         }
 
         /// <summary>
+        /// Records an owner job fence so forced teardown can block only at scene-transition/owner-destruction boundaries.
+        /// </summary>
+        /// <param name="owner">Native allocation owner.</param>
+        /// <param name="handle">Active job handle touching owner memory.</param>
+        public static void RegisterActiveJob(SystemID owner, JobHandle handle)
+        {
+            if (owner == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownAllocationOwner();
+            if (!_initialized)
+                Initialize();
+
+            if (!_ownerJobHandles.IsCreated)
+                return;
+
+            ushort ownerKey = GetOwnerKey(owner);
+            if (_ownerJobHandles.TryGetValue(ownerKey, out JobHandle existingHandle))
+            {
+                _ownerJobHandles[ownerKey] = JobHandle.CombineDependencies(existingHandle, handle);
+                return;
+            }
+
+            if (!_ownerJobKeys.IsCreated || !_ownerJobHandles.TryAdd(ownerKey, handle))
+                FatalMemoryException.ThrowAllocationTrackingFailed();
+
+            _ownerJobKeys.Add(ownerKey);
+        }
+
+        /// <summary>
+        /// Captures a generation cutoff before scene loading can allocate new Ocean memory.
+        /// </summary>
+        public static void BeginSceneTransitionPurge()
+        {
+            if (!_initialized)
+                Initialize();
+
+            int cutoffGeneration = _allocationGeneration;
+            _allocationGeneration = AdvanceDescriptorGeneration(_allocationGeneration);
+            _transitionCutoffGeneration = cutoffGeneration;
+            _transitionBaselineBytes = ComputeSceneTransitionBaselineBytes(cutoffGeneration);
+            _lastTransitionReleasedCount = 0;
+            _lastTransitionReleasedBytes = 0L;
+            _lastTransitionBaselineVerified = false;
+            _transitionSequence = AdvanceDescriptorGeneration(_transitionSequence);
+            RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.SceneTransition);
+        }
+
+        /// <summary>
+        /// Completes scene-transition leak purging and validates that tracked bytes reached the captured baseline.
+        /// </summary>
+        /// <returns>True when the exact transition baseline was reached.</returns>
+        public static bool CompleteSceneTransitionVerification()
+        {
+            if (!_initialized)
+                return true;
+
+            if (_transitionCutoffGeneration == NoTransitionCutoffGeneration)
+                return _lastTransitionBaselineVerified;
+
+            ReleaseSceneTransitionLeaks();
+            bool verified = _totalBytes == _transitionBaselineBytes;
+            _lastTransitionBaselineVerified = verified;
+            if (!verified)
+                WriteFatalLeakBlackBox(SystemID.Unknown, 0, _totalBytes - _transitionBaselineBytes, baselineMismatch: true);
+            else
+                RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.SceneTransition);
+
+            _transitionCutoffGeneration = NoTransitionCutoffGeneration;
+            return verified;
+        }
+
+        /// <summary>
+        /// Force-releases every allocation owned by one system after completing its registered job fence.
+        /// </summary>
+        /// <param name="owner">Owner to purge.</param>
+        /// <returns>Number of force-released allocations.</returns>
+        public static int ReleaseAll(SystemID owner)
+        {
+            if (!_initialized || owner == SystemID.Unknown)
+                return 0;
+
+            return ReleaseAll(owner, int.MaxValue, writeBlackBox: true);
+        }
+
+        /// <summary>
         /// Allocates raw native memory for vault-owned buffers.
         /// </summary>
         public static void* AllocateRaw(
@@ -403,7 +762,7 @@ namespace Hecton8.Core.Memory
             if (owner == SystemID.Unknown)
                 FatalMemoryException.ThrowUnknownAllocationOwner();
 
-            int safeAlignment = alignment > 0 ? alignment : 16;
+            int safeAlignment = ResolveSafeAlignment(alignment);
             if (!TryReserveBytes(owner, bytes) || !EnsureTrackingCapacity())
                 return null;
 
@@ -452,7 +811,7 @@ namespace Hecton8.Core.Memory
             if (oldBytes > 0L && oldBytes != trackedOldBytes)
                 FatalMemoryException.ThrowAllocationSizeMismatch();
 
-            int safeAlignment = alignment > 0 ? alignment : 16;
+            int safeAlignment = ResolveSafeAlignment(alignment);
             if (!TryReserveReplacementBytes(trackedOldBytes, newBytes) || !EnsureTrackingCapacity())
                 return null;
 
@@ -550,23 +909,7 @@ namespace Hecton8.Core.Memory
         /// </summary>
         public static int ReapOwnerLeaks(SystemID owner)
         {
-            if (!_initialized || owner == SystemID.Unknown)
-                return 0;
-
-            int reaped = 0;
-            for (int index = _recordCount - 1; index >= 0; index--)
-            {
-                H8AllocationRecord record = _records[index];
-                if (record.Owner != owner || record.Pointer == IntPtr.Zero)
-                    continue;
-
-                UnsafeUtility.Free(record.Pointer.ToPointer(), record.Allocator);
-                RemoveRecordAt(index);
-                reaped++;
-            }
-
-            _fatalLeakPreventedCount += reaped;
-            return reaped;
+            return ReleaseAll(owner);
         }
 
         /// <summary>
@@ -646,8 +989,11 @@ namespace Hecton8.Core.Memory
         /// </summary>
         public static void Shutdown()
         {
+            UnregisterSceneHooks();
             if (!_initialized)
                 return;
+
+            CompleteAllOwnerJobs();
 
             for (int i = _recordCount - 1; i >= 0; i--)
             {
@@ -658,14 +1004,28 @@ namespace Hecton8.Core.Memory
 
             _recordCount = 0;
             _totalBytes = 0L;
+            RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.Shutdown);
+            DisposeOwnerPointerLists();
             if (_allocationOwners.IsCreated)
                 _allocationOwners.Dispose();
+            if (_allocationRecordIndices.IsCreated)
+                _allocationRecordIndices.Dispose();
+            if (_ownerPointers.IsCreated)
+                _ownerPointers.Dispose();
+            if (_ownerJobHandles.IsCreated)
+                _ownerJobHandles.Dispose();
+            if (_ownerPointerKeys.IsCreated)
+                _ownerPointerKeys.Dispose();
+            if (_ownerJobKeys.IsCreated)
+                _ownerJobKeys.Dispose();
             if (_records.IsCreated)
                 _records.Dispose();
             if (_ownerBytes.IsCreated)
                 _ownerBytes.Dispose();
             if (_blockDescriptors.IsCreated)
                 _blockDescriptors.Dispose();
+            if (_blackBox.IsCreated)
+                _blackBox.Dispose();
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (_aliasSafetyHandleCreated)
             {
@@ -673,7 +1033,493 @@ namespace Hecton8.Core.Memory
                 _aliasSafetyHandleCreated = false;
             }
 #endif
+            _allocationGeneration = 1;
+            _transitionCutoffGeneration = NoTransitionCutoffGeneration;
+            _transitionSequence = 0;
+            _lastTransitionReleasedCount = 0;
+            _lastTransitionReleasedBytes = 0L;
+            _transitionBaselineBytes = 0L;
+            _lastTransitionBaselineVerified = true;
+            _blackBoxCursor = 0;
+            _blackBoxSequence = 0u;
             _initialized = false;
+        }
+
+        private static void RegisterSceneHooks()
+        {
+            if (_sceneHooksRegistered)
+                return;
+
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            SceneManager.sceneUnloaded += HandleSceneUnloaded;
+            _sceneHooksRegistered = true;
+        }
+
+        private static void UnregisterSceneHooks()
+        {
+            if (!_sceneHooksRegistered)
+                return;
+
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            _sceneHooksRegistered = false;
+        }
+
+        private static void HandleSceneUnloaded(Scene scene)
+        {
+            CompleteSceneTransitionVerification();
+        }
+
+        private static int ReleaseAll(SystemID owner, int generationCutoff, bool writeBlackBox)
+        {
+            if (!_initialized || owner == SystemID.Unknown)
+                return 0;
+
+            CompleteOwnerJobs(owner);
+            if (!_ownerPointers.IsCreated ||
+                !_ownerPointers.TryGetValue(GetOwnerKey(owner), out NativeList<IntPtr> pointers) ||
+                !pointers.IsCreated ||
+                pointers.Length == 0)
+            {
+                return 0;
+            }
+
+            int releasedCount = 0;
+            long releasedBytes = 0L;
+            for (int pointerIndex = pointers.Length - 1; pointerIndex >= 0; pointerIndex--)
+            {
+                IntPtr pointer = pointers[pointerIndex];
+                if (pointer == IntPtr.Zero)
+                {
+                    pointers.RemoveAtSwapBack(pointerIndex);
+                    continue;
+                }
+
+                if (!TryFindRecordIndex(pointer, out int recordIndex))
+                {
+                    pointers.RemoveAtSwapBack(pointerIndex);
+                    continue;
+                }
+
+                H8AllocationRecord record = _records[recordIndex];
+                if (record.Owner != owner)
+                {
+                    pointers.RemoveAtSwapBack(pointerIndex);
+                    continue;
+                }
+
+                if (generationCutoff != int.MaxValue && record.Generation > generationCutoff)
+                    continue;
+
+                if (ForceFreeRecordAt(recordIndex, removeOwnerPointer: false, out H8AllocationRecord releasedRecord))
+                {
+                    releasedCount++;
+                    releasedBytes += releasedRecord.Bytes;
+                }
+
+                pointers.RemoveAtSwapBack(pointerIndex);
+            }
+
+            _ownerPointers[GetOwnerKey(owner)] = pointers;
+            if (releasedCount <= 0)
+                return 0;
+
+            _fatalLeakPreventedCount += releasedCount;
+            if (writeBlackBox)
+                WriteFatalLeakBlackBox(owner, releasedCount, releasedBytes, baselineMismatch: false);
+
+            return releasedCount;
+        }
+
+        private static int ReleaseSceneTransitionLeaks()
+        {
+            int cutoffGeneration = _transitionCutoffGeneration;
+            if (cutoffGeneration == NoTransitionCutoffGeneration)
+                return 0;
+
+            CompleteSceneTransitionOwnerJobs();
+            int releasedCount = 0;
+            long releasedBytes = 0L;
+            for (int index = _recordCount - 1; index >= 0; index--)
+            {
+                H8AllocationRecord record = _records[index];
+                if (!IsSceneTransitionRecord(in record, cutoffGeneration))
+                    continue;
+
+                if (!ForceFreeRecordAt(index, removeOwnerPointer: true, out H8AllocationRecord releasedRecord))
+                    continue;
+
+                releasedCount++;
+                releasedBytes += releasedRecord.Bytes;
+            }
+
+            _lastTransitionReleasedCount = releasedCount;
+            _lastTransitionReleasedBytes = releasedBytes;
+            if (releasedCount <= 0)
+                return 0;
+
+            _fatalLeakPreventedCount += releasedCount;
+            WriteFatalLeakBlackBox(SystemID.Unknown, releasedCount, releasedBytes, baselineMismatch: false);
+            return releasedCount;
+        }
+
+        private static void CompleteOwnerJobs(SystemID owner)
+        {
+            if (!_ownerJobHandles.IsCreated || owner == SystemID.Unknown)
+                return;
+
+            ushort ownerKey = GetOwnerKey(owner);
+            if (!_ownerJobHandles.TryGetValue(ownerKey, out JobHandle ownerHandle))
+                return;
+
+            // [BLOCKING_SYNC_POINT] Scene transition and owner teardown may wait; gameplay Tick paths may not call this.
+            ownerHandle.Complete();
+            _ownerJobHandles.Remove(ownerKey);
+            RemoveOwnerJobKey(ownerKey);
+        }
+
+        private static void CompleteAllOwnerJobs()
+        {
+            if (!_ownerJobHandles.IsCreated || !_ownerJobKeys.IsCreated)
+                return;
+
+            for (int i = 0; i < _ownerJobKeys.Length; i++)
+            {
+                ushort ownerKey = _ownerJobKeys[i];
+                if (!_ownerJobHandles.TryGetValue(ownerKey, out JobHandle ownerHandle))
+                    continue;
+
+                // [BLOCKING_SYNC_POINT] Shutdown may wait; gameplay Tick paths may not call this.
+                ownerHandle.Complete();
+                _ownerJobHandles.Remove(ownerKey);
+            }
+
+            _ownerJobKeys.Clear();
+        }
+
+        private static void RemoveOwnerJobKey(ushort ownerKey)
+        {
+            if (!_ownerJobKeys.IsCreated)
+                return;
+
+            for (int i = _ownerJobKeys.Length - 1; i >= 0; i--)
+            {
+                if (_ownerJobKeys[i] != ownerKey)
+                    continue;
+
+                _ownerJobKeys.RemoveAtSwapBack(i);
+                return;
+            }
+        }
+
+        private static void CompleteSceneTransitionOwnerJobs()
+        {
+            if (!_ownerPointerKeys.IsCreated)
+                return;
+
+            for (int i = 0; i < _ownerPointerKeys.Length; i++)
+            {
+                SystemID owner = (SystemID)_ownerPointerKeys[i];
+                if (IsSceneTransitionOwner(owner))
+                    CompleteOwnerJobs(owner);
+            }
+        }
+
+        private static long ComputeSceneTransitionBaselineBytes(int cutoffGeneration)
+        {
+            long releasableBytes = 0L;
+            for (int i = 0; i < _recordCount; i++)
+            {
+                H8AllocationRecord record = _records[i];
+                if (IsSceneTransitionRecord(in record, cutoffGeneration))
+                    releasableBytes += record.Bytes;
+            }
+
+            long baseline = _totalBytes - releasableBytes;
+            return baseline > 0L ? baseline : 0L;
+        }
+
+        private static bool IsSceneTransitionRecord(in H8AllocationRecord record, int cutoffGeneration)
+        {
+            return record.Pointer != IntPtr.Zero &&
+                   record.Generation <= cutoffGeneration &&
+                   IsSceneTransitionOwner(record.Owner);
+        }
+
+        private static bool IsSceneTransitionOwner(SystemID owner)
+        {
+            switch (owner)
+            {
+                case SystemID.Unknown:
+                case SystemID.CoreDataVault:
+                case SystemID.H8Memory:
+                case SystemID.Bootstrap:
+                case SystemID.CoreDeterminism:
+                case SystemID.SystemDispatcher:
+                case SystemID.HardwareHomeostasis:
+                case SystemID.GlobalPhysicsStateManager:
+                case SystemID.Physics:
+                    return false;
+                default:
+                    return true;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ushort GetOwnerKey(SystemID owner)
+        {
+            return (ushort)owner;
+        }
+
+        private static bool ForceFreeRecordAt(int index, bool removeOwnerPointer, out H8AllocationRecord releasedRecord)
+        {
+            releasedRecord = default;
+            if ((uint)index >= (uint)_recordCount)
+                return false;
+
+            H8AllocationRecord record = _records[index];
+            if (record.Pointer == IntPtr.Zero)
+            {
+                RemoveRecordAt(index, removeOwnerPointer, H8MemoryTelemetryFlags.ForcedRelease | H8MemoryTelemetryFlags.Fault);
+                return false;
+            }
+
+            releasedRecord = record;
+            UnsafeUtility.Free(record.Pointer.ToPointer(), record.Allocator);
+            RemoveRecordAt(index, removeOwnerPointer, H8MemoryTelemetryFlags.ForcedRelease);
+            return true;
+        }
+
+        private static bool RegisterOwnerPointer(SystemID owner, IntPtr pointer)
+        {
+            if (owner == SystemID.Unknown || pointer == IntPtr.Zero || !_ownerPointers.IsCreated)
+                return false;
+
+            ushort ownerKey = GetOwnerKey(owner);
+            if (!_ownerPointers.TryGetValue(ownerKey, out NativeList<IntPtr> pointers))
+            {
+                // COLD ALLOC: NativeList<IntPtr>[16] - owner pointer lane for ReleaseAll(SystemID) - owner: H8Memory
+                pointers = new NativeList<IntPtr>(DefaultOwnerPointerCapacity, Allocator.Persistent);
+                if (!_ownerPointers.TryAdd(ownerKey, pointers))
+                {
+                    pointers.Dispose();
+                    return false;
+                }
+
+                if (_ownerPointerKeys.IsCreated)
+                    _ownerPointerKeys.Add(ownerKey);
+            }
+
+            pointers.Add(pointer);
+            _ownerPointers[ownerKey] = pointers;
+            return true;
+        }
+
+        private static void RemoveOwnerPointer(SystemID owner, IntPtr pointer)
+        {
+            if (owner == SystemID.Unknown ||
+                pointer == IntPtr.Zero ||
+                !_ownerPointers.IsCreated ||
+                !_ownerPointers.TryGetValue(GetOwnerKey(owner), out NativeList<IntPtr> pointers) ||
+                !pointers.IsCreated)
+            {
+                return;
+            }
+
+            for (int i = pointers.Length - 1; i >= 0; i--)
+            {
+                if (pointers[i] != pointer)
+                    continue;
+
+                pointers.RemoveAtSwapBack(i);
+                _ownerPointers[GetOwnerKey(owner)] = pointers;
+                return;
+            }
+        }
+
+        private static void DisposeOwnerPointerLists()
+        {
+            if (!_ownerPointerKeys.IsCreated || !_ownerPointers.IsCreated)
+                return;
+
+            for (int i = 0; i < _ownerPointerKeys.Length; i++)
+            {
+                ushort ownerKey = _ownerPointerKeys[i];
+                if (!_ownerPointers.TryGetValue(ownerKey, out NativeList<IntPtr> pointers) || !pointers.IsCreated)
+                    continue;
+
+                pointers.Dispose();
+                _ownerPointers.Remove(ownerKey);
+            }
+        }
+
+        private static bool TryFindRecordIndex(IntPtr pointer, out int index)
+        {
+            index = -1;
+            if (pointer == IntPtr.Zero)
+                return false;
+
+            long pointerKey = pointer.ToInt64();
+            if (_allocationRecordIndices.IsCreated &&
+                _allocationRecordIndices.TryGetValue(pointerKey, out int mappedIndex) &&
+                (uint)mappedIndex < (uint)_recordCount &&
+                _records[mappedIndex].Pointer.ToInt64() == pointerKey)
+            {
+                index = mappedIndex;
+                return true;
+            }
+
+            for (int i = _recordCount - 1; i >= 0; i--)
+            {
+                if (_records[i].Pointer.ToInt64() != pointerKey)
+                    continue;
+
+                index = i;
+                if (_allocationRecordIndices.IsCreated)
+                    _allocationRecordIndices[pointerKey] = i;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void WriteFatalLeakBlackBox(SystemID owner, int releaseCount, long releasedBytes, bool baselineMismatch)
+        {
+            H8MemoryTelemetryFlags flags = H8MemoryTelemetryFlags.Fault;
+            if (releaseCount > 0)
+                flags |= H8MemoryTelemetryFlags.ForcedRelease;
+            if (baselineMismatch)
+                flags |= H8MemoryTelemetryFlags.BaselineMismatch;
+            RecordBlackBox(owner, flags);
+
+            string path = ResolveAgentDumpPath();
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            try
+            {
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write("[FATAL LEAK: SystemID]");
+                    writer.Write((ushort)owner);
+                    writer.Write(_transitionSequence);
+                    writer.Write(releaseCount);
+                    writer.Write(releasedBytes);
+                    writer.Write(_totalBytes);
+                    writer.Write(_transitionBaselineBytes);
+                    writer.Write(baselineMismatch ? 1 : 0);
+                    WriteBlackBoxEntries(writer);
+                    writer.Write(_recordCount);
+                    int dumpCount = _recordCount < 300 ? _recordCount : 300;
+                    writer.Write(dumpCount);
+                    for (int i = 0; i < dumpCount; i++)
+                    {
+                        H8AllocationRecord record = _records[i];
+                        writer.Write(record.Pointer.ToInt64());
+                        writer.Write(record.Bytes);
+                        writer.Write(record.Length);
+                        writer.Write(record.Stride);
+                        writer.Write(record.Alignment);
+                        writer.Write(record.AllocationIndex);
+                        writer.Write(record.Generation);
+                        writer.Write((ushort)record.Owner);
+                        writer.Write((int)record.Allocator);
+                        writer.Write(record.Flags);
+                    }
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        private static void RecordBlackBox(SystemID owner, H8MemoryTelemetryFlags flags)
+        {
+            if (!_blackBox.IsCreated || _blackBox.Length == 0)
+                return;
+
+            int cursor = _blackBoxCursor;
+            if ((uint)cursor >= (uint)_blackBox.Length)
+                cursor = 0;
+
+            H8MemoryTelemetryEntry entry = default;
+            entry.TotalBytes = _totalBytes;
+            entry.TransitionBaselineBytes = _transitionBaselineBytes;
+            entry.LastTransitionReleasedBytes = _lastTransitionReleasedBytes;
+            entry.Sequence = ++_blackBoxSequence;
+            entry.ActiveAllocationCount = _recordCount;
+            entry.BlockDescriptorCount = _blockDescriptors.IsCreated ? _blockDescriptors.Length : 0;
+            entry.AllocationGeneration = _allocationGeneration;
+            entry.TransitionCutoffGeneration = _transitionCutoffGeneration;
+            entry.TransitionSequence = _transitionSequence;
+            entry.LastTransitionReleasedCount = _lastTransitionReleasedCount;
+            entry.FatalLeakPreventedCount = _fatalLeakPreventedCount;
+            entry.Owner = (ushort)owner;
+            entry.Flags = (ushort)flags;
+            entry.Frame = unchecked((uint)Time.frameCount);
+            _blackBox[cursor] = entry;
+
+            cursor++;
+            if (cursor >= _blackBox.Length)
+                cursor = 0;
+            _blackBoxCursor = cursor;
+        }
+
+        private static void WriteBlackBoxEntries(BinaryWriter writer)
+        {
+            if (!_blackBox.IsCreated || _blackBox.Length == 0)
+            {
+                writer.Write(0);
+                return;
+            }
+
+            int recordedCount = _blackBoxSequence < (uint)_blackBox.Length
+                ? (int)_blackBoxSequence
+                : _blackBox.Length;
+            writer.Write(recordedCount);
+
+            int start = _blackBoxSequence < (uint)_blackBox.Length ? 0 : _blackBoxCursor;
+            for (int i = 0; i < recordedCount; i++)
+            {
+                int index = start + i;
+                if (index >= _blackBox.Length)
+                    index -= _blackBox.Length;
+
+                H8MemoryTelemetryEntry entry = _blackBox[index];
+                writer.Write(entry.TotalBytes);
+                writer.Write(entry.TransitionBaselineBytes);
+                writer.Write(entry.LastTransitionReleasedBytes);
+                writer.Write(entry.Sequence);
+                writer.Write(entry.ActiveAllocationCount);
+                writer.Write(entry.BlockDescriptorCount);
+                writer.Write(entry.AllocationGeneration);
+                writer.Write(entry.TransitionCutoffGeneration);
+                writer.Write(entry.TransitionSequence);
+                writer.Write(entry.LastTransitionReleasedCount);
+                writer.Write(entry.FatalLeakPreventedCount);
+                writer.Write(entry.Owner);
+                writer.Write(entry.Flags);
+                writer.Write(entry.Frame);
+            }
+        }
+
+        private static string ResolveAgentDumpPath()
+        {
+            string currentDirectory = Directory.GetCurrentDirectory();
+            if (string.IsNullOrEmpty(currentDirectory))
+                return null;
+
+            string projectRoot = Path.GetFileName(currentDirectory) == "Hecton8"
+                ? currentDirectory
+                : Path.Combine(currentDirectory, "Hecton8");
+            return Path.Combine(projectRoot, "Docs", "AgentLogs", AgentDumpFileName);
         }
 
         private static bool TryReserveBytes(SystemID owner, long bytes)
@@ -724,6 +1570,8 @@ namespace Hecton8.Core.Memory
                 new NativeArray<H8AllocationRecord>(newCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeParallelHashMap<long, SystemID> newOwners =
                 new NativeParallelHashMap<long, SystemID>(newCapacity, Allocator.Persistent);
+            NativeParallelHashMap<long, int> newIndices =
+                new NativeParallelHashMap<long, int>(newCapacity, Allocator.Persistent);
 
             for (int i = 0; i < _recordCount; i++)
             {
@@ -732,10 +1580,12 @@ namespace Hecton8.Core.Memory
                 if (record.Pointer == IntPtr.Zero)
                     continue;
 
-                if (!newOwners.TryAdd(record.Pointer.ToInt64(), record.Owner))
+                long pointerKey = record.Pointer.ToInt64();
+                if (!newOwners.TryAdd(pointerKey, record.Owner) || !newIndices.TryAdd(pointerKey, i))
                 {
                     newRecords.Dispose();
                     newOwners.Dispose();
+                    newIndices.Dispose();
                     return false;
                 }
             }
@@ -744,9 +1594,12 @@ namespace Hecton8.Core.Memory
                 _records.Dispose();
             if (_allocationOwners.IsCreated)
                 _allocationOwners.Dispose();
+            if (_allocationRecordIndices.IsCreated)
+                _allocationRecordIndices.Dispose();
 
             _records = newRecords;
             _allocationOwners = newOwners;
+            _allocationRecordIndices = newIndices;
             EnsureBlockDescriptorCapacity(newCapacity);
             return true;
         }
@@ -765,10 +1618,24 @@ namespace Hecton8.Core.Memory
                 return false;
 
             IntPtr pointerValue = (IntPtr)pointer;
-            if (!_allocationOwners.TryAdd(pointerValue.ToInt64(), owner))
+            long pointerKey = pointerValue.ToInt64();
+            int recordIndex = _recordCount;
+            if (!_allocationOwners.TryAdd(pointerKey, owner))
                 return false;
 
-            int recordIndex = _recordCount;
+            if (!_allocationRecordIndices.TryAdd(pointerKey, recordIndex))
+            {
+                _allocationOwners.Remove(pointerKey);
+                return false;
+            }
+
+            if (!RegisterOwnerPointer(owner, pointerValue))
+            {
+                _allocationOwners.Remove(pointerKey);
+                _allocationRecordIndices.Remove(pointerKey);
+                return false;
+            }
+
             H8AllocationRecord record = new H8AllocationRecord
             {
                 Pointer = pointerValue,
@@ -777,6 +1644,7 @@ namespace Hecton8.Core.Memory
                 Stride = stride,
                 Alignment = alignment,
                 AllocationIndex = recordIndex,
+                Generation = _allocationGeneration,
                 Owner = owner,
                 Allocator = allocator,
                 Flags = (ushort)flags
@@ -789,7 +1657,10 @@ namespace Hecton8.Core.Memory
                 _ownerBytes[ownerIndex] += bytes;
 
             if ((flags & H8AllocationFlags.SubAllocatorRoot) != 0)
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Allocated);
                 return true;
+            }
 
             int descriptorIndex = RegisterBlockDescriptorNoInit(new BlockDescriptor
             {
@@ -804,7 +1675,10 @@ namespace Hecton8.Core.Memory
             });
 
             if (descriptorIndex >= 0)
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Allocated);
                 return true;
+            }
 
             RemoveRecordAt(recordIndex);
             return false;
@@ -885,10 +1759,37 @@ namespace Hecton8.Core.Memory
             return nextGeneration <= 0 ? 1 : nextGeneration;
         }
 
+        private static int ResolveSafeAlignment(int alignment)
+        {
+            if (alignment <= MinimumRawAlignment)
+                return MinimumRawAlignment;
+
+            int resolved = MinimumRawAlignment;
+            while (resolved < alignment && resolved < MaximumRawAlignment)
+                resolved <<= 1;
+
+            return resolved < alignment ? MaximumRawAlignment : resolved;
+        }
+
         private static void RemoveRecordAt(int index)
         {
+            RemoveRecordAt(index, removeOwnerPointer: true, H8MemoryTelemetryFlags.Released);
+        }
+
+        private static void RemoveRecordAt(int index, bool removeOwnerPointer)
+        {
+            RemoveRecordAt(index, removeOwnerPointer, H8MemoryTelemetryFlags.Released);
+        }
+
+        private static void RemoveRecordAt(int index, bool removeOwnerPointer, H8MemoryTelemetryFlags telemetryFlags)
+        {
             H8AllocationRecord record = _records[index];
-            _allocationOwners.Remove(record.Pointer.ToInt64());
+            long pointerKey = record.Pointer.ToInt64();
+            _allocationOwners.Remove(pointerKey);
+            if (_allocationRecordIndices.IsCreated)
+                _allocationRecordIndices.Remove(pointerKey);
+            if (removeOwnerPointer)
+                RemoveOwnerPointer(record.Owner, record.Pointer);
             MarkBlockDescriptorFree(record.Pointer, 0L);
             _totalBytes -= record.Bytes;
             int ownerIndex = (int)record.Owner;
@@ -901,10 +1802,13 @@ namespace Hecton8.Core.Memory
                 H8AllocationRecord moved = _records[_recordCount];
                 moved.AllocationIndex = index;
                 _records[index] = moved;
+                if (_allocationRecordIndices.IsCreated && moved.Pointer != IntPtr.Zero)
+                    _allocationRecordIndices[moved.Pointer.ToInt64()] = index;
                 UpdateBlockDescriptorOwnerKey(moved.Pointer, 0L, index);
             }
 
             _records[_recordCount] = default;
+            RecordBlackBox(record.Owner, telemetryFlags);
         }
 
         private static int RegisterBlockDescriptorNoInit(in BlockDescriptor descriptor)

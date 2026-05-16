@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Hecton8.AI.Perception;
 using Hecton8.Audio;
 using Hecton8.Atmosphere;
 using Hecton8.Caves;
@@ -8,7 +9,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Physics;
@@ -213,6 +214,9 @@ namespace Hecton8.AI
         private bool _flankingManeuverDetected;
         private float _combatMobilityScale = 1f;
         private float _combatMobilityUntilTime;
+        private Vector3 _acousticHeadLookTarget;
+        private float _acousticHeadLookWeight;
+        private float _acousticHeadLookUntilTime;
         
         private static readonly int _FaunaBiolumDimShaderId = Shader.PropertyToID("_FaunaBiolumDim");
         private static readonly int _FaunaCamouflageTintShaderId = Shader.PropertyToID("_FaunaCamouflageTint");
@@ -365,6 +369,10 @@ namespace Hecton8.AI
         private const float PassiveFlashlightDimSeconds = 3.5f;
         private const float PassiveFlashlightBiolumDimMultiplier = 0f;
         private const float PassiveFlashlightBiolumResponseSharpness = 12f;
+        private const float RetinalBlindBiolumStrobeDurationSeconds = 1.25f;
+        private const float RetinalBlindBiolumStrobeFrequency = 17f;
+        private const float RetinalBlindBiolumSecondaryFrequency = 9.5f;
+        private const float RetinalBlindBiolumMinimum01 = 0.08f;
         private const float CarrionLatchConsumeDistanceScale = 0.92f;
         private const float CarrionLatchTearingFrequency = 9.5f;
         private const float CarrionLatchTearingPitchDegrees = 17f;
@@ -563,6 +571,8 @@ namespace Hecton8.AI
         private bool _hasDirectorHuntTarget;
         private bool _hasDirectorHuntPrediction;
         private float _passiveFlashlightDimUntilTime;
+        private float _retinalBlindBiolumUntilTime;
+        private uint _lastRetinalBlindSignalFrame;
         private float _faunaBiolumDim01 = 1f;
         private float _deathDitherFade01;
         private float _corpseBloatAge01;
@@ -797,6 +807,7 @@ namespace Hecton8.AI
             _corpseSinkPoseDeltaTime = 0f;
             TryUnregisterCorpseSinkLateFrame();
             _passiveFlashlightDimUntilTime = 0f;
+            _retinalBlindBiolumUntilTime = 0f;
             _faunaBiolumDim01 = 1f;
             _lastAppliedBiolumLightScale01 = -1f;
             _lastAppliedFaunaBiolumShader01 = -1f;
@@ -861,6 +872,7 @@ namespace Hecton8.AI
             _whaleFallDecay01 = 0f;
             _hitFlash01 = 0f;
             _passiveFlashlightDimUntilTime = 0f;
+            _retinalBlindBiolumUntilTime = 0f;
             _faunaBiolumDim01 = 1f;
             _lastAppliedBiolumLightScale01 = -1f;
             _lastAppliedFaunaBiolumShader01 = -1f;
@@ -1390,6 +1402,17 @@ namespace Hecton8.AI
                 useAlphaLeviathanCognition);
 
             CreatureUtilityEvaluation evaluation = _utilityBrain.Evaluate(frameId, dt, _cognitionTimeSeconds, in context);
+            if (evaluation.HasAcousticHeadLook)
+            {
+                _acousticHeadLookTarget = evaluation.AcousticHeadLookTarget;
+                _acousticHeadLookWeight = math.saturate(evaluation.AcousticHeadLookWeight);
+                _acousticHeadLookUntilTime = _cognitionTimeSeconds + 0.25f;
+            }
+            else if (_cognitionTimeSeconds > _acousticHeadLookUntilTime)
+            {
+                _acousticHeadLookWeight = 0f;
+            }
+
             Transform scavengeTargetTransform = ResolveSensorTargetTransform(_sensorSuite.currentScavengeTargetOwner);
             Transform distractorTargetTransform = ResolveSensorTargetTransform(_sensorSuite.currentDistractorOwner);
             Transform preyTargetTransform = ResolveSensorTargetTransform(_sensorSuite.currentPreyOwner);
@@ -3409,14 +3432,18 @@ namespace Hecton8.AI
 
             if (signal.TargetHash != 0u && lostKineticEnergy >= KinematicCcdMath.MassiveLostKineticEnergyJoules)
             {
-                Hecton8.Core.Signals.DamageSignal damage = default;
+                Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
+                damage.WorldPoint = new float3(point.x, point.y, point.z);
+                damage.Direction = signal.Normal;
                 damage.Magnitude = math.min(600f, lostKineticEnergy * 0.004f);
-                damage.LocalPoint = new float3(point.x, point.y, point.z);
                 damage.DamageType = (uint)DamageTypeMask.Impact;
-                damage.SubjectHash = signal.TargetHash;
+                damage.TargetHash = signal.TargetHash;
+                damage.SourceHash = signal.SourceHash;
+                damage.Frame = signal.Frame;
                 damage.SourceId = signal.SourceHash > ushort.MaxValue ? ushort.MaxValue : (ushort)signal.SourceHash;
-                damage.TargetId = signal.TargetHash;
+                damage.TargetId = signal.TargetHash > ushort.MaxValue ? ushort.MaxValue : (ushort)signal.TargetHash;
                 damage.Channel = 0;
+                damage.Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag;
                 damage.IntegrityDelta = 1;
                 GlobalSignals.Publish(in damage);
             }
@@ -4033,9 +4060,13 @@ namespace Hecton8.AI
 
         private void UpdateFaunaBiolumPresentation(float dt)
         {
+            ConsumeRetinalBlindPresentationSignals();
             float targetDim = _cognitionTimeSeconds < _passiveFlashlightDimUntilTime
                 ? PassiveFlashlightBiolumDimMultiplier
                 : 1f;
+            float retinalStrobe01 = ResolveRetinalBlindBiolumStrobe01();
+            if (retinalStrobe01 > 0f)
+                targetDim = retinalStrobe01;
             float responseX = math.max(0f, dt) * PassiveFlashlightBiolumResponseSharpness;
             float alpha = math.saturate(1f - math.rcp(1f + responseX + 0.5f * responseX * responseX));
             _faunaBiolumDim01 = math.lerp(_faunaBiolumDim01, targetDim, alpha);
@@ -4043,6 +4074,44 @@ namespace Hecton8.AI
             float deathLightFade01 = 1f - math.saturate(_deathDitherFade01);
             ApplyBiolumPresentationLightScale(_faunaBiolumDim01 * deathLightFade01);
             ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01, _corpseBloatAge01, _hitFlash01, _whaleFallDecay01);
+        }
+
+        private void ConsumeRetinalBlindPresentationSignals()
+        {
+            int retinalSlot = _utilityBrain.Slot;
+            if (retinalSlot < 0 || GlobalRegistry.ScalabilityTierProfileByte < 2)
+                return;
+
+            ReadOnlySpan<FaunaStateChangedSignal> signals = SignalBus<FaunaStateChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                FaunaStateChangedSignal signal = signals[i];
+                if (signal.StateKind != FaunaStateChangedSignalKinds.Blind ||
+                    signal.Slot != (ushort)retinalSlot ||
+                    (signal.Flags & FaunaStateChangedSignalFlags.StateActive) == 0 ||
+                    signal.Frame == _lastRetinalBlindSignalFrame)
+                {
+                    continue;
+                }
+
+                _lastRetinalBlindSignalFrame = signal.Frame;
+                _retinalBlindBiolumUntilTime = math.max(
+                    _retinalBlindBiolumUntilTime,
+                    _cognitionTimeSeconds + RetinalBlindBiolumStrobeDurationSeconds);
+            }
+        }
+
+        private float ResolveRetinalBlindBiolumStrobe01()
+        {
+            if (GlobalRegistry.ScalabilityTierProfileByte < 2 || _cognitionTimeSeconds >= _retinalBlindBiolumUntilTime)
+                return 0f;
+
+            int retinalSlot = math.max(0, _utilityBrain.Slot);
+            float phase = (_cognitionTimeSeconds * RetinalBlindBiolumStrobeFrequency) + ((retinalSlot & 31) * 0.6180339f);
+            float primary = math.saturate(0.5f + (0.5f * RetinalExposureMath.SignedTriangle(phase)));
+            float secondaryPhase = (_cognitionTimeSeconds * RetinalBlindBiolumSecondaryFrequency) + ((retinalSlot & 31) * 0.381966f) + 0.37f;
+            float secondary = math.saturate(0.5f + (0.5f * RetinalExposureMath.SignedTriangle(secondaryPhase)));
+            return math.saturate(RetinalBlindBiolumMinimum01 + ((1f - RetinalBlindBiolumMinimum01) * math.max(primary, secondary)));
         }
 
         private void ApplyFaunaPresentationShaderState(float biolumDim01, float deathDitherFade01, float corpseBloatAge01, float hitFlash01, float decayAmount01 = 0f)
@@ -4460,6 +4529,7 @@ namespace Hecton8.AI
                 ? 1f - math.saturate((_attackTelegraphBurstTime - _cognitionTimeSeconds) * LeviathanAttackTelegraphInvLeadSeconds)
                 : 0f;
             _faunaKinematicsRuntime.SetAttackTelegraph(telegraphBlend);
+            PublishProceduralStrikeSignal(strikeActive);
         }
 
         private void ClearProceduralStrikeIntent()
@@ -4470,6 +4540,23 @@ namespace Hecton8.AI
             _faunaKinematicsRuntime.SetStrikeIntent(null, default, false);
             _faunaKinematicsRuntime.SetAttackTelegraph(0f);
             _faunaKinematicsRuntime.SetHeadLookTarget(default, false);
+            PublishProceduralStrikeSignal(false);
+        }
+
+        private void PublishProceduralStrikeSignal(bool strikeActive)
+        {
+            if (!TryResolveSelfLogicPosition(out Vector3 selfPosition))
+                return;
+
+            FaunaStateChangedSignal signal = default;
+            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
+            signal.SpeciesHash = unchecked((uint)ComputeStableSpeciesId());
+            signal.StateFlags = strikeActive ? FaunaStateChangedSignalFlags.StateActive : 0u;
+            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Slot = _simulationBucketId > ushort.MaxValue ? ushort.MaxValue : (ushort)math.max(0, _simulationBucketId);
+            signal.StateKind = FaunaStateChangedSignalKinds.Strike;
+            signal.Flags = strikeActive ? FaunaStateChangedSignalFlags.StateActive : (byte)0;
+            GlobalSignals.Publish(in signal);
         }
 
         private void UpdateProceduralHeadLookIntent()
@@ -4478,6 +4565,15 @@ namespace Hecton8.AI
                 return;
 
             bool hasPlayerTarget = _sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 playerPosition) && !_isDead;
+            if (!hasPlayerTarget &&
+                _acousticHeadLookWeight > 0.01f &&
+                _cognitionTimeSeconds <= _acousticHeadLookUntilTime &&
+                !_isDead)
+            {
+                _faunaKinematicsRuntime.SetHeadLookTarget(_acousticHeadLookTarget, true);
+                return;
+            }
+
             _faunaKinematicsRuntime.SetHeadLookTarget(playerPosition, hasPlayerTarget);
         }
 
@@ -5642,6 +5738,7 @@ namespace Hecton8.AI
             _whaleFallDecay01 = 0f;
             _hitFlash01 = 0f;
             _passiveFlashlightDimUntilTime = 0f;
+            _retinalBlindBiolumUntilTime = 0f;
             _faunaBiolumDim01 = 1f;
             _lastAppliedBiolumLightScale01 = -1f;
             _lastAppliedCorpseBloatShader01 = -1f;

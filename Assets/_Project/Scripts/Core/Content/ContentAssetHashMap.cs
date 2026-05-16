@@ -1,0 +1,208 @@
+using System;
+using UnityEngine;
+#if UNITY_ADDRESSABLES_EXIST
+using UnityEngine.AddressableAssets;
+#endif
+
+namespace Hecton8.Core.Content
+{
+    public enum ContentAssetKind : byte
+    {
+        Unknown = 0,
+        Prefab = 1,
+        Mesh = 2,
+        Material = 3,
+        Texture = 4,
+        Audio = 5,
+        Vfx = 6,
+        LoreText = 7,
+        Compute = 8
+    }
+
+    public enum ContentTier : byte
+    {
+        Core = 0,
+        HighRes = 1,
+        Overkill = 2
+    }
+
+    [Serializable]
+    public struct ContentAssetEntry
+    {
+        [Tooltip("FNV1a-32 authority hash. Zero is invalid and fails validators.")]
+        public uint Hash;
+
+        [Tooltip("Human-readable key used only to recompute Hash in editor/import windows.")]
+        public string StableKey;
+
+        [Tooltip("Addressables address or GUID. Runtime callers must resolve by Hash first.")]
+        public string Address;
+
+#if UNITY_ADDRESSABLES_EXIST
+        public AssetReference Asset;
+#endif
+
+        [Tooltip("Prefab or visual mesh binding required by build gates for economy/world items.")]
+        public GameObject MeshPrefab;
+
+        public Mesh Mesh;
+        public Material FallbackMaterial;
+        public ContentAssetKind Kind;
+        public ContentTier Tier;
+        public byte BiomeId;
+        public byte LodLevel;
+        public long EstimatedVramBytes;
+        public bool RequiredInBuild;
+        public bool IsBiomeCache;
+        public uint[] DependencyHashes;
+
+        public bool HasVisual3D()
+        {
+            return MeshPrefab != null || Mesh != null;
+        }
+    }
+
+    /// <summary>
+    /// Authoritative binary-hash to Unity asset bridge for Addressables, build gates, and runtime proxy systems.
+    /// </summary>
+    [CreateAssetMenu(menuName = "HECTON-8/Content/Asset Hash Map", fileName = "ContentAssetHashMap")]
+    public sealed class ContentAssetHashMap : ScriptableObject
+    {
+        private const uint FnvOffset = 2166136261u;
+        private const uint FnvPrime = 16777619u;
+
+        [SerializeField] private ContentAssetEntry[] entries = Array.Empty<ContentAssetEntry>();
+
+        [NonSerialized] private bool _sorted;
+
+        public int Count => entries != null ? entries.Length : 0;
+
+        public ContentAssetEntry GetEntryAt(int index)
+        {
+            EnsureSorted();
+            return entries[index];
+        }
+
+        public bool TryGetEntry(uint hash, out ContentAssetEntry entry)
+        {
+            EnsureSorted();
+
+            int lo = 0;
+            int hi = entries != null ? entries.Length - 1 : -1;
+            while (lo <= hi)
+            {
+                int mid = lo + ((hi - lo) >> 1);
+                uint midHash = entries[mid].Hash;
+                if (midHash == hash)
+                {
+                    entry = entries[mid];
+                    return true;
+                }
+
+                if (midHash < hash)
+                    lo = mid + 1;
+                else
+                    hi = mid - 1;
+            }
+
+            entry = default;
+            return false;
+        }
+
+        public bool Has3DMeshBinding(uint hash)
+        {
+            return TryGetEntry(hash, out ContentAssetEntry entry) && entry.HasVisual3D();
+        }
+
+        public int CopyRequiredHashes(uint[] destination)
+        {
+            EnsureSorted();
+            if (destination == null || entries == null)
+                return 0;
+
+            int count = 0;
+            int max = destination.Length;
+            for (int i = 0; i < entries.Length && count < max; i++)
+            {
+                if (!entries[i].RequiredInBuild || entries[i].Hash == 0u)
+                    continue;
+
+                destination[count] = entries[i].Hash;
+                count++;
+            }
+
+            return count;
+        }
+
+        public static uint ComputeFnv1a32(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return 0u;
+
+            uint hash = FnvOffset;
+            for (int i = 0; i < value.Length; i++)
+            {
+                hash ^= value[i];
+                hash *= FnvPrime;
+            }
+
+            return hash;
+        }
+
+        public void ForceSort()
+        {
+            SortEntries();
+        }
+
+        private void EnsureSorted()
+        {
+            if (_sorted)
+                return;
+
+            SortEntries();
+        }
+
+        private void SortEntries()
+        {
+            if (entries == null)
+            {
+                _sorted = true;
+                return;
+            }
+
+            for (int i = 1; i < entries.Length; i++)
+            {
+                ContentAssetEntry current = entries[i];
+                int j = i - 1;
+                while (j >= 0 && entries[j].Hash > current.Hash)
+                {
+                    entries[j + 1] = entries[j];
+                    j--;
+                }
+
+                entries[j + 1] = current;
+            }
+
+            _sorted = true;
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (entries == null)
+                return;
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                if (entries[i].Hash != 0u || string.IsNullOrEmpty(entries[i].StableKey))
+                    continue;
+
+                entries[i].Hash = ComputeFnv1a32(entries[i].StableKey);
+            }
+
+            _sorted = false;
+            SortEntries();
+        }
+#endif
+    }
+}

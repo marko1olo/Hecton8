@@ -18,7 +18,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Database;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Scheduling;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Dev;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -1503,9 +1503,11 @@ namespace Hecton8.Bootstrap
 
         private static void InitializeBootstrapAllocators()
         {
-            H8Memory.Initialize();
+            long vaultArenaLimitBytes = GlobalDataVault.ResolveArenaCapacityLimit(GlobalRegistry.ScalabilityTierProfileByte);
+            H8Memory.Initialize(poolCapBytes: vaultArenaLimitBytes);
+            H8Memory.ConfigurePoolCap(vaultArenaLimitBytes);
             InstallH8MemoryFatalDumpHook();
-            EnsureGlobalDataVaultRegistered();
+            EnsureGlobalDataVaultRegistered(vaultArenaLimitBytes);
             NativeArenaAllocator.Initialize();
         }
 
@@ -1560,13 +1562,32 @@ namespace Hecton8.Bootstrap
                 condition.IndexOf("nan", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private static void EnsureGlobalDataVaultRegistered()
+        private static void EnsureGlobalDataVaultRegistered(long arenaCapacityLimitBytes)
         {
             if (_globalDataVault == null)
-                _globalDataVault = GlobalDataVault.Create();
+                _globalDataVault = GlobalDataVault.Create(arenaCapacityLimitBytes: arenaCapacityLimitBytes);
 
             if (!ReferenceEquals(GlobalRegistry.DataVault, _globalDataVault))
                 GlobalRegistry.RegisterDataVault(_globalDataVault);
+
+            PreallocateDataVaultPrimaryBuffers(_globalDataVault);
+        }
+
+        private static void PreallocateDataVaultPrimaryBuffers(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            vault.GetBuffer<double>(
+                BufferID.H8Time,
+                (int)H8TimeSlot.Count,
+                SystemID.SystemDispatcher,
+                NativeArrayOptions.ClearMemory);
+            vault.GetBuffer<double3>(
+                BufferID.RigidbodyAUPs,
+                512,
+                SystemID.GlobalPhysicsStateManager,
+                NativeArrayOptions.ClearMemory);
         }
 
         private static void InitializeBootstrapEventBuses()
@@ -2381,7 +2402,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.ConnectionSplineBatchRenderer:
                     return _headlessBootMode || service != null;
                 case BootstrapDependencyNode.DebrisManager:
-                    return _headlessBootMode || service != null;
+                    return true;
                 case BootstrapDependencyNode.FaunaSimulation:
                     return service is IFaunaSim faunaSimulation && faunaSimulation.IsReady;
                 case BootstrapDependencyNode.SpatialAudioManager:
@@ -2408,7 +2429,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.ConnectionSplineBatchRenderer: return GlobalRegistry.ConnectionSplineBatchRenderer;
                 case BootstrapDependencyNode.GlobalPhysicsStateManager: return GlobalRegistry.PhysicsStateManager;
                 case BootstrapDependencyNode.PhysicsApplySystem: return GlobalRegistry.Physics;
-                case BootstrapDependencyNode.DebrisManager: return GlobalRegistry.Debris;
+                case BootstrapDependencyNode.DebrisManager: return GlobalRegistry.DebrisCompute;
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService: return GlobalRegistry.Environment;
                 case BootstrapDependencyNode.OceanKinematicsRuntimeService: return GlobalRegistry.OceanKinematics;
                 case BootstrapDependencyNode.EcosystemDirector: return GlobalRegistry.EcosystemDirector;
@@ -2570,16 +2591,7 @@ namespace Hecton8.Bootstrap
 
                 case BootstrapDependencyNode.DebrisManager:
                 {
-                    if (_headlessBootMode)
-                        return true;
-
-                    DebrisManager debrisManager = DebrisManager.EnsureRuntimeInstance();
-                    if (debrisManager == null)
-                        return false;
-
-                    PersistRuntimeService(debrisManager);
-                    debrisManager.InitializeService();
-                    return IsBootstrapDependencyNodeReady(node);
+                    return true;
                 }
 
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService:
@@ -2715,7 +2727,9 @@ namespace Hecton8.Bootstrap
             ISimulationBucketer registered = GlobalRegistry.SimulationBucketer;
             if (registered != null)
             {
-                if (!registered.IsInitialized)
+                if (registered is ModuloSimulationBucketer moduloBucketer)
+                    moduloBucketer.Initialize(SimulationBucketConstants.DefaultEntityCapacity);
+                else if (!registered.IsInitialized)
                     registered.Initialize(SimulationBucketConstants.DefaultEntityCapacity);
 
                 return registered;
@@ -3760,6 +3774,7 @@ namespace Hecton8.Bootstrap
                     node = BootstrapDependencyNode.PhysicsApplySystem;
                     return true;
                 case GlobalRegistryServiceSlot.Debris:
+                case GlobalRegistryServiceSlot.DebrisComputeRuntime:
                     node = BootstrapDependencyNode.DebrisManager;
                     return true;
                 case GlobalRegistryServiceSlot.Environment:
@@ -4737,7 +4752,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.HectonFloatingOrigin: return GlobalRegistryServiceSlot.FloatingOriginRuntime;
                 case BootstrapDependencyNode.GlobalPhysicsStateManager: return GlobalRegistryServiceSlot.PhysicsStateManager;
                 case BootstrapDependencyNode.PhysicsApplySystem: return GlobalRegistryServiceSlot.Physics;
-                case BootstrapDependencyNode.DebrisManager: return GlobalRegistryServiceSlot.Debris;
+                case BootstrapDependencyNode.DebrisManager: return GlobalRegistryServiceSlot.DebrisComputeRuntime;
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService: return GlobalRegistryServiceSlot.Environment;
                 case BootstrapDependencyNode.OceanKinematicsRuntimeService: return GlobalRegistryServiceSlot.OceanKinematics;
                 case BootstrapDependencyNode.EcosystemDirector: return GlobalRegistryServiceSlot.EcosystemDirector;

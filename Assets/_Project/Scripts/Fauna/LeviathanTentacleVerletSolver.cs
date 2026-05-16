@@ -965,12 +965,18 @@ namespace Hecton8.AI
 
             float3 root = _rootPositions.IsCreated ? SanitizeFiniteInputFloat3(_rootPositions[0], float3.zero) : float3.zero;
             float3 tip = _targetPositions.IsCreated ? SanitizeFiniteInputFloat3(_targetPositions[0], root) : root;
-            float3 directionDelta = tip - root;
-            float directionSq = math.lengthsq(directionDelta);
-            float3 direction = directionSq > 0.000001f
-                ? directionDelta * math.rsqrt(directionSq)
-                : new float3(0f, 0f, 1f);
-            Vector3 localPointVector = target.InverseTransformPoint(new Vector3(tip.x, tip.y, tip.z));
+            Vector3 tipRuntimePosition = new Vector3(tip.x, tip.y, tip.z);
+            float3 direction;
+            if (!TryResolveHighTierAupGrabContact(out direction, out tipRuntimePosition))
+            {
+                float3 directionDelta = tip - root;
+                float directionSq = math.lengthsq(directionDelta);
+                direction = directionSq > 0.000001f
+                    ? directionDelta * math.rsqrt(math.max(directionSq, 0.0001f))
+                    : new float3(0f, 0f, 1f);
+            }
+
+            Vector3 localPointVector = target.InverseTransformPoint(tipRuntimePosition);
             float3 localPoint = SanitizeFiniteInputFloat3(new float3(localPointVector.x, localPointVector.y, localPointVector.z), float3.zero);
 
             CombatDamageRequest signal = new CombatDamageRequest
@@ -995,6 +1001,38 @@ namespace Hecton8.AI
             };
 
             return CombatDamageRuntime.TryQueueDamage(in signal, in detail);
+        }
+
+        private bool TryResolveHighTierAupGrabContact(out float3 direction, out Vector3 tipRuntimePosition)
+        {
+            direction = new float3(0f, 0f, 1f);
+            tipRuntimePosition = Vector3.zero;
+            if (!IsHighEndCollisionTier(_qualityTier) ||
+                !_rootAups.IsCreated ||
+                !_targetAups.IsCreated ||
+                _rootAups.Length <= 0 ||
+                _targetAups.Length <= 0)
+            {
+                return false;
+            }
+
+            double3 rootAbsolute = _rootAups[0].ToAbsoluteDouble3();
+            double3 tipAbsolute = _targetAups[0].ToAbsoluteDouble3();
+            double3 delta = tipAbsolute - rootAbsolute;
+            double distanceSq = math.lengthsq(delta);
+            if (!math.all(math.isfinite(delta)) || !math.isfinite(distanceSq) || distanceSq <= double.Epsilon)
+                return false;
+
+            double inverseDistance = math.rsqrt(math.max(distanceSq, 0.0001d));
+            double3 exactDirection = delta * inverseDistance;
+            float3 resolvedDirection = new float3((float)exactDirection.x, (float)exactDirection.y, (float)exactDirection.z);
+            Vector3 resolvedTip = HectonFloatingOrigin.ToRuntimePosition(tipAbsolute, HectonFloatingOrigin.CurrentTotalOffsetDouble);
+            if (!math.all(math.isfinite(resolvedDirection)) || !IsFinite(resolvedTip))
+                return false;
+
+            direction = resolvedDirection;
+            tipRuntimePosition = resolvedTip;
+            return true;
         }
 
         private void UploadAndRenderIndirect()
@@ -1413,6 +1451,16 @@ namespace Hecton8.AI
         private static bool IsLowTier(HectonQualityTier tier)
         {
             return tier == HectonQualityTier.Unknown || tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
+        }
+
+        private static bool IsHighEndCollisionTier(HectonQualityTier tier)
+        {
+            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
         private static int FlatIndex(int tentacleIndex, int segmentIndex)

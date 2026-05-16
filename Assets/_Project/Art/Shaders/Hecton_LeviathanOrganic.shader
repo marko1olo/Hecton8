@@ -129,6 +129,10 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         float4 _HectonSonarColor;
         float _HectonSonarNoirHideDistance;
         float _SonarActive;
+        float4 _GlobalBiolumStates[16];
+        float4 _GlobalBiolumParams;
+        float4 _GlobalBiolumClock;
+        float4 _GlobalBiolumAupOffset;
         StructuredBuffer<float4x4> _H8LeviathanBones;
         float _H8LeviathanBoneCount;
         float _H8LeviathanIkTier;
@@ -335,6 +339,21 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             return (half)((hash & 255u) * 0.00392156863);
         }
 
+        half4 ResolveFaunaGlobalBiolum(float3 positionWS)
+        {
+            int activeCount = min(max((int)_GlobalBiolumParams.x, 0), 16);
+            if (activeCount <= 0)
+                return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+            float selector = frac(abs(positionWS.x * 0.023 + positionWS.z * 0.071 + _GlobalBiolumAupOffset.x * 0.0015 + _GlobalBiolumAupOffset.z * 0.0011));
+            int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
+            float4 state = _GlobalBiolumStates[stateIndex];
+            half strobe = saturate((half)_GlobalBiolumParams.z);
+            half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
+            half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
+            return half4(color, intensity);
+        }
+
         float EvaluateLeviathanSonarBand(float4 pulse, float4 parameters, float3 positionWS)
         {
             float active = saturate(_SonarActive) * saturate(parameters.w);
@@ -521,6 +540,9 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
                 caustics = HectonCoreLitEvaluateProjectedCausticsScattering(input.positionWS, normalWS) * surface.rgb;
                 biolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(input.positionWS) * emissionMask;
             }
+            half4 globalBiolumState = ResolveFaunaGlobalBiolum(input.positionWS);
+            half globalBiolumMask = step(0.001h, globalBiolumState.w);
+            biolum += globalBiolumState.rgb * (globalBiolumState.w * 0.08h * emissionMask * globalBiolumMask);
             half3 woundEmission = woundColor * (woundMask * _WoundEmissionBoost);
             half oceanPanic = saturate((half)_GlobalOceanPanic);
             half3 panicEmissionColor = lerp(_EmissionColor.rgb, _GlobalOceanPanicColor.rgb, oceanPanic);

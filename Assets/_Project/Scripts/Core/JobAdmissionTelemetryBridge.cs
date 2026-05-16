@@ -1,5 +1,5 @@
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Mathematics;
 using UnityEngine;
 

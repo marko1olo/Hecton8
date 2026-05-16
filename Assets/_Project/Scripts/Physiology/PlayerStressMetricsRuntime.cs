@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -202,7 +202,7 @@ namespace Hecton8.Physiology
                 _state.AcousticImpulse01 = math.max(_state.AcousticImpulse01, ResolveAcousticStress(in acousticSignal, in pose));
             }
 
-            if (GlobalSignals.TryGetLatestDamageSignal(out DamageSignal damageSignal, out int damageSequence) &&
+            if (GlobalSignals.TryGetLatestDamageSignal(out CombatDamageSignal damageSignal, out int damageSequence) &&
                 damageSequence != _lastDamageSequence)
             {
                 _lastDamageSequence = damageSequence;

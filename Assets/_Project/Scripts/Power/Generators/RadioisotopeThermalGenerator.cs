@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Power;
 using Hecton8.Power.Generators.Contracts;

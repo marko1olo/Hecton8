@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Burst;
@@ -678,12 +678,12 @@ namespace Hecton8.Gameplay
             if (maxSignals <= 0 || _damageJobScheduled || _statusJobScheduled)
                 return;
 
-            ReadOnlySpan<Hecton8.Core.Signals.CombatDamageSignal> globalSignals =
-                SignalBus<Hecton8.Core.Signals.CombatDamageSignal>.GetFrameSnapshot();
+            ReadOnlySpan<Hecton8.Core.Contracts.Signals.CombatDamageSignal> globalSignals =
+                SignalBus<Hecton8.Core.Contracts.Signals.CombatDamageSignal>.GetFrameSnapshot();
             int signalCount = math.min(maxSignals, globalSignals.Length);
             for (int i = 0; i < signalCount; i++)
             {
-                Hecton8.Core.Signals.CombatDamageSignal globalSignal = globalSignals[i];
+                Hecton8.Core.Contracts.Signals.CombatDamageSignal globalSignal = globalSignals[i];
                 if (!TryBuildCombatSignal(in globalSignal, out CombatDamageRequest combatSignal, out CombatDamageSignalDetail detail))
                     continue;
 
@@ -693,7 +693,7 @@ namespace Hecton8.Gameplay
         }
 
         private static bool TryBuildCombatSignal(
-            in Hecton8.Core.Signals.CombatDamageSignal globalSignal,
+            in Hecton8.Core.Contracts.Signals.CombatDamageSignal globalSignal,
             out CombatDamageRequest combatSignal,
             out CombatDamageSignalDetail detail)
         {
@@ -731,46 +731,6 @@ namespace Hecton8.Gameplay
             {
                 LocalPoint = localPoint,
                 ArmorNormal = safeDirection,
-                LocalTemperatureCelsius = 0f,
-                StatusDurationSeconds = 0f
-            };
-            return true;
-        }
-
-        private static bool TryBuildCombatSignal(
-            in Hecton8.Core.Signals.DamageSignal globalSignal,
-            out CombatDamageRequest combatSignal,
-            out CombatDamageSignalDetail detail)
-        {
-            combatSignal = default;
-            detail = default;
-
-            float magnitude = math.max(0f, globalSignal.Magnitude);
-            uint targetId = globalSignal.TargetId != 0u ? globalSignal.TargetId : globalSignal.SubjectHash;
-            if (targetId == 0u || !(magnitude > 0f))
-                return false;
-
-            float3 localPoint = math.all(math.isfinite(globalSignal.LocalPoint))
-                ? globalSignal.LocalPoint
-                : float3.zero;
-            uint damageType = globalSignal.DamageType != 0u
-                ? globalSignal.DamageType
-                : CombatDamageTypes.Impact;
-
-            float3 damageDirection = ResolveDominantAxisDirection(localPoint);
-            combatSignal = new CombatDamageRequest
-            {
-                TargetId = unchecked((int)targetId),
-                SourceId = globalSignal.SourceId,
-                Amount = magnitude,
-                ImpulseMagnitude = magnitude,
-                Direction = damageDirection,
-                PackedMeta = PackSignalMeta(damageType, 0u, CombatWeakspotTier.None)
-            };
-            detail = new CombatDamageSignalDetail
-            {
-                LocalPoint = localPoint,
-                ArmorNormal = damageDirection,
                 LocalTemperatureCelsius = 0f,
                 StatusDurationSeconds = 0f
             };

@@ -73,3 +73,39 @@ Solution: Re-check GitHub API on 2026-05-16 for TerrainPatcher, Nitrox, QModMana
 Rejected Alternatives: Trusting search snippets, preserving an exact QModManager archive date not exposed by GitHub API, or deleting useful clean-room source comparison because one timestamp needed correction.
 Scalability potential: Documentation/evidence hygiene only. Low/Middle/High/Ultra runtime behavior is unchanged; research stays useful because legal/source freshness boundaries are clearer.
 Hardware Impact: Research-only 0us. No runtime path changed.
+
+Problem: The Addressables dispute was too coarse: "use Addressables" versus "do not use Addressables" missed the AOT/link and prefab-instantiation contract.
+Solution: Parse Subnautica catalog/settings/link.xml as file taxonomy only. Subnautica has a 12,016,061-byte catalog, 21,090 internal IDs, Addressables 1.19.11 settings, and a 1,243-type Assembly-CSharp link.xml preserving gameplay component families such as Cyclops/Base/Water/Spawn/Creature/PDA/Vehicle. H8 can reject stock Addressables for world chunks, but still needs an explicit H8PrefabTypeManifest or generated linker/preserve contract for first-party and mod-safe prefab components.
+Rejected Alternatives: Copying Subnautica bundles/components, or pretending H8DataMonolith removes all Unity prefab stripping/instantiation risk.
+Scalability potential: Low = only mandatory prefab types preserved; Middle = first-party prefab lane manifest; High = mod-safe component allowlist with build validation; Ultra = tiered visual component groups without changing gameplay hashes.
+Hardware Impact: Research-only 0us. Future benefit is fewer IL2CPP stripping/load failures and less runtime reflection fallback on low-end devices; exact runtime gain depends on build/runtime profiling.
+
+Problem: H8 packer status was incorrectly summarized as "missing packer" in a previous high-level verdict.
+Solution: Correct the verdict. H8DataMonolithCompiler already exists, writes Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin, watches Assets/_SourceData, validates blittable layout, and bakes Items/Creatures/Biomes/Recipes/LootCdf/AudioClipRegistry/SectorPageDirectory and other sections. The real gap is source-of-truth and enforcement: Assets/_SourceData is empty, Assets/StreamingAssets is absent, static_data.h8bin is absent, and no mandatory build gate was found.
+Rejected Alternatives: Rewriting the compiler from scratch, or declaring the monolith ready because the compiler class exists.
+Scalability potential: Low = minimal Items/Recipes/Biomes CSV bridge; Middle = SO-to-_SourceData exporter plus required monolith hash; High = sector-page/world payload index emitted into monolith; Ultra = hardware-tier payload directories and overkill visual sections.
+Hardware Impact: Research-only 0us. Future target is cold boot determinism and fewer managed ScriptableObject scans on i3/MX350; microseconds require player build profiling after the blob is populated.
+
+Problem: Subnautica's baked world cache topology shows H8's pager payload vocabulary is under-named for a large underwater world.
+Solution: Use clean-room taxonomy only. Local Build18 contains CompiledOctreesCache 5,416 files / 1,147.35 MB, CellsCache 1,606 files / 159.80 MB, BatchObjectsCache 2,975 files / 3.07 MB, plus biomeMap/index/meta/CSV sidecars. H8WorldPagePayloadTypes currently exposes only VoxelDeltaRle, InventoryState, ChunkDehydratedMetadata, and WfcOutpostState. Add explicit base-world payload families: TerrainCellBase, ObjectBatchBase, VisibilityPhysicsProxyBase, AudioBiomeBank, DiscoveryRouteBase.
+Rejected Alternatives: Treating save deltas as base-world cache, streaming authored static debris as GameObjects, or copying Subnautica optoctrees.
+Scalability potential: Low = procedural fallback + sparse deltas; Middle = terrain/object base pages; High = PVS/SDF/material/audio proxy pages; Ultra = high-tier dense props, impostors, and atmosphere banks behind the same sector directory.
+Hardware Impact: Research-only 0us. Future benefit is predictable IO and fewer activation spikes; the ObjectBatchBase lane should avoid thousands of GameObject spawns, but exact microseconds require profiler evidence.
+
+Problem: Audio postprocessor exists, but it does not close the memory risk found in the audio source set.
+Solution: Read HectonAudioPostprocessor and count governed assets. It is an AssetPostprocessor with menu validators, not IPreprocessBuildWithReport. It manages 121 files / 230.27 MB, but misses 16 files / 235.41 MB, including root-level Atmos WAVs around 22-25 MB each. SFX policy always resolves to DecompressOnLoad. Ambient policy forces Vorbis CompressedInMemory. Build must fail on unmanaged large audio and on tier-incompatible load types.
+Rejected Alternatives: Assuming DSP/runtime audio systems compensate for bad import settings, or making all audio Streaming. SFX streaming remains rejected; long music/large ambience needs platform-tier policy.
+Scalability potential: Low = no large root WAV preload, ADPCM short mono SFX; Middle = Vorbis ambience/music residency groups; High = biome audio banks; Ultra = extra high-tier layers streamed/resident by budget.
+Hardware Impact: Research-only 0us. Future gain is memory pressure reduction and fewer load hitches on A50/i3/MX350; exact MB saved depends on reimport settings and platform decode behavior.
+
+Problem: H8 modding has the right DOD boundary philosophy but lacks several practical content handler surfaces seen in mature Subnautica mod workflows.
+Solution: Keep the no-Unity-reference public API. Add data-only overlay handlers rather than copying Nautilus/BepInEx: ModPdaEntryOverlay, ModScanEntryOverlay, ModKnownTechQuestFlagOverlay, ModLootCdfOverlay, ModAudioRegistryOverlay. Fix ModBuilderWindow to emit RequiredAPIVersion=2 and stop implying arbitrary external DLL loading works under IL2CPP unless a managed factory is explicitly registered.
+Rejected Alternatives: Directly copying GPL/LGPL mod frameworks, exposing GameObject/Transform/AudioClip references to mods, or enabling reflection assembly loading as a shortcut.
+Scalability potential: Low = manifest v2 and content-only overlays; Middle = validated bundle resource hashes; High = mod overlays merged through DataMonolith/MacroDB; Ultra = tiered mod visuals governed by same residency policy as first-party content.
+Hardware Impact: Research-only 0us. Future impact is stability/support-load reduction; runtime cost must stay command-queued and quota-gated.
+
+Problem: H8 has first-hour/scanner/PDA/lore pieces, but route density is not hard-gated.
+Solution: Treat current authored data as a skeleton: 11 QuestData assets, 5 AudioLogData assets, 5 depth zones, 13 research assets, scanner item/recipe/metadata, and lore registries. ContentSanityValidator validates many references and PDA shell risks, but is a menu item. Lore hashes are build-rebaked, not full first-hour route acceptance. Add a FirstHourRouteDensityGate after source-data/monolith contracts are enforced.
+Rejected Alternatives: Claiming Subnautica-level onboarding because code and a few assets exist, or copying Subnautica PDA text/data.
+Scalability potential: Low = minimum route counts for pod exit, titanium, scanner craft, scan targets, one unlock, one log, one danger/biome; Middle = biome density quotas; High = authored discovery graph; Ultra = optional VO/hologram layers by hardware tier.
+Hardware Impact: Research-only 0us. Future benefit is production/content reliability, not frame-time gain.

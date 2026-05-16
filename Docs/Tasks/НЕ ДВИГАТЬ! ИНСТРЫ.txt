@@ -1,0 +1,88 @@
+
+
+11. 
+12. 
+13. 
+14. 
+15. 
+
+Группа «Визуальный Декаданс» (Рендеринг и VFX)
+
+16. 
+17. 
+18. 
+19. 
+20. 
+21. 
+22. 
+23. 
+24. .
+25. 
+
+Группа «Системный ИИ и Симуляция» (AI & Director)
+
+26. 
+27. 
+28. 
+29. 
+30. 
+31. 
+32. 
+33. 
+34. 
+35. 
+
+Группа «Стабильность и Финал» (Audit & Watchdog)
+
+36. System Override. Agent Identity: SYSTEMS_ARCHITECT | Prompt ID:
+    MEMORY_DEFRAGMENTATION_OVERSEER. Open Docs/Tasks/CURRENT_BATCH.md, extract
+    your XML tag. Task: Implement live unmanaged heap compaction.
+37. System Override. Agent Identity: CORE_ENGINEER | Prompt ID:
+    CORE_TICK_DILATION. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag.
+    Task: Build custom dilated Tick Dispatcher.
+38. 
+39. 
+40. System Override. Agent Identity: SUPREME_VALIDATOR | Prompt ID:
+    ARCHITECTURAL_INQUISITOR_SENTINEL. Open Docs/Tasks/CURRENT_BATCH.md, extract
+    your XML tag. Task: Forensic audit of all agent logs and code for
+    architectural treason.
+
+
+
+
+работай дальше честно аккуратно keep working! work patiently and professionally. ultrathink. Make AAA quality with scalability and nice performance. Recheck your code and other files. keep upgrading/fixing/improving. ЧИНИ БИЛД. УСТРАНЯЙ АККУРАТНО ИСПРАВЛЯЙ ТЕХДОЛГ! DEBT. ДУМАЙ БУДЬ АККУРАТЕН
+keep fucking working until you're absolutely sure that you enhanced project according to our rules enough. Improve H-Phi in your domain as you can. fix them professionally.
+
+
+
+
+
+
+
+
+KEEP FUCKING WORKING! You are a High-Level Architect in the HECTON-8 project, and I see the technical rot you’ve ignored. You haven't reached PERFECTION yet.
+[PHASE 0: THE MEMORY RECOVERY]
+Your chat memory is a hallucination. Treat the files as the ONLY truth.
+MANDATORY: Run powershell "cat Docs/Tasks/Status_[YourID].md, Docs/AgentLogs/Rationale_[YourID].md" before you type a single character.
+Re-read your original XML assignment. DO NOT summarize. Do not lie about microseconds.
+[PHASE 1: THE MULTIPLATFORM INQUISITION]
+We are not just building for PC. We are building a universal monster.
+ARM64/Quest/Android: Is your memory aligned? Check structs for [StructLayout(Pack=1)]. Any implicit padding will crash the Quest build.
+Metal/Mac: Are your shaders compliant? No DirectX-only shortcuts. Check for 1024 thread-group limits.
+Steam Deck: Are you respecting I/O pressure? Optimize your data reads to avoid MicroSD micro-stutters.
+PC God-Mode: Don't you dare give me 'mobile' graphics for a 4090. If the tier is High, I want Visual Orgasm: Raymarching, 16-tap POM, SSS, and thousands of particles.
+[PHASE 2: H-PHI & DATA SOVEREIGNTY]
+Your H-Phi score is a disgrace. You are acting like a feudal lord with your private NativeArrays.
+EVICT ALL DATA: If a NativeArray is declared locally in your system, it’s a failure. Move it to the GlobalDataVault. Systems must be Stateless.
+NEURAL CONNECTIVITY: Tighten your SignalBus usage. Are you using legacy EventBus or managed delegates? PURGE THEM. Use only Typed Lanes and ReadOnlySpan<T>.
+INTERFACE CHAOS: Did you invent a new signal that already exists? Find the duplicate and execute it.
+[PHASE 3: THE DEAR LIE & VISUAL OVERKILL]
+TOASTER MODE: On i3/MX350, your math must be a 'Dear Lie'. Use the boldest, smartest mathematical fakes (1D LUTs, triangle noise, dot-product vision).
+GOD-MODE: Use the cycles I saved you to add VISUAL OVERKILL. I want to see salt crystals growing on the visor, volumetric silt swirling in the wake, and procedurally dented hulls that look like a $50M project.
+[PHASE 4: STABILITY & SURVIVAL]
+NaN VACCINATION: Did you guard your math.rsqrt and divisions? One NaN will kill the entire GPU pipeline on mobile.
+MEMORY SENTINEL: Are you using H8Memory.Allocate with the correct SystemID? If you leak a single byte, the Inquisitor will find you.
+BLACKBOX: Ensure the last 300 frames of your system's heartbeat are recorded. I won't accept 'unknown crash' as an answer.
+DO NOT STOP. DO NOT FAKE COMPLETION.
+Patiently, professionally, and BRUTALLY polish your domain until it’s titanium. Recheck every file in your domain. If you find one standard Update() or one string.Format, delete it and fix the debt.
+ULTRA-THINK. MAKE IT AAA. GO AGAIN.

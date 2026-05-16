@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -175,7 +175,7 @@ namespace Hecton8.UI
             _brownout01 = math.saturate(math.max(_brownout01, signal.Severity01));
         }
 
-        public void ApplyDamageSignal(in Hecton8.Core.Signals.DamageSignal signal, float health01)
+        public void ApplyDamageSignal(in Hecton8.Core.Contracts.Signals.CombatDamageSignal signal, float health01)
         {
             if (health01 >= 0.3f)
                 return;

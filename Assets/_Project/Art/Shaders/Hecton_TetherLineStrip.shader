@@ -51,12 +51,13 @@ Shader "Hecton8/Physics/TetherLineStrip"
                 float _TetherSegmentStressScale;
                 float _TetherRadius;
                 int _TetherPointCount;
+                int _TetherIndirectMode;
             CBUFFER_END
 
             struct Attributes
             {
-                UNITY_VERTEX_INPUT_INSTANCE_ID
                 uint vertexID : SV_VertexID;
+                uint instanceID : SV_InstanceID;
             };
 
             struct Varyings
@@ -75,11 +76,12 @@ Shader "Hecton8/Physics/TetherLineStrip"
             Varyings vert(Attributes input)
             {
                 Varyings output;
-                UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 int segmentCount = max(_TetherPointCount - 1, 0);
-                int segmentIndex = clamp((int)(input.vertexID / 6u), 0, max(segmentCount - 1, 0));
-                int localVertex = (int)(input.vertexID - ((uint)segmentIndex * 6u));
+                int segmentIndex = _TetherIndirectMode != 0
+                    ? clamp((int)input.instanceID, 0, max(segmentCount - 1, 0))
+                    : clamp((int)(input.vertexID / 6u), 0, max(segmentCount - 1, 0));
+                int localVertex = (int)(input.vertexID % 6u);
                 int cornerIndex = localVertex == 0 ? 0 :
                     localVertex == 1 ? 1 :
                     localVertex == 2 ? 2 :

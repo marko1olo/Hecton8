@@ -3,7 +3,7 @@ using Hecton.Localization;
 using Hecton8.Caves;
 using Hecton8.AI;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Power;
@@ -407,7 +407,6 @@ namespace Hecton8.Construction
         private const int HeadlessTaskCapacity = 64;
         private const int HeadlessPendingLaunchCapacity = HeadlessDroneCapacity;
         private const int DroneServiceCommandCapacity = HeadlessDroneCapacity * 3;
-        private const int DockingSignalCapacity = HeadlessDroneCapacity;
         private const int DockingObstacleProbeMaxSegments = 3;
         private const int DockingRaycastCapacity = HeadlessDroneCapacity * DockingObstacleProbeMaxSegments;
         private const int DockingRaycastMinCommandsPerJob = 8;
@@ -1122,12 +1121,7 @@ namespace Hecton8.Construction
             if (s_DockingSignalLanesConfigured)
                 return;
 
-            SignalBus<DockingRequestSignal>.Configure(DockingSignalCapacity);
-            SignalBus<DockingRequestSignal>.EnsureInitialized();
-            SignalBus<DockingCompleteSignal>.Configure(DockingSignalCapacity);
-            SignalBus<DockingCompleteSignal>.EnsureInitialized();
-            SignalBus<DockingFailedSignal>.Configure(DockingSignalCapacity);
-            SignalBus<DockingFailedSignal>.EnsureInitialized();
+            GlobalSignals.InitializeAllQueues();
             s_DockingSignalLanesConfigured = true;
         }
 

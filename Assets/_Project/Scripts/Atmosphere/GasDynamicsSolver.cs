@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -225,6 +225,8 @@ namespace Hecton8.Atmosphere
             bool canWake = !_stepRunning;
             DrainBaseTransitionSignals(canWake);
             if (canWake)
+                DrainHullRepairedSignals();
+            if (canWake)
                 WakePlayerInsideSleepingBases(ResolveUnscaledTimeSeconds());
         }
 
@@ -249,6 +251,7 @@ namespace Hecton8.Atmosphere
 
             double now = ResolveUnscaledTimeSeconds();
             DrainBaseTransitionSignals(allowWake: true);
+            DrainHullRepairedSignals();
             WakePlayerInsideSleepingBases(now);
             _lastMathLod = ResolveMathLod(GlobalRegistry.ScalabilityTier);
             _lastCadenceSeconds = ResolveCadenceSeconds(_lastMathLod);
@@ -280,6 +283,7 @@ namespace Hecton8.Atmosphere
             SeedStandardAtmosphereIfNeeded();
             TryRegisterRegistry();
             DrainBaseTransitionSignals(allowWake: true);
+            DrainHullRepairedSignals();
             WakePlayerInsideSleepingBases(ResolveUnscaledTimeSeconds());
             ResolveBaseHibernationStates();
         }
@@ -1030,6 +1034,24 @@ namespace Hecton8.Atmosphere
             // Enter wins over exit for same-frame module-to-module trigger handoffs.
             while (SignalBus<PlayerBaseEnterSignal>.TryReadFrame(out PlayerBaseEnterSignal signal))
                 ApplyBaseEnterSignal(in signal, now, allowWake);
+        }
+
+        private void DrainHullRepairedSignals()
+        {
+            if (_stepRunning || _roomCount <= 0 || !AreRoomStateLanesReady(_roomCount))
+                return;
+
+            while (SignalBus<HullRepairedSignal>.TryReadFrame(out HullRepairedSignal signal))
+            {
+                if ((signal.Flags & HullRepairedSignal.CompletedFlag) == 0)
+                    continue;
+
+                int roomId = signal.RoomId;
+                if ((uint)roomId >= (uint)_roomCount)
+                    continue;
+
+                TrySetRoomFlags(roomId, 0, RoomFlagBreached);
+            }
         }
 
         private void CaptureBaseTransitionSignalsForLater()

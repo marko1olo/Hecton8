@@ -2,38 +2,38 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
-Domain: Echelon 9 / The Integrator (Compile Medic)
-Prompt task count: 15
-Current state: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK53 + CURRENTDISKBUDGETGATE22 CURRENT-DISK GREEN.
+Domain: CORE/COMPILATION
+Prompt task count: 18
+Current state: ACTIVE - COMPILE WALL REPAIR
+Evidence status: PENDING VERIFICATION
 
-## 2026-05-15 CurrentDisk53/CurrentDiskBudgetGate22 Fresh Current-Disk Closure
+## Current Batch Hygiene
 
-Directive: keep build evidence current after conflict/log churn, repair active compile walls, and enforce exact static H-Phi budgets.
+- [x] Prompt extracted from `Docs/Tasks/CURRENT_BATCH.md` using CLI regex by exact XML id | Justification: strict batch prompt isolation; task count confirmed as 18 | Alternatives Rejected: relying on chat context or stale status | Estimate: 0 us runtime
+- [x] Hygiene violation recorded | Justification: previous status claimed task count 15 while current XML tag defines 18 | Alternatives Rejected: continuing with stale checklist | Estimate: 0 us runtime
+- [x] Mandates selected and read | Justification: assembly graph and compile wall require GlobalRegistry DI, LTS compatibility, zero-GC, crash telemetry, and evidence reporting mandates | Alternatives Rejected: broad mandate sweep without task relevance | Estimate: 0 us runtime
 
-Artifacts:
-- Compile: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log`
-- Compile exit: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.exit.txt`
-- H-Phi: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json`
-- H-Phi exit: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.exit.txt`
+## 18 Titanium Tasks
 
-- [x] Task 1 READ THE WALL | Justification: `CurrentDisk53` reports `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` | Alternatives rejected: stale deleted logs and generated `.csproj` edits | Estimate: 2,327,083 us build verification
-- [x] Task 2 ASMDEF AUDIT | Justification: strict H-Phi Core graph reports `CoreAsmdefReferenceCount=43`, `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`, `SourceBackedBridgeDebtReferenceCount=14`, `SourceBackedCompileBridgeDebtReferenceCount=8`, `ProjectReferenceReplacementDebtReferenceCount=6` | Alternatives rejected: blind leaf-reference deletion | Estimate: 116,430,187 us H-Phi verification
-- [x] Task 3 CONTRACT DISCOVERY | Justification: no current missing-contract compiler errors remain after the RenderGraph wall resolved | Alternatives rejected: moving DTOs without a live compiler need | Estimate: 0 us runtime
-- [x] Task 4 STRUCT MIGRATION | Justification: no DTO move was required for the final green Core lane | Alternatives rejected: cross-domain source moves during a compile closure | Estimate: 0 us runtime
-- [x] Task 5 NAMESPACE ALIGNMENT | Justification: no moved contract namespaces required rewrite | Alternatives rejected: broad using sweeps | Estimate: 0 us runtime
-- [x] Task 6 DUPLICATE PURGE | Justification: final compile has no duplicate member errors | Alternatives rejected: deleting current implementations from stale logs | Estimate: 0 us runtime
-- [x] Task 7 SIGNATURE RECONCILIATION | Justification: RenderGraph copy call-sites no longer depend on unavailable `AddBlitPass` overloads in the active source snapshot | Alternatives rejected: package-source edits or generated project reference widening | Estimate: 0 us runtime
-- [x] Task 8 OPTIONAL SERVICE GUARDING | Justification: no new per-frame `GlobalRegistry.Get<T>()` polling was introduced | Alternatives rejected: service lookup churn | Estimate: 0 us runtime
-- [x] Task 9 BATCHED FIXING | Justification: active wall was handled as RenderGraph compatibility plus evidence-log restoration | Alternatives rejected: monolithic rendering refactor | Estimate: 0 us runtime
-- [x] Task 10 RE-COMPILE | Justification: `CurrentDisk53` is current green CLI compile proof | Alternatives rejected: reporting deleted `CurrentDisk47/50` artifacts | Estimate: 2,327,083 us build verification
-- [x] Task 11 ASMDEF REPAIR | Justification: no new asmdef edit was needed in this closure; current graph budgets pass | Alternatives rejected: leaf-to-Core widening | Estimate: 0 us runtime
-- [x] Task 12 MEMORY SENTINEL SYNC | Justification: no new assembly/SystemID introduced | Alternatives rejected: fake sentinel registration | Estimate: 0 us runtime
-- [x] Task 13 NULLABLE ANNOTATION | Justification: final compile emitted 0 warnings | Alternatives rejected: suppressing absent warnings | Estimate: 0 us runtime
-- [x] Task 14 DEAD CODE EXTERMINATION | Justification: no unused interface/stub was a compile blocker | Alternatives rejected: vanity purge outside Integrator domain | Estimate: 0 us runtime
-- [x] Task 15 OMEGA VERIFICATION | Justification: `CurrentDisk53` compile and `CurrentDiskBudgetGate22` strict H-Phi both exit 0; `GlobalRegistrySurface=5060`, `LinqSurface=3`, `ManagedFormatSurface=534`, `PrimaryManagedRuntimeRisk=147`, `AupPrecisionRisk=0`, `FindObjectCalls=0`, `UnityUpdateMethods=0` | Alternatives rejected: stale or missing artifact claims | Estimate: 116,430,187 us H-Phi verification
+- [ ] Task 1 WALL_READ | Justification: pending `dotnet build Hecton8.Core.csproj --no-restore` first-wall parse | Alternatives Rejected: stale compile logs | Estimate: pending
+- [ ] Task 2 ASMDEF_PURGE | Justification: pending `.asmdef` scan for `autoReferenced` strict graph enforcement | Alternatives Rejected: generated `.csproj` edits | Estimate: pending
+- [ ] Task 3 GHOST_REFERENCE_KILL | Justification: pending stale reference scan/removal in `Hecton8.Core.asmdef` and related graph files | Alternatives Rejected: retaining non-existent assembly refs | Estimate: pending
+- [ ] Task 4 DTO_EXTRACTION | Justification: pending discovery of `MacroSwarm`, `BrineLayerSample`, `AcousticAup` ownership | Alternatives Rejected: blind source moves before compiler evidence | Estimate: pending
+- [ ] Task 5 NAMESPACE_ALIGNMENT | Justification: pending broken `using` scan after DTO decision | Alternatives Rejected: broad regex churn without moved symbols | Estimate: pending
+- [ ] Task 6 DUPLICATE_METHOD_AMPUTATION | Justification: pending duplicate member scan for `SaveManager.cs` and `HectonUnderwaterVisuals.cs` | Alternatives Rejected: deleting methods without compiler/source proof | Estimate: pending
+- [ ] Task 7 IL2CPP_LINKER_SHIELD | Justification: pending `link.xml` preservation audit for `SignalBus<T>` | Alternatives Rejected: claiming platform readiness from text only | Estimate: pending
+- [ ] Task 8 SHADER_INCLUDE_FIX | Justification: pending HLSL include path audit | Alternatives Rejected: shader graph rewrites outside compile wall | Estimate: pending
+- [ ] Task 9 LOW_TIER_MACRO_DEF | Justification: pending `_MATH_LOD_LOW` compile-symbol audit | Alternatives Rejected: project settings churn without evidence | Estimate: pending
+- [ ] Task 10 CROSS_PLATFORM_API | Justification: pending `System.IO.MemoryMappedFiles` platform guard scan | Alternatives Rejected: Quest/Android readiness claims without source guards | Estimate: pending
+- [ ] Task 11 NAN_VACCINATION_VERIFY | Justification: pending `math.isfinite` and `Unity.Mathematics` reference audit | Alternatives Rejected: new math helper invention | Estimate: pending
+- [ ] Task 12 BLACKBOX_COMPILER_DUMP | Justification: pending build output dump on failure | Alternatives Rejected: console-only failure evidence | Estimate: pending
+- [ ] Task 13 TRIPLE_STRIKE_REPAIR | Justification: pending up to three build-repair passes | Alternatives Rejected: stopping after first compile failure | Estimate: pending
+- [ ] Task 14 BOOTSTRAP_SYNC | Justification: pending `GameBootstrapper`/`IInitializable` compile audit | Alternatives Rejected: runtime behavior changes | Estimate: pending
+- [ ] Task 15 NULLABLE_SILENCE | Justification: pending CS8632 warning audit in legacy procedural files | Alternatives Rejected: blanket nullable edits | Estimate: pending
+- [ ] Task 16 INTERFACE_STUBBING | Justification: pending missing `ILateFrameTickable` method evidence | Alternatives Rejected: gameplay logic stubs beyond compile need | Estimate: pending
+- [ ] Task 17 TEST_HARNESS_EXCLUDE | Justification: pending C# project/test script inclusion audit | Alternatives Rejected: editing generated files as source of truth | Estimate: pending
+- [ ] Task 18 FINAL_GREEN_LIGHT | Justification: pending build success with `0 Warning(s)` and `0 Error(s)` | Alternatives Rejected: partial compile green | Estimate: pending
 
-Freshness:
-- [x] Source freshness checked | Justification: at closure time no C# or asmdef source under `Assets/_Project/Scripts` was newer than the compile artifact, and no H-Phi source/graph input was newer than the H-Phi artifact | Alternatives rejected: claiming green while artifacts were missing or stale | Estimate: 400 us scan
+## Residual Limits
 
-Residual limits:
-- Unity Editor import, Play Mode, profiler, GCMonitor, player build, runtime visuals, Quest/IL2CPP, and platform build were not run.
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, Quest/Android build, and IL2CPP are not yet run in this session.

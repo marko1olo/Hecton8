@@ -41,7 +41,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Environment;
@@ -60,6 +60,7 @@ using UnityEngine.Rendering.RenderGraphModule;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
 
 namespace Hecton8.Physics
 {
@@ -186,8 +187,8 @@ namespace Hecton8.Physics
         private const float AbyssalFlowTextureWorldSizeMeters = 100f;
         private const float AbyssalFlowTextureCellSizeMeters = AbyssalFlowTextureWorldSizeMeters / AbyssalFlowTextureResolution;
         private const int AbyssalFlowTextureThreadGroupSize = 4;
-        private const int AbyssalFlowUpdateBucketMask = 7;
-        private const float AbyssalFlowUpdateBucketInvCount = 1f / (AbyssalFlowUpdateBucketMask + 1);
+        private const int AbyssalFlowUpdateBucketMask = SimulationBucketConstants.FastBucketMask;
+        private const float AbyssalFlowUpdateBucketInvCount = 1f / SimulationBucketConstants.FastBucketCount;
         private const uint AbyssalFlowKillSwitchMask = GlobalRegistry.SystemKillSwitchLane4VfxMask;
         private const uint AbyssalFlowBucketedCostHash = 0x41424642u; // ABFB
         private const float AbyssalFlowWakeMinimumSpeedMetersPerSecond = 0.5f;
@@ -1940,6 +1941,48 @@ namespace Hecton8.Physics
                    flowSpacing.y > 0f &&
                    flowSpacing.z > 0f &&
                    flowSpacing.w > 0f;
+        }
+
+        /// <summary>
+        /// Resolves the current GPU dynamic-wake payload used by visual advection consumers.
+        /// </summary>
+        /// <param name="dynamicWakes">StructuredBuffer float4: xyz runtime position, w intensity.</param>
+        /// <param name="dynamicWakeVectors">StructuredBuffer float4: xyz push vector, w radius.</param>
+        /// <param name="dynamicWakeParams">x slot limit, y low-tier flag, z active wake count.</param>
+        /// <returns>True when the published wake buffers are valid for direct compute binding.</returns>
+        public bool TryGetDynamicWakeGpuPayload(
+            out GraphicsBuffer dynamicWakes,
+            out GraphicsBuffer dynamicWakeVectors,
+            out Vector4 dynamicWakeParams)
+        {
+            dynamicWakes = _emptyDynamicWakeBuffer;
+            dynamicWakeVectors = _emptyDynamicWakeVectorBuffer;
+            dynamicWakeParams = Vector4.zero;
+
+            EnsureFluidAdvectionState();
+            if (!HasDynamicWakeState())
+                return false;
+
+            bool lowTier = ResolveFluidAdvectionLowTier();
+            UpdateDynamicWakesForUpload(math.max(SystemDispatcher.CurrentFrameDeltaTime, 0.0001f), lowTier, uploadBuffers: true);
+            GraphicsBuffer wakeBuffer = ResolveDynamicWakeBuffer(_dynamicWakeBufferParity);
+            GraphicsBuffer wakeVectorBuffer = ResolveDynamicWakeVectorBuffer(_dynamicWakeBufferParity);
+            if (wakeBuffer == null ||
+                !wakeBuffer.IsValid() ||
+                wakeVectorBuffer == null ||
+                !wakeVectorBuffer.IsValid())
+            {
+                return false;
+            }
+
+            dynamicWakes = wakeBuffer;
+            dynamicWakeVectors = wakeVectorBuffer;
+            dynamicWakeParams = new Vector4(
+                _dynamicWakeDispatchLimit,
+                lowTier ? 1f : 0f,
+                _activeDynamicTurbulenceWakeCount,
+                0f);
+            return true;
         }
 
         /// <summary>
@@ -5386,7 +5429,7 @@ namespace Hecton8.Physics
             else
                 direction = Vector3.up;
 
-            Hecton8.Core.Signals.CombatDamageSignal damage = default;
+            Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
             damage.WorldPoint = new float3(center.x, center.y, center.z);
             damage.Direction = new float3(direction.x, direction.y, direction.z);
             damage.Magnitude = MaelstromDamageMagnitude * math.max(0.25f, math.saturate(intensity01));
@@ -5397,7 +5440,7 @@ namespace Hecton8.Physics
             damage.SourceId = (ushort)(MaelstromSourceHash & 0xffffu);
             damage.TargetId = targetHash != 0u ? (ushort)math.min(targetHash, (uint)ushort.MaxValue) : (ushort)0;
             damage.Channel = MaelstromAcousticChannel;
-            damage.Flags = Hecton8.Core.Signals.CombatDamageSignal.DirectRuntimeFlag;
+            damage.Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag;
             damage.IntegrityDelta = 1;
             GlobalSignals.Publish(in damage);
             return true;
@@ -5976,9 +6019,15 @@ namespace Hecton8.Physics
         private void ResolveAbyssalFlowBucketUniforms(out int updateBucket, out int updateBucketMask)
         {
             ISimulationBucketer bucketer = _simulationBucketer;
-            int frameCount = bucketer != null && bucketer.IsInitialized
-                ? bucketer.CurrentFrameCount
-                : Time.frameCount;
+            if (bucketer != null && bucketer.IsInitialized)
+            {
+                updateBucketMask = bucketer.FastBucketMask;
+                updateBucket = bucketer.ActiveFastBucket;
+                _gpuAbyssalFlowInterpolationAlpha = math.saturate(bucketer.SimulationBucketInterpolationAlpha);
+                return;
+            }
+
+            int frameCount = Time.frameCount;
             updateBucketMask = AbyssalFlowUpdateBucketMask;
             updateBucket = frameCount & updateBucketMask;
             _gpuAbyssalFlowInterpolationAlpha = (updateBucket + 1) * AbyssalFlowUpdateBucketInvCount;

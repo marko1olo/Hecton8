@@ -4,9 +4,50 @@ using Unity.Mathematics;
 namespace Hecton8.Core.Contracts
 {
     /// <summary>
+    /// Vault-owned compass state. Runtime writers keep this as the single mutable compass authority.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct CompassStateDTO
+    {
+        public double3 ActualAUP;
+        public double3 RawEstimatedAUP;
+        public double3 EstimatedAUP;
+        public float3 Velocity;
+        public float ActualHeadingDegrees;
+        public float CurrentHeadingDegrees;
+        public float DriftDegrees;
+        public float AnomalyInterference01;
+        public float Power01;
+        public float Glitch01;
+        public float RecalibrationHold01;
+        public float MaxGyroDriftDegrees;
+        public float DeltaSeconds;
+        public uint Frame;
+        public uint Flags;
+        public uint LastAupShiftFrameId;
+        public int CalibrationCount;
+    }
+
+    /// <summary>
+    /// SOA slots for the vault-owned compass float output buffer.
+    /// </summary>
+    public enum CompassOutputSlot : int
+    {
+        CurrentHeadingDegrees = 0,
+        ActualHeadingDegrees = 1,
+        DriftDegrees = 2,
+        AnomalyInterference01 = 3,
+        Power01 = 4,
+        Glitch01 = 5,
+        CardinalIndex = 6,
+        MaxGyroDriftDegrees = 7,
+        Count = 8
+    }
+
+    /// <summary>
     /// Registry-facing dead-reckoning state exposed to cockpit and UI consumers without concrete navigation runtime coupling.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct InertialNavigationSnapshot
     {
         /// <summary>Actual submarine AUP resolved from the authoritative motion read model.</summary>

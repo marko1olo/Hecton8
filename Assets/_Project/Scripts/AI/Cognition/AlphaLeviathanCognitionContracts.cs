@@ -19,9 +19,12 @@ namespace Hecton8.AI.Cognition
         public const byte PlayerGazeBreak = 1 << 2;
         public const byte RoarEmitted = 1 << 3;
         public const byte Fault = 1 << 4;
+        public const byte AcousticLure = 1 << 5;
+        public const byte LightRetreat = 1 << 6;
+        public const byte ShiftFenceReset = 1 << 7;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     public struct AlphaLeviathanTelemetryEntry
     {
         public uint Frame;
@@ -34,7 +37,7 @@ namespace Hecton8.AI.Cognition
         public float3 PlayerPosition;
         public float3 DesiredDirection;
         public uint StateHash;
-        public uint Reserved0;
+        public float LeviathanAgressivity01;
         public uint Reserved1;
     }
 }

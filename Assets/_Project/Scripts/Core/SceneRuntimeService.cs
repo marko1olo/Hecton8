@@ -1,6 +1,8 @@
 using System;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
+using Hecton8.Core.Memory;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using Hecton8.VFX;
 using Hecton8.World;
@@ -44,6 +46,10 @@ namespace Hecton8.Core
         private const uint TerminalBootHashSalt = 0x9E3779B9u;
         private const uint TransitionSolveBudgetWarningHash = 0x54534F4Cu; // TSOL
         private const uint TransitionTelemetryContextHash = 0x53434E45u; // SCNE
+        private const uint MemoryTransitionPauseSourceHash = 0x4D454D50u; // MEMP
+        private const byte MemoryTransitionLockFlag = 1 << 0;
+        private const byte MemoryTransitionReleasedFlag = 1 << 1;
+        private const byte MemoryTransitionFailedFlag = 1 << 2;
         private static readonly int _TransitionDitherProgressId = Shader.PropertyToID("_DitherProgress");
         private static readonly int _TransitionDitherColorId = Shader.PropertyToID("_Color");
         private static readonly int _HectonFreezeFrameDitherId = Shader.PropertyToID("_HectonFreezeFrameDither");
@@ -100,6 +106,8 @@ namespace Hecton8.Core
         private int _gpuResidencyReadyFrame = -1;
         private bool _sceneActivationReleased;
         private bool _cinematicTransitionActive;
+        private bool _memoryLifecycleTransitionActive;
+        private uint _memoryLifecyclePauseSequence;
         private float _cinematicTransitionElapsed;
         private Camera _cinematicCamera;
         private Camera _configuredCinematicCamera;
@@ -188,6 +196,7 @@ namespace Hecton8.Core
         public void InitializeService()
         {
             GlobalRegistry.RegisterSceneRuntime(this);
+            H8Memory.Initialize();
 
             if (_isInitialized)
             {
@@ -244,6 +253,7 @@ namespace Hecton8.Core
                 if (useCinematicTransition)
                     BeginMainMenuCinematicTransition();
 
+                BeginMemoryLifecycleTransition();
                 ClearRuntimeState();
 
                 LoadSceneMode loadMode = useCinematicTransition ? LoadSceneMode.Additive : LoadSceneMode.Single;
@@ -296,6 +306,7 @@ namespace Hecton8.Core
             finally
             {
                 EndMainMenuCinematicTransition();
+                CompleteMemoryLifecycleTransition();
                 _sceneLoadInFlight = false;
                 _pendingSceneName = null;
                 _pendingSceneLoadOperation = null;
@@ -310,6 +321,7 @@ namespace Hecton8.Core
         /// <param name="deltaTime">Scaled frame delta supplied by the dispatcher.</param>
         public void Tick(float deltaTime)
         {
+            H8Memory.RecordHeartbeat();
         }
 
         private void Awake()
@@ -387,10 +399,48 @@ namespace Hecton8.Core
             if (GlobalRegistry.InteractionSignals != null)
                 GlobalRegistry.InteractionSignals.ClearQueuedSignals();
 
-            if (GlobalRegistry.Debris != null)
-                GlobalRegistry.Debris.ClearActiveDebris();
+            if (GlobalRegistry.DebrisCompute != null)
+                GlobalRegistry.DebrisCompute.ClearGpuDebris();
 
             GlobalPhysicsStateManager.ClearRuntimeStateStatic();
+        }
+
+        private void BeginMemoryLifecycleTransition()
+        {
+            H8Memory.BeginSceneTransitionPurge();
+            _memoryLifecycleTransitionActive = true;
+            PublishMemoryLifecyclePause(paused: true, MemoryTransitionLockFlag);
+        }
+
+        private void CompleteMemoryLifecycleTransition()
+        {
+            if (!_memoryLifecycleTransitionActive)
+                return;
+
+            bool verified = H8Memory.CompleteSceneTransitionVerification();
+            if (verified)
+            {
+                PublishMemoryLifecyclePause(paused: false, MemoryTransitionReleasedFlag);
+                _memoryLifecycleTransitionActive = false;
+                return;
+            }
+
+            PublishMemoryLifecyclePause(paused: true, MemoryTransitionFailedFlag);
+            GlobalTelemetryBus.PublishMemoryBreachEvent(
+                MemoryTransitionPauseSourceHash,
+                H8Memory.TotalAllocatedBytes * GlobalTelemetryBus.BytesToMegabytes);
+        }
+
+        private void PublishMemoryLifecyclePause(bool paused, byte flags)
+        {
+            SystemPauseSignal signal = default;
+            signal.SourceHash = MemoryTransitionPauseSourceHash;
+            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Sequence = unchecked(++_memoryLifecyclePauseSequence);
+            signal.Paused = paused ? (byte)1 : (byte)0;
+            signal.Flags = flags;
+            signal.RestoreScalar = 1f;
+            GlobalSignals.Publish(in signal);
         }
 
         private static bool ArePersistentWorldPoolsReadyForSceneActivation()

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Hecton8.AI.Ecology.Migration;
 using Hecton8.Interaction;
 using Hecton8.SaveSystem;
 using Hecton8.Construction;
@@ -10,7 +9,7 @@ using Hecton8.Audio;
 using Hecton8.Audio.Propagation;
 using Hecton8.Audio.Virtualization;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -2354,9 +2353,9 @@ namespace Hecton8.Core
     }
 
     /// <summary>
-    /// Authoritative procedural sway director exposed through <see cref="GlobalRegistry"/> for decoupled VFX wake producers.
+    /// Authoritative mathematical wake displacement service exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
-    public interface IProceduralSwayDirector : ISystem
+    public interface IWakeDisplacementService : ISystem
     {
         /// <summary>
         /// True once the runtime owner has allocated fixed wake state and can publish shader globals.
@@ -2378,7 +2377,13 @@ namespace Hecton8.Core
         /// Clears persistent procedural wake state and publishes an empty buffer.
         /// </summary>
         void ClearWakeBuffer();
+    }
 
+    /// <summary>
+    /// Authoritative procedural sway director exposed through <see cref="GlobalRegistry"/> for decoupled VFX wake producers.
+    /// </summary>
+    public interface IProceduralSwayDirector : IWakeDisplacementService
+    {
         /// <summary>
         /// Exposes the latest GPU-culled procedural flora matrix buffer for vertex-sway consumers.
         /// </summary>
@@ -3149,6 +3154,10 @@ namespace Hecton8.Core
         AudioVirtualization = 165,
         OutpostGenerationRuntime = 166,
         PrologueSequenceRuntime = 167,
+        DebrisComputeRuntime = 168,
+        ResolutionScalerService = 169,
+        AmbientBiotaRuntime = 170,
+        DockingAutopilotRuntime = 171,
         Unknown = 255
     }
 
@@ -3359,6 +3368,37 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// GPU-resident debris shard service exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IDebrisComputeService
+    {
+        /// <summary>
+        /// True when DataVault buffers and GPU buffers are ready for debris injection.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Current CPU-side mirror count of live GPU debris particles.
+        /// </summary>
+        int ActiveDebrisCount { get; }
+
+        /// <summary>
+        /// Current tier-gated particle capacity.
+        /// </summary>
+        int ActiveParticleCapacity { get; }
+
+        /// <summary>
+        /// True when the MX350 / low-memory debris budget is active.
+        /// </summary>
+        bool IsLowTierActive { get; }
+
+        /// <summary>
+        /// Clears live GPU debris state without destroying persistent buffers.
+        /// </summary>
+        void ClearGpuDebris();
+    }
+
+    /// <summary>
     /// Immutable ecosystem population sample returned by <see cref="IEcosystemDirectorService"/>.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
@@ -3450,6 +3490,83 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Data-vault resident ambient biota state. Velocity lives in BufferID.BiotaVelocities;
+    /// AUP truth lives in BufferID.BiotaAUPs.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+    public struct AmbientBiotaState
+    {
+        public const uint FlagActive = 1u << 0;
+        public const uint FlagLowTierBillboard = 1u << 1;
+        public const uint FlagMacroHydrated = 1u << 2;
+        public const uint FlagSdfEmergence = 1u << 3;
+        public const uint FlagHighTierReactive = 1u << 4;
+        public const uint ReservedDebrisPending = 1u << 0;
+        public const uint ReservedFaultSanitized = 1u << 1;
+
+        [FieldOffset(0)] public uint StateFlags;
+        [FieldOffset(4)] public uint StableHash;
+        [FieldOffset(8)] public ushort SpeciesId;
+        [FieldOffset(10)] public ushort BucketId;
+        [FieldOffset(12)] public float AgeSeconds;
+        [FieldOffset(16)] public float LifetimeSeconds;
+        [FieldOffset(20)] public float ScaleMeters;
+        [FieldOffset(24)] public float Emission01;
+        [FieldOffset(28)] public uint Reserved;
+    }
+
+    /// <summary>
+    /// Fixed-size ambient-biota black-box sample. Stored in BufferID.BiotaTelemetryRing.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+    public struct AmbientBiotaTelemetryEntry
+    {
+        [FieldOffset(0)] public AbsoluteUniversePosition CenterAup;
+        [FieldOffset(48)] public uint FrameIndex;
+        [FieldOffset(52)] public uint StateHash;
+        [FieldOffset(56)] public ushort ActiveCount;
+        [FieldOffset(58)] public ushort CulledCount;
+        [FieldOffset(60)] public ushort Capacity;
+        [FieldOffset(62)] public ushort Flags;
+    }
+
+    /// <summary>
+    /// Registry-facing ambient biota director. It owns no per-biota GameObjects;
+    /// consumers read contiguous vault buffers or poll aggregate counters.
+    /// </summary>
+    public interface IAmbientBiotaService : ISystem
+    {
+        bool IsInitialized { get; }
+        int Capacity { get; }
+        int ActiveBiotaCount { get; }
+        float CullRatePerSecond { get; }
+        NativeArray<AbsoluteUniversePosition>.ReadOnly BiotaAups { get; }
+        NativeArray<float4>.ReadOnly BiotaVelocities { get; }
+        NativeArray<AmbientBiotaState>.ReadOnly BiotaStates { get; }
+
+        /// <summary>
+        /// Claims inactive SOA slots for macro-swarm biomass entering a hydrated sector.
+        /// </summary>
+        bool TryHydrateMacroSwarms(
+            in AbsoluteUniversePosition centerAup,
+            ushort radiusMetersQ,
+            NativeArray<MacroSwarm> swarms,
+            int swarmCount,
+            byte qualityTier,
+            float systemStress01,
+            out int spawnedBoidCount);
+
+        /// <summary>
+        /// Releases previously macro-hydrated SOA slots back into a compact biomass count for sector unload.
+        /// </summary>
+        bool TryPackMacroHydratedBiota(
+            in AbsoluteUniversePosition centerAup,
+            ushort radiusMetersQ,
+            out int releasedBoidCount,
+            out float biomassValue);
+    }
+
+    /// <summary>
     /// Allocation-free global biomass audit sample returned by <see cref="IEcosystemDirectorService"/>.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
@@ -3520,6 +3637,32 @@ namespace Hecton8.Core
         /// Projects active macro swarms into radar ping payloads without exposing ecology storage ownership.
         /// </summary>
         bool TryCopyMacroSwarmRadarPings(NativeArray<float4> destination, float3 probeOrigin, float radiusMeters, out int copiedCount);
+
+        /// <summary>
+        /// Imports vault-owned macro database payloads into the abstract macro-swarm lane.
+        /// </summary>
+        bool TryImportMacroSwarmsFromVault(ulong sectorHash, out int importedCount);
+
+        /// <summary>
+        /// Claims macro swarms intersecting a hydrated sector into caller-owned native scratch.
+        /// </summary>
+        bool TryClaimMacroSwarmsForHydration(
+            in AbsoluteUniversePosition centerAup,
+            ushort radiusMetersQ,
+            NativeArray<MacroSwarm> destination,
+            out int claimedCount,
+            out float claimedBiomass01);
+
+        /// <summary>
+        /// Converts unloaded active ecology boids back into one abstract macro-swarm.
+        /// </summary>
+        bool TryRepackHydratedBiotaToMacroSwarm(
+            in AbsoluteUniversePosition centerAup,
+            ushort radiusMetersQ,
+            long chunkId,
+            int releasedBoidCount,
+            ushort flags,
+            out float biomassValue);
 
         /// <summary>
         /// Resolves the deterministic apex-presence flag for the sector containing the supplied world position.

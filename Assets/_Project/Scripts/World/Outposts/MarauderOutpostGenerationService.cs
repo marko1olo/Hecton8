@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Logistics.Grid.Contracts;
 using Hecton8.Narrative;
@@ -539,12 +539,12 @@ namespace Hecton8.World.Outposts
             if (_jobPhase != JobPhase.None || (_generated && _publishedPowerGridHandle != 0u))
                 return;
 
-            ReadOnlySpan<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal> signals =
-                SignalBus<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
+            ReadOnlySpan<Hecton8.Core.Contracts.Signals.MacroDatabaseSectorHydrationSignal> signals =
+                SignalBus<Hecton8.Core.Contracts.Signals.MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
             ulong targetBaseHash = ResolveFirstBaseHash();
             for (int i = 0; i < signals.Length; i++)
             {
-                Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal signal = signals[i];
+                Hecton8.Core.Contracts.Signals.MacroDatabaseSectorHydrationSignal signal = signals[i];
                 if (!generateOnAnyHydratedSectorForDebug && signal.SectorHash != targetBaseHash)
                     continue;
 

@@ -2,7 +2,7 @@ using Hecton8.Atmosphere;
 using Hecton8.Audio;
 using Hecton8.Construction;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Crafting;
 using Hecton8.Power;
 using Hecton8.UI;

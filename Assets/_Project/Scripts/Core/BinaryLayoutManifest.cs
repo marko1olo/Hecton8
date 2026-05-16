@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Construction;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Collections.LowLevel.Unsafe;
@@ -52,6 +52,7 @@ namespace Hecton8.Core
             VerifyPersistentWorldLayouts();
             VerifySignalLayouts();
             VerifyRenderBlitLayouts();
+            VerifyAmbientBiotaLayouts();
 
             _verified = true;
         }
@@ -75,6 +76,23 @@ namespace Hecton8.Core
             AssertOffset<AbsoluteUniversePositionBlit128>(nameof(AbsoluteUniversePositionBlit128.GridX), 0);
             AssertOffset<AbsoluteUniversePositionBlit128>(nameof(AbsoluteUniversePositionBlit128.Local), 24);
             AssertOffset<AbsoluteUniversePositionBlit128>(nameof(AbsoluteUniversePositionBlit128.Reserved), 40);
+        }
+
+        private static void VerifyAmbientBiotaLayouts()
+        {
+            AssertSize<AmbientBiotaState>(32);
+            AssertOffset<AmbientBiotaState>(nameof(AmbientBiotaState.StateFlags), 0);
+            AssertOffset<AmbientBiotaState>(nameof(AmbientBiotaState.StableHash), 4);
+            AssertOffset<AmbientBiotaState>(nameof(AmbientBiotaState.SpeciesId), 8);
+            AssertOffset<AmbientBiotaState>(nameof(AmbientBiotaState.BucketId), 10);
+            AssertOffset<AmbientBiotaState>(nameof(AmbientBiotaState.AgeSeconds), 12);
+            AssertOffset<AmbientBiotaState>(nameof(AmbientBiotaState.Reserved), 28);
+
+            AssertSize<AmbientBiotaTelemetryEntry>(64);
+            AssertOffset<AmbientBiotaTelemetryEntry>(nameof(AmbientBiotaTelemetryEntry.CenterAup), 0);
+            AssertOffset<AmbientBiotaTelemetryEntry>(nameof(AmbientBiotaTelemetryEntry.FrameIndex), 48);
+            AssertOffset<AmbientBiotaTelemetryEntry>(nameof(AmbientBiotaTelemetryEntry.StateHash), 52);
+            AssertOffset<AmbientBiotaTelemetryEntry>(nameof(AmbientBiotaTelemetryEntry.Flags), 62);
         }
 
         private static void VerifySaveLayouts()

@@ -61,7 +61,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
@@ -85,6 +85,7 @@ namespace Hecton8.Celestial
     /// <summary>
     /// Unmanaged Mega-Bus payload fired when a sky occluder starts a solar eclipse.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct EclipseStartedEvent
     {
         public float OcclusionFactor;
@@ -117,6 +118,7 @@ namespace Hecton8.Celestial
     /// </summary>
     public static class CelestialEvents
     {
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct CelestialEventPayload
         {
             public byte EventType;
@@ -535,14 +537,14 @@ namespace Hecton8.Celestial
             public float Fullness01;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct CelestialOrbitJobOutput
         {
             public CelestialRuntimeSnapshot Snapshot;
             public byte Valid;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct CelestialBlackBoxEntry
         {
             public uint FrameIndex;
@@ -3447,9 +3449,6 @@ namespace Hecton8.Celestial
                 RenderSettings.fog = true;
                 RenderSettings.fogMode = FogMode.ExponentialSquared;
             }
-
-            if (HasMeaningfulColorShift(state.FogColor, RenderSettings.fogColor))
-                RenderSettings.fogColor = state.FogColor;
 
             float readableFogDensity = ResolveReadableSurfaceFogDensity(state.FogDensity);
             if (Mathf.Abs(RenderSettings.fogDensity - readableFogDensity) >= 0.0001f)

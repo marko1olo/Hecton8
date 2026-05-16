@@ -1,5 +1,5 @@
 using Hecton8.Input;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using System;
 using System.IO;

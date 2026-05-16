@@ -18,7 +18,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             Name "VisorFluid"
 
             HLSLPROGRAM
-            #pragma target 4.5
+            #pragma target 3.5
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
@@ -26,12 +26,21 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
+            #include "Assets/_Project/Art/Shaders/Post/Hecton_SnellRefractionCore.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float _HectonVisorFluidIntensity;
                 float _HectonVisorFluidWetness;
                 float _HectonVisorFluidHullStress;
                 float _HectonVisorFluidDistortionStrength;
+                float _HectonVisorFluidSnellStrength;
+                float _HectonVisorFluidDepthSoftness;
+                float _HectonWaterDensitySignal;
+                float _HectonVisorFluidHomeostasisFallback;
+                float _HectonVisorFluidLowTier;
+                float4 _HectonVisorFluidIorLut;
                 float _HectonVisorFluidRunoffSpeed;
                 float _HectonVisorFluidDropletScale;
                 float _HectonVisorFluidLateralStreakStrength;
@@ -44,6 +53,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float _HectonVisorFluidAmbientLight;
                 float _HectonVisorFluidDustStrength;
                 float _HectonVisorFluidAmbientDustResponse;
+                float _HectonVisorFluidVisualOverkill;
             CBUFFER_END
 
             TEXTURE2D_X(_BlitTexture);
@@ -193,6 +203,26 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 return saturate((specks * (0.32 + edgeMask * 0.68) + scratch * 0.35) * centerProtection);
             }
 
+            float ComputeSaltCrystalMask(float2 uv, float wetness, float inverseDirtRefraction, float depthRefractionMask, float lowTierMode)
+            {
+                float overkill = saturate(_HectonVisorFluidVisualOverkill);
+                float crystalDrive = saturate(overkill * wetness * inverseDirtRefraction * depthRefractionMask * (1.0 - lowTierMode));
+                if (crystalDrive <= 0.0001)
+                    return 0.0;
+
+                float2 crystalGrid = uv * lerp(92.0, 176.0, overkill);
+                float2 cell = floor(crystalGrid);
+                float2 crystalLocal = frac(crystalGrid) - 0.5;
+                float seed = Hash21(cell + floor(_Time.y * 0.03125));
+                float2 axis = float2(seed - 0.5, Hash21(cell + 19.17) - 0.5);
+                axis *= rcp(max(0.001, abs(axis.x) + abs(axis.y)));
+                float ridge = 1.0 - smoothstep(0.011, 0.052, abs(dot(crystalLocal, axis)));
+                float branch = 1.0 - smoothstep(0.012, 0.064, abs(dot(crystalLocal, axis.yx * float2(-1.0, 1.0))));
+                float growth = saturate(frac(_Time.y * 0.047 + seed) * 1.7 - 0.34);
+                float active = step(0.88 - overkill * 0.08, seed);
+                return saturate((ridge * 0.78 + ridge * branch * 0.42) * active * growth * crystalDrive);
+            }
+
             float2 ComputeRefractionOffset(float2 uv, float mask, float wetness, float hullStress)
             {
                 float2 flowDirection = float2(
@@ -287,6 +317,14 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float fluidActivity = saturate(max(wetness, hullStress) * intensity * (1.0 - thermalMotionCull));
                 float rainIntensity = saturate(_RainIntensity);
                 float lightningFlash = saturate(_HectonLightningFlash);
+                float rawSceneDepth = SampleSceneDepth(screenUV);
+#if UNITY_REVERSED_Z
+                float sceneDepthValid = step(0.0001, rawSceneDepth);
+#else
+                float sceneDepthValid = step(rawSceneDepth, 0.9999);
+#endif
+                float linearSceneDepth = LinearEyeDepth(rawSceneDepth, _ZBufferParams);
+                float depthRefractionMask = sceneDepthValid * smoothstep(0.12, max(0.13, _HectonVisorFluidDepthSoftness + 0.12), linearSceneDepth);
 
                 [branch]
                 if (fluidActivity <= 0.001 &&
@@ -308,7 +346,6 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                         -1.0 - abs(_HectonVisorFluidLocalVelocity.z) * _HectonVisorFluidForwardStretchStrength);
                     float dropletMask = ComputeDropletMask(screenUV, flowDirection, wetness, hullStress);
                     combinedMask = saturate(dropletMask * edgeMask * intensity * (1.0 - thermalMotionCull));
-                    refractedUV = saturate(screenUV + ComputeRefractionOffset(screenUV, combinedMask, wetness, hullStress));
                 }
 
                 [branch]
@@ -319,7 +356,46 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     dustMask = ComputeDustMask(screenUV, edgeMask, dustReveal);
                 }
 
-                half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, refractedUV);
+                float2 refractionOffset = float2(0.0, 0.0);
+                float inverseDirtRefraction = HectonInverseDirtMask(dustMask + combinedMask * 0.15);
+                float lowTierMode = max(step(0.5, _HectonVisorFluidLowTier), step(0.5, _HectonVisorFluidHomeostasisFallback));
+                [branch]
+                if (combinedMask > 0.0001 && lowTierMode < 0.5)
+                {
+                    float2 baseOffset = ComputeRefractionOffset(screenUV, combinedMask, wetness, hullStress);
+                    float2 offsetAbs = abs(baseOffset);
+                    float offsetMagnitude = max(offsetAbs.x, offsetAbs.y) + min(offsetAbs.x, offsetAbs.y) * 0.375;
+                    float2 offsetNormal = baseOffset * rcp(max(0.0001, offsetMagnitude));
+                    float snellStrength = _HectonVisorFluidSnellStrength * (0.65 + wetness * 0.25 + hullStress * 0.25);
+                    refractionOffset = baseOffset + HectonSnellUvOffset(
+                        offsetNormal,
+                        0.72,
+                        _HectonWaterDensitySignal,
+                        _HectonVisorFluidIorLut,
+                        snellStrength,
+                        depthRefractionMask,
+                        inverseDirtRefraction);
+                    refractionOffset = HectonClampUvOffset(refractionOffset, 0.1);
+                    refractedUV = saturate(screenUV + refractionOffset * depthRefractionMask * inverseDirtRefraction);
+                }
+
+                half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, screenUV);
+                [branch]
+                if (combinedMask > 0.0001 && lowTierMode < 0.5)
+                {
+                    half3 refractedColor = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV).rgb;
+                    color.rgb = lerp(color.rgb, refractedColor, (half)saturate(combinedMask * 0.82));
+                }
+                [branch]
+                if ((combinedMask > 0.0001 || hullStress > 0.001) && lowTierMode > 0.5)
+                {
+                    float chromaDrive = saturate((combinedMask + hullStress * 0.35) * depthRefractionMask * inverseDirtRefraction);
+                    float2 chromaOffset = HectonClampUvOffset(float2(0.0012 + hullStress * 0.0022, 0.0) * chromaDrive, 0.004);
+                    half red = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV + chromaOffset)).r;
+                    half blue = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV - chromaOffset)).b;
+                    color.r = lerp(color.r, red, (half)chromaDrive);
+                    color.b = lerp(color.b, blue, (half)chromaDrive);
+                }
                 [branch]
                 if (glitchAmount > 0.001)
                 {
@@ -339,6 +415,13 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 {
                     half sheen = (half)saturate(combinedMask * (0.08 + wetness * 0.06 + hullStress * 0.05));
                     color.rgb = max(color.rgb, color.rgb + sheen * half3(0.018, 0.025, 0.03));
+                }
+                float crystalMask = ComputeSaltCrystalMask(screenUV, wetness, inverseDirtRefraction, depthRefractionMask, lowTierMode);
+                [branch]
+                if (crystalMask > 0.0001)
+                {
+                    half3 crystalTint = half3(0.13h, 0.17h, 0.18h);
+                    color.rgb += crystalTint * (half)crystalMask;
                 }
                 [branch]
                 if (dustMask > 0.0001)

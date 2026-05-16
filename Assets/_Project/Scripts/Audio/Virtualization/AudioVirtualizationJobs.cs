@@ -1,8 +1,10 @@
 using Hecton8.Audio.Propagation;
+using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using AcousticAup = Hecton8.Core.Contracts.AcousticAup;
 
 namespace Hecton8.Audio.Virtualization
 {

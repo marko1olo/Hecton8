@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.Physics;
@@ -1923,10 +1923,6 @@ namespace NASAPunk.Visor
             float effectiveScale = Mathf.Clamp01(_renderScale);
             if (!_enableAdaptiveRuntimeRTScaling || !Application.isPlaying)
                 return QuantizeAdaptiveScale(Mathf.Clamp(effectiveScale, 0.1f, 1f));
-
-            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
-            if (scaler != null && scaler.Enabled)
-                effectiveScale *= Mathf.Clamp01(scaler.CurrentRenderScale);
 
             VRAMMonitor vramMonitor = Hecton8.Core.GlobalRegistry.VRAMMonitor;
             if (vramMonitor != null)

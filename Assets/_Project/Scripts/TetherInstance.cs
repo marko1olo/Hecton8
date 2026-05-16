@@ -1,7 +1,8 @@
 using System.IO;
 using Hecton8.Caves;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Memory;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Collections;
@@ -45,17 +46,34 @@ namespace Hecton8.Physics
         private const float VerletMidVelocityDamping = 0.975f;
         private const float VerletHighVelocityDamping = 0.985f;
         private const int VerletTelemetryCapacity = 300;
+        private const int DataVaultMaxTetherSlots = 8;
+        private const int DataVaultCableSegmentCount = 10;
+        private const int DataVaultCablePointCount = DataVaultCableSegmentCount + 1;
+        private const int DataVaultCablePointCapacity = DataVaultMaxTetherSlots * DataVaultCablePointCount;
+        private const int DataVaultCableSegmentCapacity = DataVaultMaxTetherSlots * DataVaultCableSegmentCount;
         private const float VerletFloorY = -5000f;
         private const float VerletNodeRadius = 0.035f;
+        private const float MaxCableVelocity = 24f;
+        private const float LowTierTautLineVisualThreshold01 = 0.86f;
+        private const float ReactiveVfxThreshold01 = 0.9f;
         private const float TensionCreakSafeMargin01 = 0.68f;
         private const int TensionCreakCooldownFrames = 12;
         private const int TowLoadLimitCommandCooldownFrames = 3;
         private const uint TetherCreakMaterialHash = 0x54455448u;
+        private const uint TetherSnapImpactMaterialHash = 0x54534E50u;
+        private const int DataVaultFlagPositions = 1 << 0;
+        private const int DataVaultFlagPreviousPositions = 1 << 1;
+        private const int DataVaultFlagVelocities = 1 << 2;
+        private const int DataVaultFlagMasses = 1 << 3;
+        private const int DataVaultFlagSegmentTensions = 1 << 4;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private const string TetherTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_PHYSICS_TETHERS.bin";
+        private const string TetherTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_VERLET_TOW_WINCH.bin";
         private const ulong TetherTelemetryDumpMagic = 0x00384E4F54434548ul;
         private const int TetherTelemetryDumpEntrySize = 64;
 #endif
+
+        // COLD ALLOC: bool[8] — DataVault slot reservations for concurrent tether instances — owner: TetherInstance
+        private static readonly bool[] _dataVaultSlotReservations = new bool[DataVaultMaxTetherSlots];
 
         // COLD ALLOC: Vector3[4] — virtual bend point corner cache for this tether instance — owner: TetherInstance
         private readonly Vector3[] _bendPoints = new Vector3[MaxSupportedBendPoints];
@@ -179,6 +197,7 @@ namespace Hecton8.Physics
         private NativeArray<float> _visualSegmentLengths;
         private NativeArray<float3> _verletPositions;
         private NativeArray<float3> _verletPreviousPositions;
+        private NativeArray<float3> _verletVelocities;
         private NativeArray<float3> _verletPinnedPositions;
         private NativeArray<byte> _verletPinnedMask;
         private NativeArray<float> _verletSegmentRestLengths;
@@ -190,8 +209,18 @@ namespace Hecton8.Physics
         private NativeArray<byte> _verletNodeFaultFlags;
         private NativeArray<TetherVerletTelemetryEntry> _verletTelemetryRing;
         private NativeArray<int> _verletTelemetryHead;
+        private NativeArray<float3> _dataVaultCablePositions;
+        private NativeArray<float3> _dataVaultCablePreviousPositions;
+        private NativeArray<float3> _dataVaultCableVelocities;
+        private NativeArray<float> _dataVaultCableMasses;
+        private NativeArray<float> _dataVaultCableSegmentTensions;
+        private IDataVault _dataVault;
+        private int _dataVaultSlot = -1;
+        private int _dataVaultNativeStateMask;
+        private bool _dataVaultCableStateReady;
         private bool _verletRuntimeInitialized;
         private int _verletNodeCount;
+        private float3 _verletSolverOrigin;
         private int _lastVerletIterationCount;
         private float _lastVerletPeakDelta;
         private int _lastTensionCreakFrame = -TensionCreakCooldownFrames;
@@ -200,6 +229,13 @@ namespace Hecton8.Physics
         private bool _verletFaultDumpedThisActivation;
 #endif
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticTetherSlotState()
+        {
+            for (int i = 0; i < _dataVaultSlotReservations.Length; i++)
+                _dataVaultSlotReservations[i] = false;
+        }
+
         /// <summary>GPU source buffer consumed by the procedural line-strip draw.</summary>
         public GraphicsBuffer VisualSegmentBuffer { get; private set; }
 
@@ -207,13 +243,13 @@ namespace Hecton8.Physics
         public GraphicsBuffer VisualSegmentTensionBuffer { get; private set; }
 
         /// <summary>Current number of visual points owned by the line-strip buffer.</summary>
-        public int VisualPointCount => _isActive && _verletPositions.IsCreated ? _verletPositions.Length : (_visualSegmentPositions.IsCreated ? _visualSegmentPositions.Length : 0);
+        public int VisualPointCount => _isActive && _visualSegmentPositions.IsCreated ? _visualSegmentPositions.Length : (_verletPositions.IsCreated ? _verletPositions.Length : 0);
 
         /// <summary>Whether the visual staging and render buffers are ready for use.</summary>
         public bool IsVisualReady => _isActive && VisualSegmentBuffer != null && VisualSegmentTensionBuffer != null && VisualPointCount > 1;
 
         /// <summary>CPU staging buffer used by the LateUpdate visual upload path.</summary>
-        public NativeArray<float3> VisualSegmentPositions => _verletPositions.IsCreated ? _verletPositions : _visualSegmentPositions;
+        public NativeArray<float3> VisualSegmentPositions => _visualSegmentPositions.IsCreated ? _visualSegmentPositions : _verletPositions;
 
         /// <summary>Active payload rigidbody resolved by this tether.</summary>
         internal Rigidbody PayloadBody => _payloadBody;
@@ -308,6 +344,7 @@ namespace Hecton8.Physics
 #endif
             ClearBendMetadata(0);
             EnsureVisualBuffers(_visualSegmentCount);
+            EnsureDataVaultCableState();
             InitializeVerletRuntime(
                 owner != null ? owner.ResolveTowAnchorPosition() : Vector3.zero,
                 _payloadBody != null ? _payloadBody.worldCenterOfMass : Vector3.zero);
@@ -555,6 +592,8 @@ namespace Hecton8.Physics
         {
             GlobalPhysicsStateManager.UnregisterTetherConnection(this);
             ReleasePrimaryConstraint();
+            ClearDataVaultCableEntry();
+            ReleaseDataVaultSlot();
             _isActive = false;
             _owner = null;
             _playerMotor = null;
@@ -621,6 +660,7 @@ namespace Hecton8.Physics
             _kinematicAnchorCompensationEnabled = false;
             _verletRuntimeInitialized = false;
             _verletNodeCount = 0;
+            _verletSolverOrigin = float3.zero;
             _lastVerletIterationCount = 0;
             _lastVerletPeakDelta = 0f;
             _lastTensionCreakFrame = -TensionCreakCooldownFrames;
@@ -654,6 +694,7 @@ namespace Hecton8.Physics
             DisposeNativeArray(ref _visualSegmentLengths);
             DisposeNativeArray(ref _verletPositions);
             DisposeNativeArray(ref _verletPreviousPositions);
+            DisposeNativeArray(ref _verletVelocities);
             DisposeNativeArray(ref _verletPinnedPositions);
             DisposeNativeArray(ref _verletPinnedMask);
             DisposeNativeArray(ref _verletSegmentRestLengths);
@@ -665,8 +706,10 @@ namespace Hecton8.Physics
             DisposeNativeArray(ref _verletNodeFaultFlags);
             DisposeNativeArray(ref _verletTelemetryRing);
             DisposeNativeArray(ref _verletTelemetryHead);
+            DisposeDataVaultCableState();
             _verletRuntimeInitialized = false;
             _verletNodeCount = 0;
+            _verletSolverOrigin = float3.zero;
         }
 
         private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
@@ -680,8 +723,7 @@ namespace Hecton8.Physics
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            H8Memory.Release(ref array, SystemID.Physics);
         }
 
         private void OnDestroy()
@@ -703,22 +745,25 @@ namespace Hecton8.Physics
             if (!_visualSegmentPositions.IsCreated)
             {
                 // COLD ALLOC: NativeArray<float3>[pointCount] — persistent visual staging path for tether line rendering — owner: TetherInstance
-                _visualSegmentPositions = new NativeArray<float3>(pointCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                RegisterNativeArray(_visualSegmentPositions, nameof(_visualSegmentPositions));
+                _visualSegmentPositions = H8Memory.Allocate<float3>(pointCount, SystemID.Physics, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                if (_visualSegmentPositions.IsCreated)
+                    RegisterNativeArray(_visualSegmentPositions, nameof(_visualSegmentPositions));
             }
 
             if (!_visualAnchorPositions.IsCreated)
             {
                 // COLD ALLOC: NativeArray<float3>[6] — burst visual-anchor staging path for tether catenary generation — owner: TetherInstance
-                _visualAnchorPositions = new NativeArray<float3>(MaxAnchors, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                RegisterNativeArray(_visualAnchorPositions, nameof(_visualAnchorPositions));
+                _visualAnchorPositions = H8Memory.Allocate<float3>(MaxAnchors, SystemID.Physics, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                if (_visualAnchorPositions.IsCreated)
+                    RegisterNativeArray(_visualAnchorPositions, nameof(_visualAnchorPositions));
             }
 
             if (!_visualSegmentLengths.IsCreated)
             {
                 // COLD ALLOC: NativeArray<float>[5] — burst visual segment-length staging path for tether catenary generation — owner: TetherInstance
-                _visualSegmentLengths = new NativeArray<float>(MaxSegments, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                RegisterNativeArray(_visualSegmentLengths, nameof(_visualSegmentLengths));
+                _visualSegmentLengths = H8Memory.Allocate<float>(MaxSegments, SystemID.Physics, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                if (_visualSegmentLengths.IsCreated)
+                    RegisterNativeArray(_visualSegmentLengths, nameof(_visualSegmentLengths));
             }
 
             if (VisualSegmentBuffer != null && VisualSegmentBuffer.count != pointCount)
@@ -757,6 +802,7 @@ namespace Hecton8.Physics
             int segmentCount = nodeCount - 1;
             EnsureNativeArray(ref _verletPositions, nodeCount, nameof(_verletPositions));
             EnsureNativeArray(ref _verletPreviousPositions, nodeCount, nameof(_verletPreviousPositions));
+            EnsureNativeArray(ref _verletVelocities, nodeCount, nameof(_verletVelocities));
             EnsureNativeArray(ref _verletPinnedPositions, nodeCount, nameof(_verletPinnedPositions));
             EnsureNativeArray(ref _verletPinnedMask, nodeCount, nameof(_verletPinnedMask));
             EnsureNativeArray(ref _verletCorrections, nodeCount, nameof(_verletCorrections));
@@ -780,8 +826,9 @@ namespace Hecton8.Physics
                 return;
 
             DisposeNativeArray(ref array);
-            array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RegisterNativeArray(array, label);
+            array = H8Memory.Allocate<T>(length, SystemID.Physics, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            if (array.IsCreated)
+                RegisterNativeArray(array, label);
         }
 
         private void InitializeVerletRuntime(Vector3 anchorPosition, Vector3 payloadPosition)
@@ -791,14 +838,18 @@ namespace Hecton8.Physics
 
             float3 anchor = new float3(anchorPosition.x, anchorPosition.y, anchorPosition.z);
             float3 payload = new float3(payloadPosition.x, payloadPosition.y, payloadPosition.z);
+            _verletSolverOrigin = SanitizeFinite(anchor);
+            float3 localPayload = SanitizeFinite(payload - _verletSolverOrigin);
             int nodeCount = _verletPositions.Length;
             float invLast = math.rcp(math.max(1, nodeCount - 1));
             for (int i = 0; i < nodeCount; i++)
             {
                 float t = i * invLast;
-                float3 position = math.lerp(anchor, payload, t);
+                float3 position = math.lerp(float3.zero, localPayload, t);
                 _verletPositions[i] = position;
                 _verletPreviousPositions[i] = position;
+                if (_verletVelocities.IsCreated && i < _verletVelocities.Length)
+                    _verletVelocities[i] = float3.zero;
                 _verletPinnedPositions[i] = position;
                 _verletPinnedMask[i] = (byte)((i == 0 || i == nodeCount - 1) ? 1 : 0);
                 _verletNodeFaultFlags[i] = 0;
@@ -815,6 +866,283 @@ namespace Hecton8.Physics
             _verletSolverFlags[0] = TetherVerletFaultFlags.None;
             _verletTelemetryHead[0] = 0;
             _verletRuntimeInitialized = true;
+        }
+
+        private void RebaseVerletSolverOrigin(float3 nextOrigin)
+        {
+            if (!math.all(math.isfinite(nextOrigin)))
+                return;
+
+            if (!_verletRuntimeInitialized)
+            {
+                _verletSolverOrigin = nextOrigin;
+                return;
+            }
+
+            float3 offset = _verletSolverOrigin - nextOrigin;
+            _verletSolverOrigin = nextOrigin;
+            if (math.lengthsq(offset) <= MinVectorMagnitudeSq)
+                return;
+
+            for (int i = 0; i < _verletPositions.Length; i++)
+            {
+                _verletPositions[i] = SanitizeFinite(_verletPositions[i] + offset);
+                if (i < _verletPreviousPositions.Length)
+                    _verletPreviousPositions[i] = SanitizeFinite(_verletPreviousPositions[i] + offset);
+                if (i < _verletPinnedPositions.Length)
+                    _verletPinnedPositions[i] = SanitizeFinite(_verletPinnedPositions[i] + offset);
+            }
+        }
+
+        private void EnsureDataVaultCableState()
+        {
+            if (_dataVaultCableStateReady && _dataVaultSlot >= 0)
+                return;
+
+            if (_dataVaultSlot < 0 && !TryAcquireDataVaultSlot())
+                return;
+
+            _dataVault = GlobalRegistry.DataVault;
+            bool positionsReady = EnsureDataVaultCableArray(
+                ref _dataVaultCablePositions,
+                BufferID.TetherCablePositions,
+                DataVaultCablePointCapacity,
+                nameof(_dataVaultCablePositions),
+                DataVaultFlagPositions);
+            bool previousReady = EnsureDataVaultCableArray(
+                ref _dataVaultCablePreviousPositions,
+                BufferID.TetherCablePreviousPositions,
+                DataVaultCablePointCapacity,
+                nameof(_dataVaultCablePreviousPositions),
+                DataVaultFlagPreviousPositions);
+            bool velocitiesReady = EnsureDataVaultCableArray(
+                ref _dataVaultCableVelocities,
+                BufferID.TetherCableVelocities,
+                DataVaultCablePointCapacity,
+                nameof(_dataVaultCableVelocities),
+                DataVaultFlagVelocities);
+            bool massesReady = EnsureDataVaultCableArray(
+                ref _dataVaultCableMasses,
+                BufferID.TetherCableMasses,
+                DataVaultCablePointCapacity,
+                nameof(_dataVaultCableMasses),
+                DataVaultFlagMasses);
+            bool tensionReady = EnsureDataVaultCableArray(
+                ref _dataVaultCableSegmentTensions,
+                BufferID.TetherCableSegmentTensions,
+                DataVaultCableSegmentCapacity,
+                nameof(_dataVaultCableSegmentTensions),
+                DataVaultFlagSegmentTensions);
+
+            _dataVaultCableStateReady = positionsReady &&
+                                        previousReady &&
+                                        velocitiesReady &&
+                                        massesReady &&
+                                        tensionReady;
+        }
+
+        private bool EnsureDataVaultCableArray<T>(
+            ref NativeArray<T> array,
+            BufferID bufferId,
+            int length,
+            string label,
+            int vaultFlag)
+            where T : struct
+        {
+            if (length <= 0)
+                return false;
+
+            if (array.IsCreated && array.Length >= length)
+                return true;
+
+            DisposeDataVaultCableArray(ref array, vaultFlag);
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                NativeArray<T> vaultArray = vault.GetBuffer<T>(
+                    bufferId,
+                    length,
+                    SystemID.Physics,
+                    NativeArrayOptions.ClearMemory);
+                if (vaultArray.IsCreated && vaultArray.Length >= length)
+                {
+                    _dataVaultNativeStateMask |= vaultFlag;
+                    array = vaultArray;
+                    return true;
+                }
+            }
+
+            _dataVaultNativeStateMask &= ~vaultFlag;
+            return false;
+        }
+
+        private void DisposeDataVaultCableState()
+        {
+            ClearDataVaultCableEntry();
+            ReleaseDataVaultSlot();
+            DisposeDataVaultCableArray(ref _dataVaultCablePositions, DataVaultFlagPositions);
+            DisposeDataVaultCableArray(ref _dataVaultCablePreviousPositions, DataVaultFlagPreviousPositions);
+            DisposeDataVaultCableArray(ref _dataVaultCableVelocities, DataVaultFlagVelocities);
+            DisposeDataVaultCableArray(ref _dataVaultCableMasses, DataVaultFlagMasses);
+            DisposeDataVaultCableArray(ref _dataVaultCableSegmentTensions, DataVaultFlagSegmentTensions);
+            _dataVault = null;
+            _dataVaultCableStateReady = false;
+        }
+
+        private void DisposeDataVaultCableArray<T>(ref NativeArray<T> array, int vaultFlag)
+            where T : struct
+        {
+            if (!array.IsCreated)
+            {
+                _dataVaultNativeStateMask &= ~vaultFlag;
+                return;
+            }
+
+            if ((_dataVaultNativeStateMask & vaultFlag) != 0)
+            {
+                array = default;
+                _dataVaultNativeStateMask &= ~vaultFlag;
+                return;
+            }
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            H8Memory.Release(ref array, SystemID.Physics);
+            _dataVaultNativeStateMask &= ~vaultFlag;
+        }
+
+        private bool TryAcquireDataVaultSlot()
+        {
+            for (int i = 0; i < _dataVaultSlotReservations.Length; i++)
+            {
+                if (_dataVaultSlotReservations[i])
+                    continue;
+
+                _dataVaultSlotReservations[i] = true;
+                _dataVaultSlot = i;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ReleaseDataVaultSlot()
+        {
+            if (_dataVaultSlot >= 0 && _dataVaultSlot < _dataVaultSlotReservations.Length)
+                _dataVaultSlotReservations[_dataVaultSlot] = false;
+
+            _dataVaultSlot = -1;
+            _dataVaultCableStateReady = false;
+        }
+
+        private void PublishDataVaultCableState(float fixedDeltaTime, float peakTension)
+        {
+            if (!_dataVaultCableStateReady || _dataVaultSlot < 0)
+                EnsureDataVaultCableState();
+
+            if (!_dataVaultCableStateReady || _dataVaultSlot < 0)
+                return;
+
+            int pointOffset = _dataVaultSlot * DataVaultCablePointCount;
+            int segmentOffset = _dataVaultSlot * DataVaultCableSegmentCount;
+            if (pointOffset + DataVaultCablePointCount > _dataVaultCablePositions.Length ||
+                pointOffset + DataVaultCablePointCount > _dataVaultCablePreviousPositions.Length ||
+                pointOffset + DataVaultCablePointCount > _dataVaultCableVelocities.Length ||
+                pointOffset + DataVaultCablePointCount > _dataVaultCableMasses.Length ||
+                segmentOffset + DataVaultCableSegmentCount > _dataVaultCableSegmentTensions.Length)
+            {
+                return;
+            }
+
+            float invDt = math.rcp(math.max(fixedDeltaTime, 0.0001f));
+            float playerMass = _playerRigidbody != null ? math.max(_playerRigidbody.mass, 0.0001f) : 1f;
+            float payloadMass = _payloadBody != null ? math.max(_payloadBody.mass, 0.0001f) : 1f;
+            float internalNodeMass = math.max(_reducedMass, 0.0001f);
+            for (int i = 0; i < DataVaultCablePointCount; i++)
+            {
+                float3 localPosition = SampleCanonicalCablePoint(_verletPositions, i);
+                float3 localPrevious = SampleCanonicalCablePoint(_verletPreviousPositions, i);
+                float3 velocity = ClampCableVelocity((localPosition - localPrevious) * invDt, MaxCableVelocity);
+                int targetIndex = pointOffset + i;
+                _dataVaultCablePositions[targetIndex] = localPosition;
+                _dataVaultCablePreviousPositions[targetIndex] = localPrevious;
+                _dataVaultCableVelocities[targetIndex] = velocity;
+                _dataVaultCableMasses[targetIndex] = i == 0
+                    ? playerMass
+                    : (i == DataVaultCablePointCount - 1 ? payloadMass : internalNodeMass);
+            }
+
+            for (int i = 0; i < DataVaultCableSegmentCount; i++)
+            {
+                float stretch = SampleCanonicalCableTension(i);
+                _dataVaultCableSegmentTensions[segmentOffset + i] = math.max(0f, stretch * math.max(0f, _springStiffness));
+            }
+
+            if (!math.isfinite(peakTension))
+                ClearDataVaultCableEntry();
+        }
+
+        private void ClearDataVaultCableEntry()
+        {
+            if (_dataVaultSlot < 0 ||
+                !_dataVaultCablePositions.IsCreated ||
+                !_dataVaultCablePreviousPositions.IsCreated ||
+                !_dataVaultCableVelocities.IsCreated ||
+                !_dataVaultCableMasses.IsCreated ||
+                !_dataVaultCableSegmentTensions.IsCreated)
+            {
+                return;
+            }
+
+            int pointOffset = _dataVaultSlot * DataVaultCablePointCount;
+            int segmentOffset = _dataVaultSlot * DataVaultCableSegmentCount;
+            if (pointOffset + DataVaultCablePointCount <= _dataVaultCablePositions.Length)
+            {
+                for (int i = 0; i < DataVaultCablePointCount; i++)
+                {
+                    int targetIndex = pointOffset + i;
+                    _dataVaultCablePositions[targetIndex] = float3.zero;
+                    _dataVaultCablePreviousPositions[targetIndex] = float3.zero;
+                    _dataVaultCableVelocities[targetIndex] = float3.zero;
+                    _dataVaultCableMasses[targetIndex] = 0f;
+                }
+            }
+
+            if (segmentOffset + DataVaultCableSegmentCount <= _dataVaultCableSegmentTensions.Length)
+            {
+                for (int i = 0; i < DataVaultCableSegmentCount; i++)
+                    _dataVaultCableSegmentTensions[segmentOffset + i] = 0f;
+            }
+        }
+
+        private float3 SampleCanonicalCablePoint(NativeArray<float3> source, int canonicalIndex)
+        {
+            if (!source.IsCreated || source.Length <= 0)
+                return float3.zero;
+
+            if (source.Length == 1)
+                return SanitizeFinite(source[0]);
+
+            float scaled = canonicalIndex * (source.Length - 1) * math.rcp(DataVaultCablePointCount - 1);
+            int lower = math.clamp((int)math.floor(scaled), 0, source.Length - 1);
+            int upper = math.min(lower + 1, source.Length - 1);
+            float t = math.saturate(scaled - lower);
+            return SanitizeFinite(math.lerp(source[lower], source[upper], t));
+        }
+
+        private float SampleCanonicalCableTension(int canonicalSegmentIndex)
+        {
+            if (!_verletSegmentTensions.IsCreated || _verletSegmentTensions.Length <= 0)
+                return 0f;
+
+            if (_verletSegmentTensions.Length == 1)
+                return math.max(0f, _verletSegmentTensions[0]);
+
+            float scaled = canonicalSegmentIndex * (_verletSegmentTensions.Length - 1) * math.rcp(DataVaultCableSegmentCount - 1);
+            int lower = math.clamp((int)math.floor(scaled), 0, _verletSegmentTensions.Length - 1);
+            int upper = math.min(lower + 1, _verletSegmentTensions.Length - 1);
+            float t = math.saturate(scaled - lower);
+            return math.max(0f, math.lerp(_verletSegmentTensions[lower], _verletSegmentTensions[upper], t));
         }
 
         private float RunVerletSolver(
@@ -834,9 +1162,11 @@ namespace Hecton8.Physics
 
             float3 anchor = new float3(anchorPosition.x, anchorPosition.y, anchorPosition.z);
             float3 payload = new float3(payloadPosition.x, payloadPosition.y, payloadPosition.z);
+            RebaseVerletSolverOrigin(SanitizeFinite(anchor));
+            float3 payloadLocal = SanitizeFinite(payload - _verletSolverOrigin);
             int lastNodeIndex = _verletPositions.Length - 1;
-            _verletPinnedPositions[0] = anchor;
-            _verletPinnedPositions[lastNodeIndex] = payload;
+            _verletPinnedPositions[0] = float3.zero;
+            _verletPinnedPositions[lastNodeIndex] = payloadLocal;
             _verletPinnedMask[0] = 1;
             _verletPinnedMask[lastNodeIndex] = 1;
 
@@ -855,18 +1185,20 @@ namespace Hecton8.Physics
             {
                 Positions = _verletPositions,
                 PreviousPositions = _verletPreviousPositions,
+                Velocities = _verletVelocities,
                 NodeFaultFlags = _verletNodeFaultFlags,
                 PinnedPositions = _verletPinnedPositions,
                 PinnedMask = _verletPinnedMask,
                 Acceleration = gravity + flowAcceleration,
                 DeltaTimeSq = dtSq,
                 VelocityDamping = velocityDamping,
+                MaxCableVelocity = MaxCableVelocity * fixedDeltaTime,
                 FloorY = VerletFloorY,
                 NodeRadius = VerletNodeRadius
             };
 
             integrationJob.Run(_verletPositions.Length);
-            var constraintJob = new TetherVerletJacobiConstraintJob
+            var constraintJob = new VerletCableSolverJob
             {
                 Positions = _verletPositions,
                 Corrections = _verletCorrections,
@@ -884,6 +1216,9 @@ namespace Hecton8.Physics
                 NodeRadius = VerletNodeRadius
             };
             constraintJob.Run();
+            float peakTension = _verletSolverStats.IsCreated && _verletSolverStats.Length > 0
+                ? _verletSolverStats[0] * math.max(0f, _springStiffness)
+                : 0f;
             var telemetryJob = new TetherVerletTelemetryJob
             {
                 TelemetryRing = _verletTelemetryRing,
@@ -893,6 +1228,7 @@ namespace Hecton8.Physics
                 FrameIndex = (uint)Time.frameCount,
                 NodeCount = _verletPositions.Length,
                 IterationCount = iterationCount,
+                PeakCableTension = peakTension,
                 AnchorPosition = anchor,
                 PayloadPosition = payload,
                 Flags = 0u
@@ -904,8 +1240,9 @@ namespace Hecton8.Physics
             if (_verletSolverFlags.IsCreated && _verletSolverFlags.Length > 0 && _verletSolverFlags[0] != TetherVerletFaultFlags.None)
                 DumpVerletTelemetryOnce((uint)_verletSolverFlags[0]);
 #endif
-            float peakTension = _lastVerletPeakDelta * math.max(0f, _springStiffness);
             _primaryConstraintForceMagnitude = peakTension;
+            PublishTetherTensionSignal(anchorPosition, payloadPosition, peakTension);
+            PublishDataVaultCableState(fixedDeltaTime, peakTension);
             ApplyVerletEndpointForces(anchorPosition, payloadPosition, peakTension);
             EmitTensionCreakIfNeeded(anchorPosition, payloadPosition, peakTension);
             return peakTension;
@@ -962,14 +1299,14 @@ namespace Hecton8.Physics
             writer.Write(entry.NodeCount);
             writer.Write(entry.IterationCount);
             writer.Write(entry.PeakConstraintDelta);
+            writer.Write(entry.PeakCableTension);
             WriteFloat3(writer, entry.AnchorPosition);
             WriteFloat3(writer, entry.PayloadPosition);
             writer.Write(entry.Flags);
-            writer.Write(0u);
-            writer.Write(0u);
-            writer.Write(0u);
-            writer.Write(0u);
-            writer.Write(0u);
+            writer.Write(entry.Pad0);
+            writer.Write(entry.Pad1);
+            writer.Write(entry.Pad2);
+            writer.Write(entry.Pad3);
         }
 
         private static void WriteFloat3(BinaryWriter writer, float3 value)
@@ -1041,10 +1378,57 @@ namespace Hecton8.Physics
                 WeightClass = 2,
                 PrimaryMaterialId = 7,
                 SecondaryMaterialId = 0,
-                Flags = 1
+                Flags = (byte)(peakTension >= snapThreshold * ReactiveVfxThreshold01 ? 3 : 1)
             };
             GlobalSignals.Publish(in signal);
             _lastTensionCreakFrame = frame;
+        }
+
+        private void PublishTetherTensionSignal(Vector3 anchorPosition, Vector3 payloadPosition, float peakTension)
+        {
+            if (peakTension <= 0f || !math.isfinite(peakTension))
+                return;
+
+            float snapThreshold = ResolveSnapTensionThreshold();
+            Vector3 direction = ResolveSafeDirection(payloadPosition - anchorPosition, Vector3.zero);
+            float reactiveVfx01 = math.saturate(
+                (peakTension - snapThreshold * ReactiveVfxThreshold01) *
+                math.rcp(math.max(1f, snapThreshold * (1f - ReactiveVfxThreshold01))));
+            TetherTensionSignal signal = new TetherTensionSignal
+            {
+                AnchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition),
+                PayloadAup = AbsoluteUniversePosition.FromRuntimePosition(payloadPosition),
+                DirectionToPayload = ToFloat3(direction),
+                TetherId = unchecked((uint)EntityId.ToULong(GetEntityId())),
+                FrameIndex = (uint)Time.frameCount,
+                TensionForce = peakTension,
+                SnapThreshold = snapThreshold,
+                Tension01 = math.saturate(peakTension * math.rcp(math.max(1f, snapThreshold))),
+                ReactiveVfx01 = reactiveVfx01,
+                NodeCount = (ushort)math.clamp(_verletNodeCount, 0, ushort.MaxValue),
+                Flags = (byte)(reactiveVfx01 > 0f ? 1 : 0),
+                Reserved = 0
+            };
+            TetherSignals.PublishTension(in signal);
+        }
+
+        private void PublishSnapImpactSignal(Vector3 snapPosition, float peakTension, float snapSeverity)
+        {
+            if (!IsFinite(snapPosition))
+                snapPosition = transform.position;
+
+            ImpactSignal signal = new ImpactSignal
+            {
+                PointAup = AbsoluteUniversePosition.FromRuntimePosition(snapPosition),
+                Force = math.max(0f, peakTension),
+                Intensity = math.saturate(snapSeverity),
+                MaterialHash = TetherSnapImpactMaterialHash,
+                WeightClass = 2,
+                PrimaryMaterialId = 7,
+                SecondaryMaterialId = 0,
+                Flags = 2
+            };
+            GlobalSignals.Publish(in signal);
         }
 
         private void ApplyVerletEndpointForces(Vector3 anchorPosition, Vector3 payloadPosition, float peakTension)
@@ -1086,20 +1470,44 @@ namespace Hecton8.Physics
 
         private void UpdateVerletVisualUpload()
         {
-            Vector3 minBounds = new Vector3(_verletPositions[0].x, _verletPositions[0].y, _verletPositions[0].z);
-            Vector3 maxBounds = minBounds;
-            for (int i = 1; i < _verletPositions.Length; i++)
+            if (!_visualSegmentPositions.IsCreated || _visualSegmentPositions.Length != _verletPositions.Length)
+                return;
+
+            bool useStraightLineFake = ShouldUseLowTierTautLineVisualFake();
+            float3 start = _verletPositions[0];
+            float3 end = _verletPositions[_verletPositions.Length - 1];
+            float invLast = math.rcp(math.max(1, _visualSegmentPositions.Length - 1));
+            for (int i = 0; i < _visualSegmentPositions.Length; i++)
             {
-                float3 point = _verletPositions[i];
+                float3 localPoint = useStraightLineFake
+                    ? math.lerp(start, end, i * invLast)
+                    : _verletPositions[i];
+                _visualSegmentPositions[i] = SanitizeFinite(localPoint + _verletSolverOrigin);
+            }
+
+            Vector3 minBounds = new Vector3(_visualSegmentPositions[0].x, _visualSegmentPositions[0].y, _visualSegmentPositions[0].z);
+            Vector3 maxBounds = minBounds;
+            for (int i = 1; i < _visualSegmentPositions.Length; i++)
+            {
+                float3 point = _visualSegmentPositions[i];
                 Vector3 pointV3 = new Vector3(point.x, point.y, point.z);
                 minBounds = Vector3.Min(minBounds, pointV3);
                 maxBounds = Vector3.Max(maxBounds, pointV3);
             }
 
             _visualBounds.SetMinMax(minBounds, maxBounds);
-            GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentBuffer, _verletPositions, _verletPositions.Length);
+            GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentBuffer, _visualSegmentPositions, _visualSegmentPositions.Length);
             if (VisualSegmentTensionBuffer != null)
                 GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentTensionBuffer, _verletSegmentTensions, _verletSegmentTensions.Length);
+        }
+
+        private bool ShouldUseLowTierTautLineVisualFake()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            bool lowTier = tier == HectonQualityTier.Unknown ||
+                           tier == HectonQualityTier.Low ||
+                           tier == HectonQualityTier.Mx350;
+            return lowTier && math.max(_tension01, _stress01) >= LowTierTautLineVisualThreshold01;
         }
 
         private static int ResolveVerletIterationCount()
@@ -1608,6 +2016,8 @@ namespace Hecton8.Physics
                 ? ResolveSafeDirection(_bendPoints[_bendPointCount - 1] - _payloadBody.worldCenterOfMass, Vector3.zero)
                 : ResolveSafeDirection(ownerAnchor - _payloadBody.worldCenterOfMass, Vector3.zero);
             float snapSeverity = math.saturate(peakTension * math.rcp(math.max(snapThreshold, 1f)));
+            ClearDataVaultCableEntry();
+            PublishSnapImpactSignal(ownerAnchor, peakTension, snapSeverity);
             PublishTetherSnappedSignal(ownerAnchor, peakTension, snapThreshold, snapSeverity, 1);
             InvokeSnapProtocol(playerSegmentDirection, payloadSegmentDirection, snapSeverity, false);
             return true;
@@ -1862,14 +2272,14 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            var shiftJob = new TetherVerletOriginShiftJob
+            _verletSolverOrigin -= shiftOffset;
+
+            if (_visualSegmentPositions.IsCreated)
             {
-                Positions = _verletPositions,
-                PreviousPositions = _verletPreviousPositions,
-                PinnedPositions = _verletPinnedPositions,
-                ShiftOffset = shiftOffset
-            };
-            shiftJob.Run(_verletPositions.Length);
+                for (int pointIndex = 0; pointIndex < _visualSegmentPositions.Length; pointIndex++)
+                    _visualSegmentPositions[pointIndex] = _visualSegmentPositions[pointIndex] - shiftOffset;
+            }
+
             return true;
         }
 
@@ -1923,14 +2333,11 @@ namespace Hecton8.Physics
             if (VisualSegmentBuffer == null)
                 return;
 
-            if (_verletPositions.IsCreated)
+            if (_visualSegmentPositions.IsCreated)
             {
-                GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentBuffer, _verletPositions, _verletPositions.Length);
+                GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentBuffer, _visualSegmentPositions, _visualSegmentPositions.Length);
                 return;
             }
-
-            if (_visualSegmentPositions.IsCreated)
-                GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentBuffer, _visualSegmentPositions, _visualSegmentPositions.Length);
         }
 
         internal void RetargetAnchorEndpoint(HectonPlayerMotor playerMotor, Rigidbody anchorBody)
@@ -2235,6 +2642,25 @@ namespace Hecton8.Physics
         {
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3));
+        }
+
+        private static float3 SanitizeFinite(float3 value)
+        {
+            return math.all(math.isfinite(value)) ? value : float3.zero;
+        }
+
+        private static float3 ClampCableVelocity(float3 value, float maxVelocity)
+        {
+            if (!math.all(math.isfinite(value)))
+                return float3.zero;
+
+            float safeMaxVelocity = math.max(0f, maxVelocity);
+            float lengthSq = math.lengthsq(value);
+            float maxSq = safeMaxVelocity * safeMaxVelocity;
+            if (safeMaxVelocity > 0f && lengthSq > maxSq)
+                return value * (safeMaxVelocity * math.rsqrt(math.max(lengthSq, 0.000001f)));
+
+            return value;
         }
 
         private static float3 ToFloat3(Vector3 value)

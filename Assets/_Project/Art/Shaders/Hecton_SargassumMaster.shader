@@ -115,6 +115,10 @@ Shader "Hecton8/Flora/SargassumMaster"
             half _HectonOceanBiolumStrength;
             float4 _BiolumMasterPhase;
             float4 _BiolumIntensity;
+            float4 _GlobalBiolumStates[16];
+            float4 _GlobalBiolumParams;
+            float4 _GlobalBiolumClock;
+            float4 _GlobalBiolumAupOffset;
             float _HectonTimeOfDay01;
             float _HectonNightFactor;
             float _SargassumBiolumPhaseMultiplier;
@@ -275,6 +279,21 @@ Shader "Hecton8/Flora/SargassumMaster"
                 return saturate(coarse * 0.46 + fine * 0.34 + wave * 0.20);
             }
 
+            half4 ResolveSargassumGlobalBiolum(float3 positionWS)
+            {
+                int activeCount = min(max((int)_GlobalBiolumParams.x, 0), 16);
+                if (activeCount <= 0)
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+                float selector = frac(abs(positionWS.x * 0.041 + positionWS.z * 0.033 + _GlobalBiolumAupOffset.x * 0.0017 + _GlobalBiolumAupOffset.z * 0.0013));
+                int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
+                float4 state = _GlobalBiolumStates[stateIndex];
+                half strobe = saturate((half)_GlobalBiolumParams.z);
+                half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
+                half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
+                return half4(color, intensity);
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -368,7 +387,10 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half nightFactor = saturate(_HectonNightFactor * _BiolumNightResponse);
                 half oceanBiolumInfluence = saturate(_HectonOceanBiolumStrength);
                 half3 biolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanBiolumInfluence * 0.65h);
-                half masterBiolum = max((half)_BiolumIntensity.x, 0.0h);
+                half4 globalBiolumState = ResolveSargassumGlobalBiolum(input.positionWS);
+                half globalBiolumMask = step(0.001h, globalBiolumState.w);
+                biolumColor = lerp(biolumColor, globalBiolumState.rgb, globalBiolumMask);
+                half masterBiolum = max(max((half)_BiolumIntensity.x, 0.0h), globalBiolumState.w);
                 half3 biolum = biolumColor * (_BiolumStrength * masterBiolum * (1.0h + oceanBiolumInfluence * 0.7h) * bubbleBiolumMask * biolumPulse * timeBand * nightFactor);
                 half signalPhase = dot(input.positionWS.xz, half2(_NoirSignalFlickerScale, _NoirSignalFlickerScale * 1.37h)) + _Time.y * 2.1h + input.color.b * 3.3h;
                 half signalWave = 1.0h - abs(frac(signalPhase * 0.15915494h) * 2.0h - 1.0h);

@@ -1748,8 +1748,6 @@ namespace Hecton8.Core.Generated
             public const uint CrushWarningSignalHash = 1551947084u;
             public const string CullingOverloadSignalId = "CullingOverloadSignal";
             public const uint CullingOverloadSignalHash = 462179145u;
-            public const string DamageSignalId = "DamageSignal";
-            public const uint DamageSignalHash = 562594516u;
             public const string DataReloadSignalId = "DataReloadSignal";
             public const uint DataReloadSignalHash = 3042402488u;
             public const string DebrisSpawnSignalId = "DebrisSpawnSignal";

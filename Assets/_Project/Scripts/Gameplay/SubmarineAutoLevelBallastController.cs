@@ -1,9 +1,10 @@
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using Hecton8.Physics.Determinism;
 using Hecton8.World;
@@ -33,44 +34,49 @@ namespace Hecton8.Gameplay
         IScalabilityChangedEventListener,
         ISubmarineState
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct PidJobOutput
         {
-            public float3 TorqueWorld;
-            public float3 MaelstromAcceleration;
-            public float3 Integral;
-            public float3 Error;
-            public float3 Derivative;
-            public float IntegralWindup;
-            public uint Flags;
+            [FieldOffset(0)] public float3 TorqueWorld;
+            [FieldOffset(12)] public float3 MaelstromAcceleration;
+            [FieldOffset(24)] public float3 Integral;
+            [FieldOffset(36)] public float3 Error;
+            [FieldOffset(48)] public float3 Derivative;
+            [FieldOffset(60)] public float IntegralWindup;
+            [FieldOffset(64)] public uint Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 128)]
         private struct SubmarinePidTelemetryEntry
         {
-            public int Frame;
-            public uint StateHash;
-            public uint Flags;
-            public float IntegralWindup;
-            public float3 RuntimePosition;
-            public float3 LinearVelocity;
-            public float3 AngularVelocity;
-            public float3 CenterOfMassLocal;
-            public float3 DynamicFloodComOffsetLocal;
-            public float BallastWaterMassKg;
-            public float DynamicFloodWaterMassKg;
-            public float DynamicFloodAngularDragMultiplier;
-            public byte CriticalFloodActive;
+            [FieldOffset(0)] public int Frame;
+            [FieldOffset(4)] public uint StateHash;
+            [FieldOffset(8)] public uint Flags;
+            [FieldOffset(12)] public float IntegralWindup;
+            [FieldOffset(16)] public float SystemStress01;
+            [FieldOffset(20)] public float3 RuntimePosition;
+            [FieldOffset(32)] public float3 LinearVelocity;
+            [FieldOffset(44)] public float3 AngularVelocity;
+            [FieldOffset(56)] public float3 CenterOfMassLocal;
+            [FieldOffset(68)] public float3 DynamicFloodComOffsetLocal;
+            [FieldOffset(80)] public float3 DynamicFloodInertiaTensorMultiplier;
+            [FieldOffset(92)] public float3 PidError;
+            [FieldOffset(104)] public float BallastWaterMassKg;
+            [FieldOffset(108)] public float DynamicFloodWaterMassKg;
+            [FieldOffset(112)] public float DynamicFloodAngularDragMultiplier;
+            [FieldOffset(116)] public byte CriticalFloodActive;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct DynamicFloodMassOutput
         {
-            public float3 DynamicCenterOfMassLocal;
-            public float3 DynamicCenterOfMassOffsetLocal;
-            public float TotalWaterMassKg;
-            public float AngularDragMultiplier;
-            public uint Flags;
+            [FieldOffset(0)] public float3 DynamicCenterOfMassLocal;
+            [FieldOffset(12)] public float3 DynamicCenterOfMassOffsetLocal;
+            [FieldOffset(24)] public float3 InertiaTensorMultiplier;
+            [FieldOffset(40)] public double3 GlobalPivotAnchor;
+            [FieldOffset(64)] public float TotalWaterMassKg;
+            [FieldOffset(68)] public float AngularDragMultiplier;
+            [FieldOffset(72)] public uint Flags;
         }
 
         [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -87,6 +93,7 @@ namespace Hecton8.Gameplay
             public float IntegralClamp;
             public float MaxTorque;
             public float MaelstromAccelerationClamp;
+            public float SystemStress01;
             public float3 PositionWS;
             public float3 DynamicFloodCenterOfMassOffsetLocal;
             public float FloodPitchBiasPerMeter;
@@ -158,9 +165,11 @@ namespace Hecton8.Gameplay
                     ? float3.zero
                     : (error - PreviousError) * math.rcp(safeDeltaTime);
                 float3 dampedDerivative = derivative - AngularVelocityWorld;
+                bool disableDerivative = math.saturate(SystemStress01) > SystemStressDerivativeCutoff;
+                float effectiveKd = disableDerivative ? 0f : math.max(0f, Kd);
                 float3 torque = (error * math.max(0f, Kp)) +
                                 (integral * math.max(0f, Ki)) +
-                                (dampedDerivative * math.max(0f, Kd));
+                                (dampedDerivative * effectiveKd);
 
                 float maxTorque = math.max(0f, MaxTorque);
                 float torqueLengthSq = math.lengthsq(torque);
@@ -175,6 +184,9 @@ namespace Hecton8.Gameplay
                     MaelstromAccelerationClamp);
 
                 uint flags = 0u;
+                if (disableDerivative)
+                    flags |= PidTelemetryFlagDerivativeDisabled;
+
                 if (!math.all(math.isfinite(error)) ||
                     !math.all(math.isfinite(integral)) ||
                     !math.all(math.isfinite(derivative)) ||
@@ -207,7 +219,7 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct DynamicFloodMassSolverJob : IJob
+        private struct SubmarineMassSolverJob : IJob
         {
             [ReadOnly] public NativeArray<float> RoomWaterLevels;
             [ReadOnly] public NativeArray<float> RoomVolumes;
@@ -216,14 +228,20 @@ namespace Hecton8.Gameplay
             public int RoomCount;
             public float BaseMassKg;
             public float3 BaseCenterOfMassLocal;
+            public double3 GlobalPivotAnchor;
 
             public void Execute()
             {
                 const float Epsilon = 0.000001f;
                 float baseMass = math.max(MinimumMassForReciprocal, BaseMassKg);
-                float3 weightedWaterSum = float3.zero;
+                double3 pivotAnchor = GlobalPivotAnchor;
+                bool invalidPivot = !math.all(math.isfinite(pivotAnchor));
+                if (invalidPivot)
+                    pivotAnchor = double3.zero;
+
+                double3 weightedWaterSum = double3.zero;
                 float totalWaterMass = 0f;
-                uint flags = 0u;
+                uint flags = invalidPivot ? PidTelemetryFlagFloodInvalid : 0u;
                 int count = math.min(RoomCount, math.min(RoomWaterLevels.Length, math.min(RoomVolumes.Length, RoomLocalAUPs.Length)));
 
                 for (int i = 0; i < count; i++)
@@ -239,30 +257,50 @@ namespace Hecton8.Gameplay
                     }
 
                     totalWaterMass += waterMass;
-                    weightedWaterSum += roomLocal * waterMass;
+                    double3 roomAbsolute = pivotAnchor + new double3(roomLocal.x, roomLocal.y, roomLocal.z);
+                    if (!math.all(math.isfinite(roomAbsolute)))
+                    {
+                        flags |= PidTelemetryFlagFloodInvalid;
+                        continue;
+                    }
+
+                    weightedWaterSum += roomAbsolute * waterMass;
                 }
 
                 float3 floodCenter = BaseCenterOfMassLocal;
                 if (totalWaterMass > Epsilon)
-                    floodCenter = weightedWaterSum * math.rcp(math.max(MinimumMassForReciprocal, totalWaterMass));
+                {
+                    double inverseWaterMass = math.rcp(math.max((double)MinimumMassForReciprocal, (double)totalWaterMass));
+                    double3 floodCenterAbsolute = weightedWaterSum * inverseWaterMass;
+                    double3 floodCenterLocal = floodCenterAbsolute - pivotAnchor;
+                    floodCenter = new float3((float)floodCenterLocal.x, (float)floodCenterLocal.y, (float)floodCenterLocal.z);
+                }
 
                 float combinedMass = baseMass + totalWaterMass;
                 float3 dynamicCenter = ((BaseCenterOfMassLocal * baseMass) + (floodCenter * totalWaterMass)) *
                                        math.rcp(math.max(MinimumMassForReciprocal, combinedMass));
                 float3 offset = dynamicCenter - BaseCenterOfMassLocal;
                 float angularDragMultiplier = 1f + (totalWaterMass * math.rcp(math.max(MinimumMassForReciprocal, baseMass)));
+                float floodMassRatio = totalWaterMass * math.rcp(math.max(MinimumMassForReciprocal, baseMass));
+                float3 absOffset = math.abs(offset);
+                float3 inertiaTensorMultiplier = new float3(
+                    1f + floodMassRatio * (0.75f + absOffset.z),
+                    1f + floodMassRatio * (0.50f + absOffset.x),
+                    1f + floodMassRatio * (0.75f + absOffset.y));
                 if (totalWaterMass > Epsilon)
                     flags |= PidTelemetryFlagFloodSignal;
                 if (totalWaterMass > baseMass * CriticalFloodMassBaseRatio)
                     flags |= PidTelemetryFlagCriticalFlood;
                 if (!math.all(math.isfinite(dynamicCenter)) ||
                     !math.all(math.isfinite(offset)) ||
+                    !math.all(math.isfinite(inertiaTensorMultiplier)) ||
                     !math.isfinite(totalWaterMass) ||
                     !math.isfinite(angularDragMultiplier))
                 {
                     flags |= PidTelemetryFlagFloodInvalid;
                     dynamicCenter = BaseCenterOfMassLocal;
                     offset = float3.zero;
+                    inertiaTensorMultiplier = new float3(1f);
                     totalWaterMass = 0f;
                     angularDragMultiplier = 1f;
                 }
@@ -271,6 +309,8 @@ namespace Hecton8.Gameplay
                 {
                     DynamicCenterOfMassLocal = dynamicCenter,
                     DynamicCenterOfMassOffsetLocal = offset,
+                    InertiaTensorMultiplier = math.max(new float3(1f), inertiaTensorMultiplier),
+                    GlobalPivotAnchor = pivotAnchor,
                     TotalWaterMassKg = math.max(0f, totalWaterMass),
                     AngularDragMultiplier = math.max(1f, angularDragMultiplier),
                     Flags = flags
@@ -292,8 +332,11 @@ namespace Hecton8.Gameplay
         private const uint PidTelemetryFlagCriticalFlood = 1u << 5;
         private const uint PidTelemetryFlagFloodInvalid = 1u << 6;
         private const uint PidTelemetryFlagCriticalList = 1u << 7;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SUBMARINE_AUTOPILOT.bin";
-        private const string FloodDumpRelativePath = "Docs/AgentLogs/Dump_VEHICLE_CENTER_OF_MASS_SOLVER.bin";
+        private const uint PidTelemetryFlagDerivativeDisabled = 1u << 8;
+        private const uint PidTelemetryFlagBubbleSignal = 1u << 9;
+        private const uint PidTelemetryFlagDataVaultMissing = 1u << 10;
+        private const uint PidTelemetryFlagFluidImpulseSignal = 1u << 11;
+        private const string BallastPidDumpRelativePath = "Docs/AgentLogs/Dump_SUBMARINE_BALLAST_PID_V2.bin";
         private const float WaterDensityKgPerCubicMeter = 1025f;
         private const float MaelstromAccelerationClamp = 12f;
         private const float CriticalFloodMassBaseRatio = 0.4f;
@@ -301,12 +344,16 @@ namespace Hecton8.Gameplay
         private const float HighTierFloodSolveCadenceSeconds = 0.5f;
         private const float FloodSignalTimeoutSeconds = 3f;
         private const float MinimumMassForReciprocal = 0.01f;
+        private const float SystemStressDerivativeCutoff = 0.8f;
         private const int VaultBallastFillFlag = 1 << 0;
         private const int VaultTankLocalPositionsFlag = 1 << 1;
         private const int VaultPidOutputFlag = 1 << 2;
         private const int VaultFloodMassOutputFlag = 1 << 3;
         private const int VaultTelemetryFlag = 1 << 4;
         private const uint FloodFeedbackSourceHash = 0x56434d53u;
+        private const uint EngineVentBubbleSourceHash = 0x42414c32u;
+        private const uint EngineVentFluidImpulseFlag = 1u << 0;
+        private const uint TailHeavyFluidImpulseFlag = 1u << 1;
 
         [Header("Auto-Level")]
         [SerializeField] private bool autoLevelEnabled = true;
@@ -340,8 +387,13 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(0f)] private float floodComStressAudioThresholdMeters = 0.18f;
         [SerializeField, Min(0f)] private float floodAngularDampingFloor = 0.05f;
         [SerializeField, Min(0.05f)] private float floodStressAudioCooldownSeconds = 0.5f;
+        [SerializeField, Min(0.05f)] private float pidHullStressAudioCooldownSeconds = 0.35f;
         [SerializeField, Min(0.05f)] private float criticalFloodHapticCooldownSeconds = 0.25f;
         [SerializeField, Range(0f, 89f)] private float criticalFloodPitchDegrees = 30f;
+        [SerializeField, Range(0f, 89f)] private float tailHeavyBubblePitchDegrees = 20f;
+        [SerializeField, Min(0.05f)] private float tailHeavyBubbleCooldownSeconds = 0.25f;
+        [SerializeField] private Vector3 engineVentLocalPosition = new Vector3(0f, -0.35f, -2.8f);
+        [SerializeField, Range(0.05f, 1f)] private float pidTorqueFastNlerp01 = 0.45f;
 
         [Header("Combat Recovery")]
         [SerializeField, Min(0f)] private float combatTargetHealth = 250f;
@@ -350,6 +402,7 @@ namespace Hecton8.Gameplay
 
         private SubmarineCoreDirector _core;
         private IPowerGridService _powerGrid;
+        private IAudioService _audio;
         private IDataVault _dataVault;
         private HectonFluidEngine _fluid;
         private Rigidbody _hull;
@@ -383,20 +436,29 @@ namespace Hecton8.Gameplay
         private float _mathLodSwitchTimer;
         private float _floodSolveAccumulator;
         private float _floodStressAudioCooldown;
+        private float _pidHullStressAudioCooldown;
         private float _criticalFloodHapticCooldown;
+        private float _tailHeavyBubbleCooldown;
         private float _criticalListCooldown;
         private float _lastIntegralWindup;
         private float _airReleaseCooldownSeconds;
         private bool _lowMathLodActive;
         private bool _baseAngularDampingCached;
+        private bool _baseInertiaTensorCached;
         private float3 _pidIntegral;
         private float3 _previousPidError;
         private float3 _lastPidDerivative;
+        private float3 _smoothedPidTorqueWorld;
         private float3 _centerOfMassLocal;
         private float3 _dynamicFloodCenterOfMassLocal;
         private float3 _dynamicFloodComOffsetLocal;
+        private float3 _dynamicFloodInertiaTensorMultiplier = new float3(1f);
+        private float3 _lastAppliedInertiaTensorMultiplier = new float3(1f);
+        private Vector3 _baseInertiaTensor;
         private float _dynamicFloodWaterMassKg;
         private float _dynamicFloodAngularDragMultiplier = 1f;
+        private double3 _dynamicFloodGlobalPivotAnchor;
+        private float _systemStress01;
         private uint _lastFloodSignalFrame;
         private float _floodSignalAgeSeconds;
         private int _dynamicFloodRoomCount;
@@ -411,14 +473,14 @@ namespace Hecton8.Gameplay
         private JobHandle _pidHandle;
         private JobHandle _floodMassHandle;
 
-        private NativeArray<float> _ballastFill01;
-        private NativeArray<float3> _tankLocalPositions;
-        private NativeArray<PidJobOutput> _pidOutput;
-        private NativeArray<DynamicFloodMassOutput> _floodMassOutput;
-        private NativeArray<SubmarinePidTelemetryEntry> _telemetry;
-        private NativeArray<float> _roomWaterLevels;
-        private NativeArray<float> _roomVolumes;
-        private NativeArray<float3> _roomLocalAUPs;
+        private VaultBufferHandle<float> _ballastFill01Handle;
+        private VaultBufferHandle<float3> _tankLocalPositionsHandle;
+        private VaultBufferHandle<PidJobOutput> _pidOutputHandle;
+        private VaultBufferHandle<DynamicFloodMassOutput> _floodMassOutputHandle;
+        private VaultBufferHandle<SubmarinePidTelemetryEntry> _telemetryHandle;
+        private VaultBufferHandle<float> _roomWaterLevelsHandle;
+        private VaultBufferHandle<float> _roomVolumesHandle;
+        private VaultBufferHandle<float3> _roomLocalAUPsHandle;
 
         public bool SuppressesKinematicPitch => isActiveAndEnabled && autoLevelEnabled;
 
@@ -430,7 +492,8 @@ namespace Hecton8.Gameplay
 
         public float CombatHeight => 2.8f;
 
-        public NativeArray<float>.ReadOnly BallastFill01 => _ballastFill01.IsCreated ? _ballastFill01.AsReadOnly() : default;
+        public NativeArray<float>.ReadOnly BallastFill01 =>
+            TryResolveBallastFill(out NativeArray<float> ballastFill) ? ballastFill.AsReadOnly() : default;
 
         public SubmarineStateSnapshot StateSnapshot => _snapshot;
 
@@ -477,6 +540,7 @@ namespace Hecton8.Gameplay
 
             VehicleCommandSignalBus.FlushPending();
             ConsumeFloodStateSignals();
+            ConsumeSystemHealthSignals();
             ExpireStaleDynamicFloodState(fixedDeltaTime);
             VehicleCommandSignal command = ConsumeCommand();
             AdvanceAirReleaseCooldown(fixedDeltaTime);
@@ -486,6 +550,7 @@ namespace Hecton8.Gameplay
             AdvanceDynamicFloodSolver(fixedDeltaTime, lowMathLod);
             AdvanceBallast(in command, fixedDeltaTime, lowMathLod);
             ApplyMassDistribution();
+            ApplyHighTierDynamicFloodDragTensor(lowMathLod);
             EmitDynamicFloodFeedback(fixedDeltaTime);
             RefreshSnapshot();
             WriteTelemetry(_pendingTelemetryFlags);
@@ -504,7 +569,12 @@ namespace Hecton8.Gameplay
             if (_fluid == null)
                 _fluid = GlobalRegistry.Fluid;
 
+            if (_audio == null)
+                _audio = GlobalRegistry.Audio;
+
             RefreshDynamicFloodServicesFromRegistry();
+            EnsureNativeState();
+            RefreshTankPositions();
             RefreshRoomBufferAliases();
             _floodMassSolveRequested = true;
             RefreshMathLodPolicyFromRegistrySlow();
@@ -572,9 +642,17 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+            {
+                _audio = currentService as IAudioService;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 _dataVault = currentService as IDataVault;
+                EnsureNativeState();
+                RefreshTankPositions();
                 RefreshRoomBufferAliases();
                 return;
             }
@@ -596,8 +674,11 @@ namespace Hecton8.Gameplay
         private void RegisterRuntime()
         {
             _powerGrid = GlobalRegistry.PowerGrid;
+            _audio = GlobalRegistry.Audio;
             _fluid = GlobalRegistry.Fluid;
             RefreshDynamicFloodServicesFromRegistry();
+            EnsureNativeState();
+            RefreshTankPositions();
             RefreshRoomBufferAliases();
 
             TryRegisterStateReadModel();
@@ -725,12 +806,15 @@ namespace Hecton8.Gameplay
             ClearBallastMassCoupling();
             SetFluidDynamicsCenterAuthority(false);
             _powerGrid = null;
+            _audio = null;
             _dataVault = null;
-            _roomWaterLevels = default;
-            _roomVolumes = default;
-            _roomLocalAUPs = default;
+            _roomWaterLevelsHandle = default;
+            _roomVolumesHandle = default;
+            _roomLocalAUPsHandle = default;
             ResetDynamicFloodState(clearSignalFrame: true);
             RestoreDynamicFloodAngularDrag();
+            RestoreDynamicFloodInertiaTensor();
+            ResetExternalFloodDragTensor();
         }
 
         private void CacheReferences()
@@ -753,57 +837,46 @@ namespace Hecton8.Gameplay
                 _baseAngularDamping = math.max(0f, _hull.angularDamping);
                 _baseAngularDampingCached = true;
             }
+
+            if (_hull != null && !_baseInertiaTensorCached)
+            {
+                Vector3 inertiaTensor = _hull.inertiaTensor;
+                _baseInertiaTensor = IsFinite(inertiaTensor)
+                    ? new Vector3(
+                        Mathf.Max(0.001f, inertiaTensor.x),
+                        Mathf.Max(0.001f, inertiaTensor.y),
+                        Mathf.Max(0.001f, inertiaTensor.z))
+                    : Vector3.one;
+                _baseInertiaTensorCached = true;
+            }
         }
 
         private void EnsureNativeState()
         {
-            if (!_ballastFill01.IsCreated)
+            bool seedBallast = (_vaultNativeStateMask & VaultBallastFillFlag) == 0;
+            if (TryResolveBallastFill(out NativeArray<float> ballastFill) && seedBallast)
             {
-                _ballastFill01 = AllocateArray<float>(
-                    BufferID.SubmarineBallastFill01,
-                    TankCount,
-                    nameof(_ballastFill01),
-                    VaultBallastFillFlag);
                 for (int i = 0; i < TankCount; i++)
-                    _ballastFill01[i] = math.saturate(neutralBallastFill01);
+                    ballastFill[i] = math.saturate(neutralBallastFill01);
             }
 
-            if (!_tankLocalPositions.IsCreated)
-                _tankLocalPositions = AllocateArray<float3>(
-                    BufferID.SubmarineBallastTankLocalPositions,
-                    TankCount,
-                    nameof(_tankLocalPositions),
-                    VaultTankLocalPositionsFlag);
-
-            if (!_pidOutput.IsCreated)
-                _pidOutput = AllocateArray<PidJobOutput>(
-                    BufferID.SubmarineBallastPidOutput,
-                    1,
-                    nameof(_pidOutput),
-                    VaultPidOutputFlag);
-
-            if (!_floodMassOutput.IsCreated)
-                _floodMassOutput = AllocateArray<DynamicFloodMassOutput>(
-                    BufferID.SubmarineDynamicFloodMassOutput,
-                    1,
-                    nameof(_floodMassOutput),
-                    VaultFloodMassOutputFlag);
-
-            if (!_telemetry.IsCreated)
-                _telemetry = AllocateArray<SubmarinePidTelemetryEntry>(
-                    BufferID.SubmarinePidTelemetry,
-                    TelemetryCapacity,
-                    nameof(_telemetry),
-                    VaultTelemetryFlag);
+            TryResolveTankLocalPositions(out _);
+            TryResolvePidOutput(out _);
+            TryResolveFloodMassOutput(out _);
+            TryResolveTelemetry(out _);
         }
 
         private void DisposeNativeState()
         {
-            DisposeArray(ref _ballastFill01, VaultBallastFillFlag);
-            DisposeArray(ref _tankLocalPositions, VaultTankLocalPositionsFlag);
-            DisposeArray(ref _pidOutput, VaultPidOutputFlag);
-            DisposeArray(ref _floodMassOutput, VaultFloodMassOutputFlag);
-            DisposeArray(ref _telemetry, VaultTelemetryFlag);
+            _ballastFill01Handle = default;
+            _tankLocalPositionsHandle = default;
+            _pidOutputHandle = default;
+            _floodMassOutputHandle = default;
+            _telemetryHandle = default;
+            _roomWaterLevelsHandle = default;
+            _roomVolumesHandle = default;
+            _roomLocalAUPsHandle = default;
+            _vaultNativeStateMask = 0;
         }
 
         private void ClearBallastMassCoupling()
@@ -829,30 +902,24 @@ namespace Hecton8.Gameplay
 
         private bool RefreshRoomBufferAliases()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null)
-            {
-                _roomWaterLevels = default;
-                _roomVolumes = default;
-                _roomLocalAUPs = default;
-                return false;
-            }
-
-            bool hasWater = vault.TryGetBuffer(BufferID.RoomWaterLevels, out _roomWaterLevels);
-            bool hasVolumes = vault.TryGetBuffer(BufferID.RoomVolumes, out _roomVolumes);
-            bool hasLocalAups = vault.TryGetBuffer(BufferID.RoomLocalAUPs, out _roomLocalAUPs);
-            return hasWater && hasVolumes && hasLocalAups;
+            return TryResolveRoomBuffers(
+                out NativeArray<float> roomWaterLevels,
+                out NativeArray<float> roomVolumes,
+                out NativeArray<float3> roomLocalAups) &&
+                roomWaterLevels.IsCreated &&
+                roomVolumes.IsCreated &&
+                roomLocalAups.IsCreated;
         }
 
         private void RefreshTankPositions()
         {
-            if (!_tankLocalPositions.IsCreated || _tankLocalPositions.Length < TankCount)
+            if (!TryResolveTankLocalPositions(out NativeArray<float3> tankLocalPositions) || tankLocalPositions.Length < TankCount)
                 return;
 
-            _tankLocalPositions[TankFront] = ToFloat3(frontTankLocalPosition);
-            _tankLocalPositions[TankAft] = ToFloat3(aftTankLocalPosition);
-            _tankLocalPositions[TankPort] = ToFloat3(portTankLocalPosition);
-            _tankLocalPositions[TankStarboard] = ToFloat3(starboardTankLocalPosition);
+            tankLocalPositions[TankFront] = ToFloat3(frontTankLocalPosition);
+            tankLocalPositions[TankAft] = ToFloat3(aftTankLocalPosition);
+            tankLocalPositions[TankPort] = ToFloat3(portTankLocalPosition);
+            tankLocalPositions[TankStarboard] = ToFloat3(starboardTankLocalPosition);
         }
 
         private void RefreshTargetInstanceId()
@@ -878,8 +945,8 @@ namespace Hecton8.Gameplay
 
         private void ConsumeFloodStateSignals()
         {
-            NativeArray<SubmarineFloodStateSignal>.ReadOnly snapshot = SignalBus<SubmarineFloodStateSignal>.GetFrameSnapshotArray();
-            if (!snapshot.IsCreated || snapshot.Length <= 0)
+            ReadOnlySpan<SubmarineFloodStateSignal> snapshot = SignalBus<SubmarineFloodStateSignal>.GetFrameSnapshot();
+            if (snapshot.Length <= 0)
                 return;
 
             uint targetBodyId = unchecked((uint)_targetInstanceId);
@@ -907,6 +974,34 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void ConsumeSystemHealthSignals()
+        {
+            ReadOnlySpan<SystemHealthIndexSignal> snapshot = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
+            if (snapshot.Length <= 0)
+            {
+                _systemStress01 = math.saturate(_systemStress01 * 0.95f);
+                return;
+            }
+
+            float stress01 = _systemStress01 * 0.95f;
+            for (int i = 0; i < snapshot.Length; i++)
+            {
+                SystemHealthIndexSignal signal = snapshot[i];
+                float pressure = math.isfinite(signal.Pressure01) ? math.saturate(signal.Pressure01) : 0f;
+                if (signal.State >= SystemHealthIndexSignal.StateCritical)
+                    pressure = math.max(pressure, 1f);
+                else if (signal.State >= SystemHealthIndexSignal.StateWarning)
+                    pressure = math.max(pressure, 0.5f);
+
+                if ((signal.Flags & SystemHealthIndexSignal.FlagAdrenaline) != 0)
+                    pressure = math.max(pressure, 0.85f);
+
+                stress01 = math.max(stress01, pressure);
+            }
+
+            _systemStress01 = math.saturate(stress01);
+        }
+
         private void CommitFloodStateSignal(in SubmarineFloodStateSignal signal)
         {
             _lastFloodSignalFrame = signal.Frame;
@@ -931,6 +1026,8 @@ namespace Hecton8.Gameplay
             _dynamicFloodCenterOfMassLocal = signal.DynamicCenterOfMassLocal;
             _dynamicFloodComOffsetLocal = signal.DynamicCenterOfMassOffsetLocal;
             _dynamicFloodWaterMassKg = math.max(0f, signal.TotalWaterMassKg);
+            _dynamicFloodInertiaTensorMultiplier = ResolveInertiaTensorMultiplier(_dynamicFloodWaterMassKg, _dynamicFloodComOffsetLocal);
+            _dynamicFloodGlobalPivotAnchor = ResolveGlobalPivotAnchor();
             _dynamicFloodAngularDragMultiplier = math.max(1f, signal.AngularDragMultiplier);
             _dynamicFloodRoomCount = signal.RoomCount;
             _dynamicFloodSignalActive = 1;
@@ -961,6 +1058,8 @@ namespace Hecton8.Gameplay
         {
             _dynamicFloodCenterOfMassLocal = ToFloat3(baseCenterOfMassLocal);
             _dynamicFloodComOffsetLocal = float3.zero;
+            _dynamicFloodInertiaTensorMultiplier = new float3(1f);
+            _dynamicFloodGlobalPivotAnchor = double3.zero;
             _dynamicFloodWaterMassKg = 0f;
             _dynamicFloodAngularDragMultiplier = 1f;
             _dynamicFloodRoomCount = 0;
@@ -979,7 +1078,7 @@ namespace Hecton8.Gameplay
 
         private void AdvanceBallast(in VehicleCommandSignal command, float fixedDeltaTime, bool lowMathLod)
         {
-            if (!_ballastFill01.IsCreated)
+            if (!TryResolveBallastFill(out NativeArray<float> ballastFill))
                 return;
 
             float neutral = math.saturate(neutralBallastFill01);
@@ -1008,7 +1107,7 @@ namespace Hecton8.Gameplay
                 float before = current * TankCount;
                 float next = math.saturate(current + delta);
                 for (int i = 0; i < TankCount; i++)
-                    _ballastFill01[i] = next;
+                    ballastFill[i] = next;
                 EmitAirReleaseIfNeeded(before, next * TankCount);
                 _pumpPowered = 1;
                 return;
@@ -1019,10 +1118,10 @@ namespace Hecton8.Gameplay
             float targetPort = math.saturate(neutral + totalBias);
             float targetStarboard = math.saturate(neutral + totalBias);
 
-            float d0 = ResolveFillDelta(_ballastFill01[TankFront], targetFront, fixedDeltaTime);
-            float d1 = ResolveFillDelta(_ballastFill01[TankAft], targetAft, fixedDeltaTime);
-            float d2 = ResolveFillDelta(_ballastFill01[TankPort], targetPort, fixedDeltaTime);
-            float d3 = ResolveFillDelta(_ballastFill01[TankStarboard], targetStarboard, fixedDeltaTime);
+            float d0 = ResolveFillDelta(ballastFill[TankFront], targetFront, fixedDeltaTime);
+            float d1 = ResolveFillDelta(ballastFill[TankAft], targetAft, fixedDeltaTime);
+            float d2 = ResolveFillDelta(ballastFill[TankPort], targetPort, fixedDeltaTime);
+            float d3 = ResolveFillDelta(ballastFill[TankStarboard], targetStarboard, fixedDeltaTime);
             float totalDeltaMagnitude = math.abs(d0) + math.abs(d1) + math.abs(d2) + math.abs(d3);
             if (totalDeltaMagnitude <= 0.000001f)
             {
@@ -1038,10 +1137,10 @@ namespace Hecton8.Gameplay
             }
 
             float beforeFill = SumBallastFill();
-            _ballastFill01[TankFront] = math.saturate(_ballastFill01[TankFront] + d0);
-            _ballastFill01[TankAft] = math.saturate(_ballastFill01[TankAft] + d1);
-            _ballastFill01[TankPort] = math.saturate(_ballastFill01[TankPort] + d2);
-            _ballastFill01[TankStarboard] = math.saturate(_ballastFill01[TankStarboard] + d3);
+            ballastFill[TankFront] = math.saturate(ballastFill[TankFront] + d0);
+            ballastFill[TankAft] = math.saturate(ballastFill[TankAft] + d1);
+            ballastFill[TankPort] = math.saturate(ballastFill[TankPort] + d2);
+            ballastFill[TankStarboard] = math.saturate(ballastFill[TankStarboard] + d3);
             EmitAirReleaseIfNeeded(beforeFill, SumBallastFill());
             _pumpPowered = 1;
         }
@@ -1101,7 +1200,8 @@ namespace Hecton8.Gameplay
 
         private void ApplyMassDistribution()
         {
-            if (!_ballastFill01.IsCreated || !_tankLocalPositions.IsCreated)
+            if (!TryResolveBallastFill(out NativeArray<float> ballastFill) ||
+                !TryResolveTankLocalPositions(out NativeArray<float3> tankLocalPositions))
                 return;
 
             float tankMassFull = math.max(0.01f, ballastTankVolumeCubicMeters) * WaterDensityKgPerCubicMeter;
@@ -1110,9 +1210,9 @@ namespace Hecton8.Gameplay
             float3 weightedSum = ToFloat3(baseCenterOfMassLocal) * baseMass;
             for (int i = 0; i < TankCount; i++)
             {
-                float mass = math.saturate(_ballastFill01[i]) * tankMassFull;
+                float mass = math.saturate(ballastFill[i]) * tankMassFull;
                 totalBallastMass += mass;
-                weightedSum += _tankLocalPositions[i] * mass;
+                weightedSum += tankLocalPositions[i] * mass;
             }
 
             _ballastWaterMassKg = totalBallastMass;
@@ -1126,6 +1226,7 @@ namespace Hecton8.Gameplay
             {
                 _hull.centerOfMass = ToVector3(_centerOfMassLocal);
                 ApplyDynamicFloodAngularDrag();
+                ApplyDynamicFloodInertiaTensor();
             }
 
             SubmarineFluidDynamics fluidDynamics = _core != null ? _core.FluidDynamics : null;
@@ -1200,23 +1301,133 @@ namespace Hecton8.Gameplay
             _hull.angularDamping = math.isfinite(baseDamping) ? baseDamping : 0f;
         }
 
+        private void ApplyDynamicFloodInertiaTensor()
+        {
+            if (_hull == null || !_baseInertiaTensorCached)
+                return;
+
+            float3 multiplier = _dynamicFloodInertiaTensorMultiplier;
+            if (!math.all(math.isfinite(multiplier)))
+            {
+                _pendingTelemetryFlags |= PidTelemetryFlagFloodInvalid;
+                multiplier = new float3(1f);
+            }
+
+            multiplier = math.max(new float3(1f), multiplier);
+            float3 delta = multiplier - _lastAppliedInertiaTensorMultiplier;
+            if (math.lengthsq(delta) <= 0.00000025f)
+                return;
+
+            float3 baseTensor = ToFloat3(_baseInertiaTensor);
+            float3 nextTensor = math.max(new float3(0.001f), baseTensor * multiplier);
+            if (!math.all(math.isfinite(nextTensor)))
+            {
+                _pendingTelemetryFlags |= PidTelemetryFlagFloodInvalid;
+                return;
+            }
+
+            _hull.inertiaTensor = ToVector3(nextTensor);
+            _lastAppliedInertiaTensorMultiplier = multiplier;
+        }
+
+        private void RestoreDynamicFloodInertiaTensor()
+        {
+            if (_hull == null || !_baseInertiaTensorCached)
+                return;
+
+            _hull.inertiaTensor = _baseInertiaTensor;
+            _lastAppliedInertiaTensorMultiplier = new float3(1f);
+        }
+
+        private void ApplyHighTierDynamicFloodDragTensor(bool lowMathLod)
+        {
+            SubmarineFluidDynamics fluidDynamics = _core != null ? _core.FluidDynamics : null;
+            if (fluidDynamics == null)
+                return;
+
+            if (lowMathLod || _dynamicFloodWaterMassKg <= 0.001f)
+            {
+                fluidDynamics.SetExternalFloodDragTensor(new float3(1f), new float3(1f));
+                return;
+            }
+
+            float mass01 = math.saturate(_dynamicFloodWaterMassKg * math.rcp(math.max(MinimumMassForReciprocal, _baseMassKg)));
+            float3 offset = math.abs(_dynamicFloodComOffsetLocal);
+            float3 linear = new float3(
+                1f + mass01 * (0.90f + offset.x),
+                1f + mass01 * (0.65f + offset.y),
+                1f + mass01 * (0.45f + offset.z));
+            float3 angular = new float3(
+                1f + mass01 * (0.95f + offset.z),
+                1f + mass01 * (0.70f + offset.x),
+                1f + mass01 * (0.95f + offset.y));
+
+            if (!math.all(math.isfinite(linear)) || !math.all(math.isfinite(angular)))
+            {
+                _pendingTelemetryFlags |= PidTelemetryFlagFloodInvalid;
+                fluidDynamics.SetExternalFloodDragTensor(new float3(1f), new float3(1f));
+                return;
+            }
+
+            fluidDynamics.SetExternalFloodDragTensor(linear, angular);
+        }
+
+        private void ResetExternalFloodDragTensor()
+        {
+            SubmarineFluidDynamics fluidDynamics = _core != null ? _core.FluidDynamics : null;
+            if (fluidDynamics != null)
+                fluidDynamics.SetExternalFloodDragTensor(new float3(1f), new float3(1f));
+        }
+
+        private float3 ResolveInertiaTensorMultiplier(float waterMassKg, float3 centerOfMassOffsetLocal)
+        {
+            if (!math.isfinite(waterMassKg) || !math.all(math.isfinite(centerOfMassOffsetLocal)))
+                return new float3(1f);
+
+            float massRatio = math.max(0f, waterMassKg) * math.rcp(math.max(MinimumMassForReciprocal, _baseMassKg));
+            float3 absOffset = math.abs(centerOfMassOffsetLocal);
+            float3 multiplier = new float3(
+                1f + massRatio * (0.75f + absOffset.z),
+                1f + massRatio * (0.50f + absOffset.x),
+                1f + massRatio * (0.75f + absOffset.y));
+
+            return math.all(math.isfinite(multiplier))
+                ? math.clamp(multiplier, new float3(1f), new float3(4f))
+                : new float3(1f);
+        }
+
+        private double3 ResolveGlobalPivotAnchor()
+        {
+            Vector3 position = _hull != null
+                ? _hull.position
+                : (_cachedTransform != null ? _cachedTransform.position : Vector3.zero);
+            if (!IsFinite(position))
+                return math.all(math.isfinite(_dynamicFloodGlobalPivotAnchor)) ? _dynamicFloodGlobalPivotAnchor : double3.zero;
+
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            double3 anchor = aup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(anchor)) ? anchor : double3.zero;
+        }
+
         private void EmitDynamicFloodFeedback(float fixedDeltaTime)
         {
             _floodStressAudioCooldown = math.max(0f, _floodStressAudioCooldown - math.max(0f, fixedDeltaTime));
+            _pidHullStressAudioCooldown = math.max(0f, _pidHullStressAudioCooldown - math.max(0f, fixedDeltaTime));
             _criticalFloodHapticCooldown = math.max(0f, _criticalFloodHapticCooldown - math.max(0f, fixedDeltaTime));
+            _tailHeavyBubbleCooldown = math.max(0f, _tailHeavyBubbleCooldown - math.max(0f, fixedDeltaTime));
             _criticalListCooldown = math.max(0f, _criticalListCooldown - math.max(0f, fixedDeltaTime));
 
             if (_hull == null)
                 return;
+
+            EmitTailHeavyBubbleSignal();
 
             float stressThreshold = math.max(0f, floodComStressAudioThresholdMeters);
             float offsetMagnitudeSq = math.lengthsq(_dynamicFloodComOffsetLocal);
             if (offsetMagnitudeSq >= stressThreshold * stressThreshold &&
                 _floodStressAudioCooldown <= 0f)
             {
-                float offsetMagnitude = offsetMagnitudeSq > 0.000001f
-                    ? math.sqrt(offsetMagnitudeSq)
-                    : 0f;
+                float offsetMagnitude = ApproximateMagnitudeNoSqrt(_dynamicFloodComOffsetLocal);
                 _floodStressAudioCooldown = math.max(0.05f, floodStressAudioCooldownSeconds);
                 AcousticPingSignal stress = default;
                 stress.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(_hull.worldCenterOfMass);
@@ -1254,6 +1465,77 @@ namespace Hecton8.Gameplay
                 _pendingTelemetryFlags |= PidTelemetryFlagCriticalList;
         }
 
+        private static float ApproximateMagnitudeNoSqrt(float3 value)
+        {
+            float3 absValue = math.abs(value);
+            float maxAxis = math.max(absValue.x, math.max(absValue.y, absValue.z));
+            float minAxis = math.min(absValue.x, math.min(absValue.y, absValue.z));
+            float midAxis = absValue.x + absValue.y + absValue.z - maxAxis - minAxis;
+            float magnitude = maxAxis + (0.375f * midAxis) + (0.125f * minAxis);
+            return math.select(magnitude, 0.0f, !math.isfinite(magnitude));
+        }
+
+        private void EmitTailHeavyBubbleSignal()
+        {
+            if (_tailHeavyBubbleCooldown > 0f ||
+                _dynamicFloodSignalActive == 0 ||
+                !IsTailHeavyPitchExceeded(tailHeavyBubblePitchDegrees) ||
+                _cachedTransform == null)
+            {
+                return;
+            }
+
+            Vector3 ventPosition = _cachedTransform.TransformPoint(engineVentLocalPosition);
+            if (!IsFinite(ventPosition))
+                return;
+
+            float3 ventDirection = ToFloat3(-_cachedTransform.forward);
+            if (!math.all(math.isfinite(ventDirection)))
+                return;
+
+            float directionLengthSq = math.lengthsq(ventDirection);
+            if (directionLengthSq <= 1e-6f)
+                return;
+
+            ventDirection *= math.rsqrt(directionLengthSq);
+            float intensity01 = math.saturate(_dynamicFloodWaterMassKg * math.rcp(math.max(MinimumMassForReciprocal, _baseMassKg)));
+            _tailHeavyBubbleCooldown = math.max(0.05f, tailHeavyBubbleCooldownSeconds);
+            BubbleSpawnSignal signal = default;
+            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(ventPosition);
+            signal.Direction = ventDirection;
+            signal.Intensity01 = intensity01;
+            signal.RadiusMeters = 1.35f;
+            signal.Frame = unchecked((uint)_tickCount);
+            signal.SourceHash = EngineVentBubbleSourceHash;
+            signal.Flags = BubbleSpawnSignal.FlagEngineVent | BubbleSpawnSignal.FlagTailHeavy;
+            GlobalSignals.Publish(in signal);
+            _pendingTelemetryFlags |= PidTelemetryFlagBubbleSignal;
+            EmitTailHeavyFluidImpulse(in signal.PositionAup, ventDirection, intensity01);
+        }
+
+        private void EmitTailHeavyFluidImpulse(in AbsoluteUniversePosition positionAup, float3 direction, float intensity01)
+        {
+            if (_lowMathLodActive || intensity01 <= 0.001f || !math.all(math.isfinite(direction)))
+                return;
+
+            float directionLengthSq = math.lengthsq(direction);
+            if (directionLengthSq <= 1e-6f)
+                return;
+
+            float strength01 = math.saturate(intensity01);
+            float3 normalizedDirection = direction * math.rsqrt(directionLengthSq);
+            FluidImpulseSignal impulse = default;
+            impulse.PositionAup = positionAup;
+            impulse.Vector = normalizedDirection * math.lerp(0.75f, 3.5f, strength01);
+            impulse.Radius = math.lerp(1.5f, 4.75f, strength01);
+            impulse.Lifetime = math.lerp(0.35f, 1.1f, strength01);
+            impulse.Frame = unchecked((uint)_tickCount);
+            impulse.SourceHash = EngineVentBubbleSourceHash;
+            impulse.Flags = EngineVentFluidImpulseFlag | TailHeavyFluidImpulseFlag;
+            GlobalSignals.Publish(in impulse);
+            _pendingTelemetryFlags |= PidTelemetryFlagFluidImpulseSignal;
+        }
+
         private bool IsCriticalFloodPitchExceeded()
         {
             if (_hull == null)
@@ -1269,10 +1551,27 @@ namespace Hecton8.Gameplay
             return math.abs(math.clamp(forward.y, -1f, 1f)) >= thresholdSin;
         }
 
+        private bool IsTailHeavyPitchExceeded(float thresholdDegrees)
+        {
+            if (_hull == null)
+                return false;
+
+            float threshold = math.clamp(thresholdDegrees, 0f, 89f);
+            quaternion rotation = new quaternion(_hull.rotation.x, _hull.rotation.y, _hull.rotation.z, _hull.rotation.w);
+            float3 forward = math.mul(rotation, new float3(0f, 0f, 1f));
+            float thresholdSin = math.sin(math.radians(threshold));
+            return math.clamp(forward.y, -1f, 1f) >= thresholdSin;
+        }
+
         private void SchedulePidJob(float fixedDeltaTime, bool lowMathLod)
         {
-            if (!autoLevelEnabled || _pidJobPending || !_pidOutput.IsCreated || _hull == null)
+            if (!autoLevelEnabled ||
+                _pidJobPending ||
+                !TryResolvePidOutput(out NativeArray<PidJobOutput> pidOutput) ||
+                _hull == null)
+            {
                 return;
+            }
 
             if (_criticalFloodActive != 0)
             {
@@ -1310,6 +1609,7 @@ namespace Hecton8.Gameplay
                 IntegralClamp = integralClamp,
                 MaxTorque = maxTorqueNewtons * torqueScale,
                 MaelstromAccelerationClamp = MaelstromAccelerationClamp,
+                SystemStress01 = _systemStress01,
                 PositionWS = ToFloat3(_hull.worldCenterOfMass),
                 DynamicFloodCenterOfMassOffsetLocal = _dynamicFloodComOffsetLocal,
                 FloodPitchBiasPerMeter = floodPidPitchBiasPerMeter,
@@ -1318,7 +1618,7 @@ namespace Hecton8.Gameplay
                 LowMaelstromTier = lowMathLod ? (byte)1 : (byte)0,
                 ActiveMaelstromCount = activeMaelstromCount,
                 ActiveMaelstroms = activeMaelstroms,
-                Output = _pidOutput
+                Output = pidOutput
             }.Schedule();
             _pidJobPending = true;
             _resetIntegralPending = false;
@@ -1333,10 +1633,14 @@ namespace Hecton8.Gameplay
                 return false;
 
             _pidJobPending = false;
-            if (!commitOutput || !_pidOutput.IsCreated || _pidOutput.Length == 0)
+            if (!commitOutput ||
+                !TryResolvePidOutput(out NativeArray<PidJobOutput> pidOutput) ||
+                pidOutput.Length == 0)
+            {
                 return true;
+            }
 
-            PidJobOutput output = _pidOutput[0];
+            PidJobOutput output = pidOutput[0];
             _pidIntegral = output.Integral;
             _previousPidError = output.Error;
             _lastPidDerivative = output.Derivative;
@@ -1346,13 +1650,57 @@ namespace Hecton8.Gameplay
             if (output.Flags != 0u)
                 DumpTelemetryOnce(output.Flags);
 
+            float3 acceptedTorque = output.TorqueWorld;
+            if ((output.Flags & PidTelemetryFlagInvalidOutput) != 0u)
+                _smoothedPidTorqueWorld = float3.zero;
+            else
+                acceptedTorque = FastNlerp(_smoothedPidTorqueWorld, acceptedTorque, pidTorqueFastNlerp01);
+
             if (_hull != null && output.Flags == 0u && math.lengthsq(output.TorqueWorld) > 0.0001f)
-                PhysicsForceRouter.QueueTorque(_hull, ToVector3(output.TorqueWorld), ForceMode.Force);
+            {
+                _smoothedPidTorqueWorld = acceptedTorque;
+                EmitPidHullStressSignal(output.Error, _hull.worldCenterOfMass);
+                PhysicsForceRouter.QueueTorque(_hull, ToVector3(acceptedTorque), ForceMode.Force);
+            }
 
             if (_hull != null && output.Flags == 0u && math.lengthsq(output.MaelstromAcceleration) > 0.0001f)
                 PhysicsForceRouter.QueueAmbientForce(_hull, ToVector3(output.MaelstromAcceleration), ForceMode.Acceleration);
 
             return true;
+        }
+
+        private void EmitPidHullStressSignal(float3 pidError, Vector3 worldPosition)
+        {
+            if (_pidHullStressAudioCooldown > 0f || !math.all(math.isfinite(pidError)) || !IsFinite(worldPosition))
+                return;
+
+            float stress01 = math.saturate(math.length(pidError) * 0.35f);
+            if (stress01 <= 0.001f)
+                return;
+
+            _pidHullStressAudioCooldown = math.max(0.05f, pidHullStressAudioCooldownSeconds);
+            SubmarineFluidDynamics fluidDynamics = _core != null ? _core.FluidDynamics : null;
+            float depthMeters = fluidDynamics != null ? math.max(0f, fluidDynamics.ExternalDepthMeters) : 0f;
+            float pitchScale = 0.85f + (stress01 * 0.6f);
+            HullStressSignal signal = new HullStressSignal(
+                AbsoluteUniversePosition.FromRuntimePosition(worldPosition),
+                worldPosition,
+                stress01,
+                math.length(pidError),
+                depthMeters,
+                pitchScale);
+
+            IAudioService audioService = _audio;
+            if (audioService == null)
+            {
+                audioService = GlobalRegistry.Audio;
+                _audio = audioService;
+            }
+
+            if (audioService != null && audioService.QueueHullStressSignal(in signal))
+                return;
+
+            ProceduralAudioEvents.RaiseHullStressSignal(in signal);
         }
 
         private void RefreshSnapshot()
@@ -1450,29 +1798,31 @@ namespace Hecton8.Gameplay
             if (_dynamicFloodSignalActive == 0 || _dynamicFloodRoomCount <= 0)
                 return;
 
-            if (!RefreshRoomBufferAliases())
-                return;
-
-            int bufferRoomCount = math.min(_roomWaterLevels.Length, math.min(_roomVolumes.Length, _roomLocalAUPs.Length));
-            int roomCount = math.min(_dynamicFloodRoomCount, bufferRoomCount);
-            if (roomCount <= 0 ||
-                !_floodMassOutput.IsCreated ||
-                !_roomWaterLevels.IsCreated ||
-                !_roomVolumes.IsCreated ||
-                !_roomLocalAUPs.IsCreated)
+            if (!TryResolveRoomBuffers(
+                    out NativeArray<float> roomWaterLevels,
+                    out NativeArray<float> roomVolumes,
+                    out NativeArray<float3> roomLocalAups))
             {
                 return;
             }
 
-            _floodMassHandle = new DynamicFloodMassSolverJob
+            int bufferRoomCount = math.min(roomWaterLevels.Length, math.min(roomVolumes.Length, roomLocalAups.Length));
+            int roomCount = math.min(_dynamicFloodRoomCount, bufferRoomCount);
+            if (roomCount <= 0 || !TryResolveFloodMassOutput(out NativeArray<DynamicFloodMassOutput> floodMassOutput))
             {
-                RoomWaterLevels = _roomWaterLevels,
-                RoomVolumes = _roomVolumes,
-                RoomLocalAUPs = _roomLocalAUPs,
-                Output = _floodMassOutput,
+                return;
+            }
+
+            _floodMassHandle = new SubmarineMassSolverJob
+            {
+                RoomWaterLevels = roomWaterLevels,
+                RoomVolumes = roomVolumes,
+                RoomLocalAUPs = roomLocalAups,
+                Output = floodMassOutput,
                 RoomCount = roomCount,
                 BaseMassKg = _baseMassKg,
-                BaseCenterOfMassLocal = ToFloat3(baseCenterOfMassLocal)
+                BaseCenterOfMassLocal = ToFloat3(baseCenterOfMassLocal),
+                GlobalPivotAnchor = ResolveGlobalPivotAnchor()
             }.Schedule();
             _floodMassJobPending = true;
         }
@@ -1486,10 +1836,14 @@ namespace Hecton8.Gameplay
                 return false;
 
             _floodMassJobPending = false;
-            if (!commitOutput || !_floodMassOutput.IsCreated || _floodMassOutput.Length == 0)
+            if (!commitOutput ||
+                !TryResolveFloodMassOutput(out NativeArray<DynamicFloodMassOutput> floodMassOutput) ||
+                floodMassOutput.Length == 0)
+            {
                 return true;
+            }
 
-            CommitDynamicFloodMassOutput(_floodMassOutput[0]);
+            CommitDynamicFloodMassOutput(floodMassOutput[0]);
             return true;
         }
 
@@ -1502,6 +1856,8 @@ namespace Hecton8.Gameplay
             if ((flags & PidTelemetryFlagFloodInvalid) != 0u ||
                 !math.all(math.isfinite(output.DynamicCenterOfMassLocal)) ||
                 !math.all(math.isfinite(output.DynamicCenterOfMassOffsetLocal)) ||
+                !math.all(math.isfinite(output.InertiaTensorMultiplier)) ||
+                !math.all(math.isfinite(output.GlobalPivotAnchor)) ||
                 !math.isfinite(output.TotalWaterMassKg) ||
                 !math.isfinite(output.AngularDragMultiplier))
             {
@@ -1514,6 +1870,8 @@ namespace Hecton8.Gameplay
 
             _dynamicFloodCenterOfMassLocal = output.DynamicCenterOfMassLocal;
             _dynamicFloodComOffsetLocal = output.DynamicCenterOfMassOffsetLocal;
+            _dynamicFloodInertiaTensorMultiplier = math.max(new float3(1f), output.InertiaTensorMultiplier);
+            _dynamicFloodGlobalPivotAnchor = output.GlobalPivotAnchor;
             _dynamicFloodWaterMassKg = math.max(0f, output.TotalWaterMassKg);
             _dynamicFloodAngularDragMultiplier = math.max(1f, output.AngularDragMultiplier);
             float safeBaseMass = math.max(MinimumMassForReciprocal, _baseMassKg);
@@ -1540,22 +1898,22 @@ namespace Hecton8.Gameplay
 
         private float SumBallastFill()
         {
-            if (!_ballastFill01.IsCreated)
+            if (!TryResolveBallastFill(out NativeArray<float> ballastFill))
                 return 0f;
 
-            return _ballastFill01[TankFront] +
-                   _ballastFill01[TankAft] +
-                   _ballastFill01[TankPort] +
-                   _ballastFill01[TankStarboard];
+            return ballastFill[TankFront] +
+                   ballastFill[TankAft] +
+                   ballastFill[TankPort] +
+                   ballastFill[TankStarboard];
         }
 
         private void WriteTelemetry(uint flags)
         {
-            if (!_telemetry.IsCreated || _hull == null)
+            if (!TryResolveTelemetry(out NativeArray<SubmarinePidTelemetryEntry> telemetry) || _hull == null)
                 return;
 
             int index = _telemetryCursor;
-            if ((uint)index >= (uint)_telemetry.Length)
+            if ((uint)index >= (uint)telemetry.Length)
                 index = 0;
 
             Vector3 position = _hull.position;
@@ -1567,13 +1925,16 @@ namespace Hecton8.Gameplay
                 !IsFinite(angularVelocity) ||
                 !math.isfinite(_lastIntegralWindup) ||
                 !math.all(math.isfinite(_dynamicFloodComOffsetLocal)) ||
+                !math.all(math.isfinite(_dynamicFloodInertiaTensorMultiplier)) ||
+                !math.all(math.isfinite(_previousPidError)) ||
+                !math.isfinite(_systemStress01) ||
                 !math.isfinite(_dynamicFloodWaterMassKg) ||
                 !math.isfinite(_dynamicFloodAngularDragMultiplier))
             {
                 safeFlags |= PidTelemetryFlagInvalidOutput;
             }
 
-            _telemetry[index] = new SubmarinePidTelemetryEntry
+            telemetry[index] = new SubmarinePidTelemetryEntry
             {
                 Frame = _tickCount,
                 RuntimePosition = SnapMillimeter(ToFloat3(position)),
@@ -1581,11 +1942,14 @@ namespace Hecton8.Gameplay
                 AngularVelocity = ToFloat3(angularVelocity),
                 CenterOfMassLocal = _centerOfMassLocal,
                 DynamicFloodComOffsetLocal = _dynamicFloodComOffsetLocal,
+                DynamicFloodInertiaTensorMultiplier = _dynamicFloodInertiaTensorMultiplier,
+                PidError = _previousPidError,
                 BallastWaterMassKg = _ballastWaterMassKg,
                 DynamicFloodWaterMassKg = _dynamicFloodWaterMassKg,
                 DynamicFloodAngularDragMultiplier = _dynamicFloodAngularDragMultiplier,
                 CriticalFloodActive = _criticalFloodActive,
                 IntegralWindup = _lastIntegralWindup,
+                SystemStress01 = _systemStress01,
                 Flags = safeFlags,
                 StateHash = BuildTelemetryHash(
                     position,
@@ -1594,25 +1958,36 @@ namespace Hecton8.Gameplay
                     _lastIntegralWindup,
                     _dynamicFloodWaterMassKg,
                     _dynamicFloodComOffsetLocal,
+                    _dynamicFloodInertiaTensorMultiplier,
+                    _previousPidError,
+                    _systemStress01,
                     safeFlags)
             };
 
             _telemetryCursor = (index + 1) % TelemetryCapacity;
             if ((safeFlags & PidTelemetryFlagInvalidOutput) != 0u)
-                DumpTelemetryOnce(safeFlags);
+                DumpTelemetryOnce(telemetry, safeFlags);
+        }
+
+        private void DumpTelemetryOnce(NativeArray<SubmarinePidTelemetryEntry> telemetry, uint reasonFlags)
+        {
+            if (_dumpedTelemetry || !telemetry.IsCreated)
+                return;
+
+            _dumpedTelemetry = true;
+            WriteTelemetryDumpFile(BallastPidDumpRelativePath, telemetry, reasonFlags);
         }
 
         private void DumpTelemetryOnce(uint reasonFlags)
         {
-            if (_dumpedTelemetry || !_telemetry.IsCreated)
-                return;
-
-            _dumpedTelemetry = true;
-            WriteTelemetryDumpFile(DumpRelativePath, reasonFlags);
-            WriteTelemetryDumpFile(FloodDumpRelativePath, reasonFlags);
+            if (TryResolveTelemetry(out NativeArray<SubmarinePidTelemetryEntry> telemetry))
+                DumpTelemetryOnce(telemetry, reasonFlags);
         }
 
-        private void WriteTelemetryDumpFile(string relativePath, uint reasonFlags)
+        private void WriteTelemetryDumpFile(
+            string relativePath,
+            NativeArray<SubmarinePidTelemetryEntry> telemetry,
+            uint reasonFlags)
         {
             string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
             string directory = Path.GetDirectoryName(path);
@@ -1623,20 +1998,23 @@ namespace Hecton8.Gameplay
             using BinaryWriter writer = new BinaryWriter(stream);
             writer.Write(0x53504944u);
             writer.Write(reasonFlags);
-            writer.Write(_telemetry.Length);
+            writer.Write(telemetry.Length);
             writer.Write(_telemetryCursor);
-            for (int i = 0; i < _telemetry.Length; i++)
+            for (int i = 0; i < telemetry.Length; i++)
             {
-                SubmarinePidTelemetryEntry entry = _telemetry[i];
+                SubmarinePidTelemetryEntry entry = telemetry[i];
                 writer.Write(entry.Frame);
                 writer.Write(entry.StateHash);
                 writer.Write(entry.Flags);
                 writer.Write(entry.IntegralWindup);
+                writer.Write(entry.SystemStress01);
                 WriteFloat3(writer, entry.RuntimePosition);
                 WriteFloat3(writer, entry.LinearVelocity);
                 WriteFloat3(writer, entry.AngularVelocity);
                 WriteFloat3(writer, entry.CenterOfMassLocal);
                 WriteFloat3(writer, entry.DynamicFloodComOffsetLocal);
+                WriteFloat3(writer, entry.DynamicFloodInertiaTensorMultiplier);
+                WriteFloat3(writer, entry.PidError);
                 writer.Write(entry.BallastWaterMassKg);
                 writer.Write(entry.DynamicFloodWaterMassKg);
                 writer.Write(entry.DynamicFloodAngularDragMultiplier);
@@ -1644,62 +2022,148 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private NativeArray<T> AllocateArray<T>(BufferID bufferId, int length, string label, int vaultFlag)
+        private bool TryResolveBallastFill(out NativeArray<float> buffer)
+        {
+            return TryResolveVaultBuffer(
+                ref _ballastFill01Handle,
+                BufferID.SubmarineBallastFill01,
+                TankCount,
+                VaultBallastFillFlag,
+                out buffer);
+        }
+
+        private bool TryResolveTankLocalPositions(out NativeArray<float3> buffer)
+        {
+            return TryResolveVaultBuffer(
+                ref _tankLocalPositionsHandle,
+                BufferID.SubmarineBallastTankLocalPositions,
+                TankCount,
+                VaultTankLocalPositionsFlag,
+                out buffer);
+        }
+
+        private bool TryResolvePidOutput(out NativeArray<PidJobOutput> buffer)
+        {
+            return TryResolveVaultBuffer(
+                ref _pidOutputHandle,
+                BufferID.SubmarineBallastPidOutput,
+                1,
+                VaultPidOutputFlag,
+                out buffer);
+        }
+
+        private bool TryResolveFloodMassOutput(out NativeArray<DynamicFloodMassOutput> buffer)
+        {
+            return TryResolveVaultBuffer(
+                ref _floodMassOutputHandle,
+                BufferID.SubmarineDynamicFloodMassOutput,
+                1,
+                VaultFloodMassOutputFlag,
+                out buffer);
+        }
+
+        private bool TryResolveTelemetry(out NativeArray<SubmarinePidTelemetryEntry> buffer)
+        {
+            return TryResolveVaultBuffer(
+                ref _telemetryHandle,
+                BufferID.SubmarinePidTelemetry,
+                TelemetryCapacity,
+                VaultTelemetryFlag,
+                out buffer);
+        }
+
+        private bool TryResolveRoomBuffers(
+            out NativeArray<float> roomWaterLevels,
+            out NativeArray<float> roomVolumes,
+            out NativeArray<float3> roomLocalAups)
+        {
+            bool hasWater = TryResolveExistingVaultBuffer(ref _roomWaterLevelsHandle, BufferID.RoomWaterLevels, out roomWaterLevels);
+            bool hasVolumes = TryResolveExistingVaultBuffer(ref _roomVolumesHandle, BufferID.RoomVolumes, out roomVolumes);
+            bool hasAups = TryResolveExistingVaultBuffer(ref _roomLocalAUPsHandle, BufferID.RoomLocalAUPs, out roomLocalAups);
+            return hasWater && hasVolumes && hasAups;
+        }
+
+        private bool TryResolveVaultBuffer<T>(
+            ref VaultBufferHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            int vaultFlag,
+            out NativeArray<T> buffer)
             where T : struct
         {
-            IDataVault vault = _dataVault;
+            buffer = default;
+            IDataVault vault = ResolveDataVault();
             if (vault == null)
             {
-                vault = GlobalRegistry.DataVault;
-                _dataVault = vault;
+                _pendingTelemetryFlags |= PidTelemetryFlagDataVaultMissing;
+                handle = default;
+                _vaultNativeStateMask &= ~vaultFlag;
+                return false;
             }
 
-            if (vault != null)
+            if (!handle.IsCreated || handle.BufferId != bufferId || handle.Length < requiredLength)
             {
-                NativeArray<T> vaultArray = vault.GetBuffer<T>(
+                handle = vault.GetBufferHandle<T>(
                     bufferId,
-                    length,
+                    requiredLength,
                     SystemID.VehiclesPhysics,
                     NativeArrayOptions.ClearMemory);
-                if (vaultArray.IsCreated)
+            }
+
+            buffer = handle.Resolve(vault);
+            if (buffer.IsCreated && buffer.Length >= requiredLength)
+            {
+                _vaultNativeStateMask |= vaultFlag;
+                return true;
+            }
+
+            handle = default;
+            _pendingTelemetryFlags |= PidTelemetryFlagDataVaultMissing;
+            _vaultNativeStateMask &= ~vaultFlag;
+            return false;
+        }
+
+        private bool TryResolveExistingVaultBuffer<T>(
+            ref VaultBufferHandle<T> handle,
+            BufferID bufferId,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+            {
+                handle = default;
+                _pendingTelemetryFlags |= PidTelemetryFlagDataVaultMissing;
+                return false;
+            }
+
+            if (!handle.IsCreated || handle.BufferId != bufferId)
+            {
+                if (!vault.TryGetBufferHandle(bufferId, out handle))
                 {
-                    _vaultNativeStateMask |= vaultFlag;
-                    return vaultArray;
+                    handle = default;
+                    return false;
                 }
             }
 
-            _vaultNativeStateMask &= ~vaultFlag;
-            NativeArray<T> array = H8Memory.Allocate<T>(
-                length,
-                SystemID.VehiclesPhysics,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            if (!array.IsCreated)
-                return default;
+            buffer = handle.Resolve(vault);
+            if (buffer.IsCreated)
+                return true;
 
-            NativeMemorySentinel.RegisterNativeArray(
-                array,
-                nameof(SubmarineAutoLevelBallastController),
-                label,
-                NativeAllocationLifetime.Scene);
-            return array;
+            handle = default;
+            return false;
         }
 
-        private void DisposeArray<T>(ref NativeArray<T> array, int vaultFlag)
-            where T : struct
+        private IDataVault ResolveDataVault()
         {
-            if (!array.IsCreated)
-                return;
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                return vault;
 
-            if ((_vaultNativeStateMask & vaultFlag) != 0)
-            {
-                array = default;
-                _vaultNativeStateMask &= ~vaultFlag;
-                return;
-            }
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array, SystemID.VehiclesPhysics);
+            vault = GlobalRegistry.DataVault;
+            _dataVault = vault;
+            return vault;
         }
 
         private static uint BuildTelemetryHash(
@@ -1709,6 +2173,9 @@ namespace Hecton8.Gameplay
             float integralWindup,
             float dynamicFloodWaterMassKg,
             float3 dynamicFloodOffsetLocal,
+            float3 dynamicFloodInertiaTensorMultiplier,
+            float3 pidError,
+            float systemStress01,
             uint flags)
         {
             uint hash = 2166136261u;
@@ -1726,6 +2193,13 @@ namespace Hecton8.Gameplay
             hash = Hash(hash, Quantize(dynamicFloodOffsetLocal.x));
             hash = Hash(hash, Quantize(dynamicFloodOffsetLocal.y));
             hash = Hash(hash, Quantize(dynamicFloodOffsetLocal.z));
+            hash = Hash(hash, Quantize(dynamicFloodInertiaTensorMultiplier.x));
+            hash = Hash(hash, Quantize(dynamicFloodInertiaTensorMultiplier.y));
+            hash = Hash(hash, Quantize(dynamicFloodInertiaTensorMultiplier.z));
+            hash = Hash(hash, Quantize(pidError.x));
+            hash = Hash(hash, Quantize(pidError.y));
+            hash = Hash(hash, Quantize(pidError.z));
+            hash = Hash(hash, Quantize(systemStress01));
             return Hash(hash, flags);
         }
 
@@ -1750,6 +2224,24 @@ namespace Hecton8.Gameplay
                 DeterministicPhysicsMath.SnapMillimeter(value.x),
                 DeterministicPhysicsMath.SnapMillimeter(value.y),
                 DeterministicPhysicsMath.SnapMillimeter(value.z));
+        }
+
+        private static float3 FastNlerp(float3 from, float3 to, float blend01)
+        {
+            if (!math.all(math.isfinite(from)) || !math.all(math.isfinite(to)))
+                return math.all(math.isfinite(to)) ? to : float3.zero;
+
+            float t = math.saturate(blend01);
+            float3 value = from + ((to - from) * t);
+            float maxMagnitude = math.max(math.length(from), math.length(to));
+            if (maxMagnitude <= 0.000001f)
+                return value;
+
+            float valueLengthSq = math.lengthsq(value);
+            if (valueLengthSq <= 0.000001f)
+                return float3.zero;
+
+            return value * (maxMagnitude * math.rsqrt(valueLengthSq));
         }
 
         private static bool IsFinite(Vector3 value)
@@ -1791,8 +2283,12 @@ namespace Hecton8.Gameplay
             floodComStressAudioThresholdMeters = Mathf.Max(0f, floodComStressAudioThresholdMeters);
             floodAngularDampingFloor = Mathf.Max(0f, floodAngularDampingFloor);
             floodStressAudioCooldownSeconds = Mathf.Max(0.05f, floodStressAudioCooldownSeconds);
+            pidHullStressAudioCooldownSeconds = Mathf.Max(0.05f, pidHullStressAudioCooldownSeconds);
             criticalFloodHapticCooldownSeconds = Mathf.Max(0.05f, criticalFloodHapticCooldownSeconds);
             criticalFloodPitchDegrees = Mathf.Clamp(criticalFloodPitchDegrees, 0f, 89f);
+            tailHeavyBubblePitchDegrees = Mathf.Clamp(tailHeavyBubblePitchDegrees, 0f, 89f);
+            tailHeavyBubbleCooldownSeconds = Mathf.Max(0.05f, tailHeavyBubbleCooldownSeconds);
+            pidTorqueFastNlerp01 = Mathf.Clamp(pidTorqueFastNlerp01, 0.05f, 1f);
             combatTargetHealth = Mathf.Max(0f, combatTargetHealth);
             massiveImpactDamageThreshold = Mathf.Max(0f, massiveImpactDamageThreshold);
             combatArmorValue = Mathf.Max(0f, combatArmorValue);

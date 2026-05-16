@@ -2,10 +2,12 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.AI.Cognition;
+using Hecton8.AI.Perception;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Scheduling;
 using Hecton8.World;
 using Unity.Burst;
@@ -64,7 +66,7 @@ namespace Hecton8.AI
         public uint BucketHash;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 96)]
     internal struct LightSourceData
     {
         public AbsoluteUniversePositionBlit128 PositionAup;
@@ -78,9 +80,11 @@ namespace Hecton8.AI
         public ushort Slot;
         public byte Flags;
         public byte Reserved;
+        public uint ReservedTail0;
+        public uint ReservedTail1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     internal struct RetinalTelemetryEntry
     {
         public uint Frame;
@@ -90,6 +94,7 @@ namespace Hecton8.AI
         public float MaxExposure;
         public float3 HottestLightPosition;
         public uint SourceId;
+        public uint Reserved;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -347,8 +352,7 @@ namespace Hecton8.AI
         private const int RetinalTelemetryCapacity = 300;
         private const int RetinalLightStaleFrameWindow = 8;
         private const float RetinalLowTierEvaluationIntervalSeconds = 1f;
-        private const float RetinalDirectDotThreshold = -0.8f;
-        private const float RetinalRecoveryDotThreshold = -0.5f;
+        private const float RetinalFrameBudgetStressThresholdSeconds = 1f / 60f;
         private const float RetinalBlindThreshold = 1f;
         private const float RetinalBlindRecoveryThreshold = 0.28f;
         private const float RetinalExposureRiseScale = 0.72f;
@@ -434,6 +438,18 @@ namespace Hecton8.AI
         private const int MaxPackRoleCasAttempts = 3;
         private const string NativeMemoryOwner = nameof(PredatorCognitionDomain);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const int VaultRetinalExposureFlag = 1 << 0;
+        private const int VaultRetinalBlindnessFlag = 1 << 1;
+        private const int VaultRetinalLastPublishedBlindnessFlag = 1 << 2;
+        private const int VaultRetinalLightSourcesFlag = 1 << 3;
+        private const int VaultRetinalTelemetryRingFlag = 1 << 4;
+        private const int VaultAlphaLeviathanTelemetryRingFlag = 1 << 5;
+        private const int VaultRetinalAllFlags =
+            VaultRetinalExposureFlag |
+            VaultRetinalBlindnessFlag |
+            VaultRetinalLastPublishedBlindnessFlag |
+            VaultRetinalLightSourcesFlag |
+            VaultRetinalTelemetryRingFlag;
 
         private static NativeArray<CognitionCore> _cores;
         private static NativeArray<CognitionControl> _controls;
@@ -498,6 +514,7 @@ namespace Hecton8.AI
         private static int _habitatSiegeTargetCount;
         private static int _retinalLightCount;
         private static int _retinalTelemetryCursor;
+        private static int _vaultAliasMask;
         private static int _alphaLeviathanTelemetryCursor;
         private static int _activeAlphaLeviathanTelemetryCount;
         private static int _totalBlindPredators;
@@ -841,6 +858,7 @@ namespace Hecton8.AI
             if (!_activeSlots.IsCreated)
                 return;
 
+            EnsureRetinalVaultBuffers();
             ProcessSubmarineLightSignals(frameId);
             EmitFearPheromones();
             ChemicalInfluenceGrid.BeginAiFrame(frameId);
@@ -1041,12 +1059,12 @@ namespace Hecton8.AI
             DisposeNativeArray(ref _evaluationDueFlags, disposeDependency);
             DisposeNativeArray(ref _nextEvaluationTimes, disposeDependency);
             DisposeNativeArray(ref _evaluationIntervals, disposeDependency);
-            DisposeNativeArray(ref _retinalExposure, disposeDependency);
-            DisposeNativeArray(ref _blindnessState, disposeDependency);
-            DisposeNativeArray(ref _lastPublishedBlindnessState, disposeDependency);
-            DisposeNativeArray(ref _retinalLightSources, disposeDependency);
-            DisposeNativeArray(ref _retinalTelemetryRing, disposeDependency);
-            DisposeNativeArray(ref _alphaLeviathanTelemetryRing, disposeDependency);
+            ReleaseVaultAliasArray(ref _retinalExposure, disposeDependency, VaultRetinalExposureFlag);
+            ReleaseVaultAliasArray(ref _blindnessState, disposeDependency, VaultRetinalBlindnessFlag);
+            ReleaseVaultAliasArray(ref _lastPublishedBlindnessState, disposeDependency, VaultRetinalLastPublishedBlindnessFlag);
+            ReleaseVaultAliasArray(ref _retinalLightSources, disposeDependency, VaultRetinalLightSourcesFlag);
+            ReleaseVaultAliasArray(ref _retinalTelemetryRing, disposeDependency, VaultRetinalTelemetryRingFlag);
+            ReleaseVaultAliasArray(ref _alphaLeviathanTelemetryRing, disposeDependency, VaultAlphaLeviathanTelemetryRingFlag);
             DisposeNativeParallelHashMap(ref _predatorSpeciesTargetPositions, disposeDependency, nameof(_predatorSpeciesTargetPositions));
             DisposeNativeParallelHashMap(ref _speciesTuningById, disposeDependency, nameof(_speciesTuningById));
 
@@ -1112,6 +1130,7 @@ namespace Hecton8.AI
             _habitatSiegeTargetCount = 0;
             _retinalLightCount = 0;
             _retinalTelemetryCursor = 0;
+            _vaultAliasMask = 0;
             _alphaLeviathanTelemetryCursor = 0;
             _activeAlphaLeviathanTelemetryCount = 0;
             _totalBlindPredators = 0;
@@ -1195,22 +1214,60 @@ namespace Hecton8.AI
             _nextEvaluationTimes = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[Capacity] - resolved cognition cadence intervals per slot - owner: PredatorCognitionDomain
             _evaluationIntervals = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[Capacity] - integrated retinal headlight exposure per predator slot - owner: PredatorCognitionDomain
-            _retinalExposure = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[Capacity] - binary retinal blindness state per predator slot - owner: PredatorCognitionDomain
-            _blindnessState = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[Capacity] - last published blindness state mirror for edge-triggered fauna state signals - owner: PredatorCognitionDomain
-            _lastPublishedBlindnessState = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<LightSourceData>[4] - brightest active headlight registry consumed by Burst cognition - owner: PredatorCognitionDomain
-            _retinalLightSources = new NativeArray<LightSourceData>(RetinalLightCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<RetinalTelemetryEntry>[300] - retinal black-box circular buffer - owner: PredatorCognitionDomain
-            _retinalTelemetryRing = new NativeArray<RetinalTelemetryEntry>(RetinalTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<AlphaLeviathanTelemetryEntry>[300] - Alpha stalking black-box circular buffer - owner: PredatorCognitionDomain
-            _alphaLeviathanTelemetryRing = new NativeArray<AlphaLeviathanTelemetryEntry>(RetinalTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // VAULT ALIAS: Retinal and Alpha black-box data live in GlobalDataVault.
+            EnsureRetinalVaultBuffers();
+            EnsureAlphaLeviathanTelemetryVaultBuffer();
             // COLD ALLOC: NativeParallelHashMap<int,SpeciesCognitionTuning>[Capacity] - species cognition tuning table keyed by stable species id - owner: PredatorCognitionDomain
             _speciesTuningById = new NativeParallelHashMap<int, SpeciesCognitionTuning>(Capacity, Allocator.Persistent);
             RegisterNativeMemorySentinel();
             ClearBoidClaims();
+        }
+
+        private static void EnsureRetinalVaultBuffers()
+        {
+            if (_retinalExposure.IsCreated &&
+                _blindnessState.IsCreated &&
+                _lastPublishedBlindnessState.IsCreated &&
+                _retinalLightSources.IsCreated &&
+                _retinalTelemetryRing.IsCreated)
+            {
+                return;
+            }
+
+            if (!RetinalAdaptationVault.TryResolve(
+                    GlobalRegistry.DataVault,
+                    Capacity,
+                    RetinalLightCapacity,
+                    RetinalTelemetryCapacity,
+                    out RetinalAdaptationVaultBuffers buffers))
+            {
+                return;
+            }
+
+            _retinalExposure = buffers.Exposure;
+            _blindnessState = buffers.BlindnessState;
+            _lastPublishedBlindnessState = buffers.LastPublishedBlindnessState;
+            _retinalLightSources = buffers.LightSources;
+            _retinalTelemetryRing = buffers.TelemetryRing;
+            _vaultAliasMask |= VaultRetinalAllFlags;
+        }
+
+        private static void EnsureAlphaLeviathanTelemetryVaultBuffer()
+        {
+            if (_alphaLeviathanTelemetryRing.IsCreated)
+                return;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsAllocationLocked)
+                return;
+
+            _alphaLeviathanTelemetryRing = vault.GetBuffer<AlphaLeviathanTelemetryEntry>(
+                BufferID.AlphaLeviathanTelemetryRing,
+                AlphaLeviathanStalkConstants.TelemetryCapacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            if (_alphaLeviathanTelemetryRing.IsCreated)
+                _vaultAliasMask |= VaultAlphaLeviathanTelemetryRingFlag;
         }
 
         private static void RegisterNativeMemorySentinel()
@@ -1250,13 +1307,21 @@ namespace Hecton8.AI
             NativeMemorySentinel.RegisterNativeArray(_evaluationDueFlags, NativeMemoryOwner, nameof(_evaluationDueFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_nextEvaluationTimes, NativeMemoryOwner, nameof(_nextEvaluationTimes), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_evaluationIntervals, NativeMemoryOwner, nameof(_evaluationIntervals), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_retinalExposure, NativeMemoryOwner, nameof(_retinalExposure), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_blindnessState, NativeMemoryOwner, nameof(_blindnessState), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_lastPublishedBlindnessState, NativeMemoryOwner, nameof(_lastPublishedBlindnessState), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_retinalLightSources, NativeMemoryOwner, nameof(_retinalLightSources), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_retinalTelemetryRing, NativeMemoryOwner, nameof(_retinalTelemetryRing), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_alphaLeviathanTelemetryRing, NativeMemoryOwner, nameof(_alphaLeviathanTelemetryRing), NativeMemoryLifetime);
+            RegisterNativeArrayIfDomainOwned(_retinalExposure, nameof(_retinalExposure), VaultRetinalExposureFlag);
+            RegisterNativeArrayIfDomainOwned(_blindnessState, nameof(_blindnessState), VaultRetinalBlindnessFlag);
+            RegisterNativeArrayIfDomainOwned(_lastPublishedBlindnessState, nameof(_lastPublishedBlindnessState), VaultRetinalLastPublishedBlindnessFlag);
+            RegisterNativeArrayIfDomainOwned(_retinalLightSources, nameof(_retinalLightSources), VaultRetinalLightSourcesFlag);
+            RegisterNativeArrayIfDomainOwned(_retinalTelemetryRing, nameof(_retinalTelemetryRing), VaultRetinalTelemetryRingFlag);
+            RegisterNativeArrayIfDomainOwned(_alphaLeviathanTelemetryRing, nameof(_alphaLeviathanTelemetryRing), VaultAlphaLeviathanTelemetryRingFlag);
             NativeMemorySentinel.RegisterNativeParallelHashMap(_speciesTuningById, NativeMemoryOwner, nameof(_speciesTuningById), NativeMemoryLifetime);
+        }
+
+        private static void RegisterNativeArrayIfDomainOwned<T>(NativeArray<T> array, string label, int vaultFlag) where T : struct
+        {
+            if (!array.IsCreated || (_vaultAliasMask & vaultFlag) != 0)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle disposeDependency) where T : struct
@@ -1267,6 +1332,21 @@ namespace Hecton8.AI
             NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose(disposeDependency);
             array = default;
+        }
+
+        private static void ReleaseVaultAliasArray<T>(ref NativeArray<T> array, JobHandle disposeDependency, int vaultFlag) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            if ((_vaultAliasMask & vaultFlag) != 0)
+            {
+                array = default;
+                _vaultAliasMask &= ~vaultFlag;
+                return;
+            }
+
+            DisposeNativeArray(ref array, disposeDependency);
         }
 
         private static void DisposeNativeList<T>(ref NativeList<T> list, JobHandle disposeDependency, string label) where T : unmanaged
@@ -1297,7 +1377,7 @@ namespace Hecton8.AI
         private static bool PrepareEvaluationDueFlags()
         {
             bool hasDueEvaluations = false;
-            bool lowTierRetina = GlobalRegistry.ScalabilityTierProfileByte == 0;
+            bool lowTierRetina = ResolveRetinalLowCadenceMode();
             for (int i = 0; i < _activeSlots.Length; i++)
             {
                 int slot = _activeSlots[i];
@@ -1336,6 +1416,13 @@ namespace Hecton8.AI
             }
 
             return hasDueEvaluations;
+        }
+
+        private static bool ResolveRetinalLowCadenceMode()
+        {
+            return GlobalRegistry.ScalabilityTierProfileByte == 0 ||
+                   SystemDispatcher.HomeostasisPressureLevel != 0 ||
+                   SystemDispatcher.CurrentFrameUnscaledDeltaTime > RetinalFrameBudgetStressThresholdSeconds;
         }
 
         private static void ProcessSubmarineLightSignals(int frameId)
@@ -1641,6 +1728,7 @@ namespace Hecton8.AI
 
         private static void UpdateAlphaLeviathanPostEvaluationTelemetry(int frameId)
         {
+            EnsureAlphaLeviathanTelemetryVaultBuffer();
             if (!_activeSlots.IsCreated ||
                 !_alphaLeviathanTelemetryRing.IsCreated ||
                 !_stalkingPhases.IsCreated ||
@@ -1726,8 +1814,13 @@ namespace Hecton8.AI
                 entry.PlayerPosition = playerPosition;
                 entry.DesiredDirection = invalid ? float3.zero : output.DesiredDirection;
                 entry.StateHash = stateHash;
-                _alphaLeviathanTelemetryRing[_alphaLeviathanTelemetryCursor] = entry;
-                _alphaLeviathanTelemetryCursor = (_alphaLeviathanTelemetryCursor + 1) % RetinalTelemetryCapacity;
+                int telemetryFrame = (frameId < 0 ? 0 : frameId) % AlphaLeviathanStalkConstants.TelemetryFrames;
+                int telemetrySlot = math.min(activeAlphaCount - 1, AlphaLeviathanStalkConstants.MaxLeviathanSlots - 1);
+                int telemetryIndex = (telemetryFrame * AlphaLeviathanStalkConstants.MaxLeviathanSlots) + telemetrySlot;
+                if ((uint)telemetryIndex < (uint)_alphaLeviathanTelemetryRing.Length)
+                    _alphaLeviathanTelemetryRing[telemetryIndex] = entry;
+
+                _alphaLeviathanTelemetryCursor = telemetryFrame;
                 lastPhase = phase;
                 lastStateHash = stateHash;
             }
@@ -1783,7 +1876,11 @@ namespace Hecton8.AI
                     writer.Write(frameId);
                     writer.Write(_alphaLeviathanTelemetryCursor);
                     writer.Write(_activeAlphaLeviathanTelemetryCount);
-                    for (int i = 0; i < RetinalTelemetryCapacity; i++)
+                    writer.Write(AlphaLeviathanStalkConstants.TelemetryFrames);
+                    writer.Write(AlphaLeviathanStalkConstants.MaxLeviathanSlots);
+                    int dumpCount = math.min(_alphaLeviathanTelemetryRing.Length, AlphaLeviathanStalkConstants.TelemetryCapacity);
+                    writer.Write(dumpCount);
+                    for (int i = 0; i < dumpCount; i++)
                     {
                         AlphaLeviathanTelemetryEntry entry = _alphaLeviathanTelemetryRing[i];
                         writer.Write(entry.Frame);
@@ -2714,7 +2811,7 @@ namespace Hecton8.AI
                 float dt = math.clamp(math.max(input.DeltaTime, input.MetabolicDeltaTime), CenterEvaluationIntervalSeconds, RetinalLowTierEvaluationIntervalSeconds);
                 if (!RetinalLightSources.IsCreated || RetinalLightCount <= 0)
                 {
-                    exposure = math.max(0f, exposure - RetinalExposureDecayPerSecond * dt);
+                    exposure = DecayRetinalExposure(exposure, dt);
                     blindState = exposure <= RetinalBlindRecoveryThreshold ? (byte)0 : blindState;
                     RetinalExposure[slot] = exposure;
                     BlindnessState[slot] = blindState;
@@ -2736,8 +2833,17 @@ namespace Hecton8.AI
                         continue;
 
                     float3 lightPosition = ResolveRuntimePosition(in light.PositionAup, input.FloatingOriginOffset);
+                    if (!MathGuard.IsFinite(lightPosition))
+                        continue;
+
                     float3 lightToPredator = input.Position - lightPosition;
+                    if (!MathGuard.IsFinite(lightToPredator))
+                        continue;
+
                     float distanceSq = math.lengthsq(lightToPredator);
+                    if (!MathGuard.IsFinite(distanceSq))
+                        continue;
+
                     if (distanceSq > light.RangeSq || distanceSq <= DdaEpsilon)
                         continue;
 
@@ -2747,12 +2853,15 @@ namespace Hecton8.AI
                     if (coneDot < light.SpotOuterCos)
                         continue;
 
-                    float forwardDot = math.dot(predatorForward, lightToPredatorDir);
-                    holdGlare |= forwardDot <= RetinalRecoveryDotThreshold;
-                    if (forwardDot >= RetinalDirectDotThreshold)
+                    float predatorToLightDot = RetinalExposureMath.ResolvePredatorToLightDot(predatorForward, lightToPredatorDir);
+                    if (!MathGuard.IsFinite(predatorToLightDot))
                         continue;
 
-                    float direct01 = math.saturate((RetinalDirectDotThreshold - forwardDot) * 5f);
+                    holdGlare |= RetinalExposureMath.IsHoldingGlare(predatorToLightDot);
+                    if (!RetinalExposureMath.IsLookingAtLight(predatorToLightDot))
+                        continue;
+
+                    float direct01 = RetinalExposureMath.ResolveDirectGlare01(predatorToLightDot);
                     float distance01 = 1f - math.saturate(distanceSq * math.rcp(math.max(light.RangeSq, 1f)));
                     float stimulus = math.max(0f, light.Intensity) * distance01 * direct01;
                     if (stimulus <= bestStimulus)
@@ -2770,7 +2879,7 @@ namespace Hecton8.AI
                 }
                 else if (!holdGlare)
                 {
-                    exposure = math.max(0f, exposure - RetinalExposureDecayPerSecond * dt);
+                    exposure = DecayRetinalExposure(exposure, dt);
                 }
 
                 blindState = exposure >= RetinalBlindThreshold
@@ -2781,6 +2890,11 @@ namespace Hecton8.AI
                 result.Exposure01 = exposure;
                 result.BlindState = blindState;
                 return result;
+            }
+
+            private static float DecayRetinalExposure(float exposure, float dt)
+            {
+                return math.saturate(exposure * FastExpNegPade13(RetinalExposureDecayPerSecond * math.max(0f, dt)));
             }
 
             private static float3 ResolveRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, double3 floatingOriginOffset)
@@ -2873,7 +2987,10 @@ namespace Hecton8.AI
                 bool lightAversionActive = IsLightAversionActive(input) || (retinalBlindActive && !retinalFrenzyActive);
                 bool lightFrenzyActive = (IsLightFrenzyActive(input) || retinalFrenzyActive) && hasPlayerTarget;
                 if (retinalFrenzyActive)
-                    aggression = math.saturate(aggression * 2f);
+                {
+                    aggression = 1f;
+                    threatLevel = math.max(threatLevel, input.PlayerLightExposure01);
+                }
 
                 if (lightAversionActive)
                 {
@@ -4289,7 +4406,10 @@ namespace Hecton8.AI
                         float3 up = new float3(0f, 1f, 0f);
                         float3 lateral = ResolveRsqrtDirection(math.cross(up, awayFromLight), math.cross(new float3(0f, 0f, 1f), awayFromLight));
                         lateral = math.select(lateral, -lateral, (slot & 1) != 0);
-                        return SanitizeSteeringVector(ApplyVortexSteering(selfPosition, lateral, lateral, false), lateral);
+                        float3 flinchDirection = useHighTierSmoothSteering
+                            ? ResolveRetinalThrashDirection(slot, awayFromLight, lateral, currentTime)
+                            : lateral;
+                        return SanitizeSteeringVector(ApplyVortexSteering(selfPosition, flinchDirection, lateral, false), lateral);
                     }
 
                     float3 fleeDirection = ResolveDominantAxis(selfPosition - fleeFrom, -fallbackForward);
@@ -4304,6 +4424,18 @@ namespace Hecton8.AI
                     ? ResolveApexSCurveDirection(slot, stateMask, selfPosition, targetPosition, fallbackForward, currentTime)
                     : ResolveDominantAxis(targetPosition - selfPosition, fallbackForward);
                 return SanitizeSteeringVector(ApplyVortexSteering(selfPosition, desiredDirection, fallbackForward, useApexSCurve), fallbackForward);
+            }
+
+            private static float3 ResolveRetinalThrashDirection(int slot, float3 awayFromLight, float3 lateral, float currentTime)
+            {
+                float phase = (slot * 0.6180339f) + (currentTime * 7.0f);
+                float lateralJitter = RetinalExposureMath.SignedTriangle(phase);
+                float verticalJitter = RetinalExposureMath.SignedTriangle((phase * 0.73f) + 0.37f);
+                float3 mixed =
+                    (lateral * (0.65f + (0.25f * lateralJitter))) +
+                    (awayFromLight * (0.35f - (0.2f * lateralJitter))) +
+                    new float3(0f, verticalJitter * 0.35f, 0f);
+                return ResolveRsqrtDirection(mixed, lateral);
             }
 
             private float3 ApplyVortexSteering(float3 selfPosition, float3 desiredDirection, float3 fallbackForward, bool smoothSteering)

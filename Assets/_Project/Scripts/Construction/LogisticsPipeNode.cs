@@ -1,6 +1,6 @@
 using Hecton8.Atmosphere;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Modding;

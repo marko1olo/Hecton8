@@ -16,7 +16,7 @@ using Hecton8.Celestial;
 using Hecton8.Construction;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -132,10 +132,19 @@ namespace Hecton8.Core
         private const uint _DataVaultMassiveMoveHash = 0xDADA7051u;
         private const uint _DataVaultVramPressureHash = 0xDADA7052u;
         private const uint _BaseStressCascadeBreakerHash = 3838237614u;
+        private const uint _SimulationBucketContextHash = 0x53424B54u; // SBKT
+        private const uint _FramePacingWarningHash = 0x4650574Eu; // FPWN
+        private const ulong _FramePacingEmergencyKillMask =
+            (ulong)SystemBit.NonCriticalVfx |
+            (ulong)SystemBit.ParticleAdvection |
+            (ulong)SystemBit.DistantFaunaSteering |
+            (ulong)SystemBit.SlowTick2Hz |
+            (ulong)SystemBit.TimeDilation08;
         private static readonly int _HectonFreezeFrameDitherId = Shader.PropertyToID("_HectonFreezeFrameDither");
         private static readonly int _GamePausedId = Shader.PropertyToID("_GamePaused");
         private static readonly int _HectonVisualStaticGlitchId = Shader.PropertyToID("_HectonVisualStaticGlitch");
         private static readonly int _HectonVisualStaticGlitchSeedId = Shader.PropertyToID("_HectonVisualStaticGlitchSeed");
+        private static readonly int _SimulationBucketInterpolationAlphaId = Shader.PropertyToID("_SimulationBucketInterpolationAlpha");
         private static readonly float[] _arteryFlushMilliseconds = new float[ArteryFlushSampleCapacity];
         private static int _arteryFlushSampleCursor;
         private static readonly ProfilerMarker[] _updateLaneProfilerMarkers =
@@ -324,6 +333,8 @@ namespace Hecton8.Core
         private static float _visualStaticGlitchUntilTime;
         private static int _baseStressCascadeBreakerFrame = -1;
         private static int _baseStressCascadeTableOverflowTelemetryFrame = -1;
+        private static int _lastFramePacingWarningFrame = -1;
+        private static int _lastFramePacingHomeostasisFrame = -1;
         private static int _originShiftBootstrapLockCount;
         private static int _originShiftFrameLockFrame = -1;
         private static int _criticalMemoryPressureDefragRequested;
@@ -514,10 +525,13 @@ namespace Hecton8.Core
             Volatile.Write(ref _streamingStorageDebtSequence, 0);
             Volatile.Write(ref _originShiftBootstrapLockCount, 0);
             Volatile.Write(ref _originShiftFrameLockFrame, -1);
+            _lastFramePacingWarningFrame = -1;
+            _lastFramePacingHomeostasisFrame = -1;
             Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);
             Shader.SetGlobalFloat(_GamePausedId, 0f);
             Shader.SetGlobalFloat(_HectonVisualStaticGlitchId, 0f);
             Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, 0f);
+            Shader.SetGlobalFloat(_SimulationBucketInterpolationAlphaId, 0f);
             _criticalPerformanceSpikeReported = false;
             _temporalCompressionActive = false;
             _temporalCompressionFrameCount = 0;
@@ -1518,6 +1532,19 @@ namespace Hecton8.Core
 
         private void PublishDataVaultDefragTelemetry(IDataVault dataVault, double elapsedMilliseconds)
         {
+            float vaultPressure01 = dataVault.CapacityPressure01;
+            if (vaultPressure01 >= 0.8f)
+            {
+                MemoryPressureSignal pressureSignal = default;
+                pressureSignal.ReservedMemoryBytes = dataVault.AllocatedBytes;
+                pressureSignal.PhysicalMemoryBytes = dataVault.ArenaBytes;
+                pressureSignal.UsageRatio = vaultPressure01;
+                pressureSignal.Frame = unchecked((uint)Time.frameCount);
+                pressureSignal.Severity = vaultPressure01 >= 0.95f ? (byte)2 : (byte)1;
+                pressureSignal.Flags = 2;
+                GlobalSignals.Publish(in pressureSignal);
+            }
+
             if (dataVault.HeapFragmentationRatio > 0f)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(
@@ -1673,6 +1700,7 @@ namespace Hecton8.Core
                     BootstrapBiosErrorOverlay.Show(BootstrapStatus.SafeHaltDisplayMessage);
 
                 long dispatcherTickStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                long preSimulationStartTimestamp = dispatcherTickStartTimestamp;
                 HectonXRRuntimeState.RefreshFrameState(Time.frameCount);
                 float measuredUnscaledDeltaTime = HectonXRRuntimeState.IsXRActive ? Time.smoothDeltaTime : Time.unscaledDeltaTime;
                 float unscaledDeltaTime = HectonXRRuntimeState.ResolveDispatcherDeltaTime(measuredUnscaledDeltaTime);
@@ -1693,6 +1721,8 @@ namespace Hecton8.Core
                 CurrentFrameDeltaTime = deltaTime;
                 UpdateH8TimeState(deltaTime, unscaledDeltaTime);
                 PublishTimeDilationState(0u);
+                float preSimulationCostMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - preSimulationStartTimestamp) * 1000.0 /
+                                                    System.Diagnostics.Stopwatch.Frequency);
                 RefreshSimulationBucketerDependency();
                 ISimulationBucketer simulationBucketer = _simulationBucketer;
                 bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
@@ -1700,11 +1730,15 @@ namespace Hecton8.Core
                                         _aupPreShiftPauseFrame == Time.frameCount;
                 if (simulationBucketer != null && simulationBucketer.IsInitialized)
                 {
+                    simulationBucketer.ReportPreSimulationCostMs(preSimulationCostMs);
                     simulationBucketer.AdvanceFrame(
                         GlobalRegistry.ScalabilityTierProfileByte,
                         unscaledDeltaTime,
                         jobAdmission != null ? jobAdmission.CriticalDebtFrameCount : 0,
                         aupBarrierActive);
+                    SimulationBucketFrameState bucketFrameState = simulationBucketer.CaptureFrameState();
+                    PublishSimulationBucketSync(in bucketFrameState);
+                    PublishFramePacingWarningIfNeeded(in bucketFrameState);
                 }
 
                 if (IsOriginShiftBootstrapLocked)
@@ -1785,7 +1819,9 @@ namespace Hecton8.Core
                     float activeBucketLoadMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - bucketWorkStartTimestamp) * 1000.0 /
                                                        System.Diagnostics.Stopwatch.Frequency);
                     simulationBucketer.ReportActiveBucketLoadMs(activeBucketLoadMs);
-                    CrashTelemetryBuffer.ReportSimulationBucketFrame(simulationBucketer.CaptureFrameState());
+                    SimulationBucketFrameState bucketFrameState = simulationBucketer.CaptureFrameState();
+                    PublishFramePacingWarningIfNeeded(in bucketFrameState);
+                    CrashTelemetryBuffer.ReportSimulationBucketFrame(bucketFrameState);
                 }
 
                 double tickOverheadMilliseconds =
@@ -1793,6 +1829,113 @@ namespace Hecton8.Core
                     System.Diagnostics.Stopwatch.Frequency;
                 CrashTelemetryBuffer.ReportTimeDilationState(_timeDilationScalar, tickOverheadMilliseconds);
             }
+        }
+
+        private void PublishSimulationBucketSync(in SimulationBucketFrameState frameState)
+        {
+            float alpha = math.isfinite(frameState.SimulationBucketInterpolationAlpha)
+                ? math.saturate(frameState.SimulationBucketInterpolationAlpha)
+                : 0f;
+            Shader.SetGlobalFloat(_SimulationBucketInterpolationAlphaId, alpha);
+
+            SimulationBucketSyncSignal signal = default;
+            signal.InterpolationAlpha = alpha;
+            signal.Frame = unchecked((uint)math.max(0, frameState.CurrentFrameCount));
+            signal.ActiveSlowBucket = frameState.ActiveSlowBucket;
+            signal.SlowBucketMask = frameState.SlowBucketMask;
+            signal.RebalanceSequence = frameState.RebalanceSequence;
+            signal.ActiveSlowBucketCount = frameState.ActiveSlowBucketCount;
+            signal.Flags = unchecked((byte)math.min(byte.MaxValue, frameState.FramePacingFlags));
+            SignalBus<SimulationBucketSyncSignal>.Push(in signal);
+        }
+
+        private void PublishFramePacingWarningIfNeeded(in SimulationBucketFrameState frameState)
+        {
+            uint flags = frameState.FramePacingFlags;
+            uint criticalFlags =
+                SimulationBucketPacingFlags.Impossible60Fps |
+                SimulationBucketPacingFlags.PreSimulationOverBudget |
+                SimulationBucketPacingFlags.NonFiniteCost;
+            if ((flags & criticalFlags) == 0u)
+                return;
+
+            int currentFrame = Time.frameCount;
+            float currentFrameMs = ResolveCurrentFrameMilliseconds();
+            if ((flags & SimulationBucketPacingFlags.HomeostasisKillRequested) != 0u &&
+                _lastFramePacingHomeostasisFrame != currentFrame)
+            {
+                _lastFramePacingHomeostasisFrame = currentFrame;
+                ApplyFramePacingHomeostasisKill();
+            }
+
+            if (_lastFramePacingWarningFrame == currentFrame)
+                return;
+
+            _lastFramePacingWarningFrame = currentFrame;
+            FramePacingWarningSignal warning = default;
+            warning.Frame = unchecked((uint)math.max(0, currentFrame));
+            warning.SourceHash = _FramePacingWarningHash;
+            warning.Flags = flags;
+            warning.CurrentFrameMs = currentFrameMs;
+            warning.TargetFrameMs = SimulationBucketConstants.TargetFrameMilliseconds;
+            warning.PreSimulationMs = SanitizeNonNegativeMilliseconds(frameState.PreSimulationCostMs);
+            warning.ActiveBucketLoadMs = SanitizeNonNegativeMilliseconds(frameState.ActiveBucketLoadMs);
+            warning.JitterVarianceMs = SanitizeNonNegativeMilliseconds(frameState.JitterVarianceMs);
+            warning.ExpectedMaxBucketLoadMs = SanitizeNonNegativeMilliseconds(frameState.ExpectedMaxBucketLoadMs);
+            warning.ExpectedMeanBucketLoadMs = SanitizeNonNegativeMilliseconds(frameState.ExpectedMeanBucketLoadMs);
+            warning.ActiveSlowBucket = frameState.ActiveSlowBucket;
+            warning.SlowBucketMask = frameState.SlowBucketMask;
+            warning.RebalanceSequence = frameState.RebalanceSequence;
+            warning.Severity = ResolveFramePacingSeverity(flags, currentFrameMs, warning.PreSimulationMs);
+            SignalBus<FramePacingWarningSignal>.Push(in warning);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _FramePacingWarningHash,
+                _SimulationBucketContextHash,
+                currentFrameMs);
+        }
+
+        private static void ApplyFramePacingHomeostasisKill()
+        {
+            ulong mask = KillSwitchMask | _FramePacingEmergencyKillMask;
+            byte pressureLevel = HomeostasisPressureLevel >= 3 ? HomeostasisPressureLevel : (byte)3;
+            byte foveatedTier = HomeostasisFoveatedTier >= 3 ? HomeostasisFoveatedTier : (byte)3;
+            ApplyHomeostasisKillSwitch(
+                mask,
+                pressureLevel,
+                foveatedTier,
+                slowTick2Hz: true,
+                forceTimeDilation08: true,
+                _FramePacingWarningHash);
+            GlobalRegistry.SetSystemKillSwitchBits(GlobalRegistry.SystemKillSwitchLane4VfxMask, true);
+        }
+
+        private static float ResolveCurrentFrameMilliseconds()
+        {
+            float deltaTime = Time.unscaledDeltaTime;
+            if (!math.isfinite(deltaTime) || deltaTime < 0f)
+                return 0f;
+
+            return deltaTime * 1000f;
+        }
+
+        private static float SanitizeNonNegativeMilliseconds(float milliseconds)
+        {
+            return math.isfinite(milliseconds) && milliseconds > 0f ? milliseconds : 0f;
+        }
+
+        private static byte ResolveFramePacingSeverity(uint flags, float currentFrameMs, float preSimulationMs)
+        {
+            byte severity = 1;
+            if ((flags & SimulationBucketPacingFlags.PreSimulationOverBudget) != 0u ||
+                preSimulationMs > SimulationBucketConstants.PreSimulationBudgetMilliseconds)
+                severity = 2;
+            if ((flags & SimulationBucketPacingFlags.Impossible60Fps) != 0u ||
+                currentFrameMs > SimulationBucketConstants.TargetFrameMilliseconds)
+                severity = 3;
+            if ((flags & SimulationBucketPacingFlags.NonFiniteCost) != 0u)
+                severity = 4;
+
+            return severity;
         }
 
         private static void RefreshPauseDepthOfFieldTarget()
@@ -3258,14 +3401,14 @@ namespace Hecton8.Core
             Vector3 forward = cameraTransform.forward;
             Vector3 up = cameraTransform.up;
 
-            Hecton8.Core.Signals.CameraPositionSignal positionSignal = default;
+            Hecton8.Core.Contracts.Signals.CameraPositionSignal positionSignal = default;
             positionSignal.Position = (float3)position;
             positionSignal.Frame = frame;
             positionSignal.Forward = (float3)forward;
             positionSignal.Flags = 1;
-            SignalBus<Hecton8.Core.Signals.CameraPositionSignal>.Push(in positionSignal);
+            SignalBus<Hecton8.Core.Contracts.Signals.CameraPositionSignal>.Push(in positionSignal);
 
-            Hecton8.Core.Signals.CameraFrustumSignal frustumSignal = default;
+            Hecton8.Core.Contracts.Signals.CameraFrustumSignal frustumSignal = default;
             frustumSignal.Position = (float3)position;
             frustumSignal.Forward = (float3)forward;
             frustumSignal.Up = (float3)up;
@@ -3274,7 +3417,7 @@ namespace Hecton8.Core
             frustumSignal.FarClipMeters = camera.farClipPlane;
             frustumSignal.Frame = frame;
             frustumSignal.Flags = 1;
-            SignalBus<Hecton8.Core.Signals.CameraFrustumSignal>.Push(in frustumSignal);
+            SignalBus<Hecton8.Core.Contracts.Signals.CameraFrustumSignal>.Push(in frustumSignal);
         }
 
         internal static void Clear()

@@ -68,6 +68,10 @@ Shader "Hecton8/Fauna/LeviathanTentacleIndirect"
         float4 _H8AbyssalFlowCenter;
         float4 _H8AbyssalFlowSpacing;
         float _H8AbyssalFlowActive;
+        float4 _GlobalBiolumStates[16];
+        float4 _GlobalBiolumParams;
+        float4 _GlobalBiolumClock;
+        float4 _GlobalBiolumAupOffset;
 
         CBUFFER_START(UnityPerMaterial)
             float4 _BaseMap_ST;
@@ -248,6 +252,21 @@ Shader "Hecton8/Fauna/LeviathanTentacleIndirect"
             return color;
         }
 
+        half4 ResolveTentacleGlobalBiolum(float3 positionWS)
+        {
+            int activeCount = min(max((int)_GlobalBiolumParams.x, 0), 16);
+            if (activeCount <= 0)
+                return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+            float selector = frac(abs(positionWS.x * 0.031 + positionWS.z * 0.067 + _GlobalBiolumAupOffset.x * 0.0019 + _GlobalBiolumAupOffset.z * 0.0012));
+            int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
+            float4 state = _GlobalBiolumStates[stateIndex];
+            half strobe = saturate((half)_GlobalBiolumParams.z);
+            half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
+            half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
+            return half4(color, intensity);
+        }
+
         half4 Frag(Varyings input) : SV_Target
         {
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
@@ -314,6 +333,9 @@ Shader "Hecton8/Fauna/LeviathanTentacleIndirect"
                 caustics = HectonCoreLitEvaluateProjectedCausticsScattering(input.positionWS, normalWS) * albedo;
                 biolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(input.positionWS) * emissionMask;
             }
+            half4 globalBiolumState = ResolveTentacleGlobalBiolum(input.positionWS);
+            half globalBiolumMask = step(0.001h, globalBiolumState.w);
+            biolum += globalBiolumState.rgb * (globalBiolumState.w * 0.08h * emissionMask * globalBiolumMask);
             half3 emission = _EmissionColor.rgb * (_EmissionStrength * emissionMask);
             emission += _SuctionGlowColor.rgb * (_SuctionGlowColor.a * radiusPulse * (0.55h + rim2));
             emission += _EmissionColor.rgb * (flowSheen * (0.18h + rim2 * 0.82h));

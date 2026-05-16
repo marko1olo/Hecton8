@@ -73,6 +73,14 @@ namespace Hecton8.Graphics.Materials
         public static readonly int NoirFogAlpha = Shader.PropertyToID("_NoirFogAlpha");
         /// <summary>GraphicsBuffer containing H8 Uber Noir instance matrices and seeds.</summary>
         public static readonly int H8UberNoirInstanceData = Shader.PropertyToID("_H8UberNoirInstanceData");
+        /// <summary>Global packed Beer-Lambert extinction LUT.</summary>
+        public static readonly int ExtinctionLut = Shader.PropertyToID("_ExtinctionLUT");
+        /// <summary>Global Beer-Lambert extinction LUT axis and enable parameters.</summary>
+        public static readonly int ExtinctionLutParams = Shader.PropertyToID("_ExtinctionLUTParams");
+        /// <summary>Global Beer-Lambert extinction runtime water state.</summary>
+        public static readonly int ExtinctionLutRuntime = Shader.PropertyToID("_ExtinctionLUTRuntime");
+        /// <summary>Global Beer-Lambert weather-driven turbidity shift.</summary>
+        public static readonly int ExtinctionLutWeatherParams = Shader.PropertyToID("_ExtinctionLUTWeatherParams");
         /// <summary>AUP runtime-to-absolute offset.</summary>
         public static readonly int TotalUniverseOffset = Shader.PropertyToID("_TotalUniverseOffset");
         /// <summary>Global bioluminescence phase vector.</summary>

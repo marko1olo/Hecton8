@@ -65,32 +65,34 @@ namespace Hecton8.Gameplay
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
     internal struct PlayerKinematicsHandTarget
     {
         public const byte FlagBrace = 1 << 0;
         public const byte FlagSqueeze = 1 << 1;
 
-        public float3 Position;
-        public float3 Normal;
-        public float Blend;
-        public byte Hit;
-        public byte Flags;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float3 Normal;
+        [FieldOffset(24)] public float Blend;
+        [FieldOffset(28)] public byte Hit;
+        [FieldOffset(29)] public byte Flags;
+        [FieldOffset(30)] public byte Reserved0;
+        [FieldOffset(31)] public byte Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
     internal struct PlayerKinematicsTelemetryEntry
     {
-        public float3 Position;
-        public float3 Velocity;
-        public float3 IntendedMovement;
-        public float DragCoefficient;
-        public float WaterDensityScale;
-        public uint Frame;
-        public uint Flags;
-        public uint Padding0;
-        public uint Padding1;
-        public uint Padding2;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float3 Velocity;
+        [FieldOffset(24)] public float3 IntendedMovement;
+        [FieldOffset(36)] public float DragCoefficient;
+        [FieldOffset(40)] public float WaterDensityScale;
+        [FieldOffset(44)] public uint Frame;
+        [FieldOffset(48)] public uint Flags;
+        [FieldOffset(52)] public uint Padding0;
+        [FieldOffset(56)] public uint Padding1;
+        [FieldOffset(60)] public uint Padding2;
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

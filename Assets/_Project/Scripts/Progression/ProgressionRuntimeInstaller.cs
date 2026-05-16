@@ -35,9 +35,6 @@ namespace Hecton8.Progression
             if (!playerObject.TryGetComponent<Hecton8.UI.FakeRadarBlipController>(out _))
                 playerObject.AddComponent<Hecton8.UI.FakeRadarBlipController>();
 
-            if (!playerObject.TryGetComponent<Hecton8.UI.ShaderCompassRibbon>(out _))
-                playerObject.AddComponent<Hecton8.UI.ShaderCompassRibbon>();
-
             if (!playerObject.TryGetComponent<AcousticEcholocationTranslator>(out _))
                 playerObject.AddComponent<AcousticEcholocationTranslator>();
 

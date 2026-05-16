@@ -1,9 +1,10 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts.Signals;
 
-namespace Hecton8.Physics
+namespace Hecton8.Core.Contracts.Signals
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 40)]
-    public struct TetherFiredSignal
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
+    public struct TetherFiredSignal : ISignal
     {
         public int ManagerInstanceId;
         public int OwnerInstanceId;

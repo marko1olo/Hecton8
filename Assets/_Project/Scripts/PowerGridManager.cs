@@ -6,7 +6,7 @@
 
 using System.Collections.Generic;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;

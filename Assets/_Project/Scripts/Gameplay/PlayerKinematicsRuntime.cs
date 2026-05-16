@@ -4,11 +4,13 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Determinism;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Physics;
 using Hecton8.Physics.Determinism;
+using Hecton8.Physics.KCC;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -18,30 +20,50 @@ using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
     internal struct PlayerKinematicsRuntimeTelemetryEntry
     {
-        public float3 Position;
-        public float3 Velocity;
-        public float3 IntendedMovement;
-        public float DragCoefficient;
-        public float WaterDensity;
-        public float SolidDensity;
-        public uint Frame;
-        public uint Flags;
-        public uint SyncFenceHash;
-        public uint AuxFlags;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float3 Velocity;
+        [FieldOffset(24)] public float3 IntendedMovement;
+        [FieldOffset(36)] public float DragCoefficient;
+        [FieldOffset(40)] public float WaterDensity;
+        [FieldOffset(44)] public float SolidDensity;
+        [FieldOffset(48)] public uint Frame;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public uint SyncFenceHash;
+        [FieldOffset(60)] public uint AuxFlags;
+        [FieldOffset(64)] public float AupMaxDriftErrorMeters;
+        [FieldOffset(68)] public uint Reserved0;
+        [FieldOffset(72)] public uint Reserved1;
+        [FieldOffset(76)] public uint Reserved2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
     internal struct PlayerKinematicsSyncState
     {
-        public float3 Position;
-        public float3 Velocity;
-        public quaternion Rotation;
-        public uint Frame;
-        public uint Flags;
-        public uint StateHash;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float3 Velocity;
+        [FieldOffset(24)] public quaternion Rotation;
+        [FieldOffset(40)] public uint Frame;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public uint StateHash;
+        [FieldOffset(52)] public uint Reserved0;
+        [FieldOffset(56)] public uint Reserved1;
+        [FieldOffset(60)] public uint Reserved2;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+    internal struct PlayerKinematicsAccumulatorState
+    {
+        [FieldOffset(0)] public int FastTickCounter;
+        [FieldOffset(4)] public int PreShiftHaltFrames;
+        [FieldOffset(8)] public uint LastConsumedPreShiftFrameId;
+        [FieldOffset(12)] public uint LastSyncFenceHash;
+        [FieldOffset(16)] public uint LastSyncFenceFrame;
+        [FieldOffset(20)] public uint LastGpuFlowFrame;
+        [FieldOffset(24)] public uint SqueezeInterventions;
+        [FieldOffset(28)] public uint Reserved;
     }
 
     [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -193,7 +215,8 @@ namespace Hecton8.Gameplay
                     Frame = Frame,
                     Flags = (uint)flags,
                     SyncFenceHash = 0u,
-                    AuxFlags = runtimeFlags
+                    AuxFlags = runtimeFlags,
+                    AupMaxDriftErrorMeters = 0.0f
                 };
             }
         }
@@ -714,6 +737,15 @@ namespace Hecton8.Gameplay
         private const float SqueezeBlendSharpness = 20.0f;
         private const float BraceHapticCooldownSeconds = 0.28f;
         private const float GloveScrapeCooldownSeconds = 0.16f;
+        private const float SdfSqueezeFeedbackCooldownSeconds = 0.12f;
+        private const float SdfSqueezeMaxPushOutSpeedMetersPerSecond = 1.0f;
+        private const float SdfSqueezeForwardSpeedPenalty01 = 0.6f;
+        private const float SdfSqueezeFeedbackSpeedThreshold = 0.05f;
+        private const float SdfSqueezeCo2EquivalentPressureKPa = 0.12f;
+        private const float SdfSqueezeOxygenDrainScaleBonus = 0.35f;
+        private const float SdfSqueezeRollDegrees = 3.0f;
+        private const float SdfSqueezeSystemStressSlowThreshold01 = 0.8f;
+        private const int SdfSqueezeSlowCadenceFrameInterval = 5;
         private const float BracePhaseWrap = 1024.0f;
         private const float LadderSnapRadius = 0.52f;
         private const float SolidDensityThreshold = 0.0f;
@@ -723,10 +755,34 @@ namespace Hecton8.Gameplay
         private const uint IkImpactTelemetryFlag = 1u << 18;
         private const uint IkLowTierTelemetryFlag = 1u << 19;
         private const uint IkScrapeTelemetryFlag = 1u << 20;
+        private const uint AupPreShiftHaltTelemetryFlag = 1u << 21;
+        private const uint AupDriftTelemetryFlag = 1u << 22;
+        private const uint SdfSqueezeSlowTelemetryFlag = 1u << 23;
+        private const uint SdfSqueezeNanTelemetryFlag = 1u << 24;
+        private const int PreShiftHaltFrameCount = 1;
         private const float InvTwoPi = 0.15915494309f;
         private const float RollSignalEpsilonDegrees = 0.01f;
+        private const uint AupWatchdogDumpMagic = 0x41555044u;
+        private const uint SdfSqueezeDumpMagic = 0x5344464Bu;
+        private const string AupWatchdogDumpFileName = "Dump_AUP_DETERMINISM_WATCHDOG.bin";
+        private const string SdfSqueezeDumpFileName = "Dump_KCC_SDF_SQUEEZE_RESOLVER.bin";
         private const string NativeMemoryOwner = nameof(PlayerKinematicsRuntime);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const int VaultPositionsFlag = 1 << 0;
+        private const int VaultVelocitiesFlag = 1 << 1;
+        private const int VaultIntendedMovementFlag = 1 << 2;
+        private const int VaultFlowVelocityFlag = 1 << 3;
+        private const int VaultLastValidPositionsFlag = 1 << 4;
+        private const int VaultStateReadFlag = 1 << 5;
+        private const int VaultStateWriteFlag = 1 << 6;
+        private const int VaultHandTargetsFlag = 1 << 7;
+        private const int VaultSmoothedHandTargetsFlag = 1 << 8;
+        private const int VaultTelemetryFlag = 1 << 9;
+        private const int VaultTelemetryWriteIndexFlag = 1 << 10;
+        private const int VaultFaultFlagsFlag = 1 << 11;
+        private const int VaultHandProbeCommandsFlag = 1 << 12;
+        private const int VaultHandProbeHitsFlag = 1 << 13;
+        private const int VaultSdfSqueezeResultsFlag = 1 << 14;
         private static readonly int _PlayerSwimVatSpeedId = Shader.PropertyToID("_HectonSwimVatSpeedScalar");
         private static readonly int _PlayerKinematicRollId = Shader.PropertyToID("_H8PlayerKinematicRoll");
 
@@ -749,6 +805,7 @@ namespace Hecton8.Gameplay
         private NativeArray<int> _faultFlags;
         private NativeArray<RaycastCommand> _handProbeCommands;
         private NativeArray<RaycastHit> _handProbeHits;
+        private NativeArray<SdfSqueezeResult> _sdfSqueezeResults;
         private JobHandle _handProbeHandle;
         private JobHandle _handPlacementHandle;
         private bool _handProbePending;
@@ -780,14 +837,10 @@ namespace Hecton8.Gameplay
         private int _nextColdRebindFrame;
         private int _cachedScalabilityTierFrame = int.MinValue;
         private int _cadenceSalt;
-        private int _fastTickCounter;
         private int _lastPlayerStateSequence;
         private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
-        private uint _squeezeInterventions;
         private uint _sourceId;
-        private uint _lastSyncFenceHash;
-        private uint _lastSyncFenceFrame;
-        private uint _lastGpuFlowFrame;
+        private PlayerKinematicsAccumulatorState _accumulatorState;
         private InputStateSignal _lastInputStateSignal;
         private Vector4 _lastGpuFlowResolution;
         private Vector4 _lastGpuFlowCenter;
@@ -809,6 +862,12 @@ namespace Hecton8.Gameplay
         private float _lastIkDeltaTime = 0.0166667f;
         private float _braceHapticCooldown;
         private float _scrapeAcousticCooldown;
+        private float _sdfSqueezeFeedbackCooldown;
+        private float _lastSdfSqueezeStress01;
+        private float3 _lastSdfSqueezeNormal;
+        private SdfSqueezeResult _lastSdfSqueezeResult;
+        private int _sdfSqueezeSlowHoldFrames;
+        private int _vaultNativeStateMask;
         private int _lastPlayerStressSequence;
         private bool _hasImpactBracePoint;
         private bool _lastProbeLowTier;
@@ -860,6 +919,14 @@ namespace Hecton8.Gameplay
                 _cachedTransform = transform;
 
             RebindColdIfMissing();
+            ConsumeAupPreShiftSignals();
+            if (_accumulatorState.PreShiftHaltFrames > 0)
+            {
+                _accumulatorState.PreShiftHaltFrames--;
+                PublishAupPreShiftHaltState();
+                return;
+            }
+
             HectonQualityTier scalabilityTier = ResolveScalabilityTier();
             if (MovementOwnsKinematicAuthority())
             {
@@ -904,8 +971,9 @@ namespace Hecton8.Gameplay
             float3 bodyVelocity = SanitizeFloat3(rawBodyVelocity, float3.zero);
             bool rawBodyStateInvalid = !math.all(math.isfinite(rawBodyPosition)) || !math.all(math.isfinite(rawBodyVelocity));
             Vector3 safeBodyPosition = ToVector3(bodyPosition);
+            bool needsSdfPayload = inSolid != 0 || sdfGradientProbeRequested != 0 || lowTier == 0 || _sdfSqueezeSlowHoldFrames > 0;
 
-            if (sdfGradientProbeRequested != 0 || lowTier == 0)
+            if (needsSdfPayload)
             {
                 SnapshotSdfPayload(
                     safeBodyPosition,
@@ -921,6 +989,30 @@ namespace Hecton8.Gameplay
             _positions[0] = bodyPosition;
             _velocities[0] = bodyVelocity;
             _flowVelocity[0] = SanitizeFloat3(ResolveCurrentAdvection(safeBodyPosition), float3.zero);
+            SdfSqueezeResult sdfSqueezeResult;
+            if (TryApplySdfSqueeze(
+                    fixedDeltaTime,
+                    lowTier,
+                    sdfTexture3D,
+                    sdfDimensions,
+                    sdfOrigin,
+                    sdfCellSize,
+                    sdfRange,
+                    sdfSampleMode,
+                    ref inSolid,
+                    ref sdfGradientProbeRequested,
+                    ref bodyPosition,
+                    ref bodyVelocity,
+                    ref safeBodyPosition,
+                    out sdfSqueezeResult))
+            {
+                _flowVelocity[0] = SanitizeFloat3(ResolveCurrentAdvection(safeBodyPosition), float3.zero);
+            }
+            else if ((sdfSqueezeResult.Flags & SdfSqueezeResult.FlagNaNFallback) != 0u)
+            {
+                AddFaultFlag(FaultNaN);
+            }
+
             NativeArray<WhirlpoolFlow> activeMaelstroms = default;
             int activeMaelstromCount = 0;
             if (_fluid != null &&
@@ -962,7 +1054,8 @@ namespace Hecton8.Gameplay
                 SdfGradientProbeRequested = sdfGradientProbeRequested,
                 Frame = (uint)Time.frameCount,
                 RuntimeFlags = ResolveBodyFlags(ladderActive, inSolid) |
-                               math.select(0u, BodyFlagMaelstromActive, activeMaelstromCount > 0)
+                               math.select(0u, BodyFlagMaelstromActive, activeMaelstromCount > 0) |
+                               math.select(0u, BodyFlagSdfSqueezeIntervention, sdfSqueezeResult.IsActive)
             };
             bodyJob.Run();
             if (rawBodyStateInvalid)
@@ -980,6 +1073,8 @@ namespace Hecton8.Gameplay
                 resolvedPosition3,
                 resolvedVelocity3,
                 lowTier != 0 ? KccVelocitySignal.FlagLowTier : (byte)0);
+            if (sdfSqueezeResult.IsActive)
+                PublishSdfSqueezeSignals(in sdfSqueezeResult, resolvedPosition3, resolvedVelocity3, lowTier);
             if (faultFlags == 0)
                 _dumpWrittenForFault = false;
 
@@ -1005,11 +1100,11 @@ namespace Hecton8.Gameplay
             ScheduleHandProbes();
             ConsumeSqueezeTelemetrySignal();
 
-            _fastTickCounter++;
-            if (_fastTickCounter < SyncFenceFrameInterval)
+            _accumulatorState.FastTickCounter++;
+            if (_accumulatorState.FastTickCounter < SyncFenceFrameInterval)
                 return;
 
-            _fastTickCounter = 0;
+            _accumulatorState.FastTickCounter = 0;
             PublishSyncFence();
         }
 
@@ -1092,6 +1187,22 @@ namespace Hecton8.Gameplay
                 }
             }
 
+            if (_sdfSqueezeResults.IsCreated)
+            {
+                for (int i = 0; i < _sdfSqueezeResults.Length; i++)
+                {
+                    SdfSqueezeResult result = _sdfSqueezeResults[i];
+                    if (result.IsActive)
+                    {
+                        result.Position = SanitizeFloat3(result.Position - offset, float3.zero);
+                        _sdfSqueezeResults[i] = result;
+                    }
+                }
+            }
+
+            if (_lastSdfSqueezeResult.IsActive)
+                _lastSdfSqueezeResult.Position = SanitizeFloat3(_lastSdfSqueezeResult.Position - offset, float3.zero);
+
             if (_hasImpactBracePoint)
                 _impactBracePoint = SanitizeFloat3(_impactBracePoint - offset, float3.zero);
             _lastProbeSourcePosition = SanitizeFloat3(_lastProbeSourcePosition - offset, float3.zero);
@@ -1122,35 +1233,97 @@ namespace Hecton8.Gameplay
             if (_positions.IsCreated)
                 return;
 
-            _positions = new NativeArray<float3>(EntityCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[1] - player SOA positions - owner: PlayerKinematicsRuntime
-            _velocities = new NativeArray<float3>(EntityCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[1] - player SOA velocities - owner: PlayerKinematicsRuntime
-            _intendedMovement = new NativeArray<float3>(EntityCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[1] - player SOA intended movement - owner: PlayerKinematicsRuntime
-            _flowVelocity = new NativeArray<float3>(EntityCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[1] - player current advection cache - owner: PlayerKinematicsRuntime
-            _lastValidPositions = new NativeArray<float3>(EntityCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[1] - no-clip valid-position ring head - owner: PlayerKinematicsRuntime
-            _stateRead = new NativeArray<PlayerKinematicsSyncState>(EntityCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PlayerKinematicsSyncState>[1] - KCC committed state buffer - owner: PlayerKinematicsRuntime
-            _stateWrite = new NativeArray<PlayerKinematicsSyncState>(EntityCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PlayerKinematicsSyncState>[1] - KCC post-simulation state buffer - owner: PlayerKinematicsRuntime
-            _handTargets = new NativeArray<PlayerKinematicsHandTarget>(HandTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PlayerKinematicsHandTarget>[2] - raw procedural hand targets - owner: PlayerKinematicsRuntime
-            _smoothedHandTargets = new NativeArray<PlayerKinematicsHandTarget>(HandTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PlayerKinematicsHandTarget>[2] - smoothed brace IK targets - owner: PlayerKinematicsRuntime
-            _telemetry = new NativeArray<PlayerKinematicsRuntimeTelemetryEntry>(TelemetryFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PlayerKinematicsRuntimeTelemetryEntry>[300] - kinematic black box - owner: PlayerKinematicsRuntime
-            _telemetryWriteIndex = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - kinematic telemetry cursor - owner: PlayerKinematicsRuntime
-            _faultFlags = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - kinematic fail-fast flags - owner: PlayerKinematicsRuntime
-            _handProbeCommands = new NativeArray<RaycastCommand>(EnvironmentProbeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[4] - batched environment IK commands - owner: PlayerKinematicsRuntime
-            _handProbeHits = new NativeArray<RaycastHit>(EnvironmentProbeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[4] - batched environment IK results - owner: PlayerKinematicsRuntime
-
-            RegisterArray(_positions, nameof(_positions));
-            RegisterArray(_velocities, nameof(_velocities));
-            RegisterArray(_intendedMovement, nameof(_intendedMovement));
-            RegisterArray(_flowVelocity, nameof(_flowVelocity));
-            RegisterArray(_lastValidPositions, nameof(_lastValidPositions));
-            RegisterArray(_stateRead, nameof(_stateRead));
-            RegisterArray(_stateWrite, nameof(_stateWrite));
-            RegisterArray(_handTargets, nameof(_handTargets));
-            RegisterArray(_smoothedHandTargets, nameof(_smoothedHandTargets));
-            RegisterArray(_telemetry, nameof(_telemetry));
-            RegisterArray(_telemetryWriteIndex, nameof(_telemetryWriteIndex));
-            RegisterArray(_faultFlags, nameof(_faultFlags));
-            RegisterArray(_handProbeCommands, nameof(_handProbeCommands));
-            RegisterArray(_handProbeHits, nameof(_handProbeHits));
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            _positions = AllocateRuntimeArray<float3>(
+                BufferID.PlayerKinematicPositions,
+                EntityCount,
+                nameof(_positions),
+                VaultPositionsFlag,
+                dataVault);
+            _velocities = AllocateRuntimeArray<float3>(
+                BufferID.PlayerKinematicVelocities,
+                EntityCount,
+                nameof(_velocities),
+                VaultVelocitiesFlag,
+                dataVault);
+            _intendedMovement = AllocateRuntimeArray<float3>(
+                BufferID.PlayerKinematicIntendedMovements,
+                EntityCount,
+                nameof(_intendedMovement),
+                VaultIntendedMovementFlag,
+                dataVault);
+            _flowVelocity = AllocateRuntimeArray<float3>(
+                BufferID.PlayerKinematicFlowVelocity,
+                EntityCount,
+                nameof(_flowVelocity),
+                VaultFlowVelocityFlag,
+                dataVault);
+            _lastValidPositions = AllocateRuntimeArray<float3>(
+                BufferID.PlayerKinematicLastValidPositions,
+                EntityCount,
+                nameof(_lastValidPositions),
+                VaultLastValidPositionsFlag,
+                dataVault);
+            _stateRead = AllocateRuntimeArray<PlayerKinematicsSyncState>(
+                BufferID.PlayerKinematicSyncReadState,
+                EntityCount,
+                nameof(_stateRead),
+                VaultStateReadFlag,
+                dataVault);
+            _stateWrite = AllocateRuntimeArray<PlayerKinematicsSyncState>(
+                BufferID.PlayerKinematicSyncWriteState,
+                EntityCount,
+                nameof(_stateWrite),
+                VaultStateWriteFlag,
+                dataVault);
+            _handTargets = AllocateRuntimeArray<PlayerKinematicsHandTarget>(
+                BufferID.PlayerKinematicHandTargets,
+                HandTargetCount,
+                nameof(_handTargets),
+                VaultHandTargetsFlag,
+                dataVault);
+            _smoothedHandTargets = AllocateRuntimeArray<PlayerKinematicsHandTarget>(
+                BufferID.PlayerKinematicSmoothedHandTargets,
+                HandTargetCount,
+                nameof(_smoothedHandTargets),
+                VaultSmoothedHandTargetsFlag,
+                dataVault);
+            _telemetry = AllocateRuntimeArray<PlayerKinematicsRuntimeTelemetryEntry>(
+                BufferID.PlayerKinematicRuntimeTelemetryRing,
+                TelemetryFrameCount,
+                nameof(_telemetry),
+                VaultTelemetryFlag,
+                dataVault);
+            _telemetryWriteIndex = AllocateRuntimeArray<int>(
+                BufferID.PlayerKinematicRuntimeTelemetryCursor,
+                1,
+                nameof(_telemetryWriteIndex),
+                VaultTelemetryWriteIndexFlag,
+                dataVault);
+            _faultFlags = AllocateRuntimeArray<int>(
+                BufferID.PlayerKinematicFaultFlags,
+                1,
+                nameof(_faultFlags),
+                VaultFaultFlagsFlag,
+                dataVault);
+            _handProbeCommands = AllocateRuntimeArray<RaycastCommand>(
+                BufferID.PlayerKinematicHandProbeCommands,
+                EnvironmentProbeCount,
+                nameof(_handProbeCommands),
+                VaultHandProbeCommandsFlag,
+                dataVault);
+            _handProbeHits = AllocateRuntimeArray<RaycastHit>(
+                BufferID.PlayerKinematicHandProbeHits,
+                EnvironmentProbeCount,
+                nameof(_handProbeHits),
+                VaultHandProbeHitsFlag,
+                dataVault);
+            _sdfSqueezeResults = AllocateRuntimeArray<SdfSqueezeResult>(
+                BufferID.PlayerKinematicSdfSqueezeResults,
+                EntityCount,
+                nameof(_sdfSqueezeResults),
+                VaultSdfSqueezeResultsFlag,
+                dataVault);
 
             float3 start = _body != null ? ToFloat3(_body.position) : ToFloat3(transform.position);
             start = SnapMillimeter(SanitizeFloat3(start, float3.zero));
@@ -1165,20 +1338,22 @@ namespace Hecton8.Gameplay
 
         private void DisposeNativeState()
         {
-            DisposeArray(ref _positions);
-            DisposeArray(ref _velocities);
-            DisposeArray(ref _intendedMovement);
-            DisposeArray(ref _flowVelocity);
-            DisposeArray(ref _lastValidPositions);
-            DisposeArray(ref _stateRead);
-            DisposeArray(ref _stateWrite);
-            DisposeArray(ref _handTargets);
-            DisposeArray(ref _smoothedHandTargets);
-            DisposeArray(ref _telemetry);
-            DisposeArray(ref _telemetryWriteIndex);
-            DisposeArray(ref _faultFlags);
-            DisposeArray(ref _handProbeCommands);
-            DisposeArray(ref _handProbeHits);
+            DisposeArray(ref _positions, VaultPositionsFlag);
+            DisposeArray(ref _velocities, VaultVelocitiesFlag);
+            DisposeArray(ref _intendedMovement, VaultIntendedMovementFlag);
+            DisposeArray(ref _flowVelocity, VaultFlowVelocityFlag);
+            DisposeArray(ref _lastValidPositions, VaultLastValidPositionsFlag);
+            DisposeArray(ref _stateRead, VaultStateReadFlag);
+            DisposeArray(ref _stateWrite, VaultStateWriteFlag);
+            DisposeArray(ref _handTargets, VaultHandTargetsFlag);
+            DisposeArray(ref _smoothedHandTargets, VaultSmoothedHandTargetsFlag);
+            DisposeArray(ref _telemetry, VaultTelemetryFlag);
+            DisposeArray(ref _telemetryWriteIndex, VaultTelemetryWriteIndexFlag);
+            DisposeArray(ref _faultFlags, VaultFaultFlagsFlag);
+            DisposeArray(ref _handProbeCommands, VaultHandProbeCommandsFlag);
+            DisposeArray(ref _handProbeHits, VaultHandProbeHitsFlag);
+            DisposeArray(ref _sdfSqueezeResults, VaultSdfSqueezeResultsFlag);
+            _vaultNativeStateMask = 0;
             ResetDeterminismSessionState();
         }
 
@@ -1303,12 +1478,8 @@ namespace Hecton8.Gameplay
         private void ResetDeterminismSessionState()
         {
             _stateWriteReady = false;
-            _fastTickCounter = 0;
-            _lastSyncFenceHash = 0u;
-            _lastSyncFenceFrame = 0u;
+            _accumulatorState = default;
             _lastPlayerStateSequence = 0;
-            _squeezeInterventions = 0u;
-            _lastGpuFlowFrame = 0u;
             _lastInputStateSignal = default;
             _dumpWrittenForFault = false;
             _desyncDumpWritten = false;
@@ -1332,6 +1503,11 @@ namespace Hecton8.Gameplay
             _bracePhase = 0.0f;
             _braceHapticCooldown = 0.0f;
             _scrapeAcousticCooldown = 0.0f;
+            _sdfSqueezeFeedbackCooldown = 0.0f;
+            _lastSdfSqueezeStress01 = 0.0f;
+            _lastSdfSqueezeNormal = float3.zero;
+            _lastSdfSqueezeResult = default;
+            _sdfSqueezeSlowHoldFrames = 0;
             _lastPlayerStressSequence = 0;
             _hasImpactBracePoint = false;
             _lastProbeLowTier = false;
@@ -1409,7 +1585,7 @@ namespace Hecton8.Gameplay
         private void SnapshotGpuFlow()
         {
             int frame = Time.frameCount;
-            if (_lastGpuFlowFrame != 0u && (frame & ResolveGpuFlowProbeFrameMask()) != 0)
+            if (_accumulatorState.LastGpuFlowFrame != 0u && (frame & ResolveGpuFlowProbeFrameMask()) != 0)
                 return;
 
             if (_fluid == null ||
@@ -1419,7 +1595,7 @@ namespace Hecton8.Gameplay
                     out Vector4 flowCenter,
                     out Vector4 flowSpacing))
             {
-                _lastGpuFlowFrame = 0u;
+                _accumulatorState.LastGpuFlowFrame = 0u;
                 return;
             }
 
@@ -1434,14 +1610,14 @@ namespace Hecton8.Gameplay
                 _lastGpuFlowResolution = Vector4.zero;
                 _lastGpuFlowCenter = Vector4.zero;
                 _lastGpuFlowSpacing = Vector4.zero;
-                _lastGpuFlowFrame = 0u;
+                _accumulatorState.LastGpuFlowFrame = 0u;
                 return;
             }
 
             _lastGpuFlowResolution = gridResolution;
             _lastGpuFlowCenter = flowCenter;
             _lastGpuFlowSpacing = flowSpacing;
-            _lastGpuFlowFrame = (uint)frame;
+            _accumulatorState.LastGpuFlowFrame = (uint)frame;
         }
 
         private void SnapshotVoxelSolid(out byte inSolid, out float density)
@@ -1545,6 +1721,246 @@ namespace Hecton8.Gameplay
             sdfRange = safeRange;
         }
 
+        private bool TryApplySdfSqueeze(
+            float fixedDeltaTime,
+            byte lowTier,
+            NativeArray<byte> sdfTexture3D,
+            int3 sdfDimensions,
+            float3 sdfOrigin,
+            float3 sdfCellSize,
+            float sdfRange,
+            byte sdfSampleMode,
+            ref byte inSolid,
+            ref byte sdfGradientProbeRequested,
+            ref float3 bodyPosition,
+            ref float3 bodyVelocity,
+            ref Vector3 safeBodyPosition,
+            out SdfSqueezeResult result)
+        {
+            result = default;
+            if (!HasMotionSoaStorage() ||
+                !_sdfSqueezeResults.IsCreated ||
+                _sdfSqueezeResults.Length <= 0 ||
+                (inSolid == 0 && sdfGradientProbeRequested == 0))
+            {
+                return false;
+            }
+
+            float safeDeltaTime = math.max(0.0001f, SanitizeNonNegative(fixedDeltaTime));
+            float systemStress01 = SignalBusRegistry.SystemStress01;
+            bool slowCadence = systemStress01 > SdfSqueezeSystemStressSlowThreshold01;
+            if (!IsValidSdfPayload(sdfTexture3D, sdfDimensions, sdfOrigin, sdfCellSize, sdfRange))
+            {
+                return slowCadence &&
+                       inSolid != 0 &&
+                       TryApplyCachedSdfSqueeze(safeDeltaTime, lowTier, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition, out result);
+            }
+
+            bool runSampleNow = !slowCadence ||
+                                _sdfSqueezeSlowHoldFrames <= 0 ||
+                                ((Time.frameCount + _cadenceSalt) % SdfSqueezeSlowCadenceFrameInterval) == 0;
+            if (!runSampleNow &&
+                TryApplyCachedSdfSqueeze(safeDeltaTime, lowTier, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition, out result))
+            {
+                return true;
+            }
+
+            AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(safeBodyPosition);
+            AbsoluteUniversePosition sampleAup = TryReadPlayerKinematicStateFromVault(out AbsoluteUniversePosition vaultAup)
+                ? vaultAup
+                : bodyAup;
+            WritePlayerKinematicStateToVault(in bodyAup, bodyVelocity);
+
+            _sdfSqueezeResults[0] = default;
+            var squeezeJob = new SdfSqueezeJob
+            {
+                Positions = _positions,
+                Velocities = _velocities,
+                IntendedMovement = _intendedMovement,
+                VoxelSdfTexture3D = sdfTexture3D,
+                Results = _sdfSqueezeResults,
+                VoxelSdfDimensions = sdfDimensions,
+                VoxelSdfOrigin = sdfOrigin,
+                VoxelSdfCellSize = sdfCellSize,
+                TargetAupAbsolute = sampleAup.ToAbsoluteDouble3(),
+                FloatingOriginOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble,
+                VoxelSdfRange = sdfRange,
+                SdfSampleStepMeters = ResolveSdfSampleStepMeters(sdfCellSize),
+                DeltaTime = safeDeltaTime,
+                MaxPushOutSpeedMetersPerSecond = SdfSqueezeMaxPushOutSpeedMetersPerSecond,
+                SpeedPenalty01 = SdfSqueezeForwardSpeedPenalty01,
+                SystemStress01 = systemStress01,
+                SampleMode = lowTier != 0 ? (byte)SdfSqueezeSampleMode.Tetra4 : sdfSampleMode,
+                LowTier = lowTier,
+                SlowCadence = slowCadence ? (byte)1 : (byte)0,
+                Frame = unchecked((uint)Time.frameCount)
+            };
+            squeezeJob.Run();
+            result = _sdfSqueezeResults[0];
+
+            if ((result.Flags & SdfSqueezeResult.FlagNaNFallback) != 0u)
+                WriteSdfSqueezeTelemetry(in result, bodyPosition, bodyVelocity);
+
+            if (!result.IsActive)
+                return false;
+
+            _lastSdfSqueezeResult = result;
+            _sdfSqueezeSlowHoldFrames = slowCadence ? SdfSqueezeSlowCadenceFrameInterval - 1 : 0;
+            ApplySdfSqueezeResultToRuntime(in result, lowTier, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition);
+            return true;
+        }
+
+        private bool TryApplyCachedSdfSqueeze(
+            float fixedDeltaTime,
+            byte lowTier,
+            ref byte inSolid,
+            ref byte sdfGradientProbeRequested,
+            ref float3 bodyPosition,
+            ref float3 bodyVelocity,
+            ref Vector3 safeBodyPosition,
+            out SdfSqueezeResult result)
+        {
+            result = default;
+            if (_sdfSqueezeSlowHoldFrames <= 0 ||
+                !_lastSdfSqueezeResult.IsActive ||
+                inSolid == 0 ||
+                !HasMotionSoaStorage())
+            {
+                return false;
+            }
+
+            _sdfSqueezeSlowHoldFrames--;
+            float safeDeltaTime = math.max(0.0001f, SanitizeNonNegative(fixedDeltaTime));
+            float3 normal = SafeNormalize(_lastSdfSqueezeResult.Normal, float3.zero);
+            if (math.lengthsq(normal) <= 0.000001f)
+                return false;
+
+            float pushSpeed = math.min(
+                SdfSqueezeMaxPushOutSpeedMetersPerSecond,
+                SanitizeNonNegative(_lastSdfSqueezeResult.PushSpeed));
+            float pushMeters = pushSpeed * safeDeltaTime;
+            float3 position = SnapMillimeter(SanitizeFloat3(_positions[0] + normal * pushMeters, _positions[0]));
+            float3 velocity = SnapMillimeter(ApplyForwardSpeedPenalty(_velocities[0], ReadIntendedMovementSnapshot(), SdfSqueezeForwardSpeedPenalty01) + normal * pushSpeed);
+            _positions[0] = position;
+            _velocities[0] = velocity;
+
+            result = _lastSdfSqueezeResult;
+            result.Position = position;
+            result.Velocity = velocity;
+            result.PushMeters = pushMeters;
+            result.PushSpeed = pushSpeed;
+            result.Frame = unchecked((uint)Time.frameCount);
+            result.Flags |= SdfSqueezeResult.FlagSlowCadence;
+            if (lowTier != 0)
+                result.Flags |= SdfSqueezeResult.FlagLowTier;
+
+            ApplySdfSqueezeResultToRuntime(in result, lowTier, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition);
+            return true;
+        }
+
+        private void ApplySdfSqueezeResultToRuntime(
+            in SdfSqueezeResult result,
+            byte lowTier,
+            ref byte inSolid,
+            ref byte sdfGradientProbeRequested,
+            ref float3 bodyPosition,
+            ref float3 bodyVelocity,
+            ref Vector3 safeBodyPosition)
+        {
+            bodyPosition = result.Position;
+            bodyVelocity = result.Velocity;
+            safeBodyPosition = ToVector3(bodyPosition);
+            inSolid = 0;
+            sdfGradientProbeRequested = 1;
+            _lastSdfSqueezeNormal = SafeNormalize(result.Normal, _lastSdfSqueezeNormal);
+            _lastSdfSqueezeStress01 = math.max(_lastSdfSqueezeStress01, SanitizeUnit(result.Stress01));
+            if (lowTier != 0)
+                _lastSdfSqueezeResult.Flags |= SdfSqueezeResult.FlagLowTier;
+        }
+
+        private static bool IsValidSdfPayload(
+            NativeArray<byte> sdfTexture3D,
+            int3 sdfDimensions,
+            float3 sdfOrigin,
+            float3 sdfCellSize,
+            float sdfRange)
+        {
+            return sdfTexture3D.IsCreated &&
+                   PlayerKinematicsBodyJob.TryResolveSdfVoxelCount(sdfDimensions, out int expectedLength) &&
+                   sdfTexture3D.Length == expectedLength &&
+                   math.all(math.isfinite(sdfOrigin)) &&
+                   math.all(math.isfinite(sdfCellSize)) &&
+                   math.all(math.abs(sdfCellSize) > new float3(0.0001f)) &&
+                   SanitizeNonNegative(sdfRange) > 0.0001f;
+        }
+
+        private bool TryReadPlayerKinematicStateFromVault(out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            if (dataVault == null)
+                return false;
+
+            NativeArray<LockstepPlayerKinematicState> stateBuffer = dataVault.GetBuffer<LockstepPlayerKinematicState>(
+                BufferID.PlayerKinematicState,
+                EntityCount,
+                SystemID.GameplayPlayer,
+                NativeArrayOptions.ClearMemory);
+            if (!stateBuffer.IsCreated || stateBuffer.Length <= 0)
+                return false;
+
+            LockstepPlayerKinematicState state = stateBuffer[0];
+            uint frame = unchecked((uint)Time.frameCount);
+            if (state.Frame == 0u ||
+                state.Frame > frame ||
+                frame - state.Frame > 1u ||
+                !math.all(math.isfinite(state.LocalPosition)))
+            {
+                return false;
+            }
+
+            aup = new AbsoluteUniversePosition
+            {
+                GridX = state.SectorX,
+                GridY = state.SectorY,
+                GridZ = state.SectorZ,
+                LocalX = state.LocalPosition.x,
+                LocalY = state.LocalPosition.y,
+                LocalZ = state.LocalPosition.z
+            };
+            return true;
+        }
+
+        private void WritePlayerKinematicStateToVault(in AbsoluteUniversePosition aup, float3 velocity)
+        {
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            if (dataVault == null)
+                return;
+
+            NativeArray<LockstepPlayerKinematicState> stateBuffer = dataVault.GetBuffer<LockstepPlayerKinematicState>(
+                BufferID.PlayerKinematicState,
+                EntityCount,
+                SystemID.GameplayPlayer,
+                NativeArrayOptions.ClearMemory);
+            if (!stateBuffer.IsCreated || stateBuffer.Length <= 0)
+                return;
+
+            stateBuffer[0] = new LockstepPlayerKinematicState
+            {
+                SectorX = aup.GridX,
+                SectorY = aup.GridY,
+                SectorZ = aup.GridZ,
+                LocalPosition = new float3(aup.LocalX, aup.LocalY, aup.LocalZ),
+                Velocity = SanitizeFloat3(velocity, float3.zero),
+                Forward = _cachedTransform != null
+                    ? SafeNormalize(ToFloat3(_cachedTransform.forward), new float3(0.0f, 0.0f, 1.0f))
+                    : new float3(0.0f, 0.0f, 1.0f),
+                Frame = unchecked((uint)Time.frameCount),
+                Flags = BodyFlagSdfSqueezeIntervention,
+                StableId = _sourceId
+            };
+        }
+
         private static byte ResolveSdfGradientProbeRequest()
         {
             if (!GlobalSignals.TryGetLatestPlayerStateSignal(out PlayerStateSignal signal, out int sequence) ||
@@ -1631,7 +2047,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(flow)))
                 return float3.zero;
 
-            float gpuBoost = _lastGpuFlowFrame != 0u ? 1.0f : 0.65f;
+            float gpuBoost = _accumulatorState.LastGpuFlowFrame != 0u ? 1.0f : 0.65f;
             float tierScale = IsLowTier(ResolveScalabilityTier()) ? 0.75f : 1.0f;
             float3 advection = flow * (AdvectionVelocityScale * gpuBoost * tierScale * immersion01);
             return SanitizeFloat3(advection, float3.zero);
@@ -1661,6 +2077,7 @@ namespace Hecton8.Gameplay
         private void TickInertiaRoll(float dt)
         {
             float targetRoll = 0.0f;
+            bool rollPhaseAdvanced = false;
             if (_motor != null &&
                 _motor.TryGetRecentWallSlideContact(
                     MaxWallContactFrameAge,
@@ -1675,6 +2092,7 @@ namespace Hecton8.Gameplay
                 float sideDot = math.dot(ToFloat3(normal), SafeRight());
                 float side = math.sign(math.select(sideDot, 0.0f, !math.isfinite(sideDot)));
                 _rollPhaseRadians = DeterministicPhysicsMath.WrapSignedPi(_rollPhaseRadians + SanitizeNonNegative(dt) * 28.0f);
+                rollPhaseAdvanced = true;
                 float impactWave = IsHighScalabilityTier() ? DeterministicPhysicsMath.SinApprox(_rollPhaseRadians) : SignedTriangleWave(_rollPhaseRadians);
                 targetRoll = -side *
                     SanitizeNonNegative(WallImpactRollDegrees) *
@@ -1684,6 +2102,21 @@ namespace Hecton8.Gameplay
             }
 
             float safeDt = SanitizeNonNegative(dt);
+            float squeezeStress = SanitizeUnit(_lastSdfSqueezeStress01);
+            if (squeezeStress > 0.0001f && IsHighScalabilityTier() && IsFiniteNonZero(_lastSdfSqueezeNormal))
+            {
+                if (!rollPhaseAdvanced)
+                    _rollPhaseRadians = DeterministicPhysicsMath.WrapSignedPi(_rollPhaseRadians + safeDt * 16.0f);
+
+                float sideDot = math.dot(_lastSdfSqueezeNormal, SafeRight());
+                float side = math.sign(math.select(sideDot, 0.0f, !math.isfinite(sideDot)));
+                float twistWave = 0.65f + 0.35f * DeterministicPhysicsMath.SinApprox(_rollPhaseRadians);
+                float squeezeRoll = -side * SdfSqueezeRollDegrees * squeezeStress * twistWave;
+                if (math.abs(squeezeRoll) > math.abs(targetRoll))
+                    targetRoll = squeezeRoll;
+            }
+
+            _lastSdfSqueezeStress01 = math.max(0.0f, squeezeStress - safeDt * 5.0f);
             targetRoll = math.select(targetRoll, 0.0f, !math.isfinite(targetRoll));
             _rollDegrees = math.select(_rollDegrees, 0.0f, !math.isfinite(_rollDegrees));
             _rollVelocityDegrees = math.select(_rollVelocityDegrees, 0.0f, !math.isfinite(_rollVelocityDegrees));
@@ -1729,6 +2162,193 @@ namespace Hecton8.Gameplay
                 unchecked((uint)Time.frameCount),
                 _sourceId,
                 flags);
+        }
+
+        private void PublishSdfSqueezeSignals(in SdfSqueezeResult result, float3 position, float3 velocity, byte lowTier)
+        {
+            float stress01 = SanitizeUnit(result.Stress01);
+            float pushSpeed = SanitizeNonNegative(result.PushSpeed);
+            if (stress01 <= 0.0001f && pushSpeed <= 0.0001f)
+                return;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(SnapMillimeter(position)));
+            byte stateFlags = (byte)(PlayerStateSignal.FlagActive |
+                                     PlayerStateSignal.FlagSqueezing |
+                                     PlayerStateSignal.FlagSdfGradientValid |
+                                     PlayerStateSignal.FlagAupShiftSafe);
+            if (lowTier != 0 || (result.Flags & SdfSqueezeResult.FlagLowTier) != 0u)
+                stateFlags |= PlayerStateSignal.FlagLowTierGradient;
+
+            PlayerStateSignal playerState = default;
+            playerState.PositionAup = positionAup;
+            playerState.Intensity01 = stress01;
+            playerState.SourceHash = _sourceId;
+            playerState.Frame = result.Frame != 0u ? result.Frame : unchecked((uint)Time.frameCount);
+            playerState.State = PlayerStateSignal.StateSqueezing;
+            playerState.Flags = stateFlags;
+            GlobalSignals.Publish(in playerState);
+            if (GlobalSignals.TryGetLatestPlayerStateSignal(out _, out int sequence))
+                _lastPlayerStateSequence = sequence;
+
+            unchecked
+            {
+                _accumulatorState.SqueezeInterventions++;
+            }
+
+            PublishSdfSqueezePhysiology(stress01, playerState.Frame);
+            PublishSdfSqueezeGasLoad(stress01);
+            TryPublishSdfSqueezeFeedback(in positionAup, stress01, pushSpeed, playerState.Frame);
+            WriteSdfSqueezeTelemetry(in result, position, velocity);
+        }
+
+        private void PublishSdfSqueezePhysiology(float stress01, uint frame)
+        {
+            float oxygenDrainScale = 1.0f + SanitizeUnit(stress01) * SdfSqueezeOxygenDrainScaleBonus;
+            PhysiologyStateSignal physiology = default;
+            physiology.PlayerStress01 = stress01;
+            physiology.O2DrainMultiplier = oxygenDrainScale;
+            physiology.Recovery01 = 0.0f;
+            physiology.Frame = frame;
+            physiology.Cause = PlayerStateSignal.StateSqueezing;
+            physiology.Flags = PlayerStateSignal.FlagSqueezing;
+            GlobalSignals.Publish(in physiology);
+        }
+
+        private static void PublishSdfSqueezeGasLoad(float stress01)
+        {
+            IGasDynamicsSolver gasDynamics = GlobalRegistry.GasDynamics;
+            if (gasDynamics == null || !gasDynamics.IsInitialized)
+                return;
+
+            gasDynamics.TryApplyPlayerRoomCarbonDioxideEquivalentPressure(
+                SanitizeUnit(stress01) * SdfSqueezeCo2EquivalentPressureKPa);
+        }
+
+        private void TryPublishSdfSqueezeFeedback(in AbsoluteUniversePosition positionAup, float stress01, float pushSpeed, uint frame)
+        {
+            _sdfSqueezeFeedbackCooldown = math.max(0.0f, _sdfSqueezeFeedbackCooldown);
+            if (_sdfSqueezeFeedbackCooldown > 0.0f ||
+                pushSpeed < SdfSqueezeFeedbackSpeedThreshold)
+            {
+                return;
+            }
+
+            float intensity = SanitizeUnit(math.max(stress01, pushSpeed * 0.5f));
+            HapticRequest haptic = default;
+            haptic.Intensity01 = SanitizeUnit(0.12f + intensity * 0.55f);
+            haptic.DurationSeconds = 0.035f + intensity * 0.05f;
+            haptic.Frequency01 = SanitizeUnit(0.55f + intensity * 0.25f);
+            haptic.SourceHash = _sourceId;
+            haptic.Frame = frame;
+            haptic.Channel = HapticRequest.ChannelGearScrape;
+            haptic.Flags = 0;
+            GlobalSignals.Publish(in haptic);
+
+            AcousticPingSignal acoustic = default;
+            acoustic.PositionAup = positionAup;
+            acoustic.RadiusMeters = 0.75f + intensity * 1.35f;
+            acoustic.Intensity01 = intensity;
+            acoustic.SourceId = _sourceId;
+            acoustic.Channel = AcousticPingSignal.ChannelFabricScrape;
+            acoustic.Flags = AcousticPingSignal.FlagFabricScrape;
+            GlobalSignals.Publish(in acoustic);
+
+            _sdfSqueezeFeedbackCooldown = SdfSqueezeFeedbackCooldownSeconds;
+        }
+
+        private void WriteSdfSqueezeTelemetry(in SdfSqueezeResult result, float3 position, float3 velocity)
+        {
+            if (!TryReserveTelemetrySlot(out int wrappedIndex))
+                return;
+
+            uint clampedInterventions = _accumulatorState.SqueezeInterventions > 65535u
+                ? 65535u
+                : _accumulatorState.SqueezeInterventions;
+            uint auxFlags = BodyFlagSdfSqueezeIntervention |
+                            ((clampedInterventions << TelemetrySqueezeInterventionShift) & TelemetrySqueezeInterventionMask);
+            if ((result.Flags & SdfSqueezeResult.FlagGradientValid) != 0u)
+                auxFlags |= BodyFlagSdfGradientValid;
+            if ((result.Flags & SdfSqueezeResult.FlagLowTier) != 0u)
+                auxFlags |= BodyFlagSdfLowTierGradient;
+            if ((result.Flags & SdfSqueezeResult.FlagSlowCadence) != 0u)
+                auxFlags |= SdfSqueezeSlowTelemetryFlag;
+            if ((result.Flags & SdfSqueezeResult.FlagNaNFallback) != 0u)
+                auxFlags |= SdfSqueezeNanTelemetryFlag;
+
+            _telemetry[wrappedIndex] = new PlayerKinematicsRuntimeTelemetryEntry
+            {
+                Position = SanitizeFloat3(position, result.Position),
+                Velocity = SanitizeFloat3(velocity, result.Velocity),
+                IntendedMovement = ReadIntendedMovementSnapshot(),
+                DragCoefficient = SanitizeNonNegative(dragCoefficient),
+                WaterDensity = ResolveRuntimeWaterDensityScale(),
+                SolidDensity = math.select(result.CenterDensity, 0.0f, !math.isfinite(result.CenterDensity)),
+                Frame = result.Frame != 0u ? result.Frame : unchecked((uint)Time.frameCount),
+                Flags = 0u,
+                SyncFenceHash = _accumulatorState.LastSyncFenceHash,
+                AuxFlags = auxFlags,
+                AupMaxDriftErrorMeters = SanitizeNonNegative(result.PushSpeed)
+            };
+        }
+
+        private void ConsumeAupPreShiftSignals()
+        {
+            ReadOnlySpan<AupPreShiftSignal> signals = SignalBus<AupPreShiftSignal>.GetFrameSnapshot();
+            int count = math.min(signals.Length, StateCorrectionDrainLimit);
+            for (int i = 0; i < count; i++)
+            {
+                AupPreShiftSignal signal = signals[i];
+                if (signal.ShiftFrameId == 0u ||
+                    signal.ShiftFrameId == _accumulatorState.LastConsumedPreShiftFrameId ||
+                    !math.all(math.isfinite(signal.ShiftMeters)))
+                {
+                    continue;
+                }
+
+                _accumulatorState.LastConsumedPreShiftFrameId = signal.ShiftFrameId;
+                _accumulatorState.PreShiftHaltFrames = math.max(
+                    _accumulatorState.PreShiftHaltFrames,
+                    PreShiftHaltFrameCount);
+            }
+        }
+
+        private void PublishAupPreShiftHaltState()
+        {
+            _stateWriteReady = false;
+            if (_body == null)
+                return;
+
+            float3 position = SnapMillimeter(SanitizeFloat3(ToFloat3(_body.position), ReadLastValidPosition()));
+            float3 velocity = SnapMillimeter(SanitizeFloat3(ToFloat3(_body.linearVelocity), float3.zero));
+            if (HasMotionSoaStorage())
+            {
+                _positions[0] = position;
+                _velocities[0] = velocity;
+            }
+
+            PublishKccVelocitySignal(position, velocity, KccVelocitySignal.FlagMovementAuthorityExternal);
+            WriteAupPreShiftHaltTelemetry(position, velocity);
+        }
+
+        private void WriteAupPreShiftHaltTelemetry(float3 position, float3 velocity)
+        {
+            if (!TryReserveTelemetrySlot(out int wrappedIndex))
+                return;
+
+            _telemetry[wrappedIndex] = new PlayerKinematicsRuntimeTelemetryEntry
+            {
+                Position = SanitizeFloat3(position, float3.zero),
+                Velocity = SanitizeFloat3(velocity, float3.zero),
+                IntendedMovement = ReadIntendedMovementSnapshot(),
+                DragCoefficient = SanitizeNonNegative(dragCoefficient),
+                WaterDensity = ResolveRuntimeWaterDensityScale(),
+                SolidDensity = 0.0f,
+                Frame = unchecked((uint)Time.frameCount),
+                Flags = 0u,
+                SyncFenceHash = _accumulatorState.LastSyncFenceHash,
+                AuxFlags = AupPreShiftHaltTelemetryFlag | (_accumulatorState.LastConsumedPreShiftFrameId & 0xFFFFu),
+                AupMaxDriftErrorMeters = 0.0f
+            };
         }
 
         private void ConsumeEnvironmentIkSignals()
@@ -1791,6 +2411,7 @@ namespace Hecton8.Gameplay
             _squeezeHoldTimer = math.max(0.0f, _squeezeHoldTimer - safeDeltaTime);
             _braceHapticCooldown = math.max(0.0f, _braceHapticCooldown - safeDeltaTime);
             _scrapeAcousticCooldown = math.max(0.0f, _scrapeAcousticCooldown - safeDeltaTime);
+            _sdfSqueezeFeedbackCooldown = math.max(0.0f, _sdfSqueezeFeedbackCooldown - safeDeltaTime);
 
             float braceTarget = _braceHoldTimer > 0.0f ? 1.0f : 0.0f;
             float squeezeTarget = _squeezeHoldTimer > 0.0f ? math.max(0.35f, _squeezeTargetBlend) : 0.0f;
@@ -1833,7 +2454,7 @@ namespace Hecton8.Gameplay
 
             unchecked
             {
-                _squeezeInterventions++;
+                _accumulatorState.SqueezeInterventions++;
             }
 
             WriteSqueezeTelemetry(in signal);
@@ -1846,7 +2467,9 @@ namespace Hecton8.Gameplay
 
             Vector3 runtimePosition = _body != null ? _body.position : Vector3.zero;
             Vector3 runtimeVelocity = _body != null ? _body.linearVelocity : Vector3.zero;
-            uint clampedInterventions = _squeezeInterventions > 65535u ? 65535u : _squeezeInterventions;
+            uint clampedInterventions = _accumulatorState.SqueezeInterventions > 65535u
+                ? 65535u
+                : _accumulatorState.SqueezeInterventions;
             uint auxFlags = BodyFlagSdfSqueezeIntervention |
                 BodyFlagSdfGradientValid |
                 ((clampedInterventions << TelemetrySqueezeInterventionShift) & TelemetrySqueezeInterventionMask);
@@ -2580,8 +3203,9 @@ namespace Hecton8.Gameplay
             Vector3 runtimePosition = ToVector3(position);
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             uint hash = BuildSyncFenceHash(in aup, velocity, rotation);
-            _lastSyncFenceHash = hash;
-            _lastSyncFenceFrame = (uint)Time.frameCount;
+            float maxDriftErrorMeters = ResolveAupMaxDriftErrorMeters(in aup, position);
+            _accumulatorState.LastSyncFenceHash = hash;
+            _accumulatorState.LastSyncFenceFrame = (uint)Time.frameCount;
 
             SyncFenceSignal signal = default;
             signal.PositionAup = aup;
@@ -2589,14 +3213,27 @@ namespace Hecton8.Gameplay
             signal.Velocity = velocity;
             signal.Rotation = rotation;
             signal.StateHash = hash;
-            signal.Frame = _lastSyncFenceFrame;
+            signal.Frame = _accumulatorState.LastSyncFenceFrame;
             signal.SourceId = _sourceId;
             signal.Flags = 0;
             PhysicsDeterminismSignals.Publish(in signal);
-            WriteSyncFenceTelemetry(in signal);
+            WriteSyncFenceTelemetry(in signal, maxDriftErrorMeters);
+            CrashTelemetryBuffer.ReportAupMaxDriftError(runtimePosition, maxDriftErrorMeters);
         }
 
-        private void WriteSyncFenceTelemetry(in SyncFenceSignal signal)
+        private static float ResolveAupMaxDriftErrorMeters(in AbsoluteUniversePosition aup, float3 runtimePosition)
+        {
+            double3 expectedRuntime = aup.ToAbsoluteDouble3() - HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            double3 measuredRuntime = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            double3 drift = math.abs(expectedRuntime - measuredRuntime);
+            double maxAxis = math.max(drift.x, math.max(drift.y, drift.z));
+            if (!math.isfinite(maxAxis))
+                return float.MaxValue;
+
+            return (float)math.min(maxAxis, (double)float.MaxValue);
+        }
+
+        private void WriteSyncFenceTelemetry(in SyncFenceSignal signal, float maxDriftErrorMeters)
         {
             if (!TryReserveTelemetrySlot(out int wrappedIndex))
                 return;
@@ -2612,7 +3249,8 @@ namespace Hecton8.Gameplay
                 Frame = signal.Frame,
                 Flags = FaultSyncFence,
                 SyncFenceHash = signal.StateHash,
-                AuxFlags = HectonFloatingOrigin.CurrentShiftSequence
+                AuxFlags = HectonFloatingOrigin.CurrentShiftSequence | AupDriftTelemetryFlag,
+                AupMaxDriftErrorMeters = SanitizeNonNegative(maxDriftErrorMeters)
             };
         }
 
@@ -2623,7 +3261,7 @@ namespace Hecton8.Gameplay
             signal.AuthoritativeHash = authoritativeHash;
             signal.Frame = frame != 0u ? frame : (uint)Time.frameCount;
             signal.SourceId = _sourceId;
-            signal.LastFenceFrame = _lastSyncFenceFrame;
+            signal.LastFenceFrame = _accumulatorState.LastSyncFenceFrame;
             signal.Flags = flags;
             PhysicsDeterminismSignals.Publish(in signal);
             AddFaultFlag(FaultDesync);
@@ -2700,8 +3338,12 @@ namespace Hecton8.Gameplay
             Directory.CreateDirectory(logDirectory);
             string physicsPath = Path.Combine(logDirectory, "Dump_PHYSICS_DETERMINISM_SYNC.bin");
             string ikPath = Path.Combine(logDirectory, "Dump_PLAYER_IK_ENVIRONMENT_ADAPTER.bin");
+            string aupWatchdogPath = Path.Combine(logDirectory, AupWatchdogDumpFileName);
+            string sdfSqueezePath = Path.Combine(logDirectory, SdfSqueezeDumpFileName);
             WriteTelemetryDump(physicsPath, 0x48503844u);
             WriteTelemetryDump(ikPath, 0x50494B42u);
+            WriteTelemetryDump(aupWatchdogPath, AupWatchdogDumpMagic);
+            WriteTelemetryDump(sdfSqueezePath, SdfSqueezeDumpMagic);
         }
 
         private void WriteTelemetryDump(string path, uint magic)
@@ -2713,8 +3355,8 @@ namespace Hecton8.Gameplay
                 writer.Write(_faultFlags[0]);
                 int telemetryHead = ResolveTelemetryHeadIndex();
                 writer.Write(telemetryHead);
-                writer.Write(_lastSyncFenceHash);
-                writer.Write(_lastSyncFenceFrame);
+                writer.Write(_accumulatorState.LastSyncFenceHash);
+                writer.Write(_accumulatorState.LastSyncFenceFrame);
                 int telemetryLength = _telemetry.Length;
                 for (int i = 0; i < telemetryLength; i++)
                 {
@@ -2739,6 +3381,7 @@ namespace Hecton8.Gameplay
                     writer.Write(entry.Flags);
                     writer.Write(entry.SyncFenceHash);
                     writer.Write(entry.AuxFlags);
+                    writer.Write(entry.AupMaxDriftErrorMeters);
                 }
             }
         }
@@ -2755,6 +3398,22 @@ namespace Hecton8.Gameplay
             return lengthSq > 0.000001f && math.all(math.isfinite(value))
                 ? value * math.rsqrt(lengthSq)
                 : fallback;
+        }
+
+        private static float3 ApplyForwardSpeedPenalty(float3 velocity, float3 intendedMovement, float penalty01)
+        {
+            float3 safeVelocity = SanitizeFloat3(velocity, float3.zero);
+            float3 intended = SafeNormalize(intendedMovement, float3.zero);
+            if (math.lengthsq(intended) <= 0.000001f)
+                intended = SafeNormalize(safeVelocity, float3.zero);
+            if (math.lengthsq(intended) <= 0.000001f)
+                return safeVelocity;
+
+            float forwardSpeed = math.dot(safeVelocity, intended);
+            if (!math.isfinite(forwardSpeed) || forwardSpeed <= 0.0f)
+                return safeVelocity;
+
+            return safeVelocity - intended * (forwardSpeed * SanitizeUnit(penalty01));
         }
 
         private static float SanitizeUnit(float value)
@@ -3020,19 +3679,65 @@ namespace Hecton8.Gameplay
             return 1.0f - math.abs((unit * 4.0f) - 2.0f);
         }
 
+        private NativeArray<T> AllocateRuntimeArray<T>(
+            BufferID bufferId,
+            int count,
+            string label,
+            int vaultFlag,
+            IDataVault dataVault) where T : struct
+        {
+            int safeCount = math.max(1, count);
+            if (dataVault != null)
+            {
+                NativeArray<T> vaultArray = dataVault.GetBuffer<T>(
+                    bufferId,
+                    safeCount,
+                    SystemID.GameplayPlayer,
+                    NativeArrayOptions.ClearMemory);
+                if (vaultArray.IsCreated)
+                {
+                    _vaultNativeStateMask |= vaultFlag;
+                    return vaultArray;
+                }
+            }
+
+            _vaultNativeStateMask &= ~vaultFlag;
+            return AllocateLocalArray<T>(safeCount, label);
+        }
+
+        private static NativeArray<T> AllocateLocalArray<T>(int count, string label) where T : struct
+        {
+            NativeArray<T> array = H8Memory.Allocate<T>(
+                math.max(1, count),
+                SystemID.GameplayPlayer,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            if (!array.IsCreated)
+                return default;
+
+            RegisterArray(array, label);
+            return array;
+        }
+
         private static void RegisterArray<T>(NativeArray<T> array, string label) where T : struct
         {
             NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
-        private static void DisposeArray<T>(ref NativeArray<T> array) where T : struct
+        private void DisposeArray<T>(ref NativeArray<T> array, int vaultFlag = 0) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            if (vaultFlag != 0 && (_vaultNativeStateMask & vaultFlag) != 0)
+            {
+                array = default;
+                _vaultNativeStateMask &= ~vaultFlag;
+                return;
+            }
+
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            H8Memory.Release(ref array, SystemID.GameplayPlayer);
         }
     }
 }

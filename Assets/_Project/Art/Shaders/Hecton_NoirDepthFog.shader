@@ -20,6 +20,7 @@ Shader "Hidden/Hecton8/NoirDepthFog"
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+        #include "Hecton_WaterExtinction.hlsl"
 
         CBUFFER_START(UnityPerMaterial)
             float4 _HectonNoirDepthFogShallowColor;
@@ -129,6 +130,10 @@ Shader "Hidden/Hecton8/NoirDepthFog"
                 _HectonNoirDepthFogShallowColor.rgb,
                 _HectonNoirDepthFogAbyssColor.rgb,
                 saturate(depthSq + depth01 * 0.18h));
+            half3 extinctionColor = H8WaterExtinctionSampleRgbByDepthMeters(linearEyeDepth, (half)_ExtinctionLUTRuntime.y);
+            half extinctionBlend = saturate((half)_ExtinctionLUTRuntime.z * (half)_ExtinctionLUTParams.w);
+            fogColor = H8WaterExtinctionApplyFogTint(fogColor, extinctionColor, extinctionBlend);
+            sourceColor.rgb = lerp(sourceColor.rgb, sourceColor.rgb * extinctionColor, fogFactor * extinctionBlend * 0.35h);
             sourceColor.rgb = lerp(sourceColor.rgb, fogColor, (half)fogFactor);
             return sourceColor;
         }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.VFX;
 using Hecton8.World;
@@ -52,11 +52,20 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
+    /// Maps repair hits to gas-dynamics room indices without coupling tools to submarine internals.
+    /// </summary>
+    public interface ISubmarineRepairRoomResolver
+    {
+        /// <summary>Returns the nearest mapped compartment for a repair hit. Room ids match gas-dynamics room ids.</summary>
+        bool TryResolveRepairRoom(Vector3 worldHitPoint, out int roomId);
+    }
+
+    /// <summary>
     /// Fixed-step voxelized hull integrity grid with Burst-distributed impact diffusion and double-buffered breach publication.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Submarine Structural Grid")]
-    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, ILateFrameTickable, Hecton8.Gameplay.IDamageSignalReceiver, ISubmarineHullBreachReadModel, ISubmarineDamageControlTarget
+    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, ILateFrameTickable, Hecton8.Gameplay.IDamageSignalReceiver, ISubmarineHullBreachReadModel, ISubmarineDamageControlTarget, ISubmarineRepairRoomResolver
     {
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.FixedTick");
         private static readonly ProfilerMarker _damageScheduleProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Schedule");
@@ -746,14 +755,15 @@ namespace Hecton8.Physics
             float fullDentEnergy = math.max(yieldEnergy + Epsilon, hullCollisionFullDentEnergyJoules);
             float severity01 = math.saturate((kineticEnergy - yieldEnergy) / (fullDentEnergy - yieldEnergy));
             ContactPoint contact = collision.GetContact(0);
-            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
-            _cachedTransform = cachedTransform;
-            Vector3 localPointVector = cachedTransform.InverseTransformPoint(contact.point);
-            Vector3 localNormalVector = cachedTransform.InverseTransformDirection(contact.normal);
-            float3 localPoint = new float3(localPointVector.x, localPointVector.y, localPointVector.z);
+            if (!TryResolveLocalPointAup(contact.point, out float3 localPoint) ||
+                !TryResolveLocalDirection(contact.normal, out float3 localNormalVector))
+            {
+                return;
+            }
+
             float3 localNormal = ResolveOutwardHullNormal(
                 localPoint,
-                new float3(localNormalVector.x, localNormalVector.y, localNormalVector.z));
+                localNormalVector);
             byte integrityDelta = (byte)math.clamp(
                 (int)math.round(math.lerp(1f, math.max(1f, hullCollisionMaxIntegrityDelta), severity01)),
                 1,
@@ -1040,6 +1050,37 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
+        public bool TryResolveRepairRoom(Vector3 worldHitPoint, out int roomId)
+        {
+            roomId = -1;
+            if (!_nativeStateReady ||
+                !_compartmentCentroids.IsCreated ||
+                !TryResolveLocalPointAup(worldHitPoint, out float3 localPoint))
+            {
+                return false;
+            }
+
+            if (!EnsureCompartmentMappingReady() || _mappedCompartmentCount <= 0)
+                return false;
+
+            float bestDistanceSq = float.MaxValue;
+            int bestRoomId = -1;
+            int count = math.min(_mappedCompartmentCount, _compartmentCentroids.Length);
+            for (int compartmentIndex = 0; compartmentIndex < count; compartmentIndex++)
+            {
+                float distanceSq = math.lengthsq(localPoint - _compartmentCentroids[compartmentIndex]);
+                if (distanceSq >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = distanceSq;
+                bestRoomId = compartmentIndex;
+            }
+
+            roomId = bestRoomId;
+            return bestRoomId >= 0;
+        }
+
+        /// <inheritdoc />
         public bool TryQueueRepairHit(Vector3 worldHitPoint, float deltaTime, float repairUnitsPerSecond, float intensity01)
         {
             if (!_nativeStateReady ||
@@ -1051,13 +1092,9 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
-            _cachedTransform = cachedTransform;
-            Vector3 localVector = cachedTransform.InverseTransformPoint(worldHitPoint);
-            if (!IsFiniteVector(localVector))
+            if (!TryResolveLocalPointAup(worldHitPoint, out float3 localPoint))
                 return false;
 
-            float3 localPoint = new float3(localVector.x, localVector.y, localVector.z);
             float repairRadiusSq = BreachRepairRadiusMeters * BreachRepairRadiusMeters;
             int count = math.min(_activeBreachCount, _breaches.Length);
             for (int i = 0; i < count; i++)
@@ -1673,17 +1710,96 @@ namespace Hecton8.Physics
             return (hullMass * otherMass) / math.max(1f, hullMass + otherMass);
         }
 
+        private bool TryResolveLocalPointAup(Vector3 worldPoint, out float3 localPoint)
+        {
+            localPoint = default;
+            if (!IsFiniteVector(worldPoint))
+                return false;
+
+            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
+            _cachedTransform = cachedTransform;
+            if (cachedTransform == null ||
+                !IsFiniteVector(cachedTransform.position) ||
+                !IsFiniteQuaternion(cachedTransform.rotation))
+            {
+                return false;
+            }
+
+            double3 hitAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
+            double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(cachedTransform.position);
+            double3 relativeWorldDouble = hitAup - rootAup;
+            if (!math.all(math.isfinite(relativeWorldDouble)))
+                return false;
+
+            Vector3 relativeWorld = new Vector3(
+                (float)relativeWorldDouble.x,
+                (float)relativeWorldDouble.y,
+                (float)relativeWorldDouble.z);
+            if (!IsFiniteVector(relativeWorld))
+                return false;
+
+            Vector3 localVector = Quaternion.Inverse(cachedTransform.rotation) * relativeWorld;
+            Vector3 lossyScale = cachedTransform.lossyScale;
+            localVector.x /= ResolveSafeScale(lossyScale.x);
+            localVector.y /= ResolveSafeScale(lossyScale.y);
+            localVector.z /= ResolveSafeScale(lossyScale.z);
+            if (!IsFiniteVector(localVector))
+                return false;
+
+            localPoint = new float3(localVector.x, localVector.y, localVector.z);
+            return math.all(math.isfinite(localPoint));
+        }
+
+        private bool TryResolveLocalDirection(Vector3 worldDirection, out float3 localDirection)
+        {
+            localDirection = default;
+            if (!IsFiniteVector(worldDirection))
+                return false;
+
+            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
+            _cachedTransform = cachedTransform;
+            if (cachedTransform == null || !IsFiniteQuaternion(cachedTransform.rotation))
+                return false;
+
+            Vector3 localVector = Quaternion.Inverse(cachedTransform.rotation) * worldDirection;
+            if (!IsFiniteVector(localVector))
+                return false;
+
+            localDirection = NormalizeSafe(
+                new float3(localVector.x, localVector.y, localVector.z),
+                new float3(0f, 1f, 0f));
+            return math.all(math.isfinite(localDirection));
+        }
+
         private static Vector3 ResolveSafeDirection(Vector3 value, Vector3 fallback)
         {
             float lengthSq = value.sqrMagnitude;
-            return lengthSq > Epsilon
-                ? value * math.rsqrt(lengthSq)
-                : fallback;
+            if (IsFiniteVector(value) && math.isfinite(lengthSq) && lengthSq > Epsilon)
+                return value * math.rsqrt(lengthSq);
+
+            float fallbackLengthSq = fallback.sqrMagnitude;
+            if (IsFiniteVector(fallback) && math.isfinite(fallbackLengthSq) && fallbackLengthSq > Epsilon)
+                return fallback * math.rsqrt(fallbackLengthSq);
+
+            return Vector3.up;
         }
 
         private static bool IsFiniteVector(Vector3 value)
         {
             return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        private static bool IsFiniteQuaternion(Quaternion value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z) &&
+                   math.isfinite(value.w);
+        }
+
+        private static float ResolveSafeScale(float scale)
+        {
+            return math.isfinite(scale) && math.abs(scale) > Epsilon ? scale : 1f;
         }
 
         private static float3 NormalizeSafe(float3 value, float3 fallback)
@@ -1827,7 +1943,10 @@ namespace Hecton8.Physics
                 return;
 
             Bounds bounds = hullCollider.bounds;
-            Vector3 localCenter = transform.InverseTransformPoint(bounds.center);
+            if (!TryResolveLocalPointAup(bounds.center, out float3 localCenterAup))
+                return;
+
+            Vector3 localCenter = new Vector3(localCenterAup.x, localCenterAup.y, localCenterAup.z);
             Vector3 localExtents = transform.InverseTransformVector(bounds.extents);
             localGridCenter = localCenter;
             localGridSize = new Vector3(

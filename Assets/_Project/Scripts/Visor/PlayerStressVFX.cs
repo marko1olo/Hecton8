@@ -1,7 +1,7 @@
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
 using UnityEngine;

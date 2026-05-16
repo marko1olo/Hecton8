@@ -1,8 +1,10 @@
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Environment.Fluids;
 using Hecton8.World;
 using UnityEngine;
+using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
 
 namespace Hecton8.Gameplay
 {

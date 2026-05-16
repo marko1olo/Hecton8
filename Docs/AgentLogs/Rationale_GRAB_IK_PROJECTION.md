@@ -1,0 +1,59 @@
+# Rationale_GRAB_IK_PROJECTION
+
+## Session Baseline
+
+Problem: VR hands can visually pass through cockpit steel and interactive panels when the controller pose is treated as truth.
+Solution: Add an Animation/IK-owned Burst hand projection kernel that treats controller pose as input, clamps physical presence to SDF/plane contact, solves a two-bone arm chain, and exports a haptic/ghost/telemetry read model for Core-side bridge code.
+Rejected Alternatives: Unity Animator IK was rejected by prompt; direct Rigidbody/Joint hands were rejected as expensive and nondeterministic; direct `GlobalSignals` calls from Animation/IK were rejected because `Hecton8.Core` already depends on `Hecton8.Animation.IK`.
+Scalability potential: Low disables VR hand IK and uses a screen-space fallback. Middle runs two-hand analytical IK with plane projection. High adds SDF gradient projection. Ultra spends saved cycles on richer ghost hand/haptic presentation without changing authority.
+Hardware Impact: On i3/MX350/Quest-class silicon, expected hot-path cost stays under 0.02 ms for two hands because there are no per-frame allocations, no Unity physics casts in the IK job, and no Animator IK callback pass.
+
+## Decisions
+
+Problem: Task requires `HandTargetAUP`, `HandActualAUP`, and `GrabState` in `GlobalDataVault`, but the owned Animation/IK assembly cannot own the global vault enum.
+Solution: Add narrow BufferID entries in `Hecton8.Core.Memory.H8Memory.cs` and expose Animation/IK structs that can be used as typed vault buffers.
+Rejected Alternatives: Local persistent `NativeArray` fields would violate DataVault sovereignty; adding a new service singleton would violate registry discipline and batch concurrency.
+Scalability potential: Low/Middle/High/Ultra all share two fixed hand lanes, so low devices do not pay more memory for high-tier projection logic.
+Hardware Impact: Three two-element vault buffers are cache-resident; expected memory footprint under 1 KB plus 300 telemetry entries if allocated by caller.
+
+Problem: Haptic scrape emission is requested, but Animation/IK cannot reference `GlobalSignals` without an assembly cycle.
+Solution: The job writes a deterministic scrape request bit and intensity to the output/telemetry lane; the existing Core-side haptic bridge can translate that to `HapticRequest.ChannelGearScrape`.
+Rejected Alternatives: Adding a direct `Hecton8.Core` reference to Animation/IK would create a circular dependency; duplicating `HapticRequest` in Animation/IK would fork the signal contract.
+Scalability potential: Low tier never emits scrape because VR IK is disabled; High/Ultra can add stronger haptic curves using the same output fields.
+Hardware Impact: One byte flag and one float intensity per hand; effectively zero cache impact.
+
+Problem: Universal input lives in `Hecton8.Input`, while the IK assembly is already referenced by `Hecton8.Core` and must not form an input/core/animation cycle.
+Solution: Consume grip as a blittable `UniversalInputFlags` plus `GripInputMask` lane on `VRHandPresenceInput`; Core or Input bridge code can copy `UniversalInputStateSignal` into that lane without Animation/IK depending on the concrete input assembly.
+Rejected Alternatives: Referencing `Hecton8.Input` from Animation/IK risks a circular asmdef dependency; polling XR devices inside the IK job would violate DOD signal flow and Burst constraints.
+Scalability potential: Low tier ignores the flag and emits screen-space fallback; Middle/High/Ultra read the same bitmask with no allocation or virtual dispatch.
+Hardware Impact: Two `uint` reads per hand; expected cost is below measurement noise on i3/MX350.
+
+Problem: Global compile verification is required, but the project currently fails outside this agent's domain.
+Solution: Run the full `dotnet build Hecton8.Core.csproj --no-restore` and a filtered second build scan for `VRPhysicalHandPresence`/Animation.IK references; record external blocker instead of editing VFX, docking, or ecosystem contracts.
+Rejected Alternatives: Patching unrelated VFX wake/autopilot/ecosystem domains would breach the domain boundary; claiming a clean compile would be false.
+Scalability potential: The hand IK kernel remains isolated so external services can compile independently once their contracts are repaired.
+Hardware Impact: No runtime impact; this is build-time verification discipline.
+
+Problem: VR hands need to feel blocked by steel without paying for rigidbody hand physics or synchronous casts.
+Solution: Use a cinematic physical cheat: if SDF data is available and high tier or explicit SDF projection is enabled, trilinear sample the encoded field and push out along its gradient; otherwise project the controller target onto the supplied wall plane and preserve tangent motion for slide.
+Rejected Alternatives: `Physics.SphereCast`, rigidbody hands, and Unity joints were rejected because they add physics sync cost, nondeterminism, and cross-domain coupling.
+Scalability potential: Low disables IK. Middle uses only the supplied plane. High uses SDF gradient projection. Ultra can feed denser SDFs or richer ghost/haptic presentation while the same two-lane job remains fixed.
+Hardware Impact: On i3/MX350, plane mode is only dot products and lerps; High SDF mode costs seven trilinear samples only while actively grabbing near geometry.
+
+Problem: Haptic scraping needs to track sliding contact, not normal penetration correction.
+Solution: Measure tangent velocity on the obstruction plane, gate it by threshold, and emit only an output flag/intensity packet for the existing haptic system to translate.
+Rejected Alternatives: Direct `HapticRequest` publishing from the Burst job is impossible and would violate assembly boundaries; sending haptic pulses every locked frame would buzz constantly and waste presentation budget.
+Scalability potential: Low no-op. Middle sends coarse scrape. High/Ultra can map intensity curves and audio scrape layers using the same deterministic output lane.
+Hardware Impact: One projection, one length, one threshold branch per locked hand.
+
+Problem: Lock-state failures must be debuggable after the fact, including NaN events.
+Solution: Store the last 300 frames in `VRHandIkTelemetryEntry` with `IKLockState`, state hash, flags, hand id, target/actual/controller positions, slide speed, and separation; expose a cold-path binary dump utility for `Docs/AgentLogs/Dump_GRAB_IK_PROJECTION.bin`.
+Rejected Alternatives: `Debug.Log` telemetry was rejected because it is noisy, allocates, and disappears under crash conditions; dumping from inside the Burst job was rejected because file I/O is not a job responsibility.
+Scalability potential: Low tier still writes compact fallback state. High/Ultra can enrich presentation while the ring format remains deterministic and bounded.
+Hardware Impact: One ring write per frame; fixed 300-entry memory cost and no hot-path managed allocation.
+
+Problem: NaN or fully-extended-arm math can poison all downstream animation pose data.
+Solution: Clamp cosine values, use epsilon denominators, normalize through `math.rsqrt`, validate every output, and fall back to previous physical hand state with `OutputFlagNanFallback`.
+Rejected Alternatives: Throwing exceptions or letting Unity animation sanitize the pose would hide the actual fault and break the black-box chain.
+Scalability potential: Same guard path on every tier; low devices get deterministic fallback rather than animation spikes.
+Hardware Impact: A few scalar clamps and finite checks per hand, cheaper than a single failed animation graph recovery.

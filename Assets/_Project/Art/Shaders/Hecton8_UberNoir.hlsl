@@ -3,6 +3,7 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+#include "Hecton_WaterExtinction.hlsl"
 
 #define H8_UBER_NOIR_PI 3.14159265359
 #define H8_UBER_NOIR_EPS 0.0001
@@ -98,10 +99,12 @@ struct H8UberNoirVaryings
     half3 normalWS : TEXCOORD1;
     half4 tangentWS : TEXCOORD2;
     half3 viewDirWS : TEXCOORD3;
-    float2 uv : TEXCOORD4;
+    float4 uvPack : TEXCOORD4;
     half fogFactor : TEXCOORD5;
     half instanceSeed : TEXCOORD6;
     half instanceFade : TEXCOORD7;
+    float2 baseUvScale : TEXCOORD8;
+    half3 extinctionColor : TEXCOORD9;
     UNITY_VERTEX_INPUT_INSTANCE_ID
     UNITY_VERTEX_OUTPUT_STEREO
 };
@@ -223,6 +226,16 @@ half H8UberNoirBlueNoise(float4 positionCS)
     float2 screenUV = H8UberNoirScreenUV(positionCS);
     float2 r2 = frac(_Time.y * float2(0.75487766, 0.56984029) * max(_UberNoirDitherParams.z, 0.0));
     return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, screenUV * (_ScaledScreenParams.xy * (1.0 / 64.0)) + r2).r;
+}
+
+half H8UberNoirFogIgnDither(float4 positionCS, half fogCurve)
+{
+    float2 screenUV = H8UberNoirScreenUV(positionCS);
+    float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
+    half transitionEdge = saturate(1.0h - abs(fogCurve - 0.5h) * 2.0h);
+    half noise = (half)H8WaterExtinctionInterleavedGradientNoise(pixel);
+    half active = (half)H8WaterExtinctionActive();
+    return (noise - 0.5h) * transitionEdge * 0.0078125h * active;
 }
 
 void H8UberNoirClipDitheredTransparency(half alpha, float4 positionCS)
@@ -381,6 +394,7 @@ half H8UberNoirResolveRust01()
 float2 H8UberNoirResolveRustPomUv(
     float2 rawUv,
     float2 baseUv,
+    float2 baseUvScale,
     half3 viewDirWS,
     half3 normalWS,
     half4 tangentWS,
@@ -433,8 +447,7 @@ float2 H8UberNoirResolveRustPomUv(
     half pitMask = saturate((rustPacked.r - 0.34h) * 1.85h);
     rustMask = saturate(rust01 * lerp(0.58h, 1.0h, pitMask));
     float2 invRustScale = float2(H8UberNoirSafeRcp(rustScale.x), H8UberNoirSafeRcp(rustScale.y));
-    float2 rawPomUv = rawUv + (resolvedUv - rustUv) * invRustScale;
-    return rawPomUv * _BaseMap_ST.xy + _BaseMap_ST.zw;
+    return baseUv + (resolvedUv - rustUv) * invRustScale * baseUvScale;
 #endif
 }
 
@@ -523,7 +536,12 @@ float H8UberNoirEvaluateProceduralCaustics(float2 uv)
 half3 H8UberNoirEvaluateAnalyticalCaustics(float3 positionWS, half3 normalWS, Light mainLight)
 {
 #if defined(_MATH_LOD_LOW)
-    return half3(0.0h, 0.0h, 0.0h);
+    float stablePhase = dot(positionWS.xz + _TotalUniverseOffset.xz, float2(0.031, -0.023)) + _Time.y * 0.17;
+    half caustic = (half)(H8UberNoirTriangle01(stablePhase) * H8UberNoirTriangle01(stablePhase * 1.37 + 0.19));
+    half featureMask = (half)(step(0.5, _UberNoirFeatureFlags.y) * step(H8_UBER_NOIR_EPS, _UberNoirCausticParams.x));
+    half normalMask = saturate(normalWS.y);
+    half3 tint = (half3)max(_UberNoirCausticColor.rgb, _NoirAbyssFloorColor.rgb);
+    return tint * caustic * normalMask * featureMask * (half)(_UberNoirCausticParams.x * 0.18);
 #else
     float featureMask = step(0.5, _UberNoirFeatureFlags.y) * step(H8_UBER_NOIR_EPS, _UberNoirCausticParams.x);
     float normalMask = saturate(normalWS.y);
@@ -538,12 +556,9 @@ half3 H8UberNoirEvaluateAnalyticalCaustics(float3 positionWS, half3 normalWS, Li
     float caustic = H8UberNoirEvaluateProceduralCaustics(uv);
 
 #if defined(H8_UBERNOIR_CAUSTICS_TEXTURED)
-    [branch]
-    if (_HectonCausticsRuntimeParams.x > 0.5)
-    {
-        float3 sampled = SAMPLE_TEXTURE2D(_HectonCausticsMap, sampler_HectonCausticsMap, uv).rgb;
-        caustic = dot(sampled, float3(0.27, 0.54, 0.19));
-    }
+    float3 sampled = SAMPLE_TEXTURE2D(_HectonCausticsMap, sampler_HectonCausticsMap, uv).rgb;
+    float sampledCaustic = dot(sampled, float3(0.27, 0.54, 0.19));
+    caustic = lerp(caustic, sampledCaustic, step(0.5, _HectonCausticsRuntimeParams.x));
 #endif
 
     half intensity = (half)(featureMask * inside * depthFade * normalMask * attenuation * _UberNoirCausticParams.x * max(_HectonProjectedCausticsParams.x, 0.0));
@@ -555,12 +570,13 @@ half3 H8UberNoirEvaluateAnalyticalCaustics(float3 positionWS, half3 normalWS, Li
 H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
 {
     H8UberNoirSurface surface;
-    float2 baseUv = TRANSFORM_TEX(input.uv, _BaseMap);
+    float2 baseUv = input.uvPack.xy;
+    float2 rawUv = input.uvPack.zw;
     float2 wearUv = baseUv;
 #if !defined(_MATH_LOD_LOW)
     half4 rustPacked;
     half rustMask;
-    wearUv = H8UberNoirResolveRustPomUv(input.uv, baseUv, input.viewDirWS, input.normalWS, input.tangentWS, rustPacked, rustMask);
+    wearUv = H8UberNoirResolveRustPomUv(rawUv, baseUv, input.baseUvScale, input.viewDirWS, input.normalWS, input.tangentWS, rustPacked, rustMask);
 #endif
 
     half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, wearUv) * _BaseColor;
@@ -643,11 +659,30 @@ half3 H8UberNoirEvaluateMainLighting(H8UberNoirVaryings input, H8UberNoirSurface
 #endif
 }
 
-half3 H8UberNoirApplyNoirFog(half3 color, half fogFactor)
+half3 H8UberNoirResolveExtinctionColor(H8UberNoirVaryings input)
+{
+#if defined(_MATH_LOD_LOW)
+    return max(input.extinctionColor, half3(0.0h, 0.0h, 0.0h));
+#else
+    return H8WaterExtinctionSampleRgbByWorld(input.positionWS, (half)_ExtinctionLUTRuntime.y);
+#endif
+}
+
+void H8UberNoirApplyExtinctionToSurface(half3 extinctionColor, inout H8UberNoirSurface surface)
+{
+    half emissiveMask = saturate(surface.orm.a);
+    half3 extinctAlbedo = surface.albedo * extinctionColor;
+    surface.albedo = lerp(extinctAlbedo, surface.albedo, emissiveMask);
+}
+
+half3 H8UberNoirApplyNoirFog(half3 color, half fogFactor, half3 extinctionColor, float4 positionCS)
 {
     half fog = saturate(fogFactor * (half)max(_NoirFogAlpha, _UberNoirDitherParams.y));
     half fogCurve = fog * fog * (0.82h + fog * 0.18h);
+    fogCurve = saturate(fogCurve + H8UberNoirFogIgnDither(positionCS, fogCurve));
     half3 floorColor = max((half3)_NoirFogColor.rgb, (half3)_NoirAbyssFloorColor.rgb);
+    half extinctionFogBlend = saturate((half)_ExtinctionLUTRuntime.z * (half)_ExtinctionLUTParams.w);
+    floorColor = H8WaterExtinctionApplyFogTint(floorColor, extinctionColor, extinctionFogBlend);
     return lerp(color, floorColor, fogCurve);
 }
 
@@ -658,9 +693,11 @@ half4 H8UberNoirFragment(H8UberNoirVaryings input) : SV_Target
 
     H8UberNoirSurface surface = H8UberNoirSampleSurface(input);
     H8UberNoirClipDitheredTransparency(surface.alpha, input.positionCS);
+    half3 extinctionColor = H8UberNoirResolveExtinctionColor(input);
+    H8UberNoirApplyExtinctionToSurface(extinctionColor, surface);
 
     half3 color = H8UberNoirEvaluateMainLighting(input, surface);
-    color = H8UberNoirApplyNoirFog(color, input.fogFactor);
+    color = H8UberNoirApplyNoirFog(color, input.fogFactor, extinctionColor, input.positionCS);
     half3 abyssFloor = (half3)_NoirAbyssFloorColor.rgb;
     color = all(isfinite(color)) ? max(color, abyssFloor) : abyssFloor;
     return half4(color, 1.0h);
@@ -696,10 +733,17 @@ H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
     output.normalWS = (half3)normalWS;
     output.tangentWS = half4((half3)tangentWS, input.tangentOS.w);
     output.viewDirWS = (half3)H8UberNoirSafeNormalize(GetWorldSpaceViewDir(positionWS), float3(0.0, 0.0, 1.0));
-    output.uv = input.uv;
+    float2 rawUv = input.uv;
+    output.uvPack = float4(rawUv * _BaseMap_ST.xy + _BaseMap_ST.zw, rawUv);
+    output.baseUvScale = _BaseMap_ST.xy;
     output.fogFactor = ComputeFogFactor(output.positionCS.z);
     output.instanceSeed = (half)saturate(frac(safeInstanceSeed));
     output.instanceFade = (half)safeInstanceFade;
+#if defined(_MATH_LOD_LOW)
+    output.extinctionColor = H8WaterExtinctionSampleRgbByWorld(positionWS, (half)_ExtinctionLUTRuntime.y);
+#else
+    output.extinctionColor = half3(1.0h, 1.0h, 1.0h);
+#endif
     return output;
 }
 

@@ -30,7 +30,7 @@ namespace Hecton8.World
         internal static double AUPDistanceSq(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
             double3 delta = AUPDeltaClamped(in a, in b);
-            return math.dot(delta, delta);
+            return math.lengthsq(delta);
         }
 
         /// <summary>
@@ -68,14 +68,18 @@ namespace Hecton8.World
         internal static float3 AUPDirection(in AbsoluteUniversePosition from, in AbsoluteUniversePosition to)
         {
             double3 delta = AUPDeltaClamped(in to, in from);
-            double lengthSq = math.dot(delta, delta);
-            if (!math.isfinite(lengthSq) || lengthSq <= double.Epsilon)
+            double distanceSq = math.lengthsq(delta);
+            if (!math.isfinite(distanceSq) || distanceSq <= double.Epsilon)
                 return float3.zero;
 
-            double3 direction = delta * math.rsqrt(lengthSq);
+            double inverseLength = math.rsqrt(math.max(distanceSq, 0.0001d));
+            double3 direction = delta * inverseLength;
             float3 result = new float3((float)direction.x, (float)direction.y, (float)direction.z);
             if (!math.all(math.isfinite(result)))
+            {
                 ReportInvalidFloatResult();
+                return float3.zero;
+            }
 
             return result;
         }

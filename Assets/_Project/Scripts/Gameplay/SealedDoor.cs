@@ -24,7 +24,7 @@
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using UnityEngine;
 using UnityEngine.Events;
@@ -150,6 +150,7 @@ namespace Hecton8.Gameplay
         private ushort _wfcOutpostCellIndex;
         private byte _wfcOutpostFlags;
         private bool _wfcOutpostPersistenceConfigured;
+        private bool _wfcOutpostLaserUnlocked;
 
         /// <summary>
         /// Cached MaterialPropertyBlock for progress VFX.
@@ -195,6 +196,9 @@ namespace Hecton8.Gameplay
             _wfcOutpostCellIndex = cellIndex;
             _wfcOutpostFlags = (byte)(initialFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
             _wfcOutpostPersistenceConfigured = true;
+            _wfcOutpostLaserUnlocked =
+                (_wfcOutpostFlags & WfcDoorUnlockedFlag) != 0 &&
+                (_wfcOutpostFlags & WfcDoorPowerOnFlag) == 0;
             ApplyWfcOutpostFlagsToDoor(_wfcOutpostFlags);
         }
 
@@ -204,6 +208,7 @@ namespace Hecton8.Gameplay
             _wfcOutpostSectorHash = 0UL;
             _wfcOutpostCellIndex = 0;
             _wfcOutpostFlags = 0;
+            _wfcOutpostLaserUnlocked = false;
         }
 
         public void ApplyWfcOutpostPowerState(bool poweredAndUnlocked, uint frame)
@@ -221,12 +226,53 @@ namespace Hecton8.Gameplay
             if (poweredAndUnlocked)
                 nextFlags = (byte)(nextFlags | WfcDoorUnlockedFlag | WfcDoorPowerOnFlag);
             else
-                nextFlags = (byte)(nextFlags & ~(WfcDoorUnlockedFlag | WfcDoorPowerOnFlag));
+            {
+                nextFlags = (byte)(nextFlags & ~WfcDoorPowerOnFlag);
+                if (!_wfcOutpostLaserUnlocked)
+                    nextFlags = (byte)(nextFlags & ~WfcDoorUnlockedFlag);
+            }
 
             if (((_wfcOutpostFlags ^ nextFlags) & WfcOutpostPersistenceConstants.MutableFlagMask) != 0)
                 ApplyWfcOutpostFlagsToDoor(nextFlags);
 
             SetWfcOutpostFlags(nextFlags, frame);
+        }
+
+        public bool TryGetWfcOutpostCell(out ulong sectorHash, out ushort cellIndex, out byte flags)
+        {
+            sectorHash = _wfcOutpostSectorHash;
+            cellIndex = _wfcOutpostCellIndex;
+            flags = _wfcOutpostFlags;
+            return _wfcOutpostPersistenceConfigured &&
+                   sectorHash != 0UL &&
+                   cellIndex < WfcOutpostPersistenceConstants.CellCount;
+        }
+
+        public void ApplyWfcOutpostLaserCutProgress(float progress01, uint frame)
+        {
+            if (!_wfcOutpostPersistenceConfigured || _state == DoorState.Opened)
+                return;
+
+            float clampedProgress = Mathf.Clamp01(progress01);
+            _currentProgress = requiredCuttingTime * clampedProgress;
+
+            if (clampedProgress > 0f && clampedProgress < 1f && !_isBeingCut)
+                StartCutting();
+
+            if (clampedProgress >= 1f)
+            {
+                PublishProgress(1f, true);
+                StopCutting();
+                _wfcOutpostLaserUnlocked = true;
+                byte unlockedFlags = (byte)(_wfcOutpostFlags | WfcDoorUnlockedFlag);
+                SetWfcOutpostFlags(unlockedFlags, frame);
+                ApplyWfcOutpostFlagsToDoor(unlockedFlags);
+                if (_state == DoorState.Cutting)
+                    _state = DoorState.Sealed;
+                return;
+            }
+
+            PublishProgress(clampedProgress, false);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -372,6 +418,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void ResetDoor()
         {
+            _wfcOutpostLaserUnlocked = false;
             ResetState();
             SetWfcOutpostFlags(0, (uint)Time.frameCount);
         }
@@ -385,6 +432,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _state = DoorState.Locked;
+            _wfcOutpostLaserUnlocked = false;
             StopCutting();
             SetWfcOutpostFlags((byte)(_wfcOutpostFlags & ~WfcDoorUnlockedFlag), (uint)Time.frameCount);
         }

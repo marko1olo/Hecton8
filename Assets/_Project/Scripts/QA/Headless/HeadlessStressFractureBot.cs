@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -682,7 +682,7 @@ namespace Hecton8.QA.Headless
                 return;
             }
 
-            if (!vault.TryGetBuffer<float3>(BufferID.RigidbodyAUPs, out NativeArray<float3> rigidbodyAups) || !rigidbodyAups.IsCreated)
+            if (!vault.TryGetBuffer<double3>(BufferID.RigidbodyAUPs, out NativeArray<double3> rigidbodyAups) || !rigidbodyAups.IsCreated)
             {
                 _rigidbodyScanMissCount++;
                 return;
@@ -691,7 +691,7 @@ namespace Hecton8.QA.Headless
             int length = rigidbodyAups.Length;
             for (int i = 0; i < length; i++)
             {
-                float3 value = rigidbodyAups[i];
+                double3 value = rigidbodyAups[i];
                 if (math.all(math.isfinite(value)))
                     continue;
 

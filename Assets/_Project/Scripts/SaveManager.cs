@@ -19,7 +19,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Persistence.Paging;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Modding;
@@ -1408,8 +1408,8 @@ namespace Hecton8.SaveSystem
 
         private void DrainWfcSectorHydratedSignals()
         {
-            ReadOnlySpan<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal> signals =
-                SignalBus<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
+            ReadOnlySpan<Hecton8.Core.Contracts.Signals.MacroDatabaseSectorHydrationSignal> signals =
+                SignalBus<Hecton8.Core.Contracts.Signals.MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
             if (signals.Length == 0)
                 return;
 
@@ -1421,7 +1421,7 @@ namespace Hecton8.SaveSystem
 
             for (int i = 0; i < signals.Length && hydrationSectorCount < MaxWfcSectorHydrationProbesPerTick; i++)
             {
-                Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal signal = signals[i];
+                Hecton8.Core.Contracts.Signals.MacroDatabaseSectorHydrationSignal signal = signals[i];
                 if (signal.SectorHash == 0UL ||
                     signal.PayloadBytes < sizeof(uint) ||
                     signal.PayloadBytes > WfcOutpostPersistenceConstants.PayloadMaxBytes ||
@@ -1621,7 +1621,7 @@ namespace Hecton8.SaveSystem
         }
 
         private static unsafe bool IsWfcOutpostHydrationCandidate(
-            in Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal signal,
+            in Hecton8.Core.Contracts.Signals.MacroDatabaseSectorHydrationSignal signal,
             IMacroDatabaseService macroDatabase)
         {
             if (macroDatabase == null || !macroDatabase.IsOpen)

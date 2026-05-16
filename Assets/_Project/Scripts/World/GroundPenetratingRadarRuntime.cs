@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Hecton8.Caves;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.World.GPR;
 using Unity.Collections;

@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
-using Hecton8.Gameplay;
-using Hecton8.Items;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Burst;
@@ -15,6 +13,30 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
+
+namespace Hecton8.Core.Contracts.Signals
+{
+    /// <summary>
+    /// Blittable carve ingress packet. Coordinates are absolute-universe meters.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 128)]
+    public struct VoxelCarveEvent : ISignal
+    {
+        public ulong VolumeInstanceId;
+        public float3 AbsoluteHitPoint;
+        public float3 AbsoluteSegmentEnd;
+        public float3 AbsoluteHalfExtents;
+        public float3 AbsoluteImpulseDirection;
+        public double3 AbsoluteHitPointDouble;
+        public double3 AbsoluteSegmentEndDouble;
+        public float RadiusMeters;
+        public float BlendStrengthMeters;
+        public byte Operation;
+        public byte Shape;
+        public byte MaterialId;
+        public byte SourceFlags;
+    }
+}
 
 namespace Hecton8.Caves
 {
@@ -54,27 +76,6 @@ namespace Hecton8.Caves
     }
 
     /// <summary>
-    /// Blittable carve ingress packet. Coordinates are absolute-universe meters.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    public struct VoxelCarveEvent : ISignal
-    {
-        public ulong VolumeInstanceId;
-        public float3 AbsoluteHitPoint;
-        public float3 AbsoluteSegmentEnd;
-        public float3 AbsoluteHalfExtents;
-        public float3 AbsoluteImpulseDirection;
-        public double3 AbsoluteHitPointDouble;
-        public double3 AbsoluteSegmentEndDouble;
-        public float RadiusMeters;
-        public float BlendStrengthMeters;
-        public byte Operation;
-        public byte Shape;
-        public byte MaterialId;
-        public byte SourceFlags;
-    }
-
-    /// <summary>
     /// Owns carved voxel-cell deltas, save/load projection, and deferred carve batching for runtime voxel volumes.
     /// </summary>
     [DisallowMultipleComponent]
@@ -104,14 +105,8 @@ namespace Hecton8.Caves
         private const float ThermalMeltDurationSeconds = 5f;
         private const float ThermalMeltStepIntervalSeconds = 0.25f;
         private const float ThermalMeltMinimumHeat = 0.01f;
-        private const float SphereVolumeFactor = 4f / 3f * math.PI;
         private const float SparseRleSdfByteScale = 127f / 8f;
         private const float SparseRleSdfByteInvScale = 8f / 127f;
-        private const float DirectionDiagonal2 = 0.70710677f;
-        private const float DirectionDiagonal3 = 0.57735026f;
-        private const int LaserDebrisMinFragments = 3;
-        private const int LaserDebrisMaxFragments = 5;
-        private const float LaserDebrisLifetimeSeconds = 5f;
         private const float LaserCutHeatLifetimeSeconds = 2f;
         private const float LaserCutHeatRadiusScale = 1.6f;
         private const float LaserCutHeatStrength = 1f;
@@ -163,18 +158,6 @@ namespace Hecton8.Caves
         private static int s_recentCutHeatCursor;
         private static int s_recentCutHeatCount;
         private static bool _carveSignalLaneConfigured;
-        [Header("Debris Aftermath")]
-        [Tooltip("Optional dropped-item payload spawned from carved voxel mass. Leave empty to disable persistent debris aftermath.")]
-        [SerializeField] private ItemData carveDebrisItem;
-        [Tooltip("Debris entities spawned per cubic meter of removed sphere volume.")]
-        [SerializeField, Min(0f)] private float carveDebrisPerCubicMeter = 0.3f;
-        [Tooltip("Upper bound on debris entities emitted from a single carve commit.")]
-        [SerializeField, Range(0, 16)] private int carveDebrisMaxCount = 8;
-        [Tooltip("Impulse magnitude applied to each debris entity when the carve aftermath hydrates nearby.")]
-        [SerializeField, Min(0f)] private float carveDebrisImpulse = 2.5f;
-        [Tooltip("Optional pooled transient debris profile for laser voxel cuts. Profile should author 3-5 small chunks.")]
-        [SerializeField] private OrganicDebrisProfile laserCarveDebrisProfile;
-
         private HectonVoxelEngine _engine;
         private ISimulationBucketer _simulationBucketer;
         private bool _saveRegistered;
@@ -648,8 +631,7 @@ namespace Hecton8.Caves
             if (_carveSignalLaneConfigured)
                 return;
 
-            SignalBus<VoxelCarveEvent>.Configure(InitialCarveEventQueueCapacity);
-            SignalBus<VoxelCarveEvent>.EnsureInitialized();
+            GlobalSignals.InitializeAllQueues();
             _carveSignalLaneConfigured = true;
         }
 
@@ -2677,22 +2659,11 @@ namespace Hecton8.Caves
                     EnqueueVolumeRebuild(volume);
                     float resolvedCarveRadius = ResolveCarveRadius(in _scheduledCarveRequest, volume);
                     EmitCaveInDustDecal(in _scheduledCarveRequest, resolvedCarveRadius);
-                    bool emittedTransientLaserDebris = false;
                     if ((_scheduledCarveRequest.SourceFlags & CarveSourceLaser) != 0 &&
                         (_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
                         _scheduledCarveRequest.Shape != DeltaShapeBox)
                     {
                         PushRecentCutHeat(in _scheduledCarveRequest, resolvedCarveRadius);
-                        emittedTransientLaserDebris = EmitLaserCarveDebris(
-                            in _scheduledCarveRequest,
-                            resolvedCarveRadius);
-                    }
-
-                    if (!emittedTransientLaserDebris &&
-                        (_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
-                        _scheduledCarveRequest.Shape != DeltaShapeBox)
-                    {
-                        EmitCarveDebris(in _scheduledCarveRequest, resolvedCarveRadius);
                     }
 
                     ResetScheduledCarveState();
@@ -3414,7 +3385,7 @@ namespace Hecton8.Caves
                 SourceEntityId = sourceId,
                 Intensity01 = intensity01,
                 DebrisKind = (request.SourceFlags & CarveSourceLaser) != 0 ? (byte)1 : (byte)0,
-                Flags = request.SourceFlags
+                Flags = (byte)(request.SourceFlags | DebrisSpawnSignal.FlagComputeShard)
             };
             GlobalSignals.Publish(in signal);
         }
@@ -3476,42 +3447,6 @@ namespace Hecton8.Caves
             return math.clamp(baseRadius + request.AccumulatedDamage * 0.08f, baseRadius, math.max(baseRadius, MaxCarveRadiusMeters));
         }
 
-        private void EmitCarveDebris(in PendingCarveRequest request, float radius)
-        {
-            if (carveDebrisItem == null || carveDebrisPerCubicMeter <= 0f || carveDebrisMaxCount <= 0 || radius <= 0f)
-                return;
-
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
-            if (registry == null)
-                return;
-
-            float removedVolume = SphereVolumeFactor * radius * radius * radius;
-            int spawnCount = math.clamp((int)((removedVolume * carveDebrisPerCubicMeter) + 0.5f), 0, carveDebrisMaxCount);
-            if (spawnCount <= 0)
-                return;
-
-            uint state = (uint)math.hash(new int4(
-                CastBiasInt(request.AbsoluteHitPoint.x * 10d),
-                CastBiasInt(request.AbsoluteHitPoint.y * 10d),
-                CastBiasInt(request.AbsoluteHitPoint.z * 10d),
-                math.max(1, (int)((radius * 100f) + 0.5f))));
-
-            float spawnRadius = math.max(radius * 0.35f, MinRuntimeVoxelSize);
-            for (int i = 0; i < spawnCount; i++)
-            {
-                float3 direction = NextBurstDirection(ref state);
-                float distance01 = NextBurst01(ref state);
-                float impulse01 = NextBurst01(ref state);
-                double3 absoluteSpawnPosition = request.AbsoluteHitPoint + new double3(direction.x, direction.y, direction.z) * (spawnRadius * distance01);
-                Vector3 runtimeSpawnPosition = HectonFloatingOrigin.ToRuntimePosition(absoluteSpawnPosition);
-                Vector3 burstImpulse = new Vector3(direction.x, direction.y, direction.z) * math.lerp(carveDebrisImpulse * 0.55f, carveDebrisImpulse, impulse01);
-                float3 currentImpulse3 = ResolveCinematicDebrisDriftImpulse(ref state, carveDebrisImpulse);
-                Vector3 currentImpulse = new Vector3(currentImpulse3.x, currentImpulse3.y, currentImpulse3.z);
-                Vector3 initialImpulse = burstImpulse + currentImpulse;
-                registry.TryRegisterDroppedItem(carveDebrisItem, 1, runtimeSpawnPosition, initialImpulse);
-            }
-        }
-
         private static void EmitCaveInDustDecal(in PendingCarveRequest request, float radius)
         {
             if ((request.DeltaFlags & DeltaModeAdditive) != 0 || radius <= 0f)
@@ -3527,65 +3462,6 @@ namespace Hecton8.Caves
                 ToVector3(request.AbsoluteHitPoint),
                 impulseDirection,
                 math.saturate(radius / math.max(MaxCarveRadiusMeters, MinCarveRadiusMeters)));
-        }
-
-        private static float NextBurst01(ref uint state)
-        {
-            return (NextBurstBits(ref state) & 0x00FFFFFFu) * (1f / 16777215f);
-        }
-
-        private static uint NextBurstBits(ref uint state)
-        {
-            state ^= state << 13;
-            state ^= state >> 17;
-            state ^= state << 5;
-            return state;
-        }
-
-        private static float3 NextBurstDirection(ref uint state)
-        {
-            switch ((NextBurstBits(ref state) >> 28) & 15u)
-            {
-                case 0u: return new float3(1f, 0f, 0f);
-                case 1u: return new float3(-1f, 0f, 0f);
-                case 2u: return new float3(0f, 1f, 0f);
-                case 3u: return new float3(0f, -1f, 0f);
-                case 4u: return new float3(0f, 0f, 1f);
-                case 5u: return new float3(0f, 0f, -1f);
-                case 6u: return new float3(DirectionDiagonal2, DirectionDiagonal2, 0f);
-                case 7u: return new float3(-DirectionDiagonal2, DirectionDiagonal2, 0f);
-                case 8u: return new float3(DirectionDiagonal2, -DirectionDiagonal2, 0f);
-                case 9u: return new float3(-DirectionDiagonal2, -DirectionDiagonal2, 0f);
-                case 10u: return new float3(DirectionDiagonal2, 0f, DirectionDiagonal2);
-                case 11u: return new float3(-DirectionDiagonal2, 0f, DirectionDiagonal2);
-                case 12u: return new float3(DirectionDiagonal2, 0f, -DirectionDiagonal2);
-                case 13u: return new float3(-DirectionDiagonal2, 0f, -DirectionDiagonal2);
-                case 14u: return new float3(DirectionDiagonal3, DirectionDiagonal3, DirectionDiagonal3);
-                default: return new float3(-DirectionDiagonal3, DirectionDiagonal3, -DirectionDiagonal3);
-            }
-        }
-
-        private static float3 ResolveCinematicDebrisDriftImpulse(ref uint state, float impulseMagnitude)
-        {
-            float3 planarDirection = NextBurstPlanarDirection(ref state);
-            float sinkStrength = math.lerp(0.08f, 0.18f, NextBurst01(ref state));
-            float driftMagnitude = math.max(0.15f, impulseMagnitude * math.lerp(0.18f, 0.25f, NextBurst01(ref state)));
-            return new float3(planarDirection.x, -sinkStrength, planarDirection.z) * driftMagnitude;
-        }
-
-        private static float3 NextBurstPlanarDirection(ref uint state)
-        {
-            switch ((NextBurstBits(ref state) >> 29) & 7u)
-            {
-                case 0u: return new float3(1f, 0f, 0f);
-                case 1u: return new float3(-1f, 0f, 0f);
-                case 2u: return new float3(0f, 0f, 1f);
-                case 3u: return new float3(0f, 0f, -1f);
-                case 4u: return new float3(DirectionDiagonal2, 0f, DirectionDiagonal2);
-                case 5u: return new float3(-DirectionDiagonal2, 0f, DirectionDiagonal2);
-                case 6u: return new float3(DirectionDiagonal2, 0f, -DirectionDiagonal2);
-                default: return new float3(-DirectionDiagonal2, 0f, -DirectionDiagonal2);
-            }
         }
 
         private void EnsureScheduledCarveWriteCapacity(int requiredCount)
@@ -3615,45 +3491,6 @@ namespace Hecton8.Caves
             _scheduledCarveHandle = default;
             _scheduledCarveRunning = false;
             ResetScheduledCarveState();
-        }
-
-        private bool EmitLaserCarveDebris(in PendingCarveRequest request, float radius)
-        {
-            if (laserCarveDebrisProfile == null || !laserCarveDebrisProfile.IsValid || radius <= 0f)
-                return false;
-
-            IDebrisService debris = GlobalRegistry.Debris;
-            if (debris == null || !debris.IsInitialized)
-                return false;
-
-            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(request.AbsoluteHitPoint);
-            Vector3 impulseDirection = ResolveDominantAxisDirection(request.AbsoluteImpulseDirection);
-
-            Vector3 outwardNormal = -impulseDirection;
-            Vector3 runtimeOrigin = runtimeHitPoint + outwardNormal * math.max(radius * 0.2f, MinRuntimeVoxelSize);
-            uint seed = (uint)math.hash(new int4(
-                CastBiasInt(request.AbsoluteHitPoint.x * 8d),
-                CastBiasInt(request.AbsoluteHitPoint.y * 8d),
-                CastBiasInt(request.AbsoluteHitPoint.z * 8d),
-                    math.max(1, (int)((radius * 64f) + 0.5f))));
-            Quaternion rotation = Quaternion.Euler(
-                (seed & 0xFFu) * (360f / 255f),
-                ((seed >> 8) & 0xFFu) * (360f / 255f),
-                ((seed >> 16) & 0xFFu) * (360f / 255f));
-            float power01 = math.saturate(radius / math.max(MaxCarveRadiusMeters, MinCarveRadiusMeters));
-            int requestedFragments = LaserDebrisMinFragments + (int)(seed % (uint)((LaserDebrisMaxFragments - LaserDebrisMinFragments) + 1));
-            requestedFragments = math.min(requestedFragments, laserCarveDebrisProfile.ChunkCount);
-            return requestedFragments >= LaserDebrisMinFragments &&
-                   debris.SpawnBurst(
-                       laserCarveDebrisProfile,
-                       runtimeOrigin,
-                       rotation,
-                       runtimeHitPoint,
-                       outwardNormal,
-                        power01,
-                        seed != 0u ? seed : 1u,
-                        requestedFragments,
-                        LaserDebrisLifetimeSeconds);
         }
 
         private static void ResetRecentCutHeatState()

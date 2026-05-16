@@ -229,6 +229,7 @@ Shader "Hecton8/BoidFishInstanced"
 
             #define BOID_FLAG_CONSUMED 8u
             #define BOID_FLAG_MUTATION_AGGRESSIVE 16u
+            #define BOID_FLAG_LIGHT_STIMULUS 64u
 
             // ══════════════════════════════════════════════════════
             //  VERTEX / FRAGMENT STRUCTURES
@@ -257,6 +258,7 @@ Shader "Hecton8/BoidFishInstanced"
                 float  instanceRand : TEXCOORD3; // per-instance random [0..1]
                 float  aggressiveMask : TEXCOORD4;
                 float  hitFlash : TEXCOORD5;
+                float  lightStimulus : TEXCOORD6;
             };
 
             // ══════════════════════════════════════════════════════
@@ -430,6 +432,7 @@ Shader "Hecton8/BoidFishInstanced"
                 float3 boidVel = boid.velocity * saturate(_VelocitySleepScale);
                 float  speedSq = dot(boidVel, boidVel);
                 float  aggressiveMask = (float)((boid.stateFlags & BOID_FLAG_MUTATION_AGGRESSIVE) >> 4u);
+                float  lightStimulusMask = (float)((boid.stateFlags & BOID_FLAG_LIGHT_STIMULUS) >> 6u);
                 float  aggressiveSpeedScale = lerp(1.0, 2.0, aggressiveMask);
                 float  aggressiveAmplitudeScale = lerp(1.0, 2.0, aggressiveMask);
                 float  vatSpeed01 = RemapSquaredVelocityVat(speedSq, _VatSpeedReference);
@@ -455,6 +458,7 @@ Shader "Hecton8/BoidFishInstanced"
                     output.normalWS = float3(0.0, 1.0, 0.0);
                     output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
                     output.aggressiveMask = aggressiveMask;
+                    output.lightStimulus = lightStimulusMask;
                     output.colorBlend = saturate(-input.positionOS.y - _BellyBlend);
                     return output;
                 }
@@ -574,6 +578,7 @@ Shader "Hecton8/BoidFishInstanced"
                 output.uv         = TRANSFORM_TEX(input.uv, _BaseMap);
                 output.aggressiveMask = aggressiveMask;
                 output.hitFlash = hitFlash01;
+                output.lightStimulus = lightStimulusMask;
 
                 // Belly blend: vertices below local Y center → belly color
                 output.colorBlend = saturate(-input.positionOS.y - _BellyBlend);
@@ -616,6 +621,8 @@ Shader "Hecton8/BoidFishInstanced"
 
                 // ── Final ──
                 half3 color = finalColor * texColor.rgb * lighting;
+                half lightStimulus = saturate((half)input.lightStimulus);
+                color = lerp(color, color * 1.65h + _BiolumColor.rgb * 0.35h, lightStimulus);
                 color = lerp(color, _HitFlashColor.rgb, saturate((half)input.hitFlash));
 
                 // ── Depth-based fade (underwater atmosphere) ──

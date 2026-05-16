@@ -1,7 +1,7 @@
 using System;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton.Localization;
@@ -33,12 +33,15 @@ namespace Hecton8.UI
         private const string IntrusionHintFormat = "REBOOT // HOLD {0} FOR 3.0S";
         private const string IntrusionFooterFormat = "O2 {0:0}%  |  PWR {1:0}%  |  REBOOT {2}%";
         private const string MechModeTag = "[MECH-MODE ACTIVE]";
+        private const string VaultPressureTag = "[VAULT FRAGMENTATION >80%]";
         private const string LeftFooterNumericTemplate = "CARGO {N0}/{N1}  |  MASS {N2:0.0} kg  |  READY TOOLS {N3}/{N4}";
         private const string RightFooterOnlineNumericTemplate = "O2 {N0:0}%  |  PWR {N1:0}%  |  PDA ONLINE";
         private const string RightFooterStandbyNumericTemplate = "O2 {N0:0}%  |  PWR {N1:0}%  |  PDA STANDBY";
         private const string IntrusionFooterNumericTemplate = "O2 {N0:0}%  |  PWR {N1:0}%  |  REBOOT {N2}%";
         private const int NumericTemplateWriteAttemptLimit = 8;
         private const int CharCapacityGrowthWatchdogLimit = 31;
+        private const int VaultPressureWarningStaleFrames = 300;
+        private const byte DataVaultMemoryPressureFlag = 2;
 
         private static readonly Color Primary = new Color(0.46f, 0.98f, 0.94f, 0.96f);
         private static readonly Color Dim = new Color(0.78f, 0.96f, 0.93f, 0.84f);
@@ -121,7 +124,10 @@ namespace Hecton8.UI
         private bool _lastMechModeActive;
         private bool _lastDataLinkDegraded;
         private int _lastStorageDebtBucket = int.MinValue;
+        private int _lastVaultPressureBucket = int.MinValue;
+        private int _vaultPressureWarningFrame = int.MinValue;
         private int _lastRebootProgressPercent = -1;
+        private bool _vaultPressureWarningActive;
         private int _cachedRebootBindingLength;
         private InputDisplayStyle _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
         private string _localizedMechModeTag = MechModeTag;
@@ -320,6 +326,8 @@ namespace Hecton8.UI
                 _lastStressCorruptionBucket = int.MinValue;
                 _lastIntrusionActive = false;
                 _lastStorageDebtBucket = int.MinValue;
+                _lastVaultPressureBucket = int.MinValue;
+                _vaultPressureWarningActive = false;
                 _lastRebootProgressPercent = -1;
                 UnregisterFromTickManager();
                 return;
@@ -334,6 +342,7 @@ namespace Hecton8.UI
             float storageDebt01 = SystemDispatcher.StreamingStorageDebt01;
             bool dataLinkDegraded = _lastDataLinkDegraded ? storageDebt01 > 0.45f : storageDebt01 > 0.6f;
             int storageDebtBucket = (int)math.round(storageDebt01 * 20f);
+            bool vaultPressureDirty = ObserveVaultMemoryPressure();
             int rebootProgressPercent = intrusionActive
                 ? (int)math.round(_intrusionManager.RebootProgressNormalized * 100f)
                 : 0;
@@ -348,6 +357,7 @@ namespace Hecton8.UI
                 mechModeActive != _lastMechModeActive ||
                 dataLinkDegraded != _lastDataLinkDegraded ||
                 storageDebtBucket != _lastStorageDebtBucket ||
+                vaultPressureDirty ||
                 rebootProgressPercent != _lastRebootProgressPercent;
 
             if (!inventoryDirty && !toolDirty && !vitalsDirty && !reactiveDirty)
@@ -374,6 +384,33 @@ namespace Hecton8.UI
             _lastOxygenPercent = int.MinValue;
             _lastEnergyPercent = int.MinValue;
             RefreshChrome();
+        }
+
+        private bool ObserveVaultMemoryPressure()
+        {
+            bool previousActive = _vaultPressureWarningActive;
+            int previousBucket = _lastVaultPressureBucket;
+            ReadOnlySpan<MemoryPressureSignal> signals = SignalBus<MemoryPressureSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                MemoryPressureSignal signal = signals[i];
+                if ((signal.Flags & DataVaultMemoryPressureFlag) == 0 || signal.UsageRatio < 0.8f)
+                    continue;
+
+                _vaultPressureWarningActive = true;
+                _vaultPressureWarningFrame = Time.frameCount;
+                _lastVaultPressureBucket = (int)math.round(math.saturate(signal.UsageRatio) * 20f);
+            }
+
+            if (_vaultPressureWarningActive &&
+                Time.frameCount - _vaultPressureWarningFrame > VaultPressureWarningStaleFrames)
+            {
+                _vaultPressureWarningActive = false;
+                _lastVaultPressureBucket = 0;
+            }
+
+            return previousActive != _vaultPressureWarningActive ||
+                previousBucket != _lastVaultPressureBucket;
         }
 
         private bool ConsumeInventoryChangedSignals()
@@ -788,7 +825,23 @@ namespace Hecton8.UI
 
             if (_contextTagText != null)
             {
-                if (mechModeActive)
+                if (_vaultPressureWarningActive)
+                {
+                    ReadOnlySpan<char> contextSpan = VaultPressureTag.AsSpan();
+                    CopyTextToBuffer(contextSpan, ref _contextTagBuffer, out int contextLength);
+                    ApplyTextBuffer(
+                        _contextTagText,
+                        _contextTagBuffer,
+                        contextLength,
+                        rtl,
+                        useStressReactiveStrings,
+                        stressReactiveIntensity,
+                        137,
+                        ComputeTextVersion(contextSpan, 137, stressBucket),
+                        ref _appliedContextTagVersion);
+                    _contextTagText.alpha = 1f;
+                }
+                else if (mechModeActive)
                 {
                     ReadOnlySpan<char> contextSpan = _localizedMechModeTag.AsSpan();
                     CopyTextToBuffer(contextSpan, ref _contextTagBuffer, out int contextLength);

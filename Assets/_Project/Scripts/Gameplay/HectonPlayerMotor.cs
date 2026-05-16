@@ -1,6 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Caves;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
@@ -1334,7 +1334,7 @@ namespace Hecton8.Gameplay
             debris.SourceEntityId = unchecked((uint)bodyId);
             debris.Intensity01 = impact.Intensity;
             debris.DebrisKind = SparkDebrisKind;
-            debris.Flags = flags;
+            debris.Flags = (byte)(flags | DebrisSpawnSignal.FlagComputeShard);
             GlobalSignals.Publish(in debris);
 
             HapticRequest haptic = default;
@@ -1349,14 +1349,18 @@ namespace Hecton8.Gameplay
 
             if (lostKineticEnergy >= KinematicCcdMath.MassiveLostKineticEnergyJoules)
             {
-                Hecton8.Core.Signals.DamageSignal damage = default;
+                Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
+                damage.WorldPoint = new float3(point.x, point.y, point.z);
+                damage.Direction = new float3(safeNormal.x, safeNormal.y, safeNormal.z);
                 damage.Magnitude = math.min(250f, lostKineticEnergy * 0.01f);
-                damage.LocalPoint = new float3(point.x, point.y, point.z);
                 damage.DamageType = (uint)DamageTypeMask.Impact;
-                damage.SubjectHash = targetHash;
+                damage.TargetHash = targetHash;
+                damage.SourceHash = sourceHash;
+                damage.Frame = unchecked((uint)Time.frameCount);
                 damage.SourceId = bodyId > ushort.MaxValue ? ushort.MaxValue : (ushort)bodyId;
-                damage.TargetId = targetHash;
+                damage.TargetId = targetHash > ushort.MaxValue ? ushort.MaxValue : (ushort)targetHash;
                 damage.Channel = 0;
+                damage.Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag;
                 damage.IntegrityDelta = 1;
                 GlobalSignals.Publish(in damage);
             }

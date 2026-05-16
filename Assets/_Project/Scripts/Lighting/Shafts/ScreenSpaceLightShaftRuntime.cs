@@ -3,32 +3,35 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace Hecton8.Lighting.Shafts
+namespace Hecton8.Core.Contracts.Signals
 {
     /// <summary>
     /// Broadcast signal emitted when a shaft source resolves as a burst-grade bioluminescent flare.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct VisualFlareSignal : ISignal
     {
         /// <summary>Stable source ID or component instance fallback.</summary>
-        [FieldOffset(0)] public uint SourceId;
+        public uint SourceId;
         /// <summary>Resolved burst intensity after LOD and distance gates.</summary>
-        [FieldOffset(4)] public float Intensity01;
+        public float Intensity01;
         /// <summary>Viewport-space source position.</summary>
-        [FieldOffset(8)] public float2 ScreenUv;
+        public float2 ScreenUv;
         /// <summary>Unity frame index at emission.</summary>
-        [FieldOffset(16)] public uint Frame;
+        public uint Frame;
         /// <summary>Bitfield reserved for source kind and debug state.</summary>
-        [FieldOffset(20)] public byte Flags;
+        public byte Flags;
     }
+}
 
+namespace Hecton8.Lighting.Shafts
+{
     [StructLayout(LayoutKind.Sequential)]
     internal struct LightShaftTelemetryEntry
     {
@@ -52,12 +55,9 @@ namespace Hecton8.Lighting.Shafts
     {
         private const int MaxTrackedSources = 3;
         private const int TelemetryCapacity = 300;
-        private const int VisualFlareSignalCapacity = 16;
         private const float FpsDisableThreshold = 40f;
         private const float LoadShedSeconds = 2.5f;
         private const float CameraRetrySeconds = 0.75f;
-        private const uint VisualFlareLaneHash = 0x56464C52u;
-        private const uint BrownoutLaneHash = 0x42524F57u;
         private const uint NaNFallbackWarningHash = 0x4C534E41u;
         private const uint RuntimeContextHash = 0x4C534654u;
         private const byte TelemetryFlagLowTier = 1 << 0;
@@ -176,10 +176,7 @@ namespace Hecton8.Lighting.Shafts
         {
             _disposed = false;
             _lowTier = IsLowTier(GlobalRegistry.ScalabilityTier);
-            SignalBus<VisualFlareSignal>.Configure(VisualFlareSignalCapacity, VisualFlareSignalCapacity, VisualFlareSignalCapacity, VisualFlareLaneHash);
-            SignalBus<VisualFlareSignal>.EnsureInitialized();
-            SignalBus<BrownoutSignal>.Configure(64, 64, 16, BrownoutLaneHash);
-            SignalBus<BrownoutSignal>.EnsureInitialized();
+            GlobalSignals.InitializeAllQueues();
             EnsureBuffers();
             ResolveRenderCamera();
             ScalabilityEvents.Register(this);

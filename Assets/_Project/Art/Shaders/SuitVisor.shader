@@ -55,6 +55,10 @@ Shader "NASAPunk/SuitVisor"
         _DistortionStrength ("Edge Distortion", Range(0, 0.1)) = 0.02
         _DistortionFalloff ("Distortion Edge Falloff", Range(0.5, 5)) = 2.0
         _LensEdgeRefraction ("Lens Edge Refraction", Range(0, 0.08)) = 0.028
+        _HectonVisorSnellStrength ("Snell Refraction Strength", Range(0, 0.06)) = 0.018
+        _HectonWaterDensitySignal ("Water Density Signal", Range(0, 1)) = 0
+        _HectonVisorStressFallback ("Stress Refraction Fallback", Range(0, 1)) = 0
+        _HectonVisorIorLut ("IOR LUT Air Water Dense Glass", Vector) = (1.0003, 1.333, 1.38, 1.46)
         _ChromaticAberration ("Structural Chromatic Aberration", Range(0, 0.02)) = 0
         _StaticNoise ("Structural Static Noise", Range(0, 1)) = 0
         _HectonVisorRefractionScale ("Scalable Refraction Scale", Range(0, 1)) = 1
@@ -130,7 +134,9 @@ Shader "NASAPunk/SuitVisor"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Assets/_Project/Art/Shaders/Post/Hecton_SnellRefractionCore.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
@@ -174,6 +180,10 @@ Shader "NASAPunk/SuitVisor"
                 float  _DistortionStrength;
                 float  _DistortionFalloff;
                 float  _LensEdgeRefraction;
+                float  _HectonVisorSnellStrength;
+                float  _HectonWaterDensitySignal;
+                float  _HectonVisorStressFallback;
+                float4 _HectonVisorIorLut;
                 float  _ChromaticAberration;
                 float  _StaticNoise;
                 float  _HectonVisorRefractionScale;
@@ -890,12 +900,55 @@ Shader "NASAPunk/SuitVisor"
                     distortionOffset.x += (radiationSceneNoise - 0.5) * hazardRadiation * 0.018 * radiationSceneGate;
                     distortionOffset.y += (Hash21(float2(radiationSceneBand * 1.23, floor(_Time.y * 29.0))) - 0.5) * hazardRadiation * 0.004 * radiationSceneGate;
                 }
+                float hullStressFlicker = saturate(_HullStressFlicker);
+                float fragRawDepth = saturate(IN.positionCS.z * rcp(max(IN.positionCS.w, 0.0001)));
+                float sceneRawDepth = SampleSceneDepth(screenUV);
+#if UNITY_REVERSED_Z
+                float sceneDepthValid = step(0.0001, sceneRawDepth);
+#else
+                float sceneDepthValid = step(sceneRawDepth, 0.9999);
+#endif
+                float linearSceneDepth = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
+                float linearFragDepth = LinearEyeDepth(fragRawDepth, _ZBufferParams);
+                float depthRefractionMask = HectonDepthBehindMask(
+                    linearSceneDepth,
+                    linearFragDepth,
+                    sceneDepthValid,
+                    max(_HudCloseOcclusionDistance, 0.01));
+
+                float refractionDirt = saturate(
+                    scratchMask * 0.22 +
+                    fingerprint * 0.25 +
+                    blueNoiseGrimeMask * 0.35 +
+                    runoffMask * 0.12 +
+                    condensationMask * 0.18 +
+                    frostMask * 0.62 +
+                    pressureCrackMask * 0.34);
+                float inverseDirtRefraction = HectonInverseDirtMask(refractionDirt);
+                float stressFallback = saturate(max(_HectonVisorStressFallback, hullStressFlicker));
+                float homeostasisScale = 1.0 - saturate(stressFallback * 0.75);
+                float nDotVSnell = saturate(dot(normalWS, viewDir));
+                float2 normalScreenXY = normalWS.xy + scratchNormalTS.xy * 0.45;
+                normalScreenXY = all(isfinite(normalScreenXY)) ? clamp(normalScreenXY, float2(-1.0, -1.0), float2(1.0, 1.0)) : float2(0.0, 0.0);
+                float snellStrength = max(0.0, _HectonVisorSnellStrength) *
+                    homeostasisScale *
+                    (0.55 + runoffMask * 0.45 + condensationMask * 0.25 + blueNoiseMoistureMask * 0.20);
+                distortionOffset += HectonSnellUvOffset(
+                    normalScreenXY,
+                    nDotVSnell,
+                    _HectonWaterDensitySignal,
+                    _HectonVisorIorLut,
+                    snellStrength,
+                    depthRefractionMask,
+                    inverseDirtRefraction);
+                distortionOffset = HectonClampUvOffset(distortionOffset, 0.1);
+
                 float2 refractedUV = screenUV;
                 [branch]
                 if (scalableRefractionScale > 0.001)
                 {
                     distortionOffset *= scalableRefractionScale;
-                    refractedUV = screenUV + distortionOffset;
+                    refractedUV = saturate(screenUV + distortionOffset * depthRefractionMask);
                 }
                 else
                 {
@@ -916,12 +969,24 @@ Shader "NASAPunk/SuitVisor"
                 float sceneSurrogateNoise = Hash21(floor(refractedUV * _ScaledScreenParams.xy * 0.125) + floor(_Time.y * 9.0));
                 float sceneSurrogateEdge = smoothstep(0.18, 1.0, radialMagnitude);
                 float sceneSurrogateGlare = saturate(IN.glareData.x * 0.28 + IN.glareData.y * 0.22 + sceneSurrogateEdge * 0.18);
-                float3 sceneColor =
-                    _BaseColor.rgb * (0.38 + _BaseColor.a * 0.18) +
-                    fresnelColor * (0.05 + sceneSurrogateEdge * 0.08 + runoffMask * 0.035) +
-                    _HUD_Color.rgb * (0.012 + sceneSurrogateEdge * 0.018) +
-                    float3(0.012, 0.020, 0.024);
-                sceneColor += (sceneSurrogateNoise - 0.5) * (0.018 + scalableRefractionScale * 0.014);
+                float3 sceneColor = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV).rgb;
+                float lowTierRefractionMode = max(1.0 - step(0.001, scalableRefractionScale), step(0.5, lowTierDitherScale));
+                [branch]
+                if (lowTierRefractionMode > 0.5)
+                {
+                    float lowTierChromaDrive = saturate((0.35 + radialMagnitude * 0.65) * max(lowTierDitherScale, hullStressFlicker));
+                    float2 lowTierChromaOffset = HectonClampUvOffset(
+                        radialScreenOffset * (0.0012 + hullStressFlicker * 0.0024) * depthRefractionMask * inverseDirtRefraction,
+                        0.004);
+                    float3 lowTierScene = sceneColor;
+                    lowTierScene.r = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV + lowTierChromaOffset)).r;
+                    lowTierScene.b = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV - lowTierChromaOffset)).b;
+                    sceneColor = lerp(sceneColor, lowTierScene, lowTierChromaDrive);
+                }
+                sceneColor += _BaseColor.rgb * (0.018 + _BaseColor.a * 0.012);
+                sceneColor += fresnelColor * (0.05 + sceneSurrogateEdge * 0.08 + runoffMask * 0.035);
+                sceneColor += _HUD_Color.rgb * (0.012 + sceneSurrogateEdge * 0.018);
+                sceneColor += (sceneSurrogateNoise - 0.5) * (0.006 + scalableRefractionScale * 0.008);
                 sceneColor += sceneSurrogateGlare * float3(0.026, 0.034, 0.036);
                 sceneColor = max(sceneColor, float3(0.0015, 0.0022, 0.0030));
 
@@ -1003,7 +1068,6 @@ Shader "NASAPunk/SuitVisor"
                 hudUV = TRANSFORM_TEX(hudUV, _HUD_RenderTexture);
                 float2 hudDistortedUV = hudUV + distortionOffset * 0.3;
                 hudDistortedUV -= _HectonVrComfortSway.xy * 0.018 * vrComfortEnabled;
-                float hullStressFlicker = saturate(_HullStressFlicker);
                 float pressureFlickerGate = 0.0;
                 [branch]
                 if (hullStressFlicker > 0.0001)
@@ -1189,18 +1253,9 @@ Shader "NASAPunk/SuitVisor"
                 }
 #endif
 
-                float fragRawDepth = saturate(IN.positionCS.z * rcp(max(IN.positionCS.w, 0.0001)));
-                float sceneRawDepth = SampleSceneDepth(screenUV);
-#if UNITY_REVERSED_Z
-                float sceneDepthValid = step(0.0001, sceneRawDepth);
-#else
-                float sceneDepthValid = step(sceneRawDepth, 0.9999);
-#endif
-                float linearSceneDepth = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
                 [branch]
                 if (hudAlpha > 0.001)
                 {
-                    float linearFragDepth = LinearEyeDepth(fragRawDepth, _ZBufferParams);
                     float hudOccluded = sceneDepthValid * step(linearSceneDepth + 0.002, linearFragDepth);
                     float closeDepthDelta = max(0.0, linearFragDepth - linearSceneDepth);
                     float closeOcclusionRange = max(0.001, _HudCloseOcclusionDistance);

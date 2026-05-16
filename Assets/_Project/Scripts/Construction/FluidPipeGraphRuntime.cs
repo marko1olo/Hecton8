@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Logistics;
 using Hecton8.World;

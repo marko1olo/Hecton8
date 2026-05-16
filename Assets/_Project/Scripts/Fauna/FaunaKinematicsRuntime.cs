@@ -1,9 +1,11 @@
 using System;
 using System.IO;
+using Hecton8.Animation.Fauna;
 using Hecton8.Animation.IK;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
@@ -18,13 +20,27 @@ namespace Hecton8.AI
     internal sealed class FaunaKinematicsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable
     {
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LEVIATHAN_KINEMATICS_SOLVER.bin";
+        private const string BiteTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_FAUNA_BITE_IK_SOLVER.bin";
         private const ulong TelemetryDumpMagic = 0x4C455649494B3031UL;
+        private const ulong BiteTelemetryDumpMagic = 0x4642494B30303031UL;
         private const int TelemetryEntryPayloadBytes = 96;
+        private const int BiteTelemetryEntryPayloadBytes = 128;
         private const int TelemetryEntryPaddingFloatCount = 7;
         private const float ConstraintIterationHysteresisSeconds = 2.5f;
         private const int MaxSegments = LeviathanTerrainIkConstants.MaxSegments;
         private const int LowTierSegments = LeviathanTerrainIkConstants.LowTierSegments;
         private const float MinVectorMagnitudeSq = 0.0001f;
+        private const float BiteFeedbackCooldownSeconds = 0.18f;
+        private const float BiteAudioCooldownSeconds = 0.24f;
+        private const ushort BiteLowTierDebrisQuantity = 4;
+        private const ushort BiteMidTierDebrisQuantity = 32;
+        private const ushort BiteHighTierDebrisQuantity = 512;
+        private const ushort BiteUltraTierDebrisQuantity = 2048;
+        private const float BiteHullDentLowRadiusMeters = 0.35f;
+        private const float BiteHullDentHighRadiusMeters = 1.35f;
+        private const float BiteHullDentLowDepthMeters = 0.035f;
+        private const float BiteHullDentHighDepthMeters = 0.28f;
+        private const uint BiteSparksSignalHash = 0x42505453u; // BPTS
 
         private static readonly int _LeviathanBonesId = Shader.PropertyToID("_H8LeviathanBones");
         private static readonly int _LeviathanBoneCountId = Shader.PropertyToID("_H8LeviathanBoneCount");
@@ -66,6 +82,15 @@ namespace Hecton8.AI
         [Tooltip("Seconds terrain constraints are bypassed for the strike tail wave.")]
         [SerializeField, Range(0.1f, 1.5f)] private float _tailWhipDurationSeconds = 1f;
 
+        [Tooltip("Maximum jaw IK reach in meters before the procedural miss recovery takes over.")]
+        [SerializeField, Range(1f, 30f)] private float _biteJawReachMeters = 10f;
+
+        [Tooltip("Visual mandible opening offset in meters for non-low quality tiers.")]
+        [SerializeField, Range(0f, 4f)] private float _biteJawOpenMeters = 0.8f;
+
+        [Tooltip("Bounds padding used when deciding whether teeth have scraped the target hull.")]
+        [SerializeField, Range(0f, 1f)] private float _biteContactPaddingMeters = 0.08f;
+
         [Header("GPU Skinning")]
         [Tooltip("Material using the existing compute/GPU skinning path. The bone buffer is rebound every visual sync.")]
         [SerializeField] private Material _skinningMaterial;
@@ -83,6 +108,10 @@ namespace Hecton8.AI
         private NativeArray<float4x4> _leviathanBones;
         private NativeArray<LeviathanTerrainIkTelemetryEntry> _telemetryRing;
         private NativeArray<int> _telemetryCursor;
+        private NativeArray<JawIkTarget> _jawIkTargets;
+        private NativeArray<CurrentJawPos> _currentJawPos;
+        private NativeArray<BiteIkSolveEvent> _biteIkSolveEvents;
+        private NativeArray<int> _biteIkTelemetryCursor;
 
         private GraphicsBuffer _bonesGraphicsBufferA;
         private GraphicsBuffer _bonesGraphicsBufferB;
@@ -96,6 +125,7 @@ namespace Hecton8.AI
         private bool _registeredOriginShiftListener;
         private bool _disposed;
         private bool _telemetryDumped;
+        private bool _biteTelemetryDumped;
         private bool _pendingOriginShiftRebase;
         private bool _gpuUploadDirty;
         private bool _strikeActive;
@@ -103,7 +133,11 @@ namespace Hecton8.AI
         private bool _headLookTargetActive;
         private bool _globalGpuSkinningPublished;
         private bool _gpuBufferDataValid;
+        private bool _biteVaultReady;
+        private bool _strikeSignalActive;
         private int _frameIndex;
+        private int _lastBiteFeedbackFrame = -1;
+        private int _lastBiteAudioFrame = -1;
         private int _activeSegmentCount = LowTierSegments;
         private int _resolvedConstraintIterations = 1;
         private int _pendingConstraintIterations = 1;
@@ -119,6 +153,7 @@ namespace Hecton8.AI
         private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private Transform _strikeTarget;
         private Rigidbody _strikeTargetRigidbody;
+        private Collider _strikeTargetCollider;
 
         internal bool TryGetLeviathanBones(out NativeArray<float4x4>.ReadOnly bones, out int activeSegmentCount)
         {
@@ -247,7 +282,10 @@ namespace Hecton8.AI
                 _tailWhipSecondsRemaining = safeTailWhipSecondsRemaining;
             }
 
+            ConsumeStrikeSignals();
+            float systemStress01 = ResolveSystemStress01();
             uint runtimeFlags = ResolveRuntimeFlags(qualityTier);
+            bool biteTargetReady = PrepareBiteTarget();
             LeviathanTerrainIkJob job = new LeviathanTerrainIkJob
             {
                 SegmentPositions = _segmentPositions,
@@ -282,7 +320,40 @@ namespace Hecton8.AI
                 RuntimeFlags = runtimeFlags
             };
 
-            _pendingHandle = job.Schedule();
+            JobHandle scheduledHandle = job.Schedule();
+            if (biteTargetReady)
+            {
+                ProceduralBiteJob biteJob = new ProceduralBiteJob
+                {
+                    JawIkTargets = _jawIkTargets,
+                    CurrentJawPos = _currentJawPos,
+                    LeviathanBones = _leviathanBones,
+                    BiteIkSolveEvents = _biteIkSolveEvents,
+                    TelemetryCursor = _biteIkTelemetryCursor,
+                    PredatorAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(ResolveOwnerRuntimePosition())),
+                    PredatorPosition = ResolveOwnerRuntimePosition(),
+                    PredatorForward = ResolveOwnerForward(),
+                    PredatorUp = new float3(0f, 1f, 0f),
+                    PredatorRight = ResolveOwnerRight(),
+                    DeltaTime = safeDeltaTime,
+                    BodyRadius = _bodyRadius,
+                    SegmentLength = _segmentLength,
+                    JawReachMeters = _biteJawReachMeters,
+                    JawOpenMeters = _biteJawOpenMeters,
+                    SystemStress01 = systemStress01,
+                    TargetIndex = 0,
+                    FrameIndex = _frameIndex,
+                    HeadBoneIndex = ProceduralBiteIkConstants.DefaultHeadBoneIndex,
+                    UpperJawBoneIndex = ProceduralBiteIkConstants.DefaultUpperJawBoneIndex,
+                    LowerJawBoneIndex = ProceduralBiteIkConstants.DefaultLowerJawBoneIndex,
+                    FirstTentacleBoneIndex = ProceduralBiteIkConstants.DefaultFirstTentacleBoneIndex,
+                    TentacleBoneCount = ProceduralBiteIkConstants.MaxTentacleBones,
+                    RuntimeFlags = ResolveBiteRuntimeFlags(qualityTier, systemStress01)
+                };
+                scheduledHandle = biteJob.Schedule(scheduledHandle);
+            }
+
+            _pendingHandle = scheduledHandle;
             _solverScheduled = true;
         }
 
@@ -309,6 +380,7 @@ namespace Hecton8.AI
             if (TelemetryHasInvalidFrame())
                 DumpTelemetryBlackBoxOnce();
 
+            PublishBiteFeedbackIfNeeded();
             _gpuUploadDirty = !UploadBonesToGpu();
         }
 
@@ -379,6 +451,7 @@ namespace Hecton8.AI
             {
                 _strikeTarget = null;
                 _strikeTargetRigidbody = null;
+                _strikeTargetCollider = null;
                 _wasStrikeActiveLastTick = false;
                 return;
             }
@@ -387,7 +460,9 @@ namespace Hecton8.AI
             {
                 _strikeTarget = target;
                 _strikeTargetRigidbody = null;
+                _strikeTargetCollider = null;
                 target.TryGetComponent(out _strikeTargetRigidbody);
+                target.TryGetComponent(out _strikeTargetCollider);
             }
 
             _strikeTargetWorldPosition = _strikeTargetRigidbody != null
@@ -427,32 +502,94 @@ namespace Hecton8.AI
                 _telemetryRing.IsCreated &&
                 _telemetryCursor.IsCreated)
             {
+                EnsureBiteIkVaultBuffers();
                 return;
             }
 
             JobHandle dependency = _solverScheduled ? _pendingHandle : default;
             DisposePersistentBuffers(dependency);
-            _segmentPositions = H8Memory.Allocate<float3>(MaxSegments, SystemID.External, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[20] - leviathan spine positions - owner: FaunaKinematicsRuntime
-            _previousSegmentPositions = H8Memory.Allocate<float3>(MaxSegments, SystemID.External, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[20] - leviathan previous spine positions - owner: FaunaKinematicsRuntime
-            _leviathanBones = H8Memory.Allocate<float4x4>(MaxSegments, SystemID.External, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[20] - GPU bone matrix SOA - owner: FaunaKinematicsRuntime
-            _telemetryRing = H8Memory.Allocate<LeviathanTerrainIkTelemetryEntry>(LeviathanTerrainIkConstants.TelemetryCapacity, SystemID.External, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<LeviathanTerrainIkTelemetryEntry>[300] - black box circular buffer - owner: FaunaKinematicsRuntime
-            _telemetryCursor = H8Memory.Allocate<int>(1, SystemID.External, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - black box write cursor - owner: FaunaKinematicsRuntime
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                ClearNativeBufferViews();
+                return;
+            }
+
+            _segmentPositions = vault.GetBuffer<float3>(BufferID.LeviathanSegmentPositions, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _previousSegmentPositions = vault.GetBuffer<float3>(BufferID.LeviathanPreviousSegmentPositions, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _leviathanBones = vault.GetBuffer<float4x4>(BufferID.LeviathanBoneMatrices, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _telemetryRing = vault.GetBuffer<LeviathanTerrainIkTelemetryEntry>(BufferID.LeviathanTerrainIkTelemetryRing, LeviathanTerrainIkConstants.TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _telemetryCursor = vault.GetBuffer<int>(BufferID.LeviathanTerrainIkTelemetryCursor, 1, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            EnsureBiteIkVaultBuffers();
+        }
+
+        private void EnsureBiteIkVaultBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                _biteVaultReady = false;
+                _jawIkTargets = default;
+                _currentJawPos = default;
+                _biteIkSolveEvents = default;
+                _biteIkTelemetryCursor = default;
+                return;
+            }
+
+            _jawIkTargets = vault.GetBuffer<JawIkTarget>(
+                BufferID.JawIkTargets,
+                ProceduralBiteIkConstants.TargetCapacity,
+                SystemID.AnimationFauna,
+                NativeArrayOptions.ClearMemory);
+            _currentJawPos = vault.GetBuffer<CurrentJawPos>(
+                BufferID.CurrentJawPos,
+                ProceduralBiteIkConstants.CurrentJawPoseCapacity,
+                SystemID.AnimationFauna,
+                NativeArrayOptions.ClearMemory);
+            _biteIkSolveEvents = vault.GetBuffer<BiteIkSolveEvent>(
+                BufferID.BiteIkSolveEvents,
+                ProceduralBiteIkConstants.TelemetryCapacity,
+                SystemID.AnimationFauna,
+                NativeArrayOptions.ClearMemory);
+            _biteIkTelemetryCursor = vault.GetBuffer<int>(
+                BufferID.BiteIkTelemetryCursor,
+                1,
+                SystemID.AnimationFauna,
+                NativeArrayOptions.ClearMemory);
+            _biteVaultReady = _jawIkTargets.IsCreated &&
+                              _currentJawPos.IsCreated &&
+                              _biteIkSolveEvents.IsCreated &&
+                              _biteIkTelemetryCursor.IsCreated;
         }
 
         private void DisposePersistentBuffers(JobHandle dependency)
         {
-            JobHandle releaseDependency = JobHandle.CombineDependencies(_disposeHandle, dependency);
-            releaseDependency = H8Memory.Release(ref _segmentPositions, releaseDependency, SystemID.External);
-            releaseDependency = H8Memory.Release(ref _previousSegmentPositions, releaseDependency, SystemID.External);
-            releaseDependency = H8Memory.Release(ref _leviathanBones, releaseDependency, SystemID.External);
-            releaseDependency = H8Memory.Release(ref _telemetryRing, releaseDependency, SystemID.External);
-            releaseDependency = H8Memory.Release(ref _telemetryCursor, releaseDependency, SystemID.External);
-            _disposeHandle = releaseDependency;
+            if (_solverScheduled)
+                DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);
+            else if (!dependency.Equals(default(JobHandle)))
+                DispatcherJobSwap.TryComplete(ref dependency, forceComplete: true);
+
+            _disposeHandle = default;
             DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
             _pendingHandle = default;
             _solverScheduled = false;
             _gpuUploadDirty = false;
             _gpuBufferDataValid = false;
+            ClearNativeBufferViews();
+        }
+
+        private void ClearNativeBufferViews()
+        {
+            _segmentPositions = default;
+            _previousSegmentPositions = default;
+            _leviathanBones = default;
+            _telemetryRing = default;
+            _telemetryCursor = default;
+            _biteVaultReady = false;
+            _jawIkTargets = default;
+            _currentJawPos = default;
+            _biteIkSolveEvents = default;
+            _biteIkTelemetryCursor = default;
         }
 
         private void CompleteScheduledSolverForLifecycle()
@@ -531,6 +668,229 @@ namespace Hecton8.AI
                 _motionIntentHeadTarget,
                 SanitizeFiniteInputFloat3(_headLookTargetWorldPosition, _motionIntentHeadTarget),
                 blend);
+        }
+
+        private bool PrepareBiteTarget()
+        {
+            if (!_biteVaultReady)
+            {
+                EnsureBiteIkVaultBuffers();
+                if (!_biteVaultReady)
+                    return false;
+            }
+
+            bool active = _strikeActive || _strikeSignalActive;
+            if (!active || _strikeTarget == null)
+                return false;
+
+            Bounds bounds;
+            if (_strikeTargetCollider != null)
+            {
+                bounds = _strikeTargetCollider.bounds;
+                if (!IsFiniteBounds(bounds) || bounds.extents.sqrMagnitude <= MinVectorMagnitudeSq)
+                    bounds = BuildFallbackStrikeBounds(_strikeTargetWorldPosition);
+            }
+            else
+            {
+                bounds = BuildFallbackStrikeBounds(_strikeTargetWorldPosition);
+            }
+
+            Vector3 center = bounds.center;
+            Vector3 extents = bounds.extents;
+            Transform targetTransform = _strikeTarget;
+            uint targetHash = _strikeTargetCollider != null
+                ? unchecked((uint)_strikeTargetCollider.GetInstanceID())
+                : unchecked((uint)targetTransform.GetInstanceID());
+            if (targetHash == 0u)
+                targetHash = 1u;
+
+            JawIkTarget target = new JawIkTarget
+            {
+                CenterAup = AbsoluteUniversePosition.FromRuntimePosition(center),
+                RuntimeCenter = SanitizeFiniteInputFloat3((float3)center, ResolveOwnerRuntimePosition()),
+                Extents = SanitizeFiniteInputFloat3((float3)extents, new float3(0.5f)),
+                Forward = targetTransform != null ? SanitizeFiniteInputFloat3((float3)targetTransform.forward, new float3(0f, 0f, 1f)) : new float3(0f, 0f, 1f),
+                Up = targetTransform != null ? SanitizeFiniteInputFloat3((float3)targetTransform.up, new float3(0f, 1f, 0f)) : new float3(0f, 1f, 0f),
+                Right = targetTransform != null ? SanitizeFiniteInputFloat3((float3)targetTransform.right, new float3(1f, 0f, 0f)) : new float3(1f, 0f, 0f),
+                MaxReachMeters = SanitizePositiveFinite(_biteJawReachMeters, ProceduralBiteIkConstants.DefaultJawReachMeters, 0.1f),
+                CylinderRadiusMeters = math.max(extents.x, extents.z),
+                ContactPaddingMeters = SanitizePositiveFinite(_biteContactPaddingMeters, 0.08f, 0f),
+                TargetHash = targetHash,
+                Frame = unchecked((uint)_frameIndex)
+            };
+
+            _jawIkTargets[0] = target;
+            return true;
+        }
+
+        private void ConsumeStrikeSignals()
+        {
+            _strikeSignalActive = false;
+            ReadOnlySpan<FaunaStateChangedSignal> signals = SignalBus<FaunaStateChangedSignal>.GetFrameSnapshot();
+            if (signals.Length <= 0)
+                return;
+
+            AbsoluteUniversePosition ownerAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(ResolveOwnerRuntimePosition()));
+            for (int i = 0; i < signals.Length; i++)
+            {
+                FaunaStateChangedSignal signal = signals[i];
+                if (signal.StateKind != FaunaStateChangedSignalKinds.Strike)
+                    continue;
+
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in ownerAup, in signal.PositionAup);
+                if (distanceSq > 3600d)
+                    continue;
+
+                _strikeSignalActive = (signal.Flags & FaunaStateChangedSignalFlags.StateActive) != 0;
+            }
+        }
+
+        private float ResolveSystemStress01()
+        {
+            float stress01 = 0f;
+            ReadOnlySpan<SystemHealthIndexSignal> signals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+                stress01 = math.max(stress01, math.saturate(signals[i].Pressure01));
+            return stress01;
+        }
+
+        private uint ResolveBiteRuntimeFlags(HectonQualityTier tier, float systemStress01)
+        {
+            uint flags = 0u;
+            if (_strikeActive || _strikeSignalActive)
+                flags |= ProceduralBiteIkConstants.RuntimeFlagStrikeActive;
+            if (IsLowTier(tier))
+                flags |= ProceduralBiteIkConstants.RuntimeFlagLowTier;
+            if (tier == HectonQualityTier.High)
+                flags |= ProceduralBiteIkConstants.RuntimeFlagHighTier;
+            if (tier == HectonQualityTier.Ultra)
+                flags |= ProceduralBiteIkConstants.RuntimeFlagUltraTier;
+            if (systemStress01 > ProceduralBiteIkConstants.StressFallbackThreshold01)
+                flags |= ProceduralBiteIkConstants.RuntimeFlagSystemStressFallback;
+            return flags;
+        }
+
+        private void PublishBiteFeedbackIfNeeded()
+        {
+            if (!_biteVaultReady || !_currentJawPos.IsCreated || _currentJawPos.Length <= 0)
+                return;
+
+            CurrentJawPos pose = _currentJawPos[0];
+            if ((pose.Flags & ProceduralBiteIkConstants.ResultFlagInvalid) != 0u)
+                DumpBiteTelemetryBlackBoxOnce();
+
+            int frame = Time.frameCount;
+            if ((pose.Flags & ProceduralBiteIkConstants.ResultFlagFeedback) != 0u &&
+                frame - _lastBiteFeedbackFrame >= math.max(1, (int)math.ceil(BiteFeedbackCooldownSeconds * 60f)))
+            {
+                _lastBiteFeedbackFrame = frame;
+                AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(pose.JawTipPosition));
+                DebrisSpawnSignal debris = default;
+                debris.PositionAup = pointAup;
+                debris.SpeciesHash = BiteSparksSignalHash;
+                debris.SourceEntityId = pose.TargetHash;
+                debris.Intensity01 = math.saturate(1f - pose.ContactDistanceMeters);
+                debris.DebrisKind = DebrisSpawnSignal.DebrisKindSparks;
+                debris.Flags = ResolveBiteDebrisFlags(pose.Flags);
+                debris.Quantity = ResolveBiteDebrisQuantity(_qualityTier, pose.Flags);
+                GlobalSignals.Publish(in debris);
+                PublishBiteHullDent(in pose, frame, debris.Intensity01);
+
+                HapticRequest haptic = default;
+                haptic.Intensity01 = debris.Intensity01;
+                haptic.DurationSeconds = math.lerp(0.05f, 0.18f, haptic.Intensity01);
+                haptic.Frequency01 = 0.85f;
+                haptic.SourceHash = pose.TargetHash;
+                haptic.Frame = unchecked((uint)frame);
+                haptic.Channel = HapticRequest.ChannelCrush;
+                haptic.Flags = HapticRequest.FlagCrush;
+                GlobalSignals.Publish(in haptic);
+            }
+
+            if ((pose.Flags & ProceduralBiteIkConstants.ResultFlagAudioJawSnap) != 0u &&
+                frame - _lastBiteAudioFrame >= math.max(1, (int)math.ceil(BiteAudioCooldownSeconds * 60f)))
+            {
+                _lastBiteAudioFrame = frame;
+                AcousticPingSignal signal = default;
+                signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(pose.JawTipPosition));
+                signal.RadiusMeters = 18f;
+                signal.Intensity01 = math.saturate(1f - pose.TargetDistanceMeters * 0.5f);
+                signal.SourceId = pose.TargetHash;
+                signal.Channel = AcousticPingSignal.ChannelJawSnap;
+                signal.Flags = AcousticPingSignal.FlagJawSnap;
+                GlobalSignals.Publish(in signal);
+            }
+        }
+
+        private void PublishBiteHullDent(in CurrentJawPos pose, int frame, float intensity01)
+        {
+            bool overkill = (pose.Flags & ProceduralBiteIkConstants.ResultFlagVisualOverkill) != 0u;
+            float radius = math.lerp(BiteHullDentLowRadiusMeters, BiteHullDentHighRadiusMeters, overkill ? intensity01 : intensity01 * 0.35f);
+            float depth = math.lerp(BiteHullDentLowDepthMeters, BiteHullDentHighDepthMeters, overkill ? intensity01 : intensity01 * 0.25f);
+            byte flags = HullDeformedSignal.LegacyLocalPointFlag;
+            if (IsLowTier(_qualityTier))
+                flags |= HullDeformedSignal.LowTierVisualOnlyFlag;
+
+            HullDeformedSignal dent = default;
+            dent.LocalPoint = SanitizeFiniteInputFloat3(pose.JawTipPosition, ResolveOwnerRuntimePosition());
+            dent.Radius = SanitizePositiveFinite(radius, BiteHullDentLowRadiusMeters, 0.01f);
+            dent.Depth = SanitizePositiveFinite(depth, BiteHullDentLowDepthMeters, 0f);
+            dent.Intensity01 = math.saturate(intensity01);
+            dent.TargetHash = pose.TargetHash;
+            dent.SourceHash = BiteSparksSignalHash;
+            dent.Frame = unchecked((uint)math.max(0, frame));
+            dent.TargetId = ClampHashToUShort(pose.TargetHash);
+            dent.SourceId = 0;
+            dent.ActiveDentCount = 0;
+            dent.Flags = flags;
+            dent.QualityTier = ResolveQualityTierByte(_qualityTier);
+            dent.Channel = AcousticPingSignal.ChannelJawSnap;
+            dent.DamageType = BiteSparksSignalHash;
+            GlobalSignals.Publish(in dent);
+        }
+
+        private static byte ResolveBiteDebrisFlags(uint poseFlags)
+        {
+            byte flags = DebrisSpawnSignal.FlagToolSparks;
+            if ((poseFlags & ProceduralBiteIkConstants.ResultFlagVisualOverkill) != 0u)
+                flags |= DebrisSpawnSignal.FlagComputeShard;
+            return flags;
+        }
+
+        private static ushort ResolveBiteDebrisQuantity(HectonQualityTier tier, uint poseFlags)
+        {
+            if ((poseFlags & ProceduralBiteIkConstants.ResultFlagVisualOverkill) != 0u)
+                return tier == HectonQualityTier.Ultra ? BiteUltraTierDebrisQuantity : BiteHighTierDebrisQuantity;
+            if (tier == HectonQualityTier.Mid)
+                return BiteMidTierDebrisQuantity;
+            return BiteLowTierDebrisQuantity;
+        }
+
+        private static ushort ClampHashToUShort(uint value)
+        {
+            return value > ushort.MaxValue ? ushort.MaxValue : (ushort)value;
+        }
+
+        private static byte ResolveQualityTierByte(HectonQualityTier tier)
+        {
+            return (byte)math.clamp((int)tier, 0, byte.MaxValue);
+        }
+
+        private static Bounds BuildFallbackStrikeBounds(float3 center)
+        {
+            return new Bounds(ToVector3(center), new Vector3(1.2f, 1.2f, 1.2f));
+        }
+
+        private static bool IsFiniteBounds(Bounds bounds)
+        {
+            return IsFiniteVector(bounds.center) &&
+                   IsFiniteVector(bounds.extents) &&
+                   IsFiniteVector(bounds.size);
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
         }
 
         private void RefreshQualityState(float deltaTime, HectonQualityTier tier)
@@ -1008,6 +1368,72 @@ namespace Hecton8.AI
             }
         }
 
+        private void DumpBiteTelemetryBlackBoxOnce()
+        {
+            if (_biteTelemetryDumped || !_biteIkSolveEvents.IsCreated)
+                return;
+
+            DumpBiteTelemetryBlackBox();
+            _biteTelemetryDumped = true;
+        }
+
+        private void DumpBiteTelemetryBlackBox()
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string dumpPath = Path.Combine(projectRoot, BiteTelemetryDumpRelativePath);
+            string directory = Path.GetDirectoryName(dumpPath);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            int cursor = _biteIkTelemetryCursor.IsCreated && _biteIkTelemetryCursor.Length > 0 ? _biteIkTelemetryCursor[0] : 0;
+            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+            using BinaryWriter writer = new BinaryWriter(stream);
+            writer.Write(BiteTelemetryDumpMagic);
+            int ringLength = _biteIkSolveEvents.IsCreated ? math.min(ProceduralBiteIkConstants.TelemetryCapacity, _biteIkSolveEvents.Length) : 0;
+            int entryCount = cursor >= ringLength ? ringLength : math.max(0, cursor);
+            int firstEntryIndex = entryCount == ringLength && ringLength > 0 ? cursor % ringLength : 0;
+            writer.Write(entryCount);
+            writer.Write(cursor);
+            writer.Write(BiteTelemetryEntryPayloadBytes);
+            for (int i = 0; i < entryCount; i++)
+            {
+                int sourceIndex = (firstEntryIndex + i) % ringLength;
+                BiteIkSolveEvent entry = _biteIkSolveEvents[sourceIndex];
+                writer.Write(entry.FrameIndex);
+                writer.Write(entry.Flags);
+                writer.Write(entry.StateHash);
+                writer.Write(entry.TargetHash);
+                writer.Write(entry.JawTipPosition.x);
+                writer.Write(entry.JawTipPosition.y);
+                writer.Write(entry.JawTipPosition.z);
+                writer.Write(entry.DistanceMeters);
+                writer.Write(entry.ClosestPoint.x);
+                writer.Write(entry.ClosestPoint.y);
+                writer.Write(entry.ClosestPoint.z);
+                writer.Write(entry.Reach01);
+                writer.Write(entry.TargetLocalCenter.x);
+                writer.Write(entry.TargetLocalCenter.y);
+                writer.Write(entry.TargetLocalCenter.z);
+                writer.Write(entry.SystemStress01);
+                writer.Write(entry.HeadPosition.x);
+                writer.Write(entry.HeadPosition.y);
+                writer.Write(entry.HeadPosition.z);
+                writer.Write(entry.ContactDistanceMeters);
+                writer.Write(entry.WrapAnchor0.x);
+                writer.Write(entry.WrapAnchor0.y);
+                writer.Write(entry.WrapAnchor0.z);
+                writer.Write(entry.Blend01);
+                writer.Write(entry.WrapAnchor1.x);
+                writer.Write(entry.WrapAnchor1.y);
+                writer.Write(entry.WrapAnchor1.z);
+                writer.Write(entry.Padding0);
+                writer.Write(entry.Padding1.x);
+                writer.Write(entry.Padding1.y);
+                writer.Write(entry.Padding1.z);
+                writer.Write(entry.Padding1.w);
+            }
+        }
+
         private void ResetConstraintIterationHysteresis()
         {
             _qualityTier = GlobalRegistry.ScalabilityTier;
@@ -1034,6 +1460,12 @@ namespace Hecton8.AI
         {
             float3 forward = _cachedTransform != null ? (float3)_cachedTransform.forward : new float3(0f, 0f, 1f);
             return NormalizeSafe(forward, new float3(0f, 0f, 1f));
+        }
+
+        private float3 ResolveOwnerRight()
+        {
+            float3 right = _cachedTransform != null ? (float3)_cachedTransform.right : new float3(1f, 0f, 0f);
+            return NormalizeSafe(right, new float3(1f, 0f, 0f));
         }
 
         private float ResolveBodySpeed()

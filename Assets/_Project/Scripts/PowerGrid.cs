@@ -966,23 +966,27 @@ namespace Hecton8.Power
                 return;
 
             uint nodeId = unchecked((uint)EntityId.ToULong(node.GetEntityId()));
-            Hecton8.Core.Signals.DamageSignal signal = new Hecton8.Core.Signals.DamageSignal
+            Hecton8.Core.Contracts.Signals.CombatDamageSignal signal = new Hecton8.Core.Contracts.Signals.CombatDamageSignal
             {
+                WorldPoint = float3.zero,
+                Direction = float3.zero,
                 Magnitude = math.max(0.01f, potential),
-                LocalPoint = float3.zero,
                 DamageType = (uint)DamageTypeMask.Emp,
-                SubjectHash = nodeId,
+                TargetHash = nodeId,
+                SourceHash = 0,
+                Frame = unchecked((uint)Time.frameCount),
                 SourceId = 0,
                 IntegrityDelta = 0,
                 Channel = (byte)DamageChannel.Power,
-                TargetId = nodeId
+                TargetId = nodeId > ushort.MaxValue ? ushort.MaxValue : (ushort)nodeId,
+                Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag
             };
             GlobalSignals.Publish(in signal);
         }
 
         private void PublishNodeBrownoutSignal(uint nodeId, float supplyRatio, int priority)
         {
-            Hecton8.Core.Signals.BrownoutSignal signal = new Hecton8.Core.Signals.BrownoutSignal
+            Hecton8.Core.Contracts.Signals.BrownoutSignal signal = new Hecton8.Core.Contracts.Signals.BrownoutSignal
             {
                 NetworkId = unchecked((uint)math.max(0, Id)),
                 NodeId = nodeId,

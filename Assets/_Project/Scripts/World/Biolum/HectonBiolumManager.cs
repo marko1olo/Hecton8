@@ -11,7 +11,7 @@ using Hecton8.AI;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using System.Collections.Generic;
 using Hecton8.Visor;
@@ -39,8 +39,6 @@ namespace Hecton8.Biolum
         private static readonly int _FloraOceanBiolumStrengthId = Shader.PropertyToID("_HectonOceanBiolumStrength");
         private static readonly int _FloraFloorBiolumColorId = Shader.PropertyToID("_HectonFloorBiolumColor");
         private static readonly int _FloraFloorBiolumStrengthId = Shader.PropertyToID("_HectonFloorBiolumStrength");
-        private static readonly int _GlobalBiolumPhaseId = Shader.PropertyToID("_GlobalBiolumPhase");
-        private static readonly int _BiolumMasterPhaseId = Shader.PropertyToID("_BiolumMasterPhase");
         private static readonly int _BiolumIntensityId = Shader.PropertyToID("_BiolumIntensity");
         private static readonly int _BiolumTouchRipplesId = Shader.PropertyToID("_BiolumTouchRipples");
         private static readonly int _BiolumTouchRippleParamsId = Shader.PropertyToID("_BiolumTouchRippleParams");
@@ -597,8 +595,7 @@ namespace Hecton8.Biolum
 
             if (VectorDeltaExceeds(_lastPublishedMasterPhase, phaseVector, GlobalBiolumPhasePublishEpsilon))
             {
-                Shader.SetGlobalVector(_BiolumMasterPhaseId, phaseVector);
-                Shader.SetGlobalFloat(_GlobalBiolumPhaseId, _globalBiolumPhase);
+                HectonShaderGlobalDataVaultBridge.PublishBiolumMasterPhase(phaseVector);
                 _lastPublishedMasterPhase = phaseVector;
                 _lastPublishedGlobalBiolumPhase = _globalBiolumPhase;
             }
@@ -1325,8 +1322,6 @@ namespace Hecton8.Biolum
             _cachedFloorBiolumStrength = 0f;
 
             PublishFloraShaderGlobals();
-            if (math.abs(_lastPublishedGlobalBiolumPhase) > GlobalBiolumPhasePublishEpsilon)
-                Shader.SetGlobalFloat(_GlobalBiolumPhaseId, 0f);
             _globalBiolumPhase = 0f;
             _lastPublishedGlobalBiolumPhase = 0f;
             _masterPulse01 = 0.5f;
@@ -1339,7 +1334,7 @@ namespace Hecton8.Biolum
             Vector4 resetIntensity = Vector4.zero;
             _lastPublishedMasterPhase = resetPhase;
             _lastPublishedBiolumIntensity = resetIntensity;
-            Shader.SetGlobalVector(_BiolumMasterPhaseId, resetPhase);
+            HectonShaderGlobalDataVaultBridge.PublishBiolumMasterPhase(resetPhase);
             Shader.SetGlobalVector(_BiolumIntensityId, resetIntensity);
             Shader.SetGlobalVector(_BiolumTouchRippleParamsId, Vector4.zero);
             _lastPublishedTouchRippleCount = 0;

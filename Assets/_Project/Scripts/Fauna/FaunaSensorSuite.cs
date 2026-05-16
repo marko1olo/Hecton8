@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Environment.Fluids;
 using UnityEngine;
 using Unity.Jobs;
@@ -6,6 +7,7 @@ using UnityEngine.Serialization;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Mathematics;
+using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
 
 namespace Hecton8.AI
 {

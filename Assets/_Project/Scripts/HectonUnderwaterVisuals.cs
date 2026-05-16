@@ -659,6 +659,8 @@ namespace Hecton8.Environment
             Shader.PropertyToID("_HectonNoirAbyssFloor");
         private static readonly int _HectonNoirFogStratificationId =
             Shader.PropertyToID("_HectonNoirFogStratification");
+        private static readonly int _ExtinctionLutRuntimeId =
+            Shader.PropertyToID("_ExtinctionLUTRuntime");
         private static readonly int _HectonNoirDitherParamsId =
             Shader.PropertyToID("_HectonNoirDitherParams");
         private static readonly int _HectonNoirCausticsLayerAId =
@@ -2651,7 +2653,6 @@ namespace Hecton8.Environment
             }
 
             _cachedUnderwaterFogColor = fogColor;
-            RenderSettings.fogColor = fogColor;
 
             float baseDensity = LerpClamped(maxFogDensity, minFogDensity, lightFactor);
             float targetDensity = baseDensity * _currentTurbidity;
@@ -2704,14 +2705,12 @@ namespace Hecton8.Environment
             {
                 RenderSettings.fog = true;
                 RenderSettings.fogMode = FogMode.ExponentialSquared;
-                RenderSettings.fogColor = _cachedUnderwaterFogColor;
                 RenderSettings.fogDensity = ResolvePerCameraUnderwaterFogDensity(cam);
             }
             else if (HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out _))
             {
                 RenderSettings.fog = true;
                 RenderSettings.fogMode = FogMode.ExponentialSquared;
-                RenderSettings.fogColor = ResolveSurfaceFogColor();
                 RenderSettings.fogDensity = ResolveSurfaceFogDensity();
             }
             else
@@ -2719,7 +2718,6 @@ namespace Hecton8.Environment
                 if (enableSurfaceFog)
                 {
                     RenderSettings.fog = true;
-                    RenderSettings.fogColor = ResolveSurfaceFogColor();
                     RenderSettings.fogDensity = ResolveSurfaceFogDensity();
                 }
                 else
@@ -3361,7 +3359,6 @@ namespace Hecton8.Environment
             {
                 RenderSettings.fog = true;
                 RenderSettings.fogMode = FogMode.ExponentialSquared;
-                RenderSettings.fogColor = surfaceState.FogColor;
                 RenderSettings.fogDensity = ResolveReadableSurfaceFogDensity(surfaceState.FogDensity);
                 if (!giRelayAmbientAuthority)
                 {
@@ -3376,7 +3373,6 @@ namespace Hecton8.Environment
             {
                 RenderSettings.fog        = true;
                 RenderSettings.fogMode    = FogMode.ExponentialSquared;
-                RenderSettings.fogColor   = ResolveSurfaceFogColor();
                 RenderSettings.fogDensity = ResolveReadableSurfaceFogDensity(ResolveSurfaceFogDensity());
                 if (!giRelayAmbientAuthority)
                 {
@@ -5788,6 +5784,13 @@ namespace Hecton8.Environment
                     1f / verticalFogSpan,
                     math.max(0f, abyssalDensityBoost),
                     fogScatteringCoeff));
+            Shader.SetGlobalVector(
+                _ExtinctionLutRuntimeId,
+                new Vector4(
+                    waterLevel,
+                    math.max(0f, _currentTurbidity),
+                    _cachedVisualIsUnderwater ? 1f : 0f,
+                    _cachedVisualIsUnderwater ? 1f : 0f));
             Shader.SetGlobalFloat(_FogScatteringCoeffId, fogScatteringCoeff);
             Shader.SetGlobalVector(
                 _HectonHudFogPerturbationId,
@@ -5868,6 +5871,7 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_HectonNoirResolveSettingsId, new Vector4(1.18f, 0.75f, 0f, 0f));
             Shader.SetGlobalColor(_HectonNoirAbyssFloorId, new Color(0.028f, 0.042f, 0.060f, 1f));
             Shader.SetGlobalVector(_HectonNoirFogStratificationId, new Vector4(4900f, 1f / 180f, 0.42f, 0.0001f));
+            Shader.SetGlobalVector(_ExtinctionLutRuntimeId, new Vector4(0f, 1f, 1f, 0f));
             Shader.SetGlobalVector(_HectonNoirDitherParamsId, new Vector4(0f, 0f, 64f, 0f));
             Shader.SetGlobalVector(_HectonNoirCausticsLayerAId, Vector4.zero);
             Shader.SetGlobalVector(_HectonNoirCausticsLayerBId, Vector4.zero);

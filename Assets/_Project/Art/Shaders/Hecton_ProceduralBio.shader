@@ -104,6 +104,10 @@ Shader "Hecton8/Flora/ProceduralBio"
             float4 _HectonFloraBiomeTintParams;
             float4 _BiolumMasterPhase;
             float4 _BiolumIntensity;
+            float4 _GlobalBiolumStates[16];
+            float4 _GlobalBiolumParams;
+            float4 _GlobalBiolumClock;
+            float4 _GlobalBiolumAupOffset;
 
             struct Attributes
             {
@@ -253,24 +257,45 @@ Shader "Hecton8/Flora/ProceduralBio"
                 return lerp(half3(1.0h, 1.0h, 1.0h), tint, saturate(strength * globalStrength));
             }
 
+            half4 ResolveProceduralBioGlobalBiolum(float3 positionWS)
+            {
+                int activeCount = min(max((int)_GlobalBiolumParams.x, 0), 16);
+                if (activeCount <= 0)
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+                float selector = frac(abs(positionWS.x * 0.037 + positionWS.z * 0.053 + _GlobalBiolumAupOffset.x * 0.0013 + _GlobalBiolumAupOffset.z * 0.0017));
+                int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
+                float4 state = _GlobalBiolumStates[stateIndex];
+                half strobe = saturate((half)_GlobalBiolumParams.z);
+                half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
+                half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
+                return half4(color, intensity);
+            }
+
             half3 ResolveProceduralBioEmission(float3 positionWS, half height01, half mask)
             {
-                half master = max((half)_BiolumIntensity.x, 0.0h);
+                half4 globalState = ResolveProceduralBioGlobalBiolum(positionWS);
+                half hasGlobal = step(0.001h, globalState.w);
+                half master = max(max((half)_BiolumIntensity.x, 0.0h), globalState.w);
                 half phase = saturate((half)_BiolumMasterPhase.y);
                 half sharpMask = saturate((_BiolumPulseSharpness - 0.25h) * 0.12903225h);
                 half pulse = lerp(phase, phase * phase, sharpMask);
                 half seeded = (half)HectonProceduralBioHash13(positionWS * 0.03125 + height01);
                 half organicPulse = saturate(0.55h + seeded * 0.45h + pulse * 0.35h);
-                return _EmissionColor.rgb * (_EmissionStrength * master * organicPulse * mask * height01);
+                half3 emissionColor = lerp(_EmissionColor.rgb, globalState.rgb, hasGlobal);
+                return emissionColor * (_EmissionStrength * master * organicPulse * mask * height01);
             }
 
             half3 ResolveProceduralBioEmissionLow(half height01, half mask)
             {
-                half master = max((half)_BiolumIntensity.x, 0.0h);
+                half4 globalState = ResolveProceduralBioGlobalBiolum(float3(0.0, 0.0, 0.0));
+                half hasGlobal = step(0.001h, globalState.w);
+                half master = max(max((half)_BiolumIntensity.x, 0.0h), globalState.w);
                 half phase = saturate((half)_BiolumMasterPhase.y);
                 half pulse = lerp(phase, phase * phase, 0.25h);
                 half cheapPulse = saturate(0.62h + pulse * 0.38h);
-                return _EmissionColor.rgb * (_EmissionStrength * master * cheapPulse * mask * height01);
+                half3 emissionColor = lerp(_EmissionColor.rgb, globalState.rgb, hasGlobal);
+                return emissionColor * (_EmissionStrength * master * cheapPulse * mask * height01);
             }
 
             Varyings Vert(Attributes input)

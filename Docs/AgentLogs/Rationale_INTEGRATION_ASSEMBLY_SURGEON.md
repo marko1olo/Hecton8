@@ -27,3 +27,17 @@ Solution: Ran strict full-source H-Phi with exact ceilings: `GlobalRegistrySurfa
 Rejected Alternatives: Keeping looser Gate16-era budgets, lowering the H-Phi score floor, or treating static H-Phi as runtime/profiler proof.
 Scalability potential: Low tier gets tighter no-regression guardrails against registry and managed-runtime sprawl. High and Ultra preserve visual-overkill freedom in leaf systems while the Integrator blocks renewed Core coupling.
 Hardware Impact: Runtime frame savings are 0 us measured. Static `RuntimeHPhiRisk=0.000636091`; this is static evidence only.
+
+## 2026-05-16 Current Batch Re-Entry - Checklist Reset
+
+Problem: Active disk status was stale for the current prompt. `Status_INTEGRATION_ASSEMBLY_SURGEON.md` claimed task count 15 while `CURRENT_BATCH.md` defines 18 tasks for the same id.
+Solution: Reset the active checklist to the current XML task list and record the mismatch as a hygiene violation before touching source.
+Rejected Alternatives: Reusing stale status, reporting previous build artifacts as current, or reading neighboring batch prompts.
+Scalability potential: Low/Middle/High/Ultra runtime tiers unchanged. The value is compile evidence integrity under 20+ parallel agents.
+Hardware Impact: Runtime gain is 0 us measured. This is process correction; no frame-time claim.
+
+Problem: The current task is an assembly graph compile wall, not a gameplay feature.
+Solution: Restrict edits to assembly definitions, contracts, source guards, duplicate compile blockers, and evidence logs under the authorized domain.
+Rejected Alternatives: Adding gameplay code, widening concrete cross-domain references, or changing public APIs without a legacy wrapper.
+Scalability potential: Low tier benefits from strict compile-layer isolation and no accidental managed hot-path debt; High/Ultra preserve visual-system freedom behind explicit assembly boundaries.
+Hardware Impact: Runtime gain is 0 us measured. Expected benefit is lower build/iteration debt, not profiler-proven frame savings.

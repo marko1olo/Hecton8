@@ -26,20 +26,20 @@ namespace Hecton8.Animation.IK
         public const uint RuntimeFlagLowTier = 1u << 2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 96)]
     public struct LeviathanTerrainIkTelemetryEntry
     {
-        public int FrameIndex;
-        public int ActiveSegmentCount;
-        public uint Flags;
-        public uint StateHash;
-        public float3 HeadPosition;
-        public float3 TailPosition;
-        public float3 IntendedVelocity;
-        public float MaxTerrainPushMeters;
-        public float TailWhipSecondsRemaining;
-        public float Padding0;
-        public float Padding1;
+        [FieldOffset(0)] public int FrameIndex;
+        [FieldOffset(4)] public int ActiveSegmentCount;
+        [FieldOffset(8)] public uint Flags;
+        [FieldOffset(12)] public uint StateHash;
+        [FieldOffset(16)] public float3 HeadPosition;
+        [FieldOffset(28)] public float3 TailPosition;
+        [FieldOffset(40)] public float3 IntendedVelocity;
+        [FieldOffset(52)] public float MaxTerrainPushMeters;
+        [FieldOffset(56)] public float TailWhipSecondsRemaining;
+        [FieldOffset(60)] public float Padding0;
+        [FieldOffset(64)] public float Padding1;
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]

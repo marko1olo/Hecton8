@@ -16,7 +16,7 @@
 
 using System;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;

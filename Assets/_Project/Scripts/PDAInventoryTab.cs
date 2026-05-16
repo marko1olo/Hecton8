@@ -15,7 +15,7 @@ using Hecton8.Modding;
 using Hecton8.World;
 using Hecton.Localization;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Input;
 using TMPro;
 using Unity.Collections;

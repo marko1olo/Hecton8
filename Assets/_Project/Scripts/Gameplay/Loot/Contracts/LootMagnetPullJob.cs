@@ -7,7 +7,7 @@ using Unity.Mathematics;
 namespace Hecton8.Gameplay.Loot.Contracts
 {
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct LootMagnetPullJob : IJobParallelFor
+    public struct LootMagnetJob : IJobParallelFor
     {
         public AbsoluteUniversePosition PlayerAup;
         public float DeltaTimeSeconds;
@@ -15,7 +15,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public float PullStrength;
         public float MaxVelocityMetersPerSecond;
         public uint Frame;
-        public byte LowTierSnap;
+        public byte LowTierMode;
 
         public NativeArray<AbsoluteUniversePosition> EntityAups;
         public NativeArray<uint> EntityFlags;
@@ -28,17 +28,24 @@ namespace Hecton8.Gameplay.Loot.Contracts
         {
             SignalEvents[index] = default;
             uint flags = EntityFlags[index];
-            const uint requiredFlags = LootEntityFlags.Active | LootEntityFlags.IsLoot | LootEntityFlags.PullEnabled;
+            const uint requiredFlags = LootEntityFlags.Active | LootEntityFlags.IsLoot | LootEntityFlags.Bit_IsMagnetic;
             if ((flags & requiredFlags) != requiredFlags)
             {
                 return;
             }
 
             AbsoluteUniversePosition lootAup = EntityAups[index];
+            if (!IsFiniteAup(in lootAup) || !IsFiniteAup(in PlayerAup))
+            {
+                EntityVelocities[index] = float3.zero;
+                EntityFlags[index] = flags | LootEntityFlags.NonFinite;
+                return;
+            }
+
             if (PullRadiusSq <= LootMagnetConstants.AupCellSizeSq &&
                 IsOutsideAdjacentAupCells(in lootAup, in PlayerAup))
             {
-                EntityFlags[index] = flags & ~(LootEntityFlags.Pulling | LootEntityFlags.LowTierSnap);
+                EntityFlags[index] = flags & ~(LootEntityFlags.Pulling | LootEntityFlags.LowTierLerp);
                 return;
             }
 
@@ -52,35 +59,78 @@ namespace Hecton8.Gameplay.Loot.Contracts
 
             if (distSq > PullRadiusSq)
             {
-                EntityFlags[index] = flags & ~(LootEntityFlags.Pulling | LootEntityFlags.LowTierSnap);
+                EntityFlags[index] = flags & ~(LootEntityFlags.Pulling | LootEntityFlags.LowTierLerp);
                 return;
             }
 
-            if (LowTierSnap != 0 || distSq <= LootMagnetConstants.AcquireDistanceSq)
+            if (distSq <= LootMagnetConstants.AcquireDistanceSq)
             {
                 EntityVelocities[index] = float3.zero;
                 EntityFlags[index] = (flags & ~LootEntityFlags.Active) |
-                                     LootEntityFlags.Acquired |
-                                     LootEntityFlags.Pulling |
-                                     (LowTierSnap != 0 ? LootEntityFlags.LowTierSnap : 0u);
-                EntityAups[index] = LowTierSnap != 0 ? PlayerAup : lootAup;
+                                     LootEntityFlags.Flag_Acquired |
+                                     LootEntityFlags.Pulling;
                 WriteSignalEvent(
                     index,
-                    LowTierSnap != 0 ? PlayerAup : lootAup,
+                    lootAup,
                     float3.zero,
                     distSq,
                     LootMagnetEventFlags.Acquired | LootMagnetEventFlags.Acoustic | LootMagnetEventFlags.Wake);
                 return;
             }
 
+            float safeDeltaTime = math.max(DeltaTimeSeconds, 0.0001f);
             float3 velocity = EntityVelocities[index];
-            float safeDistSq = math.max(distSq, LootMagnetConstants.MinDistanceSq);
-            float3 dir = toPlayer * math.rsqrt(safeDistSq);
-            velocity += dir * PullStrength * DeltaTimeSeconds * math.rcp(safeDistSq);
+            if (LowTierMode != 0)
+            {
+                float alpha = math.saturate(LootMagnetConstants.LowTierLerpRate * safeDeltaTime);
+                float3 step = toPlayer * alpha;
+                float maxStep = MaxVelocityMetersPerSecond * safeDeltaTime;
+                float stepSq = math.lengthsq(step);
+                if (stepSq > maxStep * maxStep)
+                {
+                    step *= math.rsqrt(math.max(stepSq, LootMagnetConstants.MinRsqrtDistanceSq)) * maxStep;
+                }
+
+                velocity = step * math.rcp(safeDeltaTime);
+                if (!math.all(math.isfinite(velocity)))
+                {
+                    EntityVelocities[index] = float3.zero;
+                    EntityFlags[index] = flags | LootEntityFlags.NonFinite;
+                    return;
+                }
+
+                AbsoluteUniversePosition lowTierAup = OffsetAup(in lootAup, step);
+                if (!IsFiniteAup(in lowTierAup))
+                {
+                    EntityVelocities[index] = float3.zero;
+                    EntityFlags[index] = flags | LootEntityFlags.NonFinite;
+                    return;
+                }
+
+                EntityVelocities[index] = velocity;
+                EntityAups[index] = lowTierAup;
+                EntityFlags[index] = flags | LootEntityFlags.Pulling | LootEntityFlags.LowTierLerp;
+                if ((index & (LootMagnetConstants.PresentationSignalStride - 1)) == 0)
+                {
+                    WriteSignalEvent(
+                        index,
+                        lowTierAup,
+                        velocity,
+                        distSq,
+                        LootMagnetEventFlags.Acoustic | LootMagnetEventFlags.Wake);
+                }
+
+                return;
+            }
+
+            float safeRsqrtDistSq = math.max(distSq, LootMagnetConstants.MinRsqrtDistanceSq);
+            float safeForceDistSq = math.max(distSq, LootMagnetConstants.MinForceDistanceSq);
+            float3 dir = toPlayer * math.rsqrt(safeRsqrtDistSq);
+            velocity += dir * (PullStrength * math.rcp(safeForceDistSq)) * safeDeltaTime;
             float speedSq = math.lengthsq(velocity);
             float maxSpeedSq = MaxVelocityMetersPerSecond * MaxVelocityMetersPerSecond;
             if (speedSq > maxSpeedSq)
-                velocity *= math.rsqrt(speedSq) * MaxVelocityMetersPerSecond;
+                velocity *= math.rsqrt(math.max(speedSq, LootMagnetConstants.MinRsqrtDistanceSq)) * MaxVelocityMetersPerSecond;
 
             if (!math.all(math.isfinite(velocity)))
             {
@@ -89,12 +139,17 @@ namespace Hecton8.Gameplay.Loot.Contracts
                 return;
             }
 
-            AbsoluteUniversePosition nextAup = OffsetAup(in lootAup, velocity * DeltaTimeSeconds);
+            AbsoluteUniversePosition nextAup = OffsetAup(in lootAup, velocity * safeDeltaTime);
+            if (!IsFiniteAup(in nextAup))
+            {
+                EntityVelocities[index] = float3.zero;
+                EntityFlags[index] = flags | LootEntityFlags.NonFinite;
+                return;
+            }
 
             EntityVelocities[index] = velocity;
             EntityAups[index] = nextAup;
-            EntityFlags[index] = flags | LootEntityFlags.Pulling |
-                                 (LowTierSnap != 0 ? LootEntityFlags.LowTierSnap : 0u);
+            EntityFlags[index] = (flags | LootEntityFlags.Pulling) & ~LootEntityFlags.LowTierLerp;
             if ((index & (LootMagnetConstants.PresentationSignalStride - 1)) == 0)
             {
                 WriteSignalEvent(
@@ -137,6 +192,13 @@ namespace Hecton8.Gameplay.Loot.Contracts
             return new float3((float)delta.x, (float)delta.y, (float)delta.z);
         }
 
+        private static bool IsFiniteAup(in AbsoluteUniversePosition aup)
+        {
+            return math.isfinite(aup.LocalX) &&
+                   math.isfinite(aup.LocalY) &&
+                   math.isfinite(aup.LocalZ);
+        }
+
         private static bool IsOutsideAdjacentAupCells(
             in AbsoluteUniversePosition lootAup,
             in AbsoluteUniversePosition playerAup)
@@ -158,6 +220,9 @@ namespace Hecton8.Gameplay.Loot.Contracts
 
         private static AbsoluteUniversePosition OffsetAup(in AbsoluteUniversePosition aup, float3 offsetMeters)
         {
+            if (!math.all(math.isfinite(offsetMeters)))
+                return new AbsoluteUniversePosition { LocalX = float.NaN };
+
             double cellSize = LootMagnetConstants.AupCellSizeMeters;
             double3 absolute = new double3(
                 ((double)aup.GridX * cellSize) + aup.LocalX + offsetMeters.x,
@@ -168,6 +233,9 @@ namespace Hecton8.Gameplay.Loot.Contracts
 
         private static AbsoluteUniversePosition BuildAupFromAbsolute(double3 absolutePosition)
         {
+            if (!math.all(math.isfinite(absolutePosition)))
+                return new AbsoluteUniversePosition { LocalX = float.NaN };
+
             double cellSize = LootMagnetConstants.AupCellSizeMeters;
             long gridX = (long)math.floor(absolutePosition.x / cellSize);
             long gridY = (long)math.floor(absolutePosition.y / cellSize);

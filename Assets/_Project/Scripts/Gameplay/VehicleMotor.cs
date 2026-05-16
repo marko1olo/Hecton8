@@ -6,7 +6,7 @@ using Unity.Profiling;
 using UnityEngine;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using Hecton8.Physics.CCD;
 using Hecton8.World;
@@ -1837,7 +1837,7 @@ namespace Hecton8.Gameplay
             debris.SourceEntityId = unchecked((uint)bodyId);
             debris.Intensity01 = impact.Intensity;
             debris.DebrisKind = SparkDebrisKind;
-            debris.Flags = flags;
+            debris.Flags = (byte)(flags | DebrisSpawnSignal.FlagComputeShard);
             GlobalSignals.Publish(in debris);
 
             HapticRequest haptic = default;
@@ -1852,14 +1852,18 @@ namespace Hecton8.Gameplay
 
             if (lostKineticEnergy >= KinematicCcdMath.MassiveLostKineticEnergyJoules)
             {
-                Hecton8.Core.Signals.DamageSignal damage = default;
+                Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
+                damage.WorldPoint = new float3(point.x, point.y, point.z);
+                damage.Direction = new float3(safeNormal.x, safeNormal.y, safeNormal.z);
                 damage.Magnitude = math.min(500f, lostKineticEnergy * 0.005f);
-                damage.LocalPoint = new float3(point.x, point.y, point.z);
                 damage.DamageType = (uint)DamageTypeMask.Impact;
-                damage.SubjectHash = targetHash;
+                damage.TargetHash = targetHash;
+                damage.SourceHash = _kinematicCcdSourceHash;
+                damage.Frame = unchecked((uint)Time.frameCount);
                 damage.SourceId = bodyId > ushort.MaxValue ? ushort.MaxValue : (ushort)bodyId;
-                damage.TargetId = targetHash;
+                damage.TargetId = targetHash > ushort.MaxValue ? ushort.MaxValue : (ushort)targetHash;
                 damage.Channel = 0;
+                damage.Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag;
                 damage.IntegrityDelta = 1;
                 GlobalSignals.Publish(in damage);
             }

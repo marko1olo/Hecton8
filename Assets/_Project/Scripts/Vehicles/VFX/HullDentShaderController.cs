@@ -1,7 +1,9 @@
 using System;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Memory;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
+using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
@@ -21,6 +23,7 @@ namespace Hecton8.Vehicles.VFX
         private const float InvDepthQuantizationSteps = 1f / 255f;
         private const float MinimumStoredDepthMeters = 0.001f;
         private const float RepairMatchPaddingMeters = 0.35f;
+        private const float LocalTransformEpsilon = 0.000001f;
         private const uint HullDentTelemetryHash = 0x48444E54u; // HDNT
 
         private static readonly ProfilerMarker _lateFrameProfilerMarker = new ProfilerMarker("H8.VehicleVFX.HullDents.LateFrame");
@@ -51,6 +54,8 @@ namespace Hecton8.Vehicles.VFX
 
         private ISubmarineHullBreachReadModel _breachReadModel;
         private ITickDispatcher _tickDispatcher;
+        private IDataVault _dataVault;
+        private VaultBufferHandle<float4> _hullDentsHandle;
         private Transform _cachedRoot;
         private int _writeHead;
         private int _activeDentCount;
@@ -67,7 +72,8 @@ namespace Hecton8.Vehicles.VFX
             ResolveBreachReadModel();
             ResolveTickDispatcher();
             RefreshQualityTier(force: true);
-            ClearDentBuffer();
+            EnsureHullDentsBuffer();
+            SyncDentBufferFromVault();
             TryRegisterLateFrameTickable();
             UploadShaderGlobals();
         }
@@ -80,8 +86,8 @@ namespace Hecton8.Vehicles.VFX
                 _registeredLateFrame = false;
             }
 
-            ClearDentBuffer();
-            UploadShaderGlobals();
+            ClearLocalDentBuffer();
+            UploadShaderGlobalsFromLocal();
             _tickDispatcher = null;
         }
 
@@ -211,8 +217,8 @@ namespace Hecton8.Vehicles.VFX
                 if (!IsFiniteVector(worldPoint))
                     return false;
 
-                Vector3 local = _cachedRoot.InverseTransformPoint(worldPoint);
-                localPoint = new float3(local.x, local.y, local.z);
+                if (!TryResolveLocalImpactAup(worldPoint, out localPoint))
+                    return false;
             }
 
             if (!math.all(math.isfinite(localPoint)))
@@ -237,11 +243,13 @@ namespace Hecton8.Vehicles.VFX
 
         private void PushDent(float3 localPoint, float radius, float depth)
         {
+            SyncDentBufferFromVault();
             int existingIndex = FindMergeDentIndex(localPoint, radius);
             int writeIndex = existingIndex >= 0 ? existingIndex : _writeHead;
             float storedDepth = existingIndex >= 0 ? math.max(UnpackDepth(_dentBuffer[existingIndex].w), depth) : depth;
 
             _dentBuffer[writeIndex] = new Vector4(localPoint.x, localPoint.y, localPoint.z, PackRadiusDepth(radius, storedDepth));
+            WriteDentToVault(writeIndex, _dentBuffer[writeIndex]);
 
             if (existingIndex < 0)
             {
@@ -272,6 +280,7 @@ namespace Hecton8.Vehicles.VFX
 
         private bool ApplyRepairCoupling(float deltaTime)
         {
+            SyncDentBufferFromVault();
             if (_breachReadModel == null || !_breachReadModel.IsReady || _activeDentCount <= 0)
                 return false;
 
@@ -300,6 +309,7 @@ namespace Hecton8.Vehicles.VFX
             if (changed)
             {
                 _activeDentCount = CountActiveDents();
+                FlushDentBufferToVault();
                 _dirty = true;
             }
 
@@ -358,6 +368,12 @@ namespace Hecton8.Vehicles.VFX
 
         private void UploadShaderGlobals()
         {
+            SyncDentBufferFromVault();
+            UploadShaderGlobalsFromLocal();
+        }
+
+        private void UploadShaderGlobalsFromLocal()
+        {
             _activeDentCount = CountActiveDents();
             float scarScalar = ResolveLowTierScarScalar();
             Shader.SetGlobalVectorArray(_HullDentsId, _dentBuffer);
@@ -365,6 +381,168 @@ namespace Hecton8.Vehicles.VFX
                 _HullDentParamsId,
                 new Vector4(_activeDentCount, _lowTier ? 1f : 0f, scarScalar, _qualityTier));
             _dirty = false;
+        }
+
+        private IDataVault ResolveDataVault()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
+        }
+
+        private bool EnsureHullDentsBuffer()
+        {
+            IDataVault vault = ResolveDataVault();
+            return EnsureHullDentsHandle(vault);
+        }
+
+        private bool SyncDentBufferFromVault()
+        {
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return false;
+
+            if (!EnsureHullDentsHandle(vault) || !vault.TryLockBuffer(BufferID.HullDents))
+                return false;
+
+            try
+            {
+                var dents = _hullDentsHandle.Resolve(vault);
+                if (!dents.IsCreated)
+                    return false;
+
+                bool changed = false;
+                int count = math.min(MaxHullDents, dents.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    float4 dent = dents[i];
+                    Vector4 next = math.all(math.isfinite(dent))
+                        ? new Vector4(dent.x, dent.y, dent.z, math.max(0f, dent.w))
+                        : Vector4.zero;
+                    if (_dentBuffer[i] != next)
+                        changed = true;
+
+                    _dentBuffer[i] = next;
+                }
+
+                for (int i = count; i < MaxHullDents; i++)
+                {
+                    if (_dentBuffer[i] != Vector4.zero)
+                        changed = true;
+
+                    _dentBuffer[i] = Vector4.zero;
+                }
+
+                RefreshDentWriteState();
+                if (changed)
+                    _dirty = true;
+
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.HullDents);
+            }
+        }
+
+        private bool FlushDentBufferToVault()
+        {
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return false;
+
+            if (!EnsureHullDentsHandle(vault) || !vault.TryLockBuffer(BufferID.HullDents))
+                return false;
+
+            try
+            {
+                var dents = _hullDentsHandle.Resolve(vault);
+                if (!dents.IsCreated)
+                    return false;
+
+                int count = math.min(MaxHullDents, dents.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    Vector4 dent = _dentBuffer[i];
+                    dents[i] = IsFiniteVector(dent)
+                        ? new float4(dent.x, dent.y, dent.z, math.max(0f, dent.w))
+                        : float4.zero;
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.HullDents);
+            }
+        }
+
+        private bool WriteDentToVault(int dentIndex, Vector4 dent)
+        {
+            if ((uint)dentIndex >= MaxHullDents || !IsFiniteVector(dent))
+                return false;
+
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return false;
+
+            if (!EnsureHullDentsHandle(vault) || !vault.TryLockBuffer(BufferID.HullDents))
+                return false;
+
+            try
+            {
+                var dents = _hullDentsHandle.Resolve(vault);
+                if (!dents.IsCreated || (uint)dentIndex >= (uint)dents.Length)
+                {
+                    return false;
+                }
+
+                dents[dentIndex] = new float4(dent.x, dent.y, dent.z, math.max(0f, dent.w));
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.HullDents);
+            }
+        }
+
+        private bool EnsureHullDentsHandle(IDataVault vault)
+        {
+            if (vault == null)
+                return false;
+
+            if (!_hullDentsHandle.IsCreated ||
+                _hullDentsHandle.BufferId != BufferID.HullDents ||
+                _hullDentsHandle.Length < MaxHullDents)
+            {
+                _hullDentsHandle = vault.GetBufferHandle<float4>(
+                    BufferID.HullDents,
+                    MaxHullDents,
+                    SystemID.Vfx,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            return _hullDentsHandle.IsCreated;
+        }
+
+        private void RefreshDentWriteState()
+        {
+            _activeDentCount = CountActiveDents();
+            if (_activeDentCount >= MaxHullDents)
+            {
+                _writeHead = 0;
+                return;
+            }
+
+            for (int i = 0; i < MaxHullDents; i++)
+            {
+                if (UnpackDepth(_dentBuffer[i].w) <= MinimumStoredDepthMeters)
+                {
+                    _writeHead = i;
+                    return;
+                }
+            }
+
+            _writeHead = 0;
         }
 
         private float ResolveLowTierScarScalar()
@@ -376,7 +554,7 @@ namespace Hecton8.Vehicles.VFX
             return math.saturate(scar * math.rcp(math.max(0.01f, maxDentDepthMeters)));
         }
 
-        private void ClearDentBuffer()
+        private void ClearLocalDentBuffer()
         {
             for (int i = 0; i < MaxHullDents; i++)
                 _dentBuffer[i] = Vector4.zero;
@@ -440,9 +618,66 @@ namespace Hecton8.Vehicles.VFX
             return ((packedInt >> 8) & 255) * InvDepthQuantizationSteps;
         }
 
+        private bool TryResolveLocalImpactAup(Vector3 worldPoint, out float3 localPoint)
+        {
+            localPoint = default;
+            if (!IsFiniteVector(worldPoint))
+                return false;
+
+            Transform root = _cachedRoot != null ? _cachedRoot : submarineRoot != null ? submarineRoot : transform;
+            _cachedRoot = root;
+            if (root == null || !IsFiniteVector(root.position) || !IsFiniteQuaternion(root.rotation))
+                return false;
+
+            double3 hitAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
+            double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(root.position);
+            double3 relativeWorldDouble = hitAup - rootAup;
+            if (!math.all(math.isfinite(relativeWorldDouble)))
+                return false;
+
+            Vector3 relativeWorld = new Vector3(
+                (float)relativeWorldDouble.x,
+                (float)relativeWorldDouble.y,
+                (float)relativeWorldDouble.z);
+            if (!IsFiniteVector(relativeWorld))
+                return false;
+
+            Vector3 local = Quaternion.Inverse(root.rotation) * relativeWorld;
+            Vector3 scale = root.lossyScale;
+            local.x /= ResolveSafeScale(scale.x);
+            local.y /= ResolveSafeScale(scale.y);
+            local.z /= ResolveSafeScale(scale.z);
+            if (!IsFiniteVector(local))
+                return false;
+
+            localPoint = new float3(local.x, local.y, local.z);
+            return math.all(math.isfinite(localPoint));
+        }
+
         private static bool IsFiniteVector(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static bool IsFiniteVector(Vector4 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z) &&
+                   float.IsFinite(value.w);
+        }
+
+        private static bool IsFiniteQuaternion(Quaternion value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z) &&
+                   float.IsFinite(value.w);
+        }
+
+        private static float ResolveSafeScale(float scale)
+        {
+            return float.IsFinite(scale) && math.abs(scale) > LocalTransformEpsilon ? scale : 1f;
         }
     }
 }

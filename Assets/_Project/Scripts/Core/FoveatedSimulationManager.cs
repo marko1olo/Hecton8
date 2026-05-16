@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
@@ -13,9 +13,9 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
-using CameraFrustumSignal = Hecton8.Core.Signals.CameraFrustumSignal;
-using CameraPositionSignal = Hecton8.Core.Signals.CameraPositionSignal;
-using CombatDamageSignal = Hecton8.Core.Signals.CombatDamageSignal;
+using CameraFrustumSignal = Hecton8.Core.Contracts.Signals.CameraFrustumSignal;
+using CameraPositionSignal = Hecton8.Core.Contracts.Signals.CameraPositionSignal;
+using CombatDamageSignal = Hecton8.Core.Contracts.Signals.CombatDamageSignal;
 
 namespace Hecton8.Core
 {

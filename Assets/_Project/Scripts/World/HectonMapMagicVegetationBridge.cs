@@ -102,6 +102,8 @@ namespace Hecton8.World
         private const int InvalidArtificialStructureId = 0;
         private const float DefaultTerrainHoleEvictionDistance = 3000f;
         private const float DefaultThermalGridRadius = 1000f;
+        private const float DistantFloraLowMathLodDistanceMeters = 1000f;
+        private const float DistantFloraLowMathLodDistanceSq = DistantFloraLowMathLodDistanceMeters * DistantFloraLowMathLodDistanceMeters;
         private const float DefaultThermalGridHorizontalCellSize = 50f;
         private const float DefaultThermalGridVerticalCellSize = 250f;
         private const float BiolumeSurgeDurationSeconds = 4f;
@@ -4374,6 +4376,38 @@ namespace Hecton8.World
             return matrix;
         }
 
+        private Matrix4x4 ApplyVegetationRuntimeOffset(Matrix4x4 matrix)
+        {
+#if _MATH_LOD_LOW
+            Vector3 approximateOffset = _totalUniverseOffset;
+            if (IsDistantFloraMatrix(matrix, approximateOffset))
+                return ApplyMatrixTranslationOffset(matrix, approximateOffset);
+#endif
+            return ApplyMatrixTranslationOffsetDouble(matrix, _totalUniverseOffsetDouble);
+        }
+
+        private static Matrix4x4 ApplyMatrixTranslationOffsetDouble(Matrix4x4 matrix, double3 offset)
+        {
+            double3 translated = new double3(matrix.m03, matrix.m13, matrix.m23) + offset;
+            matrix.m03 = (float)translated.x;
+            matrix.m13 = (float)translated.y;
+            matrix.m23 = (float)translated.z;
+            return matrix;
+        }
+
+        private bool IsDistantFloraMatrix(Matrix4x4 matrix, Vector3 offset)
+        {
+            if (!_hasLastPlayerPosition)
+                return false;
+
+            Vector3 runtimePosition = new Vector3(
+                matrix.m03 + offset.x,
+                matrix.m13 + offset.y,
+                matrix.m23 + offset.z);
+            float distanceSq = (runtimePosition - _lastPlayerPosition).sqrMagnitude;
+            return float.IsFinite(distanceSq) && distanceSq > DistantFloraLowMathLodDistanceSq;
+        }
+
         private static Matrix4x4 ConvertMatrixToStableUniverseSpace(Matrix4x4 matrix, double3 universeOffset)
         {
             return ApplyMatrixTranslationOffset(matrix, ToVector3(-universeOffset));
@@ -5838,7 +5872,7 @@ namespace Hecton8.World
             EnsureMatrixCapacity(ref matrices, count);
             EnsureIntCapacity(ref types, count);
             for (int i = 0; i < count; i++)
-                matrices[i] = ApplyMatrixTranslationOffset(sourceMatrices[i], _totalUniverseOffset);
+                matrices[i] = ApplyVegetationRuntimeOffset(sourceMatrices[i]);
             CopyNativeToManaged(sourceTypes, 0, types, 0, count);
             return count;
         }
@@ -5859,7 +5893,7 @@ namespace Hecton8.World
             EnsureVegetationDataCapacity(ref metadata, count);
             EnsureIntCapacity(ref types, count);
             for (int i = 0; i < count; i++)
-                matrices[i] = ApplyMatrixTranslationOffset(sourceMatrices[i], _totalUniverseOffset);
+                matrices[i] = ApplyVegetationRuntimeOffset(sourceMatrices[i]);
             CopyNativeToManaged(sourceMetadata, 0, metadata, 0, count);
             CopyNativeToManaged(sourceTypes, 0, types, 0, count);
             return count;

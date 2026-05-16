@@ -61,7 +61,7 @@ using Hecton8.Caves;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.World;
@@ -71,6 +71,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
 using CoreAudioEvent = Hecton8.Core.AudioEvent;
+using AcousticAup = Hecton8.Core.Contracts.AcousticAup;
 
 namespace Hecton8.Audio
 {
@@ -4937,7 +4938,7 @@ namespace Hecton8.Audio
                     _acousticPortalEdges[edgeCount++] = new AcousticPortalEdge
                     {
                         ToNode = i - 1,
-                        DistanceMeters = Vector3.Distance(_acousticPortalWaypointScratch[i], _acousticPortalWaypointScratch[i - 1]),
+                        DistanceMeters = ResolveRuntimeDistanceMeters(_acousticPortalWaypointScratch[i], _acousticPortalWaypointScratch[i - 1]),
                         Flags = AcousticPortalFlags.Voxel
                     };
                 }
@@ -4947,7 +4948,7 @@ namespace Hecton8.Audio
                     _acousticPortalEdges[edgeCount++] = new AcousticPortalEdge
                     {
                         ToNode = i + 1,
-                        DistanceMeters = Vector3.Distance(_acousticPortalWaypointScratch[i], _acousticPortalWaypointScratch[i + 1]),
+                        DistanceMeters = ResolveRuntimeDistanceMeters(_acousticPortalWaypointScratch[i], _acousticPortalWaypointScratch[i + 1]),
                         Flags = AcousticPortalFlags.Voxel
                     };
                 }
@@ -4959,6 +4960,18 @@ namespace Hecton8.Audio
             }
 
             return nodeCount >= 2 && edgeCount > 0;
+        }
+
+        private static float ResolveRuntimeDistanceMeters(Vector3 a, Vector3 b)
+        {
+            float dx = a.x - b.x;
+            float dy = a.y - b.y;
+            float dz = a.z - b.z;
+            float distanceSq = dx * dx + dy * dy + dz * dz;
+            if (!math.isfinite(distanceSq) || distanceSq <= 0f)
+                return 0f;
+
+            return distanceSq * math.rsqrt(math.max(distanceSq, 0.0001f));
         }
 
         private bool TryBuildHabitatAcousticPortalGraph(

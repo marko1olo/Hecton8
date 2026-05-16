@@ -1,6 +1,7 @@
 using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -22,6 +23,8 @@ namespace Hecton8.Gameplay
     {
         private const string DefaultInteractText = "Break Rock";
         private const float MinimumToolPower = 0.05f;
+        private const byte OutcropShardDebrisKind = 10;
+        private const uint OutcropShardSpeciesHash = 0xC0DEFACEu;
 
         [Header("Health")]
         [SerializeField, Range(1, 10)]
@@ -52,11 +55,6 @@ namespace Hecton8.Gameplay
         [SerializeField]
         [Tooltip("Legacy fallback world prefabs used only to resolve authored ItemData.")]
         private GameObject[] lootPrefabs;
-
-        [Header("Debris")]
-        [SerializeField]
-        [Tooltip("Pre-baked Voronoi chunk profile handed to the runtime debris manager on collapse.")]
-        private OrganicDebrisProfile debrisProfile;
 
         [Header("Audio")]
         [SerializeField]
@@ -230,22 +228,27 @@ namespace Hecton8.Gameplay
 
         private void DispatchDebris(Vector3 hitPoint, Vector3 hitNormal, float toolPower)
         {
-            IDebrisService debrisService = GlobalRegistry.Debris;
-            if (debrisService == null || !debrisService.IsInitialized || debrisProfile == null || !debrisProfile.IsValid)
+            if (!TryNormalize(hitNormal, out Vector3 normalizedHitNormal))
+                normalizedHitNormal = ResolveFallbackNormal(hitPoint);
+
+            float power01 = math.saturate(math.max(MinimumToolPower, toolPower));
+            uint seed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ (uint)(Time.frameCount + 1);
+            DebrisSpawnSignal signal = new DebrisSpawnSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint + normalizedHitNormal * 0.04f),
+                SpeciesHash = OutcropShardSpeciesHash,
+                SourceEntityId = seed == 0u ? 1u : seed,
+                Intensity01 = power01,
+                DebrisKind = OutcropShardDebrisKind,
+                Flags = DebrisSpawnSignal.FlagComputeShard,
+                Quantity = (ushort)math.clamp(8 + (int)(power01 * 48f), 8, 64)
+            };
+            if (!math.isfinite(signal.PositionAup.LocalX) ||
+                !math.isfinite(signal.PositionAup.LocalY) ||
+                !math.isfinite(signal.PositionAup.LocalZ))
                 return;
 
-            uint seed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ (uint)(Time.frameCount + 1);
-            Vector3 debrisNormal = TryNormalize(hitNormal, out Vector3 normalizedHitNormal)
-                ? normalizedHitNormal
-                : ResolveFallbackNormal(hitPoint);
-            debrisService.SpawnBurst(
-                debrisProfile,
-                _cachedTransform.position,
-                _cachedTransform.rotation,
-                hitPoint,
-                debrisNormal,
-                math.max(MinimumToolPower, toolPower),
-                seed);
+            GlobalSignals.Publish(in signal);
         }
 
         private void DispatchYield(float toolPower, Vector3 dropPoint)

@@ -6,6 +6,7 @@ using Hecton8.Core.Contracts;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 namespace Hecton8.Core.Memory
 {
@@ -16,6 +17,12 @@ namespace Hecton8.Core.Memory
     {
         /// <summary>Total allocated vault bytes.</summary>
         long AllocatedBytes { get; }
+
+        /// <summary>Current reserved vault arena bytes.</summary>
+        long ArenaBytes { get; }
+
+        /// <summary>Allocated-to-arena pressure ratio.</summary>
+        float CapacityPressure01 { get; }
 
         /// <summary>True while allocations are blocked for an AUP shift.</summary>
         bool IsAllocationLocked { get; }
@@ -109,7 +116,7 @@ namespace Hecton8.Core.Memory
     /// Generation-checked vault buffer handle. Resolve before dereferencing across frames.
     /// </summary>
     /// <typeparam name="T">Blittable element type.</typeparam>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public unsafe struct VaultBufferHandle<T> where T : struct
     {
         /// <summary>Cached raw pointer. Invalid after a generation mismatch; resolver fails fast.</summary>
@@ -160,7 +167,7 @@ namespace Hecton8.Core.Memory
     /// <summary>
     /// Fixed-size relocation record copied from the memory assembly to the Core signal bridge.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct VaultRelocationRecord
     {
         public const byte FlagAddressChanged = 1 << 0;
@@ -177,21 +184,22 @@ namespace Hecton8.Core.Memory
         public ushort Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct VaultBufferMeta
     {
+        public long OffsetBytes;
+        public long Bytes;
         public int Length;
         public int Stride;
         public int Alignment;
         public int BlockIndex;
-        public long OffsetBytes;
-        public long Bytes;
-        public SystemID Owner;
         public Allocator Allocator;
         public uint Version;
+        public SystemID Owner;
+        public SystemID LastAliasRequester;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct VaultArenaBlock
     {
         public long OffsetBytes;
@@ -204,17 +212,18 @@ namespace Hecton8.Core.Memory
         public ushort Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct MemoryDefragTelemetryEntry
     {
-        public uint Sequence;
-        public uint VaultGenerationID;
-        public int BlockCount;
         public long TotalFreeSpaceBytes;
         public long LargestContiguousBlockBytes;
         public long LastMovedBytes;
         public long TotalMovedBytes;
         public long PendingMassiveMoveBytes;
+        public uint Sequence;
+        public uint VaultGenerationID;
+        public int BlockCount;
+        public int ActiveBufferCount;
         public float HeapFragmentationRatio;
         public int WatchdogBreaches;
         public byte Flags;
@@ -223,7 +232,7 @@ namespace Hecton8.Core.Memory
         public byte Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct VaultGapAuditResult
     {
         public long TotalFreeBytes;
@@ -234,7 +243,6 @@ namespace Hecton8.Core.Memory
         public int UnalignedOccupiedCount;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     internal struct VaultGapAuditJob : IJob
     {
         [ReadOnly] public NativeArray<VaultArenaBlock> Blocks;
@@ -283,17 +291,24 @@ namespace Hecton8.Core.Memory
         private const int MaxBlockCapacity = MaxBufferCapacity << 1;
         internal const int VaultBlockAlignment = 64;
         private const long DefaultArenaBytes = 128L * 1024L * 1024L;
+        public const long LowTierArenaLimitBytes = 512L * 1024L * 1024L;
+        public const long HighTierArenaLimitBytes = 4L * 1024L * 1024L * 1024L;
         private const float FragmentationRatioThreshold = 0.15f;
+        private const float StressDefragHaltThreshold = 0.9f;
         private const long MassiveMoveThresholdBytes = 50L * 1024L * 1024L;
+        private const long ArenaGrowSlackBytes = 64L * 1024L * 1024L;
         private const byte MacroDatabasePayloadDirtyFlag = 1 << 0;
         private const int MaxMacroDatabasePayloadBytes = 256 * 1024;
+        private const int MaxRelocationRecordCount = 64;
         internal const byte BlockStateFree = 0;
         internal const byte BlockStateOccupied = 1;
         private const byte BlockFlagExternalView = 1 << 0;
         private const byte BlockFlagLocked = 1 << 1;
         private const byte DefragFlagFragmented = 1 << 0;
+        private const byte DefragFlagStressHalt = 1 << 2;
         private const byte DefragFlagMassiveMovePending = 1 << 3;
         private const byte DefragFlagFault = 1 << 4;
+        private const byte DefragFlagRelocated = 1 << 5;
         private const byte DefragFlagUnaligned = 1 << 6;
         private const int DefragBlackBoxFrameCount = 300;
         private const string DefragDumpPath = "Docs/AgentLogs/Dump_PLATINUM_DATA_VAULT_WARDEN.bin";
@@ -305,11 +320,13 @@ namespace Hecton8.Core.Memory
         private NativeList<VaultArenaBlock> _blocks;
         private NativeArray<MemoryDefragTelemetryEntry> _defragBlackBox;
         private NativeArray<VaultGapAuditResult> _gapAuditResult;
+        private NativeArray<VaultRelocationRecord> _lastRelocationRecords;
         private NativeParallelHashMap<ulong, MacroDatabasePayloadHandle> _macroDatabasePayloadCache;
         private NativeParallelHashMap<ulong, uint> _macroDatabasePayloadAccessTicks;
         private NativeList<ulong> _macroDatabasePayloadKeys;
         private void* _arenaBase;
         private long _arenaBytes;
+        private long _arenaCapacityLimitBytes;
         private int _allocationLock;
         private int _compactionFence;
         private uint _lockedShiftFrameId;
@@ -329,6 +346,14 @@ namespace Hecton8.Core.Memory
 
         /// <inheritdoc />
         public long AllocatedBytes => _allocatedBytes;
+
+        /// <inheritdoc />
+        public long ArenaBytes => _arenaBytes;
+
+        /// <inheritdoc />
+        public float CapacityPressure01 => _arenaBytes > 0L
+            ? math.saturate((float)((double)_allocatedBytes / _arenaBytes))
+            : 0f;
 
         /// <inheritdoc />
         public bool IsAllocationLocked => _allocationLock != 0;
@@ -378,17 +403,17 @@ namespace Hecton8.Core.Memory
         /// <summary>
         /// Creates and initializes the vault for bootstrap registration.
         /// </summary>
-        public static GlobalDataVault Create(int capacity = DefaultBufferCapacity)
+        public static GlobalDataVault Create(int capacity = DefaultBufferCapacity, long arenaCapacityLimitBytes = LowTierArenaLimitBytes)
         {
             GlobalDataVault vault = new GlobalDataVault();
-            vault.Initialize(capacity);
+            vault.Initialize(capacity, arenaCapacityLimitBytes);
             return vault;
         }
 
         /// <summary>
         /// Initializes raw vault maps.
         /// </summary>
-        public void Initialize(int capacity = DefaultBufferCapacity)
+        public void Initialize(int capacity = DefaultBufferCapacity, long arenaCapacityLimitBytes = LowTierArenaLimitBytes)
         {
             if (_initialized)
                 return;
@@ -401,18 +426,26 @@ namespace Hecton8.Core.Memory
             _metadata = new UnsafeHashMap<int, VaultBufferMeta>(safeCapacity, Allocator.Persistent);
             _keys = new NativeList<int>(safeCapacity, Allocator.Persistent);
             _blocks = new NativeList<VaultArenaBlock>(blockCapacity, Allocator.Persistent);
-            _defragBlackBox = new NativeArray<MemoryDefragTelemetryEntry>(
+            _defragBlackBox = H8Memory.Allocate<MemoryDefragTelemetryEntry>(
                 DefragBlackBoxFrameCount,
+                SystemID.CoreDataVault,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
-            _gapAuditResult = new NativeArray<VaultGapAuditResult>(
+            _gapAuditResult = H8Memory.Allocate<VaultGapAuditResult>(
                 1,
+                SystemID.CoreDataVault,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            _lastRelocationRecords = H8Memory.Allocate<VaultRelocationRecord>(
+                MaxRelocationRecordCount,
+                SystemID.CoreDataVault,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
             _macroDatabasePayloadCache = new NativeParallelHashMap<ulong, MacroDatabasePayloadHandle>(safeCapacity, Allocator.Persistent);
             _macroDatabasePayloadAccessTicks = new NativeParallelHashMap<ulong, uint>(safeCapacity, Allocator.Persistent);
             _macroDatabasePayloadKeys = new NativeList<ulong>(safeCapacity, Allocator.Persistent);
-            _arenaBytes = AlignUp(DefaultArenaBytes, VaultBlockAlignment);
+            _arenaCapacityLimitBytes = ResolveArenaCapacityLimit(arenaCapacityLimitBytes);
+            _arenaBytes = AlignUp(math.min(DefaultArenaBytes, _arenaCapacityLimitBytes), VaultBlockAlignment);
             _arenaBase = H8Memory.AllocateRaw(
                 _arenaBytes,
                 VaultBlockAlignment,
@@ -503,7 +536,9 @@ namespace Hecton8.Core.Memory
 
             long requestedBytes = (long)requiredLength * stride;
             long requiredBytes = AlignUp(requestedBytes, VaultBlockAlignment);
-            if (requiredBytes <= 0L || requiredBytes > _arenaBytes)
+            if (requiredBytes <= 0L)
+                return default;
+            if (requiredBytes > _arenaBytes && !TryGrowArenaForBytes(requiredBytes))
                 return default;
 
             bool hasExistingPointer = _buffers.TryGetValue(key, out IntPtr existingPointer);
@@ -525,12 +560,20 @@ namespace Hecton8.Core.Memory
                 ValidateType<T>(bufferId, existingMeta, stride, alignment);
                 if (existingMeta.Length >= requiredLength)
                 {
+                    if (!IsPointerAligned(existingPointer, VaultBlockAlignment))
+                    {
+                        LastDefragFlags = (byte)(LastDefragFlags | DefragFlagUnaligned);
+                        DumpPhiVodBlackBox();
+                        return default;
+                    }
+
                     if (!MarkExternalView(key, existingMeta.OffsetBytes))
                     {
                         DumpPhiVodBlackBox();
                         return default;
                     }
 
+                    SanitizeFinitePayload<T>(existingPointer, existingMeta.Length);
                     return H8Memory.CreateNativeArrayView<T>(existingPointer.ToPointer(), existingMeta.Length);
                 }
 
@@ -538,17 +581,31 @@ namespace Hecton8.Core.Memory
                     return default;
 
                 if (!TryReallocateBlock(key, existingMeta, requiredLength, requiredBytes, ShouldClear(options), out IntPtr resizedPointer, out VaultBufferMeta resizedMeta))
-                    return default;
+                {
+                    if (!TryGrowArenaForBytes(requiredBytes) ||
+                        !TryReallocateBlock(key, existingMeta, requiredLength, requiredBytes, ShouldClear(options), out resizedPointer, out resizedMeta))
+                    {
+                        return default;
+                    }
+                }
 
                 _buffers[key] = resizedPointer;
                 _metadata[key] = resizedMeta;
                 BumpVaultGeneration();
+                if (!IsPointerAligned(resizedPointer, VaultBlockAlignment))
+                {
+                    LastDefragFlags = (byte)(LastDefragFlags | DefragFlagUnaligned);
+                    DumpPhiVodBlackBox();
+                    return default;
+                }
+
                 if (!MarkExternalView(key, resizedMeta.OffsetBytes))
                 {
                     DumpPhiVodBlackBox();
                     return default;
                 }
 
+                SanitizeFinitePayload<T>(resizedPointer, requiredLength);
                 return H8Memory.CreateNativeArrayView<T>(resizedPointer.ToPointer(), requiredLength);
             }
 
@@ -559,7 +616,21 @@ namespace Hecton8.Core.Memory
                 return default;
 
             if (!TryAllocateBlock(key, requiredBytes, out int blockIndex, out IntPtr pointer))
+            {
+                if (!TryGrowArenaForBytes(requiredBytes) ||
+                    !TryAllocateBlock(key, requiredBytes, out blockIndex, out pointer))
+                {
+                    return default;
+                }
+            }
+
+            if (!IsPointerAligned(pointer, VaultBlockAlignment))
+            {
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagUnaligned);
+                FreeBlock(blockIndex);
+                DumpPhiVodBlackBox();
                 return default;
+            }
 
             if (ShouldClear(options))
                 UnsafeUtility.MemClear(pointer.ToPointer(), requiredBytes);
@@ -604,6 +675,7 @@ namespace Hecton8.Core.Memory
                 return default;
             }
 
+            SanitizeFinitePayload<T>(pointer, requiredLength);
             return H8Memory.CreateNativeArrayView<T>(pointer.ToPointer(), requiredLength);
         }
 
@@ -659,6 +731,14 @@ namespace Hecton8.Core.Memory
             int stride = UnsafeUtility.SizeOf<T>();
             int alignment = UnsafeUtility.AlignOf<T>();
             ValidateType<T>(bufferId, meta, stride, alignment);
+            if (!IsPointerAligned(pointer, VaultBlockAlignment))
+            {
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagUnaligned);
+                DumpPhiVodBlackBox();
+                return false;
+            }
+
+            SanitizeFinitePayload<T>(pointer, meta.Length);
             buffer = H8Memory.CreateNativeArrayView<T>(pointer.ToPointer(), meta.Length);
             if (buffer.IsCreated)
             {
@@ -743,6 +823,13 @@ namespace Hecton8.Core.Memory
             int stride = UnsafeUtility.SizeOf<T>();
             int alignment = UnsafeUtility.AlignOf<T>();
             ValidateType<T>(handle.BufferId, meta, stride, alignment);
+            if (!IsPointerAligned(pointer, VaultBlockAlignment))
+            {
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagUnaligned);
+                DumpPhiVodBlackBox();
+                FatalMemoryException.ThrowStaleVaultHandle();
+            }
+
             bool matchesMetadata =
                 handle.generation == meta.Version &&
                 handle.ptr != null &&
@@ -764,6 +851,7 @@ namespace Hecton8.Core.Memory
                 handle.Stride = meta.Stride;
             }
 
+            SanitizeFinitePayload<T>(pointer, meta.Length);
             return true;
         }
 
@@ -789,6 +877,12 @@ namespace Hecton8.Core.Memory
 
             if (!TryGetBuffer<T>(bufferId, out NativeArray<T> buffer))
                 return default;
+
+            if (!MarkAliasReader((int)bufferId, requester))
+            {
+                DumpPhiVodBlackBox();
+                return default;
+            }
 
             return H8Memory.CreateAlias(buffer, requester);
         }
@@ -845,8 +939,16 @@ namespace Hecton8.Core.Memory
         public bool TryGetLastRelocationRecord(int index, out VaultRelocationRecord record)
         {
             record = default;
-            _ = index;
-            return false;
+            if (!_lastRelocationRecords.IsCreated ||
+                index < 0 ||
+                index >= _lastRelocationRecordCount ||
+                index >= _lastRelocationRecords.Length)
+            {
+                return false;
+            }
+
+            record = _lastRelocationRecords[index];
+            return true;
         }
 
         /// <inheritdoc />
@@ -895,7 +997,9 @@ namespace Hecton8.Core.Memory
                 return;
             }
 
-            _ = systemStress01;
+            if (systemStress01 > StressDefragHaltThreshold)
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagStressHalt);
+
             AnalyzeGaps();
             if (!ValidateDefragTelemetry() || !ValidateBlockMap())
             {
@@ -1133,14 +1237,19 @@ namespace Hecton8.Core.Memory
                 _blocks.Dispose();
             if (_defragBlackBox.IsCreated)
             {
-                _defragBlackBox.Dispose();
+                H8Memory.Release(ref _defragBlackBox, SystemID.CoreDataVault);
             }
             if (_gapAuditResult.IsCreated)
             {
-                _gapAuditResult.Dispose();
+                H8Memory.Release(ref _gapAuditResult, SystemID.CoreDataVault);
+            }
+            if (_lastRelocationRecords.IsCreated)
+            {
+                H8Memory.Release(ref _lastRelocationRecords, SystemID.CoreDataVault);
             }
             _allocatedBytes = 0L;
             _arenaBytes = 0L;
+            _arenaCapacityLimitBytes = 0L;
             _allocationLock = 0;
             _compactionFence = 0;
             _defragBlackBoxCursor = 0;
@@ -1437,6 +1546,22 @@ namespace Hecton8.Core.Memory
             return true;
         }
 
+        private bool MarkAliasReader(int key, SystemID requester)
+        {
+            if (requester == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownAliasReader();
+
+            if (!_metadata.TryGetValue(key, out VaultBufferMeta meta) ||
+                !TryFindOccupiedBlockIndex(key, meta.OffsetBytes, out _))
+            {
+                return false;
+            }
+
+            meta.LastAliasRequester = requester;
+            _metadata[key] = meta;
+            return true;
+        }
+
         private void RecordDefragBlackBox(uint sequence)
         {
             if (!_defragBlackBox.IsCreated || _defragBlackBox.Length == 0)
@@ -1450,6 +1575,7 @@ namespace Hecton8.Core.Memory
             entry.Sequence = sequence;
             entry.VaultGenerationID = _vaultGenerationId;
             entry.BlockCount = _blocks.IsCreated ? _blocks.Length : 0;
+            entry.ActiveBufferCount = _keys.IsCreated ? _keys.Length : 0;
             entry.TotalFreeSpaceBytes = TotalFreeSpaceBytes;
             entry.LargestContiguousBlockBytes = LargestContiguousBlockBytes;
             entry.LastMovedBytes = LastDefragMovedBytes;
@@ -1585,10 +1711,211 @@ namespace Hecton8.Core.Memory
             return blockCapacity;
         }
 
+        public static long ResolveArenaCapacityLimit(byte scalabilityProfile)
+        {
+            return scalabilityProfile == 0 ? LowTierArenaLimitBytes : HighTierArenaLimitBytes;
+        }
+
+        private static long ResolveArenaCapacityLimit(long requestedLimitBytes)
+        {
+            long safeLimit = requestedLimitBytes > 0L ? requestedLimitBytes : LowTierArenaLimitBytes;
+            safeLimit = AlignUp(safeLimit, VaultBlockAlignment);
+            if (safeLimit < DefaultArenaBytes)
+                return AlignUp(DefaultArenaBytes, VaultBlockAlignment);
+            return safeLimit > HighTierArenaLimitBytes ? HighTierArenaLimitBytes : safeLimit;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void BumpVaultGeneration()
         {
             _vaultGenerationId = NextGeneration(_vaultGenerationId);
+        }
+
+        private bool TryGrowArenaForBytes(long requiredContiguousBytes)
+        {
+            if (requiredContiguousBytes <= 0L ||
+                _arenaBase == null ||
+                !_blocks.IsCreated ||
+                _allocationLock != 0 ||
+                _compactionFence != 0 ||
+                _arenaBytes >= _arenaCapacityLimitBytes)
+            {
+                return false;
+            }
+
+            int lastIndex = _blocks.Length - 1;
+            if (lastIndex < 0)
+                return false;
+            if (_blocks[lastIndex].State != BlockStateFree && _blocks.Length >= _blocks.Capacity)
+                return false;
+
+            long desiredMinimum = _allocatedBytes + requiredContiguousBytes + ArenaGrowSlackBytes;
+            if (desiredMinimum < requiredContiguousBytes)
+                desiredMinimum = requiredContiguousBytes;
+
+            long doubled = _arenaBytes <= HighTierArenaLimitBytes / 2L
+                ? _arenaBytes << 1
+                : _arenaCapacityLimitBytes;
+            long desiredBytes = math.max(doubled, desiredMinimum);
+            desiredBytes = AlignUp(desiredBytes, VaultBlockAlignment);
+            if (desiredBytes > _arenaCapacityLimitBytes)
+                desiredBytes = _arenaCapacityLimitBytes;
+            if (desiredBytes <= _arenaBytes)
+                return false;
+
+            return TryGrowArena(desiredBytes);
+        }
+
+        private bool TryGrowArena(long newArenaBytes)
+        {
+            newArenaBytes = AlignUp(newArenaBytes, VaultBlockAlignment);
+            if (newArenaBytes <= _arenaBytes || newArenaBytes > _arenaCapacityLimitBytes)
+                return false;
+
+            void* oldBase = _arenaBase;
+            long oldArenaBytes = _arenaBytes;
+            void* newBase = H8Memory.ReallocateRaw(
+                oldBase,
+                oldArenaBytes,
+                newArenaBytes,
+                VaultBlockAlignment,
+                SystemID.CoreDataVault,
+                Allocator.Persistent,
+                clearExtendedBytes: true,
+                H8AllocationFlags.Vault | H8AllocationFlags.SubAllocatorRoot);
+            if (newBase == null)
+                return false;
+
+            _arenaBase = newBase;
+            _arenaBytes = newArenaBytes;
+            long growBytes = newArenaBytes - oldArenaBytes;
+            if (!ExtendFreeTail(growBytes))
+            {
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagFault);
+                DumpPhiVodBlackBox();
+                return false;
+            }
+
+            ResetRelocationRecords();
+            RefreshBlocksAfterArenaRelocation(oldBase, newBase);
+            LastDefragMovedBytes = oldArenaBytes;
+            _totalDefragMovedBytes += oldArenaBytes;
+            LastDefragFlags = (byte)(LastDefragFlags | DefragFlagRelocated);
+            BumpVaultGeneration();
+            return true;
+        }
+
+        private bool ExtendFreeTail(long growBytes)
+        {
+            if (growBytes <= 0L)
+                return true;
+
+            int lastIndex = _blocks.Length - 1;
+            if (lastIndex < 0)
+                return false;
+
+            VaultArenaBlock last = _blocks[lastIndex];
+            if (last.State == BlockStateFree)
+            {
+                last.Bytes += growBytes;
+                last.Version = NextGeneration(last.Version);
+                _blocks[lastIndex] = last;
+                UpdateH8Descriptor(in last);
+                return true;
+            }
+
+            if (_blocks.Length >= _blocks.Capacity)
+                return false;
+
+            VaultArenaBlock freeTail = new VaultArenaBlock
+            {
+                OffsetBytes = last.OffsetBytes + last.Bytes,
+                Bytes = growBytes,
+                BufferKey = 0,
+                Version = 1u,
+                State = BlockStateFree
+            };
+            int descriptorIndex = H8Memory.RegisterBlockDescriptor(BuildDescriptor(in freeTail));
+            if (descriptorIndex < 0)
+                return false;
+
+            freeTail.H8BlockIndex = descriptorIndex;
+            _blocks.AddNoResize(freeTail);
+            return true;
+        }
+
+        private void RefreshBlocksAfterArenaRelocation(void* oldBase, void* newBase)
+        {
+            if (oldBase == null || newBase == null || !_blocks.IsCreated)
+                return;
+
+            long oldBaseAddress = ((IntPtr)oldBase).ToInt64();
+            long newBaseAddress = ((IntPtr)newBase).ToInt64();
+            for (int i = 0; i < _blocks.Length; i++)
+            {
+                VaultArenaBlock block = _blocks[i];
+                if (block.State == BlockStateOccupied)
+                {
+                    IntPtr oldPointer = (IntPtr)(oldBaseAddress + block.OffsetBytes);
+                    IntPtr newPointer = (IntPtr)(newBaseAddress + block.OffsetBytes);
+                    block.Version = NextGeneration(block.Version);
+                    _blocks[i] = block;
+
+                    if (_metadata.TryGetValue(block.BufferKey, out VaultBufferMeta meta))
+                    {
+                        meta.BlockIndex = i;
+                        meta.OffsetBytes = block.OffsetBytes;
+                        meta.Version = block.Version;
+                        _metadata[block.BufferKey] = meta;
+                        _buffers[block.BufferKey] = newPointer;
+                        RecordRelocation(block.BufferKey, in meta, oldPointer, newPointer, block.Bytes, block.Version);
+                    }
+                }
+                else
+                {
+                    _blocks[i] = block;
+                }
+
+                UpdateH8Descriptor(in block);
+            }
+        }
+
+        private void RecordRelocation(
+            int key,
+            in VaultBufferMeta meta,
+            IntPtr oldPointer,
+            IntPtr newPointer,
+            long bytes,
+            uint generation)
+        {
+            if (!_lastRelocationRecords.IsCreated ||
+                _lastRelocationRecordCount >= _lastRelocationRecords.Length)
+            {
+                return;
+            }
+
+            VaultRelocationRecord record = default;
+            record.OldPointer = oldPointer.ToInt64();
+            record.NewPointer = newPointer.ToInt64();
+            record.BufferId = key;
+            record.ByteLength = bytes > int.MaxValue ? int.MaxValue : (int)bytes;
+            record.Generation = generation;
+            record.Flags = oldPointer == newPointer
+                ? (byte)0
+                : VaultRelocationRecord.FlagAddressChanged;
+            int ownerId = (int)meta.Owner;
+            record.SystemId = ownerId > byte.MaxValue ? byte.MaxValue : (byte)ownerId;
+            _lastRelocationRecords[_lastRelocationRecordCount++] = record;
+        }
+
+        private void ResetRelocationRecords()
+        {
+            _lastRelocationRecordCount = 0;
+            if (!_lastRelocationRecords.IsCreated)
+                return;
+
+            for (int i = 0; i < _lastRelocationRecords.Length; i++)
+                _lastRelocationRecords[i] = default;
         }
 
         private bool TryReallocateBlock(
@@ -1878,6 +2205,120 @@ namespace Hecton8.Core.Memory
         private static bool ShouldClear(NativeArrayOptions options)
         {
             return options != NativeArrayOptions.UninitializedMemory;
+        }
+
+        private static bool IsPointerAligned(IntPtr pointer, int alignment)
+        {
+            if (pointer == IntPtr.Zero || alignment <= 0)
+                return false;
+
+            return ((ulong)pointer.ToInt64() & (ulong)(alignment - 1)) == 0UL;
+        }
+
+        private static void SanitizeFinitePayload<T>(IntPtr pointer, int length) where T : struct
+        {
+            if (pointer == IntPtr.Zero || length <= 0)
+                return;
+
+            if (typeof(T) == typeof(float))
+            {
+                float* values = (float*)pointer.ToPointer();
+                for (int i = 0; i < length; i++)
+                {
+                    if (!math.isfinite(values[i]))
+                        values[i] = 0f;
+                }
+
+                return;
+            }
+
+            if (typeof(T) == typeof(float2))
+            {
+                float2* values = (float2*)pointer.ToPointer();
+                for (int i = 0; i < length; i++)
+                {
+                    float2 value = values[i];
+                    if (!math.all(math.isfinite(value)))
+                        values[i] = default;
+                }
+
+                return;
+            }
+
+            if (typeof(T) == typeof(float3))
+            {
+                float3* values = (float3*)pointer.ToPointer();
+                for (int i = 0; i < length; i++)
+                {
+                    float3 value = values[i];
+                    if (!math.all(math.isfinite(value)))
+                        values[i] = default;
+                }
+
+                return;
+            }
+
+            if (typeof(T) == typeof(float4))
+            {
+                float4* values = (float4*)pointer.ToPointer();
+                for (int i = 0; i < length; i++)
+                {
+                    float4 value = values[i];
+                    if (!math.all(math.isfinite(value)))
+                        values[i] = default;
+                }
+
+                return;
+            }
+
+            if (typeof(T) == typeof(double))
+            {
+                double* values = (double*)pointer.ToPointer();
+                for (int i = 0; i < length; i++)
+                {
+                    if (!math.isfinite(values[i]))
+                        values[i] = 0d;
+                }
+
+                return;
+            }
+
+            if (typeof(T) == typeof(double2))
+            {
+                double2* values = (double2*)pointer.ToPointer();
+                for (int i = 0; i < length; i++)
+                {
+                    double2 value = values[i];
+                    if (!math.all(math.isfinite(value)))
+                        values[i] = default;
+                }
+
+                return;
+            }
+
+            if (typeof(T) == typeof(double3))
+            {
+                double3* values = (double3*)pointer.ToPointer();
+                for (int i = 0; i < length; i++)
+                {
+                    double3 value = values[i];
+                    if (!math.all(math.isfinite(value)))
+                        values[i] = default;
+                }
+
+                return;
+            }
+
+            if (typeof(T) == typeof(double4))
+            {
+                double4* values = (double4*)pointer.ToPointer();
+                for (int i = 0; i < length; i++)
+                {
+                    double4 value = values[i];
+                    if (!math.all(math.isfinite(value)))
+                        values[i] = default;
+                }
+            }
         }
 
         private static void ValidateType<T>(BufferID bufferId, VaultBufferMeta meta, int stride, int alignment) where T : struct

@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Burst;
@@ -23,6 +23,7 @@ namespace Hecton8.VFX.Debris
     [DisallowMultipleComponent]
     public sealed class CarveDebrisComputeRenderer : MonoBehaviour,
         IUpdatable,
+        IDebrisComputeService,
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener,
         IScalabilityChangedEventListener
@@ -41,6 +42,7 @@ namespace Hecton8.VFX.Debris
         private const int HighTierParticlesPerCarve = 64;
         private const int MaxCarveSignalsPerFrame = 32;
         private const int MaxCarveSignalScanPerFrame = 64;
+        private const int MaxDebrisSpawnSignalScanPerFrame = 64;
         private const int TelemetryPublishStride = 30;
         private const int GlobalSdfRefreshStrideFrames = 4;
         private const int TierSwitchConfirmFrames = 120;
@@ -184,6 +186,7 @@ namespace Hecton8.VFX.Debris
         private bool _tierCacheInitialized;
         private bool _hotSwapRegistered;
         private bool _scalabilityEventsRegistered;
+        private bool _computeServiceRegistered;
 
         private void Awake()
         {
@@ -193,6 +196,7 @@ namespace Hecton8.VFX.Debris
         private void OnEnable()
         {
             EnsureFallbackRenderResources();
+            TryRegisterComputeService();
             TryRegisterHotSwapListener();
             TryRegisterScalabilityEvents();
             TryRegisterTick();
@@ -201,6 +205,7 @@ namespace Hecton8.VFX.Debris
 
         private void Start()
         {
+            TryRegisterComputeService();
             TryRegisterHotSwapListener();
             TryRegisterScalabilityEvents();
             TryRegisterTick();
@@ -209,6 +214,7 @@ namespace Hecton8.VFX.Debris
 
         private void OnDisable()
         {
+            TryUnregisterComputeService();
             TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
             if (_registered)
@@ -245,6 +251,30 @@ namespace Hecton8.VFX.Debris
         }
 #endif
 
+        /// <inheritdoc />
+        public bool IsInitialized => _gpuReady && IsGpuStateValid();
+
+        /// <inheritdoc />
+        public int ActiveDebrisCount => _activeMirrorCount;
+
+        /// <inheritdoc />
+        public int ActiveParticleCapacity => ResolveActiveCapacity(_cachedLowTier);
+
+        /// <inheritdoc />
+        public bool IsLowTierActive => _cachedLowTier;
+
+        /// <inheritdoc />
+        public void ClearGpuDebris()
+        {
+            _activeMirrorCount = 0;
+            _pendingAupShift = default;
+            _lastAppliedAupShift = default;
+            _lastFlowActive = false;
+            _lastSdfActive = false;
+            if (IsGpuStateValid())
+                ClearMirrorsAndUpload();
+        }
+
         public void Tick(float deltaTime)
         {
             if (!enabled)
@@ -276,6 +306,25 @@ namespace Hecton8.VFX.Debris
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterComputeService()
+        {
+            IDebrisComputeService registered = GlobalRegistry.DebrisCompute;
+            if (registered != null && !ReferenceEquals(registered, this))
+                return;
+
+            GlobalRegistry.RegisterDebrisComputeService(this);
+            _computeServiceRegistered = ReferenceEquals(GlobalRegistry.DebrisCompute, this);
+        }
+
+        private void TryUnregisterComputeService()
+        {
+            if (!_computeServiceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterDebrisComputeService(this);
+            _computeServiceRegistered = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -663,9 +712,6 @@ namespace Hecton8.VFX.Debris
         {
             ReadOnlySpan<VoxelCarveEvent> carveSignals = SignalBus<VoxelCarveEvent>.GetFrameSnapshot();
             int signalCount = math.min(carveSignals.Length, MaxCarveSignalScanPerFrame);
-            if (signalCount <= 0)
-                return 0;
-
             int particlesPerCarve = lowTier ? LowTierParticlesPerCarve : HighTierParticlesPerCarve;
             int queuedCarves = 0;
             int requestCount = 0;
@@ -699,6 +745,19 @@ namespace Hecton8.VFX.Debris
                     Life = 1f,
                     Seed = seed
                 };
+                requestCount++;
+                queuedCarves++;
+            }
+
+            ReadOnlySpan<DebrisSpawnSignal> debrisSignals = SignalBus<DebrisSpawnSignal>.GetFrameSnapshot();
+            int debrisSignalCount = math.min(debrisSignals.Length, MaxDebrisSpawnSignalScanPerFrame);
+            for (int i = 0; i < debrisSignalCount && requestCount < MaxCarveSignalsPerFrame; i++)
+            {
+                DebrisSpawnSignal debrisSignal = debrisSignals[i];
+                if (!TryBuildComputeShardRequest(in debrisSignal, particlesPerCarve, out CarveDebrisRequest request))
+                    continue;
+
+                _carveRequests[requestCount] = request;
                 requestCount++;
                 queuedCarves++;
             }
@@ -1410,6 +1469,64 @@ namespace Hecton8.VFX.Debris
                    qualityTier == HectonQualityTier.Unknown ||
                    qualityTier == HectonQualityTier.Low ||
                    qualityTier == HectonQualityTier.Mx350;
+        }
+
+        private bool TryBuildComputeShardRequest(
+            in DebrisSpawnSignal signal,
+            int particlesPerSignal,
+            out CarveDebrisRequest request)
+        {
+            request = default;
+            if ((signal.Flags & DebrisSpawnSignal.FlagComputeShard) == 0)
+                return false;
+
+            float intensity01 = math.saturate(signal.Intensity01);
+            float3 center = signal.PositionAup.ToRuntimeFloat3();
+            if (!math.isfinite(intensity01) || !math.all(math.isfinite(center)))
+            {
+                _jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
+                return false;
+            }
+
+            uint seed = signal.SourceEntityId ^
+                        (signal.SpeciesHash * 747796405u) ^
+                        ((uint)signal.DebrisKind << 24) ^
+                        (_frameSequence * 2891336453u);
+            seed = seed == 0u ? 1u : seed;
+            int quantity = signal.Quantity > 0 ? signal.Quantity : particlesPerSignal;
+            request = new CarveDebrisRequest
+            {
+                Center = center,
+                EjectionAxis = BuildSignalEjectionAxis(seed),
+                Radius = math.lerp(0.08f, 0.85f, intensity01),
+                ParticlesToInject = math.clamp(quantity, 1, particlesPerSignal),
+                InitialSpeed = initialVelocityMetersPerSecond * math.lerp(0.65f, 1.45f, intensity01),
+                Life = 1f,
+                Seed = seed
+            };
+            return true;
+        }
+
+        private static float3 BuildSignalEjectionAxis(uint seed)
+        {
+            float3 axis = new float3(
+                HashToSigned01(seed ^ 0x9E3779B9u),
+                math.abs(HashToSigned01(seed ^ 0x85EBCA6Bu)) + 0.2f,
+                HashToSigned01(seed ^ 0xC2B2AE35u));
+            float lengthSq = math.lengthsq(axis);
+            return lengthSq > 0.0001f && math.all(math.isfinite(axis))
+                ? axis * math.rsqrt(lengthSq)
+                : new float3(0f, 1f, 0f);
+        }
+
+        private static float HashToSigned01(uint value)
+        {
+            value ^= value >> 16;
+            value *= 2246822519u;
+            value ^= value >> 13;
+            value *= 3266489917u;
+            value ^= value >> 16;
+            return ((value & 0x00FFFFFFu) * (1f / 8388607.5f)) - 1f;
         }
 
         private static bool IsFiniteCarveEvent(in VoxelCarveEvent carveEvent)

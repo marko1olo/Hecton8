@@ -1,6 +1,6 @@
 using Hecton8.Audio;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Input;
 using Hecton8.Interaction;
 using Hecton8.Physics;

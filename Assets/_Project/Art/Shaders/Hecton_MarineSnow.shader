@@ -34,7 +34,7 @@ Shader "Hecton8/VFX/MarineSnow"
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            struct Particle
+            struct SiltParticle
             {
                 float3 Pos;
                 float Life;
@@ -46,7 +46,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 float2 Pad;
             };
 
-            StructuredBuffer<Particle> _MarineSnowParticles;
+            StructuredBuffer<SiltParticle> _MarineSnowParticles;
             StructuredBuffer<uint> _MarineSnowVisibleParticleIndices;
 
             struct MarineSnowFrameData
@@ -121,7 +121,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 instanceID = unity_InstanceID;
             #endif
                 uint particleIndex = _MarineSnowVisibleParticleIndices[instanceID];
-                Particle particle = _MarineSnowParticles[particleIndex];
+                SiltParticle particle = _MarineSnowParticles[particleIndex];
                 float active = step(0.5, _MarineSnowMetaParams.w);
                 float densityScale = saturate(_MarineSnowCameraUp_Density.w);
                 float2 corner = ResolveQuadCorner(input.vertexID);
@@ -132,6 +132,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 float invMaxDistanceSq = rcp(maxDistance * maxDistance);
                 float distanceFade = saturate(1.0 - dot(cameraDelta, cameraDelta) * invMaxDistanceSq);
                 float isBubble = ((particle.Flags & 1u) != 0u) ? 1.0 : 0.0;
+                float headlightBoost = saturate(particle.Pad.y);
                 float size = particle.Size * lerp(0.65, 1.0, distanceFade) * lerp(1.0, 1.65, isBubble);
                 float stretchScale = max(1.0, _MarineSnowCameraVelocity_Stretch.w);
                 float2 screenMotion = float2(
@@ -148,7 +149,8 @@ Shader "Hecton8/VFX/MarineSnow"
                 output.positionCS = TransformWorldToHClip(worldPosition);
                 output.uv = corner * 0.5 + 0.5;
                 output.color = lerp(_MarineSnowTint, float4(0.72, 0.88, 0.94, _MarineSnowTint.a * 0.72), isBubble);
-                output.color.a *= active * densityScale * particle.Life * distanceFade;
+                output.color.rgb *= 1.0 + headlightBoost * 1.45;
+                output.color.a *= active * densityScale * particle.Life * distanceFade * (1.0 + headlightBoost * 0.65);
                 return output;
             }
 
@@ -173,6 +175,172 @@ Shader "Hecton8/VFX/MarineSnow"
                 float alpha = FastRadialSoftness(radial, _MarineSnowRenderParams.y) * input.color.a;
                 float coverage = step(MarineSnowDither01(input.positionCS.xy), saturate(alpha));
                 return half4(input.color.rgb, coverage);
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "MotionVectors"
+            Tags { "LightMode" = "MotionVectors" }
+
+            ZWrite Off
+            ZTest LEqual
+            ColorMask RG
+            AlphaToMask On
+
+            HLSLPROGRAM
+            #pragma target 4.5
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
+
+            struct SiltParticle
+            {
+                float3 Pos;
+                float Life;
+                float3 Vel;
+                float Size;
+                float3 PrevPos;
+                uint Flags;
+                float2 UV;
+                float2 Pad;
+            };
+
+            StructuredBuffer<SiltParticle> _MarineSnowParticles;
+            StructuredBuffer<uint> _MarineSnowVisibleParticleIndices;
+
+            struct MarineSnowFrameData
+            {
+                float4 CameraPositionTime;
+                float4 CameraRightDeltaTime;
+                float4 CameraUpDensity;
+                float4 FlowFieldCenterCellSize;
+                float4 ShellParams;
+                float4 MetaParams;
+                float4 CameraVelocityStretch;
+            };
+
+            StructuredBuffer<MarineSnowFrameData> _HectonMarineSnowFrame;
+
+            #define _MarineSnowCameraPosition_Time (_HectonMarineSnowFrame[0].CameraPositionTime)
+            #define _MarineSnowCameraRight_DeltaTime (_HectonMarineSnowFrame[0].CameraRightDeltaTime)
+            #define _MarineSnowCameraUp_Density (_HectonMarineSnowFrame[0].CameraUpDensity)
+            #define _MarineSnowMetaParams (_HectonMarineSnowFrame[0].MetaParams)
+            #define _MarineSnowCameraVelocity_Stretch (_HectonMarineSnowFrame[0].CameraVelocityStretch)
+
+            float4 _MarineSnowRenderParams;
+
+            struct Attributes
+            {
+                uint vertexID : SV_VertexID;
+                uint instanceID : SV_InstanceID;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float4 positionCSNoJitter : POSITION_CS_NO_JITTER;
+                float4 previousPositionCSNoJitter : PREV_POSITION_CS_NO_JITTER;
+                float2 uv : TEXCOORD0;
+                float alpha : TEXCOORD1;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            float2 ResolveQuadCorner(uint vertexID)
+            {
+                if (vertexID == 0) return float2(-1.0, -1.0);
+                if (vertexID == 1) return float2(-1.0,  1.0);
+                if (vertexID == 2) return float2( 1.0,  1.0);
+                if (vertexID == 3) return float2(-1.0, -1.0);
+                if (vertexID == 4) return float2( 1.0,  1.0);
+                return float2(1.0, -1.0);
+            }
+
+            float2 DominantAxisDirection2(float2 value)
+            {
+                float2 absValue = abs(value);
+                if (absValue.x <= 0.0001 && absValue.y <= 0.0001)
+                    return float2(0.0, 1.0);
+
+                if (absValue.x >= absValue.y)
+                    return float2(value.x >= 0.0 ? 1.0 : -1.0, 0.0);
+
+                return float2(0.0, value.y >= 0.0 ? 1.0 : -1.0);
+            }
+
+            Varyings vert(Attributes input)
+            {
+                Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                uint instanceID = input.instanceID;
+            #if UNITY_ANY_INSTANCING_ENABLED
+                instanceID = unity_InstanceID;
+            #endif
+                uint particleIndex = _MarineSnowVisibleParticleIndices[instanceID];
+                SiltParticle particle = _MarineSnowParticles[particleIndex];
+                float active = step(0.5, _MarineSnowMetaParams.w);
+                float densityScale = saturate(_MarineSnowCameraUp_Density.w);
+                float2 corner = ResolveQuadCorner(input.vertexID);
+                float3 cameraRight = _MarineSnowCameraRight_DeltaTime.xyz;
+                float3 cameraUp = _MarineSnowCameraUp_Density.xyz;
+                float maxDistance = max(_MarineSnowRenderParams.z, 0.25);
+                float3 cameraDelta = particle.Pos - _MarineSnowCameraPosition_Time.xyz;
+                float invMaxDistanceSq = rcp(maxDistance * maxDistance);
+                float distanceFade = saturate(1.0 - dot(cameraDelta, cameraDelta) * invMaxDistanceSq);
+                float isBubble = ((particle.Flags & 1u) != 0u) ? 1.0 : 0.0;
+                float headlightBoost = saturate(particle.Pad.y);
+                float size = particle.Size * lerp(0.65, 1.0, distanceFade) * lerp(1.0, 1.65, isBubble);
+                float stretchScale = max(1.0, _MarineSnowCameraVelocity_Stretch.w);
+                float2 screenMotion = float2(
+                    dot(-_MarineSnowCameraVelocity_Stretch.xyz, cameraRight),
+                    dot(-_MarineSnowCameraVelocity_Stretch.xyz, cameraUp));
+                float2 stretchAxis = DominantAxisDirection2(screenMotion);
+                float2 crossAxis = float2(-stretchAxis.y, stretchAxis.x);
+                float2 stretchedCorner =
+                    stretchAxis * (dot(corner, stretchAxis) * stretchScale) +
+                    crossAxis * dot(corner, crossAxis);
+                float3 billboardOffset = (cameraRight * stretchedCorner.x + cameraUp * stretchedCorner.y) * size;
+                float3 currentWorldPosition = particle.Pos + billboardOffset;
+                float3 previousWorldPosition = particle.PrevPos + billboardOffset;
+
+                output.positionCS = TransformWorldToHClip(currentWorldPosition);
+                output.positionCSNoJitter = mul(_NonJitteredViewProjMatrix, float4(currentWorldPosition, 1.0));
+                output.previousPositionCSNoJitter = mul(_PrevViewProjMatrix, float4(previousWorldPosition, 1.0));
+                ApplyMotionVectorZBias(output.positionCS);
+                output.uv = corner * 0.5 + 0.5;
+                output.alpha = active * densityScale * particle.Life * distanceFade * (1.0 + headlightBoost * 0.65);
+                return output;
+            }
+
+            float FastRadialSoftness(float radial, float softness)
+            {
+                float radial2 = radial * radial;
+                float radial4 = radial2 * radial2;
+                return lerp(radial, radial4, saturate((softness - 1.0) * 0.3333));
+            }
+
+            float MarineSnowDither01(float2 pixel)
+            {
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float4 frag(Varyings input) : SV_Target
+            {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                float2 centered = input.uv * 2.0 - 1.0;
+                float radial = saturate(1.0 - dot(centered, centered));
+                float alpha = FastRadialSoftness(radial, _MarineSnowRenderParams.y) * input.alpha;
+                float coverage = step(MarineSnowDither01(input.positionCS.xy), saturate(alpha));
+                return float4(CalcNdcMotionVectorFromCsPositions(input.positionCSNoJitter, input.previousPositionCSNoJitter), 0, saturate(coverage));
             }
             ENDHLSL
         }

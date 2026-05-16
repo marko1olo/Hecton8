@@ -70,6 +70,54 @@ namespace Hecton8.Core.Contracts
     }
 
     /// <summary>
+    /// DataVault-backed STP render-scale state. One element is owned by the graphics scalability adapter.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    public struct ResolutionScaleState
+    {
+        public float CurrentRenderScale01;
+        public float TargetRenderScale01;
+        public float SystemStress01;
+        public float SystemStressEwma01;
+        public float FrameTimeEwmaMs;
+        public float SharpenIntensity01;
+        public uint Frame;
+        public uint Sequence;
+        public byte HardwareTier;
+        public byte StpActive;
+        public byte Flags;
+        public byte AupLockFrames;
+        public int Reserved0;
+    }
+
+    /// <summary>
+    /// Flag bits packed into <see cref="ResolutionScaleState.Flags"/>.
+    /// </summary>
+    public static class ResolutionScaleStateFlags
+    {
+        public const byte LowTierEmergency = 1 << 0;
+        public const byte FramePressure = 1 << 1;
+        public const byte ThermalPressure = 1 << 2;
+        public const byte AupLocked = 1 << 3;
+        public const byte InvalidStateRecovered = 1 << 4;
+    }
+
+    /// <summary>
+    /// Registry-facing STP dynamic-resolution policy service.
+    /// </summary>
+    public interface IResolutionScalerService : IDisposable
+    {
+        float CurrentRenderScale01 { get; }
+        float TargetRenderScale01 { get; }
+        float SystemStress01 { get; }
+        float SystemStressEwma01 { get; }
+        float SharpenIntensity01 { get; }
+        byte HardwareTier { get; }
+        bool StpActive { get; }
+        bool TryGetScaleState(out ResolutionScaleState state);
+    }
+
+    /// <summary>
     /// Registry-owned render-scale writer. Graphics policy systems push numeric overrides through this contract.
     /// </summary>
     public interface IDynamicResolutionRuntime : IDisposable

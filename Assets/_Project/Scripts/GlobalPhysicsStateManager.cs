@@ -7,7 +7,7 @@ using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
@@ -365,7 +365,7 @@ namespace Hecton8.Physics
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct PhysicsDistanceCullingJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float3> RigidbodyAUPs;
+            [ReadOnly] public NativeArray<double3> RigidbodyAUPs;
             [ReadOnly] public NativeArray<byte> CurrentStates;
             [WriteOnly] public NativeArray<byte> AwakeResults;
             [WriteOnly] public NativeArray<byte> CommandResults;
@@ -391,7 +391,7 @@ namespace Hecton8.Physics
                     return;
                 }
 
-                float3 playerRelativeAup = RigidbodyAUPs[index];
+                double3 playerRelativeAup = RigidbodyAUPs[index];
                 if (!math.all(math.isfinite(playerRelativeAup)))
                 {
                     AwakeResults[index] = 1;
@@ -400,9 +400,12 @@ namespace Hecton8.Physics
                     return;
                 }
 
-                float distanceSq = math.distancesq(float3.zero, playerRelativeAup);
-                DistanceSqResults[index] = math.isfinite(distanceSq) ? distanceSq : 0f;
-                if (!math.isfinite(distanceSq))
+                double distanceSqDouble = math.lengthsq(playerRelativeAup);
+                float distanceSq = math.isfinite(distanceSqDouble) && distanceSqDouble < float.MaxValue
+                    ? (float)distanceSqDouble
+                    : float.MaxValue;
+                DistanceSqResults[index] = distanceSq;
+                if (!math.isfinite(distanceSqDouble))
                 {
                     AwakeResults[index] = 1;
                     CommandResults[index] = CullingCommandAwake | CullingCommandInvalidInput;
@@ -414,7 +417,11 @@ namespace Hecton8.Physics
                     effectiveSleepDistance *= AbyssalDepthSleepDistanceScale;
 
                 float3 safeCameraForward = math.normalizesafe(CameraForward, new float3(0f, 0f, 1f));
-                bool behindCamera = math.dot(playerRelativeAup, safeCameraForward) < 0f;
+                double behindDot =
+                    playerRelativeAup.x * safeCameraForward.x +
+                    playerRelativeAup.y * safeCameraForward.y +
+                    playerRelativeAup.z * safeCameraForward.z;
+                bool behindCamera = behindDot < 0d;
                 if (behindCamera)
                     effectiveSleepDistance *= BehindCameraSleepDistanceScale;
 
@@ -580,7 +587,7 @@ namespace Hecton8.Physics
         private readonly List<MeshCollider> _meshColliderScratch = new List<MeshCollider>(MeshColliderScratchCapacity);
 
         private NativeArray<float3> _lastValidPositions;
-        private NativeArray<float3> _rigidbodyAUPs;
+        private NativeArray<double3> _rigidbodyAUPs;
         private NativeArray<byte> _rigidbodyCullingStateSnapshot;
         private NativeArray<byte> _rigidbodyAwakeResults;
         private NativeArray<byte> _rigidbodyCullingCommandResults;
@@ -1002,26 +1009,16 @@ namespace Hecton8.Physics
 
             if (!_rigidbodyAUPs.IsCreated)
             {
-                // COLD ALLOC: NativeArray<float3>[512] - player-relative AUP body positions for Burst distance culling - owner: GlobalPhysicsStateManager
+                // COLD ALLOC: NativeArray<double3>[512] - player-relative AUP body positions for Burst distance culling - owner: GlobalPhysicsStateManager
                 IDataVault dataVault = GlobalRegistry.DataVault;
                 if (dataVault != null)
                 {
-                    _rigidbodyAUPs = dataVault.GetBuffer<float3>(
+                    _rigidbodyAUPs = dataVault.GetBuffer<double3>(
                         BufferID.RigidbodyAUPs,
                         MaxTrackedBodies,
                         SystemID.GlobalPhysicsStateManager,
                         NativeArrayOptions.ClearMemory);
                     _rigidbodyAUPsVaultOwned = _rigidbodyAUPs.IsCreated;
-                }
-
-                if (!_rigidbodyAUPs.IsCreated)
-                {
-                    _rigidbodyAUPsVaultOwned = false;
-                    _rigidbodyAUPs = H8Memory.Allocate<float3>(
-                        MaxTrackedBodies,
-                        SystemID.GlobalPhysicsStateManager,
-                        Allocator.Persistent,
-                        NativeArrayOptions.ClearMemory);
                 }
 
                 if (_rigidbodyAUPs.IsCreated)
@@ -1522,7 +1519,7 @@ namespace Hecton8.Physics
 
                 _lastValidPositions[i] = new float3(targetPosition.x, targetPosition.y, targetPosition.z);
                 if (_rigidbodyAUPs.IsCreated)
-                    _rigidbodyAUPs[i] = _lastValidPositions[i];
+                    _rigidbodyAUPs[i] = new double3(targetPosition.x, targetPosition.y, targetPosition.z);
                 bodyState.HasLastValidPosition = true;
                 bodyState.LastValidAup = AbsoluteUniversePosition.FromRuntimePosition(targetPosition);
                 bodyState.HasLastValidAup = true;
@@ -2564,14 +2561,14 @@ namespace Hecton8.Physics
                 if (!TryResolveTrackedBodyAup(body, ref bodyState, out AbsoluteUniversePosition bodyAup))
                 {
                     _bodyStates[bodyIndex] = bodyState;
-                    _rigidbodyAUPs[bodyIndex] = float3.zero;
+                    _rigidbodyAUPs[bodyIndex] = double3.zero;
                     _rigidbodyCullingStateSnapshot[bodyIndex] = CullingStateIgnoreCulling;
                     bodyIndex++;
                     continue;
                 }
 
                 _bodyStates[bodyIndex] = bodyState;
-                _rigidbodyAUPs[bodyIndex] = AbsoluteUniversePosition.ToCameraRelativeFloat3(in bodyAup, in playerAup);
+                _rigidbodyAUPs[bodyIndex] = AbsoluteUniversePosition.DeltaMetersClamped(in bodyAup, in playerAup);
                 _rigidbodyCullingStateSnapshot[bodyIndex] = BuildPhysicsCullingStateSnapshot(in bodyState);
                 bodyIndex++;
             }

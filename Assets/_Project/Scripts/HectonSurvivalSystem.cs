@@ -5,7 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Items;
 using Hecton8.Meta;
 using Hecton8.Modding;

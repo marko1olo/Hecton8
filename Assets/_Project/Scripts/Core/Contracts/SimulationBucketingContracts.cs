@@ -46,6 +46,39 @@ namespace Hecton8.Core
 
         /// <summary>Minimum active slow bucket count used during debt, AUP barriers, and low tier.</summary>
         public const byte MinimumActiveSlowBucketCount = 1;
+
+        /// <summary>Target 60 FPS frame duration in milliseconds.</summary>
+        public const float TargetFrameMilliseconds = 16.667f;
+
+        /// <summary>PRE_SIMULATION hard budget in milliseconds.</summary>
+        public const float PreSimulationBudgetMilliseconds = 1.5f;
+
+        /// <summary>High-tier dynamic rebalance cadence in dispatcher frames.</summary>
+        public const int RebalanceCadenceFrames = 60;
+    }
+
+    /// <summary>
+    /// Bit flags describing current simulation-bucket frame-pacing pressure.
+    /// </summary>
+    public static class SimulationBucketPacingFlags
+    {
+        /// <summary>Frame cost exceeds the 60 FPS mathematical budget after bucketing.</summary>
+        public const uint Impossible60Fps = 1u << 0;
+
+        /// <summary>PRE_SIMULATION exceeded its 1.5 ms phase budget.</summary>
+        public const uint PreSimulationOverBudget = 1u << 1;
+
+        /// <summary>A non-finite measured cost was sanitized.</summary>
+        public const uint NonFiniteCost = 1u << 2;
+
+        /// <summary>A background rebalance job is pending and the current frame uses the last stable table.</summary>
+        public const uint RebalancePending = 1u << 3;
+
+        /// <summary>Low-tier static distribution is active.</summary>
+        public const uint LowTierStaticDistribution = 1u << 4;
+
+        /// <summary>The dispatcher requested homeostasis load shedding for this frame.</summary>
+        public const uint HomeostasisKillRequested = 1u << 5;
     }
 
     /// <summary>
@@ -83,6 +116,27 @@ namespace Hecton8.Core
 
         /// <summary>Last measured active bucket workload in milliseconds.</summary>
         public float ActiveBucketLoadMs;
+
+        /// <summary>EWMA absolute jitter deviation in milliseconds.</summary>
+        public float JitterVarianceMs;
+
+        /// <summary>Expected maximum bucket load after the latest accepted rebalance.</summary>
+        public float ExpectedMaxBucketLoadMs;
+
+        /// <summary>Expected mean bucket load after the latest accepted rebalance.</summary>
+        public float ExpectedMeanBucketLoadMs;
+
+        /// <summary>Dispatcher-measured PRE_SIMULATION phase cost in milliseconds.</summary>
+        public float PreSimulationCostMs;
+
+        /// <summary>Globally broadcast interpolation alpha for bucketed presentation.</summary>
+        public float SimulationBucketInterpolationAlpha;
+
+        /// <summary>Frame-pacing flags from <see cref="SimulationBucketPacingFlags"/>.</summary>
+        public uint FramePacingFlags;
+
+        /// <summary>Accepted dynamic rebalance sequence number.</summary>
+        public uint RebalanceSequence;
     }
 
     /// <summary>
@@ -135,6 +189,21 @@ namespace Hecton8.Core
         /// <summary>Last measured active bucket workload in milliseconds.</summary>
         float LastActiveBucketLoadMs { get; }
 
+        /// <summary>EWMA absolute jitter deviation in milliseconds.</summary>
+        float JitterVarianceMs { get; }
+
+        /// <summary>Expected maximum bucket load from the latest accepted rebalance.</summary>
+        float ExpectedMaxBucketLoadMs { get; }
+
+        /// <summary>Expected mean bucket load from the latest accepted rebalance.</summary>
+        float ExpectedMeanBucketLoadMs { get; }
+
+        /// <summary>Globally synchronized interpolation alpha for bucketed presentation.</summary>
+        float SimulationBucketInterpolationAlpha { get; }
+
+        /// <summary>Current frame pacing flags.</summary>
+        uint FramePacingFlags { get; }
+
         /// <summary>True when AUP shift safety is holding staggered simulation to one slow bucket.</summary>
         bool AupBarrierActive { get; }
 
@@ -152,6 +221,16 @@ namespace Hecton8.Core
         /// <summary>Stores the measured active bucket load for black-box telemetry.</summary>
         /// <param name="milliseconds">Measured milliseconds. Non-finite values are clamped to zero.</param>
         void ReportActiveBucketLoadMs(float milliseconds);
+
+        /// <summary>Stores the measured PRE_SIMULATION cost for phase-lock warnings.</summary>
+        /// <param name="milliseconds">Measured milliseconds. Non-finite values are clamped to zero.</param>
+        void ReportPreSimulationCostMs(float milliseconds);
+
+        /// <summary>Feeds an entity's measured work cost into the rebalance EWMA table.</summary>
+        /// <param name="entityIndex">Entity registry index.</param>
+        /// <param name="measuredCostMs">Measured cost in milliseconds.</param>
+        /// <returns>True when the cost was accepted.</returns>
+        bool TryReportEntityCostMs(int entityIndex, float measuredCostMs);
 
         /// <summary>Resolves the registry index for a stable hash.</summary>
         /// <param name="stableHash">Entity stable hash.</param>

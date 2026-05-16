@@ -1,7 +1,7 @@
 using System;
 using Hecton.Localization;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using TMPro;
 using Unity.Collections;
 using Unity.Jobs;

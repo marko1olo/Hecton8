@@ -7,7 +7,7 @@ using Hecton8.Caves;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.SaveSystem;
 using Unity.Burst;
 using Unity.Collections;
@@ -1604,7 +1604,7 @@ namespace Hecton8.World
         private void EmitThermalShock(Vector3 positionWS, float deltaCelsius, int sourceId, GameObject targetObject, byte temperatureFlags)
         {
             uint targetHash = targetObject != null ? unchecked((uint)EntityId.ToULong(targetObject.GetEntityId())) : 0u;
-            Hecton8.Core.Signals.CombatDamageSignal damage = default;
+            Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
             damage.WorldPoint = new float3(positionWS.x, positionWS.y, positionWS.z);
             damage.Direction = new float3(0f, 1f, 0f);
             damage.Magnitude = ThermalShockDamageMagnitude;
@@ -1617,7 +1617,7 @@ namespace Hecton8.World
                 ? (ushort)math.min(CombatDamageRuntime.ResolveTargetId(targetObject), ushort.MaxValue)
                 : (ushort)0;
             damage.Channel = ThermalShockAcousticChannel;
-            damage.Flags = Hecton8.Core.Signals.CombatDamageSignal.DirectRuntimeFlag;
+            damage.Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag;
             damage.IntegrityDelta = 1;
             GlobalSignals.Publish(in damage);
 

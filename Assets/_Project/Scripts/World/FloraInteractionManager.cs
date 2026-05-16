@@ -1,16 +1,19 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.AI;
 using Hecton8.Celestial;
 using Hecton8.Construction;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Memory;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Systems.AI;
+using Hecton8.VFX.Wakes;
 using Hecton.Localization;
 using Unity.Burst;
 using Unity.Collections;
@@ -47,20 +50,6 @@ namespace Hecton8.World
         {
             public Vector4 UvEllipse;
             public Vector4 DirectionStrengthVertical;
-        }
-
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
-        private struct ProceduralWakePoint
-        {
-            public float3 PositionWS;
-            public float3 TargetWS;
-            public float3 VelocityWS;
-            public float Radius;
-            public float Intensity;
-            public float AgeSeconds;
-            public byte SourceKind;
-            public byte Active;
-            public ushort Padding;
         }
 
         private struct ModuleParasiteState
@@ -308,7 +297,9 @@ namespace Hecton8.World
 
         private const int MaxPublishedInteractionPoints = 12;
         private const int MaxExternalInteractionPoints = 4;
-        private const int MaxProceduralWakePoints = 32;
+        private const int MaxProceduralWakePoints = 16;
+        private const int LowTierWakeSlotLimit = 4;
+        private const int WakeBlackBoxCapacity = 300;
         private const int MaxWakeSignalsPerFrame = 64;
         private const int MaxQueryColliders = 32;
         private const int MaxModuleQueryHits = 32;
@@ -331,6 +322,12 @@ namespace Hecton8.World
         private const float WakeDecayPerSecond = 0.85f;
         private const float WakeFollowSharpness = 9.5f;
         private const float WakeMinimumPublishedIntensity = 0.01f;
+        private const float WakeFluidImpulseThreshold = 0.55f;
+        private const uint WakeBlackBoxInvalidInputFlag = 1u << 0;
+        private const uint WakeBlackBoxNaNFlag = 1u << 1;
+        private const uint WakeBlackBoxLowTierFlag = 1u << 2;
+        private const uint WakeBlackBoxStressCapFlag = 1u << 3;
+        private const uint WakeFluidImpulseSourceHash = 0x57414B45u;
         private const float ApexPredatorWakeMinSpeed = 3f;
         private const float DefaultPlayerWakeRadius = 2.4f;
         private const float DefaultMaxBendRadius = 2.9f;
@@ -418,6 +415,9 @@ namespace Hecton8.World
         private static readonly int _ProceduralWakeBufferId = Shader.PropertyToID("_HectonFloraWakeBuffer");
         private static readonly int _ProceduralWakeCountId = Shader.PropertyToID("_HectonFloraWakeCount");
         private static readonly int _ProceduralWakeParamsId = Shader.PropertyToID("_HectonFloraWakeParams");
+        private static readonly int _GlobalWakeBufferId = Shader.PropertyToID("_GlobalWakeBuffer");
+        private static readonly int _GlobalWakeVectorBufferId = Shader.PropertyToID("_GlobalWakeVectors");
+        private static readonly int _GlobalWakeParamsId = Shader.PropertyToID("_GlobalWakeParams");
         private static readonly int _CulledFloraVisibleInstancesId = Shader.PropertyToID("_HectonCulledFloraVisibleInstances");
         private static readonly int _CulledFloraVisibleCountId = Shader.PropertyToID("_HectonCulledFloraVisibleCount");
         private static readonly int _ShearFoamAmountId = Shader.PropertyToID("_ShearFoamAmount");
@@ -901,10 +901,18 @@ namespace Hecton8.World
         private Vector2 _wakeTrailCenterXZ;
         private Vector2 _pendingWakeTrailScrollUv;
         private NativeArray<WakeTrailStampCommand> _queuedWakeTrailStampCommands;
-        private NativeArray<ProceduralWakePoint> _proceduralWakePoints;
+        private VaultBufferHandle<WakeSource> _proceduralWakePointsHandle;
+        private VaultBufferHandle<float4> _globalWakeBufferHandle;
+        private VaultBufferHandle<float4> _globalWakeVectorBufferHandle;
+        private VaultBufferHandle<WakeTelemetryEntry> _wakeBlackBoxHandle;
+        private IDataVault _wakeDataVault;
         private Vector4[] _proceduralWakeShaderBuffer;
+        private Vector4[] _globalWakeShaderBuffer;
+        private Vector4[] _globalWakeVectorShaderBuffer;
         private int _publishedProceduralWakeCount;
         private float _publishedShearFoamAmount;
+        private int _wakeBlackBoxCursor;
+        private bool _wakeBlackBoxDumped;
         private bool _proceduralWakeGlobalsInitialized;
         private float _wakeTrailRuntimeWorldSize;
         private float _wakeTrailEnergy;
@@ -1005,7 +1013,7 @@ namespace Hecton8.World
         public Vector3 LastPublishedScooterWakePosition => _lastPublishedScooterWakePosition;
 
         /// <inheritdoc />
-        public bool IsInitialized => _proceduralWakePoints.IsCreated && _proceduralWakeShaderBuffer != null;
+        public bool IsInitialized => _proceduralWakePointsHandle.IsCreated && _proceduralWakeShaderBuffer != null;
 
         /// <inheritdoc />
         public int ActiveWakeCount => _publishedProceduralWakeCount;
@@ -1102,8 +1110,12 @@ namespace Hecton8.World
             _interactionPoints = new FloraInteractionPointGpuData[_maxInteractionPoints];
             // COLD ALLOC: FloraInteractionPointGpuData[4] - external tool-impact vegetation interaction payloads - owner: FloraInteractionManager
             _externalInteractionPoints = new FloraInteractionPointGpuData[MaxExternalInteractionPoints];
-            // COLD ALLOC: Vector4[32] - fixed global procedural wake shader payload - owner: FloraInteractionManager
+            // COLD ALLOC: Vector4[16] - fixed global procedural wake shader payload - owner: FloraInteractionManager
             _proceduralWakeShaderBuffer = new Vector4[MaxProceduralWakePoints];
+            // COLD ALLOC: Vector4[16] - global wake source payload for cross-shader displacement - owner: FloraInteractionManager
+            _globalWakeShaderBuffer = new Vector4[MaxProceduralWakePoints];
+            // COLD ALLOC: Vector4[16] - global wake direction/radius payload for shader and compute consumers - owner: FloraInteractionManager
+            _globalWakeVectorShaderBuffer = new Vector4[MaxProceduralWakePoints];
             // COLD ALLOC: Collider[32] - NonAlloc interaction query results - owner: FloraInteractionManager
             _interactionColliders = new Collider[MaxQueryColliders];
             // COLD ALLOC: Rigidbody[32] - duplicate suppression for interaction query results - owner: FloraInteractionManager
@@ -1117,7 +1129,7 @@ namespace Hecton8.World
             _oceanFlowSamplePositions = new NativeArray<Vector3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Vector3>[1] - caller-owned ocean provider sample results for vegetation flow publishing - owner: FloraInteractionManager
             _oceanFlowSampleResults = new NativeArray<Vector3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _proceduralWakePoints = new NativeArray<ProceduralWakePoint>(MaxProceduralWakePoints, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ProceduralWakePoint>[32] - smoothed flora wake state - owner: FloraInteractionManager
+            ResolveProceduralWakeVaultBuffer(clearExisting: true);
             _reactiveFloraQueryHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - shared reactive flora spatial-query handle staging - owner: FloraInteractionManager
             _surfaceReactiveFloraHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - registered surface reactive-flora spatial handles - owner: FloraInteractionManager
             _underwaterReactiveFloraHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - registered underwater reactive-flora spatial handles - owner: FloraInteractionManager
@@ -1148,7 +1160,8 @@ namespace Hecton8.World
                 Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
 
             HectonFloatingOrigin.RegisterListener(this);
-            GlobalRegistry.RegisterProceduralSwayDirector(this);
+            GlobalRegistry.RegisterWakeDisplacementService(this);
+            ResolveProceduralWakeVaultBuffer(clearExisting: false);
             RefreshInstanceCullingService();
             TryRegisterCullingHotSwapListener();
             RefreshCachedSubmarineContext();
@@ -1165,7 +1178,7 @@ namespace Hecton8.World
                 s_ActiveRuntimeInstance = null;
 
             HectonFloatingOrigin.UnregisterListener(this);
-            GlobalRegistry.UnregisterProceduralSwayDirector(this);
+            GlobalRegistry.UnregisterWakeDisplacementService(this);
             TryUnregisterCullingHotSwapListener();
             _instanceCullingService = null;
             _submarineRuntimeContext = null;
@@ -1185,7 +1198,7 @@ namespace Hecton8.World
                 s_ActiveRuntimeInstance = null;
 
             HectonFloatingOrigin.UnregisterListener(this);
-            GlobalRegistry.UnregisterProceduralSwayDirector(this);
+            GlobalRegistry.UnregisterWakeDisplacementService(this);
             TryUnregisterCullingHotSwapListener();
             _instanceCullingService = null;
             _submarineRuntimeContext = null;
@@ -1200,7 +1213,11 @@ namespace Hecton8.World
 
             DisposeNativeArray(ref _oceanFlowSamplePositions);
             DisposeNativeArray(ref _oceanFlowSampleResults);
-            DisposeNativeArray(ref _proceduralWakePoints);
+            _proceduralWakePointsHandle = default;
+            _globalWakeBufferHandle = default;
+            _globalWakeVectorBufferHandle = default;
+            _wakeBlackBoxHandle = default;
+            _wakeDataVault = null;
 
             DisposeNativeArray(ref _cascadeReactiveTemplateMask);
             DisposeNativeArray(ref _defensiveSporeBurstTemplateMask);
@@ -2106,16 +2123,36 @@ namespace Hecton8.World
         /// <inheritdoc />
         public void ClearWakeBuffer()
         {
-            if (_proceduralWakePoints.IsCreated)
+            if (TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources))
             {
-                for (int i = 0; i < _proceduralWakePoints.Length; i++)
-                    _proceduralWakePoints[i] = default;
+                for (int i = 0; i < wakeSources.Length; i++)
+                    wakeSources[i] = default;
+            }
+
+            if (TryResolveGlobalWakeBuffers(out NativeArray<float4> globalWakes, out NativeArray<float4> globalWakeVectors))
+            {
+                for (int i = 0; i < globalWakes.Length; i++)
+                    globalWakes[i] = default;
+                for (int i = 0; i < globalWakeVectors.Length; i++)
+                    globalWakeVectors[i] = default;
             }
 
             if (_proceduralWakeShaderBuffer != null)
             {
                 for (int i = 0; i < _proceduralWakeShaderBuffer.Length; i++)
                     _proceduralWakeShaderBuffer[i] = Vector4.zero;
+            }
+
+            if (_globalWakeShaderBuffer != null)
+            {
+                for (int i = 0; i < _globalWakeShaderBuffer.Length; i++)
+                    _globalWakeShaderBuffer[i] = Vector4.zero;
+            }
+
+            if (_globalWakeVectorShaderBuffer != null)
+            {
+                for (int i = 0; i < _globalWakeVectorShaderBuffer.Length; i++)
+                    _globalWakeVectorShaderBuffer[i] = Vector4.zero;
             }
 
             _publishedProceduralWakeCount = 0;
@@ -2198,26 +2235,39 @@ namespace Hecton8.World
 
         private void DrainWakeGeneratedSignals()
         {
-            int drainBudget = MaxWakeSignalsPerFrame;
-            while (drainBudget-- > 0 && GlobalSignals.TryDequeueWakeGenerated(out WakeGeneratedSignal signal))
+            ReadOnlySpan<WakeGeneratedSignal> signals = SignalBus<WakeGeneratedSignal>.GetFrameSnapshot();
+            int drainCount = math.min(signals.Length, MaxWakeSignalsPerFrame);
+            for (int i = 0; i < drainCount; i++)
+            {
+                WakeGeneratedSignal signal = signals[i];
                 QueueProceduralWake(in signal);
+            }
         }
 
         private void QueueProceduralWake(in WakeGeneratedSignal signal)
         {
-            if (!_proceduralWakePoints.IsCreated)
+            if (!TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources))
                 return;
 
             float3 velocity = signal.Velocity;
             if (!math.all(math.isfinite(velocity)))
+            {
+                RecordWakeBlackBox(0, ResolveWakeSlotLimit(), 0f, 0f, float3.zero, float3.zero, WakeBlackBoxInvalidInputFlag | WakeBlackBoxNaNFlag);
                 return;
+            }
 
             if (!IsFiniteAup(in signal.PositionAup))
+            {
+                RecordWakeBlackBox(0, ResolveWakeSlotLimit(), 0f, 0f, float3.zero, velocity, WakeBlackBoxInvalidInputFlag);
                 return;
+            }
 
             float3 position = signal.PositionAup.ToRuntimeFloat3();
             if (!math.all(math.isfinite(position)))
+            {
+                RecordWakeBlackBox(0, ResolveWakeSlotLimit(), 0f, 0f, float3.zero, velocity, WakeBlackBoxInvalidInputFlag | WakeBlackBoxNaNFlag);
                 return;
+            }
 
             byte sourceKind = (byte)(signal.SourceFlags & 0xFFu);
             if (sourceKind == 0)
@@ -2233,8 +2283,9 @@ namespace Hecton8.World
                 radius <= 0.01f)
                 return;
 
-            int slot = FindProceduralWakeSlot(position, sourceKind, radius);
-            ProceduralWakePoint point = _proceduralWakePoints[slot];
+            int slotLimit = ResolveWakeSlotLimit();
+            int slot = FindProceduralWakeSlot(wakeSources, slotLimit, position, sourceKind, radius);
+            WakeSource point = wakeSources[slot];
             if (point.Active == 0 ||
                 math.distancesq(point.PositionWS, position) > math.max(radius * radius * 4f, 16f))
             {
@@ -2243,24 +2294,31 @@ namespace Hecton8.World
             }
 
             point.TargetWS = position;
+            point.PositionAup = signal.PositionAup;
             point.VelocityWS = velocity;
             point.Radius = math.max(point.Radius, radius);
             point.Intensity = math.max(point.Intensity, intensity);
+            point.SourceFlags = signal.SourceFlags;
+            point.FrameStamp = unchecked((uint)Mathf.Max(0, Time.frameCount));
             point.SourceKind = sourceKind;
             point.Active = 1;
-            _proceduralWakePoints[slot] = point;
+            wakeSources[slot] = point;
+
+            if (intensity >= WakeFluidImpulseThreshold && GlobalRegistry.ScalabilityTierProfileByte >= 2)
+                PublishWakeFluidImpulse(in signal, radius, intensity);
         }
 
-        private int FindProceduralWakeSlot(float3 position, byte sourceKind, float radius)
+        private int FindProceduralWakeSlot(NativeArray<WakeSource> wakeSources, int slotLimit, float3 position, byte sourceKind, float radius)
         {
             int firstInactive = -1;
             int weakestIndex = 0;
             float weakestIntensity = float.MaxValue;
             float mergeRadiusSq = math.max(4f, radius * radius * 0.64f);
+            int safeLimit = math.min(math.max(1, slotLimit), wakeSources.Length);
 
-            for (int i = 0; i < _proceduralWakePoints.Length; i++)
+            for (int i = 0; i < safeLimit; i++)
             {
-                ProceduralWakePoint point = _proceduralWakePoints[i];
+                WakeSource point = wakeSources[i];
                 if (point.Active == 0)
                 {
                     if (firstInactive < 0)
@@ -2283,48 +2341,65 @@ namespace Hecton8.World
 
         private void UpdateProceduralWakeBuffer(float deltaTime)
         {
-            if (!_proceduralWakePoints.IsCreated)
+            if (!TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources))
                 return;
 
             float safeDeltaTime = float.IsFinite(deltaTime) ? math.clamp(deltaTime, 0f, 0.1f) : 0f;
             float follow = math.saturate(safeDeltaTime * WakeFollowSharpness);
-            float decay = safeDeltaTime * WakeDecayPerSecond;
+            int slotLimit = ResolveWakeSlotLimit();
 
-            for (int i = 0; i < _proceduralWakePoints.Length; i++)
+            WakeDecayJob decayJob = new WakeDecayJob
             {
-                ProceduralWakePoint point = _proceduralWakePoints[i];
+                WakeSources = wakeSources,
+                DeltaTime = safeDeltaTime,
+                DecayRate = WakeDecayPerSecond,
+                SlotLimit = slotLimit
+            };
+            decayJob.Schedule(wakeSources.Length, 8).Complete();
+
+            for (int i = 0; i < wakeSources.Length; i++)
+            {
+                WakeSource point = wakeSources[i];
                 if (point.Active == 0)
                     continue;
 
                 point.PositionWS = math.lerp(point.PositionWS, point.TargetWS, follow);
-                point.Intensity = math.max(0f, point.Intensity - decay);
-                point.AgeSeconds += safeDeltaTime;
 
                 if (point.Intensity <= WakeMinimumPublishedIntensity ||
                     !float.IsFinite(point.Radius) ||
                     !float.IsFinite(point.Intensity) ||
                     !math.all(math.isfinite(point.PositionWS)) ||
-                    !math.all(math.isfinite(point.TargetWS)))
+                    !math.all(math.isfinite(point.TargetWS)) ||
+                    !math.all(math.isfinite(point.VelocityWS)))
                 {
+                    RecordWakeBlackBox(0, slotLimit, point.Intensity, point.Radius, point.PositionWS, point.VelocityWS, WakeBlackBoxNaNFlag);
                     point = default;
                 }
 
-                _proceduralWakePoints[i] = point;
+                wakeSources[i] = point;
             }
         }
 
         private void PublishProceduralWakeBuffer(bool forceUpload = false)
         {
-            if (_proceduralWakeShaderBuffer == null)
+            if (_proceduralWakeShaderBuffer == null ||
+                _globalWakeShaderBuffer == null ||
+                _globalWakeVectorShaderBuffer == null)
                 return;
 
             int publishedCount = 0;
             float maxWakeIntensity = 0f;
-            if (_proceduralWakePoints.IsCreated)
+            float maxWakeRadius = 0f;
+            float3 strongestPosition = float3.zero;
+            float3 strongestVelocity = float3.zero;
+            int slotLimit = ResolveWakeSlotLimit();
+            if (TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources) &&
+                TryResolveGlobalWakeBuffers(out NativeArray<float4> globalWakes, out NativeArray<float4> globalWakeVectors))
             {
-                for (int i = 0; i < _proceduralWakePoints.Length && publishedCount < MaxProceduralWakePoints; i++)
+                int safeLimit = math.min(math.min(wakeSources.Length, MaxProceduralWakePoints), slotLimit);
+                for (int i = 0; i < safeLimit && publishedCount < MaxProceduralWakePoints; i++)
                 {
-                    ProceduralWakePoint point = _proceduralWakePoints[i];
+                    WakeSource point = wakeSources[i];
                     if (point.Active == 0 ||
                         point.Intensity <= WakeMinimumPublishedIntensity ||
                         !float.IsFinite(point.Radius) ||
@@ -2338,9 +2413,37 @@ namespace Hecton8.World
                         point.PositionWS.y,
                         point.PositionWS.z,
                         packedRadiusIntensity);
+                    float3 wakeDirection = ResolveSafeWakeDirection(point.VelocityWS);
+                    Vector4 globalWake = new Vector4(
+                        point.PositionWS.x,
+                        point.PositionWS.y,
+                        point.PositionWS.z,
+                        point.Intensity);
+                    Vector4 globalWakeVector = new Vector4(
+                        wakeDirection.x,
+                        wakeDirection.y,
+                        wakeDirection.z,
+                        point.Radius);
+                    _globalWakeShaderBuffer[publishedCount] = globalWake;
+                    _globalWakeVectorShaderBuffer[publishedCount] = globalWakeVector;
+                    if (publishedCount < globalWakes.Length)
+                        globalWakes[publishedCount] = new float4(globalWake.x, globalWake.y, globalWake.z, globalWake.w);
+                    if (publishedCount < globalWakeVectors.Length)
+                        globalWakeVectors[publishedCount] = new float4(globalWakeVector.x, globalWakeVector.y, globalWakeVector.z, globalWakeVector.w);
+                    if (point.Intensity > maxWakeIntensity)
+                    {
+                        strongestPosition = point.PositionWS;
+                        strongestVelocity = point.VelocityWS;
+                    }
                     maxWakeIntensity = math.max(maxWakeIntensity, point.Intensity);
+                    maxWakeRadius = math.max(maxWakeRadius, point.Radius);
                     publishedCount++;
                 }
+
+                for (int i = publishedCount; i < globalWakes.Length; i++)
+                    globalWakes[i] = default;
+                for (int i = publishedCount; i < globalWakeVectors.Length; i++)
+                    globalWakeVectors[i] = default;
             }
 
             float shearFoamAmount = maxWakeIntensity > 0.8f
@@ -2358,14 +2461,29 @@ namespace Hecton8.World
 
             for (int i = publishedCount; i < _proceduralWakeShaderBuffer.Length; i++)
                 _proceduralWakeShaderBuffer[i] = Vector4.zero;
+            for (int i = publishedCount; i < _globalWakeShaderBuffer.Length; i++)
+                _globalWakeShaderBuffer[i] = Vector4.zero;
+            for (int i = publishedCount; i < _globalWakeVectorShaderBuffer.Length; i++)
+                _globalWakeVectorShaderBuffer[i] = Vector4.zero;
 
             Shader.SetGlobalVectorArray(_ProceduralWakeBufferId, _proceduralWakeShaderBuffer);
             Shader.SetGlobalInt(_ProceduralWakeCountId, publishedCount);
             Shader.SetGlobalVector(_ProceduralWakeParamsId, new Vector4(publishedCount, MaxProceduralWakePoints, maxWakeIntensity, shearFoamAmount));
+            Shader.SetGlobalVectorArray(_GlobalWakeBufferId, _globalWakeShaderBuffer);
+            Shader.SetGlobalVectorArray(_GlobalWakeVectorBufferId, _globalWakeVectorShaderBuffer);
+            Shader.SetGlobalVector(_GlobalWakeParamsId, new Vector4(slotLimit, ResolveWakeLowTier01(), publishedCount, maxWakeIntensity));
             Shader.SetGlobalFloat(_ShearFoamAmountId, shearFoamAmount);
             _publishedProceduralWakeCount = publishedCount;
             _publishedShearFoamAmount = shearFoamAmount;
             _proceduralWakeGlobalsInitialized = true;
+            RecordWakeBlackBox(
+                publishedCount,
+                slotLimit,
+                maxWakeIntensity,
+                maxWakeRadius,
+                strongestPosition,
+                strongestVelocity,
+                ResolveWakeTelemetryFlags());
         }
 
         private float ResolveWakeRadius(byte sourceKind, float speed)
@@ -2422,6 +2540,169 @@ namespace Hecton8.World
             int radiusQuantized = Mathf.Clamp(Mathf.RoundToInt(safeRadius * 16f), 0, 16383);
             int intensityQuantized = Mathf.Clamp(Mathf.RoundToInt(safeIntensity * 1023f), 0, 1023);
             return radiusQuantized * 1024f + intensityQuantized;
+        }
+
+        private static float3 ResolveSafeWakeDirection(float3 velocity)
+        {
+            float lengthSq = math.lengthsq(velocity);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+                return float3.zero;
+
+            return velocity * math.rsqrt(lengthSq);
+        }
+
+        private int ResolveWakeSlotLimit()
+        {
+            bool lowTier = GlobalRegistry.ScalabilityTierProfileByte == 0;
+            bool stressCap = HomeostasisBrain.SystemHealthIndex01 > 0.8f;
+            return lowTier || stressCap
+                ? LowTierWakeSlotLimit
+                : MaxProceduralWakePoints;
+        }
+
+        private static float ResolveWakeLowTier01()
+        {
+            return GlobalRegistry.ScalabilityTierProfileByte == 0 ||
+                   HomeostasisBrain.SystemHealthIndex01 > 0.8f
+                ? 1f
+                : 0f;
+        }
+
+        private static uint ResolveWakeTelemetryFlags()
+        {
+            uint flags = 0u;
+            if (GlobalRegistry.ScalabilityTierProfileByte == 0)
+                flags |= WakeBlackBoxLowTierFlag;
+            if (HomeostasisBrain.SystemHealthIndex01 > 0.8f)
+                flags |= WakeBlackBoxStressCapFlag;
+            return flags;
+        }
+
+        private static void PublishWakeFluidImpulse(in WakeGeneratedSignal signal, float radius, float intensity)
+        {
+            if (!math.all(math.isfinite(signal.Velocity)) ||
+                !math.isfinite(radius) ||
+                !math.isfinite(intensity))
+                return;
+
+            FluidImpulseSignal impulse = new FluidImpulseSignal
+            {
+                PositionAup = signal.PositionAup,
+                Vector = signal.Velocity,
+                Radius = math.max(0.5f, radius),
+                Lifetime = math.lerp(0.35f, 1.4f, math.saturate(intensity)),
+                Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
+                SourceHash = WakeFluidImpulseSourceHash,
+                Flags = signal.SourceFlags
+            };
+            GlobalSignals.Publish(in impulse);
+        }
+
+        private void RecordWakeBlackBox(
+            int activeCount,
+            int slotLimit,
+            float maxIntensity,
+            float maxRadius,
+            float3 strongestPosition,
+            float3 strongestVelocity,
+            uint flags)
+        {
+            if (!TryResolveWakeBlackBox(out NativeArray<WakeTelemetryEntry> wakeBlackBox) || wakeBlackBox.Length == 0)
+                return;
+
+            int cursor = _wakeBlackBoxCursor;
+            if ((uint)cursor >= (uint)wakeBlackBox.Length)
+                cursor = 0;
+
+            uint stateHash = 2166136261u;
+            stateHash = MixWakeHash(stateHash, (uint)math.max(0, activeCount));
+            stateHash = MixWakeHash(stateHash, (uint)math.max(0, slotLimit));
+            stateHash = MixWakeHash(stateHash, (uint)math.asint(maxIntensity));
+            stateHash = MixWakeHash(stateHash, (uint)math.asint(maxRadius));
+
+            WakeTelemetryEntry entry = default;
+            entry.Frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            entry.ActiveWakeSourcesCount = (ushort)math.clamp(activeCount, 0, ushort.MaxValue);
+            entry.SlotLimit = (ushort)math.clamp(slotLimit, 0, ushort.MaxValue);
+            entry.StrongestWakePositionWS = strongestPosition;
+            entry.StrongestIntensity = maxIntensity;
+            entry.StrongestVelocityWS = strongestVelocity;
+            entry.MaxRadius = maxRadius;
+            entry.Flags = flags;
+            entry.StateHash = stateHash;
+            entry.DataVaultGeneration = _proceduralWakePointsHandle.GenerationID;
+            entry.AupShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            entry.SystemStress01 = HomeostasisBrain.SystemHealthIndex01;
+            entry.LowTier01 = ResolveWakeLowTier01();
+            wakeBlackBox[cursor] = entry;
+
+            cursor++;
+            if (cursor >= wakeBlackBox.Length)
+                cursor = 0;
+            _wakeBlackBoxCursor = cursor;
+
+            if ((flags & (WakeBlackBoxInvalidInputFlag | WakeBlackBoxNaNFlag)) != 0u)
+                DumpWakeBlackBoxOnce();
+        }
+
+        private static uint MixWakeHash(uint hash, uint value)
+        {
+            hash ^= value;
+            hash *= 16777619u;
+            return hash == 0u ? 1u : hash;
+        }
+
+        private void DumpWakeBlackBoxOnce()
+        {
+            if (_wakeBlackBoxDumped ||
+                !TryResolveWakeBlackBox(out NativeArray<WakeTelemetryEntry> wakeBlackBox) ||
+                !wakeBlackBox.IsCreated)
+                return;
+
+            _wakeBlackBoxDumped = true;
+            try
+            {
+                string root = Directory.GetCurrentDirectory();
+                if (!string.Equals(Path.GetFileName(root), "Hecton8", StringComparison.OrdinalIgnoreCase))
+                    root = Path.Combine(root, "Hecton8");
+
+                string directory = Path.Combine(root, "Docs", "AgentLogs");
+                Directory.CreateDirectory(directory);
+                string path = Path.Combine(directory, "Dump_INTERACTIVE_WAKE_VFX.bin");
+                using BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read));
+                writer.Write(0x57414B45u);
+                writer.Write(wakeBlackBox.Length);
+                writer.Write(_wakeBlackBoxCursor);
+                for (int i = 0; i < wakeBlackBox.Length; i++)
+                {
+                    WakeTelemetryEntry entry = wakeBlackBox[i];
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.ActiveWakeSourcesCount);
+                    writer.Write(entry.SlotLimit);
+                    writer.Write(entry.StrongestWakePositionWS.x);
+                    writer.Write(entry.StrongestWakePositionWS.y);
+                    writer.Write(entry.StrongestWakePositionWS.z);
+                    writer.Write(entry.StrongestIntensity);
+                    writer.Write(entry.StrongestVelocityWS.x);
+                    writer.Write(entry.StrongestVelocityWS.y);
+                    writer.Write(entry.StrongestVelocityWS.z);
+                    writer.Write(entry.MaxRadius);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.StateHash);
+                    writer.Write(entry.DataVaultGeneration);
+                    writer.Write(entry.AupShiftSequence);
+                    writer.Write(entry.SystemStress01);
+                    writer.Write(entry.LowTier01);
+                }
+            }
+            catch (IOException)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
         }
 
         private void UpdateToxicSporeExposure(Vector3 playerPositionWS, float deltaTime)
@@ -4606,7 +4887,6 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeList(_underwaterReactiveFloraHandles, NativeMemoryOwner, nameof(_underwaterReactiveFloraHandles), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_surfaceCascadeEvents, NativeMemoryOwner, nameof(_surfaceCascadeEvents), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_underwaterCascadeEvents, NativeMemoryOwner, nameof(_underwaterCascadeEvents), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_proceduralWakePoints, NativeMemoryOwner, nameof(_proceduralWakePoints), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_parasiteNodes, NativeMemoryOwner, nameof(_parasiteNodes), NativeMemoryLifetime);
         }
 
@@ -5361,18 +5641,18 @@ namespace Hecton8.World
                 PublishWakeTrailGlobals();
             }
 
-            if (_proceduralWakePoints.IsCreated)
+            if (TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources))
             {
                 float3 offset = new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z);
-                for (int i = 0; i < _proceduralWakePoints.Length; i++)
+                for (int i = 0; i < wakeSources.Length; i++)
                 {
-                    ProceduralWakePoint point = _proceduralWakePoints[i];
+                    WakeSource point = wakeSources[i];
                     if (point.Active == 0)
                         continue;
 
                     point.PositionWS += offset;
                     point.TargetWS += offset;
-                    _proceduralWakePoints[i] = point;
+                    wakeSources[i] = point;
                 }
 
                 PublishProceduralWakeBuffer();
@@ -5475,6 +5755,106 @@ namespace Hecton8.World
             _instanceCullingService = GlobalRegistry.InstanceCulling;
         }
 
+        private bool ResolveProceduralWakeVaultBuffer(bool clearExisting)
+        {
+            return ResolveProceduralWakeVaultBuffer(GlobalRegistry.DataVault, clearExisting);
+        }
+
+        private bool ResolveProceduralWakeVaultBuffer(IDataVault dataVault, bool clearExisting)
+        {
+            _wakeDataVault = dataVault;
+            if (dataVault == null)
+            {
+                _proceduralWakePointsHandle = default;
+                _globalWakeBufferHandle = default;
+                _globalWakeVectorBufferHandle = default;
+                _wakeBlackBoxHandle = default;
+                return false;
+            }
+
+            NativeArrayOptions options = clearExisting
+                ? NativeArrayOptions.ClearMemory
+                : NativeArrayOptions.UninitializedMemory;
+            _proceduralWakePointsHandle = dataVault.GetBufferHandle<WakeSource>(
+                BufferID.WakeSources,
+                MaxProceduralWakePoints,
+                SystemID.Vfx,
+                options);
+            _globalWakeBufferHandle = dataVault.GetBufferHandle<float4>(
+                BufferID.WakeGlobalBuffer,
+                MaxProceduralWakePoints,
+                SystemID.Vfx,
+                options);
+            _globalWakeVectorBufferHandle = dataVault.GetBufferHandle<float4>(
+                BufferID.WakeVectorBuffer,
+                MaxProceduralWakePoints,
+                SystemID.Vfx,
+                options);
+            _wakeBlackBoxHandle = dataVault.GetBufferHandle<WakeTelemetryEntry>(
+                BufferID.WakeBlackBox,
+                WakeBlackBoxCapacity,
+                SystemID.Vfx,
+                options);
+
+            if (!TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources) ||
+                !TryResolveGlobalWakeBuffers(out NativeArray<float4> globalWakes, out NativeArray<float4> globalWakeVectors) ||
+                !TryResolveWakeBlackBox(out NativeArray<WakeTelemetryEntry> wakeBlackBox))
+                return false;
+
+            if (clearExisting)
+            {
+                for (int i = 0; i < wakeSources.Length; i++)
+                    wakeSources[i] = default;
+                for (int i = 0; i < globalWakes.Length; i++)
+                    globalWakes[i] = default;
+                for (int i = 0; i < globalWakeVectors.Length; i++)
+                    globalWakeVectors[i] = default;
+                for (int i = 0; i < wakeBlackBox.Length; i++)
+                    wakeBlackBox[i] = default;
+                _wakeBlackBoxCursor = 0;
+                _wakeBlackBoxDumped = false;
+            }
+
+            return true;
+        }
+
+        private bool TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources)
+        {
+            wakeSources = default;
+            IDataVault dataVault = _wakeDataVault;
+            if (dataVault == null || !_proceduralWakePointsHandle.IsCreated)
+                return false;
+
+            wakeSources = _proceduralWakePointsHandle.Resolve(dataVault);
+            return wakeSources.IsCreated;
+        }
+
+        private bool TryResolveGlobalWakeBuffers(out NativeArray<float4> globalWakes, out NativeArray<float4> globalWakeVectors)
+        {
+            globalWakes = default;
+            globalWakeVectors = default;
+            IDataVault dataVault = _wakeDataVault;
+            if (dataVault == null ||
+                !_globalWakeBufferHandle.IsCreated ||
+                !_globalWakeVectorBufferHandle.IsCreated)
+                return false;
+
+            globalWakes = _globalWakeBufferHandle.Resolve(dataVault);
+            globalWakeVectors = _globalWakeVectorBufferHandle.Resolve(dataVault);
+            return globalWakes.IsCreated && globalWakeVectors.IsCreated;
+        }
+
+        private bool TryResolveWakeBlackBox(out NativeArray<WakeTelemetryEntry> wakeBlackBox)
+        {
+            wakeBlackBox = default;
+            IDataVault dataVault = _wakeDataVault;
+            if (dataVault == null || !_wakeBlackBoxHandle.IsCreated)
+                return false;
+
+            wakeBlackBox = _wakeBlackBoxHandle.Resolve(dataVault);
+            return wakeBlackBox.IsCreated;
+        }
+
         private void TryRegisterCullingHotSwapListener()
         {
             if (_cullingHotSwapRegistered || !Application.isPlaying)
@@ -5497,6 +5877,12 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                ResolveProceduralWakeVaultBuffer(currentService as IDataVault, clearExisting: false);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.InstanceCullingRuntime)
                 return;
 

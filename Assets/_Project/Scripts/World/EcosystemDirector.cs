@@ -4,7 +4,9 @@ using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.AI.Ecology.Migration;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Environment.Fluids;
 using Hecton8.Ecosystem;
 using Hecton8.Gameplay;
@@ -19,6 +21,9 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
+using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
+using MacroSwarm = Hecton8.Core.Contracts.MacroSwarm;
+using MacroSwarmArrival = Hecton8.Core.Contracts.MacroSwarmArrival;
 
 namespace Hecton8.World
 {
@@ -104,6 +109,7 @@ namespace Hecton8.World
         private const int MacroSwarmArrivalCapacity = 64;
         private const int MacroSwarmSignalScratchCapacity = 64;
         private const int MacroSwarmBlackBoxCapacity = 300;
+        private const int MacroSwarmVisualBoidsPerBiomassUnit = 64;
         private const int FaunaMutationBlackBoxCapacity = 300;
         private const int MacroSwarmLowTierCap = 32;
         private const int MacroSwarmMiddleTierCap = 64;
@@ -120,6 +126,11 @@ namespace Hecton8.World
         private const float MacroSwarmPredatorHighThreshold01 = 0.65f;
         private const float MacroSwarmPredatorBiteFraction01 = 0.1f;
         private const float MacroSwarmDefaultSpeedCellsPerSecond = 0.2f;
+        private const int MacroSwarmBlackBoxFlagInvalid = 1;
+        private const int MacroSwarmBlackBoxFlagDatabaseHydrated = 2;
+        private const int MacroSwarmBlackBoxFlagActiveHydrated = 4;
+        private const int MacroSwarmBlackBoxFlagCapacityOverflow = 8;
+        private const int MacroSwarmBlackBoxFlagActiveDehydrated = 16;
         private const byte ItemAcquiredSourceUnknown = 0;
         private const byte ItemAcquiredSourceResourceNode = 1;
         private const byte BiomassCellFlagSectorClearedPublished = 1 << 0;
@@ -893,8 +904,11 @@ namespace Hecton8.World
         private byte _macroSwarmQualityTierProfileByte;
         private float _macroSwarmSpeedCellsPerSecond = MacroSwarmDefaultSpeedCellsPerSecond * 0.5f;
         private int _lastMacroSwarmArrivalCount;
+        private int _lastMacroSwarmsHydrated;
+        private int _lastMacroHydratedBoidEstimate;
         private int _lastSectorResidencySignalDrainFrame;
         private int _scheduledApexTerritoryOverlapCount;
+        private IDataVault _dataVault;
         private bool _registeredService;
         private bool _registeredSlowTickable;
         private bool _registeredFrostTickable;
@@ -2309,6 +2323,187 @@ namespace Hecton8.World
             return copiedCount > 0;
         }
 
+        /// <inheritdoc />
+        public unsafe bool TryImportMacroSwarmsFromVault(ulong sectorHash, out int importedCount)
+        {
+            importedCount = 0;
+            if (sectorHash == 0UL || !_macroSwarms.IsCreated || _macroSwarmTravelScheduled)
+                return false;
+
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || !vault.TryGetMacroDatabasePayload(sectorHash, out MacroDatabasePayloadHandle handle))
+                return false;
+
+            int stride = UnsafeUtility.SizeOf<MacroSwarm>();
+            if (handle.Pointer == IntPtr.Zero || handle.ByteLength < stride)
+            {
+                PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagInvalid);
+                return false;
+            }
+
+            int available = handle.ByteLength / stride;
+            int cap = ResolveMacroSwarmActiveCap();
+            int invalid = 0;
+            int overflow = 0;
+            void* payload = handle.Pointer.ToPointer();
+            for (int i = 0; i < available; i++)
+            {
+                if (_activeMacroSwarmCount >= cap)
+                {
+                    overflow++;
+                    break;
+                }
+
+                MacroSwarm swarm = UnsafeUtility.ReadArrayElement<MacroSwarm>(payload, i);
+                if (!TryNormalizeImportedMacroSwarm(ref swarm, sectorHash))
+                {
+                    invalid++;
+                    continue;
+                }
+
+                if (HasActiveMacroSwarmRoute(swarm.SectorAup, swarm.TargetSectorAup))
+                    continue;
+
+                _macroSwarms[_activeMacroSwarmCount++] = swarm;
+                importedCount++;
+            }
+
+            int flags = importedCount > 0 ? MacroSwarmBlackBoxFlagDatabaseHydrated : 0;
+            if (invalid > 0)
+                flags |= MacroSwarmBlackBoxFlagInvalid;
+            if (overflow > 0)
+                flags |= MacroSwarmBlackBoxFlagCapacityOverflow;
+            if (flags != 0)
+                PushMacroSwarmBlackBox(flags);
+
+            return importedCount > 0;
+        }
+
+        /// <inheritdoc />
+        public bool TryClaimMacroSwarmsForHydration(
+            in AbsoluteUniversePosition centerAup,
+            ushort radiusMetersQ,
+            NativeArray<MacroSwarm> destination,
+            out int claimedCount,
+            out float claimedBiomass01)
+        {
+            claimedCount = 0;
+            claimedBiomass01 = 0f;
+            if (!destination.IsCreated ||
+                destination.Length <= 0 ||
+                !_macroSwarms.IsCreated ||
+                _activeMacroSwarmCount <= 0 ||
+                _macroSwarmTravelScheduled)
+            {
+                return false;
+            }
+
+            int2 centerCell = QuantizeBiomassMacroCell(in centerAup);
+            int radiusCells = math.max(1, (int)math.ceil(math.max(1, radiusMetersQ) * InvBiomassMacroCellSizeMeters));
+            int i = 0;
+            while (i < _activeMacroSwarmCount && claimedCount < destination.Length)
+            {
+                MacroSwarm swarm = _macroSwarms[i];
+                int2 delta = swarm.SectorAup - centerCell;
+                if (math.max(math.abs(delta.x), math.abs(delta.y)) > radiusCells)
+                {
+                    i++;
+                    continue;
+                }
+
+                destination[claimedCount++] = swarm;
+                claimedBiomass01 = math.saturate(claimedBiomass01 + math.max(0f, swarm.BiomassValue));
+                RemoveMacroSwarmSwapBack(i);
+            }
+
+            if (claimedCount <= 0)
+                return false;
+
+            _lastMacroSwarmsHydrated = claimedCount;
+            _lastMacroHydratedBoidEstimate = math.max(0, (int)math.round(claimedBiomass01 * MacroSwarmVisualBoidsPerBiomassUnit));
+            PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagActiveHydrated);
+            return true;
+        }
+
+        /// <inheritdoc />
+        public bool TryRepackHydratedBiotaToMacroSwarm(
+            in AbsoluteUniversePosition centerAup,
+            ushort radiusMetersQ,
+            long chunkId,
+            int releasedBoidCount,
+            ushort flags,
+            out float biomassValue)
+        {
+            biomassValue = 0f;
+            if (!_macroSwarms.IsCreated ||
+                _macroSwarmTravelScheduled ||
+                releasedBoidCount <= 0 ||
+                _activeMacroSwarmCount >= ResolveMacroSwarmActiveCap())
+            {
+                return false;
+            }
+
+            int2 sourceCell = QuantizeBiomassMacroCell(in centerAup);
+            int radiusCells = math.max(1, (int)math.ceil(math.max(1, radiusMetersQ) * InvBiomassMacroCellSizeMeters));
+            int2 targetCell = ResolveLowestNeighborMacroCell(sourceCell);
+            if (math.all(targetCell == sourceCell))
+                targetCell += ResolveDeterministicMigrationDirection(sourceCell + radiusCells);
+
+            biomassValue = math.saturate(releasedBoidCount * math.rcp((float)MacroSwarmVisualBoidsPerBiomassUnit));
+            bool appended = TryAppendMacroSwarm(
+                sourceCell,
+                targetCell,
+                biomassValue,
+                ResolveMacroSwarmSpeedCellsPerSecond(),
+                HashMacroSwarm(sourceCell, targetCell, chunkId),
+                flags);
+
+            if (!appended)
+            {
+                biomassValue = 0f;
+                return false;
+            }
+
+            PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagActiveDehydrated);
+            return true;
+        }
+
+        private IDataVault ResolveDataVault()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                return vault;
+
+            vault = GlobalRegistry.DataVault;
+            _dataVault = vault;
+            return vault;
+        }
+
+        private static bool TryNormalizeImportedMacroSwarm(ref MacroSwarm swarm, ulong sectorHash)
+        {
+            if (!math.isfinite(swarm.BiomassValue) ||
+                !math.isfinite(swarm.Speed) ||
+                math.all(swarm.SectorAup == swarm.TargetSectorAup))
+            {
+                return false;
+            }
+
+            if (!math.all(math.isfinite(swarm.CurrentSectorAup)))
+                swarm.CurrentSectorAup = new float2(swarm.SectorAup.x, swarm.SectorAup.y);
+
+            swarm.BiomassValue = math.saturate(swarm.BiomassValue);
+            swarm.Speed = math.max(0.001f, swarm.Speed);
+            if (swarm.BiomassValue <= 0.0001f)
+                return false;
+
+            if (swarm.HashId == 0u)
+                swarm.HashId = HashMacroSwarm(swarm.SectorAup, swarm.TargetSectorAup, unchecked((long)sectorHash));
+            if (swarm.Genome == 0UL)
+                swarm.Genome = FaunaGenome64.BuildGenome(swarm.HashId, 1f, 1f + math.saturate(swarm.Speed) * 0.2f);
+
+            return true;
+        }
+
         /// <summary>
         /// Returns the sector-level apex presence flag used by presentation and audio fakes.
         /// </summary>
@@ -2876,6 +3071,8 @@ namespace Hecton8.World
             _lastMutationBrineDepth01 = 0f;
             _activeMacroSwarmCount = 0;
             _lastMacroSwarmArrivalCount = 0;
+            _lastMacroSwarmsHydrated = 0;
+            _lastMacroHydratedBoidEstimate = 0;
             _lastSectorResidencySignalDrainFrame = -1;
             _scheduledApexTerritoryOverlapCount = 0;
             _coldTickAccumulator = 0f;
@@ -3069,6 +3266,7 @@ namespace Hecton8.World
             _saveSnapshotSectors = default;
             _saveSnapshotBiomassRuns = default;
             _apexTerritoryBrains = null;
+            _dataVault = null;
             _activeSectorCount = 0;
             _activeBiomassCellCount = 0;
             _pendingBiomassImpactCount = 0;
@@ -3090,6 +3288,8 @@ namespace Hecton8.World
             _lastMutationBrineDepth01 = 0f;
             _activeMacroSwarmCount = 0;
             _lastMacroSwarmArrivalCount = 0;
+            _lastMacroSwarmsHydrated = 0;
+            _lastMacroHydratedBoidEstimate = 0;
             _lastSectorResidencySignalDrainFrame = -1;
             _scheduledApexTerritoryOverlapCount = 0;
             _coldTickAccumulator = 0f;
@@ -3600,13 +3800,18 @@ namespace Hecton8.World
                 }
             }
 
+            ReadOnlySpan<MacroDatabaseSectorHydrationSignal> macroDatabaseHydratedSignals = SignalBus<MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
+            for (int i = 0; i < macroDatabaseHydratedSignals.Length; i++)
+            {
+                if (TryImportMacroSwarmsFromVault(macroDatabaseHydratedSignals[i].SectorHash, out _))
+                    continue;
+
+                PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagDatabaseHydrated);
+            }
+
             ReadOnlySpan<SectorResidencyHydratedSignal> hydratedSignals = SignalBus<SectorResidencyHydratedSignal>.GetFrameSnapshot();
             for (int i = 0; i < hydratedSignals.Length; i++)
                 HydrateSectorMacroSwarms(in hydratedSignals[i]);
-
-            ReadOnlySpan<MacroDatabaseSectorHydrationSignal> macroDatabaseHydratedSignals = SignalBus<MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
-            if (macroDatabaseHydratedSignals.Length > 0)
-                PushMacroSwarmBlackBox(2);
         }
 
         private void StageDehydratedSectorSwarm(in SectorDehydratedSignal signal)
@@ -3617,6 +3822,9 @@ namespace Hecton8.World
             {
                 return;
             }
+
+            if (TryStageActiveBiotaDehydration(in signal))
+                return;
 
             int2 sourceCell = QuantizeBiomassMacroCell(in signal.CenterAup);
             int sourceSlot = ResolveOrCreateBiomassCellSlot(sourceCell, seedWithBaseline: true);
@@ -3647,6 +3855,40 @@ namespace Hecton8.World
             _macroDehydrationScratch.AddNoResize(swarm);
         }
 
+        private bool TryStageActiveBiotaDehydration(in SectorDehydratedSignal signal)
+        {
+            IAmbientBiotaService activeBiota = GlobalRegistry.AmbientBiota;
+            if (activeBiota == null ||
+                !activeBiota.IsInitialized ||
+                !activeBiota.TryPackMacroHydratedBiota(
+                    in signal.CenterAup,
+                    signal.RadiusMetersQ,
+                    out int releasedBoidCount,
+                    out float biomassValue) ||
+                releasedBoidCount <= 0 ||
+                biomassValue <= 0.0001f)
+            {
+                return false;
+            }
+
+            int2 sourceCell = QuantizeBiomassMacroCell(in signal.CenterAup);
+            int2 targetCell = ResolveLowestNeighborMacroCell(sourceCell);
+            if (math.all(targetCell == sourceCell))
+                targetCell += ResolveDeterministicMigrationDirection(sourceCell);
+
+            MacroSwarm swarm = CreateMacroSwarm(
+                sourceCell,
+                targetCell,
+                biomassValue,
+                ResolveMacroSwarmSpeedCellsPerSecond(),
+                HashMacroSwarm(sourceCell, targetCell, signal.ChunkId),
+                signal.Flags);
+            _macroDehydrationScratch.AddNoResize(swarm);
+            _lastMacroHydratedBoidEstimate = releasedBoidCount;
+            PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagActiveDehydrated);
+            return true;
+        }
+
         private void HydrateSectorMacroSwarms(in SectorResidencyHydratedSignal signal)
         {
             if (!_macroSwarms.IsCreated || _activeMacroSwarmCount <= 0)
@@ -3668,13 +3910,48 @@ namespace Hecton8.World
                     continue;
                 }
 
-                AddPreyBiomassToCell(centerCell, swarm.BiomassValue);
                 if (_macroHydrationScratch.IsCreated && _macroHydrationScratch.Length < _macroHydrationScratch.Capacity)
                     _macroHydrationScratch.AddNoResize(swarm);
                 RemoveMacroSwarmSwapBack(i);
             }
 
-            PublishHydratedMacroSwarmBurst(centerCell, signal.RadiusMetersQ);
+            if (!_macroHydrationScratch.IsCreated || _macroHydrationScratch.Length <= 0)
+                return;
+
+            int spawnedBoids = 0;
+            bool activeHydrated = TryHydrateActiveBiotaFromScratch(in signal, out spawnedBoids);
+            if (!activeHydrated)
+            {
+                int count = _macroHydrationScratch.Length;
+                for (int scratchIndex = 0; scratchIndex < count; scratchIndex++)
+                    AddPreyBiomassToCell(centerCell, _macroHydrationScratch[scratchIndex].BiomassValue);
+            }
+
+            _lastMacroSwarmsHydrated = _macroHydrationScratch.Length;
+            _lastMacroHydratedBoidEstimate = spawnedBoids;
+            PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagActiveHydrated);
+            PublishHydratedMacroSwarmBurst(centerCell, signal.RadiusMetersQ, spawnedBoids);
+        }
+
+        private bool TryHydrateActiveBiotaFromScratch(in SectorResidencyHydratedSignal signal, out int spawnedBoids)
+        {
+            spawnedBoids = 0;
+            if (!_macroHydrationScratch.IsCreated || _macroHydrationScratch.Length <= 0)
+                return false;
+
+            IAmbientBiotaService activeBiota = GlobalRegistry.AmbientBiota;
+            if (activeBiota == null || !activeBiota.IsInitialized)
+                return false;
+
+            NativeArray<MacroSwarm> swarms = _macroHydrationScratch.AsArray();
+            return activeBiota.TryHydrateMacroSwarms(
+                in signal.CenterAup,
+                signal.RadiusMetersQ,
+                swarms,
+                _macroHydrationScratch.Length,
+                _macroSwarmQualityTierProfileByte,
+                GlobalSignals.SystemStress01,
+                out spawnedBoids);
         }
 
         private void SpawnMacroSwarmDiffusionGradient()
@@ -4147,7 +4424,7 @@ namespace Hecton8.World
             }
         }
 
-        private void PublishHydratedMacroSwarmBurst(int2 macroCell, ushort radiusMetersQ)
+        private void PublishHydratedMacroSwarmBurst(int2 macroCell, ushort radiusMetersQ, int spawnedBoids)
         {
             if (!_macroHydrationScratch.IsCreated || _macroHydrationScratch.Length <= 0)
                 return;
@@ -4159,7 +4436,10 @@ namespace Hecton8.World
                 RadiusMeters = math.max(BiomassMacroCellSizeMeters, radiusMetersQ),
                 Intensity01 = math.saturate(_macroHydrationScratch.Length * math.rcp((float)MacroSwarmSignalScratchCapacity)),
                 SourceId = MacroSwarmSaveHeaderMarker,
-                EstimatedBoidCount = (ushort)math.clamp(_macroHydrationScratch.Length * 64, 0, ushort.MaxValue),
+                EstimatedBoidCount = (ushort)math.clamp(
+                    spawnedBoids > 0 ? spawnedBoids : _macroHydrationScratch.Length * MacroSwarmVisualBoidsPerBiomassUnit,
+                    0,
+                    ushort.MaxValue),
                 Flags = 1,
                 QualityTier = _macroSwarmQualityTierProfileByte
             });
@@ -4176,7 +4456,7 @@ namespace Hecton8.World
             {
                 MacroSwarm swarm = _macroSwarms[i];
                 if (!math.isfinite(swarm.BiomassValue) || !math.isfinite(swarm.Speed) || !math.all(math.isfinite(swarm.CurrentSectorAup)))
-                    invalidFlag |= 1;
+                    invalidFlag |= MacroSwarmBlackBoxFlagInvalid;
                 else
                     biomassSum += swarm.BiomassValue;
             }
@@ -4189,7 +4469,9 @@ namespace Hecton8.World
                 ActiveMacroSwarms = _activeMacroSwarmCount,
                 ArrivalCount = _lastMacroSwarmArrivalCount,
                 BiomassSum = biomassSum,
-                Flags = invalidFlag
+                Flags = invalidFlag,
+                Reserved0 = unchecked((uint)math.max(0, _lastMacroSwarmsHydrated)),
+                Reserved1 = unchecked((uint)math.max(0, _lastMacroHydratedBoidEstimate))
             };
             _macroSwarmBlackBoxCursor++;
             if (invalidFlag != 0)
@@ -5382,6 +5664,8 @@ namespace Hecton8.World
 
             _activeMacroSwarmCount = 0;
             _lastMacroSwarmArrivalCount = 0;
+            _lastMacroSwarmsHydrated = 0;
+            _lastMacroHydratedBoidEstimate = 0;
             _lastSectorResidencySignalDrainFrame = -1;
         }
 

@@ -281,3 +281,9 @@ Solution: Fetch first, prove remote sync, verify volatile external source claims
 Rejected Alternatives: Deleting the raw prompt artifact, committing the active profane filename, or pushing source-date claims without current source checks.
 Scalability potential: Git/documentation hygiene only. Runtime tier behavior is unchanged; research quality improves because stale/unsupported source claims are removed before publication.
 Hardware Impact: 0 us runtime impact.
+
+Problem: A new active `Docs/Tasks/CURRENT_BATCH.md` appeared while the archived Batch005 `CURRENT_BATCH.md` was locally emptied. The companion instruction file claims 40 Prompt IDs, but the active batch contains only 36 prompt blocks.
+Solution: Restore the archive file from `HEAD` to prevent data loss, leave the provided active batch and companion instruction file intact, and write a separate audit documenting prompt count, duplicate IDs, missing instruction IDs, batch-only IDs, and missing polish mandate.
+Rejected Alternatives: Committing the archive deletion, moving the instruction file despite its name, inventing missing prompt blocks, or editing the master batch content without owner confirmation.
+Scalability potential: Git/documentation hygiene only. Runtime tier behavior is unchanged. Process scalability improves by preventing 40-agent launch drift from an unchecked prompt mismatch.
+Hardware Impact: 0 us runtime impact.

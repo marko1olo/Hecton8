@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Environment.Fluids;
 using Hecton8.Gameplay;
 using Hecton8.Scavenging;
@@ -10,6 +11,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
 
 namespace Hecton8.World
 {

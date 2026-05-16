@@ -30,13 +30,15 @@ using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Caves;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Memory;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.Tools;
 using Hecton8.UI;
 using Hecton8.World;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -55,7 +57,18 @@ namespace Hecton8.Gameplay
         private const string RepairToolCategory = "REPAIR";
         private const string RepairToolModuleLabel = "BASE MODULE";
         private const uint RepairSparksSignalHash = 0x44525350u;
+        private const uint HullRepairSourceHash = 0x574C4452u; // WLDR
+        private const uint HullRepairTelemetryHash = 0x48445250u; // HDRP
         private const byte RepairSparkDebrisKind = 1;
+        private const int HullDentVaultCapacity = 16;
+        private const int HullDentRadiusQuantizationStepsPerMeter = 16;
+        private const float InvHullDentRadiusQuantizationStepsPerMeter = 1f / HullDentRadiusQuantizationStepsPerMeter;
+        private const float InvHullDentDepthQuantizationSteps = 1f / 255f;
+        private const float HullDentRepairRadiusMeters = 2f;
+        private const float HullDentRepairRadiusSq = HullDentRepairRadiusMeters * HullDentRepairRadiusMeters;
+        private const float HullDentRepairDepthScale = 0.01f;
+        private const float MinimumStoredHullDentDepthMeters = 0.001f;
+        private const float HullRepairEpsilon = 0.0001f;
         private static readonly char[] s_integrityDiagnosticPrefixChars = "INTEGRITY ".ToCharArray();
         private static FixedCharBuffer s_hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - repair tool HUD staging buffer - owner: RepairTool
 
@@ -118,6 +131,10 @@ namespace Hecton8.Gameplay
         private BaseAirlock _cachedServiceTargetAirlock;
         private Collider _cachedSubmarineDamageTargetCollider;
         private ISubmarineDamageControlTarget _cachedSubmarineDamageTarget;
+        private ISubmarineRepairRoomResolver _cachedSubmarineRepairRoomResolver;
+        private Transform _cachedSubmarineDamageTargetTransform;
+        private IDataVault _dataVault;
+        private VaultBufferHandle<float4> _hullDentsHandle;
         private readonly List<MonoBehaviour> _submarineDamageTargetSearchBuffer = new List<MonoBehaviour>(16); // COLD ALLOC: List<MonoBehaviour>(16) - interface lookup scratch for submarine damage-control targets - owner: RepairTool
         private readonly char[] _integrityDiagnosticBuffer = new char[24]; // COLD ALLOC: char[24] — repair-tool floating integrity diagnostic buffer — owner: RepairTool
 
@@ -322,12 +339,16 @@ namespace Hecton8.Gameplay
         private float ResolveRuntimeRepairPowerPerSecond()
         {
             float runtimePower = GetRuntimePowerScalar(1f);
-            return repairSpeed * math.max(0.1f, runtimePower);
+            if (!math.isfinite(runtimePower))
+                runtimePower = 1f;
+
+            return FiniteNonNegativeOrZero(repairSpeed) * math.max(0.1f, runtimePower);
         }
 
         private float ResolveRuntimeRepairPowerNormalized()
         {
-            return math.saturate(GetRuntimePowerScalar(1f));
+            float runtimePower = GetRuntimePowerScalar(1f);
+            return math.isfinite(runtimePower) ? math.saturate(runtimePower) : 0f;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -336,8 +357,21 @@ namespace Hecton8.Gameplay
 
         public override void UsePrimary(float deltaTime)
         {
-            _isRepairing = true;
+            if (!TryBeginToolUse(deltaTime, true))
+            {
+                _isRepairing = false;
+                if (!_noTargetReportedThisUse)
+                {
+                    PublishWarningMessage(ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_NO_POWER, "REPAIR TOOL - NO POWER"));
+                    _noTargetReportedThisUse = true;
+                }
 
+                UpdateBeamMiss();
+                InvalidateDiagnosisCache();
+                return;
+            }
+
+            _isRepairing = true;
             bool didHit = TryGetRepairHit(out _hit);
 
             if (!didHit)
@@ -605,6 +639,7 @@ namespace Hecton8.Gameplay
         private void UpdateBeamHit(Vector3 hitPoint, Vector3 hitNormal)
         {
             SetRepairVisuals(true);
+            Vector3 safeNormal = ResolveFiniteDirection(hitNormal, _cachedTransform != null ? _cachedTransform.forward : Vector3.forward);
 
             if (repairLine != null)
             {
@@ -612,19 +647,23 @@ namespace Hecton8.Gameplay
                     repairLine.enabled = true;
 
                 repairLine.SetPosition(0, Vector3.zero);
-                repairLine.SetPosition(1, _cachedTransform.InverseTransformPoint(hitPoint));
+                repairLine.SetPosition(
+                    1,
+                    TryResolveToolLocalPointAup(hitPoint, out Vector3 localHitPoint)
+                        ? localHitPoint
+                        : Vector3.forward * ResolveRuntimeRepairRange());
             }
 
             if (sparksVFX != null)
             {
                 Transform t = sparksVFX.transform;
                 t.position = hitPoint;
-                t.rotation = Quaternion.LookRotation(hitNormal);
+                t.rotation = Quaternion.LookRotation(safeNormal);
             }
 
             if (weldLight != null)
             {
-                weldLight.transform.position = hitPoint - hitNormal * 0.05f;
+                weldLight.transform.position = hitPoint - safeNormal * 0.05f;
             }
 
             if (repairLoopAudio != null && !repairLoopAudio.isPlaying)
@@ -696,7 +735,11 @@ namespace Hecton8.Gameplay
             {
                 repairLine.enabled = true;
                 repairLine.SetPosition(0, Vector3.zero);
-                repairLine.SetPosition(1, _cachedTransform.InverseTransformPoint(_hit.point));
+                repairLine.SetPosition(
+                    1,
+                    TryResolveToolLocalPointAup(_hit.point, out Vector3 localHitPoint)
+                        ? localHitPoint
+                        : Vector3.forward * ResolveRuntimeRepairRange());
             }
 
             ResolveRepairTargets(_hit.collider, out BaseModule module, out _);
@@ -765,7 +808,22 @@ namespace Hecton8.Gameplay
 
             float repairPowerPerSecond = ResolveRuntimeRepairPowerPerSecond();
             float intensity01 = ResolveRuntimeRepairPowerNormalized();
-            if (!damageTarget.TryQueueRepairHit(_hit.point, deltaTime, repairPowerPerSecond, intensity01))
+            int repairRoomId = -1;
+            ISubmarineRepairRoomResolver roomResolver = _cachedSubmarineRepairRoomResolver;
+            if (roomResolver != null)
+                roomResolver.TryResolveRepairRoom(_hit.point, out repairRoomId);
+
+            bool dentChanged = TryRepairVaultHullDents(
+                _hit.point,
+                deltaTime,
+                repairPowerPerSecond,
+                intensity01,
+                _cachedSubmarineDamageTargetTransform,
+                repairRoomId,
+                out _,
+                out _);
+            bool breachRepairQueued = damageTarget.TryQueueRepairHit(_hit.point, deltaTime, repairPowerPerSecond, intensity01);
+            if (!dentChanged && !breachRepairQueued)
                 return false;
 
             UpdateBeamHit(_hit.point, _hit.normal);
@@ -790,6 +848,8 @@ namespace Hecton8.Gameplay
             {
                 _cachedSubmarineDamageTargetCollider = collider;
                 _cachedSubmarineDamageTarget = null;
+                _cachedSubmarineRepairRoomResolver = null;
+                _cachedSubmarineDamageTargetTransform = null;
 
                 _submarineDamageTargetSearchBuffer.Clear();
                 collider.GetComponentsInParent(false, _submarineDamageTargetSearchBuffer);
@@ -799,6 +859,8 @@ namespace Hecton8.Gameplay
                     if (component is ISubmarineDamageControlTarget target)
                     {
                         _cachedSubmarineDamageTarget = target;
+                        _cachedSubmarineRepairRoomResolver = component as ISubmarineRepairRoomResolver;
+                        _cachedSubmarineDamageTargetTransform = component != null ? component.transform : null;
                         break;
                     }
                 }
@@ -809,17 +871,334 @@ namespace Hecton8.Gameplay
 
         private void PublishRepairSparkSignal(Vector3 worldPoint, float intensity01)
         {
+            float safeIntensity01 = math.isfinite(intensity01) ? math.saturate(intensity01) : 0f;
+            ushort sparkQuantity = ResolveRepairSparkQuantity(safeIntensity01);
             double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
             DebrisSpawnSignal signal = new DebrisSpawnSignal
             {
                 PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(absolute),
                 SpeciesHash = RepairSparksSignalHash,
                 SourceEntityId = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId())),
-                Intensity01 = math.saturate(intensity01),
+                Intensity01 = safeIntensity01,
                 DebrisKind = RepairSparkDebrisKind,
-                Flags = 0
+                Flags = DebrisSpawnSignal.FlagToolSparks | DebrisSpawnSignal.FlagComputeShard,
+                Quantity = sparkQuantity
             };
             GlobalSignals.Publish(in signal);
+        }
+
+        private static ushort ResolveRepairSparkQuantity(float intensity01)
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            bool lowTier = tier == HectonQualityTier.Unknown ||
+                           tier == HectonQualityTier.Low ||
+                           tier == HectonQualityTier.Mx350;
+            int min = lowTier ? 2 : 8;
+            int max = lowTier ? 6 : 32;
+            return (ushort)math.clamp((int)math.round(math.lerp(min, max, math.saturate(intensity01))), 1, 64);
+        }
+
+        private bool TryRepairVaultHullDents(
+            Vector3 worldPoint,
+            float deltaTime,
+            float repairPowerPerSecond,
+            float intensity01,
+            Transform submarineRoot,
+            int roomId,
+            out int touchedDentCount,
+            out int repairedDentCount)
+        {
+            touchedDentCount = 0;
+            repairedDentCount = 0;
+            float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
+            float safeRepairPowerPerSecond = FiniteNonNegativeOrZero(repairPowerPerSecond);
+            float safeIntensity01 = math.isfinite(intensity01) ? math.saturate(intensity01) : 0f;
+            if (submarineRoot == null ||
+                safeDeltaTime <= 0f ||
+                safeRepairPowerPerSecond <= 0f ||
+                !TryResolveSubmarineLocalHit(submarineRoot, worldPoint, out float3 localPoint))
+            {
+                return false;
+            }
+
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return false;
+
+            if (!EnsureHullDentsHandle(vault))
+                return false;
+
+            float repairDelta = safeDeltaTime *
+                                safeRepairPowerPerSecond *
+                                HullDentRepairDepthScale *
+                                math.max(0.1f, safeIntensity01);
+            if (repairDelta <= 0f || !math.isfinite(repairDelta))
+                return false;
+
+            if (!vault.TryLockBuffer(BufferID.HullDents))
+                return false;
+
+            bool changed = false;
+            int activeDentCount = 0;
+            try
+            {
+                var dents = _hullDentsHandle.Resolve(vault);
+                if (!dents.IsCreated)
+                    return false;
+
+                int count = math.min(HullDentVaultCapacity, dents.Length);
+                for (int dentIndex = 0; dentIndex < count; dentIndex++)
+                {
+                    float4 dent = dents[dentIndex];
+                    if (!math.all(math.isfinite(dent)))
+                    {
+                        dents[dentIndex] = default;
+                        changed = true;
+                        continue;
+                    }
+
+                    float depth = UnpackHullDentDepth(dent.w);
+                    if (depth <= MinimumStoredHullDentDepthMeters)
+                    {
+                        if (dent.w < 0f || !math.isfinite(dent.w))
+                        {
+                            dent.w = 0f;
+                            dents[dentIndex] = dent;
+                            changed = true;
+                        }
+
+                        continue;
+                    }
+
+                    activeDentCount++;
+                    float3 dentPoint = new float3(dent.x, dent.y, dent.z);
+                    if (math.distancesq(dentPoint, localPoint) > HullDentRepairRadiusSq)
+                        continue;
+
+                    touchedDentCount++;
+                    float radius = UnpackHullDentRadius(dent.w);
+                    float repairedDepth = math.max(0f, depth - repairDelta);
+                    float repairedPacked = repairedDepth <= MinimumStoredHullDentDepthMeters
+                        ? 0f
+                        : PackHullDentRadiusDepth(radius, repairedDepth);
+
+                    if (math.abs(repairedPacked - dent.w) <= HullRepairEpsilon)
+                        continue;
+
+                    dent.w = math.max(0f, repairedPacked);
+                    dents[dentIndex] = dent;
+                    changed = true;
+
+                    if (repairedDepth <= MinimumStoredHullDentDepthMeters)
+                    {
+                        repairedDentCount++;
+                        activeDentCount = math.max(0, activeDentCount - 1);
+                        PublishHullRepairedSignal(worldPoint, roomId, dentIndex, repairedDentCount);
+                    }
+                }
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.HullDents);
+            }
+
+            if (changed || repairedDentCount > 0)
+                CrashTelemetryBuffer.ReportHullDentState(HullRepairTelemetryHash, activeDentCount, BuildHullRepairTelemetryFlags(touchedDentCount, repairedDentCount));
+
+            return changed;
+        }
+
+        private IDataVault ResolveDataVault()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
+        }
+
+        private bool EnsureHullDentsHandle(IDataVault vault)
+        {
+            if (vault == null)
+                return false;
+
+            if (!_hullDentsHandle.IsCreated ||
+                _hullDentsHandle.BufferId != BufferID.HullDents ||
+                _hullDentsHandle.Length < HullDentVaultCapacity)
+            {
+                _hullDentsHandle = vault.GetBufferHandle<float4>(
+                    BufferID.HullDents,
+                    HullDentVaultCapacity,
+                    SystemID.GameplayTools,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            return _hullDentsHandle.IsCreated;
+        }
+
+        private static bool TryResolveSubmarineLocalHit(Transform submarineRoot, Vector3 worldPoint, out float3 localPoint)
+        {
+            localPoint = default;
+            if (submarineRoot == null || !IsFiniteVector(worldPoint))
+                return false;
+            if (!IsFiniteQuaternion(submarineRoot.rotation))
+                return false;
+
+            double3 hitAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
+            double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(submarineRoot.position);
+            double3 relativeWorldDouble = hitAup - rootAup;
+            if (!math.all(math.isfinite(relativeWorldDouble)))
+                return false;
+
+            Vector3 relativeWorld = new Vector3(
+                (float)relativeWorldDouble.x,
+                (float)relativeWorldDouble.y,
+                (float)relativeWorldDouble.z);
+            if (!IsFiniteVector(relativeWorld))
+                return false;
+
+            Vector3 localVector = Quaternion.Inverse(submarineRoot.rotation) * relativeWorld;
+            Vector3 lossyScale = submarineRoot.lossyScale;
+            localVector.x /= ResolveSafeScale(lossyScale.x);
+            localVector.y /= ResolveSafeScale(lossyScale.y);
+            localVector.z /= ResolveSafeScale(lossyScale.z);
+            if (!IsFiniteVector(localVector))
+                return false;
+
+            localPoint = new float3(localVector.x, localVector.y, localVector.z);
+            return math.all(math.isfinite(localPoint));
+        }
+
+        private bool TryResolveToolLocalPointAup(Vector3 worldPoint, out Vector3 localPoint)
+        {
+            localPoint = Vector3.zero;
+            if (!IsFiniteVector(worldPoint))
+                return false;
+
+            Transform toolTransform = _cachedTransform != null ? _cachedTransform : transform;
+            _cachedTransform = toolTransform;
+            if (toolTransform == null ||
+                !IsFiniteVector(toolTransform.position) ||
+                !IsFiniteQuaternion(toolTransform.rotation))
+            {
+                return false;
+            }
+
+            double3 pointAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
+            double3 toolAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(toolTransform.position);
+            double3 relativeWorldDouble = pointAup - toolAup;
+            if (!math.all(math.isfinite(relativeWorldDouble)))
+                return false;
+
+            Vector3 relativeWorld = new Vector3(
+                (float)relativeWorldDouble.x,
+                (float)relativeWorldDouble.y,
+                (float)relativeWorldDouble.z);
+            if (!IsFiniteVector(relativeWorld))
+                return false;
+
+            Vector3 localVector = Quaternion.Inverse(toolTransform.rotation) * relativeWorld;
+            Vector3 lossyScale = toolTransform.lossyScale;
+            localVector.x /= ResolveSafeScale(lossyScale.x);
+            localVector.y /= ResolveSafeScale(lossyScale.y);
+            localVector.z /= ResolveSafeScale(lossyScale.z);
+            if (!IsFiniteVector(localVector))
+                return false;
+
+            localPoint = localVector;
+            return true;
+        }
+
+        private static void PublishHullRepairedSignal(Vector3 worldPoint, int roomId, int dentIndex, int repairedDentCount)
+        {
+            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
+            byte flags = HullRepairedSignal.CompletedFlag;
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            if (tier == HectonQualityTier.Unknown || tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350)
+                flags |= HullRepairedSignal.LowTierVisualOnlyFlag;
+
+            HullRepairedSignal signal = new HullRepairedSignal
+            {
+                HitAup = AbsoluteUniversePosition.FromAbsolutePosition(absolute),
+                RoomId = roomId,
+                SourceHash = HullRepairSourceHash,
+                Frame = unchecked((uint)Time.frameCount),
+                DentIndex = (byte)math.clamp(dentIndex, 0, 255),
+                DentsRepairedCount = (byte)math.clamp(repairedDentCount, 0, 255),
+                QualityTier = GlobalRegistry.ScalabilityTierProfileByte,
+                Flags = flags
+            };
+            GlobalSignals.Publish(in signal);
+        }
+
+        private static uint BuildHullRepairTelemetryFlags(int touchedDentCount, int repairedDentCount)
+        {
+            uint touched = (uint)math.clamp(touchedDentCount, 0, 255);
+            uint repaired = (uint)math.clamp(repairedDentCount, 0, 255);
+            return GlobalRegistry.ScalabilityTierProfileByte |
+                   (touched << 8) |
+                   (repaired << 16);
+        }
+
+        private static float PackHullDentRadiusDepth(float radius, float depth)
+        {
+            int radiusQ = Mathf.Clamp(
+                Mathf.RoundToInt(math.clamp(radius, 0f, 15.9375f) * HullDentRadiusQuantizationStepsPerMeter),
+                0,
+                255);
+            int depthQ = Mathf.Clamp(Mathf.RoundToInt(math.saturate(depth) * 255f), 0, 255);
+            return (depthQ << 8) | radiusQ;
+        }
+
+        private static float UnpackHullDentRadius(float packed)
+        {
+            int packedInt = Mathf.Max(0, Mathf.RoundToInt(math.max(0f, packed)));
+            return (packedInt & 255) * InvHullDentRadiusQuantizationStepsPerMeter;
+        }
+
+        private static float UnpackHullDentDepth(float packed)
+        {
+            int packedInt = Mathf.Max(0, Mathf.RoundToInt(math.max(0f, packed)));
+            return ((packedInt >> 8) & 255) * InvHullDentDepthQuantizationSteps;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        private static Vector3 ResolveFiniteDirection(Vector3 value, Vector3 fallback)
+        {
+            if (IsFiniteVector(value))
+            {
+                float lengthSq = value.sqrMagnitude;
+                if (math.isfinite(lengthSq) && lengthSq > HullRepairEpsilon * HullRepairEpsilon)
+                    return value * math.rsqrt(lengthSq);
+            }
+
+            if (IsFiniteVector(fallback))
+            {
+                float fallbackLengthSq = fallback.sqrMagnitude;
+                if (math.isfinite(fallbackLengthSq) && fallbackLengthSq > HullRepairEpsilon * HullRepairEpsilon)
+                    return fallback * math.rsqrt(fallbackLengthSq);
+            }
+
+            return Vector3.forward;
+        }
+
+        private static bool IsFiniteQuaternion(Quaternion value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z) &&
+                   math.isfinite(value.w);
+        }
+
+        private static float FiniteNonNegativeOrZero(float value)
+        {
+            return math.isfinite(value) && value > 0f ? value : 0f;
+        }
+
+        private static float ResolveSafeScale(float scale)
+        {
+            return math.isfinite(scale) && math.abs(scale) > HullRepairEpsilon ? scale : 1f;
         }
 
         private void PublishIntegrityDiagnostic(BaseModule module, Vector3 hitPoint, Vector3 hitNormal)

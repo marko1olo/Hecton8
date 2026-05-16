@@ -11,7 +11,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Tools;
 using Hecton8.Core;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using TMPro;
 #if UNITY_EDITOR
 using UnityEditor;

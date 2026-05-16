@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Signals;
+using Hecton8.Core.Contracts.Signals;
 using MacroDatabaseHydratedSignal = Hecton8.Core.Contracts.SectorHydratedSignal;
 
 namespace Hecton8.Core
@@ -13,7 +13,7 @@ namespace Hecton8.Core
     {
         public void PublishSectorHydrated(in MacroDatabaseHydratedSignal signal)
         {
-            Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal payload = new Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal
+            Hecton8.Core.Contracts.Signals.MacroDatabaseSectorHydrationSignal payload = new Hecton8.Core.Contracts.Signals.MacroDatabaseSectorHydrationSignal
             {
                 SectorHash = signal.SectorHash,
                 FileOffset = signal.FileOffset,
