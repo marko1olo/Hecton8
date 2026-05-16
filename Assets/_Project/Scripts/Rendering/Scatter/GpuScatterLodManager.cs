@@ -256,6 +256,7 @@ namespace Hecton8.Rendering.Scatter
         private GraphicsBuffer _motionVectorBuffer;
         private GraphicsBuffer _argsBuffer;
         private GraphicsBuffer _frameConstantsBuffer;
+        private MaterialPropertyBlock _materialProperties;
         private Plane[] _cameraPlanes;
         private Vector4[] _frustumPlaneUpload;
         private readonly ScatterFrameConstants[] _frameConstantsUpload = new ScatterFrameConstants[1]; // COLD ALLOC: ScatterFrameConstants[1] - packed compute constant upload lane - owner: GpuScatterLodManager
@@ -394,6 +395,7 @@ namespace Hecton8.Rendering.Scatter
             _metadataBuffers = new GraphicsBuffer[DoubleBufferCount]; // COLD ALLOC: GraphicsBuffer[2] - double-buffered flora metadata upload handles - owner: GpuScatterLodManager
             _cameraPlanes = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - camera frustum cache - owner: GpuScatterLodManager
             _frustumPlaneUpload = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] - compute frustum upload cache - owner: GpuScatterLodManager
+            _materialProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - per-draw indirect flora shader state - owner: GpuScatterLodManager
             instanceCapacity = math.max(1, instanceCapacity);
             _activeInstanceCount = math.clamp(initialActiveInstanceCount, 0, instanceCapacity);
             _drawBounds = fallbackDrawBounds;
@@ -947,18 +949,23 @@ namespace Hecton8.Rendering.Scatter
                 return;
 
             material.enableInstancing = true;
-            material.SetBuffer(_ShaderInstanceMatricesId, _matrixBuffers[_gpuBufferIndex]);
-            material.SetBuffer(_ShaderInstanceDataId, _metadataBuffers[_gpuBufferIndex]);
-            material.SetBuffer(_ShaderVisibleIndicesId, _visibleIndexBuffer);
-            material.SetBuffer(_VisibleMatricesId, _visibleMatrixBuffer);
-            material.SetBuffer(_ShaderMotionVectorsId, _motionVectorBuffer);
-            material.SetVector(_GlobalFloatingOffsetId, _aupShiftOffset);
-            material.SetVector(_HectonFloatingOriginOffsetId, _aupShiftOffset);
-            material.SetFloat(_LodNearDistanceId, math.max(1f, lowTierCullDistanceMeters));
-            material.SetFloat(_LodFarDistanceId, math.max(1f, _effectiveCullDistanceMeters));
-            material.SetFloat(_LodTransitionRangeId, _cachedHighTier ? math.max(0f, lodCrossfadeRangeMeters) : 0f);
             material.EnableKeyword(GpuIndirectKeyword);
-            ApplyMaterialScalability(material);
+            MaterialPropertyBlock properties = _materialProperties;
+            if (properties == null)
+                return;
+
+            properties.Clear();
+            properties.SetBuffer(_ShaderInstanceMatricesId, _matrixBuffers[_gpuBufferIndex]);
+            properties.SetBuffer(_ShaderInstanceDataId, _metadataBuffers[_gpuBufferIndex]);
+            properties.SetBuffer(_ShaderVisibleIndicesId, _visibleIndexBuffer);
+            properties.SetBuffer(_VisibleMatricesId, _visibleMatrixBuffer);
+            properties.SetBuffer(_ShaderMotionVectorsId, _motionVectorBuffer);
+            properties.SetVector(_GlobalFloatingOffsetId, _aupShiftOffset);
+            properties.SetVector(_HectonFloatingOriginOffsetId, _aupShiftOffset);
+            properties.SetFloat(_LodNearDistanceId, math.max(1f, lowTierCullDistanceMeters));
+            properties.SetFloat(_LodFarDistanceId, math.max(1f, _effectiveCullDistanceMeters));
+            properties.SetFloat(_LodTransitionRangeId, _cachedHighTier ? math.max(0f, lodCrossfadeRangeMeters) : 0f);
+            ApplyMaterialScalability(material, properties);
 
             Bounds bounds = _hasExplicitDrawBounds ? _drawBounds : ResolveFallbackDrawBounds();
             RenderParams renderParams = new RenderParams(material)
@@ -968,31 +975,32 @@ namespace Hecton8.Rendering.Scatter
                 shadowCastingMode = shadowCastingMode,
                 receiveShadows = receiveShadows,
                 motionVectorMode = MotionVectorGenerationMode.Object,
-                camera = viewCamera
+                camera = viewCamera,
+                matProps = properties
             };
 
             Graphics.RenderMeshIndirect(renderParams, mesh, _argsBuffer, 1, 0);
         }
 
-        private void ApplyMaterialScalability(Material material)
+        private void ApplyMaterialScalability(Material material, MaterialPropertyBlock properties)
         {
             if (_cachedHighTier)
             {
                 material.EnableKeyword(QualityHighKeyword);
                 material.DisableKeyword(QualityMx350Keyword);
-                material.SetFloat(_AnisotropicSssStrengthId, math.max(0f, highTierAnisotropicSssStrength));
-                material.SetFloat(_OrganicSssScaleId, math.max(0f, highTierOrganicSssScale));
-                material.SetFloat(_EdgeBloomStrengthId, math.max(0f, highTierEdgeBloomStrength));
-                material.SetFloat(_LocalCausticStrengthId, math.max(0f, highTierLocalCausticStrength));
+                properties.SetFloat(_AnisotropicSssStrengthId, math.max(0f, highTierAnisotropicSssStrength));
+                properties.SetFloat(_OrganicSssScaleId, math.max(0f, highTierOrganicSssScale));
+                properties.SetFloat(_EdgeBloomStrengthId, math.max(0f, highTierEdgeBloomStrength));
+                properties.SetFloat(_LocalCausticStrengthId, math.max(0f, highTierLocalCausticStrength));
                 return;
             }
 
             material.EnableKeyword(QualityMx350Keyword);
             material.DisableKeyword(QualityHighKeyword);
-            material.SetFloat(_AnisotropicSssStrengthId, math.max(0f, lowTierAnisotropicSssStrength));
-            material.SetFloat(_OrganicSssScaleId, math.max(0f, lowTierOrganicSssScale));
-            material.SetFloat(_EdgeBloomStrengthId, math.max(0f, lowTierEdgeBloomStrength));
-            material.SetFloat(_LocalCausticStrengthId, math.max(0f, lowTierLocalCausticStrength));
+            properties.SetFloat(_AnisotropicSssStrengthId, math.max(0f, lowTierAnisotropicSssStrength));
+            properties.SetFloat(_OrganicSssScaleId, math.max(0f, lowTierOrganicSssScale));
+            properties.SetFloat(_EdgeBloomStrengthId, math.max(0f, lowTierEdgeBloomStrength));
+            properties.SetFloat(_LocalCausticStrengthId, math.max(0f, lowTierLocalCausticStrength));
         }
 
         private void UpdateVisibleCountReadback(int frameIndex)

@@ -4,7 +4,7 @@ Agent Identity: VFX_TECHNICAL_ARTIST
 Prompt ID: INTERACTIVE_WAKE_VFX
 Domain: VFX/ENVIRONMENT
 Task Count: 18
-Status: VERIFIED MASTER GRADE - WAKES ACTIVE
+Status: WAKE COMPLETE - FINAL BUILD BLOCKED BY CONCURRENT DEPENDENCY
 
 ## Mandates Read
 
@@ -20,7 +20,7 @@ Status: VERIFIED MASTER GRADE - WAKES ACTIVE
 
 - [x] 1. PURGE_WIND | DOD: static scan of `Assets/_Project` found zero first-party `WindZone`, `ForceField`, `ParticleSystemForceField`, or `forceOverLifetime` usage; third-party GPU Instancer WindZone scan left untouched under third-party integrity rule | Alternatives Rejected: editing vendor code or raw YAML without a first-party hit | Estimate: 0 us/frame saved in first-party environment path
 - [x] 2. SINGLETON_KILL | DOD: `IWakeDisplacementService` exposed through `GlobalRegistry.WakeDisplacement`, mapped to `ProceduralSwayDirectorRuntime`, and registered/unregistered by `FloraInteractionManager` without `WakeManager.Instance`; static scan found no first-party `WakeManager` usage | Alternatives Rejected: new singleton, duplicate wake manager, or vendor-code WindZone edit | Estimate: 0 us/frame direct, prevents unmanaged singleton scene lookup drift
-- [x] 3. DATA_EVICTION | DOD: active procedural wake sources now resolve through `GlobalDataVault` buffer `BufferID.WakeSources` with `SystemID.Vfx`; local persistent `NativeArray<ProceduralWakePoint>` ownership and sentinel registration removed | Alternatives Rejected: private persistent wake allocation owned by `FloraInteractionManager` | Estimate: 0-5 us/frame low-end accounting/owner churn reduction
+- [x] 3. DATA_EVICTION | DOD: active procedural wake sources resolve through `GlobalDataVault` buffer `BufferID.WakeSources`; wake trail stamp commands resolve through `BufferID.WakeTrailStampCommands`; local persistent wake NativeArray ownership and sentinel registration removed | Alternatives Rejected: private persistent wake allocation owned by `FloraInteractionManager` | Estimate: 0-5 us/frame low-end accounting/owner churn reduction
 
 ## Verification
 
@@ -34,6 +34,8 @@ Status: VERIFIED MASTER GRADE - WAKES ACTIVE
 - [x] Phase 3 shader inquisition scan | Command: `rg -n "distance\(|normalize\(|String\.Format|string\.Format|WindZone|forceOverLifetime|ParticleSystemForceField|ForceField" Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl Assets/_Project/Art/Shaders/Hecton_FluidAdvection.compute Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute Assets/_Project/Scripts/VFX/Wakes Assets/_Project/Scripts/World/FloraInteractionManager.cs` | Result: no hits | Estimate: prevents banned shader math and Unity wind fallback
 - [x] Metal/Quest thread-group scan | Command: `rg -n "numthreads\(([^)]*)\)" Assets/_Project/Art/Shaders/Hecton_FluidAdvection.compute Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute` | Result: only 64x1x1 or 1x1x1 groups | Estimate: below 1024 thread-group ceiling
 - [x] Final compile | Command: `dotnet build .\Hecton8.Core.csproj -v:minimal -clp:ErrorsOnly` | Result: Build succeeded, 0 warnings, 0 errors | Status: green
+- [x] Wake trail DataVault eviction scan | Command: `rg -n "_queuedWakeTrailStampCommands|new NativeArray<WakeTrailStampCommand>|StructLayout\(LayoutKind\.Sequential, Pack = 4, Size = 32\).*WakeTrail" Assets/_Project/Scripts/World/FloraInteractionManager.cs` | Result: no hits; `WakeTrailStampCommand` is explicit `Pack = 1` and DataVault-backed by `BufferID.WakeTrailStampCommands` | Estimate: removes 4-command private native wake queue ownership
+- [x] Latest compile reattempt | Command: `dotnet build .\Hecton8.Core.csproj -v:minimal -clp:ErrorsOnly` | Result: exits 1 on concurrent non-wake dependency wall (`ContentRuntimeServices`, `SargassumMicroFaunaBoids.cs` sensory fields, `LockstepStateValidator`, `EcosystemDirector`, `SubmarineFluidDynamics`); no sampled error names `FloraInteractionManager`, `WakeTrailStampCommands`, `WakeSource`, or `Hecton8_UberNoir` | Status: `[BLOCKED BY DEPENDENCY]`
 
 ## Remaining Tasks
 
@@ -51,7 +53,7 @@ Status: VERIFIED MASTER GRADE - WAKES ACTIVE
 - [x] 15. HOMEOSTASIS_ADAPTATION | DOD: `SystemStress01 > 0.8` or low tier caps active wake publishing/decay to 4 slots; high tier keeps 16 | Alternatives Rejected: one-size-fits-all middle tier | Estimate: up to 6-18 us/frame GPU-side downstream savings on stress frames
 - [x] 16. NORMAL_PERTURBATION | DOD: UberNoir wake response tilts `normalWS` with radial and vortex impulse using safe normalization and dot-based radius checks | Alternatives Rejected: fragment-only normal sparkle or raw `normalize` | Estimate: 2-6 us/frame high-tier GPU spend for visible shimmer
 - [x] 17. BOID_INTEGRATION | DOD: `SargassumMicroFaunaBoids.compute` reads global wake arrays and adds wake repulsion/vortex steering; low/simplified tiers cap to 2 slots, full tier uses up to 16 | Alternatives Rejected: submarine-center-only panic and new CPU-side boid wake owner | Estimate: 4-14 us/frame saved versus CPU overlap queries
-- [x] 18. FINAL_VALIDATION | DOD: `dotnet build .\Hecton8.Core.csproj -v:minimal -clp:ErrorsOnly` succeeded with 0 warnings and 0 errors after the final wake pass | Alternatives Rejected: reporting stale dependency wall | Estimate: build green
+- [ ] 18. FINAL_VALIDATION | `[BLOCKED BY DEPENDENCY]` Latest `dotnet build .\Hecton8.Core.csproj -v:minimal -clp:ErrorsOnly` exits 1 on concurrent non-wake compile wall after a prior green build; sampled blockers are content telemetry, boid sensory fields, lockstep signal constants, ecosystem macro swarms, and submarine fluid vault migration | Alternatives Rejected: patching unrelated domains from the VFX wake prompt | Estimate: wake slice has no sampled compile error
 
 ## Prior Blocker History
 

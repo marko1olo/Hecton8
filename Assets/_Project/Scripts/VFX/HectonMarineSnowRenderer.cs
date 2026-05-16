@@ -865,7 +865,7 @@ namespace Hecton8.Environment
         {
             _vehicleWakePublishCooldown = math.max(0f, _vehicleWakePublishCooldown - dt);
             if (_vehicleWakePublishCooldown > 0f ||
-                !TryResolveVehicleWakeJobResultBuffer(out NativeArray<VehicleWakeJobResult> vehicleWakeJobResult) ||
+                !TryResolveVehicleWakeJobResultBuffer(out var vehicleWakeJobResult) ||
                 math.abs(_lastVehicleThrottle) <= VehicleWakeThrottleDeadZone)
             {
                 return;
@@ -2401,7 +2401,7 @@ namespace Hecton8.Environment
 
         private void RecordTelemetry()
         {
-            if (!TryResolveTelemetryRing(out NativeArray<MarineSnowTelemetryEntry> telemetryRing))
+            if (!TryResolveTelemetryRing(out var telemetryRing))
                 return;
 
             Vector3 cameraPosition = targetCamera != null ? targetCamera.position : Vector3.zero;
@@ -2463,7 +2463,7 @@ namespace Hecton8.Environment
 
         private void DumpBlackBoxOnce()
         {
-            if (_blackBoxDumped || !TryResolveTelemetryRing(out NativeArray<MarineSnowTelemetryEntry> telemetryRing))
+            if (_blackBoxDumped || !TryResolveTelemetryRing(out var telemetryRing))
                 return;
 
             _blackBoxDumped = true;

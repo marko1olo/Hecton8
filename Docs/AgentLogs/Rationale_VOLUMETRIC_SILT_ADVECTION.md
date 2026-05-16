@@ -93,8 +93,8 @@ Scalability potential: Low clamps cheap radial wakes; High/Ultra clamps combined
 Hardware Impact: Small ALU cost buys deterministic failure containment; expected recovery cost saved is 5 us plus avoided visual corruption.
 
 Problem: Critical VFX state needed a blackbox without managed logging.
-Solution: Added a 300-entry persistent NativeArray circular buffer and binary dump path `Docs/AgentLogs/Dump_VOLUMETRIC_SILT_ADVECTION.bin` for non-finite detection.
-Rejected Alternatives: `Debug.Log` per frame or no crash evidence was rejected; both violate the blackbox mandate.
+Solution: Added a 300-entry `GlobalDataVault` telemetry ring and binary dump path `Docs/AgentLogs/Dump_VOLUMETRIC_SILT_ADVECTION.bin` for non-finite detection.
+Rejected Alternatives: `Debug.Log` per frame, no crash evidence, and renderer-owned persistent `NativeArray` storage were rejected; all violate blackbox/data-sovereignty mandates.
 Scalability potential: Same fixed 300-entry cost on all tiers; High/Ultra telemetry includes larger capacity and wake count.
 Hardware Impact: Fixed 64B x 300 native memory; avoids managed string allocations and enables postmortem state recovery.
 
@@ -125,3 +125,23 @@ Solution: Ran static scans for `GameObject.Find`, `FindObjectOfType`, direct ren
 Rejected Alternatives: Treating global service access as a new circular dependency was rejected because this code uses existing `GlobalRegistry`, `VehicleCommandSignalBus`, and `GlobalSignals` contracts rather than constructing peer systems.
 Scalability potential: Dependency shape stays stable across low/high tiers; VFX reads published GPU buffers and signals instead of owning gameplay or fluid state.
 Hardware Impact: No runtime cost; prevents future managed discovery spikes and architecture drift.
+
+## Loop 6 Multiplatform/H-Phi Inquisition
+
+Problem: The marine-snow renderer still owned persistent wake-job and blackbox `NativeArray` storage, contradicting DataVault sovereignty and increasing leak surface.
+Solution: Added `BufferID.MarineSnowWakeJobResult` and `BufferID.MarineSnowTelemetryRing`, then changed the renderer to lease those buffers through `GlobalDataVault` handles and invalidate them during vault compaction.
+Rejected Alternatives: Keeping `H8Memory.Allocate` inside the renderer was rejected because the system should own behavior, not storage. Managed delegates/EventBus were not introduced; existing typed `VehicleCommandSignalBus` and `GlobalSignals` remain the only signal path.
+Scalability potential: Low/Toaster uses the same 1-entry wake lane and 300-entry telemetry ring; High/Ultra can drive 100,000 particles without additional CPU-side storage.
+Hardware Impact: Removes two renderer-owned persistent native allocations from the leak surface. Estimated low-end gain is not frame-time ALU, but reduced memory sentinel churn and fewer ownership faults on i3/MX350/Quest-class devices.
+
+Problem: Quest/ARM64 builds are sensitive to implicit struct padding and stale GPU/CPU ABI assumptions.
+Solution: Set `Pack = 1` and explicit `Size` on `ParticleGpuData` (64B), `FrameConstantsData` (112B), `VehicleWakeJobResult` (40B), `MarineSnowTelemetryEntry` (64B), and `VfxComputeParticleBudget` (28B). Added runtime `UnsafeUtility.SizeOf` guards before the renderer ticks.
+Rejected Alternatives: Relying on default sequential layout was rejected because padding differences are invisible until platform build or buffer stride mismatch.
+Scalability potential: Low/Middle/High/Ultra all keep one stable ABI; particle count and math path scale independently of struct layout.
+Hardware Impact: Prevents Quest/Android buffer stride faults and GPU read corruption. Runtime cost is one cold-path layout check; expected frame cost is 0 us.
+
+Problem: Metal/Mac and Steam Deck requirements needed an explicit platform audit, not a PC-only assumption.
+Solution: Re-scanned marine-snow shaders: thread groups are 64, 64, and 1, under Metal's 1024-thread limit; no wave intrinsics/groupshared path is present; `rsqrt`/`rcp` sites are guarded with `max`/finite checks; frame I/O only occurs during fault blackbox dump, never during normal ticks.
+Rejected Alternatives: Adding high-fidelity physical silt collision or per-frame disk traces was rejected because the assignment needs controllable visual cheats and Steam Deck-safe I/O pressure.
+Scalability potential: Toaster mode keeps 8,000 particles and radial wake fake; Middle keeps bounded flow; High/Ultra spend budget on 100,000 particles, 3D flow texture, curl fake, and headlight emission.
+Hardware Impact: Maintains the existing GPU budget gates; no measured microseconds claimed because the current project compile wall prevents profiler capture.

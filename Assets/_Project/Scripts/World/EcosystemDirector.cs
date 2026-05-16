@@ -854,8 +854,8 @@ namespace Hecton8.World
         private NativeArray<float> _macroSwarmMutationBrine;
         private NativeArray<byte> _macroSwarmMutationResults;
         private NativeArray<FaunaMutationTelemetryEntry> _faunaMutationBlackBox;
-        private NativeList<MacroSwarm> _macroHydrationScratch;
-        private NativeList<MacroSwarm> _macroDehydrationScratch;
+        private NativeArray<MacroSwarm> _macroHydrationScratch;
+        private NativeArray<MacroSwarm> _macroDehydrationScratch;
         private NativeList<EcosystemBiomassSaveRun> _saveSnapshotBiomassRuns;
         private NativeHashMap<long, int> _biomassIndexByKey;
         private HeadlessEntitySoA _headlessEntities;
@@ -888,6 +888,8 @@ namespace Hecton8.World
         private int _biomassBlackBoxCursor;
         private int _macroSwarmBlackBoxCursor;
         private int _faunaMutationBlackBoxCursor;
+        private int _macroHydrationScratchCount;
+        private int _macroDehydrationScratchCount;
         private int _lastFaunaMutationInvalidScalarFrame = -1;
         private int _totalMutatedEntities;
         private int _lastHeadlessMutationCount;
@@ -2954,6 +2956,10 @@ namespace Hecton8.World
             if (_sectorFrontStates.IsCreated)
                 return;
 
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return;
+
             // COLD ALLOC: NativeArray<SectorPopulationState>[maxTrackedSectors] - ecosystem sector front buffer for Burst readers - owner: EcosystemDirector
             _sectorFrontStates = new NativeArray<SectorPopulationState>(maxTrackedSectors, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<SectorPopulationState>[maxTrackedSectors] - ecosystem sector back buffer for Burst writers - owner: EcosystemDirector
@@ -2986,28 +2992,18 @@ namespace Hecton8.World
             _pendingBiomassImpacts = new NativeArray<BiomassImpactEvent>(BiomassImpactQueueCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<BiomassTelemetryEntry>[300] - ecology blackbox circular buffer - owner: EcosystemDirector
             _biomassBlackBox = new NativeArray<BiomassTelemetryEntry>(BiomassBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<MacroSwarm>[256] - background ecology migration authority buffer - owner: EcosystemDirector
-            _macroSwarms = new NativeArray<MacroSwarm>(MacroSwarmCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<MacroSwarmArrival>[64] - late-frame biomass transfer packets - owner: EcosystemDirector
-            _macroSwarmArrivals = new NativeArray<MacroSwarmArrival>(MacroSwarmArrivalCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[4] - macro swarm job counters - owner: EcosystemDirector
-            _macroSwarmCounters = new NativeArray<int>(4, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<MacroSwarmTelemetryEntry>[300] - macro migration blackbox circular buffer - owner: EcosystemDirector
-            _macroSwarmBlackBox = new NativeArray<MacroSwarmTelemetryEntry>(MacroSwarmBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[256] - macro swarm radiation mutation scalars - owner: EcosystemDirector
-            _macroSwarmMutationRadiation = new NativeArray<float>(MacroSwarmCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[256] - macro swarm toxicity mutation scalars - owner: EcosystemDirector
-            _macroSwarmMutationToxicity = new NativeArray<float>(MacroSwarmCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[256] - macro swarm brine mutation scalars - owner: EcosystemDirector
-            _macroSwarmMutationBrine = new NativeArray<float>(MacroSwarmCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[256] - macro swarm mutation result flags - owner: EcosystemDirector
-            _macroSwarmMutationResults = new NativeArray<byte>(MacroSwarmCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _macroSwarms = vault.GetBuffer<MacroSwarm>(BufferID.EcosystemMacroSwarms, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory);
+            _macroSwarmArrivals = vault.GetBuffer<MacroSwarmArrival>(BufferID.EcosystemMacroSwarmArrivals, MacroSwarmArrivalCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory);
+            _macroSwarmCounters = vault.GetBuffer<int>(BufferID.EcosystemMacroSwarmCounters, 4, SystemID.AIEcology, NativeArrayOptions.ClearMemory);
+            _macroSwarmBlackBox = vault.GetBuffer<MacroSwarmTelemetryEntry>(BufferID.EcosystemMacroSwarmBlackBox, MacroSwarmBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory);
+            _macroSwarmMutationRadiation = vault.GetBuffer<float>(BufferID.EcosystemMacroSwarmMutationRadiation, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory);
+            _macroSwarmMutationToxicity = vault.GetBuffer<float>(BufferID.EcosystemMacroSwarmMutationToxicity, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory);
+            _macroSwarmMutationBrine = vault.GetBuffer<float>(BufferID.EcosystemMacroSwarmMutationBrine, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory);
+            _macroSwarmMutationResults = vault.GetBuffer<byte>(BufferID.EcosystemMacroSwarmMutationResults, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<FaunaMutationTelemetryEntry>[300] - fauna mutation blackbox circular buffer - owner: EcosystemDirector
             _faunaMutationBlackBox = new NativeArray<FaunaMutationTelemetryEntry>(FaunaMutationBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeList<MacroSwarm>[64] - hydration signal bulk scratch - owner: EcosystemDirector
-            _macroHydrationScratch = new NativeList<MacroSwarm>(MacroSwarmSignalScratchCapacity, Allocator.Persistent);
-            // COLD ALLOC: NativeList<MacroSwarm>[64] - dehydration signal bulk scratch - owner: EcosystemDirector
-            _macroDehydrationScratch = new NativeList<MacroSwarm>(MacroSwarmSignalScratchCapacity, Allocator.Persistent);
+            _macroHydrationScratch = vault.GetBuffer<MacroSwarm>(BufferID.EcosystemMacroHydrationScratch, MacroSwarmSignalScratchCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory);
+            _macroDehydrationScratch = vault.GetBuffer<MacroSwarm>(BufferID.EcosystemMacroDehydrationScratch, MacroSwarmSignalScratchCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeHashMap<long,int>[maxTrackedBiomassCells] - packed 50 m macro-cell key to slot lookup - owner: EcosystemDirector
             _biomassIndexByKey = new NativeHashMap<long, int>(maxTrackedBiomassCells, Allocator.Persistent);
             _headlessEntities = new HeadlessEntitySoA
@@ -3058,6 +3054,8 @@ namespace Hecton8.World
             _biomassBlackBoxCursor = 0;
             _macroSwarmBlackBoxCursor = 0;
             _faunaMutationBlackBoxCursor = 0;
+            _macroHydrationScratchCount = 0;
+            _macroDehydrationScratchCount = 0;
             _totalMutatedEntities = 0;
             _lastHeadlessMutationCount = 0;
             _lastMacroSwarmMutationCount = 0;
@@ -3157,28 +3155,8 @@ namespace Hecton8.World
                 _pendingBiomassImpacts.Dispose(disposeDependency);
             if (_biomassBlackBox.IsCreated)
                 _biomassBlackBox.Dispose(disposeDependency);
-            if (_macroSwarms.IsCreated)
-                _macroSwarms.Dispose(disposeDependency);
-            if (_macroSwarmArrivals.IsCreated)
-                _macroSwarmArrivals.Dispose(disposeDependency);
-            if (_macroSwarmCounters.IsCreated)
-                _macroSwarmCounters.Dispose(disposeDependency);
-            if (_macroSwarmBlackBox.IsCreated)
-                _macroSwarmBlackBox.Dispose(disposeDependency);
-            if (_macroSwarmMutationRadiation.IsCreated)
-                _macroSwarmMutationRadiation.Dispose(disposeDependency);
-            if (_macroSwarmMutationToxicity.IsCreated)
-                _macroSwarmMutationToxicity.Dispose(disposeDependency);
-            if (_macroSwarmMutationBrine.IsCreated)
-                _macroSwarmMutationBrine.Dispose(disposeDependency);
-            if (_macroSwarmMutationResults.IsCreated)
-                _macroSwarmMutationResults.Dispose(disposeDependency);
             if (_faunaMutationBlackBox.IsCreated)
                 _faunaMutationBlackBox.Dispose(disposeDependency);
-            if (_macroHydrationScratch.IsCreated)
-                _macroHydrationScratch.Dispose(disposeDependency);
-            if (_macroDehydrationScratch.IsCreated)
-                _macroDehydrationScratch.Dispose(disposeDependency);
             if (_biomassIndexByKey.IsCreated)
                 _biomassIndexByKey.Dispose(disposeDependency);
             if (_headlessEntities.Positions.IsCreated)
@@ -3253,6 +3231,8 @@ namespace Hecton8.World
             _faunaMutationBlackBox = default;
             _macroHydrationScratch = default;
             _macroDehydrationScratch = default;
+            _macroHydrationScratchCount = 0;
+            _macroDehydrationScratchCount = 0;
             _biomassIndexByKey = default;
             _headlessEntities = default;
             _sectorFoodHeatmapR8 = default;
@@ -3341,17 +3321,7 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeArray(_biomassCellFlags, NativeMemoryOwner, nameof(_biomassCellFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_pendingBiomassImpacts, NativeMemoryOwner, nameof(_pendingBiomassImpacts), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_biomassBlackBox, NativeMemoryOwner, nameof(_biomassBlackBox), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_macroSwarms, NativeMemoryOwner, nameof(_macroSwarms), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_macroSwarmArrivals, NativeMemoryOwner, nameof(_macroSwarmArrivals), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_macroSwarmCounters, NativeMemoryOwner, nameof(_macroSwarmCounters), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_macroSwarmBlackBox, NativeMemoryOwner, nameof(_macroSwarmBlackBox), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_macroSwarmMutationRadiation, NativeMemoryOwner, nameof(_macroSwarmMutationRadiation), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_macroSwarmMutationToxicity, NativeMemoryOwner, nameof(_macroSwarmMutationToxicity), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_macroSwarmMutationBrine, NativeMemoryOwner, nameof(_macroSwarmMutationBrine), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_macroSwarmMutationResults, NativeMemoryOwner, nameof(_macroSwarmMutationResults), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_faunaMutationBlackBox, NativeMemoryOwner, nameof(_faunaMutationBlackBox), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_macroHydrationScratch, NativeMemoryOwner, nameof(_macroHydrationScratch), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_macroDehydrationScratch, NativeMemoryOwner, nameof(_macroDehydrationScratch), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeHashMap(_biomassIndexByKey, NativeMemoryOwner, nameof(_biomassIndexByKey), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_headlessEntities.Positions, NativeMemoryOwner, nameof(_headlessEntities.Positions), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_headlessEntities.SpeciesID, NativeMemoryOwner, nameof(_headlessEntities.SpeciesID), NativeMemoryLifetime);
@@ -3392,17 +3362,7 @@ namespace Hecton8.World
             NativeMemorySentinel.UnregisterNativeArray(_biomassCellFlags);
             NativeMemorySentinel.UnregisterNativeArray(_pendingBiomassImpacts);
             NativeMemorySentinel.UnregisterNativeArray(_biomassBlackBox);
-            NativeMemorySentinel.UnregisterNativeArray(_macroSwarms);
-            NativeMemorySentinel.UnregisterNativeArray(_macroSwarmArrivals);
-            NativeMemorySentinel.UnregisterNativeArray(_macroSwarmCounters);
-            NativeMemorySentinel.UnregisterNativeArray(_macroSwarmBlackBox);
-            NativeMemorySentinel.UnregisterNativeArray(_macroSwarmMutationRadiation);
-            NativeMemorySentinel.UnregisterNativeArray(_macroSwarmMutationToxicity);
-            NativeMemorySentinel.UnregisterNativeArray(_macroSwarmMutationBrine);
-            NativeMemorySentinel.UnregisterNativeArray(_macroSwarmMutationResults);
             NativeMemorySentinel.UnregisterNativeArray(_faunaMutationBlackBox);
-            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_macroHydrationScratch));
-            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_macroDehydrationScratch));
             NativeMemorySentinel.UnregisterNativeHashMap(NativeMemoryOwner, nameof(_biomassIndexByKey));
             NativeMemorySentinel.UnregisterNativeArray(_headlessEntities.Positions);
             NativeMemorySentinel.UnregisterNativeArray(_headlessEntities.SpeciesID);
@@ -3786,13 +3746,13 @@ namespace Hecton8.World
 
             ReadOnlySpan<SectorDehydratedSignal> dehydratedSignals = SignalBus<SectorDehydratedSignal>.GetFrameSnapshot();
             if (_macroDehydrationScratch.IsCreated)
-                _macroDehydrationScratch.Clear();
+                _macroDehydrationScratchCount = 0;
             for (int i = 0; i < dehydratedSignals.Length; i++)
                 StageDehydratedSectorSwarm(in dehydratedSignals[i]);
 
             if (_macroDehydrationScratch.IsCreated)
             {
-                int count = _macroDehydrationScratch.Length;
+                int count = math.min(_macroDehydrationScratchCount, _macroDehydrationScratch.Length);
                 for (int i = 0; i < count; i++)
                 {
                     MacroSwarm staged = _macroDehydrationScratch[i];
@@ -3817,7 +3777,7 @@ namespace Hecton8.World
         private void StageDehydratedSectorSwarm(in SectorDehydratedSignal signal)
         {
             if (!_macroDehydrationScratch.IsCreated ||
-                _macroDehydrationScratch.Length >= _macroDehydrationScratch.Capacity ||
+                _macroDehydrationScratchCount >= _macroDehydrationScratch.Length ||
                 _activeMacroSwarmCount >= ResolveMacroSwarmActiveCap())
             {
                 PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagCapacityOverflow);
@@ -3853,7 +3813,7 @@ namespace Hecton8.World
                 ResolveMacroSwarmSpeedCellsPerSecond(),
                 HashMacroSwarm(sourceCell, targetCell, signal.ChunkId),
                 signal.Flags);
-            _macroDehydrationScratch.AddNoResize(swarm);
+            _macroDehydrationScratch[_macroDehydrationScratchCount++] = swarm;
         }
 
         private bool TryStageActiveBiotaDehydration(in SectorDehydratedSignal signal)
@@ -3885,6 +3845,7 @@ namespace Hecton8.World
                 HashMacroSwarm(sourceCell, targetCell, signal.ChunkId),
                 signal.Flags);
             _macroDehydrationScratch.AddNoResize(swarm);
+            _macroDehydrationScratch[_macroDehydrationScratchCount++] = swarm;
             _lastMacroHydratedBoidEstimate = releasedBoidCount;
             PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagActiveDehydrated);
             return true;

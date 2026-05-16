@@ -107,7 +107,7 @@ Hardware Impact: Runtime microsecond gain is 0; the gain is platform survival: d
 
 ## Validation Wall Third Pass
 Problem: Build validation still cannot isolate the repair domain because project graph errors stop the compile first.
-Solution: Ran `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly`; captured 245 errors dominated by RealtimeCSG missing source files plus unrelated Hecton8.Core failures in GlobalDataVault and SargassumMicroFaunaBoids. No emitted diagnostic referenced the WELDING repair files.
-Rejected Alternatives: Repairing RealtimeCSG package inventory, fauna sensory buffers, or global vault ABI helper code is outside this XML domain and would trample active work from other agents.
+Solution: Ran `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly` after the storage ABI patch, then reran it after the signal ABI patch; the latest full run reports 401 errors dominated by RealtimeCSG missing source files plus unrelated Hecton8.Core failures in GlobalDataVault, SargassumMicroFaunaBoids, and SubmarineFluidDynamics. A filtered rerun returned NO_REPAIR_FILE_DIAGNOSTICS for RepairTool, HullDentShaderController, SubmarineStructuralGrid, GlobalSignals, and GasDynamicsSolver.
+Rejected Alternatives: Repairing RealtimeCSG package inventory, fauna sensory buffers, global vault ABI helper code, or fluid vault-property mutations is outside this XML domain and would trample active work from other agents.
 Scalability potential: No runtime scalability impact; this remains external build health debt.
 Hardware Impact: No hardware gain; compile is dependency-blocked outside the repair kernel.

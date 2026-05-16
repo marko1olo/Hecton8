@@ -40,6 +40,12 @@ Rejected Alternatives: `Physics.SphereCast`, rigidbody hands, and Unity joints w
 Scalability potential: Low disables IK. Middle uses only the supplied plane. High uses SDF gradient projection. Ultra can feed denser SDFs or richer ghost/haptic presentation while the same two-lane job remains fixed.
 Hardware Impact: On i3/MX350, plane mode is only dot products and lerps; High SDF mode costs seven trilinear samples only while actively grabbing near geometry.
 
+Problem: The SDF branch did not match the plane signed-distance contract. Deep negative SDF penetration could skip projection, while shallow positive contact could push by `distance + clearance`.
+Solution: Use `density < clearance` as the contact test and project by `clearance - density`, matching the plane path and keeping the hand on the surface instead of overshooting.
+Rejected Alternatives: Keeping the original sign mix was rejected because it made SDF lock behavior weaker than the mathematical plane fallback.
+Scalability potential: Middle plane and High SDF now share the same contact semantics; Ultra can feed denser SDFs without changing hand authority.
+Hardware Impact: No extra samples or allocations; the fix changes one comparison and one subtraction in the existing high-tier branch.
+
 Problem: Haptic scraping needs to track sliding contact, not normal penetration correction.
 Solution: Measure tangent velocity on the obstruction plane, gate it by threshold, and emit only an output flag/intensity packet for the existing haptic system to translate.
 Rejected Alternatives: Direct `HapticRequest` publishing from the Burst job is impossible and would violate assembly boundaries; sending haptic pulses every locked frame would buzz constantly and waste presentation budget.
@@ -57,6 +63,12 @@ Solution: Clamp cosine values, use epsilon denominators, normalize through `math
 Rejected Alternatives: Throwing exceptions or letting Unity animation sanitize the pose would hide the actual fault and break the black-box chain.
 Scalability potential: Same guard path on every tier; low devices get deterministic fallback rather than animation spikes.
 Hardware Impact: A few scalar clamps and finite checks per hand, cheaper than a single failed animation graph recovery.
+
+Problem: If both controller input and previous controller state were invalid, the fallback chain could still start from NaN before output validation.
+Solution: Add a hard finite floor at controller ingress: sanitize input against previous state, then sanitize again against `float3.zero`.
+Rejected Alternatives: Waiting for `IsValidOutput()` was rejected because poisoned intermediates can affect branch decisions, haptic speed, and telemetry before fallback is chosen.
+Scalability potential: All tiers share the same deterministic finite entry point.
+Hardware Impact: Two finite checks per hand; cheaper than any downstream animation recovery.
 
 Problem: Quest/ARM64 builds are sensitive to implicit struct padding across Burst, NativeArray, and file-dump boundaries.
 Solution: Convert every owned hand payload struct to `[StructLayout(LayoutKind.Sequential, Pack = 1)]` and verify the rest of the owned IK folder has no remaining `Pack = 4`.

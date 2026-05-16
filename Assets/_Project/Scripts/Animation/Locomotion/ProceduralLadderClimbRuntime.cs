@@ -22,6 +22,10 @@ namespace Hecton8.Animation.Locomotion
         private const float ShoulderHeightMeters = 1.36f;
         private const float ShoulderBacksetMeters = 0.14f;
         private const float ElbowPoleMeters = 0.38f;
+        private const float FastClimbStressSpeedMetersPerSecond = 1.4f;
+        private const float ClimbStressOxygenDrainBonus = 0.28f;
+        private const float LookDownGripReleaseDotThreshold = 0.9848077f;
+        private const float HeadStabilizationSharpness = 12f;
         private const uint DefaultGripActionMask = 1u << 6;
         private const byte GripMaskLeft = 1 << 0;
         private const byte GripMaskRight = 1 << 1;
@@ -60,6 +64,7 @@ namespace Hecton8.Animation.Locomotion
         private Transform _entryPoint;
         private Transform _exitPoint;
         private IPlayerMovementForceSink _movementForceSink;
+        private IPlayerRuntimeContext _playerContext;
         private float3 _ladderUp;
         private float3 _ladderForward;
         private float _climbDirection;
@@ -67,10 +72,15 @@ namespace Hecton8.Animation.Locomotion
         private float _climbHeightMeters;
         private float _stamina01;
         private float _pendingGripPullMeters;
+        private Vector3 _cameraSlideEntryPosition;
+        private Vector3 _cameraSlideExitPosition;
+        private Quaternion _headStabilizedRotation = Quaternion.identity;
         private byte _pendingGripMask;
+        private byte _lastResolvedGripMask;
         private int _lastLeftRung = -1;
         private int _lastRightRung = -1;
         private byte _qualityTier;
+        private bool _headStabilizationInitialized;
 
         internal static ProceduralLadderClimbRuntime EnsureRuntimeInstance()
         {
@@ -163,6 +173,7 @@ namespace Hecton8.Animation.Locomotion
             }
 
             GlobalRegistry.RegisterProceduralLadderClimbRuntime(this);
+            CacheVaultDependency();
             EnsureVaultBuffers();
         }
 
@@ -171,6 +182,7 @@ namespace Hecton8.Animation.Locomotion
             if (GlobalRegistry.ProceduralLadderClimbRuntime == null)
                 GlobalRegistry.RegisterProceduralLadderClimbRuntime(this);
 
+            CacheVaultDependency();
             EnsureVaultBuffers();
         }
 
@@ -204,8 +216,10 @@ namespace Hecton8.Animation.Locomotion
             _climbProgressMeters = math.clamp(_climbProgressMeters + progressDelta, 0f, _climbHeightMeters);
             float appliedProgressDelta = _climbProgressMeters - previousProgress;
             DrainStamina(appliedProgressDelta);
+            PublishClimbPhysiology(math.abs(appliedProgressDelta), safeDeltaTime);
 
-            if (_stamina01 <= 0.0001f && math.abs(appliedProgressDelta) > 0.0001f)
+            if ((_stamina01 <= 0.0001f && math.abs(appliedProgressDelta) > 0.0001f) ||
+                ShouldDropFromLookDownGripRelease())
             {
                 _pendingSlip = true;
                 _pendingFinish = true;

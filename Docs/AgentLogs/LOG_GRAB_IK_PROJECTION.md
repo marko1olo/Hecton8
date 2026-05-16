@@ -109,3 +109,27 @@ Exact microseconds saved:
 Verification:
 - Owned IK forbidden-pattern scan returned no hits for `Pack = 4`, `Vector3.Lerp`, `Quaternion.Slerp`, `math.acos`, `Physics.SphereCast`, `VRHandManager`, `Update`, `string.Format`, legacy `EventBus`, managed delegates, or local `NativeArray` allocation.
 - `dotnet build Hecton8.Core.csproj --no-restore -v:q -clp:ErrorsOnly` now fails outside Animation/IK on `SargassumMicroFaunaBoids.EnsureVaultBufferHandle`, `HectonMarineSnowRenderer` missing `_vehicleWakeJobResult`/`_telemetryRing`, and `VehicleDockingModule` missing cache helpers.
+
+## 2026-05-16 | GRAB_IK_PROJECTION | CONTACT AND NAN VACCINE PASS
+
+What was wrong:
+- The SDF contact branch used a different signed-distance formula than the plane branch. That could skip deep penetration and over-push shallow contact.
+- Controller sanitization still trusted previous controller state as a fallback even when that state was also invalid.
+
+What was done:
+- Changed SDF lock test to `density < localClearance`.
+- Changed SDF pushout to `surfaceNormal * (localClearance - density)`, matching the plane projection contract.
+- Added hard finite controller fallback to `float3.zero` after checking input and previous state.
+
+Cinematic cheats used:
+- Kept the SDF as a cheap contact projection, not rigidbody truth.
+- Plane and SDF branches now share one predictable mathematical lie.
+
+Exact microseconds saved:
+- No measured savings claimed. The fix is correctness and NaN survival.
+- No new samples, allocations, disk I/O, or physics queries were added.
+
+Verification:
+- Static owned IK scan still reports no forbidden patterns.
+- Filtered build scan reports `NO_OWNED_IK_OR_VAULT_ERRORS`.
+- Full compile remains blocked by external Core.Content, World, Determinism, Ecosystem, and Fluid domain errors.

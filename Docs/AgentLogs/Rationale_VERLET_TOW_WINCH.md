@@ -90,6 +90,12 @@ Hardware Impact: Low-end i3/MX350 target is protected by fixed buffer sizes, no 
   Scalability potential: Low/Mid still write one 64-byte heartbeat per active frame; High/Ultra can add visual consumers by reading the same vault ring without touching the solver.
   Hardware Impact: Estimated runtime delta is one extra int lane write and offset clamp per telemetry tick; no measured microsecond claim. Memory stays fixed at `8 * 300 * 64` bytes for ring data plus `8 * 4` bytes for heads.
 
+- Problem: `TetherManager` still had a separate local 300-frame blackbox ring after the Verlet ring moved to the vault.
+  Solution: Moved `TetherManagerTelemetryEntry` and its cursor to `GlobalDataVault` using `BufferID.TetherManagerBlackBox` and `BufferID.TetherManagerBlackBoxHead`; corrected attempted IDs after detecting MarineSnow and AcousticEcho lane collisions.
+  Rejected Alternatives: Keeping a manager-owned H8Memory ring was rejected because it leaves a second private crash log in the same domain; reusing `TetherCableBlackBox` was rejected because the manager payload is a different ABI size.
+  Scalability potential: Low writes one compact 16-byte manager heartbeat only when the tether manager ticks; High/Ultra can inspect aggregate manager tension without coupling to instance objects.
+  Hardware Impact: Estimated runtime delta is one int cursor read/write plus one 16-byte struct write per manager sample. No measured microsecond claim; collision-free BufferIDs 232/233 avoid vault type mismatch failures.
+
 - Problem: Directed compile caught that `TetherFiredSignal` lived on a contract path whose generated project treatment was unstable.
   Solution: Placed the actual `TetherFiredSignal` payload in compiled `TetherSignals.cs`, restored the generated-project contract path as an empty compile anchor, and explicitly aliased runtime fire usage to the core contract type.
   Rejected Alternatives: Editing the generated `.csproj` was rejected because Unity overwrites it; leaving the real payload only in the contract stub was rejected after the compiler failed to resolve it.

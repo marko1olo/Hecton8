@@ -1532,8 +1532,6 @@ namespace Hecton8.World
         private NativeArray<FoveatedSimulationDecision> _foveatedSimulationFrontNative;
         private NativeArray<FoveatedSimulationDecision> _foveatedSimulationBackNative;
         private NativeArray<SimulationFrameConstants> _simulationFrameNative;
-        private NativeArray<float4> _boidSensoryThreatsNative;
-        private NativeArray<BoidSensoryBlackBoxEntry> _boidSensoryBlackBox;
         private VaultBufferHandle<float4> _boidSensoryThreatsHandle;
         private VaultBufferHandle<BoidSensoryBlackBoxEntry> _boidSensoryBlackBoxHandle;
         private NativeArray<uint> _threatGridUploadNative;
@@ -2473,8 +2471,8 @@ namespace Hecton8.World
             EnsureNativeArrayCapacity(vault, ref _foveatedSimulationFrontNative, BufferID.SargassumFoveatedSimulationFront, 1, nameof(_foveatedSimulationFrontNative));
             EnsureNativeArrayCapacity(vault, ref _foveatedSimulationBackNative, BufferID.SargassumFoveatedSimulationBack, 1, nameof(_foveatedSimulationBackNative));
             EnsureNativeArrayCapacity(vault, ref _simulationFrameNative, BufferID.SargassumSimulationFrame, 1, nameof(_simulationFrameNative));
-            EnsureNativeArrayCapacity(vault, ref _boidSensoryThreatsNative, BufferID.SargassumBoidSensoryThreats, PredatorAupBufferCapacity, nameof(_boidSensoryThreatsNative));
-            EnsureNativeArrayCapacity(vault, ref _boidSensoryBlackBox, BufferID.SargassumBoidSensoryBlackBox, BoidSensoryBlackBoxCapacity, nameof(_boidSensoryBlackBox));
+            EnsureVaultBufferHandle(vault, ref _boidSensoryThreatsHandle, BufferID.SargassumBoidSensoryThreats, PredatorAupBufferCapacity);
+            EnsureVaultBufferHandle(vault, ref _boidSensoryBlackBoxHandle, BufferID.SargassumBoidSensoryBlackBox, BoidSensoryBlackBoxCapacity);
             EnsureNativeArrayCapacity(vault, ref _foodChainTelemetryRing, BufferID.SargassumFoodChainTelemetryRing, FoodChainTelemetryCapacity, nameof(_foodChainTelemetryRing));
             _inactiveStatisticalSwarmRing.EnsureCapacity(vault, BufferID.SargassumInactiveSwarmRing, InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmRing));
             _inactiveStatisticalSwarmCenterRing.EnsureCapacity(vault, BufferID.SargassumInactiveSwarmCenterRing, InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmCenterRing));
@@ -5213,7 +5211,7 @@ namespace Hecton8.World
                 DebrisKind = PredatorKillBloodDebrisKind,
                 Flags = PredatorKillDebrisFlags
             };
-            GlobalSignals.Publish(in debrisSignal);
+            SignalBus<DebrisSpawnSignal>.Push(in debrisSignal);
 
             AbyssalFluidDecalManager fluidDecals = _abyssalFluidDecals;
             if (fluidDecals != null)
@@ -5243,7 +5241,7 @@ namespace Hecton8.World
                 Channel = FeedingFrenzyAcousticChannel,
                 Flags = FeedingFrenzyAcousticFlags
             };
-            GlobalSignals.Publish(in acousticPingSignal);
+            SignalBus<AcousticPingSignal>.Push(in acousticPingSignal);
             _feedingFrenzyKillCount = 0;
             _feedingFrenzyWindowStartTime = safeTime;
         }
@@ -5926,7 +5924,7 @@ namespace Hecton8.World
                 QualityTier = (byte)_lastSimulationLodTier
             };
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<SwarmDispersedSignal>.Push(in signal);
             RecordFoodChainTelemetry(FoodChainTelemetryFlagBoidsScattered, originWS, resolvedSourceId, 0u);
         }
 
@@ -6753,8 +6751,8 @@ namespace Hecton8.World
             ResetThreatGridSnapshot();
             ResetThreatVoxelSnapshot();
             DisposeNativeArrayDeferred(ref _simulationFrameNative, disposeDependency);
-            DisposeNativeArrayDeferred(ref _boidSensoryThreatsNative, disposeDependency);
-            DisposeNativeArrayDeferred(ref _boidSensoryBlackBox, disposeDependency);
+            _boidSensoryThreatsHandle = default;
+            _boidSensoryBlackBoxHandle = default;
             DisposeNativeArrayDeferred(ref _foodChainTelemetryRing, disposeDependency);
             _inactiveStatisticalSwarmRing.Dispose(disposeDependency);
             _inactiveStatisticalSwarmCenterRing.Dispose(disposeDependency);
@@ -7054,6 +7052,46 @@ namespace Hecton8.World
         {
             _leviathanPathNodeCount = 0;
             _debugLeviathanNodeCount = 0;
+        }
+
+        private NativeArray<float4> ResolveBoidSensoryThreats()
+        {
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            _dataVault = vault;
+            return vault != null && _boidSensoryThreatsHandle.IsCreated
+                ? _boidSensoryThreatsHandle.Resolve(vault)
+                : default;
+        }
+
+        private NativeArray<BoidSensoryBlackBoxEntry> ResolveBoidSensoryBlackBox()
+        {
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            _dataVault = vault;
+            return vault != null && _boidSensoryBlackBoxHandle.IsCreated
+                ? _boidSensoryBlackBoxHandle.Resolve(vault)
+                : default;
+        }
+
+        private static void EnsureVaultBufferHandle<T>(
+            IDataVault vault,
+            ref VaultBufferHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            if (requiredLength <= 0 || vault == null || bufferId == BufferID.Unknown)
+            {
+                handle = default;
+                return;
+            }
+
+            if (handle.IsCreated && handle.BufferId == bufferId && handle.Length >= requiredLength)
+                return;
+
+            handle = vault.GetBufferHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.WorldSargassum,
+                NativeArrayOptions.ClearMemory);
         }
 
         private static void EnsureNativeArrayCapacity<T>(

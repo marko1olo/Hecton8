@@ -76,3 +76,34 @@ Validation:
 - `dotnet build Assembly-CSharp.csproj --no-restore` logged to `Build_BOID_SENSORY_INPUT_PUMP_AssemblyCSharp.txt` and is blocked by missing RealtimeCSG files plus existing bootstrap/bucketing errors.
 - Scans found no diagnostics for `SargassumMicroFaunaBoids.cs`, `H8Memory.cs`, `SargassumMicroFaunaBoids.compute`, or `BoidFishInstanced.shader`.
 - `git diff --check` on touched code files produced no whitespace errors; only repository line-ending warnings.
+
+## 2026-05-16 BOID_SENSORY_INPUT_PUMP Data-Sovereignty Pass
+
+What was wrong:
+
+- Sensory data used vault allocation, but `_boidSensoryThreatsNative` and `_boidSensoryBlackBox` still existed as local persistent NativeArray fields.
+- Boid-originated debris, acoustic ping, and swarm dispersion events still used the legacy `GlobalSignals.Publish` wrapper.
+
+What was done:
+
+- Replaced sensory persistent NativeArray fields with `VaultBufferHandle<float4>` and `VaultBufferHandle<BoidSensoryBlackBoxEntry>`.
+- Added vault handle ensure/resolve helpers and passed transient vault views through sensory slot writing, ping decay, upload, and blackbox recording.
+- Replaced three `GlobalSignals.Publish` calls with direct typed `SignalBus<T>.Push` lanes.
+
+Cinematic Cheats used:
+
+- No new physical simulation was added. The low-tier endpoint sphere, full-tier capsule SDF, and triangle-wave light pulse remain the visual fake stack.
+- No frame logging was added; blackbox I/O remains anomaly-only.
+
+Exact Microseconds saved:
+
+- Removed local persistent sensory collection ownership: 0 GC, fixed vault bytes unchanged.
+- Direct typed lane publishing avoids legacy wrapper queue pressure during bursts: estimated 1-3 us/frame saved when predator kill/frenzy/dispersion signals fire.
+- Vault handle resolution adds ~1 us/frame during active simulation upload, accepted to enforce data sovereignty.
+
+Validation:
+
+- `dotnet build Hecton8.Core.csproj --no-restore` logged to `Build_BOID_SENSORY_INPUT_PUMP_Polish3.txt`.
+- Build remains blocked by unrelated `LockstepStateValidator`, `EcosystemDirector`, and `SubmarineFluidDynamics` errors.
+- No diagnostics reference `SargassumMicroFaunaBoids.cs`, `H8Memory.cs`, `SargassumMicroFaunaBoids.compute`, or `BoidFishInstanced.shader`.
+- Static scans: no `_boidSensoryThreatsNative`, no `_boidSensoryBlackBox` local data field, no `GlobalSignals.Publish`, no `EventBus`, no managed delegates, no `void Update()`, no `string.Format`, no `Transform.position` in the sensory surface.

@@ -25,7 +25,7 @@ Hygiene: Status file was missing at session start. Initialized for current batch
 - [x] 5. AUP_INTEGRITY | Justification: N/A by prompt; no world-space simulation math. | Alternatives Rejected: adding AUP dependency to render settings. | Estimate: 0 us.
 - [x] 6. DOD_SOA_LAYOUT | Justification: stress maps to byte codes Low/Med/High and fixed scalar levels 0.35/0.62/0.85, then reports scalar state to `HectonXRRuntimeState`. | Alternatives Rejected: ScriptableObject quality table or managed dictionary lookup. | Estimate: 1 us CPU, fill-rate saving is GPU dependent.
 - [x] 7. SIGNAL_FLOW | Justification: consumes `SignalBus<SystemHealthSignal>` and `SignalBus<ThermalStateChangedSignal>` through `ReadOnlySpan<T>`. | Alternatives Rejected: `UnityEvent`, `Action<T>`, or per-system direct dependency. | Estimate: 2-8 us CPU.
-- [x] 8. LOW_TIER_FAKE | Justification: Quest 2/Oculus Quest class Android XR runtimes are forced to High FFR constantly without requiring Vulkan classification; Unity caps still gate actual hardware foveation writes. | Alternatives Rejected: per-frame aesthetic search, eye-tracking assumption on weak mobile silicon, or Vulkan-only Quest detection. | Estimate: saves 0.2-1.0 ms GPU fill-rate on mobile VR; CPU cost under 3 us per sample.
+- [x] 8. LOW_TIER_FAKE | Justification: Quest 2/Oculus Quest class Android XR runtimes are forced to High FFR constantly without requiring Vulkan classification; Quest 3/Quest Pro are explicitly excluded from the low-tier lock; Unity caps still gate actual hardware foveation writes. | Alternatives Rejected: per-frame aesthetic search, eye-tracking assumption on weak mobile silicon, Vulkan-only Quest detection, or misclassifying Quest 3/Pro as toaster hardware. | Estimate: saves 0.2-1.0 ms GPU fill-rate on mobile VR; CPU cost under 3 us per sample.
 - [x] 9. HIGH_END_OVERKILL | Justification: PC standalone-like VR enables `GazeAllowed` only when XR eye fixation is valid and caps expose foveation image/non-uniform raster. | Alternatives Rejected: blind gaze flag without eye data; package-specific OpenXR calls absent from manifest. | Estimate: 5-15 us CPU sample path, GPU benefit hardware dependent.
 - [x] 10. REACTIVE_VFX | Justification: N/A by prompt; foveation must not create new VFX coupling. | Alternatives Rejected: non-requested VFX events. | Estimate: 0 us.
 - [x] 11. STP_STABILIZATION | Justification: N/A by prompt; no STP vector or render-scale mutation. | Alternatives Rejected: touching STP/DRS systems from VR foveation. | Estimate: 0 us.
@@ -51,6 +51,7 @@ Hygiene: Status file was missing at session start. Initialized for current batch
 - Attempt 11: same filtered build scan after duplicate-guard hardening produced no matching VR/legacy foveation diagnostics; full build still exits red externally.
 - Attempt 12: same filtered build scan after Quest Android detection hardening produced no matching VR/legacy foveation diagnostics; full build still exits red externally.
 - Attempt 13: unfiltered `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` failed with 16 external errors: missing `EnsureVaultBufferHandle` in `World/SargassumMicroFaunaBoids.cs`, missing `CacheFluidRuntime`/`ResetDockingRuntimeCaches` in `Construction/VehicleDockingModule.cs`, and missing `_vehicleWakeJobResult`/`_telemetryRing` in `VFX/HectonMarineSnowRenderer.cs`.
+- Attempt 14: filtered build scan after Quest 3/Pro low-tier exclusion produced no matching VR/legacy foveation diagnostics; full build status remains blocked by the external 16-error set above.
 
 ## Loop Log
 - Loop 0: Prompt extracted from `CURRENT_BATCH.md`. Status/Rationale were missing. No code touched.
@@ -69,6 +70,7 @@ Hygiene: Status file was missing at session start. Initialized for current batch
 - Loop 13: Purged the duplicate legacy `OculusFfrEnforcer` execution path to a disabled compatibility shim, removing its private `NativeArray` blackbox, managed XR-state event subscription, texture mip clamp, and direct hardware foveation writes.
 - Loop 14: Hardened duplicate commander handling so a duplicate component destroys only itself instead of destroying the whole host GameObject.
 - Loop 15: Removed the Vulkan-only dependency from Quest 2 fixed-FFR detection; Android XR Quest-family runtimes now take the low-tier high-FFR fake when memory/device evidence matches.
+- Loop 16: Added explicit Quest 3/Quest Pro exclusion before memory-gate fallback so high-end standalone headsets are not downgraded to Quest 2 fixed-high policy by reserved-memory reporting.
 
 ## Omega Polish Inquisition
 - Polish mandate read only after tasks were complete/blocked: `[VI. OMEGA POLISH MANDATE] STATUS: MUST BE "VERIFIED MASTER GRADE".`
@@ -79,7 +81,7 @@ Hygiene: Status file was missing at session start. Initialized for current batch
 - Final status: assigned-domain static scans pass, but runtime readiness is pending verification and project build cannot be honestly marked green until Core/Gameplay dependency walls are fixed.
 
 ## Multiplatform Inquisition
-- ARM64/Quest/Android: `FoveatedRenderTelemetryEntry` is `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]`; the heartbeat buffer is vault-owned and 64-byte arena aligned by `GlobalDataVault`; Quest 2/Oculus Quest fixed-high FFR detection does not depend on Vulkan.
+- ARM64/Quest/Android: `FoveatedRenderTelemetryEntry` is `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]`; the heartbeat buffer is vault-owned and 64-byte arena aligned by `GlobalDataVault`; Quest 2/Oculus Quest fixed-high FFR detection does not depend on Vulkan and excludes Quest 3/Quest Pro.
 - Metal/Mac: no shader, compute kernel, thread group, or DirectX-only path was introduced in `Graphics/VR`; PC/Mac standalone-like VR only uses Unity XR foveation flags when hardware caps and gaze data exist.
 - Steam Deck: normal runtime performs no disk reads and no per-frame file writes; blackbox dump is one-shot only on non-finite/crash path.
 - PC God-Mode: PC VR is not clamped to mobile fixed FFR; when eye fixation data is valid, it uses gaze-allowed VRS and reports hardware foveation state into existing XR shader globals for downstream visual overkill; the old Quest-only enforcer can no longer overwrite the PC/Quest 3 path.

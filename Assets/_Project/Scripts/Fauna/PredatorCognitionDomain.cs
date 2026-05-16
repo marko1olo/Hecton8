@@ -349,6 +349,7 @@ namespace Hecton8.AI
         private const float PredatorUtilityEvaluationIntervalSeconds = 0.5f;
         private const float PredatorUtilityEvaluationStaggerStepSeconds = PredatorUtilityEvaluationIntervalSeconds * 0.03125f;
         private const int RetinalLightCapacity = 4;
+        private const int RetinalLightSignalConsumeLimit = 64;
         private const int RetinalTelemetryCapacity = 300;
         private const int AlphaLeviathanTelemetrySlotCapacity = 64;
         private const int AlphaLeviathanTelemetryVaultCapacity =
@@ -1442,8 +1443,12 @@ namespace Hecton8.AI
             if (!_retinalLightSources.IsCreated)
                 return;
 
-            while (GlobalSignals.TryDequeueSubmarineLightsChanged(out SubmarineLightsChangedSignal signal))
+            System.ReadOnlySpan<SubmarineLightsChangedSignal> lightSignals =
+                SignalBus<SubmarineLightsChangedSignal>.GetFrameSnapshot();
+            int startIndex = math.max(0, lightSignals.Length - RetinalLightSignalConsumeLimit);
+            for (int i = startIndex; i < lightSignals.Length; i++)
             {
+                SubmarineLightsChangedSignal signal = lightSignals[i];
                 if (signal.Operation == SubmarineLightsChangedSignalOperations.ClearSource)
                 {
                     RemoveRetinalLightSource(signal.SourceId);

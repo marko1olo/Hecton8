@@ -1,13 +1,15 @@
 using System;
 using System.IO;
-#if !UNITY_WEBGL
+#if UNITY_EDITOR || UNITY_STANDALONE
 using System.IO.MemoryMappedFiles;
 #endif
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace Hecton8.Core.Content
 {
     [Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
     public struct ContentLoreBlockIndex
     {
         public uint Hash;
@@ -20,15 +22,18 @@ namespace Hecton8.Core.Content
     /// </summary>
     public sealed class ContentLoreBinaryProvider : MonoBehaviour, IDisposable
     {
+        public const int MaxSynchronousLoreReadBytes = 64 * 1024;
+
         [SerializeField] private string dictionaryRelativePath = "Babel_Dictionary.h8bin";
         [SerializeField] private ContentLoreBlockIndex[] blocks = Array.Empty<ContentLoreBlockIndex>();
 
         private bool _sorted;
-#if !UNITY_WEBGL
+#if UNITY_EDITOR || UNITY_STANDALONE
         private MemoryMappedFile _mappedFile;
         private MemoryMappedViewAccessor _accessor;
 #endif
         private FileStream _fallbackStream;
+        private long _fileLength;
 
         private void Awake()
         {
@@ -46,10 +51,10 @@ namespace Hecton8.Core.Content
             if (!TryGetBlock(hash, out ContentLoreBlockIndex block))
                 return false;
 
-            if (block.Length <= 0 || destination.Length < block.Length)
+            if (!IsBlockReadable(block) || destination.Length < block.Length)
                 return false;
 
-#if !UNITY_WEBGL
+#if UNITY_EDITOR || UNITY_STANDALONE
             if (_accessor != null)
             {
                 for (int i = 0; i < block.Length; i++)
@@ -67,7 +72,7 @@ namespace Hecton8.Core.Content
             return bytesWritten == block.Length;
         }
 
-        public void Open()
+        public bool Open()
         {
             Dispose();
             EnsureSorted();
@@ -77,19 +82,26 @@ namespace Hecton8.Core.Content
                 path = Path.Combine(Application.dataPath, dictionaryRelativePath);
 
             if (!File.Exists(path))
-                return;
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[ContentLoreBinaryProvider] Babel dictionary missing: " + dictionaryRelativePath, this);
+#endif
+                return false;
+            }
 
-#if !UNITY_WEBGL
+            _fileLength = new FileInfo(path).Length;
+#if UNITY_EDITOR || UNITY_STANDALONE
             _mappedFile = MemoryMappedFile.CreateFromFile(path, FileMode.Open, null, 0L, MemoryMappedFileAccess.Read);
             _accessor = _mappedFile.CreateViewAccessor(0L, 0L, MemoryMappedFileAccess.Read);
 #else
             _fallbackStream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 #endif
+            return true;
         }
 
         public void Dispose()
         {
-#if !UNITY_WEBGL
+#if UNITY_EDITOR || UNITY_STANDALONE
             if (_accessor != null)
             {
                 _accessor.Dispose();
@@ -107,6 +119,8 @@ namespace Hecton8.Core.Content
                 _fallbackStream.Dispose();
                 _fallbackStream = null;
             }
+
+            _fileLength = 0L;
         }
 
         private bool TryGetBlock(uint hash, out ContentLoreBlockIndex block)
@@ -154,6 +168,18 @@ namespace Hecton8.Core.Content
             }
 
             _sorted = true;
+        }
+
+        private bool IsBlockReadable(ContentLoreBlockIndex block)
+        {
+            if (block.Offset < 0L || block.Length <= 0 || block.Length > MaxSynchronousLoreReadBytes)
+                return false;
+
+            long end = block.Offset + block.Length;
+            if (end < block.Offset)
+                return false;
+
+            return _fileLength <= 0L || end <= _fileLength;
         }
     }
 }

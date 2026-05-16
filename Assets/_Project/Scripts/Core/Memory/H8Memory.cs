@@ -37,6 +37,7 @@ namespace Hecton8.Core.Memory
         AnimationFauna = 145,
         AIPathfinding = 146,
         AIEcology = 147,
+        AISensory = 148,
         SimulationBucketer = 161,
         AmbientBiota = 162,
         Vfx = 192,
@@ -279,7 +280,12 @@ namespace Hecton8.Core.Memory
         BiotaMacroHydrationCounters = 225,
         ContentAuthorityBlackBox = 226,
         ContentAuthorityTelemetryCursor = 227,
-        WakeTrailStampCommands = 228
+        WakeTrailStampCommands = 228,
+        AcousticEchoFrameTaps = 229,
+        AcousticEchoTrailState = 230,
+        AcousticEchoBlackBox = 231,
+        TetherManagerBlackBox = 232,
+        TetherManagerBlackBoxHead = 233
     }
 
     [Flags]

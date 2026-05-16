@@ -99,3 +99,24 @@ Validation:
 - Corrected hot-path scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, banned Unity joints, `TetherManager.Instance`, or legacy tether queues in the touched path.
 - `dotnet build Hecton8.Core.csproj -v:minimal /p:UseSharedCompilation=false` still fails on unrelated Sargassum, MarineSnow, and VehicleDocking errors. No tether compiler errors appeared in the reported set.
 - Unity runtime and profiler validation were not executed.
+
+## 2026-05-16 - Vault-Owned Manager Blackbox
+
+What was wrong:
+- `TetherManager` still owned a separate 300-entry `NativeArray<TetherManagerTelemetryEntry>` blackbox and local cursor after the instance-level Verlet blackbox was evicted.
+
+What was done:
+- Moved the manager heartbeat ring to `GlobalDataVault` under `BufferID.TetherManagerBlackBox`.
+- Moved the manager cursor to `BufferID.TetherManagerBlackBoxHead`.
+- Corrected BufferID assignments after detecting collisions with MarineSnow and AcousticEcho lanes; final manager IDs are 232/233 after the current enum tail.
+
+Cinematic Cheats used:
+- None in this pass. This is memory ownership cleanup.
+
+Exact Microseconds saved:
+- Not measured. The path replaces local H8Memory allocation ownership with vault views; per-sample work remains one 16-byte write plus one cursor int update.
+
+Validation:
+- `rg` found no remaining `H8Memory.Allocate<TetherManagerTelemetryEntry>`, `H8Memory.Release(ref _telemetryRing)`, or manager telemetry sentinel registration.
+- `dotnet build Hecton8.Core.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` still fails on unrelated Lockstep, Ecosystem, and SubmarineFluid dependency errors. No tether compiler errors appeared in the reported set.
+- Unity runtime and profiler validation were not executed.

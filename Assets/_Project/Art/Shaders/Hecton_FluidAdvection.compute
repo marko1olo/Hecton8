@@ -350,9 +350,10 @@ void CullCarveDebrisForRender(uint3 id : SV_DispatchThreadID)
     float liveMask = step(0.000001, particle.w);
     float3 delta = particle.xyz - _CarveDebrisCameraParams.xyz;
     float maxDistanceSq = _CarveDebrisCameraParams.w;
-    float distanceMask = maxDistanceSq > 0.0 ? step(dot(delta, delta), maxDistanceSq) : 1.0;
+    float distanceLimitMask = step(0.000001, maxDistanceSq);
+    float distanceMask = lerp(1.0, step(dot(delta, delta), maxDistanceSq), distanceLimitMask);
     uint maxVisible = (uint)max(0.0, _CarveDebrisCounts.z);
-    uint visibleIncrement = (finiteMask * liveMask * distanceMask > 0.5 && maxVisible > 0u) ? 1u : 0u;
+    uint visibleIncrement = (uint)(finiteMask * liveMask * distanceMask * step(0.5, (float)maxVisible));
     if (visibleIncrement == 0u)
         return;
 

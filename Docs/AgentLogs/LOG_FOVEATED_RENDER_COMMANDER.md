@@ -178,9 +178,11 @@ Validation:
 
 What was wrong:
 - Quest 2 fixed-high FFR detection depended on `QuestVulkanRuntimePolicy.IsQuestRuntimeActive`, so an Android XR Quest runtime outside Vulkan would miss the low-tier fixed-FFR fake.
+- The memory gate also needed an explicit Quest 3/Quest Pro exclusion, otherwise reserved-memory reporting could push high-end standalone headsets into the toaster policy.
 
 What was done:
 - Changed Quest 2/Oculus Quest detection to require Android + active XR + memory/device Quest-family evidence, independent of Vulkan.
+- Added explicit Quest 3/Quest Pro exclusion before the low-tier memory fallback.
 - Kept Unity `SystemInfo.foveatedRenderingCaps` as the actual hardware write gate.
 
 Cinematic Cheats used:
@@ -194,3 +196,4 @@ Validation:
 - Static scan shows no remaining `QuestVulkanRuntimePolicy.IsQuestRuntimeActive` dependency in `FoveatedRenderCommander`.
 - Filtered build diagnostics after the change produced no VR/legacy foveation matches. Full build remains red externally.
 - Unfiltered `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` now fails with 16 external errors in `World/SargassumMicroFaunaBoids.cs`, `Construction/VehicleDockingModule.cs`, and `VFX/HectonMarineSnowRenderer.cs`; no `Graphics/VR` files are named.
+- Filtered build diagnostics after Quest 3/Pro exclusion again produced no VR/legacy foveation matches.

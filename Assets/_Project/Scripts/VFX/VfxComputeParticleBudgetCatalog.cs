@@ -286,7 +286,7 @@ namespace Hecton8.VFX
     /// <summary>
     /// Immutable compute-particle budget row.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 28)]
     public struct VfxComputeParticleBudget
     {
         /// <summary>Low-tier budget row.</summary>

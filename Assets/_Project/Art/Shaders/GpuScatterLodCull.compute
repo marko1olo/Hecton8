@@ -1,4 +1,5 @@
 #pragma kernel ScatterCullJob
+#pragma target 4.5
 
 #define HECTON_SCATTER_THREADS_PER_GROUP 64
 #define HECTON_SCATTER_FRUSTUM_PLANES 6

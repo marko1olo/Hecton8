@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using UnityEngine;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.AddressableAssets;
@@ -24,6 +25,23 @@ namespace Hecton8.Core.Content
         Core = 0,
         HighRes = 1,
         Overkill = 2
+    }
+
+    [Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    public struct ContentAssetBinaryRecord
+    {
+        public uint Hash;
+        public long EstimatedVramBytes;
+        public uint DependencyOffset;
+        public ushort DependencyCount;
+        public ContentAssetKind Kind;
+        public ContentTier Tier;
+        public byte BiomeId;
+        public byte LodLevel;
+        public byte Flags;
+        public byte Reserved0;
+        public uint Reserved1;
     }
 
     [Serializable]

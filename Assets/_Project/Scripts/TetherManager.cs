@@ -92,11 +92,12 @@ namespace Hecton8.Physics
         private GraphicsBuffer _indirectTetherArgsBuffer;
         private Mesh _indirectArgsMesh;
         private int _indirectArgsSegmentCount = -1;
+        private IDataVault _dataVault;
         private bool _registeredFixedTick;
         private bool _registeredLateFrameTick;
         private bool _registeredOriginShiftListener;
         private NativeArray<TetherManagerTelemetryEntry> _telemetryRing;
-        private int _telemetryHead;
+        private NativeArray<int> _telemetryHead;
         private bool _telemetryDumped;
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 1, Size = 16)]
@@ -223,11 +224,9 @@ namespace Hecton8.Physics
 
             ReleaseIndirectTetherRenderResources();
 
-            if (_telemetryRing.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
-                H8Memory.Release(ref _telemetryRing, SystemID.Physics);
-            }
+            _telemetryRing = default;
+            _telemetryHead = default;
+            _dataVault = null;
         }
 
         internal void DrainTetherFiredSignals()
@@ -621,33 +620,36 @@ namespace Hecton8.Physics
 
         private void EnsureTelemetry()
         {
-            if (_telemetryRing.IsCreated)
+            if (_telemetryRing.IsCreated && _telemetryHead.IsCreated)
                 return;
 
-            // COLD ALLOC: NativeArray<TetherManagerTelemetryEntry>[300] - tether blackbox ring - owner: TetherManager
-            _telemetryRing = H8Memory.Allocate<TetherManagerTelemetryEntry>(
+            _dataVault = GlobalRegistry.DataVault;
+            if (_dataVault == null)
+                return;
+
+            _telemetryRing = _dataVault.GetBuffer<TetherManagerTelemetryEntry>(
+                BufferID.TetherManagerBlackBox,
                 TetherBlackBoxCapacity,
                 SystemID.Physics,
-                Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
-            if (!_telemetryRing.IsCreated)
+            _telemetryHead = _dataVault.GetBuffer<int>(
+                BufferID.TetherManagerBlackBoxHead,
+                1,
+                SystemID.Physics,
+                NativeArrayOptions.ClearMemory);
+            if (!_telemetryRing.IsCreated || !_telemetryHead.IsCreated)
                 return;
 
-            NativeMemorySentinel.RegisterNativeArray(
-                _telemetryRing,
-                nameof(TetherManager),
-                nameof(_telemetryRing),
-                NativeAllocationLifetime.Scene);
-            _telemetryHead = 0;
+            _telemetryHead[0] = 0;
             _telemetryDumped = false;
         }
 
         private void WriteBlackBoxSample(int activeTethers, float peakTension, uint flags)
         {
-            if (!_telemetryRing.IsCreated)
+            if (!_telemetryRing.IsCreated || !_telemetryHead.IsCreated)
                 EnsureTelemetry();
 
-            if (!_telemetryRing.IsCreated)
+            if (!_telemetryRing.IsCreated || !_telemetryHead.IsCreated)
                 return;
 
             if (!math.isfinite(peakTension))
@@ -656,16 +658,22 @@ namespace Hecton8.Physics
                 flags |= 1u;
             }
 
-            _telemetryRing[_telemetryHead] = new TetherManagerTelemetryEntry
+            int head = _telemetryHead[0];
+            if (head < 0 || head >= _telemetryRing.Length)
+                head = 0;
+
+            _telemetryRing[head] = new TetherManagerTelemetryEntry
             {
                 FrameIndex = (uint)Time.frameCount,
                 ActiveTethers = activeTethers,
                 PeakTension = peakTension,
                 Flags = flags
             };
-            _telemetryHead++;
-            if (_telemetryHead >= _telemetryRing.Length)
-                _telemetryHead = 0;
+            head++;
+            if (head >= _telemetryRing.Length)
+                head = 0;
+
+            _telemetryHead[0] = head;
 
             if ((flags & 1u) != 0u)
                 DumpBlackBoxOnce();
@@ -673,7 +681,7 @@ namespace Hecton8.Physics
 
         private void DumpBlackBoxOnce()
         {
-            if (_telemetryDumped || !_telemetryRing.IsCreated)
+            if (_telemetryDumped || !_telemetryRing.IsCreated || !_telemetryHead.IsCreated)
                 return;
 
             _telemetryDumped = true;
@@ -692,7 +700,7 @@ namespace Hecton8.Physics
                 {
                     writer.Write(TetherBlackBoxMagic);
                     writer.Write(_telemetryRing.Length);
-                    writer.Write(_telemetryHead);
+                    writer.Write(_telemetryHead[0]);
                     for (int i = 0; i < _telemetryRing.Length; i++)
                     {
                         TetherManagerTelemetryEntry entry = _telemetryRing[i];

@@ -151,3 +151,36 @@ Verification:
 - Domain scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, custom `event`, `Action<>`, `Func<>`, or legacy `EventBus` in `Assets/_Project/Scripts/Core/Memory/`.
 - `dotnet build Hecton8.Core.csproj --no-restore` still fails outside CORE/MEMORY: missing `Hecton8.Animation.Locomotion`, `Hecton8.Core.Determinism`, `Hecton8.Physics.KCC`, missing `ProceduralLadderClimbRuntime`, and Core.Contracts/domain type conflicts.
 - No compiler errors were reported in the touched CORE/MEMORY files.
+
+## 2026-05-16 - Continuation Inquisition / ABI Guard and Blackbox Separation
+
+What was wrong:
+- H8Memory had frame heartbeats and lifecycle allocation/release/transition snapshots sharing one bounded 300-entry ring.
+- A teardown event burst could evict frame heartbeat evidence before a fatal dump, violating the last-300-frame blackbox requirement.
+- Packed binary layout attributes existed, but the vault needed an explicit runtime ABI size guard to fail closed if struct sizes drift.
+
+What was done:
+- Kept `_blackBox` as the exact 300-frame heartbeat ring.
+- Added `_eventBlackBox` as a separate 300-entry lifecycle snapshot ring.
+- Routed `RecordBlackBox()` so `Heartbeat` flags write only to the frame ring and all other lifecycle flags write to the event ring.
+- Serialized both rings into `Dump_SENTINEL_DISPOSAL_GUARD.bin`.
+- Verified `H8Memory.ValidateAbiLayout()` and `GlobalDataVault.ValidateAbiLayout()` check packed binary sizes through `UnsafeUtility.SizeOf` and throw `FatalMemoryException.ThrowAbiLayoutMismatch()` on drift.
+
+Cinematic Cheats used:
+- No visual-domain edit belongs here. The memory-domain contribution is preserving crash evidence and evicting old-scene data so Ocean/VFX can spend memory on actual visuals.
+- Toaster mode: no per-frame disk writes, no managed queue, one heartbeat struct store per frame.
+- God-mode: lifecycle event forensics stay available without sacrificing the mandatory frame heartbeat ring.
+
+Exact Microseconds saved:
+- No exact microseconds claimed. Runtime profiling is blocked by external compile errors.
+- Gameplay hot path: one fixed native heartbeat struct store per frame, exact CPU cost unmeasured.
+- Persistent memory cost: 38,400 bytes total for two 300-entry 64-byte H8Memory blackbox rings.
+- GC impact: 0 B/frame by static inspection.
+
+Verification:
+- Re-read the exact `SENTINEL_DISPOSAL_GUARD` XML block from `Docs/Tasks/CURRENT_BATCH.md`.
+- Static scan found no CORE/MEMORY `StructLayout` without `Pack = 1`.
+- Static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>` in CORE/MEMORY.
+- `git diff --check` reported no whitespace errors for the touched runtime files.
+- `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 13.22s and failed on 3 external Construction errors in `VehicleDockingModule`: duplicate `IsLowDockingMathTier`, `ResolveSystemStress01`, and `ResetDockingRuntimeCaches`.
+- No compiler errors were reported in `Assets/_Project/Scripts/Core/Memory/H8Memory.cs`, `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs`, or `Assets/_Project/Scripts/Core/SceneRuntimeService.cs`.

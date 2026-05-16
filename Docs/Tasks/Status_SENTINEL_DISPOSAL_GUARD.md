@@ -45,11 +45,10 @@ Relevant mandates read before coding:
 - [x] Re-read H8Memory and bridge code for missed owner removal, zero pointer guards, baseline math, compile references, and non-hot path signal use. DOD: static scan found only cold-path allocations and the intentional transition blocking sync point. Rejected: adding hot-path registry lookups. Estimate: 0.0 us gameplay hot path.
 
 ## Compile Wall Note
-- Build command: `dotnet build Hecton8.Core.csproj --no-restore`.
-- Remaining blocker: external compile state now reports unsupported `XRDisplaySubsystem.TryRequestDisplayRefreshRate`, `VaultProbeUtility` generic inference failure, missing `ItemAcquiredSignal`, missing submarine breach/damage-control fields/helpers, missing Biolum profile/blackbox fields, and related non-memory contract drift.
-- Affected files include `Core/HectonXRRuntimeState.cs`, `Core/Diagnostics/Visuals/VaultProbeUtility.cs`, `HectonItem.cs`, `SubmarineStructuralGrid.cs`, and `VFX/Bioluminescence/BiolumPulseSyncRuntime.cs`.
-- No compiler errors are reported in `Assets/_Project/Scripts/Core/Memory/H8Memory.cs`, `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs`, or `Assets/_Project/Scripts/Core/SceneRuntimeService.cs` after the local enum-key and inquisition fixes.
-- Ownership: those blockers are outside CORE/MEMORY. Marked dependency block, not reverted.
+- Latest build command: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`.
+- Remaining blocker: external compile state now reports three duplicate member definitions in `Assets/_Project/Scripts/Construction/VehicleDockingModule.cs`: `IsLowDockingMathTier`, `ResolveSystemStress01`, and `ResetDockingRuntimeCaches`.
+- No compiler errors are reported in `Assets/_Project/Scripts/Core/Memory/H8Memory.cs`, `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs`, or `Assets/_Project/Scripts/Core/SceneRuntimeService.cs` after the ABI guard and blackbox separation pass.
+- Ownership: the blocker is outside CORE/MEMORY. Marked dependency block, not reverted.
 
 ## Omega Polish
 - [x] Extracted `<POLISH_MANDATE>` from `Docs/Tasks/CURRENT_BATCH.md` after all tasks were checked or blocked. Result: `NO_POLISH_MANDATE_TAG_FOUND`.
@@ -74,7 +73,7 @@ Relevant mandates read before coding:
 ## Continuation Inquisition - Frame Heartbeat Blackbox
 - [x] True 300-frame heartbeat: `H8Memory.RecordHeartbeat()` writes a frame-indexed `Heartbeat` telemetry entry into the fixed ring from `SceneRuntimeService.Tick`. Rejected: allocation-event-only blackbox because it cannot prove the last 300 frames. Estimate: one native struct store per frame; exact microseconds unmeasured.
 - [x] Hot-path allocation guard: H8Memory initialization is performed in `SceneRuntimeService.InitializeService`, not inside `Tick`; `RecordHeartbeat()` returns if the sentinel is not initialized. Rejected: hidden cold allocation from Tick. Estimate: 0 B GC/frame; exact CPU microseconds unmeasured.
-- [x] Binary entry size preservation: replaced two reserved ushorts with one `uint Frame`, keeping `H8MemoryTelemetryEntry` at the same 64-byte manual layout while adding frame evidence. Rejected: growing the ring entry size without MX350 need. Estimate: persistent memory stays 19,200 bytes for 300 entries.
+- [x] Binary entry size preservation: replaced two reserved ushorts with one `uint Frame`, keeping `H8MemoryTelemetryEntry` at the same 64-byte manual layout while adding frame evidence. Rejected: growing the heartbeat entry size without MX350 need. Estimate: heartbeat ring is 19,200 bytes; total H8Memory blackbox storage is now 38,400 bytes after separating lifecycle-event snapshots into their own 300-entry ring.
 - [x] Latest validation before vault eviction: `dotnet build Hecton8.Core.csproj --no-restore --nologo /v:minimal` completed in 01:42.88 and failed on 85 external errors. No errors reported in CORE/MEMORY touched files.
 
 ## Continuation Inquisition - Vault Scene Owner Eviction
@@ -82,3 +81,9 @@ Relevant mandates read before coding:
 - [x] Scene transition wiring: `SceneRuntimeService.CompleteMemoryLifecycleTransition()` now releases scene-owned vault buffers before `H8Memory.CompleteSceneTransitionVerification()`. Rejected: relying only on top-level H8Memory owner records, which cannot see per-buffer vault ownership inside the arena. Estimate: 0 B GC/frame; cold transition scan over vault keys.
 - [x] Locked block safety: vault owner eviction skips locked blocks and emits the existing Phi/VOD blackbox instead of freeing active-job memory. Rejected: force-freeing vault buffers with `BlockFlagLocked` or nonzero lock count. Estimate: no gameplay hot-path cost.
 - [x] Latest validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 01:47.73 and failed on 39 external errors. No errors reported in CORE/MEMORY touched files.
+
+## Continuation Inquisition - ABI Guard / Blackbox Separation
+- [x] ABI guard restore: `H8Memory.ValidateAbiLayout()` and `GlobalDataVault.ValidateAbiLayout()` fail closed through `FatalMemoryException.ThrowAbiLayoutMismatch()` when packed binary record sizes drift. Rejected: trusting attributes without runtime size checks. Estimate: cold initialization only; 0.0 us gameplay hot path.
+- [x] Heartbeat/event isolation: H8Memory now keeps the last 300 frame heartbeats in `_blackBox` and lifecycle allocation/release/transition snapshots in `_eventBlackBox`, preventing event bursts from evicting frame heartbeat evidence. Rejected: a mixed ring that can lose the required last-300-frame heartbeat. Estimate: one heartbeat struct store per frame; exact microseconds unmeasured; persistent storage is 38,400 bytes total.
+- [x] Static validation: CORE/MEMORY scans found no `StructLayout` without `Pack = 1`, no `Update`/`FixedUpdate`/`LateUpdate`, no `string.Format`, no legacy `EventBus`, no custom `event`, no `Action<>`, and no `Func<>`.
+- [x] Latest validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 13.22s and failed on 3 external `VehicleDockingModule` duplicate-method errors. No errors reported in CORE/MEMORY touched files.

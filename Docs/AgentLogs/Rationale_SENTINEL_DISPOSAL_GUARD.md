@@ -48,7 +48,7 @@ Problem: H8Memory fatal dumps had allocation snapshots but no fixed last-300 hea
 Solution: Added `NativeArray<H8MemoryTelemetryEntry>[300]` to H8Memory, recording allocation/release/transition/fatal state and serializing it before leak detail records in `Dump_SENTINEL_DISPOSAL_GUARD.bin`.
 Rejected Alternatives: Rejected managed queues, Debug.Log, or per-frame disk writes. Rejected pretending allocation records alone were a system heartbeat.
 Scalability potential: Low devices get cold-path forensic data without gameplay writes; High/Ultra can keep deeper in-memory telemetry without runtime disk pressure.
-Hardware Impact: 300 fixed 64-byte entries = 19,200 bytes persistent memory; 0.0 us gameplay hot path, event-only writes on allocation/free/transition.
+Hardware Impact: Initial fixed 300-entry ring cost was 19,200 bytes. Current split blackbox storage is 38,400 bytes for heartbeat plus lifecycle-event rings; gameplay hot path writes one heartbeat struct per frame and exact CPU microseconds are unmeasured.
 
 Problem: Raw allocation alignment accepted caller values directly, which can pass non-power-of-two or sub-16-byte alignment into ARM64/Quest native memory paths.
 Solution: Added `ResolveSafeAlignment` and routed `AllocateRaw`/`ReallocateRaw` through a power-of-two alignment floor of 16 bytes.
@@ -84,7 +84,7 @@ Problem: H8Memory blackbox was event-driven, not a true last-300-frame heartbeat
 Solution: Added `H8Memory.RecordHeartbeat()` and call it from the existing `SceneRuntimeService.Tick` bridge. The method writes one fixed `H8MemoryTelemetryEntry` with a `Heartbeat` flag and `Time.frameCount` into the persistent 300-entry ring.
 Rejected Alternatives: Rejected Debug.Log, managed queues, per-frame disk writes, and initializing H8Memory from Tick. Initialization is done in `SceneRuntimeService.InitializeService`; heartbeat returns if memory is not initialized.
 Scalability potential: Low tier gets crash context without disk pressure. High/Ultra keeps deterministic frame evidence without growing the ring.
-Hardware Impact: Persistent memory remains 19,200 bytes; per frame cost is one NativeArray struct store and exact microseconds are unmeasured. GC impact is 0 B/frame by static inspection.
+Hardware Impact: Heartbeat ring remains 19,200 bytes; total H8Memory blackbox storage is now 38,400 bytes after the lifecycle-event ring split. Per frame cost is one NativeArray struct store and exact microseconds are unmeasured. GC impact is 0 B/frame by static inspection.
 
 Problem: Adding frame evidence risked inflating the telemetry record beyond the established 64-byte blackbox entry footprint.
 Solution: Replaced two reserved ushort fields with one `uint Frame`, preserving the manual 64-byte packed layout while adding frame index data to binary dumps.
@@ -103,3 +103,15 @@ Solution: `ReleaseBuffersByOwner` skips blocks with `BlockFlagLocked` or nonzero
 Rejected Alternatives: Rejected force-freeing locked vault blocks. Rejected adding per-frame polling for lock expiry.
 Scalability potential: Low/Quest avoids use-after-free during scene transitions. High/Ultra keep job parallelism outside the transition gate.
 Hardware Impact: Cold transition branch only; no gameplay hot-path cost.
+
+Problem: H8Memory mixed frame heartbeats and lifecycle allocation/release/transition snapshots in one 300-entry ring. Event bursts during teardown could evict the last-300-frame heartbeat evidence required by the blackbox rule.
+Solution: Split the sentinel telemetry into `_blackBox` for frame heartbeats and `_eventBlackBox` for lifecycle snapshots, both fixed-size native rings serialized into `Dump_SENTINEL_DISPOSAL_GUARD.bin`. Added packed ABI size guards in both H8Memory and GlobalDataVault initialization so binary dump layouts fail closed on drift.
+Rejected Alternatives: Rejected enlarging a single mixed ring because it still fails the semantic requirement when event spikes exceed capacity. Rejected managed queues and Debug.Log snapshots because they add GC/I/O pressure and lose deterministic binary layout. Rejected trusting `StructLayout` attributes without `UnsafeUtility.SizeOf` checks.
+Scalability potential: Low/Quest/Steam Deck retain deterministic crash evidence without per-frame disk writes. High/Ultra get the same heartbeat guarantee while lifecycle events remain available for leak forensics and Ocean activation budget remains protected.
+Hardware Impact: 38,400 bytes persistent native storage for two 300-entry 64-byte rings. Gameplay hot path is one heartbeat struct store; lifecycle ring writes only on allocation/release/transition. Exact microseconds are unmeasured.
+
+Problem: Latest build validation is still red, but the current blocker is outside CORE/MEMORY.
+Solution: Reran `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`; current errors are duplicate `VehicleDockingModule` methods in Construction: `IsLowDockingMathTier`, `ResolveSystemStress01`, and `ResetDockingRuntimeCaches`. CORE/MEMORY touched files report no compiler errors.
+Rejected Alternatives: Rejected editing Construction from the sentinel memory domain and rejected claiming green build while external duplicates remain.
+Scalability potential: None in CORE/MEMORY; integrator or Construction owner must collapse duplicate docking methods before Unity/runtime profiling can prove transition timing.
+Hardware Impact: None from this dependency block.

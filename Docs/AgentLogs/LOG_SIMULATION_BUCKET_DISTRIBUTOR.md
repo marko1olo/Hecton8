@@ -38,3 +38,36 @@ Validation:
 - Errors-only attempts 2 and 3 were captured in `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt2.log` and `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt3.log`; blockers were external to touched scheduler files.
 - Final post-polish attempt captured in `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt4_final.log`; it timed out behind external dependency errors and filtered to zero errors in touched files.
 - External blockers observed: missing `Hecton8.VFX.Wakes`, missing `IDockingAutopilotService` / `ActiveSplineData`, interface drift in `EcosystemDirector`, and duplicate/member drift in other agents' determinism/lighting code.
+
+## 2026-05-16 - H-Phi Re-Inquisition Pass
+What was wrong:
+- The previous scheduler state still documented and partially implied fallback ownership outside `GlobalDataVault`.
+- `ModuloSimulationBucketer` had no actual 300-frame DataVault black-box ring in the file after the overwrite pass.
+- High-tier visual budget was not exposed as a typed scheduler flag.
+- Build attempt5 reached a Sargassum compile error from incomplete vault-handle calls before the known construction wall.
+
+What was done:
+- Reworked `ModuloSimulationBucketer` to keep only `VaultBufferHandle<T>` handles and scalar state; no persistent private scheduler `NativeArray<T>` fields remain.
+- Added `BufferID.SimulationBucketBlackBox` and a packed 64-byte `SimulationBucketBlackBoxEntry` ring with 300 entries.
+- Added fault-only dump to `Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin` on non-finite scheduler cost.
+- Fixed scheduler contract packing: `SimulationBucketFrameState` Pack=1 Size=64, `SimulationBucketRebalanceResult` Pack=1 Size=20, scheduler signals Explicit Pack=1.
+- Added `VisualOverkillBudgetAvailable` as a downstream high-tier budget flag.
+- Replaced the broken Sargassum `EnsureVaultBufferHandle` calls with existing DataVault-backed `EnsureNativeArrayCapacity` calls for boid sensory threat and black-box buffers.
+- Ran build attempts 5 and 6; attempt6 has zero errors in scheduler-touched files and is blocked by `VehicleDockingModule` construction-domain missing methods.
+
+Cinematic cheats used:
+- Toaster mode remains a static 128-bucket Dear Lie with no rebalance job.
+- Steam Deck I/O is protected by fault-only binary dump; normal frames only overwrite the in-memory ring.
+- God-mode visual overkill is exposed as a flag when expected scheduler cost is under half budget, without the scheduler editing render/VFX domains.
+
+Exact microseconds saved / budget estimates:
+- Private scheduler allocation ownership removed: 0 B persistent private scheduler state.
+- Black-box ring write: <5 us/frame, 0 us normal disk I/O.
+- Fault dump: cold path only; no Steam Deck MicroSD traffic during healthy frames.
+- Visual overkill flag: scalar bit test downstream, effectively 0 us scheduler overhead.
+- Sargassum compile repair: no runtime gain claimed; removed dead helper dependency.
+
+Validation:
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt5_hphi.log`: failed first on Sargassum missing `EnsureVaultBufferHandle`, then unrelated VFX/construction errors.
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt6_hphi.log`: failed only in `Assets/_Project/Scripts/Construction/VehicleDockingModule.cs`.
+- Filtered attempt6 against touched files: zero errors in `ModuloSimulationBucketer`, contracts, signals, dispatcher, bootstrap, H8Memory, CrashTelemetryBuffer, Sargassum, and HectonFluidEngine.

@@ -1168,34 +1168,6 @@ namespace Hecton8.Construction
             _fluidRuntime = GlobalRegistry.Fluid;
         }
 
-        private void ResetDockingRuntimeCaches()
-        {
-            _activeDockingSpline = default;
-            _activeDockingSplineSlot = -1;
-            _lowTierSplineFromPosition = Vector3.zero;
-            _lowTierSplineTargetPosition = Vector3.zero;
-            _lowTierSplineTargetRotation = Quaternion.identity;
-            _lastDockingSplineTargetPosition = Vector3.zero;
-            _lastDockingCommandVelocity = Vector3.zero;
-            _lastDockingFlowVelocity = float3.zero;
-            _lowTierSplineBlendSeconds = 0f;
-            _dockingWakeElapsedSeconds = 0f;
-            _lastSplineDeviationError = 0f;
-            _hasLowTierSplineSample = false;
-            _dockingCompletionSignalPublished = false;
-        }
-
-        private static float ResolveSystemStress01()
-        {
-            float stress01 = HomeostasisBrain.SystemHealthIndex01;
-            return math.isfinite(stress01) ? math.saturate(stress01) : 0f;
-        }
-
-        private static bool IsLowDockingMathTier(byte mathLod)
-        {
-            return mathLod == 0;
-        }
-
         private bool TryEvaluateDockingSplinePose(
             float progress01,
             float fixedDeltaTime,

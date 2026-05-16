@@ -4,7 +4,9 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Optimization;
+using Unity.Collections;
 using UnityEngine;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.AddressableAssets;
@@ -14,6 +16,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 namespace Hecton8.Core.Content
 {
     [Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
     public struct ContentBundleRefState
     {
         public uint Hash;
@@ -22,10 +25,11 @@ namespace Hecton8.Core.Content
         public int LastAccessFrame;
         public byte BiomeId;
         public ContentTier Tier;
-        public bool IsBiomeCache;
+        public byte IsBiomeCache;
+        public byte Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     public struct ContentAuthorityTelemetryEntry
     {
         public uint Frame;
@@ -73,7 +77,8 @@ namespace Hecton8.Core.Content
                 state.LastAccessFrame = frame;
                 if (bytes > state.Bytes)
                     state.Bytes = bytes;
-                state.IsBiomeCache |= isBiomeCache;
+                if (isBiomeCache)
+                    state.IsBiomeCache = 1;
                 _states[i] = state;
                 return true;
             }
@@ -89,7 +94,7 @@ namespace Hecton8.Core.Content
                 LastAccessFrame = frame,
                 BiomeId = biomeId,
                 Tier = tier,
-                IsBiomeCache = isBiomeCache
+                IsBiomeCache = isBiomeCache ? (byte)1 : (byte)0
             };
             _count++;
             return true;
@@ -125,7 +130,7 @@ namespace Hecton8.Core.Content
             for (int i = 0; i < _count; i++)
             {
                 ContentBundleRefState state = _states[i];
-                if (!state.IsBiomeCache || state.RefCount != 0)
+                if (state.IsBiomeCache == 0 || state.RefCount != 0)
                     continue;
 
                 if (state.LastAccessFrame >= bestFrame)
@@ -163,7 +168,16 @@ namespace Hecton8.Core.Content
         {
             long total = 0L;
             for (int i = 0; i < _count; i++)
-                total += _states[i].Bytes;
+            {
+                long bytes = _states[i].Bytes;
+                if (bytes <= 0L)
+                    continue;
+
+                if (total > long.MaxValue - bytes)
+                    return long.MaxValue;
+
+                total += bytes;
+            }
             return total;
         }
     }
@@ -197,6 +211,7 @@ namespace Hecton8.Core.Content
         private const uint VramInterceptFlag = 1u << 0;
         private const uint AupCleanupFlag = 1u << 1;
         private const uint HologramFlag = 1u << 2;
+        private const uint NonFiniteFlag = 1u << 3;
         private const uint VramLedgerOwnerHash = 0xC0A77A57u;
         private const int TelemetryCapacity = 300;
 
@@ -211,21 +226,19 @@ namespace Hecton8.Core.Content
         private readonly List<PendingLoad> _pendingLoads = new List<PendingLoad>(64);
         // COLD ALLOC: ContentBundleReferenceCounter[256] - duplicate bundle load guard - owner: ContentAuthorityRuntime
         private readonly ContentBundleReferenceCounter _bundleRefs = new ContentBundleReferenceCounter(256);
-        // COLD ALLOC: ContentAuthorityTelemetryEntry[300] - black-box circular state - owner: ContentAuthorityRuntime
-        private readonly ContentAuthorityTelemetryEntry[] _telemetry = new ContentAuthorityTelemetryEntry[TelemetryCapacity];
 #if UNITY_ADDRESSABLES_EXIST
         // COLD ALLOC: List<AsyncOperationHandle>[64] - VFX prewarm handle ledger - owner: ContentAuthorityRuntime
         private readonly List<AsyncOperationHandle> _vfxPrewarmHandles = new List<AsyncOperationHandle>(64);
 #endif
+        private IDataVault _dataVault;
+        private VaultBufferHandle<ContentAuthorityTelemetryEntry> _telemetryHandle;
+        private VaultBufferHandle<int> _telemetryCursorHandle;
         private GameObject[] _hologramPool;
         private Renderer[] _hologramRenderers;
         private bool _registeredTick;
         private bool _vfxPrewarmStarted;
         private int _nextHologramIndex;
         private int _hologramsActive;
-        private int _telemetryCursor;
-        private AsyncOperation _unusedAssetsOperation;
-        private Action<AsyncOperation> _unusedAssetsCompleted;
 
         public ContentAssetHashMap AssetHashMap => assetHashMap;
         public ContentBundleReferenceCounter BundleReferenceCounter => _bundleRefs;
@@ -237,7 +250,6 @@ namespace Hecton8.Core.Content
             _hologramPool = new GameObject[capacity];
             // COLD ALLOC: Renderer[capacity] - hidden hologram proxy renderers - owner: ContentAuthorityRuntime
             _hologramRenderers = new Renderer[capacity];
-            _unusedAssetsCompleted = HandleUnusedAssetsCompleted;
             BuildHologramPool(capacity);
         }
 
@@ -261,8 +273,6 @@ namespace Hecton8.Core.Content
         private void OnDestroy()
         {
             TryUnregister();
-            if (_unusedAssetsOperation != null && _unusedAssetsCompleted != null)
-                _unusedAssetsOperation.completed -= _unusedAssetsCompleted;
 
 #if UNITY_ADDRESSABLES_EXIST
             for (int i = 0; i < _vfxPrewarmHandles.Count; i++)
@@ -277,6 +287,8 @@ namespace Hecton8.Core.Content
                 if (_hologramPool[i] != null)
                     Destroy(_hologramPool[i]);
             }
+
+            ClearVaultHandles();
         }
 
         public void Tick(float deltaTime)
@@ -487,9 +499,6 @@ namespace Hecton8.Core.Content
 
         private void TickAupShiftCleanup(ref uint flags)
         {
-            if (_unusedAssetsOperation != null)
-                return;
-
             if (SignalBusRegistry.SystemStress01 <= 0.8f)
                 return;
 
@@ -497,22 +506,14 @@ namespace Hecton8.Core.Content
             if (shifts.Length == 0)
                 return;
 
-            _unusedAssetsOperation = Resources.UnloadUnusedAssets();
-            if (_unusedAssetsOperation != null && _unusedAssetsCompleted != null)
-                _unusedAssetsOperation.completed += _unusedAssetsCompleted;
+            AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+            if (governor != null)
+            {
+                governor.ForceDrainPendingReleaseQueue();
+                governor.EvictLowestPriorityUnusedAssets(2, AssetPriorityTier.Tier5DistantHlod);
+            }
 
             flags |= AupCleanupFlag;
-        }
-
-        private void HandleUnusedAssetsCompleted(AsyncOperation operation)
-        {
-            if (!ReferenceEquals(operation, _unusedAssetsOperation))
-                return;
-
-            if (_unusedAssetsCompleted != null)
-                operation.completed -= _unusedAssetsCompleted;
-
-            _unusedAssetsOperation = null;
         }
 
         private void TickVramIntercept(ref uint flags)
@@ -556,17 +557,30 @@ namespace Hecton8.Core.Content
 #endif
         }
 
-        private void WriteTelemetry(uint flags)
+        private unsafe void WriteTelemetry(uint flags)
         {
             VRAMPressureMonitor pressure = GlobalRegistry.VRAMPressure;
             long estimate = _bundleRefs.EstimateResidentBytes();
-            float vramPressure = pressure != null ? pressure.VramPressureFactor : 0f;
-            float ramPressure = pressure != null ? pressure.RamPressureFactor : 0f;
+            float rawVramPressure = pressure != null ? pressure.VramPressureFactor : 0f;
+            float rawRamPressure = pressure != null ? pressure.RamPressureFactor : 0f;
+            bool nonFinite = !IsFinite(rawVramPressure) || !IsFinite(rawRamPressure);
+            float vramPressure = Sanitize01(rawVramPressure);
+            float ramPressure = Sanitize01(rawRamPressure);
+            if (nonFinite)
+                flags |= NonFiniteFlag;
+
             uint stateHash = unchecked((uint)_pendingLoads.Count * 73856093u) ^
                              unchecked((uint)_bundleRefs.Count * 19349663u) ^
                              unchecked((uint)_hologramsActive * 83492791u);
 
-            _telemetry[_telemetryCursor] = new ContentAuthorityTelemetryEntry
+            if (!TryResolveTelemetryPointer(out ContentAuthorityTelemetryEntry* telemetry, out int* cursorPtr))
+                return;
+
+            int cursor = *cursorPtr;
+            if ((uint)cursor >= TelemetryCapacity)
+                cursor = 0;
+
+            telemetry[cursor] = new ContentAuthorityTelemetryEntry
             {
                 Frame = unchecked((uint)Time.frameCount),
                 Flags = flags,
@@ -578,20 +592,87 @@ namespace Hecton8.Core.Content
                 RamPressure01 = ramPressure,
                 StateHash = stateHash
             };
-            _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
+            cursor++;
+            if (cursor >= TelemetryCapacity)
+                cursor = 0;
+            *cursorPtr = cursor;
 
-            if (float.IsNaN(vramPressure) || float.IsNaN(ramPressure))
+            if (nonFinite)
                 DumpBlackBox();
         }
 
-        private void DumpBlackBox()
+        private unsafe bool TryResolveTelemetryPointer(
+            out ContentAuthorityTelemetryEntry* telemetry,
+            out int* cursor)
         {
+            telemetry = null;
+            cursor = null;
+
+            if (!EnsureTelemetry())
+                return false;
+
+            telemetry = (ContentAuthorityTelemetryEntry*)_telemetryHandle.ResolvePointer(_dataVault);
+            cursor = (int*)_telemetryCursorHandle.ResolvePointer(_dataVault);
+            return telemetry != null && cursor != null;
+        }
+
+        private bool EnsureTelemetry()
+        {
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            _dataVault = vault;
+            if (!_telemetryHandle.IsCreated || !vault.ResolveBuffer(ref _telemetryHandle))
+            {
+                _telemetryHandle = vault.GetBufferHandle<ContentAuthorityTelemetryEntry>(
+                    BufferID.ContentAuthorityBlackBox,
+                    TelemetryCapacity,
+                    SystemID.ContentAuthority,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_telemetryCursorHandle.IsCreated || !vault.ResolveBuffer(ref _telemetryCursorHandle))
+            {
+                _telemetryCursorHandle = vault.GetBufferHandle<int>(
+                    BufferID.ContentAuthorityTelemetryCursor,
+                    1,
+                    SystemID.ContentAuthority,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            return _telemetryHandle.IsCreated &&
+                   _telemetryHandle.Length >= TelemetryCapacity &&
+                   _telemetryCursorHandle.IsCreated &&
+                   _telemetryCursorHandle.Length >= 1;
+        }
+
+        private void ClearVaultHandles()
+        {
+            _telemetryHandle = default;
+            _telemetryCursorHandle = default;
+            _dataVault = null;
+        }
+
+        private unsafe void DumpBlackBox()
+        {
+            if (!TryResolveTelemetryPointer(out ContentAuthorityTelemetryEntry* telemetry, out int* cursorPtr))
+                return;
+
+            int cursor = *cursorPtr;
+            if ((uint)cursor >= TelemetryCapacity)
+                cursor = 0;
+
             string path = Path.Combine(Directory.GetCurrentDirectory(), "Docs/AgentLogs/Dump_CONTENT_AUTHORITY_DICTATOR.bin");
             using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
             {
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
-                    ContentAuthorityTelemetryEntry entry = _telemetry[(_telemetryCursor + i) % TelemetryCapacity];
+                    int index = cursor + i;
+                    if (index >= TelemetryCapacity)
+                        index -= TelemetryCapacity;
+
+                    ContentAuthorityTelemetryEntry entry = telemetry[index];
                     writer.Write(entry.Frame);
                     writer.Write(entry.Flags);
                     writer.Write(entry.FocusHash);
@@ -605,6 +686,20 @@ namespace Hecton8.Core.Content
                     writer.Write(entry.Reserved0);
                 }
             }
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        private static float Sanitize01(float value)
+        {
+            if (!IsFinite(value))
+                return 0f;
+            if (value <= 0f)
+                return 0f;
+            return value >= 1f ? 1f : value;
         }
 
         private void TryRegister()
@@ -635,6 +730,15 @@ namespace Hecton8.Core.Content
 
     public static class ContentTieredGroupPolicy
     {
+        public const uint VisualFeatureSaltCrystals = 1u << 0;
+        public const uint VisualFeatureVolumetricSiltWake = 1u << 1;
+        public const uint VisualFeatureProceduralHullDents = 1u << 2;
+        public const uint VisualFeatureRaymarchDetail = 1u << 3;
+        public const uint VisualFeatureParallaxOcclusion16Tap = 1u << 4;
+        public const uint DearLieOneDimensionalLut = 1u << 16;
+        public const uint DearLieTriangleNoise = 1u << 17;
+        public const uint DearLieDotProductVision = 1u << 18;
+
         public static bool CanDownload(ContentTier tier)
         {
             if (tier != ContentTier.Overkill)
@@ -653,6 +757,29 @@ namespace Hecton8.Core.Content
                 return ContentTier.HighRes;
 
             return SystemInfo.graphicsMemorySize > 4096 ? ContentTier.Overkill : ContentTier.HighRes;
+        }
+
+        public static uint ResolveVisualFeatureMask(ContentTier tier)
+        {
+            if (HectonXRRuntimeState.IsXRActive || SystemInfo.graphicsMemorySize <= 2048)
+            {
+                return DearLieOneDimensionalLut |
+                       DearLieTriangleNoise |
+                       DearLieDotProductVision;
+            }
+
+            if (tier == ContentTier.Overkill && SystemInfo.graphicsMemorySize > 4096)
+            {
+                return VisualFeatureSaltCrystals |
+                       VisualFeatureVolumetricSiltWake |
+                       VisualFeatureProceduralHullDents |
+                       VisualFeatureRaymarchDetail |
+                       VisualFeatureParallaxOcclusion16Tap;
+            }
+
+            return VisualFeatureSaltCrystals |
+                   VisualFeatureVolumetricSiltWake |
+                   DearLieTriangleNoise;
         }
     }
 }

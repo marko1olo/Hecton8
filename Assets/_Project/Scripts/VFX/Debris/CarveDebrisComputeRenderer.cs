@@ -63,7 +63,7 @@ namespace Hecton8.VFX.Debris
         private const uint SdfActiveFlag = 1u << 2;
         private const uint FlowActiveFlag = 1u << 3;
         private const uint StressRecycleFlag = 1u << 4;
-        private const string DumpPath = "Docs/AgentLogs/Dump_VFX_SDF_CARVE_DEBRIS.bin";
+        private const string DumpPath = "Docs/AgentLogs/Dump_DEBRIS_PHYSICS_FAKE.bin";
 
         private static readonly int CarveDebrisReadId = Shader.PropertyToID("_CarveDebrisRead");
         private static readonly int CarveDebrisWriteId = Shader.PropertyToID("_CarveDebrisWrite");
@@ -830,7 +830,7 @@ namespace Hecton8.VFX.Debris
             GraphicsBuffer positionWrite = readA ? _positionBufferB : _positionBufferA;
             GraphicsBuffer velocityRead = readA ? _velocityBufferA : _velocityBufferB;
             GraphicsBuffer velocityWrite = readA ? _velocityBufferB : _velocityBufferA;
-            int dispatchGroups = lowTier ? _lowDispatchGroups : _maxDispatchGroups;
+            int dispatchGroups = ResolveDispatchGroups(activeCapacity, _threadGroupSize);
             Vector4 drawArgs = drawArgsBase;
             drawArgs.w = activeCapacity;
             float3 appliedAupShift = _pendingAupShift;

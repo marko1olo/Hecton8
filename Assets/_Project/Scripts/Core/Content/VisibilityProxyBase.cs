@@ -40,12 +40,30 @@ namespace Hecton8.Core.Content
             Transform tr = transform;
             Vector3 scale = tr.lossyScale;
             Vector3 size = new Vector3(
-                Mathf.Abs(localSize.x * scale.x),
-                Mathf.Abs(localSize.y * scale.y),
-                Mathf.Abs(localSize.z * scale.z));
-            _worldBounds = new Bounds(tr.TransformPoint(localCenter), size);
+                SanitizeExtent(localSize.x * scale.x),
+                SanitizeExtent(localSize.y * scale.y),
+                SanitizeExtent(localSize.z * scale.z));
+            Vector3 center = tr.TransformPoint(localCenter);
+            if (!IsFinite(center.x) || !IsFinite(center.y) || !IsFinite(center.z))
+                center = tr.position;
+
+            _worldBounds = new Bounds(center, size);
         }
 
         public abstract void ExecuteVisibleWork(float deltaTime);
+
+        private static float SanitizeExtent(float value)
+        {
+            if (!IsFinite(value))
+                return 0.01f;
+
+            float absolute = Mathf.Abs(value);
+            return absolute < 0.01f ? 0.01f : absolute;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
     }
 }

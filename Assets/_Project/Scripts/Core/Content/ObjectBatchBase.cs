@@ -1,10 +1,12 @@
 using System;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace Hecton8.Core.Content
 {
     [Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
     public struct ObjectBatchInstance
     {
         public Matrix4x4 LocalToWorld;
@@ -15,6 +17,7 @@ namespace Hecton8.Core.Content
     }
 
     [Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
     public struct ObjectBatchChunk
     {
         public Bounds Bounds;

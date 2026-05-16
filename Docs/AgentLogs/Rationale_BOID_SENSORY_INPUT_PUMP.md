@@ -73,3 +73,21 @@ Solution: Logged `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish2.txt` and 
 Rejected Alternatives: Editing missing Tether or RealtimeCSG files was rejected as outside the AI/COMPUTE sensory domain and would mask another agent's dependency wall.
 Scalability potential: No runtime scaling impact. This preserves the sensory patch while the integrator repairs project references.
 Hardware Impact: 0 us/frame; build-only blocker.
+
+Problem: Sensory data was vault-backed but still cached as local persistent NativeArray fields, which fails the stricter H-PHI interpretation.
+Solution: Replaced `_boidSensoryThreatsNative` and `_boidSensoryBlackBox` fields with `VaultBufferHandle<float4>` and `VaultBufferHandle<BoidSensoryBlackBoxEntry>`. The system now resolves transient NativeArray views from `GlobalDataVault` only at the upload/blackbox boundary.
+Rejected Alternatives: Keeping local NativeArray views was rejected because field ownership still looks like private state even when the backing allocation lives in the vault. Resolving with managed arrays was rejected for GC and copy cost.
+Scalability potential: Low resolves a 16-slot threat view and 300-entry telemetry ring only when the simulation dispatch is active. Middle/High/Ultra keep the same vault contract, so richer visual response does not fork memory ownership.
+Hardware Impact: Adds an estimated ~1 us/frame handle resolution cost on i3/MX350 and removes private persistent sensory collection ownership. Persistent memory remains fixed at 256 bytes for threats plus 19.2 KB for blackbox.
+
+Problem: The boid surface still published three outgoing events through `GlobalSignals.Publish`, which is a legacy wrapper despite forwarding to typed lanes.
+Solution: Replaced those calls with direct `SignalBus<DebrisSpawnSignal>.Push`, `SignalBus<AcousticPingSignal>.Push`, and `SignalBus<SwarmDispersedSignal>.Push`.
+Rejected Alternatives: Keeping wrappers was rejected because the inquisition explicitly requires typed lanes. Adding new duplicate signals was rejected because existing typed payloads already cover debris, acoustic pings, and swarm dispersion.
+Scalability potential: Low/Middle/High/Ultra all use the same typed lanes and frame snapshots; higher tiers can add visual consumers without changing the producer.
+Hardware Impact: Expected save is small but real: removes wrapper queue writes for these boid-originated events and avoids legacy lane pressure. Estimated 1-3 us/frame saved during kill/frenzy/dispersion bursts, 0 steady-state cost.
+
+Problem: The third build probe still cannot validate the sensory surface because unrelated systems fail first.
+Solution: Logged `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish3.txt` and scanned for touched-file diagnostics. None reference `SargassumMicroFaunaBoids.cs`, `H8Memory.cs`, `SargassumMicroFaunaBoids.compute`, or `BoidFishInstanced.shader`.
+Rejected Alternatives: Editing `LockstepStateValidator`, `EcosystemDirector`, or `SubmarineFluidDynamics` was rejected as cross-domain compile-wall work.
+Scalability potential: No runtime impact; this is integration debt outside the sensory pump.
+Hardware Impact: 0 us/frame; build-only blocker.

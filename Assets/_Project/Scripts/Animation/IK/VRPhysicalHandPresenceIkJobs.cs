@@ -449,7 +449,9 @@ namespace Hecton8.Animation.IK
             if (gripInput)
                 flags |= VRPhysicalHandPresenceConstants.OutputFlagGripInput;
 
-            float3 controller = SanitizeFinite(input.ControllerPosition, previousState.ControllerPosition);
+            float3 controller = SanitizeFinite(
+                SanitizeFinite(input.ControllerPosition, previousState.ControllerPosition),
+                float3.zero);
             float3 previousActual = SanitizeFinite(previousState.ActualPosition, input.PreviousActualPosition);
             if (!math.all(math.isfinite(previousActual)))
                 previousActual = controller;
@@ -497,11 +499,11 @@ namespace Hecton8.Animation.IK
             if (gripInput && canUseSdf &&
                 allowSdfProjection &&
                 TrySampleSdfTrilinear(controller, invCellSize, SdfRange, out float density) &&
-                density > -localClearance &&
+                density < localClearance &&
                 TryResolveSdfGradient(controller, invCellSize, SdfRange, gradientStep, out float3 sdfNormal))
             {
                 surfaceNormal = sdfNormal;
-                projectedTarget = SanitizeFinite(controller + surfaceNormal * (density + localClearance), controller);
+                projectedTarget = SanitizeFinite(controller + surfaceNormal * (localClearance - density), controller);
                 locked = true;
                 usedSdf = true;
                 flags |= VRPhysicalHandPresenceConstants.OutputFlagLocked | VRPhysicalHandPresenceConstants.OutputFlagSdfSlide;
@@ -717,7 +719,9 @@ namespace Hecton8.Animation.IK
 
         private VRHandPresenceOutput BuildNanFallback(in VRHandPresenceInput input, VRHandGrabState previousState, int hand, uint flags)
         {
-            float3 controller = SanitizeFinite(input.ControllerPosition, previousState.ControllerPosition);
+            float3 controller = SanitizeFinite(
+                SanitizeFinite(input.ControllerPosition, previousState.ControllerPosition),
+                float3.zero);
             float3 actual = SanitizeFinite(previousState.ActualPosition, controller);
             float3 shoulder = SanitizeFinite(input.ShoulderPosition, actual + new float3(0f, -0.25f, -0.2f));
             float3 fallbackElbow = SanitizeFinite(math.lerp(shoulder, actual, 0.5f), actual);

@@ -71,3 +71,63 @@ Rejected Alternatives: Running all spline batches on the main thread only, addin
 Scalability potential: Low/MX350: scalar or small batched solve at low active counts. Middle: jobified 64-slot vault lane. High: downstream current compensation can add a second vector lane. Ultra: later Hermite smoothing can write a different progress lane while the solver remains unchanged.
 
 Hardware Impact: Estimated cost target is under 0.1 ms for the 64-slot batch on i3/MX350 and 0 B/frame. The job avoids managed dispatch decisions and only carries blittable data.
+
+## Decision 7 - Current Compensation Is A Velocity Command, Not A Global Force
+
+Problem: The XML requires abyssal-flow compensation, but the docking handler owns a kinematic capture sequence. Applying global current physics or forcing every entity through the fluid field would violate the flow mandate and risk frame spikes.
+
+Solution: Cache `HectonFluidEngine` outside the hot path, sample `TrySampleModAbyssalFlow` only for the active docking vehicle, and subtract the flow vector from the path velocity command. The spline remains the authoritative AUP path; current compensation drives thruster/wake/motion-vector intent.
+
+Rejected Alternatives: Global per-entity current force was rejected by the abyssal-current mandate. Per-frame `GlobalRegistry.Fluid` polling was rejected by the registry mandate. Letting water drift the kinematic path was rejected because docking must be predictable and controllable.
+
+Scalability potential: Low: no flow if the cached fluid runtime is missing, and one sample only when docking is active. Middle: one previous-frame flow sample. High: same sample feeds wake advection. Ultra: future fluid owner can replace the sampler without changing docking authority.
+
+Hardware Impact: Estimated cost is <3 us per active dock on i3/MX350 and 0 B/frame. The fake-first channel buys visible thruster/wake compensation without simulating broad fluid truth.
+
+## Decision 8 - Math LOD Split For Toaster And Overkill
+
+Problem: Full-rate cubic evaluation is cheap at one active dock but still violates the scalability pillar if MX350 and RTX receive the same treatment.
+
+Solution: Math LOD 0 solves at 10 Hz and manually interpolates position between cached samples. Math LOD 2 uses a seventh-order Hermite progress curve with zero endpoint jerk before Bezier evaluation. Homeostasis stress above 0.8 disables the high-end curve and falls back to basic inertial progress.
+
+Rejected Alternatives: Instant low-tier snap was rejected because it destroys the heavy docking feel. `AnimationCurve` was rejected by XML. A middle-ground fixed mode was rejected because HECTON-8 requires toaster and overkill paths, not one balanced path.
+
+Scalability potential: Low/MX350: 10 Hz spline solve plus manual interpolation. Middle: fixed-tick Bezier. High: Hermite zero-jerk progress. Ultra: saved cycles can go to wake/fluid presentation instead of more path authority.
+
+Hardware Impact: Low-tier spline solve cadence drops by about 80% versus 50 Hz. High-tier adds only scalar polynomial math and is shed under stress.
+
+## Decision 9 - Reactive VFX Uses Existing Wake/Fluid Lanes
+
+Problem: The XML names `VehicleWakeSignal`, but the repository already has `WakeGeneratedSignal` and `FluidImpulseSignal` consumers for procedural wake and fluid advection.
+
+Solution: Publish `WakeGeneratedSignal` with the vehicle source flag and `FluidImpulseSignal` with bounded radius/lifetime at 10 Hz while docking. This keeps VFX domain ownership intact and avoids direct particle spawning from the physics handler.
+
+Rejected Alternatives: Adding an orphan `VehicleWakeSignal` was rejected because no consumer exists. Spawning particles or writing fluid buffers directly was rejected as cross-domain sabotage.
+
+Scalability potential: Low: signal cadence is already 10 Hz and consumers can discard by tier. Middle: flora wake buffer receives sparse procedural points. High/Ultra: fluid advection can use the impulse lane for richer turbulent wakes.
+
+Hardware Impact: One bounded signal pair every 0.1 s during active docking. 0 B/frame in the docking path; visual owners pay or shed their own budgets.
+
+## Decision 10 - Blackbox, Handoff, And Abort Are Signal-Driven
+
+Problem: Large docking deviation or NaN cannot be explained after the fact without a 300-frame record, and moonpool/WFC handoff must not create a direct dependency from physics into construction animation code.
+
+Solution: Extend the existing docking telemetry ring with spline deviation, target position, flow velocity, command velocity, owner hash, request id, and flags. Dump to `Dump_DOCKING_AUTOPILOT_SPLINE.bin` on invalid pose/deviation. Emit `DockingCompleteSignal` at t > 0.95 and `DockingFailedSignal` on abort.
+
+Rejected Alternatives: Silent snapping after a >5 m deviation was rejected because it hides real faults. Direct WFC animation calls were rejected because the signal lane is already the decoupled contract.
+
+Scalability potential: Low/Middle/High/Ultra use the same fixed telemetry footprint. Cheap devices get crash evidence without extra frame allocation; top-tier can consume the same signals for richer animation and fluid reaction.
+
+Hardware Impact: The ring is fixed at 300 entries. Added fields increase persistent memory only; hot-path writes remain straight-line value copies with no managed allocation.
+
+## Decision 11 - Compile Wall Is External
+
+Problem: Focused build still fails, but errors now resolve to unrelated shared-worktree files: `EcosystemDirector`, `SubmarineFluidDynamics`, and `LockstepStateValidator`.
+
+Solution: Run a filtered rebuild for docking file names. It returned no `VehicleDockingModule`, `DockingAutopilotService`, or docking signal errors, so task 18 is marked blocked by dependency instead of green.
+
+Rejected Alternatives: Editing ecosystem, submarine hydrodynamics native-state handles, or lockstep constants was rejected as outside the docking prompt. Reporting success was rejected because `dotnet build` exits nonzero.
+
+Scalability potential: No runtime impact. This is integration state only.
+
+Hardware Impact: 0 us/frame. Compile blocker classification only.

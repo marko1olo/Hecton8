@@ -5,7 +5,7 @@ Prompt ID: DOCKING_AUTOPILOT_SPLINE
 Domain: PHYSICS/VEHICLES
 Authoritative source: `Docs/Tasks/CURRENT_BATCH.md`
 Task Count: 18
-Current loop: Phase 2 - Kernel
+Current loop: Phase 4 - Stability/Validation
 Runtime status: PENDING VERIFICATION
 
 ## Batch Extraction
@@ -25,22 +25,22 @@ Runtime status: PENDING VERIFICATION
 - [x] Task 4 `[BURST_BEZIER_SOLVER]` | Justification: added Burst-compiled `CubicBezierJob` over vault-compatible `NativeArray<ActiveSplineData>` and `NativeArray<DockingSplineSample>` lanes | Alternative rejected: main-thread class solver only, `AnimationCurve`, managed arrays, same-frame schedule/complete policy | Estimate: batchable solver cost target <0.1 ms for 64 active splines; 0 B/frame.
 - [x] Task 5 `[TANGENT_MATH]` | Justification: derivative `B'(t)` is evaluated beside position and normalized with fail-closed target-forward fallback for LookRotation consumers | Alternative rejected: nlerping from start rotation to anchor rotation | Estimate: tangent adds ~0.5-1 us per 64-spline batch on i3/MX350; 0 B/frame.
 - [x] Task 6 `[AUP_INTEGRITY]` | Justification: `ActiveSplineData.P0/P1/P2/P3` are `double3`, and runtime conversion goes through `AbsoluteUniversePosition.FromAbsolutePosition` | Alternative rejected: float3 control points for submarine-scale authority | Estimate: prevents high-coordinate spline warp; arithmetic cost accepted because active docking count is low.
-- [ ] Task 7 `[CURRENT_COMPENSATION]`
-- [ ] Task 8 `[LOW_TIER_FAKE]`
-- [ ] Task 9 `[HIGH_END_OVERKILL]`
-- [ ] Task 10 `[REACTIVE_VFX]`
-- [ ] Task 11 `[STP_STABILIZATION]`
-- [ ] Task 12 `[NAN_VACCINATION]`
-- [ ] Task 13 `[BLACKBOX_LOGGING]`
-- [ ] Task 14 `[TRIPLE_STRIKE_REPAIR]`
-- [ ] Task 15 `[HOMEOSTASIS_ADAPTATION]`
-- [ ] Task 16 `[AUTOMATIC_HANDOFF]`
-- [ ] Task 17 `[ABORT_LOGIC]`
-- [ ] Task 18 `[FINAL_VALIDATION]`
+- [x] Task 7 `[CURRENT_COMPENSATION]` | Justification: `VehicleDockingModule` samples cached `HectonFluidEngine.TrySampleModAbyssalFlow` at the evaluated spline point and subtracts that flow from the path velocity command | Alternative rejected: global current force on every entity or registry polling in `FixedTick` | Estimate: one gameplay-critical flow sample per active dock; 0 B/frame; expected <3 us on i3/MX350.
+- [x] Task 8 `[LOW_TIER_FAKE]` | Justification: Math LOD 0 keeps the spline solve at 10 Hz and uses manual position interpolation between cached samples; no Unity `Lerp` API is called | Alternative rejected: instant low-tier snap and full-rate cubic solve on MX350 | Estimate: reduces low-tier cubic evaluations from 50 Hz to 10 Hz, ~80% solve cadence reduction for active dock.
+- [x] Task 9 `[HIGH_END_OVERKILL]` | Justification: Math LOD 2 uses a seventh-order Hermite progress curve with endpoint velocity/acceleration/jerk flattened before Bezier evaluation | Alternative rejected: `AnimationCurve` or author-time curve assets | Estimate: adds ~7 scalar multiplies per active dock only on High/Ultra.
+- [x] Task 10 `[REACTIVE_VFX]` | Justification: docking publishes existing `WakeGeneratedSignal` and `FluidImpulseSignal` into the zero-GC signal lanes at 10 Hz for wake/fluid advection consumers | Alternative rejected: adding an orphan `VehicleWakeSignal` with no consumer or spawning particles directly | Estimate: bounded 10 Hz signal push; fluid/VFX owners decide visual cost.
+- [x] Task 11 `[STP_STABILIZATION]` | Justification: docking now keeps kinematic Rigidbody interpolation enabled during capture and writes compensated linear velocity instead of zeroing it every fixed tick | Alternative rejected: postprocess-specific hacks in the docking handler | Estimate: no extra allocations; motion vector stability uses existing Rigidbody/renderer history.
+- [x] Task 12 `[NAN_VACCINATION]` | Justification: tangent normalization already fails closed to target forward, and new deviation/flow/velocity paths reject non-finite vectors before motion or signal publish | Alternative rejected: trusting raw spline/flow outputs | Estimate: finite checks are sub-1 us per active dock.
+- [x] Task 13 `[BLACKBOX_LOGGING]` | Justification: the 300-frame telemetry ring now stores `SplineDeviationError`, spline target, flow velocity, command velocity, owner hash, request id, and runtime flags; dumps to `Docs/AgentLogs/Dump_DOCKING_AUTOPILOT_SPLINE.bin` on invalid pose/deviation | Alternative rejected: chat-only failure notes or the older generic vehicle dump name | Estimate: persistent ring already existed; added fixed fields only, 0 B/frame.
+- [x] Task 14 `[TRIPLE_STRIKE_REPAIR]` | Justification: static scan found no `VehicleCommandSignal` call-site in docking autopilot; existing command bus users are outside this prompt, so no signature repair is required here | Alternative rejected: editing `MountablePlayerTransport`, tether, or ballast command paths without an autopilot call-site | Estimate: 0 us runtime.
+- [x] Task 15 `[HOMEOSTASIS_ADAPTATION]` | Justification: `ResolveDockingProgress01` disables high-end Hermite smoothing when `SignalBusRegistry.SystemStress01 > 0.8` and falls back to basic inertial Bezier progress | Alternative rejected: keeping overkill math under frame pressure | Estimate: saves the high-tier smoothing overhead under stress; cheap devices stay on LOD 0.
+- [x] Task 16 `[AUTOMATIC_HANDOFF]` | Justification: when progress crosses 0.95, docking emits `DockingCompleteSignal` with AUP dock position, forward vector, owner/request ids, and flags | Alternative rejected: hard-coupling moonpool/WFC animation code into the docking module | Estimate: one signal per docking sequence.
+- [x] Task 17 `[ABORT_LOGIC]` | Justification: if actual transport pose deviates more than 5 m from the active spline target, docking dumps blackbox telemetry, publishes `DockingFailedSignal`, releases the control lock, and returns the body to its cached state | Alternative rejected: clamping the vehicle back silently after a large external knock | Estimate: one squared-distance/deviation check per active dock.
+- [BLOCKED BY DEPENDENCY] Task 18 `[FINAL_VALIDATION]` | Justification: focused `dotnet build Hecton8.Core.csproj --no-restore` still fails in unrelated files, while filtered build output shows no `VehicleDockingModule`, `DockingAutopilotService`, or `DroneDockingSignals` errors | Alternative rejected: reverting other agents' `EcosystemDirector`, `SubmarineFluidDynamics`, or lockstep edits | Estimate: 0 us runtime.
 
 ## Compile Status
 
-- [BLOCKED BY DEPENDENCY] Compile verification | Justification: latest `dotnet build Hecton8.Core.csproj --no-restore` reached unrelated current-worktree errors after docking symbols resolved: missing `Hecton8.AI.Sensory`, missing `TetherFiredSignal`, and missing `AcousticEchoHuntResult` | Alternative rejected: claiming green from static scan or reverting other agents' files | Estimate: 0 us runtime.
+- [BLOCKED BY DEPENDENCY] Compile verification | Justification: latest focused build reaches unrelated current-worktree errors in `World/EcosystemDirector.cs`, `SubmarineFluidDynamics.cs`, and `Core/Determinism/LockstepStateValidator.cs`; a filtered rebuild returned no docking-file errors | Alternative rejected: claiming green from static scan or reverting other agents' files | Estimate: 0 us runtime.
 
 ## Working Evidence
 
@@ -48,3 +48,5 @@ Runtime status: PENDING VERIFICATION
 - Static scan found no `DockingManager.Instance`; singleton task completed by adding the `GlobalRegistry` service slot and registration API.
 - Legacy interpolation target `Assets/_Project/Scripts/Construction/VehicleDockingModule.cs` now uses spline evaluation; no `ResolveRuntimeAupLerp` or local `FastNlerp` remains.
 - `CubicBezierJob` now evaluates P0-P3 and tangent in Burst-compatible value math; no schedule/complete path was added.
+- Static scan confirms no `Vector3.Lerp`, `Quaternion.Slerp`, `AnimationCurve`, or `math.pow` in the touched docking files.
+- Current compensation, low-tier 10 Hz sampling, high-tier zero-jerk progress, wake/fluid signals, completion/failure signals, and deviation aborts are implemented behind existing registry/signal boundaries.

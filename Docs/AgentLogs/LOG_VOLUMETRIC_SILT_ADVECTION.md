@@ -39,3 +39,31 @@ Validation:
 - `git diff --check` clean except existing CRLF normalization warnings.
 - Static scans: no `GameObject.Find`, no `FindObjectOfType`, no compute/render shader `distance()`, particle kernels use 64 threads.
 - Unity default, DX12, and Vulkan batchmode runs were attempted. All failed before VFX shader/API validation because of pre-existing C# errors in Audio/Physics/Editor assemblies. No touched VFX file was named in those logs.
+
+## Entry 2026-05-16 - Multiplatform H-Phi Inquisition
+
+What was wrong:
+- The renderer still owned two persistent native data lanes: wake job result and 300-frame blackbox telemetry.
+- Marine-snow CPU/GPU structs used default sequential packing or `Pack=4`, which is not acceptable for Quest/ARM64 ABI paranoia.
+- The touched VFX budget row still used default sequential layout.
+
+What was done:
+- Added `BufferID.MarineSnowWakeJobResult` and `BufferID.MarineSnowTelemetryRing`.
+- Moved wake-job output and blackbox telemetry ownership to `GlobalDataVault`; renderer now stores only vault handles and invalidates on compaction.
+- Added explicit `Pack = 1` and `Size` to marine-snow particle/frame/wake/telemetry structs and `VfxComputeParticleBudget`.
+- Added `UnsafeUtility.SizeOf` ABI checks before runtime tick.
+- Re-ran platform scans: no persistent native arrays, `H8Memory.Allocate`, `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, scene discovery, or `distance()` calls in touched marine-snow files.
+
+Cinematic Cheats used:
+- Low/Toaster: 8,000 particles, radial wake fake, no 3D flow texture, no curl, no silt collision.
+- High/Ultra: 100,000 particles, abyssal 3D flow texture, curl fake, headlight emission boost.
+- Blackbox writes only on fixed telemetry ring; disk dump only on fault, avoiding normal Steam Deck/MicroSD pressure.
+
+Exact Microseconds saved:
+- Renderer-owned native allocation churn/leak surface removed: estimated 0 us steady-state frame gain, operational risk reduction only.
+- ABI validation is cold-path; expected frame cost 0 us after state is ready.
+- Existing visual-fake savings remain the prior estimates: 240 us CPU-side avoided versus CPU particle/discovery paths before profiler proof; GPU collision/noise wins still require capture.
+
+Validation:
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /m:1` still fails on unrelated Lockstep/SubmarineFluid/Ecosystem errors. Filtered log contains no `HectonMarineSnowRenderer.cs`, `H8Memory.cs`, or marine-snow BufferID errors.
+- Shader static audit: particle kernels use 64-thread groups, clear kernels use 64/1, no `distance()`, no wave intrinsics/groupshared use, guarded `rsqrt`/`rcp` paths.
