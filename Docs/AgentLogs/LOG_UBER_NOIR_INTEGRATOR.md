@@ -186,3 +186,65 @@ Exact microseconds saved:
 
 Verification:
 - Forbidden-pattern scan over UberNoir-owned runtime files still finds no `NativeArray<`, `Update()`, `string.Format`, managed delegates, or EventBus usage.
+
+## 2026-05-16 Loop 15 - Blackbox Fault Latch Audit
+
+What was wrong:
+- Normal telemetry push failure called `DumpBlackBox` when the DataVault ring was unavailable.
+- That could write an empty startup dump and consume `_dumpedFault`, preventing a later real NaN/layout fault from producing the useful dump.
+
+What was done:
+- Removed the normal-path dump call from `PushBlackBox`.
+- Kept `DumpBlackBox` fault-only: layout and non-finite failures still write the full 300-entry ring, or an empty reason-coded header if the ring cannot be read during the actual fault.
+
+Cinematic cheats used:
+- None. This is crash-forensics correctness.
+
+Exact microseconds saved:
+- None measured. Static effect: avoids accidental cold/startup file I/O when DataVault is temporarily unavailable.
+
+Verification:
+- Source patch is limited to `HectonUberNoirRuntimeBridge.cs`.
+- Core C# compile validation passed in `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition03_ubernoir_latch.log`; Unity shader import/player compile was not run.
+
+## 2026-05-16 Loop 16 - Low-Tier Descriptor Shedding
+
+What was wrong:
+- Optional UberNoir resources were declared even in variants that cannot sample or read them.
+- Low-tier stripped POM/normal/blue-noise/textured-caustic work, but the file-scope declarations still exposed avoidable binding pressure.
+
+What was done:
+- Guarded `_BumpMap`, `_RustDetailMap`, and `_BlueNoiseTex` declarations behind `!_MATH_LOD_LOW`.
+- Guarded `_HectonCausticsMap` behind `H8_UBERNOIR_CAUSTICS_TEXTURED`.
+- Guarded `_H8UberNoirInstanceData` behind `H8_UBERNOIR_USE_INSTANCE_BUFFER`.
+- Wrapped `H8UberNoirBlueNoise` out of low-tier variants.
+
+Cinematic cheats used:
+- Low-tier remains salt-crust plus analytical dither/caustics. High/Ultra keeps POM, normal mapping, blue-noise sutures, textured caustics, and BRG buffers.
+
+Exact microseconds saved:
+- None measured. Static effect: fewer low-tier shader resource bindings; profiler/RenderDoc proof remains compile-blocked.
+
+Verification:
+- HLSL brace count remains balanced (`64/64`).
+- HLSL preprocessor balance is `31/31` for if-like directives and `#endif`.
+- `git diff --check` reports only line-ending warnings.
+
+## 2026-05-16 Loop 17 - Cold Allocation Comment Audit
+
+What was wrong:
+- The touched UberNoir runtime bridge fallback GameObject allocation lacked the canonical capacity/reason/owner comment shape.
+- The LUT resolver scratch allocation needed audit because it was touched by the same rendering cold-path sweep.
+
+What was done:
+- Updated the fallback runtime GameObject comment to include `GameObject[1]`, reason, and owner.
+- Verified the LUT scratch byte-array comment already uses capacity/reason/owner form with ASCII separators; no codegen-relevant change was kept there.
+
+Cinematic cheats used:
+- None. Documentation hygiene only.
+
+Exact microseconds saved:
+- 0 us. Comment-only.
+
+Verification:
+- Touched-file COLD ALLOC comments now use the mandated owner/capacity shape.

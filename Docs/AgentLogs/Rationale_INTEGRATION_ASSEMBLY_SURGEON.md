@@ -141,3 +141,23 @@ Solution: Rebuilt `Hecton8.Core.csproj` on current disk after the bridge fallbac
 Rejected Alternatives: Treating shader/runtime bridge changes as static-only, or pushing the fallback dump code without compiler evidence.
 Scalability potential: Low/Quest/Android and High/Ultra tiers share the same fault-only blackbox path; the normal hot path remains unchanged.
 Hardware Impact: Runtime gain is 0 us measured. Compile verification cost: 73,480,000 us.
+
+## 2026-05-16 Inquisition02-05 Current-Disk Polish
+
+Problem: A fresh current-disk pass found one first-party asmdef still auto-referenced outside `Assets/_Project/Scripts`: `Assets/_Project/Input/Hecton8.Input.Generated.asmdef`. It is explicitly referenced by `Hecton8.Input.asmdef`, so auto-injection was unnecessary graph leakage.
+Solution: Set `autoReferenced` to false on the generated input asmdef and revalidated all first-party asmdefs under `Assets/_Project`.
+Rejected Alternatives: Editing 39 vendor/package asmdefs was rejected under third-party asset integrity; editing generated `.csproj` files was rejected because Unity regenerates them.
+Scalability potential: Low/Middle/High/Ultra all get stricter assembly isolation and faster editor dependency reasoning without changing runtime behavior.
+Hardware Impact: Runtime gain is 0 us measured. Compile verification cost after the asmdef change: 830,000 us.
+
+Problem: `ArchitectEyePdaCommandConsole` used `FindFirstObjectByType<ArchitectEyeVisualizer>` as a fallback target resolver. It was a diagnostic console, but it was still a runtime scene search in Core.
+Solution: Removed the scene-search fallback. The console now submits only to its explicitly wired serialized `ArchitectEyeVisualizer`; missing wiring fails closed.
+Rejected Alternatives: Keeping the fallback because the path is rare, or adding a static singleton-like visualizer registry in a compile-polish pass.
+Scalability potential: Low tier avoids accidental scene scan spikes from diagnostic panels; High/Ultra keep the same explicit diagnostic wiring.
+Hardware Impact: Runtime gain is not profiler-measured. Static effect is removal of one O(scene) search path; compile verification cost after this cleanup: 28,590,000 us.
+
+Problem: A rendering bridge tail corrected blackbox latch discipline by removing a normal-path `DumpBlackBox(TelemetryFlagVaultUnavailable)` call from `PushBlackBox`. Because that file is compiled into Core, it required integration evidence even though Rendering owns the behavior.
+Solution: Rebuilt Core after the latch correction and kept the behavior claim limited to source/compile evidence.
+Rejected Alternatives: Letting a transient DataVault miss consume `_dumpedFault`, or claiming runtime crash-forensics readiness without Unity/player fault injection.
+Scalability potential: Low devices avoid accidental cold/startup dump file I/O; High/Ultra preserve full fault-only blackbox dumps when the ring exists.
+Hardware Impact: Runtime gain is 0 us measured. Compile verification cost for the latch build: 1,000,000 us.

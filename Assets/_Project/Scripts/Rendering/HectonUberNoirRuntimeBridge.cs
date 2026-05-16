@@ -85,7 +85,7 @@ namespace Hecton8.Core
             if (!Application.isPlaying || s_runtimeInstance != null)
                 return;
 
-            // COLD ALLOC: one scene-local shader feature bridge when authoring has not placed the component.
+            // COLD ALLOC: GameObject[1] - fallback scene runtime bridge - owner: HectonUberNoirRuntimeBridge
             GameObject host = new GameObject("H8_UberNoirRuntimeBridge");
             host.hideFlags = HideFlags.DontSave;
             host.AddComponent<HectonUberNoirRuntimeBridge>();
@@ -211,10 +211,7 @@ namespace Hecton8.Core
         private void PushBlackBox(float stress01, float highCostAllowed01, float visualOverkill01, uint featureMask)
         {
             if (!EnsureTelemetryBuffer())
-            {
-                DumpBlackBox(TelemetryFlagVaultUnavailable);
                 return;
-            }
 
             IDataVault vault = _dataVault;
             if (vault == null || !vault.TryLockBuffer(BufferID.ShaderFeatureTelemetryRing))

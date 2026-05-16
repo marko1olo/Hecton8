@@ -75,10 +75,6 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private ArchitectEyeVisualizer ResolveTarget()
         {
-            if (visualizer != null)
-                return visualizer;
-
-            visualizer = FindFirstObjectByType<ArchitectEyeVisualizer>(FindObjectsInactive.Include);
             return visualizer;
         }
 

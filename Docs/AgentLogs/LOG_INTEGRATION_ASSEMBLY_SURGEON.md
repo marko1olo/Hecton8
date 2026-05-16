@@ -78,6 +78,52 @@ Residual risk:
 Current Status:
 - VERIFIED MASTER GRADE - BUILD GREEN.
 
+## 2026-05-16 - Inquisition02-05 Strict Graph and No-Find Polish
+
+What was wrong:
+- Current-disk scan found one first-party asmdef still auto-referenced: `Assets/_Project/Input/Hecton8.Input.Generated.asmdef`.
+- Broad asset scan also found 39 vendor/package auto-referenced asmdefs. Those are third-party asset graph files, not safe first-party surgery.
+- `ArchitectEyePdaCommandConsole` had a runtime `FindFirstObjectByType<ArchitectEyeVisualizer>` fallback.
+- A Rendering-owned `HectonUberNoirRuntimeBridge` tail changed blackbox latch behavior and needed Core compile evidence.
+
+What was done:
+- Set `Hecton8.Input.Generated.asmdef` to `autoReferenced=false`; it remains explicitly referenced by `Hecton8.Input.asmdef`.
+- Removed the Core diagnostic scene-search fallback; the PDA command console now requires an explicitly wired visualizer.
+- Revalidated the UberNoir fault-latch change with a Core compile.
+- Re-ran first-party asmdef, ABI, signal, compute-threadgroup, no-Find, and Core compile gates.
+
+Cinematic Cheats used:
+- No gameplay or visual simulation was added.
+- Low/MX350 benefits from stricter compile isolation and no runtime scene search in Core diagnostics.
+- High/Ultra behavior is unchanged.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Inquisition02 compile verification time: 28,030,000 us.
+- UberNoir latch compile verification time: 1,000,000 us.
+- Input asmdef compile verification time: 830,000 us.
+- No-Find cleanup compile verification time: 28,590,000 us.
+- Final staged-tree compile verification time: 26,960,000 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition02.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition03_ubernoir_latch.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition04_input_asmdef.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition05_no_find.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_inquisition06_final_staged.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `FIRST_PARTY_ASMDEF_COUNT=97`, `FIRST_PARTY_AUTO_REFERENCED_TRUE_COUNT=0`, `FIRST_PARTY_ASMDEF_CYCLES=0`, `FIRST_PARTY_MISSING_NAMED_HECTON8_REFERENCES=0`.
+- `CORE_CONTRACT_STRUCTLAYOUT_WITHOUT_PACK=0`.
+- `ISIGNAL_TOTAL=163`, `ISIGNAL_NO_SIZE_OR_NON16=0`.
+- `COMPUTE_MAX_THREADGROUP_THREADS=512`, `COMPUTE_THREADGROUP_OVER_1024=0`.
+- Core no-Find scan returned 0 hits.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+- Vendor/package asmdefs with `autoReferenced=true` remain untouched by design.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
 ## 2026-05-16 - Tail12 UberNoir Bridge Compile Revalidation
 
 What was wrong:

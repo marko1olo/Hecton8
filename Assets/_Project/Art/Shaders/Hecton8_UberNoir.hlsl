@@ -24,14 +24,20 @@ TEXTURE2D(_BaseMap);
 SAMPLER(sampler_BaseMap);
 TEXTURE2D(_MaskMap);
 SAMPLER(sampler_MaskMap);
+
+#if !defined(_MATH_LOD_LOW)
 TEXTURE2D(_BumpMap);
 SAMPLER(sampler_BumpMap);
 TEXTURE2D(_RustDetailMap);
 SAMPLER(sampler_RustDetailMap);
 TEXTURE2D(_BlueNoiseTex);
 SAMPLER(sampler_BlueNoiseTex);
+#endif
+
+#if defined(H8_UBERNOIR_CAUSTICS_TEXTURED)
 TEXTURE2D(_HectonCausticsMap);
 SAMPLER(sampler_HectonCausticsMap);
+#endif
 
 struct H8UberNoirInstanceData
 {
@@ -40,7 +46,9 @@ struct H8UberNoirInstanceData
     float4 SeedFadeFlags; // x=seed, y=fade01, z=feature flags, w=reserved
 };
 
+#if defined(H8_UBERNOIR_USE_INSTANCE_BUFFER)
 StructuredBuffer<H8UberNoirInstanceData> _H8UberNoirInstanceData;
+#endif
 
 CBUFFER_START(UnityPerMaterial)
     float4 _BaseMap_ST;
@@ -261,19 +269,21 @@ float2 H8UberNoirScreenUV(float4 positionCS)
     return saturate(screenUV);
 }
 
-half H8UberNoirBlueNoise(float4 positionCS)
-{
-    float2 screenUV = H8UberNoirScreenUV(positionCS);
-    float2 r2 = frac(_Time.y * float2(0.75487766, 0.56984029) * max(_UberNoirDitherParams.z, 0.0));
-    return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, screenUV * (_ScaledScreenParams.xy * (1.0 / 64.0)) + r2).r;
-}
-
 half H8UberNoirCheapDither(float4 positionCS)
 {
     float2 screenUV = H8UberNoirScreenUV(positionCS);
     float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
     return (half)H8WaterExtinctionInterleavedGradientNoise(pixel);
 }
+
+#if !defined(_MATH_LOD_LOW)
+half H8UberNoirBlueNoise(float4 positionCS)
+{
+    float2 screenUV = H8UberNoirScreenUV(positionCS);
+    float2 r2 = frac(_Time.y * float2(0.75487766, 0.56984029) * max(_UberNoirDitherParams.z, 0.0));
+    return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, screenUV * (_ScaledScreenParams.xy * (1.0 / 64.0)) + r2).r;
+}
+#endif
 
 half H8UberNoirFogIgnDither(float4 positionCS, half fogCurve)
 {

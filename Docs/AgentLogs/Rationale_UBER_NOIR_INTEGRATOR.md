@@ -163,3 +163,24 @@ Solution: Added `WriteEmptyBlackBox`, which writes `Dump_UBER_NOIR_INTEGRATOR.bi
 Rejected Alternatives: Keeping a silent return was rejected because it recreates "unknown crash" failure. Allocating a private fallback native ring was rejected because this domain already evicted telemetry ownership to DataVault.
 Scalability potential: Low devices still avoid hot-path I/O; fault-only dumps retain postmortem signal even under DataVault failure. High/Ultra keep the full ring when vault access is valid.
 Hardware Impact: Hot path unchanged. Fault path may write a tiny header instead of no file; no frame-time claim.
+
+## Decision 024 - Blackbox Fault Latch Discipline
+Problem: Normal telemetry push failure called `DumpBlackBox(TelemetryFlagVaultUnavailable)` whenever the DataVault ring was not available. During startup or transient compaction this could write an empty dump and consume `_dumpedFault`, leaving a later real NaN/layout fault without a dump.
+Solution: Removed the normal-path dump call from `PushBlackBox`. Missing DataVault now skips only that frame's telemetry write. `DumpBlackBox` remains reserved for explicit layout/non-finite fault paths and still writes a full ring or reason-coded empty header if vault access fails during the fault.
+Rejected Alternatives: Keeping proactive missing-vault dumps was rejected because it turns a recoverable startup condition into a one-shot crash artifact. Adding a private fallback ring was rejected because shader telemetry ownership belongs to GlobalDataVault.
+Scalability potential: Low devices avoid accidental file I/O during startup/load; High/Ultra retain the full 300-frame blackbox when the ring is live.
+Hardware Impact: Removes potential cold/startup file write on DataVault absence; hot path remains allocation-free by static review. No measured microseconds claimed.
+
+## Decision 025 - Low-Tier Descriptor Shedding
+Problem: `_BumpMap`, `_RustDetailMap`, `_BlueNoiseTex`, `_HectonCausticsMap`, and `_H8UberNoirInstanceData` were declared at file scope even in variants where the preprocessor removes every sample/read. On mobile and descriptor-limited APIs, a disabled feature should not keep avoidable bindings alive.
+Solution: Guarded optional texture and structured-buffer declarations with the same `_MATH_LOD_LOW`, `H8_UBERNOIR_CAUSTICS_TEXTURED`, and `H8_UBERNOIR_USE_INSTANCE_BUFFER` preprocessor conditions as their use sites. Wrapped `H8UberNoirBlueNoise` out of low-tier variants so `_BlueNoiseTex` is not referenced there.
+Rejected Alternatives: Leaving unused declarations was rejected because descriptor-binding pressure is real even when ALU samples are stripped. Removing the high-tier resources entirely was rejected because High/Ultra still need POM, normal maps, blue-noise sutures, textured caustics, and BRG instance buffers.
+Scalability potential: Low/MX350/Quest variants carry base/mask texture bindings and ALU salt-crust/dither fakes; High/Ultra variants retain full resource access for visual overkill.
+Hardware Impact: Expected static effect is fewer low-tier shader resource bindings and less mobile descriptor pressure. No GPU microseconds are claimed without Unity/RenderDoc validation.
+
+## Decision 026 - Touched Cold Allocation Comment Canonicalization
+Problem: The touched UberNoir runtime bridge fallback GameObject allocation lacked the mandated owner/capacity comment form. The LUT scratch allocation needed audit because it sits in the same cold rendering loader path.
+Solution: Updated the fallback runtime GameObject comment to canonical `COLD ALLOC: Type[capacity] - reason - owner` form and verified the LUT scratch byte-array comment already matched that shape with ASCII separators.
+Rejected Alternatives: Broadly changing GpuScatter comments was rejected because that file maps to the separate GPU scatter prompt slice and comment churn risks conflict with another running agent. Ignoring the touched-file violations was rejected because these files are inside the active Rendering/URP audit path.
+Scalability potential: No visual or runtime scalability impact; this preserves auditability for startup allocations.
+Hardware Impact: 0 us codegen/runtime impact; comment-only documentation fix.
