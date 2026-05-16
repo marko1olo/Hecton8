@@ -48,6 +48,7 @@ Hygiene: Status file was missing at session start. Initialized for current batch
 - Attempt 8: repeated filtered build diagnostic scan after canonical cold-allocation comment cleanup timed out after 147 seconds; no `dotnet` process remained afterward. This is not counted as a green validation.
 - Attempt 9: `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` filtered for VR-domain symbols produced no matching diagnostics; full build still exits red externally.
 - Attempt 10: same filtered build scan after legacy `OculusFfrEnforcer` quarantine produced no matching `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, or `Graphics/VR` diagnostics; full build still exits red externally.
+- Attempt 11: same filtered build scan after duplicate-guard hardening produced no matching VR/legacy foveation diagnostics; full build still exits red externally.
 
 ## Loop Log
 - Loop 0: Prompt extracted from `CURRENT_BATCH.md`. Status/Rationale were missing. No code touched.
@@ -64,13 +65,14 @@ Hygiene: Status file was missing at session start. Initialized for current batch
 - Loop 11: Re-read `AGENTS.md` and `Docs/Actual Domains of Project.txt`; corrected state wording to `PENDING VERIFICATION` because runtime readiness cannot be claimed from static scans or blocked builds.
 - Loop 12: Corrected cold-allocation comments in the VR file to the project canonical `COLD ALLOC` format and re-ran the static debt scan.
 - Loop 13: Purged the duplicate legacy `OculusFfrEnforcer` execution path to a disabled compatibility shim, removing its private `NativeArray` blackbox, managed XR-state event subscription, texture mip clamp, and direct hardware foveation writes.
+- Loop 14: Hardened duplicate commander handling so a duplicate component destroys only itself instead of destroying the whole host GameObject.
 
 ## Omega Polish Inquisition
 - Polish mandate read only after tasks were complete/blocked: `[VI. OMEGA POLISH MANDATE] STATUS: MUST BE "VERIFIED MASTER GRADE".`
 - Anti-bloat scan: no `Update()`, no `GameObject.Find`, no `FindObject*`, no `foreach`, no LINQ, no `VRSManager.Instance` in `FoveatedRenderCommander.cs`; legacy `OculusFfrEnforcer` no longer owns hardware foveation or blackbox data.
 - Allocation scan: hot path has no managed collection creation; cold allocations are the bootstrap GameObject/component and one static `List<XRDisplaySubsystem>`; blackbox storage is a vault-owned 300-entry buffer and dump `FileStream/BinaryWriter` allocation is dump-only.
 - Render-target scan: new commander does not allocate or downscale edge render targets; it uses XR display hardware foveation state only.
-- Stability scan: GPU timing remains fresh without rewriting XR display state every sample; UI VRS disable is nested-camera safe and only decremented by matching UI-camera end callbacks; thermal severity can recover; non-finite XR display state clears hardware foveation after writing evidence and is not reported as active to shader globals.
+- Stability scan: GPU timing remains fresh without rewriting XR display state every sample; UI VRS disable is nested-camera safe and only decremented by matching UI-camera end callbacks; thermal severity can recover; non-finite XR display state clears hardware foveation after writing evidence and is not reported as active to shader globals; duplicate components do not destroy scene rigs.
 - Final status: assigned-domain static scans pass, but runtime readiness is pending verification and project build cannot be honestly marked green until Core/Gameplay dependency walls are fixed.
 
 ## Multiplatform Inquisition

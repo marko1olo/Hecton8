@@ -545,6 +545,7 @@ namespace Hecton8.Core.Memory
             if (_initialized)
                 return;
 
+            ValidateAbiLayout();
             int safeCapacity = ResolveTrackingCapacity(capacity);
             // COLD ALLOC: NativeParallelHashMap<long,SystemID>[capacity] - pointer to owner registry - owner: H8Memory
             _allocationOwners = new NativeParallelHashMap<long, SystemID>(safeCapacity, Allocator.Persistent);
@@ -586,6 +587,16 @@ namespace Hecton8.Core.Memory
             _aliasSafetyHandle = AtomicSafetyHandle.Create();
             _aliasSafetyHandleCreated = true;
 #endif
+        }
+
+        private static void ValidateAbiLayout()
+        {
+            if (UnsafeUtility.SizeOf<BlockDescriptor>() != BlockDescriptorSizeBytes ||
+                UnsafeUtility.SizeOf<H8AllocationRecord>() != H8AllocationRecordSizeBytes ||
+                UnsafeUtility.SizeOf<H8MemoryTelemetryEntry>() != H8MemoryTelemetryEntrySizeBytes)
+            {
+                FatalMemoryException.ThrowAbiLayoutMismatch();
+            }
         }
 
         /// <summary>
