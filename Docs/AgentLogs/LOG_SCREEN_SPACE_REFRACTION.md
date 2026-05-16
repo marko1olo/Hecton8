@@ -30,3 +30,15 @@ Cinematic Cheats used: Toaster path remains chromatic split plus bounded dirt/de
 Exact Microseconds saved: 0 us certified. New heartbeat cost is a 48-byte DataVault write when the player camera is evaluated; exact CPU microseconds pending profiler. Shader overkill is CPU 0.0 us/frame and GPU ALU-only, tier-gated, exact GPU microseconds pending profiler.
 
 Build/validation: Re-extracted the XML assignment from `Docs/Tasks/CURRENT_BATCH.md`. Static audit found no compute thread groups, DX-only texture calls, `EventBus`, managed delegate lane, standard `Update` methods, `string.Format`, Unity object search, singleton `.Instance`, `AddBlitPass`, `RenderGraphUtils`, or `GrabPass` in touched visor/refraction files. `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` still fails outside this domain with 67 errors, first in `DiegeticGyroCompassRuntime.cs`, `LockstepStateValidator.cs`, `HomeostasisBrain.cs`, `PickupItem.cs`, and `TetherSignals.cs`.
+
+## 2026-05-16 - DataVault Handle Eviction Pass
+
+What was wrong: The visor feature still contained a literal `NativeArray<VisorRefractionTelemetryEntry>` alias and private telemetry cursor state. It was vault-owned, but the code surface still looked like local NativeArray ownership.
+
+What was done: Replaced the alias with `VaultBufferHandle<VisorRefractionTelemetryEntry>`, resolved the live vault pointer only when writing telemetry, and removed private cursor/last-frame fields. The ring index is now derived from `Time.frameCount % blackBoxLength`, keeping the heartbeat deterministic without feature-owned cursor state.
+
+Cinematic Cheats used: No new simulation, no per-frame I/O, no managed buffer. The blackbox is a fixed 300-frame binary heartbeat and only dumps on non-finite input.
+
+Exact Microseconds saved: Not measured. Runtime work remains one 48-byte heartbeat write when evaluated. Removing the cursor/last-frame fields saves two trivial field writes/reads per evaluated player-camera frame; exact us pending profiler.
+
+Build/validation: `rg NativeArray Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs` returns no matches. Domain scan found no forbidden hot-path patterns. `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:ContinuousIntegrationBuild=false -p:EnableSourceControlManagerQueries=false -v:minimal -clp:Summary` fails outside this domain with 39 errors, first in `HectonXRRuntimeState.cs`, `BiolumPulseSyncRuntime.cs`, `VaultProbeUtility.cs`, `SpatialAudioManager.cs`, and `SubmarineStructuralGrid.cs`.

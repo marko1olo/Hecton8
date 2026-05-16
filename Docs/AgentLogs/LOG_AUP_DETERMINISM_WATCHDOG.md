@@ -50,3 +50,31 @@ Validation:
 Status:
 - `VERIFIED MASTER GRADE` for AUP determinism scope.
 - Global compile remains blocked by external dependency owners.
+
+## 2026-05-16 Multiplatform Inquisition Addendum
+
+What was wrong:
+- Physics-facing structs in the AUP patch scope still used default, `Pack = 4`, or `Pack = 8` layout in several packet/telemetry paths.
+- KCC runtime NativeArray fields needed proof that they were vault-backed views, not private allocator islands.
+- A few scanned scalar math paths still used `math.sqrt`, branch-only `rsqrt`, or a normal divide despite the mobile NaN mandate.
+
+What was done:
+- Enforced `Pack = 1` on determinism signal packets, docking spline packets, Leviathan telemetry, AUP-touched movement structs, and the KCC runtime telemetry/state/accumulator structs.
+- Preserved `ActiveSplineData` as an explicit 144-byte packet with `ReservedTail` so DataVault stride stays stable while padding becomes intentional.
+- Verified `PlayerKinematicsRuntime` allocates all runtime arrays through `AllocateRuntimeArray(..., BufferID.*, SystemID.GameplayPlayer)` and leaves only the `H8Memory.Allocate<T>` fallback with the correct SystemID.
+- Replaced the remaining scanned `math.sqrt` with guarded `rsqrt` math and clamped additional `rsqrt`/`rcp` paths in station keeping, CCD, fluid math, tether constraints, docking spline distance, and acoustic portal reverb.
+
+Cinematic cheats used:
+- Acoustic portal reverb keeps the perceptual square-root curve via guarded reciprocal-square-root math instead of exact sqrt.
+- Docking spline control length uses guarded distance from `distSq * rsqrt(distSq)`; no extra physical solver was added.
+
+Exact microseconds saved / spent:
+- ARM64 packing: 0.0 us direct frame gain; removes layout drift risk.
+- KCC DataVault-first proof: 0.0 us direct frame gain; prevents duplicate persistent memory ownership.
+- Scalar sqrt/division cleanup: estimated 0.01-0.05 us saved across cold/warm calls, with larger value from avoiding NaN recovery.
+
+Validation:
+- `rg --pcre2 -n "\[StructLayout\((?![^\)]*Pack\s*=\s*1)"` on the patched AUP/KCC/physics scope returns no matches.
+- `rg -n "Vector3\.Distance|string\.Format|math\.sqrt\("` on the patched AUP/physics/audio-adjacent scope returns no matches.
+- `git diff --check` on touched files returns 0 whitespace errors; Git reports LF-to-CRLF warnings only.
+- Full compile still requires dependency-wall verification after external wake/docking/ecosystem contracts are restored.

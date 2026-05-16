@@ -65,3 +65,11 @@ Solution: SectorDehydratedSignal first asks the registered AmbientBiota service 
 Rejected Alternatives: Dropping active visual biomass, directly referencing AmbientBiotaDirector concrete type, or spawning replacement GameObjects during unload.
 Scalability potential: Low = fewer visual boids are packed because stress/low-tier hydration created fewer. Middle = full sector pack. High/Ultra = same macro payload path with richer visual emergence restored on next hydration.
 Hardware Impact: i3/MX350 cost is a bounded SOA scan with no GC; avoids scene-object destruction and recreation churn.
+
+## Decision 8 - Omega Polish Pass
+
+Problem: Final anti-bloat pass was required after all tasks were checked or dependency-blocked, but `CURRENT_BATCH.md` contains no standalone `<POLISH_MANDATE>` XML tag.
+Solution: Treat the inline OMEGA mandate as the authority and run targeted grep/diff checks against edited files for prefab spawning, SpawnPoint usage, managed collections, runtime resizing, dump-path mismatch, and stress/SDF gates.
+Rejected Alternatives: Skip polish because the XML tag is absent, or edit unrelated files to satisfy aesthetic cleanup.
+Scalability potential: No new runtime path. Confirms low/middle/high/ultra behavior remains driven by fixed quality tier and stress gates.
+Hardware Impact: No runtime cost; prevents late bloat from entering the hydration path.

@@ -57,6 +57,7 @@ What was done:
 - Kept only a bounded 16-entry managed Unity-object resolver sidecar for immediate same-frame attach. No delegate/EventBus/native queue remains in the tether fire path.
 - Kept snap and tension on typed signal lanes.
 - Locked tether signal/telemetry payloads to `Pack=1` explicit sizes.
+- Added an epsilon floor before the solver correction-weight reciprocal.
 - Removed the private fallback allocation for public DataVault cable SOA lanes.
 - Routed remaining tether-owned runtime `NativeArray` allocation/release through `H8Memory` with `SystemID.Physics`.
 - Moved the real compiled `TetherFiredSignal` payload into `TetherSignals.cs` and restored `TetherSignalContracts.cs` as an empty generated-project anchor.
@@ -69,6 +70,7 @@ Exact Microseconds saved:
 - Fire private queue purge: no measured frame-time claim; removed one persistent native queue and one private queue drain.
 - Public DataVault fallback removal: no frame-time claim; prevents hidden fallback allocation and split-state cost.
 - Pack=1/contract placement: 0 us runtime; build and binary-layout stability fix.
+- Correction-weight reciprocal guard: estimated <1 us per 11-node pass; prevents near-zero divide amplification.
 - Remaining estimates are unchanged: Low tier saves roughly 6-12 us versus the 10-segment high path; DataVault publish remains estimated +3-6 us.
 
 Validation:

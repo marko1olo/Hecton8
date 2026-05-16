@@ -49,8 +49,8 @@ Hardware Impact: Low-end i3/MX350 target is protected by fixed buffer sizes, no 
   Hardware Impact: Estimated neutral to -5 us CPU on High/Ultra by moving segment repetition into indirect instancing; no benefit claimed for MX350.
 
 - Problem: A stuck wreck can create unbounded endpoint delta and poison the simulation.
-  Solution: Clamped Verlet displacement velocity and exported `PeakCableTension` into the 300-frame telemetry ring / dump file.
-  Rejected Alternatives: Allowing raw velocity through the solver was rejected because one voxel SDF penetration can explode every downstream force.
+  Solution: Clamped Verlet displacement velocity, guarded constraint correction reciprocals with an epsilon weight floor, and exported `PeakCableTension` into the 300-frame telemetry ring / dump file.
+  Rejected Alternatives: Allowing raw velocity or raw near-zero correction reciprocals through the solver was rejected because one voxel SDF penetration can explode every downstream force.
   Scalability potential: All tiers use the same safety clamp; High/Ultra can visualize higher stress before snap without destabilizing authority.
   Hardware Impact: Estimated <1 us per 11-node integration pass using `math.rsqrt`; prevents catastrophic recovery cost.
 

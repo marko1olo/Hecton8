@@ -250,6 +250,12 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
+            float3 DebrisSafeNormalize(float3 value, float3 fallback)
+            {
+                float lengthSq = dot(value, value);
+                return lengthSq > 0.000001 ? value * rsqrt(lengthSq) : fallback;
+            }
+
             void BuildDebrisBasis(uint particleIndex, float timeSeconds, out float3 rightWS, out float3 upWS, out float3 forwardWS)
             {
                 float edgeJitter = Hash11(particleIndex ^ 0xC2B2AE35u);
@@ -257,9 +263,9 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                     Hash11(particleIndex ^ 0x9E3779B9u) * 2.0 - 1.0,
                     Hash11(particleIndex ^ 0x85EBCA6Bu) * 0.7 - 0.35,
                     edgeJitter * 2.0 - 1.0);
-                forwardWS = SafeNormalize(rawForward, float3(0.0, 1.0, 0.0));
+                forwardWS = DebrisSafeNormalize(rawForward, float3(0.0, 1.0, 0.0));
                 float3 basisUp = abs(forwardWS.y) < 0.92 ? float3(0.0, 1.0, 0.0) : float3(1.0, 0.0, 0.0);
-                rightWS = SafeNormalize(cross(basisUp, forwardWS), float3(1.0, 0.0, 0.0));
+                rightWS = DebrisSafeNormalize(cross(basisUp, forwardWS), float3(1.0, 0.0, 0.0));
                 upWS = cross(forwardWS, rightWS);
                 float angularSpeed = lerp(-8.0, 8.0, Hash11(particleIndex ^ 0x27D4EB2Du));
                 float spinPhase = Hash11(particleIndex ^ 0x165667B1u) * 6.28318530718 + timeSeconds * angularSpeed;

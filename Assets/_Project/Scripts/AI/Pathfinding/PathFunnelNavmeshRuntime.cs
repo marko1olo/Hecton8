@@ -86,11 +86,10 @@ namespace Hecton8.AI.Pathfinding
         /// <inheritdoc />
         public void FastTick(float deltaTime)
         {
-            if (!TryResolveVaultViews(
+            if (!TryResolveMutationViews(
                     out NativeArray<PathFunnelActivePath> activePaths,
                     out NativeArray<ulong> activePathCellMasks,
                     out NativeArray<PathFunnelInvalidation> invalidations,
-                    out NativeArray<PathFunnelTelemetryEntry> telemetry,
                     out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
             {
                 return;
@@ -113,7 +112,6 @@ namespace Hecton8.AI.Pathfinding
             }
 
             runtimeStateBuffer[0] = runtimeState;
-            _ = telemetry;
         }
 
         /// <inheritdoc />
@@ -169,11 +167,10 @@ namespace Hecton8.AI.Pathfinding
             if (pathId == 0u ||
                 sectorHash == 0UL ||
                 corridorCellCount < 0 ||
-                !TryResolveVaultViews(
+                !TryResolveMutationViews(
                     out NativeArray<PathFunnelActivePath> activePaths,
                     out NativeArray<ulong> activePathCellMasks,
                     out NativeArray<PathFunnelInvalidation> invalidations,
-                    out NativeArray<PathFunnelTelemetryEntry> telemetry,
                     out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
             {
                 return false;
@@ -211,7 +208,6 @@ namespace Hecton8.AI.Pathfinding
             runtimeState.ActivePathCount = activePathCount;
             runtimeStateBuffer[0] = runtimeState;
             _ = invalidations;
-            _ = telemetry;
             return true;
         }
 
@@ -221,11 +217,10 @@ namespace Hecton8.AI.Pathfinding
         /// <param name="pathId">Stable path identifier.</param>
         public void UnregisterActivePath(uint pathId)
         {
-            if (!TryResolveVaultViews(
+            if (!TryResolveMutationViews(
                     out NativeArray<PathFunnelActivePath> activePaths,
                     out NativeArray<ulong> activePathCellMasks,
                     out NativeArray<PathFunnelInvalidation> invalidations,
-                    out NativeArray<PathFunnelTelemetryEntry> telemetry,
                     out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
             {
                 return;
@@ -249,7 +244,6 @@ namespace Hecton8.AI.Pathfinding
             runtimeState.ActivePathCount = math.max(0, lastIndex);
             runtimeStateBuffer[0] = runtimeState;
             _ = invalidations;
-            _ = telemetry;
         }
 
         /// <summary>
@@ -382,17 +376,15 @@ namespace Hecton8.AI.Pathfinding
             _runtimeStateHandle = default;
         }
 
-        private bool TryResolveVaultViews(
+        private bool TryResolveMutationViews(
             out NativeArray<PathFunnelActivePath> activePaths,
             out NativeArray<ulong> activePathCellMasks,
             out NativeArray<PathFunnelInvalidation> invalidations,
-            out NativeArray<PathFunnelTelemetryEntry> telemetry,
             out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer)
         {
             activePaths = default;
             activePathCellMasks = default;
             invalidations = default;
-            telemetry = default;
             runtimeStateBuffer = default;
 
             if (!EnsureVaultBuffers())
@@ -402,23 +394,20 @@ namespace Hecton8.AI.Pathfinding
             activePaths = _activePathsHandle.Resolve(vault);
             activePathCellMasks = _activePathCellMasksHandle.Resolve(vault);
             invalidations = _invalidationsHandle.Resolve(vault);
-            telemetry = _telemetryHandle.Resolve(vault);
             runtimeStateBuffer = _runtimeStateHandle.Resolve(vault);
             if (!activePaths.IsCreated ||
                 !activePathCellMasks.IsCreated ||
                 !invalidations.IsCreated ||
-                !telemetry.IsCreated ||
                 !runtimeStateBuffer.IsCreated ||
                 activePaths.Length <= 0 ||
                 activePathCellMasks.Length < activePaths.Length * PathFunnelConstants.WfcCellMaskWordCount ||
                 invalidations.Length <= 0 ||
-                telemetry.Length < PathFunnelConstants.TelemetryFrames ||
                 runtimeStateBuffer.Length <= 0)
             {
                 return false;
             }
 
-            InitializeRuntimeState(runtimeStateBuffer, telemetry.Length);
+            InitializeRuntimeState(runtimeStateBuffer, PathFunnelConstants.TelemetryFrames);
             return true;
         }
 

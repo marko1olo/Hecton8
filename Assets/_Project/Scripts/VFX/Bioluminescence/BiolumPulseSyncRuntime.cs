@@ -850,18 +850,36 @@ namespace Hecton8.VFX.Bioluminescence
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 40)]
         private struct BiolumPulseTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public ushort ActiveBiolumProfileId;
+            [FieldOffset(6)]
             public byte ActiveStateCount;
+            [FieldOffset(7)]
             public byte QualityTier;
+            [FieldOffset(8)]
             public byte Flags;
+            [FieldOffset(9)]
+            public byte Reserved0;
+            [FieldOffset(10)]
+            public ushort Reserved1;
+            [FieldOffset(12)]
             public float Strobe01;
+            [FieldOffset(16)]
             public float PrimaryIntensityHdr;
+            [FieldOffset(20)]
             public float TimeSeconds;
-            public float3 AupOriginOffset;
+            [FieldOffset(24)]
+            public float AupOffsetX;
+            [FieldOffset(28)]
+            public float AupOffsetY;
+            [FieldOffset(32)]
+            public float AupOffsetZ;
+            [FieldOffset(36)]
             public uint ProfileSourceHash;
         }
     }

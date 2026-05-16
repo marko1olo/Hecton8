@@ -19,7 +19,7 @@ Actual implementation surface: Assets/_Project/Scripts/World/SargassumMicroFauna
 - [x] 10. Reactive VFX: boids entering beam multiply Albedo. DOD: compute sets `BOID_FLAG_LIGHT_STIMULUS`; instanced fish shader brightens albedo/biolum when flag is present. Rejected alternative: render-side threat buffer sampling. Estimate: saves a render buffer bind and per-fragment SDF.
 - [x] 11. STP N/A. DOD: no STP-specific allocation or scheduling path added. Rejected alternative: inventing an STP hook. Estimate: 0 us/frame.
 - [x] 12. NaN vaccination: `w=max(w,0.1f)`. DOD: CPU slot writer clamps active w to `SensoryThreatMinRadiusMeters`; shader also clamps sensory radius to 0.1. Rejected alternative: trusting signal payloads. Estimate: avoids NaN/zero-radius branch stalls.
-- [x] 13. Blackbox N/A. DOD: existing boid food-chain telemetry ring remains untouched; prompt marks blackbox not applicable. Rejected alternative: duplicate telemetry ring for non-critical sensory pump. Estimate: saves 19.2 KB persistent NativeArray.
+- [x] 13. Blackbox originally N/A, superseded by inquisition addendum. DOD: added vault-backed 300-frame `BoidSensoryBlackBoxEntry` ring with `[StructLayout(Pack=1, Size=64)]`, state hashes, flags, active threat count, submarine/flashlight slots, ping radii, and anomaly dump to `Docs/AgentLogs/Dump_BOID_SENSORY_INPUT_PUMP.bin`. Rejected alternative: per-frame text log or local managed list. Estimate: adds ~2 us/frame CPU, 19.2 KB vault memory, 0 steady-state I/O.
 - [x] 14. Fix Compute Buffer binding. DOD: sensory array binds to `_PredatorAUPBuffer`; encounter predator data binds to `_EncounterPredatorAUPBuffer` with fallback rebinding when no encounter buffer exists. Rejected alternative: overwriting sensory buffer with encounter buffer per frame. Estimate: fixed 256 byte sensory upload.
 - [x] 15. Homeostasis N/A. DOD: no homeostasis loop is part of the sensory buffer directive. Rejected alternative: adding unrelated behavior state. Estimate: 0 us/frame.
 - [x] 16. Ping decay threats reduce w by `dt*decay`. DOD: slots 2-4 decay by `simulationDt * SensoryAcousticPingDecayMetersPerSecond` and clear below 0.1. Rejected alternative: timestamped managed ping list. Estimate: 0 GC, ~1 us/frame.
@@ -63,3 +63,19 @@ Self-review evidence:
 - Player `Transform.position` scan found only legacy dependency/cache references, not sensory runtime position reads.
 - ALU increase documented in `Rationale_BOID_SENSORY_INPUT_PUMP.md`.
 - Final `dotnet build` remains blocked by unrelated project-wide dependency errors listed in loop logs.
+
+### Loop 6: Multiplatform/H-PHI Inquisition
+
+STATUS: VERIFIED MASTER GRADE.
+
+Hardening evidence:
+
+- Re-read original XML assignment from `Docs/Tasks/CURRENT_BATCH.md` with CLI extraction.
+- Added `BufferID.SargassumBoidSensoryBlackBox` and moved sensory blackbox storage through `GlobalDataVault.GetBuffer(..., SystemID.WorldSargassum, ...)`; no new local persistent NativeArray allocation was added.
+- ARM64/Quest check: new blackbox entry is `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]` and `ValidateGpuStructLayouts` fails dispatch if the size drifts.
+- Metal/Mac check: compute flashlight capsule gate now uses a `uint` mask instead of a shader `bool`; `THREAD_GROUP_SIZE` remains 64, under the 1024 group limit.
+- Steam Deck I/O check: blackbox writes to disk only on NaN/anomaly dump, not per frame.
+- Dear Lie/God Mode check: low tier remains endpoint sphere; full tier uses capsule SDF; render response now adds a triangle-wave beam pulse.
+- Debt scan: no `void Update()`, no `string.Format`, no `Transform.position`, no `GlobalSignals.TryDequeue`, no `Allocator.Temp`, no new `NativeArray` allocation in the boid sensory domain. Existing `_killSignals` persistent queue is legacy food-chain job plumbing, not this task.
+- Compile check: `dotnet build Hecton8.Core.csproj --no-restore` is blocked before this surface by missing `Assets/_Project/Scripts/Physics/Tethers/Contracts/TetherSignalContracts.cs`. `dotnet build Assembly-CSharp.csproj --no-restore` is blocked by missing RealtimeCSG files and existing bootstrap/bucketing errors. No diagnostics reference `SargassumMicroFaunaBoids.cs`, `H8Memory.cs`, `SargassumMicroFaunaBoids.compute`, or `BoidFishInstanced.shader`.
+- `git diff --check` on touched code files produced no whitespace errors; only line-ending warnings.

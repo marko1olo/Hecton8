@@ -9,6 +9,7 @@
 #define H8_UBER_NOIR_EPS 0.0001
 #define H8_UBER_NOIR_POM_STEPS 16
 #define H8_UBER_NOIR_MAX_HULL_DENTS 16
+#define H8_UBER_NOIR_MAX_GLOBAL_WAKES 16
 
 TEXTURE2D(_BaseMap);
 SAMPLER(sampler_BaseMap);
@@ -84,6 +85,9 @@ float4 _HectonMaterialDecayRuntime;
 float4 _HectonPlayerBloodSplatter;
 float _HectonEquipmentRust01;
 #endif
+float4 _GlobalWakeBuffer[H8_UBER_NOIR_MAX_GLOBAL_WAKES];
+float4 _GlobalWakeVectors[H8_UBER_NOIR_MAX_GLOBAL_WAKES];
+float4 _GlobalWakeParams; // x=slot limit, y=low tier, z=active count, w=stress
 
 struct H8UberNoirAttributes
 {
@@ -428,6 +432,74 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
     displacement = isfinite(displacement) ? displacement : 0.0;
     return H8UberNoirFinite3(safePositionWS + H8UberNoirSafeNormalize(normalWS, float3(0.0, 1.0, 0.0)) * displacement, safePositionWS);
 #endif
+}
+
+void H8UberNoirApplyGlobalWakeWS(inout float3 positionWS, inout float3 normalWS, half instanceSeed)
+{
+    float3 safePositionWS = H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0));
+    float3 safeNormalWS = H8UberNoirSafeNormalize(normalWS, float3(0.0, 1.0, 0.0));
+    int rawSlotLimit = min((int)max(_GlobalWakeParams.x, 0.0), H8_UBER_NOIR_MAX_GLOBAL_WAKES);
+#if defined(_MATH_LOD_LOW)
+    int slotLimit = min(rawSlotLimit, 2);
+#else
+    int slotLimit = rawSlotLimit;
+#endif
+    if (slotLimit <= 0)
+    {
+        positionWS = safePositionWS;
+        normalWS = safeNormalWS;
+        return;
+    }
+
+    float3 wakeOffsetWS = float3(0.0, 0.0, 0.0);
+    float3 normalImpulseWS = float3(0.0, 0.0, 0.0);
+    float seed = frac((float)instanceSeed * 11.13);
+
+    [unroll]
+    for (int i = 0; i < H8_UBER_NOIR_MAX_GLOBAL_WAKES; i++)
+    {
+        if (i >= slotLimit)
+            continue;
+
+        float4 wake = _GlobalWakeBuffer[i];
+        float4 wakeVector = _GlobalWakeVectors[i];
+        float intensity = max(wake.w, 0.0);
+        float radius = max(wakeVector.w, 0.0);
+        if (intensity <= H8_UBER_NOIR_EPS || radius <= H8_UBER_NOIR_EPS)
+            continue;
+
+        float3 delta = safePositionWS - wake.xyz;
+        float distSq = dot(delta, delta);
+        float radiusSq = max(radius * radius, H8_UBER_NOIR_EPS);
+        if (distSq >= radiusSq)
+            continue;
+
+        float3 pushAxisWS = H8UberNoirSafeNormalize(wakeVector.xyz, float3(0.0, 0.0, 1.0));
+        float3 radialWS = H8UberNoirSafeNormalize(delta, pushAxisWS);
+        float falloff = saturate(1.0 - distSq * rcp(radiusSq));
+        float falloffSq = falloff * falloff;
+
+#if defined(_MATH_LOD_LOW)
+        float lowStrength = intensity * falloffSq * 0.035;
+        wakeOffsetWS += radialWS * lowStrength;
+        normalImpulseWS += radialWS * (falloff * intensity * 0.18);
+#else
+        float3 upCurlWS = H8UberNoirSafeNormalize(cross(pushAxisWS, safeNormalWS), float3(0.0, 0.0, 0.0));
+        if (dot(upCurlWS, upCurlWS) <= H8_UBER_NOIR_EPS)
+            upCurlWS = H8UberNoirSafeNormalize(cross(pushAxisWS, float3(0.0, 1.0, 0.0)), float3(1.0, 0.0, 0.0));
+
+        float3 vortexWS = H8UberNoirSafeNormalize(cross(pushAxisWS, radialWS) + upCurlWS * 0.35, upCurlWS);
+        float spatialPhase = H8UberNoirTriangle01(dot(safePositionWS.xz + seed, float2(0.173, 0.219)) + (float)i * 0.131);
+        float directionalGate = saturate(dot(radialWS, pushAxisWS) * 0.5 + 0.5);
+        float curvatureStrength = intensity * falloffSq * (0.055 + spatialPhase * 0.025);
+        float pushStrength = intensity * falloffSq * (0.022 + directionalGate * 0.018);
+        wakeOffsetWS += radialWS * pushStrength + vortexWS * curvatureStrength;
+        normalImpulseWS += radialWS * (falloff * intensity * 0.22) + vortexWS * (curvatureStrength * 3.5);
+#endif
+    }
+
+    positionWS = H8UberNoirFinite3(safePositionWS + wakeOffsetWS, safePositionWS);
+    normalWS = H8UberNoirSafeNormalize(safeNormalWS + normalImpulseWS, safeNormalWS);
 }
 
 half H8UberNoirResolveRust01()
@@ -789,6 +861,7 @@ H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
     float3 positionWS = mul(objectToAupWorld, float4(positionOS, 1.0)).xyz;
     float3 normalWS = H8UberNoirTransformNormal(normalOS, instanceData.WorldToObject);
     positionWS = H8UberNoirApplyDynamicHullBendingWS(positionWS, normalWS, (half)safeInstanceSeed);
+    H8UberNoirApplyGlobalWakeWS(positionWS, normalWS, (half)safeInstanceSeed);
 
     float3 tangentWS = H8UberNoirSafeNormalize(mul((float3x3)objectToAupWorld, input.tangentOS.xyz), float3(1.0, 0.0, 0.0));
     output.positionWS = positionWS;

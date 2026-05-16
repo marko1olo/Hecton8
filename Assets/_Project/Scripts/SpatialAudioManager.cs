@@ -1790,9 +1790,6 @@ namespace Hecton8.Audio
             if (hasListener && IsBeyondMaxHearingRange(in audibleAup, in listenerAup))
                 return -1;
 
-            if (hasListener && IsBeyondMaxHearingRange(in audibleAup, in listenerAup))
-                return false;
-
             AudioLodTier lodTier = hasListener
                 ? ResolveAudioLodTier(in audibleAup, in listenerAup)
                 : AudioLodTier.Tier0Full;
@@ -3168,6 +3165,7 @@ namespace Hecton8.Audio
             ResetWorldSourceState(index, true);
             source.enabled = true;
             source.transform.position = audiblePosition;
+            AudioResidencyCache.TouchClip(clip, ResolveWorldResidencyDomain(clip, mixerGroup), true);
             source.clip = clip;
             float clampedVolume = math.saturate(volume);
             if (hasAcousticPortalPath)
@@ -3289,6 +3287,7 @@ namespace Hecton8.Audio
 
             AudioSource source = _pool2D[index];
 
+            AudioResidencyCache.TouchClip(clip, AudioResidencyDomain.Interface, true);
             source.clip = clip;
             source.volume = math.saturate(volume);
             source.pitch = 1f;
@@ -3755,6 +3754,9 @@ namespace Hecton8.Audio
             ResolveListenerBasis(listener, out float3 listenerRight, out _, out float3 listenerForward);
             float3 listenerAcousticForward = listenerForward;
             ResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition);
+            if (hasListener && IsBeyondMaxHearingRange(in sourceAup, in listenerAup))
+                return false;
+
             AudioLodTier lodTier = hasListener
                 ? ResolveAudioLodTier(in sourceAup, in listenerAup)
                 : AudioLodTier.Tier0Full;
@@ -3769,6 +3771,7 @@ namespace Hecton8.Audio
             ResetWorldSourceState(index, true);
             source.enabled = true;
             source.transform.position = position;
+            AudioResidencyCache.TouchClip(clip, ResolveWorldResidencyDomain(clip, mixerGroup), true);
             source.clip = clip;
             float clampedVolume = math.saturate(volume);
             source.volume = clampedVolume;
@@ -5157,7 +5160,8 @@ namespace Hecton8.Audio
         private static float ResolveAcousticPortalReverbMix(float roomVolumeCubicMeters)
         {
             float volume01 = math.saturate(roomVolumeCubicMeters * math.rcp(SabineReverbModuleVolumeReferenceCubicMeters));
-            return math.clamp(0.12f + math.sqrt(volume01) * 0.68f, 0f, 1.1f);
+            float volumeCurve = volume01 * math.rsqrt(math.max(volume01, 0.000001f));
+            return math.clamp(0.12f + volumeCurve * 0.68f, 0f, 1.1f);
         }
 
         private bool TryResolveAcousticPortalPath(
@@ -5735,6 +5739,14 @@ namespace Hecton8.Audio
                 : AudioLodTier.Tier0Full;
         }
 
+        private bool IsBeyondMaxHearingRange(in AbsoluteUniversePosition sourceAup, in AbsoluteUniversePosition listenerAup)
+        {
+            float maxRange = math.max(1f, _maxDistance);
+            float maxRangeSq = maxRange * maxRange;
+            float distanceSq = ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
+            return distanceSq > maxRangeSq;
+        }
+
         private static float ResolveStereoPan(in AbsoluteUniversePosition sourceAup, in AbsoluteUniversePosition listenerAup, float3 listenerRight)
         {
             float3 listenerWorldDelta = ResolveAupDelta(in listenerAup, in sourceAup);
@@ -6217,6 +6229,18 @@ namespace Hecton8.Audio
                 return ResolvedBedBusGroup;
 
             return requestedGroup != null ? requestedGroup : ResolvedDefaultWorldMixerGroup;
+        }
+
+        private AudioResidencyDomain ResolveWorldResidencyDomain(AudioClip clip, AudioMixerGroup requestedGroup)
+        {
+            byte routeFlags = ResolveClipRouteFlags(clip);
+            if (requestedGroup == _threatGroup || (routeFlags & AudioClipRouteFlagThreat) != 0)
+                return AudioResidencyDomain.Creatures;
+
+            if (requestedGroup == _interfaceGroup)
+                return AudioResidencyDomain.Interface;
+
+            return AudioResidencyDomain.Environment;
         }
 
         private bool IsThreatWorldSource(int sourceIndex)

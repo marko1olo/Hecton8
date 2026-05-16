@@ -80,3 +80,15 @@ Extracted from Docs/Tasks/CURRENT_BATCH.md with id SCREEN_SPACE_REFRACTION.
 - Native memory scan found `NativeArray<VisorRefractionTelemetryEntry>` only as a DataVault alias returned by `vault.GetBuffer<...>(BufferID.VisorRefractionBlackBox, 300, SystemID.Vfx, ClearMemory)`. No `new NativeArray` owner or `H8Memory.Allocate` path was added.
 - Fault I/O scan found `Path`, `Directory`, `FileStream`, and `BinaryWriter` only in `DumpBlackBoxOnce`, gated by `BlackBoxFlagNonFiniteInput`; no per-frame disk read/write path was added, preserving Steam Deck/MicroSD pressure.
 - Continuation compile check: `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` failed outside this domain with 67 errors, first in `DiegeticGyroCompassRuntime.cs`, `LockstepStateValidator.cs`, `HomeostasisBrain.cs`, `PickupItem.cs`, and `TetherSignals.cs`.
+
+## Sovereignty Recheck - 2026-05-16
+
+- [x] 24. VAULT_HANDLE_EVICTION | Done | DOD: removed the visor feature's `NativeArray<VisorRefractionTelemetryEntry>` field and local declaration; blackbox now uses `VaultBufferHandle<VisorRefractionTelemetryEntry>` and resolves a pointer through `IDataVault.ResolveBuffer` | Alternative rejected: retaining a DataVault alias with a `NativeArray` type in the system file | Estimate: same 48-byte heartbeat write; exact us pending profiler
+- [x] 25. STATELESS_RING_INDEX | Done | DOD: removed private telemetry cursor and last-frame fields; ring slot is derived from `Time.frameCount % blackBoxLength` | Alternative rejected: feature-owned cursor state | Estimate: saves two field reads/writes per evaluated player-camera frame; exact us unmeasured
+- [x] 26. RETRY_VALIDATION | BLOCKED BY DEPENDENCY | DOD: re-ran static audit and `dotnet build`; visor/refraction files have zero `NativeArray` tokens and no forbidden hot-path patterns, while build fails outside domain | Alternative rejected: modifying XR, biolum, vault diagnostics, audio, or submarine structural files | Estimate: blocker, no frame estimate
+
+## Sovereignty Verification Log
+
+- `rg NativeArray Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs` returned no matches after replacing the blackbox alias with `VaultBufferHandle`.
+- Domain hot-path scan returned no `EventBus`, managed delegate lane, standard `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, Unity object search, singleton `.Instance`, `AddBlitPass`, `RenderGraphUtils`, `GrabPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:ContinuousIntegrationBuild=false -p:EnableSourceControlManagerQueries=false -v:minimal -clp:Summary` failed outside domain with 39 errors, first in `HectonXRRuntimeState.cs`, `BiolumPulseSyncRuntime.cs`, `VaultProbeUtility.cs`, `SpatialAudioManager.cs`, and `SubmarineStructuralGrid.cs`.

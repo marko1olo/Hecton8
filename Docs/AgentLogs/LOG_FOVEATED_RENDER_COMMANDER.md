@@ -130,3 +130,28 @@ Validation:
 - Re-read `AGENTS.md` and `Docs/Actual Domains of Project.txt`; final wording remains `PENDING VERIFICATION` because Unity import, Play Mode, profiler, player build, and full compile are not available from the current red build.
 - Corrected `COLD ALLOC` comments in `FoveatedRenderCommander.cs` to the canonical project format. A final filtered build diagnostic scan timed out after 147 seconds and left no `dotnet` process; it is not evidence of green validation.
 - Re-ran filtered build diagnostics with `-m:1 /nr:false /clp:ErrorsOnly`; no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, or `Graphics/VR` diagnostics were emitted. Full build remains red externally.
+
+## 2026-05-16 - Escalation Polish / Legacy Enforcer Quarantine
+
+What was wrong:
+- `Assets/_Project/Scripts/Core/OculusFfrEnforcer.cs` was a second hardware foveation owner with direct `XRDisplaySubsystem.foveatedRenderingLevel` writes.
+- It held a private persistent `NativeArray<QuestFfrBlackboxEntry>` blackbox instead of using `GlobalDataVault`.
+- It subscribed to a managed XR-active event and could clamp texture mip limits on Quest separately from the graphics/VR commander.
+
+What was done:
+- Preserved `QuestVulkanRuntimePolicy`; it is still used for Quest runtime classification.
+- Reduced `OculusFfrEnforcer` to an obsolete disabled compatibility shim so old serialized components do not become missing scripts.
+- Removed the legacy private native blackbox, direct foveation writes, XR-state event subscription, texture mip clamp, and duplicate dump path from the old class.
+
+Cinematic Cheats used:
+- No new simulation. Quest foveation remains the single low-tier visual cheat, now owned only by `FoveatedRenderCommander`.
+- High-end gaze VRS can no longer be overwritten by the stale Quest-only enforcer.
+
+Exact microseconds saved:
+- Exact measured microseconds saved: 0. Build remains red outside this domain.
+- Estimated avoided CPU if the old component were accidentally enabled: one 60-frame XR subsystem scan plus blackbox write, roughly 2-10 us per sample.
+- Private native allocation avoided if the old component were accidentally enabled: one 300-entry Quest FFR ring. The authoritative commander still uses the 19.2 KB DataVault ring.
+
+Validation:
+- Static scan shows no `NativeArray`, no old dump path, no managed XR-active subscription, and no direct foveation writes in `OculusFfrEnforcer.cs`.
+- Filtered `dotnet build` diagnostic scan after quarantine produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, or `Graphics/VR` diagnostics. Full build remains red externally.

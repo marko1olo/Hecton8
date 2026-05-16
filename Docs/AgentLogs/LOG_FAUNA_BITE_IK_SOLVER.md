@@ -43,3 +43,31 @@ Validation:
 - `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly` exits 1 due unrelated cross-agent compile failures. Errors include missing `JobAdmissionLane`/contract references, missing visual signal types, voxel debris fields, player motor helpers, and `HectonShaderGlobalDataVaultBridge`.
 - No emitted build error targeted `Assets/_Project/Scripts/Animation/Fauna/ProceduralBiteIkJobs.cs`.
 - Final status is `[BLOCKED BY DEPENDENCY]`, not `VERIFIED MASTER GRADE`.
+## 2026-05-16 - Loop 6 Multiplatform/H-Phi Inquisition
+What was wrong:
+- `FaunaKinematicsRuntime` still held persistent private `NativeArray<T>` views for spine/bone/telemetry state after the first DataVault eviction.
+- The shared Leviathan IK vault helper still requested animation buffers under `SystemID.AICognition`.
+- A stale `CurrentJawPos` contact frame could survive after strike release and re-trigger contact feedback.
+- The shared terrain IK pass used `FloatMode.Fast` while the bite solver depends on deterministic bone output.
+
+What was done:
+- Replaced persistent native-array fields with `VaultBufferHandle<T>` fields and generation-checked resolves at job scheduling, GPU upload, origin-shift rebase, and black-box dump boundaries.
+- Moved Leviathan IK vault helper requests to `SystemID.AnimationFauna`.
+- Added inactive-strike target/pose clearing and target-hash/frame gates before sparks, haptics, hull dent, or acoustic jaw snap publish.
+- Switched `LeviathanTerrainIkJob` to deterministic Burst mode.
+- Reran forbidden-pattern, struct-pack, line-diff, and `dotnet build` checks.
+
+Cinematic Cheats used:
+- Toaster mode remains a head-bone orientation/scale lie with no mandible/tentacle solve.
+- High/Ultra still use deterministic cylindrical wrap anchors and overkill debris/dent/audio signals when contact is current.
+
+Exact Microseconds saved:
+- Private NativeArray lifetime removal: no claimed per-frame saving; it removes stale-view/leak risk.
+- Stale feedback gate: estimated 2-6 us avoided on false contact frames by skipping debris/haptic/audio/dent publishes.
+- SystemID correction: 0 us runtime; ownership/audit fix.
+- Deterministic terrain Burst: no saving claimed; it trades tiny math cost for cross-platform predictability.
+
+Verification:
+- `rg` found no `BiteManager.Instance`, `Animator.SetIKPosition`, Unity physics overlap/raycast bite query, `Update()`, `string.Format`, `EventBus`, `H8Memory.Allocate`, or `SystemID.External` in the owned bite/IK slice.
+- `rg --pcre2` found no private `NativeArray<T>` fields and no non-Pack struct layouts in the owned bite/IK slice.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly` remains blocked by external SubmarineStructuralGrid, Bioluminescence, SpatialAudio, XR, and VaultProbe errors. No emitted error targets `ProceduralBiteIkJobs.cs`, `FaunaKinematicsRuntime.cs`, or `LeviathanTerrainIkJobs.cs`.

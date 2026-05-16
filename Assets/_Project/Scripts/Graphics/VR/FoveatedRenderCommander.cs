@@ -164,7 +164,7 @@ namespace Hecton8.Graphics.VR
         {
             if (s_activeCommander != null && !ReferenceEquals(s_activeCommander, this))
             {
-                Destroy(gameObject);
+                Destroy(this);
                 return;
             }
 

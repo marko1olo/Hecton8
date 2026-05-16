@@ -45,3 +45,4 @@ State: CORE COMPLETE / BUILD BLOCKED BY DEPENDENCY
 - Loop 2: Tasks 6-10 verified in active hydration path. `dotnet build Hecton8.Core.csproj` reached compile and failed on unrelated UI/item/homeostasis/lockstep/tether errors; no reported errors in edited ecology/global-signal files.
 - Loop 3: Tasks 11-15 completed. Added SDF cavity gate, prompt-ID dump path, capacity overflow blackbox evidence, and stress-based 50 percent visual hydration.
 - Loop 4: Tasks 16-18 completed/blocked. Dehydration seam packs macro-hydrated active biota to MacroSwarm; final build remains blocked by external compile wall.
+- Loop 5: Omega polish pass complete. Batch had no `<POLISH_MANDATE>` tag; anti-bloat grep found no Instantiate/new GameObject/SpawnPoint path in edited files, no runtime resize path, and only fixed-cap AddNoResize sites with preceding capacity gates.

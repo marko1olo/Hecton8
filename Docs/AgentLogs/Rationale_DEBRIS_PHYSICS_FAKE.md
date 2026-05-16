@@ -71,3 +71,51 @@ Rejected Alternatives: Patching fauna, docking, wake, or ecosystem types from th
 Scalability potential: Low/Middle/High/Ultra debris scalability remains unaffected by this external build break; runtime profiling is blocked until the fauna compile wall is resolved by its owner or integrator.
 
 Hardware Impact: 0 us direct debris runtime impact from this decision. Compile validation is blocked externally, so measured microsecond proof for Phase 1 must wait.
+
+## Decision 7 - Multiplatform ABI Lockdown
+
+Problem: Debris request and telemetry structs were sequential without explicit packing or size. On ARM64/Quest and IL2CPP, implicit padding differences can corrupt DataVault reads or blackbox dumps.
+
+Solution: Locked `CarveDebrisRequest` and `CarveDebrisTelemetryEntry` to `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]`. `DebrisSpawnSignal` and `VoxelCarveEvent` are already fixed-size packed/explicit signals. Data remains in `GlobalDataVault` buffers; local `NativeArray` fields in the renderer are leases, not owned allocations.
+
+Rejected Alternatives: Leaving CLR default packing was rejected because Quest/Android cannot be trusted to preserve desktop assumptions. Moving to managed classes was rejected because it breaks Burst and DataVault sovereignty.
+
+Scalability potential: Low = predictable 64B request/telemetry cache lines. Middle = same data contract with 4096 shards. High = same ABI scales to 16,384 shards. Ultra = extra visual passes can read identical buffer layout without producer changes.
+
+Hardware Impact: Static estimate is 0 us direct frame gain; this prevents platform-only memory faults and keeps DataVault inspection deterministic.
+
+## Decision 8 - H-Phi SoA And Tier Split
+
+Problem: The debris path still behaved like a middle-ground 4096-particle system. It did not expose the XML-named `_DebrisBuffer`/`_DebrisPhysicsBuffer` contract and did not buy high-end visuals with low-tier savings.
+
+Solution: Kept the authoritative DataVault buffers `BufferID.CarveDebris` and `BufferID.CarveDebrisVelocity`, bound them to shader names `_DebrisBuffer` and `_DebrisPhysicsBuffer`, and split capacity by tier: 1024 low, 4096 mid, 16,384 high/ultra. Per-carve injection now scales 16/48/128 by tier.
+
+Rejected Alternatives: A single balanced capacity was rejected because HECTON-8 requires toaster mode and God-mode, not a compromise. Interleaved particle structs were rejected because float4 SoA is cheaper for compute and shader reads.
+
+Scalability potential: Low = Dear Lie with 1024 shards and skipped SDF/flow. Middle = 4096 visible chips without RTX assumptions. High = 16,384 shards with SDF/flow and improved lighting. Ultra = same contract can carry future POM/SSS material overkill.
+
+Hardware Impact: Low-tier static estimate: 0.3-1.2 ms GPU avoided under debris storms. High tier spends the saved CPU path on 4x previous maximum shard density.
+
+## Decision 9 - Shader-Only Tumble And STP Motion Vectors
+
+Problem: Debris orientation was static per particle ID and render params forced no motion vectors, producing procedural shimmer risk under STP/upscalers.
+
+Solution: Moved tumble to the vertex shader using particle ID plus time. Added a MotionVectors pass that reconstructs previous position from `_DebrisPhysicsBuffer.xyz * deltaTime`, and changed render params from `ForceNoMotion` to object motion.
+
+Rejected Alternatives: CPU quaternion updates were rejected because they reintroduce per-shard transform work. Leaving motion vectors off was rejected because it hides cost while degrading STP stability.
+
+Scalability potential: Low = shader hash tumble without CPU cost. Middle = stable motion history for 4096 shards. High/Ultra = deterministic tumble remains cheap at 16,384 shards and supports heavier material lighting later.
+
+Hardware Impact: Static estimate is 20-90 us CPU avoided versus CPU-side rotation for thousands of shards. Motion-vector GPU cost is pending capture; image stability is the intended spend.
+
+## Decision 10 - Homeostasis And SetData Stall Removal
+
+Problem: Stress adaptation and SetData stall defense were incomplete as explicit task evidence.
+
+Solution: Debris lifetime decay now multiplies by 4 when `SystemStress01 > 0.9`, shortening lifetime by 75% and recycling slots faster. The upload path uses `GraphicsBuffer.LockBufferForWrite` on double-buffered position/velocity buffers and contains no `GraphicsBuffer.SetData` hot path.
+
+Rejected Alternatives: Dropping all producer signals during stress was rejected because it removes tactile feedback. Full-buffer `SetData` was rejected because it can stall the main thread and create MicroSD-like hitch symptoms during streaming pressure.
+
+Scalability potential: Low = pressure recycles shards aggressively. Middle = stable buffer uploads. High/Ultra = high density remains bounded by capacity and lifetime pressure.
+
+Hardware Impact: Static estimate: stress mode reduces active particle residence by 4x. SetData avoidance prevents intermittent sync spikes; exact microseconds require GPU/main-thread profiling after external compile blockers are cleared.

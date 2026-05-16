@@ -71,3 +71,31 @@ Solution: Fixed the only compass-owned compile defect (signal payload placement)
 Rejected Alternatives: Editing docking/autopilot/flora/fauna/ecosystem interfaces from this UX task would be cross-domain sabotage. Claiming build green would be a false report.
 Scalability potential: No runtime scalability change; this preserves ownership boundaries for the integrator.
 Hardware Impact: None at runtime. Integration risk is external compile order/ownership, not compass frame cost.
+
+## Decision 011 - Multiplatform Data Sovereignty Repair
+Problem: The runtime still held private `NativeArray` handles to vault buffers, and compass structs were not all explicitly `Pack = 1`.
+Solution: Removed persistent `NativeArray` fields from the MonoBehaviour; buffer access now resolves transient vault views only when scheduling, presenting, committing, or dumping. Changed `CompassStateDTO`, `InertialNavigationSnapshot`, and `CompassBlackBoxEntry` to `Pack = 1`.
+Rejected Alternatives: Keeping cached NativeArray fields would look like private system state and fail H-Phi inspection. Moving data into managed lists would break zero-GC and DataVault ownership.
+Scalability potential: Low/Middle/High/Ultra all read the same vault data; presentation tier changes do not fork authority.
+Hardware Impact: Quest/ARM gets deterministic struct layout and avoids private handle lifetime ambiguity. DataVault lookups replace cached handles; expected overhead is below the 0.1 ms suspicion line and buys sovereignty.
+
+## Decision 012 - Dear Lie Noise Ladder
+Problem: Low tier still used coherent noise despite being on SlowTick; that is wasteful on i3/MX350 and mobile.
+Solution: Low tier now uses triangle noise. Middle uses one coherent-noise sample. High/Ultra with indirect dial enabled uses two-octave noise plus `_CompassOverkill01` for glass/material response.
+Rejected Alternatives: Full magnetometer simulation, raymarched field distortion, or particle-heavy failure on all tiers would waste performance on fake physics. A fixed random jitter would look cheap and unreadable.
+Scalability potential: Low = triangle-wave lie. Middle = one noise sample. High = two-octave drift and indirect dial. Ultra can bind `_CompassOverkill01` in material shaders for heavier glass/salt/SSS response without touching navigation truth.
+Hardware Impact: Low tier saves the coherent-noise sample during drift, estimated 1-3 us per scheduled compass tick on i3/MX350. High tier spends that saved CPU only when stress is below 0.8.
+
+## Decision 013 - Platform Rendering Guard
+Problem: Indirect mesh drawing can be invalid on GLES/mobile paths and should not assume DirectX-style support.
+Solution: Gate high-tier indirect dial rendering behind `SystemInfo.supportsInstancing`, `SystemInfo.supportsComputeShaders`, and non-GLES graphics device types.
+Rejected Alternatives: Always using `Graphics.DrawMeshInstancedIndirect` would risk Android/GLES failure. Disabling high-tier rendering globally would give 4090 users mobile visuals.
+Scalability potential: Toaster/mobile uses text or transform dial. PC/Metal/Vulkan/D3D high tier can use indirect dial and overkill material scalars.
+Hardware Impact: Quest/GLES avoids unsupported draw paths. High PC keeps the richer visual path.
+
+## Decision 014 - Validation After Inquisition
+Problem: The project still cannot produce a green `dotnet build`, and `Assembly-CSharp.csproj` did not finish within the validation window.
+Solution: Re-ran hazard scans and build. The compass scan is clean. Core build now fails on external `Hecton8.Core.Bucketing` / `ModuloSimulationBucketer` errors in `GameBootstrapper`. Assembly-CSharp timed out after 124 seconds.
+Rejected Alternatives: Editing scheduler/bucketing ownership from UX Navigation would violate domain boundaries. Reporting perfection would be false.
+Scalability potential: None; this is integration state, not compass runtime behavior.
+Hardware Impact: None from compass. Build-wall risk remains external.

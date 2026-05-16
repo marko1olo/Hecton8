@@ -78,6 +78,9 @@ Status hygiene: fresh file created for current batch. Previous status file was m
 
 - `Vector3.Distance` scan: `rg -n "Vector3\\.Distance" Assets/_Project/Scripts` returns no matches after replacing two acoustic portal segment calls with a squared-length/rsqrt helper.
 - 0.1ms frame-time check: added hot-path work is bounded to simple scalar math: AUP center gravity ~0.04 us/fixed tick, sync-fence drift ~0.03 us/300 frames, high-tier tentacle exact contact gated to High/Ultra, low-tier flora float path gated behind `_MATH_LOD_LOW`.
+- Multiplatform packing scan: `rg --pcre2 -n "\[StructLayout\((?![^\)]*Pack\s*=\s*1)"` over the AUP/KCC/physics patch scope returns no matches after enforcing `Pack = 1` on determinism signals, KCC telemetry/state, docking spline packets, Leviathan telemetry, and AUP-touched player movement structs.
+- Data sovereignty scan: `PlayerKinematicsRuntime` runtime arrays are DataVault-first through `AllocateRuntimeArray(..., BufferID.*, SystemID.GameplayPlayer)`; the only remaining `H8Memory.Allocate<T>` call is the fallback path with `SystemID.GameplayPlayer`.
+- NaN vaccination scan: removed remaining `math.sqrt` in the scanned AUP/physics/audio-adjacent scope and clamped additional `rsqrt`/`rcp` sites in station keeping, CCD, fluid math, tether constraints, docking spline distance, and acoustic portal reverb mix.
 - Status: `VERIFIED MASTER GRADE` for AUP scope; global compile remains `[BLOCKED BY DEPENDENCY]`.
 
 ## Loop State
@@ -88,3 +91,4 @@ Status hygiene: fresh file created for current batch. Previous status file was m
 - Iteration 3: tasks 11-13 implemented/verified; compile gate blocked by unrelated input namespace dependency.
 - Iteration 4: tasks 14-16 implemented/verified; prompt re-extracted after task 12; compile gate blocked by unrelated contract/determinism/signal dependency fallout.
 - Iteration 5: tasks 17-18 verified; final compile attempted and marked `[BLOCKED BY DEPENDENCY]` for non-AUP errors. Polish mandate completed with zero remaining `Vector3.Distance` matches.
+- Iteration 6: post-inquisition hardening completed; ARM64 `Pack = 1` scan clean in touched AUP/physics scope, KCC scratch/state arrays are DataVault-first, and guarded `rsqrt`/`rcp` replaced remaining scanned sqrt/division risk.

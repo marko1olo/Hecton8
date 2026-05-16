@@ -572,7 +572,7 @@ namespace Hecton8.AI
         private bool _hasDirectorHuntPrediction;
         private float _passiveFlashlightDimUntilTime;
         private float _retinalBlindBiolumUntilTime;
-        private uint _lastRetinalBlindSignalFrame;
+        private uint _lastRetinalBlindSignalFrame = uint.MaxValue;
         private float _faunaBiolumDim01 = 1f;
         private float _deathDitherFade01;
         private float _corpseBloatAge01;
@@ -808,6 +808,7 @@ namespace Hecton8.AI
             TryUnregisterCorpseSinkLateFrame();
             _passiveFlashlightDimUntilTime = 0f;
             _retinalBlindBiolumUntilTime = 0f;
+            _lastRetinalBlindSignalFrame = uint.MaxValue;
             _faunaBiolumDim01 = 1f;
             _lastAppliedBiolumLightScale01 = -1f;
             _lastAppliedFaunaBiolumShader01 = -1f;
@@ -873,6 +874,7 @@ namespace Hecton8.AI
             _hitFlash01 = 0f;
             _passiveFlashlightDimUntilTime = 0f;
             _retinalBlindBiolumUntilTime = 0f;
+            _lastRetinalBlindSignalFrame = uint.MaxValue;
             _faunaBiolumDim01 = 1f;
             _lastAppliedBiolumLightScale01 = -1f;
             _lastAppliedFaunaBiolumShader01 = -1f;
@@ -5739,6 +5741,7 @@ namespace Hecton8.AI
             _hitFlash01 = 0f;
             _passiveFlashlightDimUntilTime = 0f;
             _retinalBlindBiolumUntilTime = 0f;
+            _lastRetinalBlindSignalFrame = uint.MaxValue;
             _faunaBiolumDim01 = 1f;
             _lastAppliedBiolumLightScale01 = -1f;
             _lastAppliedCorpseBloatShader01 = -1f;

@@ -186,3 +186,23 @@ Solution: Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -
 Rejected Alternatives: Patching wake VFX, docking, or ecosystem contracts was rejected as another agent's dependency wall.
 Scalability potential: AUP scope is ready for integration once those contracts compile.
 Hardware Impact: None from the external compile wall.
+
+### Phase 6: Multiplatform Inquisition
+
+Problem: ARM64/Quest builds cannot rely on platform-default struct padding for physics packets and telemetry rings.
+Solution: Enforced `StructLayout(Pack = 1)` on AUP/KCC/physics-facing structs touched by this pass: KCC telemetry/state/accumulator, `PhysicsDeterminismSignals` packets, docking spline packets, Leviathan telemetry, and player movement telemetry/callback structs. `ActiveSplineData` keeps an explicit 144-byte stride with `ReservedTail` so the DataVault packet stride remains stable while the padding is no longer implicit.
+Rejected Alternatives: Leaving `Pack = 4`, `Pack = 8`, or default sequential layout was rejected because that lets Mono/IL2CPP/Burst choose alignment details per platform. Rewriting unrelated world/core packet families was rejected as cross-domain churn outside this AUP pass.
+Scalability potential: Low/Quest gets deterministic packet strides; Middle/High/Ultra preserve the same serialized/vault layout with no runtime branch.
+Hardware Impact: Estimated 0.0 us steady-state gain; the benefit is removing ARM64 layout drift and avoiding misread packet recovery work.
+
+Problem: KCC still appeared to own private NativeArrays even after accumulator cleanup.
+Solution: Verified every KCC runtime scratch/state array now resolves through `AllocateRuntimeArray(..., BufferID.*, SystemID.GameplayPlayer, GlobalDataVault)` first. The only local allocation path left is the H8Memory fallback with `SystemID.GameplayPlayer` when the vault is missing.
+Rejected Alternatives: Replacing NativeArray job fields with managed containers or direct singletons was rejected because Burst jobs require native views and the vault already owns the storage contract.
+Scalability potential: Low keeps one compact vault-backed KCC state set; Middle/High/Ultra can expand BufferIDs without changing job signatures.
+Hardware Impact: Estimated 0.0 us direct gain; prevents duplicate persistent allocations and improves memory accounting on 8GB systems.
+
+Problem: Additional scanned physics-adjacent math still had branch-only `rsqrt` guards, one guarded divide, or direct `math.sqrt`.
+Solution: Clamped station-keeping, CCD normalization, fluid ingress sqrt approximation, tether constraint weighting, docking spline distance, and acoustic portal reverb curve through `math.max` + `math.rsqrt`/`math.rcp`.
+Rejected Alternatives: Keeping branch-only guards was rejected because mobile NaN propagation can survive edge-case data. Simulating richer audio/physics response was rejected because these are scalar authority/perception curves.
+Scalability potential: Low gets deterministic safe fallbacks; High/Ultra spend saved stability budget on existing tier-gated contact precision and particle density rather than extra physics.
+Hardware Impact: Estimated 0.01-0.05 us saved across cold/warm scalar calls; primary value is avoiding NaN fault cascades.

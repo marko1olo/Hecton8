@@ -67,6 +67,13 @@ Rejected Alternatives: Keeping the private `NativeArray`, adding an ad hoc graph
 Scalability potential: Low devices get one fixed 19.2 KB aligned heartbeat ring; High/Ultra can read the same vault buffer for diagnostics without adding extra foveation-owned allocations.
 Hardware Impact: Private allocation removed. DataVault resolution adds a few scalar checks, estimated 0-1 us over the previous direct array write, buying leak ownership and alignment guarantees.
 
+## Legacy Quest Enforcer Quarantine
+Problem: `Assets/_Project/Scripts/Core/OculusFfrEnforcer.cs` still contained a second hardware foveation writer, a private persistent `NativeArray` blackbox, a managed XR-active event subscription, and a Quest texture mip clamp. It was unreferenced, but if activated it would fight the graphics/VR commander and violate DataVault ownership.
+Solution: Kept `QuestVulkanRuntimePolicy` because the commander uses it for runtime classification, and reduced `OculusFfrEnforcer` to a disabled obsolete compatibility shim so old serialized components do not become missing scripts.
+Rejected Alternatives: Leaving duplicate direct foveation writes in Core, deleting the MonoBehaviour class and risking missing-script fallout, or migrating another blackbox when the correct owner is already `FoveatedRenderCommander`.
+Scalability potential: Low Quest policy remains centralized in the commander. High/Ultra PC/Quest 3 gaze VRS cannot be overwritten by a stale Quest-only component.
+Hardware Impact: Removes a potential 60-frame duplicate XR subsystem scan and one 300-entry private native allocation if the legacy component is accidentally enabled. Exact measured savings remain 0 until runtime profiling is possible.
+
 ## Compile Wall Boundary
 Problem: Three build attempts failed before final green validation because other agents changed Core/Gameplay files outside the `Graphics/VR` domain.
 Solution: Do not edit or revert those files except the minimal `BufferID` addition required for this domain's DataVault ownership. Record exact blockers: `PlayerKinematicsRuntime.cs` unresolved AUP helpers on attempt 1, `GlobalSignals.cs(580,50)` `ISignalLane.FlushPreSimulation(bool,int)` mismatch on attempts 2-3, then 105 unrelated assembly/contract/signal/gameplay errors on attempt 4.

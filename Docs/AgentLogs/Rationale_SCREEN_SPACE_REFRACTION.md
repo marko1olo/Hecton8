@@ -115,3 +115,19 @@ Solution: Re-run `dotnet build` and record the current first blockers: UI compas
 Rejected Alternatives: Editing UI, determinism, core homeostasis, item, or physics signal code would exceed the VFX/POST assignment and collide with other agents.
 Scalability potential: Refraction Low/Mid/High/Ultra paths remain implemented; certification is blocked by unrelated integration debt.
 Hardware Impact: No runtime impact from this blocker. Exact visor microseconds remain unmeasured until the compile wall is cleared.
+
+## Decision 14 - Literal NativeArray Eviction
+
+Problem: Even a DataVault-owned `NativeArray` alias in the visor feature left a literal private `NativeArray` declaration, which is too easy to misread as local ownership and fails the stricter H-Phi mandate.
+Solution: Replace the alias with `VaultBufferHandle<VisorRefractionTelemetryEntry>`, resolve the current pointer through the vault each write, and index the telemetry ring by `Time.frameCount % 300` instead of storing a private cursor.
+Rejected Alternatives: Keeping the alias with a rationale comment was rejected because the file still contained the forbidden type token; adding a separate cursor buffer was rejected as unnecessary for a fixed frame-indexed ring.
+Scalability potential: Low, Middle, High, and Ultra all emit identical compact telemetry while their visual paths diverge; the handle remains generation-checked across vault relocation/fence events.
+Hardware Impact: Same 48-byte heartbeat write when evaluated. Removing cursor/last-frame state saves two small field updates per evaluated player-camera frame, exact microseconds unmeasured.
+
+## Decision 15 - Compile Wall Retry
+
+Problem: The first retry hit a shared SourceLink file lock; the second retry reached C# and failed outside the visor domain.
+Solution: Record the current blockers without touching unrelated domains: `HectonXRRuntimeState`, `BiolumPulseSyncRuntime`, `VaultProbeUtility`, `SpatialAudioManager`, and `SubmarineStructuralGrid`.
+Rejected Alternatives: Fixing XR refresh-rate APIs, biolum telemetry structs, vault diagnostics, audio residency helpers, or submarine breach buffers would exceed the VFX/POST assignment.
+Scalability potential: No change to visor scalability; the compile wall is integration debt.
+Hardware Impact: No runtime impact from the blocker. Exact visor microseconds remain unmeasured until the shared project compiles.

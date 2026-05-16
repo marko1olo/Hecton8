@@ -165,7 +165,12 @@ float3 ApplyDynamicWakes(float3 positionWS, float3 flow)
             float3 sheetAxis = SafeNormalize(cross(pushAxis, float3(0.0, 1.0, 0.0)), float3(1.0, 0.0, 0.0));
             float3 shear = cross(radial, sheetAxis) * (intensity * falloff * core * 0.22);
             float3 billow = radial * (intensity * falloff * core * 0.18);
-            flow += shear + billow;
+            float highIntensityGate = saturate((intensity - 0.55) * 2.2);
+            float triangleA = abs(frac(dot(positionWS.xz, float2(0.091, 0.137)) + (float)i * 0.173) * 2.0 - 1.0);
+            float triangleB = abs(frac(dot(positionWS.xy, float2(0.067, 0.109)) + (float)i * 0.211) * 2.0 - 1.0);
+            float3 churnAxis = SafeNormalize(cross(radial + pushAxis, sheetAxis), pushAxis);
+            float3 turbulence = (churnAxis * (triangleA - 0.5) + radial * (triangleB - 0.5)) * (intensity * falloff * highIntensityGate * 0.34);
+            flow += shear + billow + turbulence;
         }
     }
 

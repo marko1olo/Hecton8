@@ -5,6 +5,8 @@ Domain: `UX/NAVIGATION`
 Code domain: `Assets/_Project/Scripts/UI/Navigation/`
 Status: IMPLEMENTED; FINAL BUILD BLOCKED BY EXTERNAL DEPENDENCIES
 
+Latest inquisition pass: 2026-05-16
+
 Relevant mandates read before coding:
 - `UI_Diegetic_Physical_Interfaces.txt`
 - `UI_Data_Streaming_ZeroGC_Optimization.txt`
@@ -41,3 +43,5 @@ Relevant mandates read before coding:
 - [x] Loop 3: tasks 11-14 + compile repair. Build strike 3 exposed compass signal structs missing from core signal lane ownership; fixed by moving `AnomalyProximitySignal` and `CompassCalibratedSignal` into `GlobalSignals.cs`. Rebuild then failed only on external walls: `Hecton8.VFX.Wakes`, `IDockingAutopilotService`, `ActiveSplineData`, and ecosystem service method mismatches.
 - [x] Loop 4: tasks 15-18 + dependency-wall classification. Verified homeostasis/power/calibration paths and marked final build blocked instead of editing docking, flora, fauna, or ecosystem ownership.
 - [x] Loop 5: self-inquisition / omega polish. Re-read runtime, legacy ribbon, signal placement, and scans. Result: compass implementation is internally consistent, but status cannot be upgraded to `VERIFIED MASTER GRADE` until the external compile wall is cleared.
+- [x] Loop 6: multiplatform/data sovereignty pass. Removed persistent `NativeArray` fields from `DiegeticGyroCompassRuntime`; all compass buffers are now transient views fetched from `GlobalDataVault`. Changed compass DTO/snapshot/blackbox structs to `Pack = 1`. Low tier now uses triangle noise instead of coherent noise; high tier uses richer two-octave drift plus `_CompassOverkill01`. Indirect dial draw is guarded against GLES/no-compute/no-instancing targets.
+- [x] Loop 7: post-inquisition verification. Domain hazard scan found no private `NativeArray`, standard `Update`, `LateUpdate`, `FixedUpdate`, managed formatting, TMP `.text`, `SetText`, camera polling, EventBus, managed delegates, `GameObject.Find`, coroutine, or direct `H8Memory.Allocate` in navigation domain. `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:minimal` remains blocked by external `Hecton8.Core.Bucketing` / `ModuloSimulationBucketer` errors in `GameBootstrapper`. `dotnet build Assembly-CSharp.csproj -m:1 /v:minimal` timed out after 124 seconds.

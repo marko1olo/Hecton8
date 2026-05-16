@@ -59,7 +59,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
         public static bool TryReadGlobalBufferBytes<T>(BufferID bufferId, out Span<byte> bytes)
             where T : unmanaged
         {
-            return TryReadBufferBytes(GlobalRegistry.DataVault, bufferId, out bytes);
+            return TryReadBufferBytes<T>(GlobalRegistry.DataVault, bufferId, out bytes);
         }
 
         /// <summary>

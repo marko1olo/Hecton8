@@ -188,7 +188,7 @@ Hardware Impact: NaN-vaccination cost is one finite branch in the compute kernel
 
 Problem: The build gate still cannot prove final compilation after the additional pass.
 
-Solution: Ran isolated `dotnet build Assembly-CSharp.csproj --no-restore --no-dependencies -m:1` and full `dotnet build Assembly-CSharp.csproj --no-restore -m:1`. Isolated build stops on missing generated/plugin DLLs in `Temp/bin/Debug`; full build stops earlier on missing RealtimeCSG source files. A filtered build scan for `GpuScatter`, `Rendering/Scatter`, and `FloraScatter` produced no scatter-specific compiler errors.
+Solution: Ran isolated `dotnet build Assembly-CSharp.csproj --no-restore --no-dependencies -m:1`, full `dotnet build Assembly-CSharp.csproj --no-restore -m:1`, and filtered `dotnet build Hecton8.Core.csproj --no-restore -m:1`. Isolated Assembly-CSharp stops on missing generated/plugin DLLs in `Temp/bin/Debug`; full Assembly-CSharp stops earlier on missing RealtimeCSG source files; Hecton8.Core stops on unrelated XR/submarine/fauna/VFX/audio compile errors. Filtered scans for `GpuScatter`, `Rendering/Scatter`, `FloraScatter`, `H8Memory`, and `BufferID` produced no scatter/BufferID-specific compiler errors.
 
 Rejected Alternatives: Creating fake RealtimeCSG/plugin files or cross-domain stubs was rejected as architectural sabotage. Reverting the scatter changes was rejected because the observed errors are project dependency/source-file failures outside the assigned domain.
 

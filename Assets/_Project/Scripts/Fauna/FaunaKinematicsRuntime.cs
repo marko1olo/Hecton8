@@ -103,11 +103,11 @@ namespace Hecton8.AI
         private IDataVault _dataVault;
         private MapMagicBridge _mapMagic;
 
-        private NativeArray<float3> _segmentPositions;
-        private NativeArray<float3> _previousSegmentPositions;
-        private NativeArray<float4x4> _leviathanBones;
-        private NativeArray<LeviathanTerrainIkTelemetryEntry> _telemetryRing;
-        private NativeArray<int> _telemetryCursor;
+        private VaultBufferHandle<float3> _segmentPositionsHandle;
+        private VaultBufferHandle<float3> _previousSegmentPositionsHandle;
+        private VaultBufferHandle<float4x4> _leviathanBonesHandle;
+        private VaultBufferHandle<LeviathanTerrainIkTelemetryEntry> _telemetryRingHandle;
+        private VaultBufferHandle<int> _telemetryCursorHandle;
 
         private GraphicsBuffer _bonesGraphicsBufferA;
         private GraphicsBuffer _bonesGraphicsBufferB;
@@ -153,15 +153,23 @@ namespace Hecton8.AI
 
         internal bool TryGetLeviathanBones(out NativeArray<float4x4>.ReadOnly bones, out int activeSegmentCount)
         {
-            if (_disposed || _solverScheduled || !_leviathanBones.IsCreated || _activeSegmentCount <= 0)
+            if (_disposed ||
+                _solverScheduled ||
+                _activeSegmentCount <= 0 ||
+                !TryResolveSpineVaultBuffers(
+                    out _,
+                    out _,
+                    out NativeArray<float4x4> leviathanBones,
+                    out _,
+                    out _))
             {
                 bones = default;
                 activeSegmentCount = 0;
                 return false;
             }
 
-            activeSegmentCount = math.min(_activeSegmentCount, _leviathanBones.Length);
-            bones = _leviathanBones.AsReadOnly();
+            activeSegmentCount = math.min(_activeSegmentCount, leviathanBones.Length);
+            bones = leviathanBones.AsReadOnly();
             return activeSegmentCount > 0;
         }
 
@@ -242,11 +250,19 @@ namespace Hecton8.AI
         public void Tick(float deltaTime)
         {
             if (_disposed ||
-                !_segmentPositions.IsCreated ||
-                !_leviathanBones.IsCreated ||
                 _solverScheduled ||
                 !math.isfinite(deltaTime) ||
                 deltaTime <= 0f)
+            {
+                return;
+            }
+
+            if (!TryResolveSpineVaultBuffers(
+                    out NativeArray<float3> segmentPositions,
+                    out NativeArray<float3> previousSegmentPositions,
+                    out NativeArray<float4x4> leviathanBones,
+                    out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
+                    out NativeArray<int> telemetryCursor))
             {
                 return;
             }
@@ -287,11 +303,11 @@ namespace Hecton8.AI
                 out NativeArray<int> biteIkTelemetryCursor);
             LeviathanTerrainIkJob job = new LeviathanTerrainIkJob
             {
-                SegmentPositions = _segmentPositions,
-                PreviousSegmentPositions = _previousSegmentPositions,
-                LeviathanBones = _leviathanBones,
-                TelemetryRing = _telemetryRing,
-                TelemetryCursor = _telemetryCursor,
+                SegmentPositions = segmentPositions,
+                PreviousSegmentPositions = previousSegmentPositions,
+                LeviathanBones = leviathanBones,
+                TelemetryRing = telemetryRing,
+                TelemetryCursor = telemetryCursor,
                 VoxelSdfTexture3D = sdfTexture3D,
                 TerrainHeightSamples = heightSamples,
                 VoxelSdfDimensions = sdfDimensions,
@@ -326,7 +342,7 @@ namespace Hecton8.AI
                 {
                     JawIkTargets = jawIkTargets,
                     CurrentJawPos = currentJawPos,
-                    LeviathanBones = _leviathanBones,
+                    LeviathanBones = leviathanBones,
                     BiteIkSolveEvents = biteIkSolveEvents,
                     TelemetryCursor = biteIkTelemetryCursor,
                     PredatorAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(ResolveOwnerRuntimePosition())),
@@ -495,11 +511,7 @@ namespace Hecton8.AI
 
         private void EnsurePersistentBuffers()
         {
-            if (_segmentPositions.IsCreated &&
-                _previousSegmentPositions.IsCreated &&
-                _leviathanBones.IsCreated &&
-                _telemetryRing.IsCreated &&
-                _telemetryCursor.IsCreated)
+            if (TryResolveSpineVaultBuffers(out _, out _, out _, out _, out _))
             {
                 TryResolveBiteIkVaultBuffers(out _, out _, out _, out _);
                 return;
@@ -513,12 +525,47 @@ namespace Hecton8.AI
                 return;
             }
 
-            _segmentPositions = vault.GetBuffer<float3>(BufferID.LeviathanSegmentPositions, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _previousSegmentPositions = vault.GetBuffer<float3>(BufferID.LeviathanPreviousSegmentPositions, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _leviathanBones = vault.GetBuffer<float4x4>(BufferID.LeviathanBoneMatrices, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _telemetryRing = vault.GetBuffer<LeviathanTerrainIkTelemetryEntry>(BufferID.LeviathanTerrainIkTelemetryRing, LeviathanTerrainIkConstants.TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _telemetryCursor = vault.GetBuffer<int>(BufferID.LeviathanTerrainIkTelemetryCursor, 1, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _segmentPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanSegmentPositions, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _previousSegmentPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanPreviousSegmentPositions, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _leviathanBonesHandle = vault.GetBufferHandle<float4x4>(BufferID.LeviathanBoneMatrices, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _telemetryRingHandle = vault.GetBufferHandle<LeviathanTerrainIkTelemetryEntry>(BufferID.LeviathanTerrainIkTelemetryRing, LeviathanTerrainIkConstants.TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _telemetryCursorHandle = vault.GetBufferHandle<int>(BufferID.LeviathanTerrainIkTelemetryCursor, 1, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
             TryResolveBiteIkVaultBuffers(out _, out _, out _, out _);
+        }
+
+        private bool TryResolveSpineVaultBuffers(
+            out NativeArray<float3> segmentPositions,
+            out NativeArray<float3> previousSegmentPositions,
+            out NativeArray<float4x4> leviathanBones,
+            out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
+            out NativeArray<int> telemetryCursor)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                segmentPositions = default;
+                previousSegmentPositions = default;
+                leviathanBones = default;
+                telemetryRing = default;
+                telemetryCursor = default;
+                return false;
+            }
+
+            segmentPositions = _segmentPositionsHandle.Resolve(vault);
+            previousSegmentPositions = _previousSegmentPositionsHandle.Resolve(vault);
+            leviathanBones = _leviathanBonesHandle.Resolve(vault);
+            telemetryRing = _telemetryRingHandle.Resolve(vault);
+            telemetryCursor = _telemetryCursorHandle.Resolve(vault);
+            return segmentPositions.IsCreated &&
+                   previousSegmentPositions.IsCreated &&
+                   leviathanBones.IsCreated &&
+                   telemetryRing.IsCreated &&
+                   telemetryCursor.IsCreated &&
+                   segmentPositions.Length >= MaxSegments &&
+                   previousSegmentPositions.Length >= MaxSegments &&
+                   leviathanBones.Length >= MaxSegments &&
+                   telemetryRing.Length >= LeviathanTerrainIkConstants.TelemetryCapacity &&
+                   telemetryCursor.Length >= 1;
         }
 
         private bool TryResolveBiteIkVaultBuffers(
@@ -581,11 +628,11 @@ namespace Hecton8.AI
 
         private void ClearNativeBufferViews()
         {
-            _segmentPositions = default;
-            _previousSegmentPositions = default;
-            _leviathanBones = default;
-            _telemetryRing = default;
-            _telemetryCursor = default;
+            _segmentPositionsHandle = default;
+            _previousSegmentPositionsHandle = default;
+            _leviathanBonesHandle = default;
+            _telemetryRingHandle = default;
+            _telemetryCursorHandle = default;
             _biteVaultReady = false;
         }
 
@@ -603,8 +650,15 @@ namespace Hecton8.AI
 
         private void SeedSpineFromOwner()
         {
-            if (!_segmentPositions.IsCreated || !_previousSegmentPositions.IsCreated || !_leviathanBones.IsCreated)
+            if (!TryResolveSpineVaultBuffers(
+                    out NativeArray<float3> segmentPositions,
+                    out NativeArray<float3> previousSegmentPositions,
+                    out NativeArray<float4x4> leviathanBones,
+                    out _,
+                    out _))
+            {
                 return;
+            }
 
             float3 origin = ResolveOwnerRuntimePosition();
             float3 forward = ResolveOwnerForward();
@@ -613,9 +667,9 @@ namespace Hecton8.AI
             for (int i = 0; i < MaxSegments; i++)
             {
                 float3 position = origin - forward * (segmentLength * i);
-                _segmentPositions[i] = position;
-                _previousSegmentPositions[i] = position;
-                _leviathanBones[i] = float4x4.TRS(position, quaternion.LookRotationSafe(forward, new float3(0f, 1f, 0f)), new float3(bodyRadius, bodyRadius, segmentLength));
+                segmentPositions[i] = position;
+                previousSegmentPositions[i] = position;
+                leviathanBones[i] = float4x4.TRS(position, quaternion.LookRotationSafe(forward, new float3(0f, 1f, 0f)), new float3(bodyRadius, bodyRadius, segmentLength));
             }
 
             _motionIntentVelocity = float3.zero;
@@ -1103,7 +1157,12 @@ namespace Hecton8.AI
 
         private bool UploadBonesToGpu()
         {
-            if (!_leviathanBones.IsCreated)
+            if (!TryResolveSpineVaultBuffers(
+                    out _,
+                    out _,
+                    out NativeArray<float4x4> leviathanBones,
+                    out _,
+                    out _))
             {
                 _gpuBufferDataValid = false;
                 ClearGpuSkinningBinding();
@@ -1128,7 +1187,7 @@ namespace Hecton8.AI
                 return false;
             }
 
-            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _leviathanBones, MaxSegments);
+            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, leviathanBones, MaxSegments);
             float ikTier = IsLowTier(_qualityTier) ? 0f : 1f;
             float safeSegmentLength = SanitizePositiveFinite(_segmentLength, LeviathanTerrainIkConstants.DefaultSegmentLength, LeviathanTerrainIkConstants.MinSegmentLength);
             float safeTailWhipDuration = SanitizePositiveFinite(_tailWhipDurationSeconds, 1f, 0.0001f);
@@ -1302,8 +1361,15 @@ namespace Hecton8.AI
 
         private void ApplyOriginShiftRebase(float3 offset)
         {
-            if (!_segmentPositions.IsCreated || !_previousSegmentPositions.IsCreated || !_leviathanBones.IsCreated)
+            if (!TryResolveSpineVaultBuffers(
+                    out NativeArray<float3> segmentPositions,
+                    out NativeArray<float3> previousSegmentPositions,
+                    out NativeArray<float4x4> leviathanBones,
+                    out _,
+                    out _))
+            {
                 return;
+            }
 
             if (!math.all(math.isfinite(offset)))
             {
@@ -1313,14 +1379,14 @@ namespace Hecton8.AI
 
             for (int i = 0; i < MaxSegments; i++)
             {
-                _segmentPositions[i] = SanitizeFiniteInputFloat3(_segmentPositions[i] - offset, float3.zero);
-                _previousSegmentPositions[i] = SanitizeFiniteInputFloat3(_previousSegmentPositions[i] - offset, _segmentPositions[i]);
-                float4x4 matrix = _leviathanBones[i];
+                segmentPositions[i] = SanitizeFiniteInputFloat3(segmentPositions[i] - offset, float3.zero);
+                previousSegmentPositions[i] = SanitizeFiniteInputFloat3(previousSegmentPositions[i] - offset, segmentPositions[i]);
+                float4x4 matrix = leviathanBones[i];
                 float4 c3 = matrix.c3;
                 float3 matrixRawPosition = new float3(c3.x - offset.x, c3.y - offset.y, c3.z - offset.z);
-                float3 matrixPosition = SanitizeFiniteInputFloat3(matrixRawPosition, _segmentPositions[i]);
+                float3 matrixPosition = SanitizeFiniteInputFloat3(matrixRawPosition, segmentPositions[i]);
                 matrix.c3 = new float4(matrixPosition, math.isfinite(c3.w) ? c3.w : 1f);
-                _leviathanBones[i] = matrix;
+                leviathanBones[i] = matrix;
             }
 
             float3 ownerFallback = ResolveOwnerRuntimePosition();
@@ -1333,14 +1399,23 @@ namespace Hecton8.AI
 
         private bool TelemetryHasInvalidFrame()
         {
-            if (!_telemetryRing.IsCreated || !_telemetryCursor.IsCreated || _telemetryRing.Length <= 0 || _telemetryCursor.Length <= 0)
+            if (!TryResolveSpineVaultBuffers(
+                    out _,
+                    out _,
+                    out _,
+                    out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
+                    out NativeArray<int> telemetryCursor) ||
+                telemetryRing.Length <= 0 ||
+                telemetryCursor.Length <= 0)
+            {
                 return false;
+            }
 
-            int index = (_telemetryCursor[0] - 1) % _telemetryRing.Length;
+            int index = (telemetryCursor[0] - 1) % telemetryRing.Length;
             if (index < 0)
-                index += _telemetryRing.Length;
+                index += telemetryRing.Length;
 
-            return (_telemetryRing[index].Flags & LeviathanTerrainIkConstants.TelemetryFlagInvalid) != 0u;
+            return (telemetryRing[index].Flags & LeviathanTerrainIkConstants.TelemetryFlagInvalid) != 0u;
         }
 
         private void AdvanceFrameIndex()
@@ -1350,8 +1425,17 @@ namespace Hecton8.AI
 
         private void DumpTelemetryBlackBoxOnce()
         {
-            if (_telemetryDumped || !_telemetryRing.IsCreated)
+            if (_telemetryDumped ||
+                !TryResolveSpineVaultBuffers(
+                    out _,
+                    out _,
+                    out _,
+                    out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
+                    out _ ) ||
+                !telemetryRing.IsCreated)
+            {
                 return;
+            }
 
             DumpTelemetryBlackBox();
             _telemetryDumped = true;
@@ -1365,11 +1449,17 @@ namespace Hecton8.AI
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            int cursor = _telemetryCursor.IsCreated && _telemetryCursor.Length > 0 ? _telemetryCursor[0] : 0;
+            TryResolveSpineVaultBuffers(
+                out _,
+                out _,
+                out _,
+                out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
+                out NativeArray<int> telemetryCursor);
+            int cursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : 0;
             using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
             using BinaryWriter writer = new BinaryWriter(stream);
             writer.Write(TelemetryDumpMagic);
-            int ringLength = _telemetryRing.IsCreated ? math.min(LeviathanTerrainIkConstants.TelemetryCapacity, _telemetryRing.Length) : 0;
+            int ringLength = telemetryRing.IsCreated ? math.min(LeviathanTerrainIkConstants.TelemetryCapacity, telemetryRing.Length) : 0;
             int entryCount = cursor >= ringLength ? ringLength : math.max(0, cursor);
             int firstEntryIndex = entryCount == ringLength && ringLength > 0 ? cursor % ringLength : 0;
             writer.Write(entryCount);
@@ -1378,7 +1468,7 @@ namespace Hecton8.AI
             for (int i = 0; i < entryCount; i++)
             {
                 int sourceIndex = (firstEntryIndex + i) % ringLength;
-                LeviathanTerrainIkTelemetryEntry entry = _telemetryRing[sourceIndex];
+                LeviathanTerrainIkTelemetryEntry entry = telemetryRing[sourceIndex];
                 writer.Write(entry.FrameIndex);
                 writer.Write(entry.ActiveSegmentCount);
                 writer.Write(entry.Flags);

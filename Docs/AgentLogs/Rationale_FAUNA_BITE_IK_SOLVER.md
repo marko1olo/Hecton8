@@ -64,3 +64,24 @@ Solution: Run anti-bloat scans on owned code, write the final log, and report th
 Rejected Alternatives: Faking master-grade status or expanding into unrelated systems would violate evidence-based coding and the domain boundary.
 Scalability potential: Low/Middle/High/Ultra bite IK paths remain present; polish grade is blocked by repository state, not by the bite LOD design.
 Hardware Impact: No runtime impact. The low-end and high-end paths remain bounded as recorded above.
+
+## Decision 9 - Vault Handles Over Cached Arrays
+Problem: The second H-Phi audit found `FaunaKinematicsRuntime` still carried persistent `NativeArray<T>` fields for spine, bone, and telemetry views even though ownership had moved to `GlobalDataVault`.
+Solution: Replace those fields with generation-checked `VaultBufferHandle<T>` fields and resolve short-lived views only at scheduling, GPU upload, origin-shift rebase, and telemetry dump boundaries.
+Rejected Alternatives: Leaving private `NativeArray<T>` fields would preserve a feudal data island; resolving buffers by raw pointer without a generation check would make relocation bugs silent.
+Scalability potential: Low/Middle/High/Ultra all share one vault-owned bone stream. Low-tier still uses the cheap head fake; High/Ultra still spend only math and VFX signals, not memory churn.
+Hardware Impact: i3/MX350 gain is lower stale-view risk and no private array lifetime to leak; high-end devices keep the same GPU upload path for visual overkill bones.
+
+## Decision 10 - Stale Bite Feedback Gate
+Problem: If a strike ended after a contact frame, the previous `CurrentJawPos` flags could survive in the vault and allow late spark/haptic/audio feedback after the target was gone.
+Solution: Clear target and rest pose on inactive strike, then gate feedback by nonzero target hash and the most recent solved frame before publishing debris, haptics, hull dents, or jaw snap audio.
+Rejected Alternatives: Trusting cooldowns alone would still leak stale feedback; clearing the whole telemetry ring would erase black-box evidence.
+Scalability potential: Low-tier gets no fake contact spam; High/Ultra retain overkill feedback only on current solved contact.
+Hardware Impact: A couple of scalar frame/hash checks prevent needless signal traffic on MX350 and Steam Deck while preserving high-tier effects when real contact exists.
+
+## Decision 11 - Deterministic Shared IK Stream
+Problem: Bite IK consumes the shared Leviathan bone stream after terrain IK; `FloatMode.Fast` in the terrain pass could diverge across ARM64, Metal, and x86 targets.
+Solution: Move the shared terrain IK job to deterministic Burst mode and tag its vault helper allocations with `SystemID.AnimationFauna`.
+Rejected Alternatives: Keeping fast math was cheaper but weaker for cross-platform reproducibility; leaving `AICognition` ownership on animation buffers hid the true memory owner.
+Scalability potential: Low keeps one-iteration terrain/head fake; High/Ultra keep full segment and appendage placement without adding allocations.
+Hardware Impact: Expected MX350 cost is bounded by existing low-tier segment count; determinism buys fewer cross-platform animation faults, which is worth the tiny scalar overhead.
