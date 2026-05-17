@@ -23,6 +23,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Audio;
 using Hecton8.Environment;
 using Hecton8.Environment.Fluids;
@@ -787,12 +788,10 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(1f, 89f)] private float suitScrapeSlideAngleThresholdDegrees = 45f;
         [Tooltip("Minimum KCC blocked speed required before a wall scrape emits feedback.")]
         [SerializeField, Range(0f, 6f)] private float suitScrapeMinBlockedSpeed = 0.45f;
-        [Tooltip("Speed scale forwarded to PhysicsEvents for low-amplitude scrape audio/material feedback.")]
+        [Tooltip("Speed scale forwarded to the physics impact queue for low-amplitude scrape feedback.")]
         [SerializeField, Range(0f, 2f)] private float suitScrapeImpactBusSpeedScale = 0.38f;
-        [Tooltip("Small acoustic radius emitted through PhysicsEventBus when suit plating scrapes a KCC wall.")]
+        [Tooltip("Small acoustic radius emitted through the acoustic signal lane when suit plating scrapes a KCC wall.")]
         [SerializeField, Range(0f, 16f)] private float suitScrapeAcousticRadiusMeters = 5f;
-        [Tooltip("Short acoustic lifetime emitted through PhysicsEventBus when suit plating scrapes a KCC wall.")]
-        [SerializeField, Range(0f, 1f)] private float suitScrapeAcousticLifetimeSeconds = 0.22f;
         [Tooltip("Speed scale forwarded to camera collision shake for low-amplitude scrape feedback.")]
         [SerializeField, Range(0f, 2f)] private float suitScrapeCameraSpeedScale = 0.32f;
 
@@ -1564,8 +1563,11 @@ namespace Hecton8.Gameplay
         private const int CollisionMetadataCacheCapacity = 128;
         // COLD ALLOC: QueuedCollisionEvent[8] â€” ring buffer bridging Unity collision callbacks into controller-owned FixedTick processing â€” owner: HectonPlayerMovement
         private readonly QueuedCollisionEvent[] _queuedCollisionEvents = new QueuedCollisionEvent[MaxQueuedCollisionEvents];
-        // COLD ALLOC: Dictionary<int, ColliderCallbackMetadata>(128) Ã¢â‚¬â€ collider metadata cache keyed by instance ID to avoid repeated collider->GameObject traversal in collision callbacks Ã¢â‚¬â€ owner: HectonPlayerMovement
-        private readonly Dictionary<int, ColliderCallbackMetadata> _collisionMetadataCache = new Dictionary<int, ColliderCallbackMetadata>(CollisionMetadataCacheCapacity);
+        // COLD ALLOC: int[128] - fixed collider metadata key cache for collision callbacks - owner: HectonPlayerMovement
+        private readonly int[] _collisionMetadataCacheKeys = new int[CollisionMetadataCacheCapacity];
+        // COLD ALLOC: ColliderCallbackMetadata[128] - fixed collider metadata values, no Dictionary growth path - owner: HectonPlayerMovement
+        private readonly ColliderCallbackMetadata[] _collisionMetadataCacheValues = new ColliderCallbackMetadata[CollisionMetadataCacheCapacity];
+        private int _collisionMetadataCacheWriteIndex;
         private int _queuedCollisionReadIndex;
         private int _queuedCollisionWriteIndex;
         private int _queuedCollisionCount;
@@ -3206,7 +3208,7 @@ namespace Hecton8.Gameplay
             if (colliderInstanceId == 0)
                 return false;
 
-            if (_collisionMetadataCache.TryGetValue(colliderInstanceId, out ColliderCallbackMetadata cachedMetadata))
+            if (TryReadCollisionMetadataCache(colliderInstanceId, out ColliderCallbackMetadata cachedMetadata))
             {
                 colliderLayer = cachedMetadata.Layer;
                 isTrigger = cachedMetadata.IsTrigger;
@@ -3215,12 +3217,41 @@ namespace Hecton8.Gameplay
 
             colliderLayer = otherCollider.gameObject.layer;
             isTrigger = otherCollider.isTrigger;
-            _collisionMetadataCache[colliderInstanceId] = new ColliderCallbackMetadata
+            WriteCollisionMetadataCache(colliderInstanceId, new ColliderCallbackMetadata
             {
                 Layer = colliderLayer,
                 IsTrigger = isTrigger
-            };
+            });
             return true;
+        }
+
+        private bool TryReadCollisionMetadataCache(int colliderInstanceId, out ColliderCallbackMetadata metadata)
+        {
+            metadata = default;
+            if (colliderInstanceId == 0)
+                return false;
+
+            for (int i = 0; i < CollisionMetadataCacheCapacity; i++)
+            {
+                if (_collisionMetadataCacheKeys[i] != colliderInstanceId)
+                    continue;
+
+                metadata = _collisionMetadataCacheValues[i];
+                return true;
+            }
+
+            return false;
+        }
+
+        private void WriteCollisionMetadataCache(int colliderInstanceId, in ColliderCallbackMetadata metadata)
+        {
+            if (colliderInstanceId == 0)
+                return;
+
+            int writeIndex = _collisionMetadataCacheWriteIndex;
+            _collisionMetadataCacheKeys[writeIndex] = colliderInstanceId;
+            _collisionMetadataCacheValues[writeIndex] = metadata;
+            _collisionMetadataCacheWriteIndex = (writeIndex + 1) % CollisionMetadataCacheCapacity;
         }
 
         private static int ResolveStableEntitySeed32(GameObject owner)
@@ -7110,7 +7141,7 @@ namespace Hecton8.Gameplay
                         _juiceProcessor.IsSubmerged,
                         EffectiveWaterSurfaceY,
                         math.abs(_rb != null ? _rb.linearVelocity.y : 0f));
-                    PublishWaterTransitionEvent(
+                    PublishWaterTransitionSignal(
                         WaterTransitionKind.Splash,
                         _juiceProcessor.IsSubmerged,
                         _juiceProcessor.SplashIntensity,
@@ -7120,7 +7151,7 @@ namespace Hecton8.Gameplay
 
                 if (_juiceProcessor.SubmergeChangedThisFrame)
                 {
-                    PublishWaterTransitionEvent(
+                    PublishWaterTransitionSignal(
                         WaterTransitionKind.SubmergeChanged,
                         _juiceProcessor.IsSubmerged,
                         _juiceProcessor.IsSubmerged ? 1f : 0.65f,
@@ -10412,7 +10443,7 @@ namespace Hecton8.Gameplay
             _surfaceBreachLockTimer = math.max(_surfaceBreachLockTimer, surfaceBreachLockDuration);
             _recentBreachExitTimer = math.max(_recentBreachExitTimer, wipeoutBreachLandingGraceTime);
 
-            PublishWaterTransitionEvent(WaterTransitionKind.SurfaceExit, false, 1f, surfaceY, upwardSpeed);
+            PublishWaterTransitionSignal(WaterTransitionKind.SurfaceExit, false, 1f, surfaceY, upwardSpeed);
             PublishSurfaceBreachSplash(upwardSpeed, surfaceY);
         }
 
@@ -10553,7 +10584,7 @@ namespace Hecton8.Gameplay
             SignalBus<VisorDropletSignal>.Push(in signal);
         }
 
-        private void PublishWaterTransitionEvent(
+        private void PublishWaterTransitionSignal(
             WaterTransitionKind kind,
             bool isSubmerged,
             float intensity,
@@ -10561,15 +10592,20 @@ namespace Hecton8.Gameplay
             float verticalSpeed)
         {
             Vector3 runtimePosition = ResolvePlayerAupRuntimePosition();
-            WaterTransitionEvent transitionEvent = new WaterTransitionEvent(
-                unchecked((int)EntityId.ToULong(GetEntityId())),
-                kind,
-                isSubmerged,
-                intensity,
-                surfaceY,
-                verticalSpeed,
-                runtimePosition);
-            WaterTransitionEvents.Publish(in transitionEvent);
+            Vector3 safeRuntimePosition = HectonPlayerMotor.SafeVelocity(runtimePosition);
+            WaterTransitionSignal signal = new WaterTransitionSignal
+            {
+                SourceId = PlayerSignalSourceId,
+                Frame = unchecked((uint)Time.frameCount),
+                Intensity01 = math.saturate(intensity),
+                SurfaceY = surfaceY,
+                VerticalSpeed = math.max(0f, verticalSpeed),
+                Kind = (byte)kind,
+                IsSubmerged = isSubmerged ? (byte)1 : (byte)0,
+                RuntimePosition = new float3(safeRuntimePosition.x, safeRuntimePosition.y, safeRuntimePosition.z),
+                AbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(safeRuntimePosition)
+            };
+            SignalBus<WaterTransitionSignal>.Push(in signal);
         }
 
         private void TryStartWaterEntryImpact(float previousWaterImmersionRatio, bool wasGroundedLastFixedTick, float entryVerticalVelocity)
@@ -11426,15 +11462,16 @@ namespace Hecton8.Gameplay
                 wallNormal,
                 busSpeed);
 
-            AcousticPingEvent scrapePing = new AcousticPingEvent(
-                hitPoint,
-                math.max(0f, suitScrapeAcousticRadiusMeters),
-                math.saturate(scrapeT * 0.35f),
-                math.max(0f, suitScrapeAcousticLifetimeSeconds),
-                FieldTargetRole.Generic,
-                0,
-                scrapeT * 120f);
-            PhysicsEventBus.NotifyAcousticPing(in scrapePing);
+            AcousticPingSignal scrapePing = new AcousticPingSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint),
+                RadiusMeters = math.max(0f, suitScrapeAcousticRadiusMeters),
+                Intensity01 = math.saturate(scrapeT * 0.35f),
+                SourceId = PlayerSignalSourceId,
+                Channel = AcousticPingSignal.ChannelFabricScrape,
+                Flags = AcousticPingSignal.FlagFabricScrape
+            };
+            GlobalSignals.Publish(in scrapePing);
         }
 
         private void ApplyExosuitJumpJets(float fixedDeltaTime)

@@ -197,3 +197,57 @@ Verification -> `rg` confirms `KeyCode.F12`, `DrawMeshInstancedIndirect`, and `D
 Verification -> Shader audit remains clean for numeric `h` suffixes, compute thread groups, RW buffers, group-shared memory, `discard`, and `clip`.
 Verification -> Per operator instruction, no dotnet rebuild was run. `git diff --check` passed clean for touched diagnostics and log files.
 Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
+## Editor UI Debt Delta
+
+What was wrong -> `ArchitectEyeBlackBoxTimelineViewer` still used editor IMGUI (`OnGUI`, `EditorGUILayout`, `GUILayout`, `EditorGUI`) and explicit `.ToString()` formatting. Static audit also found the blackbox dump constant had drifted back to `Dump_ARCHITECT_EYE_VISUALIZER.bin`. Vault fragmentation blocks were yellow, despite the XML contract requiring red for fragmented memory. `CreateMaterial` still used runtime `Shader.Find`.
+What was done -> Replaced the editor viewer with UI Toolkit `CreateGUI`: fixed toolbar buttons, POI/teleport toggles, `SliderInt` frame selection, 300-frame timeline bars, and fixed detail labels. Preserved capped sequential dump loading, SceneView AUP grid, play-mode-gated teleport preview, and POI breadcrumb capture. Replaced explicit POI float `.ToString("R")` calls with `TryFormat` into a stack span using invariant formatting. Restored `ArchitectEyeVisualizer.BlackBoxDumpRelativePath` to `Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin`. Restored fragmented Vault blocks and the fragmentation gauge to red while keeping relocation flash yellow. Replaced runtime `Shader.Find` with a serialized shader reference plus editor-only `AssetDatabase` fallback.
+Cinematic Cheats used -> Runtime none. Timeline remains a cheap editor bar proxy over the 300-frame blackbox instead of constructing scene objects or runtime UI.
+Exact Microseconds saved -> Runtime: 0 us; gameplay path unchanged. Editor: no benchmark claimed; the gain is rule compliance and bounded postmortem IO.
+
+Verification -> No `dotnet build` rerun per operator instruction.
+Verification -> Targeted `rg` found no `OnGUI`, `EditorGUILayout`, `GUILayout`, `EditorGUI`, explicit `.ToString()`, `string.Format`, `Shader.Find`, `SetData`, `GetData`, standard `Update`, or old dump path in the diagnostics visual domain.
+Verification -> `rg` confirmed `DrawMeshInstancedIndirect`, `KeyCode.F12`, and `Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin`.
+Verification -> `git diff --check` reported only CRLF normalization warnings for the touched diagnostics files.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
+## Signal Waterfall Literal Contract Delta
+
+What was wrong -> `BuildSignalFlow` rendered 48 history bars, while task 12 requires the last 50 signal entries.
+What was done -> Increased the blackbox-backed waterfall window to 50 entries and reduced horizontal spacing to keep it inside the same overlay band.
+Cinematic Cheats used -> Same fixed blackbox ring and indirect quad proxy; no text log, no Canvas, no managed event viewer.
+Exact Microseconds saved -> 0 runtime us; this adds two quads in the existing draw and keeps allocation count unchanged.
+
+Verification -> No `dotnet build` rerun per operator instruction.
+Verification -> Targeted code review confirmed `history = math.min(blackBox.Length, 50)` in `BuildSignalFlow`.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
+## VRAM Pie And Regression Lock Delta
+
+What was wrong -> VRAM budget slices were rendered as independent bars, not the requested PDA pie chart. A fresh audit also found live drift in three previously reported fixes: dump path, F12 toggle, and red fragmentation color.
+What was done -> Replaced `BuildVramSlice` with a cumulative pie/ring proxy built from bounded indirect screen quads. Low tier uses coarse two-ring slices; High/Ultra add segment density and a third radial ring without new draw calls. Restored `Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin`, restored `KeyCode.F12` inside `Render()` before the `_enabled` early return, and set fragmented Vault block/gauge color to red while keeping yellow only for pointer relocation flashes.
+Cinematic Cheats used -> Pie chart is a Dear Lie made from small diegetic beads instead of CPU mesh generation or Canvas. It reads as Flora/Sub/UI/SDF distribution while staying on the existing indirect quad renderer.
+Exact Microseconds saved -> 0 us claimed. The fix buys visual correctness; overhead is bounded by existing quad capacity and no extra draw submission.
+
+Verification -> Targeted `rg` confirms `KeyCode.F12`, `DrawMeshInstancedIndirect`, and `Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin`; no `Dump_ARCHITECT_EYE_VISUALIZER`, no yellow fragmentation literal, no `OnGUI`, no explicit `.ToString()`, no `string.Format`, no `Shader.Find`, no `SetData`, no `GetData`, no standard Unity tick methods, no runtime Canvas, no local `new NativeArray`, no `EventBus`, and no managed delegates remain in `Assets/_Project/Scripts/Core/Diagnostics/Visuals`. Per operator instruction, no dotnet rebuild was run.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
+## Vault Probe Sovereignty Delta
+
+What was wrong -> `VaultProbeUtility.TryBufferBytes<T>()` had been reintroduced as a mutable `Span<byte>` over GlobalDataVault memory, contradicting the read-only diagnostics boundary and the existing status record.
+What was done -> Removed the mutable byte probe again. `VaultProbeUtility` now exposes read-only byte spans, typed handle inspection, and finite scanners only. Removed unused imports from `ArchitectEyeDebugSignal`.
+Cinematic Cheats used -> None. This is data-boundary hardening, not a visual fake.
+Exact Microseconds saved -> 0 us claimed. Runtime behavior is unchanged; the benefit is preventing diagnostics from becoming a generic Vault write tunnel.
+
+Verification -> Targeted `rg` found no `TryBufferBytes`, no `out Span<byte>`, no raw mutable byte comment, no old dump path, no yellow fragmentation literal, no standard Unity tick methods, no `Shader.Find`, no `SetData`/`GetData`, no runtime Canvas, no local `new NativeArray`, no `EventBus`, no managed delegates, and no non-`Pack = 1` struct layouts in `Assets/_Project/Scripts/Core/Diagnostics/Visuals`. Per operator instruction, no dotnet rebuild was run.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
+## Blackbox Endian Delta
+
+What was wrong -> `DumpBlackBox` wrote the 300-frame ring by wrapping native struct memory in a raw `ReadOnlySpan<byte>`. The structs are packed, but raw memory dump coupling is weaker postmortem evidence across ARM64/Quest, Steam Deck, Metal/Mac, and PC.
+What was done -> Added a fixed 64-byte little-endian serializer for `ArchitectEyeBlackBoxEntry` using `BinaryPrimitives` and stack memory. The dump remains exactly 300 entries with the same field order, but no longer streams raw native struct memory.
+Cinematic Cheats used -> None. This is crash-forensics hardening.
+Exact Microseconds saved -> 0 us claimed. Normal frame cost is unchanged; fault-path IO remains bounded and allocation-free.
+
+Verification -> `rg` confirms `WriteBlackBoxEntryLittleEndian`, `BlackBoxEntrySizeBytes`, and no raw `ReadOnlySpan<byte>(source)` blackbox export in diagnostics visuals. Per operator instruction, no dotnet rebuild was run.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.

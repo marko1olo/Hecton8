@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -137,7 +138,7 @@ namespace Hecton8.AI
             return job.Schedule(safeCount, 32, dependency);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct DataOnlyFaunaLodJob : IJobParallelFor
         {
             public NativeArray<PoolSlotData> PoolSlots;
@@ -156,18 +157,52 @@ namespace Hecton8.AI
                 if ((flags & (ResidentSimulationFlag | DehydratedSimulationFlag)) != (ResidentSimulationFlag | DehydratedSimulationFlag))
                     return;
 
+                if (!IsFinite(PlayerAbsolutePosition) ||
+                    !math.isfinite(DehydrationDistanceSq) ||
+                    !math.isfinite(HibernationDistanceSq))
+                {
+                    return;
+                }
+
                 PoolSlotData slotData = PoolSlots[index];
                 double3 positionAbsolute = ToAbsolutePosition(slotData);
+                if (!IsFinite(positionAbsolute))
+                {
+                    LinearVelocities[index] = float3.zero;
+                    return;
+                }
+
                 double3 delta = positionAbsolute - PlayerAbsolutePosition;
                 double distanceSq = math.dot(delta, delta);
-                if (distanceSq <= DehydrationDistanceSq || distanceSq > HibernationDistanceSq)
+                if (!math.isfinite(distanceSq) ||
+                    distanceSq <= DehydrationDistanceSq ||
+                    distanceSq > HibernationDistanceSq)
                     return;
 
-                float step = math.max(0f, DeltaTime);
-                float3 nextVelocity = LinearVelocities[index] * math.saturate(1f - (step * 0.12f));
-                positionAbsolute += (double3)(nextVelocity * step);
+                float step = math.isfinite(DeltaTime) ? math.max(0f, DeltaTime) : 0f;
+                if (step <= 0f)
+                    return;
+
+                float3 cachedVelocity = LinearVelocities[index];
+                if (!IsFinite(cachedVelocity))
+                {
+                    LinearVelocities[index] = float3.zero;
+                    return;
+                }
+
+                float3 nextVelocity = cachedVelocity * math.saturate(1f - (step * 0.12f));
+                if (!IsFinite(nextVelocity))
+                    nextVelocity = float3.zero;
+
+                double3 nextAbsolute = positionAbsolute + (double3)(nextVelocity * step);
+                if (!IsFinite(nextAbsolute))
+                {
+                    LinearVelocities[index] = float3.zero;
+                    return;
+                }
+
                 LinearVelocities[index] = nextVelocity;
-                WriteAbsolutePosition(ref slotData, positionAbsolute);
+                WriteAbsolutePosition(ref slotData, nextAbsolute);
                 PoolSlots[index] = slotData;
             }
 
@@ -182,16 +217,47 @@ namespace Hecton8.AI
 
             private static void WriteAbsolutePosition(ref PoolSlotData slotData, double3 absolutePosition)
             {
+                if (!IsFinite(absolutePosition))
+                    return;
+
                 const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
                 long gridX = (long)math.floor(absolutePosition.x / cellSize);
                 long gridY = (long)math.floor(absolutePosition.y / cellSize);
                 long gridZ = (long)math.floor(absolutePosition.z / cellSize);
 
-                slotData.AupCell = new int3((int)gridX, (int)gridY, (int)gridZ);
+                slotData.AupCell = new int3(
+                    ClampToInt(gridX),
+                    ClampToInt(gridY),
+                    ClampToInt(gridZ));
                 slotData.LocalOffset = new float3(
                     (float)(absolutePosition.x - (gridX * cellSize)),
                     (float)(absolutePosition.y - (gridY * cellSize)),
                     (float)(absolutePosition.z - (gridZ * cellSize)));
+            }
+
+            private static bool IsFinite(float3 value)
+            {
+                return math.isfinite(value.x) &&
+                       math.isfinite(value.y) &&
+                       math.isfinite(value.z);
+            }
+
+            private static bool IsFinite(double3 value)
+            {
+                return math.isfinite(value.x) &&
+                       math.isfinite(value.y) &&
+                       math.isfinite(value.z);
+            }
+
+            private static int ClampToInt(long value)
+            {
+                if (value < int.MinValue)
+                    return int.MinValue;
+
+                if (value > int.MaxValue)
+                    return int.MaxValue;
+
+                return (int)value;
             }
         }
 
@@ -255,15 +321,23 @@ namespace Hecton8.AI
     }
 
     /// <summary>
-    /// IDisposable owner for fauna residency native memory.
+    /// GlobalDataVault-backed fauna residency memory facade.
     /// </summary>
     internal struct FaunaSimulationMemory : IDisposable
     {
-        public NativeArray<PoolSlotData> PoolSlots;
-        public NativeArray<float3> LinearVelocities;
-        public NativeArray<byte> SimulationFlags;
-        public NativeQueue<int> FreeSlots;
+        private IDataVault _vault;
+        private VaultBufferHandle<PoolSlotData> _poolSlotsHandle;
+        private VaultBufferHandle<float3> _linearVelocitiesHandle;
+        private VaultBufferHandle<byte> _simulationFlagsHandle;
+
+        public FaunaSimulationFreeSlotStack FreeSlots;
         public int Capacity;
+
+        public NativeArray<PoolSlotData> PoolSlots => ResolveBuffer(_vault ?? GlobalRegistry.DataVault, ref _poolSlotsHandle);
+
+        public NativeArray<float3> LinearVelocities => ResolveBuffer(_vault ?? GlobalRegistry.DataVault, ref _linearVelocitiesHandle);
+
+        public NativeArray<byte> SimulationFlags => ResolveBuffer(_vault ?? GlobalRegistry.DataVault, ref _simulationFlagsHandle);
 
         public bool IsCreated =>
             PoolSlots.IsCreated &&
@@ -278,121 +352,221 @@ namespace Hecton8.AI
             if (Capacity <= 0)
                 return;
 
-            // COLD ALLOC: NativeArray<PoolSlotData>[Capacity] - fauna residency slot metadata for dehydration and restore - owner: FaunaSimulationMemory
-            PoolSlots = new NativeArray<PoolSlotData>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float3>[Capacity] - dehydrated fauna linear velocity cache for Burst LOD updates - owner: FaunaSimulationMemory
-            LinearVelocities = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[Capacity] - resident/dehydrated simulation flags for Burst LOD updates - owner: FaunaSimulationMemory
-            SimulationFlags = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RegisterArrays();
-            // COLD ALLOC: NativeQueue<int>(Persistent) - free fauna residency slot queue - owner: FaunaSimulationMemory
-            FreeSlots = new NativeQueue<int>(Allocator.Persistent);
-            NativeMemorySentinel.RegisterNativeQueue(
-                FreeSlots,
-                Capacity,
-                nameof(FaunaSimulationMemory),
-                nameof(FreeSlots),
-                NativeAllocationLifetime.Session);
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsAllocationLocked)
+            {
+                Capacity = 0;
+                return;
+            }
 
-            for (int i = 0; i < Capacity; i++)
-                FreeSlots.Enqueue(i);
+            _vault = vault;
+            _poolSlotsHandle = vault.GetBufferHandle<PoolSlotData>(
+                BufferID.FaunaSimulationPoolSlots,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _linearVelocitiesHandle = vault.GetBufferHandle<float3>(
+                BufferID.FaunaSimulationLinearVelocities,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _simulationFlagsHandle = vault.GetBufferHandle<byte>(
+                BufferID.FaunaSimulationFlags,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+
+            NativeArray<PoolSlotData> poolSlots = PoolSlots;
+            NativeArray<float3> linearVelocities = LinearVelocities;
+            NativeArray<byte> simulationFlags = SimulationFlags;
+            if (!poolSlots.IsCreated ||
+                !linearVelocities.IsCreated ||
+                !simulationFlags.IsCreated ||
+                poolSlots.Length < Capacity ||
+                linearVelocities.Length < Capacity ||
+                simulationFlags.Length < Capacity)
+            {
+                ReleaseVaultAliases();
+                return;
+            }
+
+            ClearArrays(poolSlots, linearVelocities, simulationFlags);
+            FreeSlots.Allocate(
+                vault,
+                Capacity,
+                BufferID.FaunaSimulationFreeSlots,
+                SystemID.AICognition);
+            if (!FreeSlots.IsCreated)
+                ReleaseVaultAliases();
         }
 
         public void Reset()
         {
-            if (PoolSlots.IsCreated)
-            {
-                for (int i = 0; i < PoolSlots.Length; i++)
-                    PoolSlots[i] = default;
-            }
-
-            if (LinearVelocities.IsCreated)
-            {
-                for (int i = 0; i < LinearVelocities.Length; i++)
-                    LinearVelocities[i] = default;
-            }
-
-            if (SimulationFlags.IsCreated)
-            {
-                for (int i = 0; i < SimulationFlags.Length; i++)
-                    SimulationFlags[i] = 0;
-            }
-
-            if (!FreeSlots.IsCreated)
-                return;
-
-            FreeSlots.Clear();
-            for (int i = 0; i < Capacity; i++)
-                FreeSlots.Enqueue(i);
+            NativeArray<PoolSlotData> poolSlots = PoolSlots;
+            NativeArray<float3> linearVelocities = LinearVelocities;
+            NativeArray<byte> simulationFlags = SimulationFlags;
+            ClearArrays(poolSlots, linearVelocities, simulationFlags);
+            FreeSlots.Reset();
         }
 
         public void Dispose()
         {
-            if (PoolSlots.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(PoolSlots);
-                PoolSlots.Dispose();
-            }
-
-            if (LinearVelocities.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(LinearVelocities);
-                LinearVelocities.Dispose();
-            }
-
-            if (SimulationFlags.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(SimulationFlags);
-                SimulationFlags.Dispose();
-            }
-
-            if (FreeSlots.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(FaunaSimulationMemory), nameof(FreeSlots));
-                FreeSlots.Dispose();
-            }
-
-            Capacity = 0;
+            ReleaseVaultAliases();
         }
 
         public void Dispose(JobHandle dependency)
         {
-            if (PoolSlots.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(PoolSlots);
-                PoolSlots.Dispose(dependency);
-                PoolSlots = default;
-            }
+            ReleaseVaultAliases();
+        }
 
-            if (LinearVelocities.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(LinearVelocities);
-                LinearVelocities.Dispose(dependency);
-                LinearVelocities = default;
-            }
+        private static NativeArray<T> ResolveBuffer<T>(IDataVault vault, ref VaultBufferHandle<T> handle) where T : struct
+        {
+            if (vault == null || !handle.IsCreated)
+                return default;
 
-            if (SimulationFlags.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(SimulationFlags);
-                SimulationFlags.Dispose(dependency);
-                SimulationFlags = default;
-            }
+            return handle.Resolve(vault);
+        }
 
-            if (FreeSlots.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(FaunaSimulationMemory), nameof(FreeSlots));
-                FreeSlots.Dispose(dependency);
-                FreeSlots = default;
-            }
-
+        private void ReleaseVaultAliases()
+        {
+            _poolSlotsHandle = default;
+            _linearVelocitiesHandle = default;
+            _simulationFlagsHandle = default;
+            FreeSlots.Dispose();
+            _vault = null;
             Capacity = 0;
         }
 
-        private void RegisterArrays()
+        private static void ClearArrays(
+            NativeArray<PoolSlotData> poolSlots,
+            NativeArray<float3> linearVelocities,
+            NativeArray<byte> simulationFlags)
         {
-            NativeMemorySentinel.RegisterNativeArray(PoolSlots, nameof(FaunaSimulationMemory), nameof(PoolSlots), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(LinearVelocities, nameof(FaunaSimulationMemory), nameof(LinearVelocities), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(SimulationFlags, nameof(FaunaSimulationMemory), nameof(SimulationFlags), NativeAllocationLifetime.Session);
+            if (poolSlots.IsCreated)
+            {
+                for (int i = 0; i < poolSlots.Length; i++)
+                    poolSlots[i] = default;
+            }
+
+            if (linearVelocities.IsCreated)
+            {
+                for (int i = 0; i < linearVelocities.Length; i++)
+                    linearVelocities[i] = default;
+            }
+
+            if (simulationFlags.IsCreated)
+            {
+                for (int i = 0; i < simulationFlags.Length; i++)
+                    simulationFlags[i] = 0;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Fixed-capacity free-slot stack backed by GlobalDataVault.
+    /// </summary>
+    internal struct FaunaSimulationFreeSlotStack
+    {
+        private IDataVault _vault;
+        private VaultBufferHandle<int> _slotsHandle;
+        private int _count;
+        private int _capacity;
+
+        public bool IsCreated => _slotsHandle.IsCreated && _capacity > 0 && ResolveSlots(_vault ?? GlobalRegistry.DataVault, ref _slotsHandle).IsCreated;
+
+        public void Allocate(IDataVault vault, int capacity, BufferID bufferId, SystemID owner)
+        {
+            Dispose();
+            _vault = vault;
+            _capacity = math.max(0, capacity);
+            if (_vault == null || _capacity <= 0)
+            {
+                Dispose();
+                return;
+            }
+
+            _slotsHandle = _vault.GetBufferHandle<int>(
+                bufferId,
+                _capacity,
+                owner,
+                NativeArrayOptions.ClearMemory);
+
+            if (!ResolveSlots(_vault, ref _slotsHandle).IsCreated)
+            {
+                Dispose();
+                return;
+            }
+
+            Reset();
+        }
+
+        public void Reset()
+        {
+            Clear();
+            NativeArray<int> slots = ResolveSlots(_vault ?? GlobalRegistry.DataVault, ref _slotsHandle);
+            if (!slots.IsCreated)
+                return;
+
+            int capacity = math.min(_capacity, slots.Length);
+            for (int i = capacity - 1; i >= 0; i--)
+            {
+                slots[_count] = i;
+                _count++;
+            }
+        }
+
+        public void Clear()
+        {
+            _count = 0;
+        }
+
+        public bool TryDequeue(out int slotIndex)
+        {
+            slotIndex = -1;
+            NativeArray<int> slots = ResolveSlots(_vault ?? GlobalRegistry.DataVault, ref _slotsHandle);
+            if (!slots.IsCreated || _count <= 0)
+                return false;
+
+            _count--;
+            slotIndex = slots[_count];
+            if ((uint)slotIndex >= (uint)_capacity)
+            {
+                slotIndex = -1;
+                return false;
+            }
+
+            return true;
+        }
+
+        public void Enqueue(int slotIndex)
+        {
+            NativeArray<int> slots = ResolveSlots(_vault ?? GlobalRegistry.DataVault, ref _slotsHandle);
+            if (!slots.IsCreated ||
+                (uint)slotIndex >= (uint)_capacity ||
+                _count >= _capacity ||
+                _count >= slots.Length)
+            {
+                return;
+            }
+
+            slots[_count] = slotIndex;
+            _count++;
+        }
+
+        public void Dispose()
+        {
+            _slotsHandle = default;
+            _vault = null;
+            _count = 0;
+            _capacity = 0;
+        }
+
+        private static NativeArray<int> ResolveSlots(IDataVault vault, ref VaultBufferHandle<int> slotsHandle)
+        {
+            if (vault == null || !slotsHandle.IsCreated)
+                return default;
+
+            return slotsHandle.Resolve(vault);
         }
     }
 }

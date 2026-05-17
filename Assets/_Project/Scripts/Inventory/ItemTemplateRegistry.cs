@@ -53,7 +53,7 @@ namespace Hecton8.Inventory
     /// Immutable item-template record used by SOA inventory/runtime systems.
     /// </summary>
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 44)]
     public struct ItemTemplate
     {
         [SerializeField] private uint hashID;

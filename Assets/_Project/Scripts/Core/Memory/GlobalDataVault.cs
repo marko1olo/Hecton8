@@ -542,43 +542,92 @@ namespace Hecton8.Core.Memory
             SystemID requester,
             NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct
         {
-            if (requiredLength <= 0)
+            if (!TryEnsureVaultBuffer<T>(
+                    bufferId,
+                    requiredLength,
+                    requester,
+                    options,
+                    exposeExternalView: true,
+                    out IntPtr pointer,
+                    out int resolvedLength))
+            {
                 return default;
+            }
+
+            return H8Memory.CreateNativeArrayView<T>(pointer.ToPointer(), resolvedLength);
+        }
+
+        /// <inheritdoc />
+        public VaultBufferHandle<T> GetBufferHandle<T>(
+            BufferID bufferId,
+            int requiredLength,
+            SystemID requester,
+            NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct
+        {
+            if (!TryEnsureVaultBuffer<T>(
+                    bufferId,
+                    requiredLength,
+                    requester,
+                    options,
+                    exposeExternalView: false,
+                    out _,
+                    out _) ||
+                !TryBuildHandle(bufferId, out VaultBufferHandle<T> handle))
+            {
+                return default;
+            }
+
+            return handle;
+        }
+
+        private bool TryEnsureVaultBuffer<T>(
+            BufferID bufferId,
+            int requiredLength,
+            SystemID requester,
+            NativeArrayOptions options,
+            bool exposeExternalView,
+            out IntPtr resolvedPointer,
+            out int resolvedLength) where T : struct
+        {
+            resolvedPointer = default;
+            resolvedLength = 0;
+            if (requiredLength <= 0)
+                return false;
             if (requester == SystemID.Unknown)
                 FatalMemoryException.ThrowUnknownAllocationOwner();
 
             EnsureInitialized();
             if (_compactionFence != 0)
-                return default;
+                return false;
 
             if (_arenaBase == null)
             {
                 DumpPhiVodBlackBox();
-                return default;
+                return false;
             }
 
             int key = (int)bufferId;
             if (key == 0)
-                return default;
+                return false;
 
             int stride = UnsafeUtility.SizeOf<T>();
             int alignment = UnsafeUtility.AlignOf<T>();
             if (stride <= 0 || requiredLength > long.MaxValue / stride)
-                return default;
+                return false;
 
             long requestedBytes = (long)requiredLength * stride;
             long requiredBytes = AlignUp(requestedBytes, VaultBlockAlignment);
             if (requiredBytes <= 0L)
-                return default;
+                return false;
             if (requiredBytes > _arenaBytes && !TryGrowArenaForBytes(requiredBytes))
-                return default;
+                return false;
 
             bool hasExistingPointer = _buffers.TryGetValue(key, out IntPtr existingPointer);
             bool hasExistingMeta = _metadata.TryGetValue(key, out VaultBufferMeta existingMeta);
             if (hasExistingPointer != hasExistingMeta)
             {
                 DumpPhiVodBlackBox();
-                return default;
+                return false;
             }
 
             if (hasExistingPointer)
@@ -586,7 +635,7 @@ namespace Hecton8.Core.Memory
                 if (existingPointer == IntPtr.Zero)
                 {
                     DumpPhiVodBlackBox();
-                    return default;
+                    return false;
                 }
 
                 ValidateType<T>(bufferId, existingMeta, stride, alignment);
@@ -596,28 +645,30 @@ namespace Hecton8.Core.Memory
                     {
                         LastDefragFlags = (byte)(LastDefragFlags | DefragFlagUnaligned);
                         DumpPhiVodBlackBox();
-                        return default;
+                        return false;
                     }
 
-                    if (!MarkExternalView(key, existingMeta.OffsetBytes))
+                    if (exposeExternalView && !MarkExternalView(key, existingMeta.OffsetBytes))
                     {
                         DumpPhiVodBlackBox();
-                        return default;
+                        return false;
                     }
 
                     SanitizeFinitePayload<T>(existingPointer, existingMeta.Length);
-                    return H8Memory.CreateNativeArrayView<T>(existingPointer.ToPointer(), existingMeta.Length);
+                    resolvedPointer = existingPointer;
+                    resolvedLength = existingMeta.Length;
+                    return true;
                 }
 
                 if (_allocationLock != 0)
-                    return default;
+                    return false;
 
                 if (!TryReallocateBlock(key, existingMeta, requiredLength, requiredBytes, ShouldClear(options), out IntPtr resizedPointer, out VaultBufferMeta resizedMeta))
                 {
                     if (!TryGrowArenaForBytes(requiredBytes) ||
                         !TryReallocateBlock(key, existingMeta, requiredLength, requiredBytes, ShouldClear(options), out resizedPointer, out resizedMeta))
                     {
-                        return default;
+                        return false;
                     }
                 }
 
@@ -628,31 +679,33 @@ namespace Hecton8.Core.Memory
                 {
                     LastDefragFlags = (byte)(LastDefragFlags | DefragFlagUnaligned);
                     DumpPhiVodBlackBox();
-                    return default;
+                    return false;
                 }
 
-                if (!MarkExternalView(key, resizedMeta.OffsetBytes))
+                if (exposeExternalView && !MarkExternalView(key, resizedMeta.OffsetBytes))
                 {
                     DumpPhiVodBlackBox();
-                    return default;
+                    return false;
                 }
 
                 SanitizeFinitePayload<T>(resizedPointer, requiredLength);
-                return H8Memory.CreateNativeArrayView<T>(resizedPointer.ToPointer(), requiredLength);
+                resolvedPointer = resizedPointer;
+                resolvedLength = requiredLength;
+                return true;
             }
 
             if (_allocationLock != 0)
-                return default;
+                return false;
 
             if (_keys.Length >= _keys.Capacity)
-                return default;
+                return false;
 
             if (!TryAllocateBlock(key, requiredBytes, out int blockIndex, out IntPtr pointer))
             {
                 if (!TryGrowArenaForBytes(requiredBytes) ||
                     !TryAllocateBlock(key, requiredBytes, out blockIndex, out pointer))
                 {
-                    return default;
+                    return false;
                 }
             }
 
@@ -661,7 +714,7 @@ namespace Hecton8.Core.Memory
                 LastDefragFlags = (byte)(LastDefragFlags | DefragFlagUnaligned);
                 FreeBlock(blockIndex);
                 DumpPhiVodBlackBox();
-                return default;
+                return false;
             }
 
             if (ShouldClear(options))
@@ -691,12 +744,12 @@ namespace Hecton8.Core.Memory
 
                 FreeBlock(blockIndex);
                 DumpPhiVodBlackBox();
-                return default;
+                return false;
             }
 
             _keys.AddNoResize(key);
             _allocatedBytes += requiredBytes;
-            if (!MarkExternalView(key, meta.OffsetBytes))
+            if (exposeExternalView && !MarkExternalView(key, meta.OffsetBytes))
             {
                 RemoveBufferKey(key);
                 _buffers.Remove(key);
@@ -704,25 +757,13 @@ namespace Hecton8.Core.Memory
                 _allocatedBytes = _allocatedBytes > requiredBytes ? _allocatedBytes - requiredBytes : 0L;
                 FreeBlock(blockIndex);
                 DumpPhiVodBlackBox();
-                return default;
+                return false;
             }
 
             SanitizeFinitePayload<T>(pointer, requiredLength);
-            return H8Memory.CreateNativeArrayView<T>(pointer.ToPointer(), requiredLength);
-        }
-
-        /// <inheritdoc />
-        public VaultBufferHandle<T> GetBufferHandle<T>(
-            BufferID bufferId,
-            int requiredLength,
-            SystemID requester,
-            NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct
-        {
-            NativeArray<T> buffer = GetBuffer<T>(bufferId, requiredLength, requester, options);
-            if (!buffer.IsCreated || !TryBuildHandle(bufferId, out VaultBufferHandle<T> handle))
-                return default;
-
-            return handle;
+            resolvedPointer = pointer;
+            resolvedLength = requiredLength;
+            return true;
         }
 
         /// <inheritdoc />
@@ -870,7 +911,7 @@ namespace Hecton8.Core.Memory
                 handle.Stride == meta.Stride;
             if (!matchesMetadata)
             {
-                if (hasCachedIdentity)
+                if (hasCachedIdentity && !CanRefreshHandleAfterGenerationBump(in handle, in meta, pointer))
                 {
                     DumpPhiVodBlackBox();
                     FatalMemoryException.ThrowStaleVaultHandle();
@@ -2193,23 +2234,13 @@ namespace Hecton8.Core.Memory
             int stride = UnsafeUtility.SizeOf<T>();
             int alignment = UnsafeUtility.AlignOf<T>();
             ValidateType<T>(bufferId, meta, stride, alignment);
-
-            if (!MarkExternalView(key, meta.OffsetBytes))
+            if (!IsPointerAligned(pointer, VaultBlockAlignment))
             {
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagUnaligned);
                 DumpPhiVodBlackBox();
                 return false;
             }
 
-            if (!_buffers.TryGetValue(key, out pointer) ||
-                !_metadata.TryGetValue(key, out meta) ||
-                pointer == IntPtr.Zero ||
-                meta.Length <= 0)
-            {
-                DumpPhiVodBlackBox();
-                return false;
-            }
-
-            ValidateType<T>(bufferId, meta, stride, alignment);
             handle.ptr = pointer.ToPointer();
             handle.generation = meta.Version;
             handle.BufferId = bufferId;
@@ -2222,6 +2253,28 @@ namespace Hecton8.Core.Memory
         {
             uint next = generation + 1u;
             return next == 0u ? 1u : next;
+        }
+
+        private static bool CanRefreshHandleAfterGenerationBump<T>(
+            in VaultBufferHandle<T> handle,
+            in VaultBufferMeta meta,
+            IntPtr pointer) where T : struct
+        {
+            if (pointer == IntPtr.Zero ||
+                handle.BufferId == BufferID.Unknown ||
+                handle.ptr == null ||
+                handle.generation == 0u)
+            {
+                return false;
+            }
+
+            if (meta.Version <= handle.generation)
+                return false;
+
+            if (handle.Stride != 0 && handle.Stride != meta.Stride)
+                return false;
+
+            return handle.Length <= 0 || meta.Length >= handle.Length;
         }
 
         private static int ResolveBufferCapacity(int capacity)

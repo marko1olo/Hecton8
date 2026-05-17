@@ -247,7 +247,7 @@ namespace Hecton8.Gameplay
                 !math.isfinite(signal.PositionAup.LocalZ))
                 return;
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<DebrisSpawnSignal>.Push(in signal);
         }
 
         private void DispatchYield(float toolPower, Vector3 dropPoint)

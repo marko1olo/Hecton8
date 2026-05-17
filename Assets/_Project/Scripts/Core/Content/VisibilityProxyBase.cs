@@ -7,6 +7,9 @@ namespace Hecton8.Core.Content
     /// </summary>
     public abstract class VisibilityProxyBase : MonoBehaviour
     {
+        private const float MinVisibilityExtentMeters = 0.01f;
+        private const float MaxVisibilityExtentMeters = 10000f;
+
         [SerializeField] private Vector3 localCenter;
         [SerializeField] private Vector3 localSize = Vector3.one;
 
@@ -45,7 +48,11 @@ namespace Hecton8.Core.Content
                 SanitizeExtent(localSize.z * scale.z));
             Vector3 center = tr.TransformPoint(localCenter);
             if (!IsFinite(center.x) || !IsFinite(center.y) || !IsFinite(center.z))
+            {
                 center = tr.position;
+                if (!IsFinite(center.x) || !IsFinite(center.y) || !IsFinite(center.z))
+                    center = Vector3.zero;
+            }
 
             _worldBounds = new Bounds(center, size);
         }
@@ -55,10 +62,14 @@ namespace Hecton8.Core.Content
         private static float SanitizeExtent(float value)
         {
             if (!IsFinite(value))
-                return 0.01f;
+                return MinVisibilityExtentMeters;
 
             float absolute = Mathf.Abs(value);
-            return absolute < 0.01f ? 0.01f : absolute;
+            if (absolute < MinVisibilityExtentMeters)
+                return MinVisibilityExtentMeters;
+            if (absolute > MaxVisibilityExtentMeters)
+                return MaxVisibilityExtentMeters;
+            return absolute;
         }
 
         private static bool IsFinite(float value)

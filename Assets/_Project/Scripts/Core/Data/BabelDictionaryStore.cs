@@ -221,23 +221,12 @@ namespace Hecton8.Core.Data
             string resolvedPath = string.IsNullOrEmpty(path)
                 ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_CSV_DATA_MONOLITH_SYNC.bin"))
                 : path;
-            string directory = Path.GetDirectoryName(resolvedPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            int entrySize = UnsafeUtility.SizeOf<H8StaticDataTelemetryEntry>();
-            using (FileStream stream = new FileStream(resolvedPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                int cursorValue = *cursor;
-                if ((uint)cursorValue >= H8StaticDataFormat.TelemetryFrameCount)
-                    cursorValue = 0;
-
-                for (int i = 0; i < H8StaticDataFormat.TelemetryFrameCount; i++)
-                {
-                    int sourceIndex = (cursorValue + i) % H8StaticDataFormat.TelemetryFrameCount;
-                    stream.Write(new ReadOnlySpan<byte>(ring + sourceIndex, entrySize));
-                }
-            }
+            H8StaticDataBlackBoxDump.Write(
+                resolvedPath,
+                ring,
+                *cursor,
+                IsOpen ? _header.PayloadCrc32 : 0u,
+                IsOpen ? _header.Flags : 0u);
         }
 
         public void Dispose()

@@ -216,12 +216,12 @@ namespace Hecton8.Core.Hardware
             if (!Application.isPlaying)
                 return;
 
+            RebindCachedServicesCold();
             EnsureNativeState();
             TryRegisterService();
             if (!_serviceRegistered)
                 return;
 
-            RebindCachedServicesCold();
             TryRegisterHotSwap();
             TryRegisterFrameTick();
             TryRegisterFrostTick();
@@ -278,6 +278,7 @@ namespace Hecton8.Core.Hardware
             _thermalStatus = rawThermalStatus;
             _temperatureTenthsCelsius = rawTemperature;
             _sequence++;
+            PlatformBatteryWatchdog.SampleAndApply(this);
 
             if (TryResolveThermalSeverity(out NativeArray<byte> thermalSeverity))
                 thermalSeverity[0] = _severity;
@@ -771,11 +772,10 @@ namespace Hecton8.Core.Hardware
         private bool TryResolveThermalSeverity(out NativeArray<byte> severity)
         {
             severity = default;
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            _dataVault = vault;
             if (!_thermalSeverityHandle.IsCreated || !vault.ResolveBuffer(ref _thermalSeverityHandle))
             {
                 _thermalSeverityHandle = vault.GetBufferHandle<byte>(
@@ -792,11 +792,10 @@ namespace Hecton8.Core.Hardware
         private bool TryResolveThermalBlackBox(out NativeArray<ThermalTelemetryEntry> blackBox)
         {
             blackBox = default;
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            _dataVault = vault;
             if (!_blackBoxHandle.IsCreated || !vault.ResolveBuffer(ref _blackBoxHandle))
             {
                 _blackBoxHandle = vault.GetBufferHandle<ThermalTelemetryEntry>(
@@ -839,6 +838,7 @@ namespace Hecton8.Core.Hardware
 
         private void RebindCachedServicesCold()
         {
+            _dataVault = GlobalRegistry.DataVault;
             _foveatedDirector = GlobalRegistry.FoveatedSimulationDirector;
             _dispatcher = GlobalRegistry.Dispatcher;
             _haptics = GlobalRegistry.ToolHaptics;
@@ -849,6 +849,14 @@ namespace Hecton8.Core.Hardware
             if (serviceSlot == GlobalRegistryServiceSlot.FoveatedSimulationDirector)
             {
                 _foveatedDirector = currentService as IFoveatedSimulationDirector;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                _dataVault = currentService as IDataVault;
+                _thermalSeverityHandle = default;
+                _blackBoxHandle = default;
                 return;
             }
 

@@ -389,3 +389,65 @@ Validation:
 - Marine-snow shader scan found no `distance()`, wave intrinsics, groupshared/SV_Group, append/consume buffers, `SetData`, or `GetData`.
 - VFX update-loop scan found no standard `Update`/`LateUpdate`/`FixedUpdate`.
 - `git diff --check` reports only CRLF normalization warnings.
+
+## Entry 2026-05-17 - Dynamic Wake Concurrent Regression Lockdown
+
+What was wrong:
+- The live marine-snow files were overwritten back to the old `_GlobalWake*` path during the next pass.
+- `Hecton_MarineSnow.compute` again contained `_GlobalWakeBuffer[16]`, `_GlobalWakeVectors[16]`, `_GlobalWakeParams`, and `ResolveGlobalWakeFlow`.
+- `HectonMarineSnowRenderer` again contained `GlobalWakeParamsId`, `_boundGlobalWakeParams`, `_debugGlobalWakeCount`, `RefreshGlobalWakeBinding`, and `GlobalWakeCount`.
+- Adjacent `CarveDebrisComputeRenderer` had two Burst job structs with `[StructLayout(Pack = 1)]` and no explicit `Size`, even though those structs contain platform-dependent `NativeArray<T>` handles.
+
+What was done:
+- Repaired the live marine-snow shader back to `StructuredBuffer<float4> _DynamicWakes`, `StructuredBuffer<float4> _DynamicWakeVectors`, `_DynamicWakeParams`, and `ResolveDynamicWakeFlow`.
+- Repaired `HectonMarineSnowRenderer` to bind `_DynamicWakes`, `_DynamicWakeVectors`, and `_DynamicWakeParams` from cached `HectonFluidEngine.TryGetDynamicWakeGpuPayload`.
+- Kept wake params sanitized: low tier clamps to 4 dynamic wake slots, high/ultra can use 16, active count cannot exceed slot limit.
+- Kept blackbox telemetry ABI stable while using the `DynamicWakeCount` name.
+- Removed false packed layout attributes from `AgeCarveDebrisMirrorJob` and `CarveDebrisInjectBatchJob`; binary/GPU-facing VFX structs still carry explicit `Size`.
+
+Cinematic Cheats used:
+- Low/Toaster: 8,000 marine-snow particles, 4 wake slots, radial fake wake behavior, no silt SDF collision, no low-tier 3D flow lookup.
+- High/Ultra: 100,000 marine-snow particles, 16 dynamic wake slots, abyssal flow texture, curl fake, headlight emission, sonar glow, and fog injection.
+
+Exact Microseconds saved:
+- 0 us measured. No profiler/player capture was run.
+- No microsecond savings are claimed. This is correctness, data sovereignty, and platform-layout debt cleanup.
+
+Validation:
+- Did not run dotnet rebuild or Unity platform compile.
+- Delayed static scan found no `GlobalWake`, `_GlobalWake*`, `HECTON_GLOBAL_WAKE`, `ResolveGlobalWakeFlow`, `GlobalWakeParamsId`, `_debugGlobalWake`, or `GlobalWakeCount` in owned marine-snow files.
+- Dynamic wake scan confirms `_DynamicWakes`, `_DynamicWakeVectors`, `_DynamicWakeParams`, `ResolveDynamicWakeFlow`, `DynamicWakeCount`, and `TryGetDynamicWakeGpuPayload`.
+- Delayed VFX struct scan found no `StructLayout(... Pack = 1)` entries without explicit `Size` under `Assets/_Project/Scripts/VFX`.
+- VFX debt scan found no standard update loops, `string.Format`, interpolation `$"`, scene discovery, coroutine, `Resources.Load`, `Camera.main`, legacy `EventBus`, `GlobalSignals.Publish/TryGetLatest`, or managed delegate patterns under `Assets/_Project/Scripts/VFX`.
+- Marine-snow shader scan found no `distance()`, wave intrinsics, groupshared/SV_Group, append/consume buffers, `SetData`, or `GetData`.
+- `git diff --check` reports only CRLF normalization warnings.
+
+## Entry 2026-05-17 - Fluid Advection Dynamic Wake Contract Pass
+
+What was wrong:
+- `Hecton_FluidAdvection.compute` still declared `_GlobalWakeBuffer`, `_GlobalWakeVectors`, and `_GlobalWakeParams`.
+- `HectonFluidEngine.BindFluidAdvectionCompute` already binds `_DynamicWakes`, `_DynamicWakeVectors`, and `_DynamicWakeParams`.
+- `CarveDebrisComputeRenderer` only copied global wake params, so adjacent debris/fluid advection could miss the actual FluidEngine wake buffers.
+
+What was done:
+- `Hecton_FluidAdvection.compute` now consumes `StructuredBuffer<float4> _DynamicWakes`, `StructuredBuffer<float4> _DynamicWakeVectors`, and `_DynamicWakeParams`.
+- `ApplyGlobalWakes` became `ApplyDynamicWakes` and all fluid/debris advection call sites use it.
+- `CarveDebrisComputeRenderer` now resolves the dynamic wake payload through cached `HectonFluidEngine.TryGetDynamicWakeGpuPayload`.
+- Debris advection validates both `GraphicsBuffer` handles and falls back to the existing empty float4 buffer when FluidEngine has no valid payload.
+- Wake params are sanitized locally: low tier clamps to 4 slots, high/ultra can use 16, active count cannot exceed slot limit.
+
+Cinematic Cheats used:
+- Low/Toaster: 4 wake slots for debris, low-tier advection gate, cheap bounded vector math, no extra texture/noise work added.
+- High/Ultra: FluidEngine dynamic wake ring drives debris/fluid advection while marine snow keeps 100,000 particles, 16 wake slots, abyssal flow texture, curl fake, headlight emission, sonar glow, and fog injection.
+
+Exact Microseconds saved:
+- 0 us measured. No profiler/player capture was run.
+- No microsecond savings are claimed. This is a correctness and data-sovereignty repair.
+
+Validation:
+- Did not run dotnet rebuild or Unity platform compile.
+- Delayed static scan found no local `GlobalWake`, `_GlobalWake*`, `HECTON_GLOBAL_WAKE`, `ApplyGlobalWakes`, `ResolveGlobalWakeParamsForCompute`, or `GlobalWakeParamsId` in marine-snow, carve-debris, or fluid-advection owned files.
+- Dynamic wake scan confirms `_DynamicWakes`, `_DynamicWakeVectors`, `_DynamicWakeParams`, `ApplyDynamicWakes`, `TryGetDynamicWakeGpuPayload`, and `ResolveDynamicWakePayloadForCompute`.
+- Marine-snow/fluid-advection shader scans found no `distance()`, wave intrinsics, groupshared/SV_Group, append/consume buffers, `SetData`, or `GetData`.
+- VFX C# debt scan found no standard update loops, `string.Format`, interpolation `$"`, scene discovery, coroutine, `Resources.Load`, `Camera.main`, legacy `EventBus`, `GlobalSignals.Publish/TryGetLatest`, or managed delegate patterns.
+- `git diff --check` reports only CRLF normalization warnings.

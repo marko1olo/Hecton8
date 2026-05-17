@@ -296,3 +296,48 @@ Validation:
 - Targeted scan over migrated files returns no matches for the removed player movement event names, `event System.Action`, local `NativeQueue` ownership, or non-packed structs.
 - Broad AUP/player/physics scan remains clean for explicit `(float3)`, `math.normalize*`, direct sqrt/length/unguarded-rsqrt math, `string.Format`, and standard `Update()`. The only `math.distancesq` hit is a squared-distance API and not a forbidden `math.distance` call.
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:BuildInParallel=false -p:RunAnalyzers=false -p:IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP21\ -p:OutputPath=Temp\bin\AUP21\ -v:minimal -clp:Summary` passes with 0 warnings and 0 errors. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt21.txt`.
+
+## 2026-05-17 Player Presentation Compile Closure
+
+What was wrong:
+- Attempt 22 invalidated the stale green report. The current compile failed on player presentation signal visibility and `DockingAutopilotService.TryEvaluateActiveSpline` using pointer-backed DataVault spline storage from a safe method.
+
+What was done:
+- Kept the packed player presentation signals in the compiled `GlobalSignals.cs` contract surface.
+- Marked `TryEvaluateActiveSpline` as `unsafe`, matching the adjacent acquire/read/write/release spline accessors.
+- Re-ran one isolated no-restore build only after the repair.
+
+Cinematic Cheats used:
+- No new simulation. Presentation remains bounded typed-lane pulses; docking remains zero-copy DataVault spline evaluation.
+
+Exact Microseconds saved:
+- 0.0 us runtime. The fix closes compile/unsafe-context debt without changing the spline math cost.
+
+Validation:
+- Removed-event scan returns no matches in migrated player/audio/VFX/UI files.
+- Non-`Pack = 1` struct scan returns no matches in the touched player presentation and docking scope.
+- `git diff --check` reports only existing LF-to-CRLF warning text for `DockingAutopilotService.cs`.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:BuildInParallel=false -p:RunAnalyzers=false -p:IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP23\ -p:OutputPath=Temp\bin\AUP23\ -v:minimal -clp:Summary` passes with 0 warnings and 0 errors. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt23.txt`.
+
+## 2026-05-17 Water Transition Typed-Lane Closure
+
+What was wrong:
+- `WaterTransitionHandler` still depended on `WaterTransitionEvents`, a fixed-capacity but managed listener registry.
+- `HectonPlayerMovement` still published water transition state through that local registry after the first presentation signal purge.
+
+What was done:
+- Added packed `WaterTransitionSignal` in the compiled `GlobalSignals.cs` contract surface and configured/validated its typed lane.
+- Replaced `PublishWaterTransitionEvent` with `PublishWaterTransitionSignal` in `HectonPlayerMovement`.
+- Converted `WaterTransitionHandler` to consume `ReadOnlySpan<WaterTransitionSignal>` snapshots and preserve the source-id filter plus surface-exit gravity timers.
+
+Cinematic Cheats used:
+- Kept surface-breach gravity as a bounded scalar kick, not a fluid simulation. The signal carries AUP/runtime position for richer consumers without forcing them into the player authority path.
+
+Exact Microseconds saved:
+- 0.0 us measured direct frame gain.
+- Static estimate: neutral-to-sub-microsecond dispatch shift; practical gain is removing the remaining managed listener registry from the player water-transition path.
+
+Validation:
+- `rg -n "WaterTransitionEvent|WaterTransitionEvents|IWaterTransitionEventListener|PublishWaterTransitionEvent"` over `WaterTransitionHandler.cs` and `HectonPlayerMovement.cs` returns no matches.
+- Targeted non-`Pack = 1` struct scan returns no matches for the touched player transition/signal files.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:BuildInParallel=false -p:RunAnalyzers=false -p:IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP24\ -p:OutputPath=Temp\bin\AUP24\ -v:minimal -clp:Summary` passes with 0 warnings and 0 errors. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt24.txt`.

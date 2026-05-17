@@ -112,6 +112,24 @@ namespace Hecton8.Core.Contracts
         public const byte WfcOutpostDoorPowerSignal = 108;
         public const byte WfcOutpostGeneratedSignal = 109;
         public const byte WfcOutpostStateChangedSignal = 110;
-        public const uint SignalLaneRegistryHash = 0x13CABE35u;
+        public const byte AcousticZoneChangedEvent = 111;
+        public const byte DataVaultUpdateSignal = 112;
+        public const byte DirectorAIMusicSignal = 113;
+        public const byte HUDNotificationSignal = 114;
+        public const byte PlayerExhaleSignal = 115;
+        public const byte PlayerFatalPressureSignal = 116;
+        public const byte PlayerFootstepSignal = 117;
+        public const byte PlayerSprintStateSignal = 118;
+        public const byte PlayerTransportBailoutSignal = 119;
+        public const byte PlayerWaterSplashSignal = 120;
+        public const byte PrefabAcousticSignatureSignal = 121;
+        public const byte PrefabLoreLinkSignal = 122;
+        public const byte ScalabilityChangedEvent = 123;
+        public const byte SeismicSignal = 124;
+        public const byte ToolAcousticSignal = 125;
+        public const byte WaterTransitionSignal = 126;
+        public const byte CameraJuiceImpactSignal = 127;
+        public const uint ScalabilityChangedEventStableHash = 0x53434C54u;
+        public const uint SignalLaneRegistryHash = 0x83E4FE14u;
     }
 }

@@ -683,7 +683,8 @@ namespace Hecton8.Core.Content
                 if (!retainAsBiomeCache)
                 {
 #if UNITY_ADDRESSABLES_EXIST
-                    TryReleaseTrackedBundleHandle(hash);
+                    if (!TryReleaseTrackedBundleHandle(hash))
+                        LogBundleHandleReleaseMiss(hash);
 #endif
                     _bundleRefs.Remove(hash);
                 }
@@ -811,6 +812,10 @@ namespace Hecton8.Core.Content
                     LogVfxPrewarmLedgerFull(true);
                     Addressables.Release(handle);
                 }
+                else
+                {
+                    LogInvalidVfxPrewarmHandle(i, true);
+                }
             }
 
             for (int i = 0; i < vfxPrewarmManifest.ComputeShaderCount && dispatched < ContentVfxPrewarmManifest.MaxEntries; i++)
@@ -829,6 +834,10 @@ namespace Hecton8.Core.Content
                 {
                     LogVfxPrewarmLedgerFull(false);
                     Addressables.Release(handle);
+                }
+                else
+                {
+                    LogInvalidVfxPrewarmHandle(i, false);
                 }
             }
 #endif
@@ -1017,7 +1026,8 @@ namespace Hecton8.Core.Content
             if (_bundleRefs.TrySelectOldestUnusedBiomeCache(out uint hash))
             {
 #if UNITY_ADDRESSABLES_EXIST
-                TryReleaseTrackedBundleHandle(hash);
+                if (!TryReleaseTrackedBundleHandle(hash))
+                    LogBundleHandleReleaseMiss(hash);
 #endif
                 _bundleRefs.Remove(hash);
                 VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
@@ -1591,6 +1601,13 @@ namespace Hecton8.Core.Content
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogBundleHandleReleaseMiss(uint hash)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] No tracked Addressables bundle handle during release for hash 0x" + hash.ToString("X8") + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidBundleHandle(uint hash)
         {
             Debug.LogError("[ContentAuthorityRuntime] Invalid Addressables bundle handle for hash 0x" + hash.ToString("X8") + ".");
@@ -1640,6 +1657,14 @@ namespace Hecton8.Core.Content
         {
             Debug.LogError("[ContentAuthorityRuntime] VFX prewarm handle ledger full kind=" +
                            (particle ? "particle" : "compute") + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidVfxPrewarmHandle(int index, bool particle)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] VFX prewarm returned invalid Addressables handle kind=" +
+                           (particle ? "particle" : "compute") + " index=" + index + ".");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

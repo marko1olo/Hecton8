@@ -465,7 +465,16 @@ namespace Hecton8.Gameplay
 
         public override void UsePrimary(float deltaTime)
         {
-            if (!TryBeginToolUse(deltaTime, true))
+            float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
+            if (safeDeltaTime <= 0f)
+            {
+                _isRepairing = false;
+                UpdateBeamMiss();
+                InvalidateDiagnosisCache();
+                return;
+            }
+
+            if (!TryBeginToolUse(safeDeltaTime, true))
             {
                 _isRepairing = false;
                 if (!_noTargetReportedThisUse)
@@ -495,7 +504,7 @@ namespace Hecton8.Gameplay
             }
 
             BaseAirlock airlock = ResolveRepairAirlock(_hit.collider);
-            if (airlock != null && airlock.TryApplyWeldOverride(deltaTime, _hit.point))
+            if (airlock != null && airlock.TryApplyWeldOverride(safeDeltaTime, _hit.point))
             {
                 UpdateBeamHit(_hit.point, _hit.normal);
                 ClearIntegrityDiagnostic();
@@ -503,7 +512,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (TryHandleSubmarineDamageControlHit(deltaTime))
+            if (TryHandleSubmarineDamageControlHit(safeDeltaTime))
             {
                 ClearIntegrityDiagnostic();
                 InvalidateDiagnosisCache();
@@ -514,9 +523,10 @@ namespace Hecton8.Gameplay
             if (module != null)
             {
                 float beforeIntegrity = module.CurrentIntegrity;
+                float beforeMaxIntegrity = module.MaxIntegrity;
                 bool beforeFlooded = module.IsFlooded;
 
-                if (beforeIntegrity >= module.MaxIntegrity && !beforeFlooded)
+                if (IsIntegrityAtMax(beforeIntegrity, beforeMaxIntegrity) && !beforeFlooded)
                 {
                     if (!_healthyTargetReportedThisUse)
                     {
@@ -530,7 +540,7 @@ namespace Hecton8.Gameplay
                     return;
                 }
 
-                float repairAmount = ResolveRuntimeRepairPowerPerSecond() * deltaTime;
+                float repairAmount = ResolveRuntimeRepairPowerPerSecond() * safeDeltaTime;
                 ToolEffectEvents.RaiseEffectApplied(
                     EffectType.Weld,
                     module,
@@ -558,8 +568,8 @@ namespace Hecton8.Gameplay
                     _activeRepairReportedThisUse = true;
                 }
 
-                if ((beforeIntegrity < module.MaxIntegrity || beforeFlooded) &&
-                    module.CurrentIntegrity >= module.MaxIntegrity &&
+                if ((IsIntegrityBelowMax(beforeIntegrity, beforeMaxIntegrity) || beforeFlooded) &&
+                    IsModuleIntegrityAtMax(module) &&
                     !module.IsFlooded)
                 {
                     PublishInfoMessage(ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_RESTORED, "REPAIR TOOL - MODULE RESTORED"));
@@ -579,15 +589,17 @@ namespace Hecton8.Gameplay
                 if (voxelVolume != null)
                 {
                     double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_hit.point);
-                    if (voxelVolume.ApplyRepairWeldDda(
-                        absoluteHitPoint,
-                        _cachedTransform.forward,
-                        ResolveRuntimeRepairPowerNormalized(),
-                        ResolveRuntimeRepairRange()))
+                    if (IsFiniteVector(_hit.point) &&
+                        math.all(math.isfinite(absoluteHitPoint)) &&
+                        voxelVolume.ApplyRepairWeldDda(
+                            absoluteHitPoint,
+                            ResolveFiniteDirection(_cachedTransform.forward, Vector3.forward),
+                            ResolveRuntimeRepairPowerNormalized(),
+                            ResolveRuntimeRepairRange()))
                     {
                         UpdateBeamHit(_hit.point, _hit.normal);
                         ClearIntegrityDiagnostic();
-                        QueueToolHapticFeedback(ResolveRuntimeRepairPowerPerSecond(), math.max(1f, repairSpeed));
+                        QueueToolHapticFeedback(ResolveRuntimeRepairPowerPerSecond(), FiniteAtLeast(repairSpeed, 1f));
                         InvalidateDiagnosisCache();
                         return;
                     }
@@ -918,6 +930,10 @@ namespace Hecton8.Gameplay
             if (damageTarget == null)
                 return false;
 
+            float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
+            if (safeDeltaTime <= 0f)
+                return false;
+
             float repairPowerPerSecond = ResolveRuntimeRepairPowerPerSecond();
             float intensity01 = ResolveRuntimeRepairPowerNormalized();
             int repairRoomId = -1;
@@ -927,20 +943,20 @@ namespace Hecton8.Gameplay
 
             bool dentChanged = TryRepairVaultHullDents(
                 _hit.point,
-                deltaTime,
+                safeDeltaTime,
                 repairPowerPerSecond,
                 intensity01,
                 _cachedSubmarineDamageTargetTransform,
                 repairRoomId,
                 out _,
                 out _);
-            bool breachRepairQueued = damageTarget.TryQueueRepairHit(_hit.point, deltaTime, repairPowerPerSecond, intensity01);
+            bool breachRepairQueued = damageTarget.TryQueueRepairHit(_hit.point, safeDeltaTime, repairPowerPerSecond, intensity01);
             if (!dentChanged && !breachRepairQueued)
                 return false;
 
             UpdateBeamHit(_hit.point, _hit.normal);
             PublishRepairSparkSignal(_hit.point, intensity01);
-            QueueToolHapticFeedback(repairPowerPerSecond, math.max(1f, repairSpeed));
+            QueueToolHapticFeedback(repairPowerPerSecond, FiniteAtLeast(repairSpeed, 1f));
 
             if (!_activeRepairReportedThisUse)
             {
@@ -983,6 +999,9 @@ namespace Hecton8.Gameplay
 
         private void PublishRepairSparkSignal(Vector3 worldPoint, float intensity01)
         {
+            if (!IsFiniteVector(worldPoint))
+                return;
+
             float safeIntensity01 = math.isfinite(intensity01) ? math.saturate(intensity01) : 0f;
             ushort sparkQuantity = ResolveRepairSparkQuantity(safeIntensity01);
             bool lowTier = IsLowRepairSparkTier();
@@ -991,6 +1010,9 @@ namespace Hecton8.Gameplay
                 flags |= DebrisSpawnSignal.FlagComputeShard;
 
             double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
+            if (!math.all(math.isfinite(absolute)))
+                return;
+
             DebrisSpawnSignal signal = new DebrisSpawnSignal
             {
                 PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(absolute),
@@ -1505,23 +1527,25 @@ namespace Hecton8.Gameplay
 
         private static float PackHullDentRadiusDepth(float radius, float depth)
         {
+            float safeRadius = math.min(FiniteNonNegativeOrZero(radius), 15.9375f);
+            float safeDepth = math.saturate(FiniteNonNegativeOrZero(depth));
             int radiusQ = Mathf.Clamp(
-                Mathf.RoundToInt(math.clamp(radius, 0f, 15.9375f) * HullDentRadiusQuantizationStepsPerMeter),
+                Mathf.RoundToInt(safeRadius * HullDentRadiusQuantizationStepsPerMeter),
                 0,
                 255);
-            int depthQ = Mathf.Clamp(Mathf.RoundToInt(math.saturate(depth) * 255f), 0, 255);
+            int depthQ = Mathf.Clamp(Mathf.RoundToInt(safeDepth * 255f), 0, 255);
             return (depthQ << 8) | radiusQ;
         }
 
         private static float UnpackHullDentRadius(float packed)
         {
-            int packedInt = Mathf.Max(0, Mathf.RoundToInt(math.max(0f, packed)));
+            int packedInt = Mathf.Max(0, Mathf.RoundToInt(SanitizePackedHullDentValue(packed)));
             return (packedInt & 255) * InvHullDentRadiusQuantizationStepsPerMeter;
         }
 
         private static float UnpackHullDentDepth(float packed)
         {
-            int packedInt = Mathf.Max(0, Mathf.RoundToInt(math.max(0f, packed)));
+            int packedInt = Mathf.Max(0, Mathf.RoundToInt(SanitizePackedHullDentValue(packed)));
             return ((packedInt >> 8) & 255) * InvHullDentDepthQuantizationSteps;
         }
 
@@ -1558,6 +1582,16 @@ namespace Hecton8.Gameplay
         }
 
         private static float FiniteNonNegativeOrZero(float value)
+        {
+            return math.isfinite(value) && value > 0f ? value : 0f;
+        }
+
+        private static float FiniteAtLeast(float value, float minimum)
+        {
+            return math.isfinite(value) && value > minimum ? value : minimum;
+        }
+
+        private static float SanitizePackedHullDentValue(float value)
         {
             return math.isfinite(value) && value > 0f ? value : 0f;
         }
@@ -1612,9 +1646,7 @@ namespace Hecton8.Gameplay
             int cursor = 0;
             s_integrityDiagnosticPrefixChars.CopyTo(_integrityDiagnosticBuffer, cursor);
             cursor += s_integrityDiagnosticPrefixChars.Length;
-            int integrityPercent = module.MaxIntegrity > 0.01f
-                ? (int)(math.saturate(module.CurrentIntegrity / module.MaxIntegrity) * 100f + 0.5f)
-                : 0;
+            int integrityPercent = ResolveModuleIntegrityPercent(module);
             if (!integrityPercent.TryFormat(_integrityDiagnosticBuffer.AsSpan(cursor), out int written))
                 return false;
 
@@ -1669,14 +1701,50 @@ namespace Hecton8.Gameplay
             return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, ResolveRuntimeRepairRange(), repairMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
+        private static float ResolveModuleIntegrity01(BaseModule module)
+        {
+            if (module == null)
+                return 0f;
+
+            float current = module.CurrentIntegrity;
+            float max = module.MaxIntegrity;
+            if (!float.IsFinite(current) || !float.IsFinite(max) || max <= 0.01f)
+                return 0f;
+
+            return math.saturate(current / max);
+        }
+
+        private static int ResolveModuleIntegrityPercent(BaseModule module)
+        {
+            return (int)(ResolveModuleIntegrity01(module) * 100f + 0.5f);
+        }
+
+        private static bool IsModuleIntegrityAtMax(BaseModule module)
+        {
+            return module != null && IsIntegrityAtMax(module.CurrentIntegrity, module.MaxIntegrity);
+        }
+
+        private static bool IsIntegrityAtMax(float current, float max)
+        {
+            return float.IsFinite(current) &&
+                   float.IsFinite(max) &&
+                   max > 0.01f &&
+                   current >= max;
+        }
+
+        private static bool IsIntegrityBelowMax(float current, float max)
+        {
+            return float.IsFinite(max) &&
+                   max > 0.01f &&
+                   (!float.IsFinite(current) || current < max);
+        }
+
         private static ServiceDiagnosis BuildDiagnosis(BaseModule module)
         {
-            float integrity01 = module.MaxIntegrity > 0f
-                ? math.saturate(module.CurrentIntegrity / module.MaxIntegrity)
-                : 0f;
+            float integrity01 = ResolveModuleIntegrity01(module);
             int integrityPercent = (int)(integrity01 * 100f + 0.5f);
 
-            if (module.IsFlooded && !module.HasPower && module.CurrentIntegrity >= module.MaxIntegrity)
+            if (module.IsFlooded && !module.HasPower && IsModuleIntegrityAtMax(module))
             {
                 return new ServiceDiagnosis
                 {

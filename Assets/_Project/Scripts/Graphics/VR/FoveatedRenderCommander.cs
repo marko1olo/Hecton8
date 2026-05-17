@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -56,6 +57,7 @@ namespace Hecton8.Graphics.VR
         private const ushort FlagHysteresisHold = 1 << 11;
         private const ushort FlagGazeGraceHold = 1 << 12;
         private const ushort FlagQuestClassificationPending = 1 << 13;
+        private const ushort FlagFreshGpuTimeEscalation = 1 << 14;
         private const string RuntimeObjectName = "[FoveatedRenderCommander]";
         private const string DumpFileName = "Dump_FOVEATED_RENDER_COMMANDER.bin";
 
@@ -451,7 +453,7 @@ namespace Hecton8.Graphics.VR
             bool thermalPressure =
                 _thermalSeverity >= (byte)HardwareThermalSeverity.Throttling ||
                 _gpuUtil01 >= GpuPressureHighThreshold ||
-                _latestGpuTimeMs >= GpuTimeHighPressureMs;
+                IsGpuTimePressureActive(_latestGpuTimeMs);
             bool systemPressure = _systemStress01 >= StressMediumThreshold || _pressureLevel >= 2 || _foveatedPressureTier >= 2;
             ushort flags = 0;
 
@@ -540,6 +542,39 @@ namespace Hecton8.Graphics.VR
             _targetFlags = targetFlags;
 
             bool applied = ApplyDisplayState(targetLevel, targetFlags, mode, force, out float appliedLevel, out int displayCount);
+            if (!thermalPressure && IsGpuTimePressureActive(_latestGpuTimeMs))
+            {
+                thermalPressure = true;
+                flags = (ushort)(flags & ~(FlagApplied | FlagNonFinite | FlagHighEndFixedDisabled | FlagHysteresisHold));
+                flags |= FlagThermalPressure;
+                flags |= FlagFreshGpuTimeEscalation;
+
+                levelCode = ApplyTargetLevelHysteresis(
+                    ResolveTargetLevelCode(
+                        _systemStress01,
+                        _pressureLevel,
+                        _foveatedPressureTier,
+                        quest2Runtime,
+                        true),
+                    true,
+                    out bool gpuTimeHysteresisHeld);
+                if (gpuTimeHysteresisHeld)
+                    flags |= FlagHysteresisHold;
+
+                targetLevel = ResolveLevel01(levelCode);
+                mode = gazeTracked ? FoveatedRenderMode.GazeTracked : FoveatedRenderMode.Fixed;
+                targetFlags = gazeTracked
+                    ? XRDisplaySubsystem.FoveatedRenderingFlags.GazeAllowed
+                    : XRDisplaySubsystem.FoveatedRenderingFlags.None;
+
+                _targetLevelCode = levelCode;
+                _targetLevel01 = targetLevel;
+                _targetMode = mode;
+                _targetFlags = targetFlags;
+
+                applied = ApplyDisplayState(targetLevel, targetFlags, mode, true, out appliedLevel, out displayCount);
+            }
+
             if (applied)
                 flags |= FlagApplied;
             bool invalidState = !math.isfinite(appliedLevel) ||
@@ -1264,6 +1299,11 @@ namespace Hecton8.Graphics.VR
         private static float Sanitize01(float value)
         {
             return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static bool IsGpuTimePressureActive(float gpuTimeMs)
+        {
+            return math.isfinite(gpuTimeMs) && gpuTimeMs >= GpuTimeHighPressureMs;
         }
 
         private static byte MaxByte(byte a, byte b)

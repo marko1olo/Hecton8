@@ -25,6 +25,7 @@ using System.Threading;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -42,7 +43,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-110)]
-    public sealed class SuitUpgradeManager : MonoBehaviour, ISaveable, INarrativeEventListener, IGlobalRegistryHotSwapListener
+    public sealed class SuitUpgradeManager : MonoBehaviour, ISaveable, INarrativeEventListener, IGlobalRegistryHotSwapListener, ILateFrameTickable
     {
         // ----------------------------------------------------------
         //  INSPECTOR
@@ -95,11 +96,13 @@ namespace Hecton8.Gameplay
         private SurvivalStats _runtimeStats;
         private uint _breakOrdinal;
         private bool _serviceRegistered;
-        private bool _inventorySubscribed;
+        private bool _lateFrameRegistered;
         private bool _inventorySyncQueued;
         private bool _inventorySyncRunning;
         private bool _hotSwapRegistered;
         private PlayerInventory _subscribedInventory;
+        private uint _inventorySignalHash;
+        private uint _lastInventorySignalRevision;
         private int _lastInventoryVersion = -1;
         private ulong _inventoryUpgradeMask;
         private ulong _upgradeMask;
@@ -121,7 +124,7 @@ namespace Hecton8.Gameplay
             public string UpgradeId;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = TelemetryEntrySizeBytes)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = TelemetryEntrySizeBytes)]
         private struct SuitUpgradeTelemetryEntry
         {
             public uint FrameIndex;
@@ -240,6 +243,7 @@ namespace Hecton8.Gameplay
                 return;
 
             TryRegisterHotSwapListener();
+            TryRegisterLateFrame();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
@@ -252,6 +256,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             _inventorySyncQueued = false;
+            TryUnregisterLateFrame();
             UnbindInventory();
             TryUnregisterHotSwapListener();
 
@@ -264,6 +269,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
             _resolverResultHandle = default;
@@ -316,6 +322,8 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
+            TryRegisterLateFrame();
+
             if (serviceSlot != GlobalRegistryServiceSlot.PlayerInventory)
                 return;
 
@@ -342,6 +350,23 @@ namespace Hecton8.Gameplay
 
             Hecton8.Core.GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying || Hecton8.Core.GlobalRegistry.Dispatcher == null)
+                return;
+
+            _lateFrameRegistered = Hecton8.Core.GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            Hecton8.Core.GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _lateFrameRegistered = false;
         }
 
 #if UNITY_EDITOR
@@ -805,25 +830,71 @@ namespace Hecton8.Gameplay
                 return;
 
             _subscribedInventory = inventory;
-            _subscribedInventory.InventoryChanged += HandleInventoryChanged;
-            _inventorySubscribed = true;
+            _inventorySignalHash = ResolveInventorySignalHash(inventory);
+            _lastInventorySignalRevision = inventory.InventoryVersion > 0
+                ? unchecked((uint)inventory.InventoryVersion)
+                : 0u;
             _lastInventoryVersion = -1;
         }
 
         private void UnbindInventory()
         {
-            if (_inventorySubscribed && _subscribedInventory != null)
-                _subscribedInventory.InventoryChanged -= HandleInventoryChanged;
-
             _subscribedInventory = null;
-            _inventorySubscribed = false;
+            _inventorySignalHash = 0u;
+            _lastInventorySignalRevision = 0u;
             _lastInventoryVersion = -1;
             _inventoryUpgradeMask = 0UL;
         }
 
-        private void HandleInventoryChanged()
+        public void LateFrameTick()
         {
-            QueueInventoryMaskRebuild();
+            if (!isActiveAndEnabled)
+                return;
+
+            TryBindInventory();
+            if (ConsumeInventoryChangedSignals())
+                QueueInventoryMaskRebuild();
+        }
+
+        private bool ConsumeInventoryChangedSignals()
+        {
+            PlayerInventory inventory = _subscribedInventory != null ? _subscribedInventory : GlobalRegistry.PlayerInventoryRuntime;
+            uint inventoryHash = ResolveInventorySignalHash(inventory);
+            if (inventoryHash == 0u)
+                return false;
+
+            if (inventoryHash != _inventorySignalHash)
+            {
+                _inventorySignalHash = inventoryHash;
+                _lastInventorySignalRevision = inventory != null && inventory.InventoryVersion > 0
+                    ? unchecked((uint)inventory.InventoryVersion)
+                    : 0u;
+            }
+
+            ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+            bool changed = false;
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly InventoryChangedSignal signal = ref signals[i];
+                if (signal.InventoryHash != inventoryHash ||
+                    signal.Revision == 0u ||
+                    (_lastInventorySignalRevision != 0u && signal.Revision <= _lastInventorySignalRevision))
+                {
+                    continue;
+                }
+
+                _lastInventorySignalRevision = signal.Revision;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static uint ResolveInventorySignalHash(PlayerInventory inventory)
+        {
+            return inventory != null && inventory.gameObject != null
+                ? unchecked((uint)EntityId.ToULong(inventory.gameObject.GetEntityId()))
+                : 0u;
         }
 
         private void QueueInventoryMaskRebuild()

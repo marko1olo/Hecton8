@@ -5,6 +5,7 @@ Snapshot: 2026-05-16T03:56+04:00
 Agent: COMPUTE_LOGISTICS_AUDITOR
 Source: `C:\Users\danat\.codex\sessions/**/*.jsonl`, `C:\Users\danat\.codex\state_5.sqlite`, `Assets/_Project/Scripts/**/*.cs`
 Pricing reference: official OpenAI API pricing, `https://openai.com/api/pricing/`, checked during this audit.
+Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 ## Boundary
 
@@ -424,5 +425,32 @@ This is a SQLite live pulse only. It uses the latest 04:46 LOC denominator and d
 | Tokens per script byte | 1,138.73 |
 
 Top burners: `Enforce DataVault statelessness` 460,086; `CONTENT_AUTHORITY_DICTATOR` 404,169; `Move reports to batch006` 328,033; `Build ballast PID` 284,567; `Improve bot memory and CRM` 171,246.
+
+STATUS: AUDIT COMPLETE.
+
+## H-Phi Live Rebase - 2026-05-17T11:42+04:00
+
+This section adds the latest H-Phi/token window after the large post-04:12 source drift.
+
+| Metric | Value |
+|---|---:|
+| C# files modified after 04:12 | 113 |
+| Current meaningful LOC | 854,943 |
+| Current script bytes | 46,232,512 |
+| Runtime H-Phi risk | 0.005378664 |
+| Runtime H-Phi narrow | 0.075881112 |
+| Data sovereignty | 0.141543476 |
+| Delta vs 04:12 Runtime risk | +0.000519851 |
+| Delta vs 04:12 Runtime narrow | +0.005594882 |
+| Token window total | 501,495,243 |
+| Token window cache-aware cost | USD 397.22 |
+| Token window no-cache equivalent | USD 2,548.92 |
+| Token window average | 18,578.71 tokens/sec |
+| 11:38 SQLite total | 51,066,572,323 |
+| 11:38 live pulse | 3,001,335 tokens in 30.099099 sec |
+| 11:38 live rate | 99,715.11 tokens/sec |
+| Current energy estimate | 2,553.33 MWh |
+| Tokens per meaningful LOC | 59,730.97 |
+| Tokens per script byte | 1,104.56 |
 
 STATUS: AUDIT COMPLETE.

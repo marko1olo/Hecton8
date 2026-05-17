@@ -5,6 +5,7 @@ Snapshot: 2026-05-16T03:56+04:00
 Scope: HECTON-8 only. Timaert ignored.
 Evidence: local filesystem, `.codex` SQLite, `.codex` JSONL, static LOC scanner, official OpenAI pricing page.
 Invoice status: NOT AN INVOICE. This is local telemetry accounting.
+Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 ## Current Hard Numbers
 
@@ -54,6 +55,8 @@ Cache is carrying the bill. At current model-aware public-price assumptions, cac
 - Detailed 2026-05-16 ledger: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_BURN_RATE_LEDGER.md`
 - Live delta: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_DELTA_20260516.md`
 - Recent 2026-05-17 JSONL rate audit: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_RECENT_JSONL_RATE_AUDIT_20260517.md`
+- H-Phi search index: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_SEARCH_INDEX_20260517.md`
+- H-Phi rebase 2026-05-17 11:42: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1142.md`
 - Post-04:12 token live rebase: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_LIVE_REBASE_20260517_0446.md`
 - 05:34 SQLite live pulse: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_PULSE_20260517_0534.md`
 - Log DB audit: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LOG_DB_AUDIT.md`
@@ -344,4 +347,30 @@ SQLite live sample: 2026-05-17T05:34:08+04:00 to 05:34:38+04:00.
 Top live burners: `Enforce DataVault statelessness` 460,086; `CONTENT_AUTHORITY_DICTATOR` 404,169; `Move reports to batch006` 328,033; `Build ballast PID` 284,567; `Improve bot memory and CRM` 171,246.
 
 Detailed file: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_PULSE_20260517_0534.md`.
+
+## H-Phi Rebase 2026-05-17T11:42+04:00
+
+Reason for new H-Phi scan: 113 C# files changed after 04:12, touching 10,799,862 bytes. Current first-party surface: 1,585 files, 1,035,315 physical LOC, 854,943 meaningful LOC, 46,232,512 script bytes.
+
+| Metric | Value |
+|---|---:|
+| Runtime H-Phi risk | 0.005378664 |
+| Runtime H-Phi narrow | 0.075881112 |
+| Data sovereignty | 0.141543476 |
+| Memory alignment | 0.536097561 |
+| Delta vs 04:12 Runtime risk | +0.000519851 |
+| Delta vs 04:12 Runtime narrow | +0.005594882 |
+| Delta vs 04:12 Data sovereignty | +0.009319933 |
+| DataVault refs delta | +104 |
+| Owner-blocked NativeArray refs delta | -162 |
+| Primary native ownership risk delta | -175 |
+| Primary managed runtime risk delta | +20 |
+
+Token window 04:12-11:42: `501,495,243` tokens, `USD 397.22` cache-aware, `USD 2,548.92` no-cache, `95.6619%` cached input, average `18,578.71 tokens/sec`.
+
+SQLite live pulse 11:38: current total `51,066,572,323` tokens; 30-second burn `3,001,335`; rate `99,715.11 tokens/sec`; estimated current cache-aware total `USD 34,756.09`; current energy estimate `2,553.33 MWh`; tokens per meaningful LOC `59,730.97`.
+
+Marginal H-Phi ROI vs 04:12: `964,690,350` tokens per `+0.001` Runtime H-Phi risk, `USD 764.11` per `+0.001`.
+
+Detailed file: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1142.md`.
 

@@ -423,3 +423,67 @@ Key numbers:
 - Top live burners: `Enforce DataVault statelessness`, `CONTENT_AUTHORITY_DICTATOR`, `Move reports to batch006`, `Build ballast PID`, `Improve bot memory and CRM`.
 
 STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 H-Phi Live Rebase 11:42
+
+What was wrong: The 04:12 H-Phi artifact was stale after a large source drift. Continuing to quote it would understate both architecture gains and new managed runtime debt.
+
+What was done:
+
+- Counted post-04:12 C# source drift: 113 files, 10,799,862 touched bytes.
+- Re-scanned current first-party LOC.
+- Ran `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`.
+- Wrote `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_CURRENT_20260517_1138.json`.
+- Parsed JSONL token usage between 04:12 and 11:41:52.
+- Ran a 30-second SQLite live pulse at 11:38.
+- Wrote `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1142.md`.
+- Updated root brief, audit index, token ledger, dominance report, status, rationale, and this log.
+
+Cinematic cheats used: None. This is static architecture/token accounting.
+
+Exact microseconds saved: H-Phi was not rerun blindly. The scan was gated by source drift evidence and then cost 181,218 ms.
+
+Key numbers:
+
+- Runtime H-Phi risk: 0.005378664.
+- Runtime H-Phi narrow: 0.075881112.
+- Data sovereignty: 0.141543476.
+- Delta vs 04:12: +0.000519851 risk, +0.005594882 narrow, +104 DataVault refs, -162 owner-blocked NativeArray refs.
+- Regressions in same interval: +20 ManagedFormatSurface, +20 PrimaryManagedRuntimeRisk.
+- Token window 04:12-11:42: 501,495,243 tokens.
+- Cache-aware cost between H-Phi artifacts: USD 397.22.
+- No-cache equivalent: USD 2,548.92.
+- Marginal efficiency: 964,690,350 tokens per +0.001 Runtime H-Phi risk.
+- SQLite current tokens: 51,066,572,323.
+- 11:38 live rate: 99,715.11 tokens/sec.
+- Meaningful LOC: 854,943.
+- Tokens per meaningful LOC: 59,730.97.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 H-Phi Search Index And Keywords
+
+What was wrong: H-Phi / ash-fi was present in many reports under inconsistent spellings. Future search would miss evidence unless the reader knew the exact filename or spelling.
+
+What was done:
+
+- Created `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_SEARCH_INDEX_20260517.md`.
+- Added a standard keyword alias line to active H-Phi compute docs.
+- Preserved the latest score timeline and token ROI intervals in one searchable file.
+- Updated brief, audit index, token ledger, dominance report, status, rationale, and this log.
+
+Cinematic cheats used: None. This is documentation/search indexing.
+
+Exact microseconds saved: No runtime claim. The saving is future audit lookup time: one `rg "ash-fi|H-Phi|token-H-Phi-ROI"` now reaches the canonical trail.
+
+Key numbers indexed:
+
+- Latest Runtime H-Phi risk: 0.005378664.
+- Latest Runtime H-Phi narrow: 0.075881112.
+- Latest Data sovereignty: 0.141543476.
+- Latest current SQLite tokens: 51,066,572,323.
+- Cumulative tracked H-Phi token spend from 2026-05-15 22:46 to 2026-05-17 11:42: 5,567,902,795.
+- Cumulative cache-aware H-Phi cost: USD 4,312.58.
+- Cumulative tokens per +0.001 Runtime H-Phi risk: 1,174,025,744.
+
+STATUS: AUDIT COMPLETE.

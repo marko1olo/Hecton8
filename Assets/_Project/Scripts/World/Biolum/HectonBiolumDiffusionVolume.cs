@@ -1,5 +1,6 @@
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -14,9 +15,13 @@ namespace Hecton8.Biolum
     public sealed class HectonBiolumDiffusionVolume : MonoBehaviour, ITickable, IUpdatable, IOriginShiftListener
     {
         private const int DefaultResolution = 64;
-        private const int ThreadGroupSize = 4;
+        private const float DefaultVolumeWorldSize = 72f;
+        private const uint DefaultThreadGroupSize = 4u;
+        private const ulong MaxPortableComputeThreadsPerGroup = 1024ul;
         private const int MaxTrackedZones = 32;
         private const int MaxGlowShaderPoints = 16;
+        private const float MaxBiolumHdrIntensity = 10f;
+        private const double CascadeTimeModulo = 65536d;
         private const float GlowPositionHashScale = 20f;
         private const float GlowRangeHashScale = 16f;
         private const float GlowColorHashScale = 255f;
@@ -42,6 +47,7 @@ namespace Hecton8.Biolum
         private static readonly int _GlowPointColorIntensityId = Shader.PropertyToID("_HectonGlowPointColorIntensity");
         private static readonly int _GlowPointParamsId = Shader.PropertyToID("_HectonGlowPointParams");
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
         private struct BiolumPointGpuData
         {
             public Vector4 PositionRange;
@@ -99,9 +105,19 @@ namespace Hecton8.Biolum
         private int _clearKernel = -1;
         private int _diffuseKernel = -1;
         private int _injectKernel = -1;
+        private uint _clearThreadGroupSizeX = DefaultThreadGroupSize;
+        private uint _clearThreadGroupSizeY = DefaultThreadGroupSize;
+        private uint _clearThreadGroupSizeZ = DefaultThreadGroupSize;
+        private uint _diffuseThreadGroupSizeX = DefaultThreadGroupSize;
+        private uint _diffuseThreadGroupSizeY = DefaultThreadGroupSize;
+        private uint _diffuseThreadGroupSizeZ = DefaultThreadGroupSize;
+        private uint _injectThreadGroupSizeX = DefaultThreadGroupSize;
+        private uint _injectThreadGroupSizeY = DefaultThreadGroupSize;
+        private uint _injectThreadGroupSizeZ = DefaultThreadGroupSize;
         private Transform _playerTransform;
         private HectonBiolumManager _biolumManager;
         private Vector3 _lastVolumeCenter;
+        private double _cascadeTimeSeconds;
         private int _lastUploadedPointCount = -1;
         private int _lastPublishedGlowCount = -1;
         private int _lastInvalidGlowTelemetryFrame = -1;
@@ -173,6 +189,7 @@ namespace Hecton8.Biolum
             if (deltaTime < 0f)
                 return;
 
+            float safeDeltaTime = SanitizeDelta(deltaTime);
             ResolveDependencies();
             EnsureResources();
             if (_playerTransform == null || _biolumManager == null || _volumeA == null || _volumeB == null || _pointBuffer == null)
@@ -183,48 +200,66 @@ namespace Hecton8.Biolum
             }
 
             Vector3 volumeCenter = _playerTransform.position;
+            if (!MathGuard.IsFinite(volumeCenter))
+            {
+                ReportInvalidGlowInput();
+                Shader.SetGlobalFloat(_GlobalActiveId, 0f);
+                PublishGlowPointGlobals(0, force: true);
+                return;
+            }
+
             _debugVolumeCenter = volumeCenter;
 
             int pointCount = CollectNearbyPoints(volumeCenter);
             _debugPointCount = pointCount;
             PublishGlowPointGlobals(pointCount);
 
-            float worldTexelSize = volumeWorldSize / math.max(1, volumeResolution);
+            int safeVolumeResolution = math.clamp(volumeResolution, 32, 64);
+            float safeVolumeWorldSize = SanitizeGlowPositive(volumeWorldSize, DefaultVolumeWorldSize);
+            float invResolution = math.rcp(math.max(1f, (float)safeVolumeResolution));
+            float worldTexelSize = safeVolumeWorldSize * invResolution;
             Vector3 centerOffset = _hasLastVolumeCenter ? volumeCenter - _lastVolumeCenter : Vector3.zero;
             float centerDeltaSq = _hasLastVolumeCenter ? centerOffset.sqrMagnitude : 0f;
-            float clearDistance = volumeWorldSize * 0.5f;
+            float clearDistance = safeVolumeWorldSize * 0.5f;
             if (_hasLastVolumeCenter && centerDeltaSq >= clearDistance * clearDistance)
                 _needsClear = true;
 
             float centerDelta = centerDeltaSq > 0.000001f ? EstimateLength3D(centerOffset) : 0f;
             float motionDecayBoost = math.saturate(centerDelta / math.max(worldTexelSize * 4f, 0.001f));
-            float resolvedDecayRate = math.saturate(decayRate + motionDecayBoost * 0.45f);
+            float safeDecayRate = math.saturate(SanitizeGlowNonNegative(decayRate, 0.08f));
+            float resolvedDecayRate = math.saturate(safeDecayRate + motionDecayBoost * 0.45f);
+            float cascadeTime = ResolveCascadeTimeSeconds(safeDeltaTime);
+            float safeInjectionStrength = math.min(SanitizeGlowNonNegative(injectionStrength, 1.2f), MaxBiolumHdrIntensity);
+            float safeDiffusionStrength = math.saturate(SanitizeGlowNonNegative(diffusionStrength, 0.24f));
+            float safeCascadeSpikeThreshold = math.saturate(SanitizeGlowNonNegative(cascadeSpikeThreshold, 0.32f));
+            float safeCascadePropagationGain = math.min(SanitizeGlowNonNegative(cascadePropagationGain, 0.75f), MaxBiolumHdrIntensity);
+            float safeCascadeWaveSpeed = math.min(SanitizeGlowNonNegative(cascadeWaveSpeed, 4.4f), 64f);
 
             Matrix4x4 worldToLocal = Matrix4x4.Translate(-volumeCenter);
-            Vector4 halfExtents = new Vector4(volumeWorldSize * 0.5f, volumeWorldSize * 0.5f, volumeWorldSize * 0.5f, 0f);
+            Vector4 halfExtents = new Vector4(safeVolumeWorldSize * 0.5f, safeVolumeWorldSize * 0.5f, safeVolumeWorldSize * 0.5f, 0f);
             Vector4 volumeParams = new Vector4(
-                math.max(0f, injectionStrength),
-                math.saturate(diffusionStrength),
+                safeInjectionStrength,
+                safeDiffusionStrength,
                 resolvedDecayRate,
-                math.max(0f, deltaTime));
+                safeDeltaTime);
             Vector4 cascadeParams = new Vector4(
-                math.saturate(cascadeSpikeThreshold),
-                math.max(0f, cascadePropagationGain),
-                math.max(0f, cascadeWaveSpeed),
-                Time.time);
+                safeCascadeSpikeThreshold,
+                safeCascadePropagationGain,
+                safeCascadeWaveSpeed,
+                cascadeTime);
             Vector4 texelSize = new Vector4(
-                1f / volumeResolution,
-                1f / volumeResolution,
-                1f / volumeResolution,
-                volumeResolution);
+                invResolution,
+                invResolution,
+                invResolution,
+                safeVolumeResolution);
 
             if (_needsClear)
             {
                 BindSharedParameters(_clearKernel, halfExtents, worldToLocal, volumeParams, cascadeParams, texelSize, 0);
                 biolumDiffusionCompute.SetTexture(_clearKernel, _VolumeOutputId, _volumeA);
-                DispatchVolumeKernel(_clearKernel);
+                DispatchVolumeKernel(_clearKernel, _clearThreadGroupSizeX, _clearThreadGroupSizeY, _clearThreadGroupSizeZ);
                 biolumDiffusionCompute.SetTexture(_clearKernel, _VolumeOutputId, _volumeB);
-                DispatchVolumeKernel(_clearKernel);
+                DispatchVolumeKernel(_clearKernel, _clearThreadGroupSizeX, _clearThreadGroupSizeY, _clearThreadGroupSizeZ);
                 _needsClear = false;
             }
 
@@ -234,12 +269,12 @@ namespace Hecton8.Biolum
             BindSharedParameters(_diffuseKernel, halfExtents, worldToLocal, volumeParams, cascadeParams, texelSize, pointCount);
             biolumDiffusionCompute.SetTexture(_diffuseKernel, _VolumeInputId, _volumeA);
             biolumDiffusionCompute.SetTexture(_diffuseKernel, _VolumeOutputId, _volumeB);
-            DispatchVolumeKernel(_diffuseKernel);
+            DispatchVolumeKernel(_diffuseKernel, _diffuseThreadGroupSizeX, _diffuseThreadGroupSizeY, _diffuseThreadGroupSizeZ);
 
             BindSharedParameters(_injectKernel, halfExtents, worldToLocal, volumeParams, cascadeParams, texelSize, pointCount);
             biolumDiffusionCompute.SetTexture(_injectKernel, _VolumeInputId, _volumeB);
             biolumDiffusionCompute.SetTexture(_injectKernel, _VolumeOutputId, _volumeA);
-            DispatchVolumeKernel(_injectKernel);
+            DispatchVolumeKernel(_injectKernel, _injectThreadGroupSizeX, _injectThreadGroupSizeY, _injectThreadGroupSizeZ);
 
             PublishGlobals();
             Shader.SetGlobalTexture(_GlobalTextureId, _volumeA);
@@ -266,13 +301,34 @@ namespace Hecton8.Biolum
                 return;
 
             if (_clearKernel < 0)
+            {
                 _clearKernel = biolumDiffusionCompute.FindKernel("ClearBiolumVolume");
+                CacheKernelThreadGroupSizes(
+                    _clearKernel,
+                    out _clearThreadGroupSizeX,
+                    out _clearThreadGroupSizeY,
+                    out _clearThreadGroupSizeZ);
+            }
 
             if (_diffuseKernel < 0)
+            {
                 _diffuseKernel = biolumDiffusionCompute.FindKernel("DiffuseBiolumVolume");
+                CacheKernelThreadGroupSizes(
+                    _diffuseKernel,
+                    out _diffuseThreadGroupSizeX,
+                    out _diffuseThreadGroupSizeY,
+                    out _diffuseThreadGroupSizeZ);
+            }
 
             if (_injectKernel < 0)
+            {
                 _injectKernel = biolumDiffusionCompute.FindKernel("InjectBiolumPoints");
+                CacheKernelThreadGroupSizes(
+                    _injectKernel,
+                    out _injectThreadGroupSizeX,
+                    out _injectThreadGroupSizeY,
+                    out _injectThreadGroupSizeZ);
+            }
 
             int clampedResolution = Mathf.Clamp(volumeResolution, 32, 64);
             if (_volumeA == null || _volumeA.width != clampedResolution)
@@ -325,7 +381,8 @@ namespace Hecton8.Biolum
                 return 0;
             }
 
-            int count = _biolumManager.CopyNearbyZonesNonAlloc(volumeCenter, zoneGatherRadius, _nearbyZones, _nearbyZoneWeights, includeOcean: true, includeFloor: true);
+            float safeGatherRadius = SanitizeGlowPositive(zoneGatherRadius, 88f);
+            int count = _biolumManager.CopyNearbyZonesNonAlloc(volumeCenter, safeGatherRadius, _nearbyZones, _nearbyZoneWeights, includeOcean: true, includeFloor: true);
             int safeCount = math.min(count, MaxTrackedZones);
             int writeCount = 0;
             uint pointHash = FnvOffsetBasis;
@@ -347,12 +404,12 @@ namespace Hecton8.Biolum
                 float zoneIntensity = SanitizeGlowNonNegative(zone.SampleZoneIntensity());
                 float zoneRange = math.max(0.5f, SanitizeGlowNonNegative(zone.SampleZoneRange(), 0.5f));
                 float weight = SanitizeGlowNonNegative(_nearbyZoneWeights[i]);
-                float weightedIntensity = zoneIntensity * weight;
+                float weightedIntensity = math.min(SanitizeGlowNonNegative(zoneIntensity * weight), MaxBiolumHdrIntensity);
                 Vector4 positionRange = new Vector4(zonePosition.x, zonePosition.y, zonePosition.z, zoneRange);
                 Vector4 colorIntensity = new Vector4(
-                    SanitizeGlowNonNegative(zoneColor.r),
-                    SanitizeGlowNonNegative(zoneColor.g),
-                    SanitizeGlowNonNegative(zoneColor.b),
+                    math.min(SanitizeGlowNonNegative(zoneColor.r), MaxBiolumHdrIntensity),
+                    math.min(SanitizeGlowNonNegative(zoneColor.g), MaxBiolumHdrIntensity),
+                    math.min(SanitizeGlowNonNegative(zoneColor.b), MaxBiolumHdrIntensity),
                     weightedIntensity);
 
                 _pointUpload[writeCount] = new BiolumPointGpuData
@@ -426,6 +483,15 @@ namespace Hecton8.Biolum
             return math.max(0f, fallback);
         }
 
+        private float SanitizeGlowPositive(float value, float fallback)
+        {
+            if (math.isfinite(value) && value > 0f)
+                return value;
+
+            ReportInvalidGlowInput();
+            return math.max(0.001f, fallback);
+        }
+
         private static uint MixGlowPointHash(uint hash, Vector4 positionRange, Vector4 colorIntensity)
         {
             hash = MixHash(hash, QuantizeHashComponent(positionRange.x, GlowPositionHashScale));
@@ -475,10 +541,81 @@ namespace Hecton8.Biolum
             biolumDiffusionCompute.SetBuffer(kernelIndex, _PointBufferId, _pointBuffer);
         }
 
-        private void DispatchVolumeKernel(int kernelIndex)
+        private void DispatchVolumeKernel(int kernelIndex, uint threadGroupSizeX, uint threadGroupSizeY, uint threadGroupSizeZ)
         {
-            int dispatchCount = math.max(1, (volumeResolution + ThreadGroupSize - 1) / ThreadGroupSize);
-            biolumDiffusionCompute.Dispatch(kernelIndex, dispatchCount, dispatchCount, dispatchCount);
+            int safeResolution = math.clamp(volumeResolution, 1, 64);
+            int dispatchX = ResolveDispatchCount(safeResolution, threadGroupSizeX);
+            int dispatchY = ResolveDispatchCount(safeResolution, threadGroupSizeY);
+            int dispatchZ = ResolveDispatchCount(safeResolution, threadGroupSizeZ);
+            biolumDiffusionCompute.Dispatch(kernelIndex, dispatchX, dispatchY, dispatchZ);
+        }
+
+        private void CacheKernelThreadGroupSizes(int kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ)
+        {
+            sizeX = DefaultThreadGroupSize;
+            sizeY = DefaultThreadGroupSize;
+            sizeZ = DefaultThreadGroupSize;
+            if (biolumDiffusionCompute == null || kernelIndex < 0)
+                return;
+
+            biolumDiffusionCompute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            if (IsPortableThreadGroup(sizeX, sizeY, sizeZ))
+                return;
+
+            sizeX = DefaultThreadGroupSize;
+            sizeY = DefaultThreadGroupSize;
+            sizeZ = DefaultThreadGroupSize;
+            ReportInvalidGlowInput();
+        }
+
+        private static int ResolveDispatchCount(int resolution, uint threadGroupSize)
+        {
+            int safeThreadGroupSize = threadGroupSize > 2147483647u ? int.MaxValue : (int)threadGroupSize;
+            safeThreadGroupSize = math.max(1, safeThreadGroupSize);
+            return math.max(1, (resolution + safeThreadGroupSize - 1) / safeThreadGroupSize);
+        }
+
+        private static bool IsPortableThreadGroup(uint sizeX, uint sizeY, uint sizeZ)
+        {
+            if (sizeX == 0u || sizeY == 0u || sizeZ == 0u)
+                return false;
+
+            if (sizeX > MaxPortableComputeThreadsPerGroup || sizeY > MaxPortableComputeThreadsPerGroup || sizeZ > MaxPortableComputeThreadsPerGroup)
+                return false;
+
+            ulong xy = (ulong)sizeX * sizeY;
+            if (xy > MaxPortableComputeThreadsPerGroup)
+                return false;
+
+            return xy * sizeZ <= MaxPortableComputeThreadsPerGroup;
+        }
+
+        private float ResolveCascadeTimeSeconds(float safeDeltaTime)
+        {
+            ITickDispatcher dispatcher = GlobalRegistry.Dispatcher;
+            if (dispatcher != null)
+            {
+                H8TimeSnapshot snapshot = dispatcher.TimeSnapshot;
+                if (snapshot.Time >= 0d && !double.IsNaN(snapshot.Time) && !double.IsInfinity(snapshot.Time))
+                {
+                    _cascadeTimeSeconds = snapshot.Time;
+                    return (float)(_cascadeTimeSeconds % CascadeTimeModulo);
+                }
+            }
+
+            _cascadeTimeSeconds += safeDeltaTime;
+            if (double.IsNaN(_cascadeTimeSeconds) || double.IsInfinity(_cascadeTimeSeconds) || _cascadeTimeSeconds < 0d)
+                _cascadeTimeSeconds = 0d;
+
+            return (float)(_cascadeTimeSeconds % CascadeTimeModulo);
+        }
+
+        private static float SanitizeDelta(float deltaTime)
+        {
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+                return 0f;
+
+            return math.min(deltaTime, 0.25f);
         }
 
         private static float EstimateLength3D(Vector3 value)

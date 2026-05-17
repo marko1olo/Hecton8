@@ -422,6 +422,10 @@ namespace Hecton8.Core
                 GlobalRegistry.DebrisCompute.ClearGpuDebris();
 
             GlobalPhysicsStateManager.ClearRuntimeStateStatic();
+
+            SceneRuntimeService runtime = GlobalRegistry.SceneRuntime;
+            if (runtime != null)
+                runtime.RestoreCoreTickAfterRuntimeStateClear();
         }
 
         private void BeginMemoryLifecycleTransition()
@@ -1103,6 +1107,21 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private void RestoreCoreTickAfterRuntimeStateClear()
+        {
+            if (!_isInitialized || !Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (GlobalRegistry.Updatables.Contains(this))
+            {
+                _registeredUpdatable = true;
+                return;
+            }
+
+            _registeredUpdatable = false;
+            TryRegisterUpdatable();
         }
 
         private void TryUnregisterUpdatable()

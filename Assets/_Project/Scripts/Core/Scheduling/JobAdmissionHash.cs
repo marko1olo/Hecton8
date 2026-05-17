@@ -33,7 +33,7 @@ namespace Hecton8.Core.Scheduling
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ComputeFnv1a(string text)
         {
-            return ComputeFnv1a(text.AsSpan());
+            return text == null ? ComputeFnv1a(ReadOnlySpan<char>.Empty) : ComputeFnv1a(text.AsSpan());
         }
 
         /// <summary>Computes a stable FNV1a hash for a managed type name on cold paths.</summary>

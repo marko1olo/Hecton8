@@ -36,7 +36,7 @@ Status hygiene: fresh file created for current batch. Previous status file was m
 - [x] 15. HOMEOSTASIS_ADAPTATION: N/A for core math; no runtime adaptation branch added.
 - [x] 16. GRAVITY_VECTOR_FIX: player default gravity now resolves from predicted AUP absolute position toward the AUP center with guarded double3 normalization.
 - [x] 17. GHOST_REPLAY_VALIDATION: KCC body job, state staging, and sync-fence hashing all use millimeter quantization before persisted replay/hash state.
-- [x] 18. FINAL_VALIDATION: `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` passes with 0 warnings and 0 errors on attempt 15; attempts 16 and 20 also pass with isolated output/intermediate paths to avoid concurrent workspace file locks.
+- [x] 18. FINAL_VALIDATION: latest isolated `dotnet build Hecton8.Core.csproj --no-restore` gate passes with 0 warnings and 0 errors on attempt 24; attempts 15, 16, 20, 21, and 23 also passed in earlier loop states.
 
 ## Loop 1 Evidence: Tasks 1-5
 
@@ -159,8 +159,17 @@ Status hygiene: fresh file created for current batch. Previous status file was m
 - Consumer DOD: player footstep audio, surface weather splash VFX, underwater exhale bubbles, internal visor waterline bubbles, camera sprint FOV juice, and fatal-pressure boot UI now consume `ReadOnlySpan<T>` snapshots instead of `+=`/`-=` callbacks.
 - Interface-chaos DOD: submerge state keeps using the existing water-transition path instead of a duplicate public event; wet-lens pulses reuse the existing `VisorDropletSignal` lane.
 - Scan DOD: targeted scan over the migrated files returns no matches for the removed player movement events, `event System.Action`, local `NativeQueue` ownership, or non-`Pack = 1` structs.
-- Compile DOD: attempt 21 passes with 0 warnings and 0 errors using isolated `IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP21\` and `OutputPath=Temp\bin\AUP21\`. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt21.txt`.
+- Compile DOD: attempt 22 exposed a real current compile wall after the presentation lane pass: transient player signal contract visibility plus `DockingAutopilotService.TryEvaluateActiveSpline` pointer use inside a safe method. The signal contracts are now compiled from `GlobalSignals.cs`, the docking evaluator is explicitly `unsafe`, and attempt 23 passes with 0 warnings and 0 errors using isolated `IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP23\` and `OutputPath=Temp\bin\AUP23\`. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt23.txt`.
 - Microsecond estimate: 0.0 us measured direct frame gain. Low-tier value is removal of managed delegate subscription surfaces and central SignalBus telemetry/load-shed caps; presentation consumers accept one-frame snapshot latency.
+
+## Loop 16 Evidence: Water Transition Typed-Lane Closure
+
+- Signal DOD: removed the remaining `WaterTransitionEvents` managed listener registry and `IWaterTransitionEventListener` edge from the player water-transition path. `HectonPlayerMovement` now emits packed `WaterTransitionSignal` payloads through `SignalBus<T>`.
+- Consumer DOD: `WaterTransitionHandler` drains `ReadOnlySpan<WaterTransitionSignal>` snapshots during the existing surface-breach gravity advance and keeps the source-id filter for the owning player.
+- ARM64 layout DOD: `WaterTransitionSignal` is `Pack = 1` and validated at 96 bytes with explicit AUP payload storage; targeted non-packed `StructLayout` scan is clean.
+- Scan DOD: `rg -n "WaterTransitionEvent|WaterTransitionEvents|IWaterTransitionEventListener|PublishWaterTransitionEvent"` over `WaterTransitionHandler.cs` and `HectonPlayerMovement.cs` returns no matches.
+- Compile DOD: attempt 24 passes with 0 warnings and 0 errors using isolated `IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP24\` and `OutputPath=Temp\bin\AUP24\`. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt24.txt`.
+- Microsecond estimate: 0.0 us measured direct frame gain. Low-tier value is removal of the last local managed listener registry in this player water-transition path; high-tier can attach richer water presentation consumers through the same typed lane.
 
 ## Loop State
 
@@ -179,4 +188,5 @@ Status hygiene: fresh file created for current batch. Previous status file was m
 - Iteration 12: migrated the remaining player cinematic focus blackbox `NativeArray` field to a DataVault handle; broad AUP/player/physics scans are clean and attempt 15 builds green.
 - Iteration 13: migrated floating-origin drift probes and KCC runtime lanes to vault handles, clamped remaining floating-origin `rsqrt`, restored broad scan cleanliness, and attempt 16 builds green through isolated output paths.
 - Iteration 14: removed remaining explicit `(float3)` downcasts and `math.normalize*` calls from the AUP/player/physics scan scope, repaired the external acoustic compile wall with a fully-qualified type reference, and attempt 20 builds green with 0 warnings and 0 errors.
-- Iteration 15: purged `HectonPlayerMovement` managed presentation events into packed typed `SignalBus<T>` lanes, migrated six consumers to `ReadOnlySpan<T>` snapshots, and attempt 21 builds green with 0 warnings and 0 errors.
+- Iteration 15: purged `HectonPlayerMovement` managed presentation events into packed typed `SignalBus<T>` lanes, migrated six consumers to `ReadOnlySpan<T>` snapshots, repaired the attempt 22 compile wall, and attempt 23 builds green with 0 warnings and 0 errors.
+- Iteration 16: purged the remaining `WaterTransitionEvents` managed listener registry into `WaterTransitionSignal`, kept surface-breach gravity on a typed snapshot drain, and attempt 24 builds green with 0 warnings and 0 errors.

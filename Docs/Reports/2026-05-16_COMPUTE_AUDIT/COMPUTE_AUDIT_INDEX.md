@@ -4,6 +4,7 @@ Status: AUDIT COMPLETE
 Snapshot: 2026-05-16T03:56+04:00
 Agent: COMPUTE_LOGISTICS_AUDITOR
 Scope: HECTON-8 local telemetry and source/docs size.
+Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 ## Read Order
 
@@ -12,14 +13,16 @@ Scope: HECTON-8 local telemetry and source/docs size.
 3. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_DELTA_20260516.md` - post-audit SQLite live burn sample.
 4. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LAST6H_PROMPT_TOKEN_AUDIT.md` - recent six-hour JSONL token/prompt cadence.
 5. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_RECENT_JSONL_RATE_AUDIT_20260517.md` - bounded 30h/24h/6h/1h rate audit and 00:52 live pulse.
-6. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_PULSE_20260517_0534.md` - latest SQLite live pulse and active burners.
-7. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_LIVE_REBASE_20260517_0446.md` - post-H-Phi token/live-rate rebase.
-8. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_0412.md` - latest H-Phi score/counter/token rebase.
-9. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_0217.md` - prior H-Phi score/counter/token rebase.
-10. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_TOKEN_CORRELATION_20260516.md` - H-Phi source score and token correlation.
-11. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_BUDGET_GATE_ATTEMPT_20260517.md` - strict H-Phi baseline gate attempt and timeout boundary.
-12. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LOG_DB_AUDIT.md` - Codex log DB size/noise audit.
-13. `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md` - historical report plus appended continuation addenda.
+6. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_SEARCH_INDEX_20260517.md` - H-Phi / ash-fi search aliases and score timeline.
+7. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1142.md` - latest H-Phi score/counter/token rebase.
+8. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_PULSE_20260517_0534.md` - SQLite live pulse and active burners.
+9. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_LIVE_REBASE_20260517_0446.md` - post-H-Phi token/live-rate rebase.
+10. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_0412.md` - prior H-Phi score/counter/token rebase.
+11. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_0217.md` - earlier H-Phi score/counter/token rebase.
+12. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_TOKEN_CORRELATION_20260516.md` - H-Phi source score and token correlation.
+13. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_BUDGET_GATE_ATTEMPT_20260517.md` - strict H-Phi baseline gate attempt and timeout boundary.
+14. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LOG_DB_AUDIT.md` - Codex log DB size/noise audit.
+15. `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md` - historical report plus appended continuation addenda.
 
 ## Evidence Boundaries
 
@@ -63,4 +66,6 @@ H-Phi live rebase 2026-05-17T04:12+04:00: Runtime H-Phi risk 0.004858813, Runtim
 Token live rebase 2026-05-17T04:46+04:00: no fresh H-Phi scan. Post-04:12 JSONL window found 190,381,072 tokens over 1,793.884547 seconds, USD 173.29 cache-aware, USD 966.82 no-cache, 93.009% cached input, 106,127.83 tokens/sec average, and a 17,679,821-token peak minute at 04:41. SQLite total at 04:45:54: 50,636,429,732 tokens. Current meaningful LOC: 839,069; tokens per meaningful LOC: 60,348.35.
 
 Live pulse 2026-05-17T05:34+04:00: SQLite total 50,953,580,001 tokens. 30-second delta 1,648,101 tokens, 54,919.99 tokens/sec, 3,295,199.27 tokens/min, 4,745,086,950.04 tokens/day equivalent. Cache-aware rate range: USD 2.52-3.00/min; no-cache scenario USD 16.73/min. Current energy estimate: 2,547.68 MWh. Current token/code ratio: 60,726.33 tokens per meaningful LOC.
+
+H-Phi live rebase 2026-05-17T11:42+04:00: source drift after 04:12 justified a new scan: 113 C# files changed, 10,799,862 changed bytes, current 854,943 meaningful LOC. Runtime H-Phi risk 0.005378664, narrow 0.075881112, Data sovereignty 0.141543476. Versus 04:12: +0.000519851 risk, +0.005594882 narrow, +104 DataVault refs, -162 owner-blocked NativeArray refs, but +20 PrimaryManagedRuntimeRisk. Token window 04:12-11:42: 501,495,243 tokens, USD 397.22 cache-aware, USD 2,548.92 no-cache. SQLite total at 11:39: 51,066,572,323 tokens; current energy 2,553.33 MWh.
 

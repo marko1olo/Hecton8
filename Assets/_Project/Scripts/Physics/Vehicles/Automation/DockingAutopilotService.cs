@@ -68,7 +68,7 @@ namespace Hecton8.Vehicles.Automation
     }
 
     [BurstCompile]
-    public unsafe struct CubicBezierJob : IJobParallelFor
+    internal unsafe struct CubicBezierJob : IJobParallelFor
     {
         [NativeDisableUnsafePtrRestriction] public ActiveSplineData* Splines;
         [NativeDisableUnsafePtrRestriction] public float* Progress01;
@@ -375,68 +375,77 @@ namespace Hecton8.Vehicles.Automation
                 : ServiceHeartbeatState.Degraded;
         }
 
-        public unsafe bool TryAcquireSplineSlot(uint ownerHash, out int slot)
+        public bool TryAcquireSplineSlot(uint ownerHash, out int slot)
         {
             slot = -1;
-            if (ownerHash == 0u || !TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length))
-                return false;
-
-            for (int i = 0; i < length; i++)
+            unsafe
             {
-                ActiveSplineData existing = activeSplines[i];
-                if (existing.OwnerHash == ownerHash && existing.State != (byte)DockingSplineRuntimeState.Inactive)
+                if (ownerHash == 0u || !TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length))
+                    return false;
+
+                for (int i = 0; i < length; i++)
                 {
+                    ActiveSplineData existing = activeSplines[i];
+                    if (existing.OwnerHash == ownerHash && existing.State != (byte)DockingSplineRuntimeState.Inactive)
+                    {
+                        slot = i;
+                        return true;
+                    }
+                }
+
+                for (int i = 0; i < length; i++)
+                {
+                    ActiveSplineData existing = activeSplines[i];
+                    if (existing.State != (byte)DockingSplineRuntimeState.Inactive)
+                        continue;
+
+                    existing = default;
+                    existing.OwnerHash = ownerHash;
+                    existing.State = (byte)DockingSplineRuntimeState.Reserved;
+                    activeSplines[i] = existing;
                     slot = i;
                     return true;
                 }
+
+                _heartbeatState = ServiceHeartbeatState.Degraded;
+                return false;
             }
+        }
 
-            for (int i = 0; i < length; i++)
+        public bool TryWriteActiveSpline(int slot, in ActiveSplineData spline)
+        {
+            unsafe
             {
-                ActiveSplineData existing = activeSplines[i];
-                if (existing.State != (byte)DockingSplineRuntimeState.Inactive)
-                    continue;
+                if (!spline.IsFinite() || !TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length) || (uint)slot >= (uint)length)
+                    return false;
 
-                existing = default;
-                existing.OwnerHash = ownerHash;
-                existing.State = (byte)DockingSplineRuntimeState.Reserved;
-                activeSplines[i] = existing;
-                slot = i;
+                ActiveSplineData existing = activeSplines[slot];
+                if (existing.State != (byte)DockingSplineRuntimeState.Inactive &&
+                    existing.OwnerHash != spline.OwnerHash)
+                {
+                    return false;
+                }
+
+                ActiveSplineData writable = spline;
+                if (writable.State == (byte)DockingSplineRuntimeState.Inactive)
+                    writable.State = (byte)DockingSplineRuntimeState.Active;
+
+                activeSplines[slot] = writable;
                 return true;
             }
-
-            _heartbeatState = ServiceHeartbeatState.Degraded;
-            return false;
         }
 
-        public unsafe bool TryWriteActiveSpline(int slot, in ActiveSplineData spline)
-        {
-            if (!spline.IsFinite() || !TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length) || (uint)slot >= (uint)length)
-                return false;
-
-            ActiveSplineData existing = activeSplines[slot];
-            if (existing.State != (byte)DockingSplineRuntimeState.Inactive &&
-                existing.OwnerHash != spline.OwnerHash)
-            {
-                return false;
-            }
-
-            ActiveSplineData writable = spline;
-            if (writable.State == (byte)DockingSplineRuntimeState.Inactive)
-                writable.State = (byte)DockingSplineRuntimeState.Active;
-
-            activeSplines[slot] = writable;
-            return true;
-        }
-
-        public unsafe bool TryReadActiveSpline(int slot, out ActiveSplineData spline)
+        public bool TryReadActiveSpline(int slot, out ActiveSplineData spline)
         {
             spline = default;
-            if (!TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length, allowEnsure: false) || (uint)slot >= (uint)length)
-                return false;
+            unsafe
+            {
+                if (!TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length, allowEnsure: false) || (uint)slot >= (uint)length)
+                    return false;
 
-            spline = activeSplines[slot];
-            return spline.State != (byte)DockingSplineRuntimeState.Inactive && spline.IsFinite();
+                spline = activeSplines[slot];
+                return spline.State != (byte)DockingSplineRuntimeState.Inactive && spline.IsFinite();
+            }
         }
 
         public bool TryEvaluateActiveSpline(int slot, float progress01, out DockingSplineSample sample)
@@ -457,25 +466,31 @@ namespace Hecton8.Vehicles.Automation
             }
         }
 
-        public unsafe bool TryReleaseSplineSlot(int slot, uint ownerHash)
+        public bool TryReleaseSplineSlot(int slot, uint ownerHash)
         {
-            if (ownerHash == 0u || !TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length, allowEnsure: false) || (uint)slot >= (uint)length)
-                return false;
+            unsafe
+            {
+                if (ownerHash == 0u || !TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length, allowEnsure: false) || (uint)slot >= (uint)length)
+                    return false;
 
-            ActiveSplineData existing = activeSplines[slot];
-            if (existing.OwnerHash != ownerHash)
-                return false;
+                ActiveSplineData existing = activeSplines[slot];
+                if (existing.OwnerHash != ownerHash)
+                    return false;
 
-            activeSplines[slot] = default;
-            return true;
+                activeSplines[slot] = default;
+                return true;
+            }
         }
 
-        public unsafe void OnServiceShutdown()
+        public void OnServiceShutdown()
         {
-            if (TryResolveExistingActiveSplines(out ActiveSplineData* activeSplines, out int length))
+            unsafe
             {
-                for (int i = 0; i < length; i++)
-                    activeSplines[i] = default;
+                if (TryResolveExistingActiveSplines(out ActiveSplineData* activeSplines, out int length))
+                {
+                    for (int i = 0; i < length; i++)
+                        activeSplines[i] = default;
+                }
             }
 
             UnregisterService();

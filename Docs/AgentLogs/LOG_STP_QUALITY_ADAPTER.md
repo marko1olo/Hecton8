@@ -370,3 +370,31 @@ Validation:
 - Direct fallback now writes both URP asset render scale and scalable-buffer scale.
 - `git diff --check` reported only CRLF conversion warnings.
 - Latest compile evidence remains gate 21 before loops 14-17: 0 warnings, 0 errors. Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION.
+
+## 2026-05-17 - Loop 18 / Runtime Bridge NaN Vaccination
+
+What was wrong:
+- The STP adapter was clamped, but the concrete `IDynamicResolutionRuntime` bridge in `World/DynamicResolutionScaler` still trusted several serialized/debug/platform floats.
+- Non-finite `_maxRenderScale`, startup grace, debug override values, platform pressure floors, scale percentages, or frame-time state could poison URP render-scale writes, scalable-buffer resize calls, or the runtime snapshot consumed by STP-facing systems.
+- A development-only initialization log concatenated a float into a managed string.
+
+What was done:
+- Added finite fallback helpers for default render scale, max render scale, startup grace, target frame time, critical frame time, and snapshot frame time.
+- Routed startup, save-load disable restore, debug override, platform pressure, system override, startup grace, scale reduction, scale increase, snapshot, `ApplyRenderScale()`, `RefreshMinimumRenderScale()`, and `RestoreDefaultRenderScale()` through finite guards.
+- `ApplyRenderScale()` now clamps current/target scale before writing `UniversalRenderPipelineAsset.renderScale` and `ScalableBufferManager.ResizeBuffers`.
+- Removed the development-only string concatenation in the initialization log.
+
+Cinematic cheats used:
+- No new expensive pass. Low/MX350/Quest keep the 0.5 base / 0.35 emergency STP dear-lie path instead of being blocked by bad bridge input.
+- High/Ultra keep full-scale visual-overkill consumer flags for visor salt, volumetric silt, procedural hull dents, 16-tap POM, SSS, and raymarched fog.
+
+Exact microseconds saved:
+- Not measured. This is stability and correctness work, not a measured frame-time optimization.
+- Expected gain is preserving the intended pixel-count reduction under corrupt inputs and preventing NaN propagation; no profiler capture exists for this loop.
+
+Validation:
+- No dotnet gate was run in this loop because the operator explicitly requested not to rebuild on every pass.
+- Static STP-domain scan found no `Update/LateUpdate/FixedUpdate`, local `NativeArray<T>`, `new NativeArray`, `Allocator.Persistent`, `EventBus`, managed delegate/event, `string.Format`, unsafe normalization, STP-owned compute/threadgroup path, legacy blit, or RenderGraph compatibility path.
+- Runtime bridge audit now routes render-scale and frame-time publication through finite guards before URP/scalable-buffer writes.
+- `git diff --check` reported only CRLF conversion warnings.
+- Latest compile evidence remains gate 21 before loops 14-18: 0 warnings, 0 errors. Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION.

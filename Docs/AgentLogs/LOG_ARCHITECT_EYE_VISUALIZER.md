@@ -224,6 +224,41 @@ Verification:
 - Targeted C# scan again reports only `ReceiveCanvasInput` / `CanvasHitPoint`, which are diegetic panel coordinate names, not UGUI usage.
 - No `GetKeyDown`, no `KeyCode.F12`, no `ARCHITECT_SPATIAL_PROBE`, no standard runtime updates, no `string.Format`, no private native allocation, no EventBus/delegate command bus, no `Debug.DrawLine`, and no `GraphicsBuffer.SetData`.
 - Shader static scan remains clean for compute groups, geometry stage, RW/append buffers, `ComputeBuffer`, and `normalize` tokens.
+
+## 2026-05-17 - LOOP 14 COMPILE WALL / DRIFT CONTAINMENT / BLOCKED BY GENERATED-ASSET CHURN
+
+What was wrong:
+- The project compile surface drifted again under parallel edits. `PlayerMovementPresentationSignals.cs` alternated between an empty namespace shell and the packed player presentation payload structs.
+- `Directory.Build.targets` removed the player signal source before its conditional re-include could reliably make the file part of `Hecton8.Core`.
+- External compile walls appeared in `BioCableIK`, `IPlatformIntegration`, camera-juice signal binding, and the typed audio signal lane.
+- Architect Eye drift restored F12 render polling, `Dump_ARCHITECT_SPATIAL_PROBE.bin`, and red fragmentation warnings again.
+- The final no-restore editor build did not reach C# compilation because `Temp/obj/Hecton8.Editor/project.assets.json` was removed by generated-project churn.
+
+What was done:
+- Made `Directory.Build.targets` explicitly include `Assets/_Project/Scripts/Core/Signals/PlayerMovementPresentationSignals.cs` after the remove.
+- Kept one player-presentation signal ABI: final inspection has `PlayerMovementPresentationSignals.cs` as an empty shim and the packed payload structs compiled once from `GlobalSignals.cs`.
+- Preserved the stabilized `BioCableIK` finite-helper path and avoided a broad world-system rewrite.
+- Qualified camera-juice dequeue payloads to `Hecton8.Core.CameraJuiceImpactSignal`.
+- Qualified the audio typed lane to `Hecton8.Core.Contracts.Signals.AudioEvent` so it does not bind to the unrelated core audio queue struct.
+- Reapplied Architect Eye patch: no F12 render input, `Dump_ARCHITECT_EYE_VISUALIZER.bin`, and yellow fragmented memory gaps/bars.
+
+Cinematic cheats used:
+- No new render architecture. Architect Eye remains indirect quads only.
+- Toaster mode keeps low caps and 5Hz sampled diagnostics.
+- High/Ultra overkill remains stable-seeded salt/silt/dent overlays through the same buffer path.
+
+Exact microseconds saved or bounded:
+- No Unity profiler measurement was run; no measured microsecond claim is made.
+- Compile-wall repairs are 0 us runtime to Architect Eye.
+- Removing F12 polling removes one render-path input query branch again, source/static evidence only.
+- Yellow fragmentation color and signal type qualification are 0 us runtime changes.
+
+Verification:
+- `dotnet restore Hecton8.Editor.csproj -v:minimal /nr:false` exited 0.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal /clp:ErrorsOnly /m:1 /nr:false` ended with NETSDK1004 because `Temp/obj/Hecton8.Editor/project.assets.json` was missing again. This is not a green compile.
+- Diagnostics static scan is clean except `ReceiveCanvasInput` / `CanvasHitPoint`, which are diegetic panel coordinate names, not UGUI usage.
+- No `GetKeyDown`, no `KeyCode.F12`, no `ARCHITECT_SPATIAL_PROBE`, no red memory-fragmentation warning color in Architect Eye after the latest patch.
+- Shader static scan remains clean for compute groups, geometry stage, RW/append buffers, `ComputeBuffer`, and `normalize` tokens.
 - `dotnet build` was not rerun in Loop 9 by explicit user instruction to avoid rebuild spam. Latest build evidence remains Loop 8: Core exited 0; Editor exited 0 with 5 external package/generated-project warnings.
 
 ## 2026-05-17 - LOOP 10 CAPACITY / COMMAND HARDENING / VERIFIED MASTER GRADE - EYES OPEN
@@ -257,3 +292,34 @@ Verification:
 - Targeted C# static scan still reports only `ReceiveCanvasInput` / `CanvasHitPoint`, which are diegetic panel coordinate names, not UGUI usage.
 - No `GetKeyDown`, no `KeyCode.F12`, no `ARCHITECT_SPATIAL_PROBE`, no standard `Update`/`LateUpdate`/`FixedUpdate`, no `string.Format`, no private native allocation, no EventBus/delegate command bus, no `Debug.DrawLine`, and no `GraphicsBuffer.SetData` remain in the diagnostics visualizer domain.
 - Shader static scan returned no compute thread groups, no geometry stage, no RW/append buffers, no `ComputeBuffer`, and no `normalize` token.
+
+## 2026-05-17 - LOOP 13 PROBE CONTRACT / VISUAL STABILITY / VERIFIED MASTER GRADE - EYES OPEN
+
+What was wrong:
+- `VaultProbeUtility` exposed read-only byte spans only; the assignment explicitly required a raw `Span<byte>` probe path.
+- Memory-map fragmented gaps were colored red, while task 14 mandates yellow fragmented gaps.
+- High/Ultra salt/silt/dent overkill used `state.LastFrame` as a position seed, causing 5Hz popping instead of stable premium detail.
+- Parallel drift again restored F12 render polling and `Dump_ARCHITECT_SPATIAL_PROBE.bin`.
+
+What was done:
+- Added `VaultProbeUtility.TryBufferBytes<T>()` over existing vault buffers with bounded byte-length checks and `GetUnsafePtr`.
+- Changed fragmented free memory gaps to yellow.
+- Changed High/Ultra overkill to stable per-index spatial hashes with a slow phase term for salt growth and silt motion.
+- Removed F12 render polling again and restored `Dump_ARCHITECT_EYE_VISUALIZER.bin`.
+
+Cinematic cheats used:
+- Toaster mode unchanged: low caps, 5Hz diagnostics, no idle keyboard poll, no new draw path.
+- God-mode keeps the same indirect-quad budget but turns unstable random popping into stable salt crystals, silt drift, and hull dent overlays.
+
+Exact microseconds saved or bounded:
+- No Unity profiler measurement was run; no measured microsecond claim is made.
+- Mutable probe path costs 0 us unless called and uses the existing scalar resolver checks.
+- Yellow gap color is 0 us.
+- Stable overkill seeding is cost-equivalent to the old hashes and remains High/Ultra-only at the existing slow cadence.
+- Removing F12 polling removes the per-render input query branch again; source/static proof only.
+
+Verification:
+- `dotnet build` was not rerun to avoid rebuild spam. Latest build evidence remains Loop 8.
+- Targeted C# scan reports only `ReceiveCanvasInput` / `CanvasHitPoint`, which are diegetic panel coordinate names, not UGUI usage.
+- No `GetKeyDown`, no `KeyCode.F12`, no `ARCHITECT_SPATIAL_PROBE`, no standard runtime updates, no `string.Format`, no private native allocation, no EventBus/delegate command bus, no `Debug.DrawLine`, and no `GraphicsBuffer.SetData`.
+- Shader static scan remains clean for compute groups, geometry stage, RW/append buffers, `ComputeBuffer`, and `normalize` tokens.

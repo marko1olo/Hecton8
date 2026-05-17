@@ -412,3 +412,87 @@ Solution: Ran fixed-string grep across PlayerTool, RepairTool, HullDentShaderCon
 Rejected Alternatives: Claiming no ToString anywhere would be false. Rewriting every string-returning tool summary API in this prompt would be an architectural refactor outside WELDING_REPAIR_LOGIC. Reporting a nonzero build as clean would be false.
 Scalability potential: The zero-GC WriteOperationalSummary/WriteOperationalDirective API remains available for HUD use; the legacy string bridge debt is documented but not expanded.
 Hardware Impact: No validation hardware gain. Runtime impact is the debug-only string/log removal described above.
+
+## Interaction Shutdown Vault Lifecycle
+Problem: EquipmentInteractionHandler.ShutdownServiceState used the same public ClearQueuedSignals path as normal runtime resets. After the interaction payload queue moved into GlobalDataVault, that meant shutdown could call EnsureSignalQueueHandle and create/reacquire BufferID.InteractionSignalQueue only to clear it during teardown.
+Solution: Split ClearQueuedSignals into the public runtime path and a private ClearQueuedSignals(bool createVaultLane) path. Public clear still ensures the lane. Shutdown now passes false, so it clears an existing valid handle but does not allocate or reactivate the vault queue when the lane was never created.
+Rejected Alternatives: Leaving teardown on the public path would preserve avoidable lifecycle churn. Removing vault clearing entirely during shutdown would risk stale payloads when the handle exists. Adding another service-level shutdown signal would duplicate existing lifecycle flow.
+Scalability potential: Low/MX350 avoids needless shutdown allocation in sparse interaction sessions. Middle/High/Ultra runtime behavior is unchanged; the repair raycast dependency still uses the vault queue during play.
+Hardware Impact: Estimated 1-3 microseconds saved only on shutdown paths where the signal lane was not created. Normal frame cost is unchanged.
+
+## Validation Wall Twenty-Fifth Pass
+Problem: The shutdown lifecycle patch changed interaction service cleanup and needed proof that the normal runtime clear path still exists without adding hot-path debt.
+Solution: Ran rg confirming ClearQueuedSignals(createVaultLane:true) for public clear and ClearQueuedSignals(createVaultLane:false) for ShutdownServiceState. Ran fixed-string grep across PlayerTool, RepairTool, HullDentShaderController, EquipmentInteractionHandler, and EquipmentInteractionContracts; it returned NO_REPAIR_SHUTDOWN_VAULT_HOTPATH_BLOAT_MATCHES. Ran filtered dotnet build with BuildProjectReferences=false; it returned NO_REPAIR_SHUTDOWN_VAULT_BUILD_DIAGNOSTICS and DOTNET_EXIT_CODE=1.
+Rejected Alternatives: Claiming a clean build would be false. Rebuilding full project graph repeatedly remains blocked by external dependencies and does not add repair-domain evidence.
+Scalability potential: No gameplay or visual contract changed.
+Hardware Impact: No validation hardware gain; shutdown-only lifecycle cost reduction described above.
+
+## HullDent VFX Fade NaN Guard
+Problem: HullDentShaderController used `math.max(0f, deltaTime)` and `math.max(0f, repairFadeMetersPerSecond)` to build visual repair fade. A NaN input can survive that pattern and poison dent fade state before the shader mirror updates.
+Solution: Added a finite nonnegative clamp and used it for both dispatcher delta and serialized repair fade speed before calculating `fadeDelta`.
+Rejected Alternatives: Trusting caller dt or inspector-authored speed would leave a mobile GPU NaN path. Clamping after `_dentBuffer` mutation would be too late.
+Scalability potential: Low/MX350 avoids a fault path with one cheap branch pair. Middle/High/Ultra keep the same shader dent recovery and compute-spark visual budget.
+Hardware Impact: Estimated 0-1 microseconds branch cost on active fade frames. No speed claim; this is NaN containment.
+
+## Validation Wall Twenty-Sixth Pass
+Problem: The VFX fade fix touched compile-relevant repair-adjacent source and needed evidence without claiming the external graph is clean.
+Solution: Ran fixed-string grep across PlayerTool, RepairTool, HullDentShaderController, EquipmentInteractionHandler, and EquipmentInteractionContracts; it returned NO_REPAIR_VFX_FADE_NAN_HOTPATH_BLOAT_MATCHES. Ran filtered dotnet build with BuildProjectReferences=false; it returned NO_REPAIR_VFX_FADE_NAN_BUILD_DIAGNOSTICS and DOTNET_EXIT_CODE=1.
+Rejected Alternatives: Reporting a nonzero build as clean would be false. Skipping compile after a C# code edit would weaken evidence for this pass.
+Scalability potential: No gameplay contract changed; visual dent fade now rejects invalid scalar inputs before touching shader mirror state.
+Hardware Impact: No validation hardware gain; branch cost described above.
+
+## Repair Spark AUP Guard
+Problem: PublishRepairSparkSignal converted `worldPoint` into AUP and pushed `DebrisSpawnSignal` without proving the hit point and converted double3 were finite. That could poison the compute-shard spark lane with invalid position authority.
+Solution: Added early finite gates for the world hit point and converted AUP before constructing the signal.
+Rejected Alternatives: Trusting raycast hit data or AbsoluteUniversePosition conversion to sanitize coordinates would leave a GPU-facing VFX lane exposed.
+Scalability potential: Low/MX350 local sparks and High/Ultra compute-shard sparks keep the same quantity split; only invalid coordinates are rejected.
+Hardware Impact: Estimated 0-1 microseconds branch cost per spark publication attempt. No speed gain claimed; this is fault containment.
+
+## Validation Wall Thirtieth Pass
+Problem: Spark AUP hardening touched compile-relevant RepairTool code and needed evidence.
+Solution: Source grep confirms finite worldPoint and converted-AUP checks before DebrisSpawnSignal publication. Fixed-string bloat grep across repair/tool/interaction/VFX files returned NO_REPAIR_SPARK_AUP_GUARD_HOTPATH_BLOAT_MATCHES. Filtered dotnet build with BuildProjectReferences=false returned NO_REPAIR_SPARK_AUP_GUARD_BUILD_DIAGNOSTICS and DOTNET_EXIT_CODE=1.
+Rejected Alternatives: Reporting a nonzero build as clean would be false. Skipping compile after code changes would be weaker evidence.
+Scalability potential: No gameplay contract changed; visual spark ingress now rejects invalid position authority before typed signal publication.
+Hardware Impact: No validation hardware gain; branch cost described above.
+
+## RepairTool Raw Delta / Packed Dent NaN Guard
+Problem: RepairTool.UsePrimary passed raw `deltaTime` into airlock weld override, module repair amount, and submarine damage repair after PlayerTool only sanitized delta for energy/durability. RepairTool's own HullDent pack/unpack helpers also used NaN-prone packed value clamps.
+Solution: Added a safe delta gate at the start of UsePrimary, passed safeDeltaTime through airlock, submarine damage, and module repair paths, finite-clamped haptic rated repair speed, and sanitized HullDent radius/depth/packed values before quantization and unpacking.
+Rejected Alternatives: Trusting TryBeginToolUse would leave downstream repair math exposed. Clamping only inside TryRepairVaultHullDents would not protect airlocks, BaseModule repair, or damage target queuing.
+Scalability potential: Low/MX350 avoids invalid repair work with one early branch. Middle/High/Ultra keep the same repair visuals and compute spark path.
+Hardware Impact: Estimated 0-1 microseconds per primary-use call plus 0-1 microseconds per dent pack/unpack. No speed gain claimed; this is NaN containment.
+
+## Validation Wall Twenty-Ninth Pass
+Problem: Raw delta and packed dent hardening touched compile-relevant RepairTool code and needed evidence.
+Solution: Ran rg for raw deltaTime handoffs and NaN-prone packed dent quantization; it returned NO_REPAIR_RAW_DELTA_PACKED_NAN_MATCHES. Ran fixed-string bloat grep across repair/tool/interaction/VFX files; it returned NO_REPAIR_RAW_DELTA_PACKED_HOTPATH_BLOAT_MATCHES. Ran filtered dotnet build with BuildProjectReferences=false; it returned NO_REPAIR_RAW_DELTA_PACKED_BUILD_DIAGNOSTICS and DOTNET_EXIT_CODE=1.
+Rejected Alternatives: Skipping build after C# changes would be weak evidence. Reporting a nonzero build as clean would be false.
+Scalability potential: No gameplay contract changed; repair math now rejects invalid dt before touching module, airlock, damage-control, or vault dent paths.
+Hardware Impact: No validation hardware gain; branch cost described above.
+
+## HullDent VFX Dent Scalar NaN Guard
+Problem: HullDentShaderController still used `math.max` around incoming combat magnitude, authored dent scalar fields, and packed vault dent values. Those expressions do not prove NaN rejection before quantization, vault writes, or shader global upload.
+Solution: Routed magnitude, radius/depth multipliers, max dent distance, max dent depth, and packed dent values through finite clamps before radius/depth math, Pack/Unpack quantization, vault sync, vault flush, and single-dent writes.
+Rejected Alternatives: Trusting every combat producer and vault writer to be finite would leave the VFX mirror as a GPU-facing NaN sink. Clamping only the shader global upload would still leave poisoned CPU-side dent state.
+Scalability potential: Low/MX350 avoids mobile GPU fault paths with bounded branch checks over the 16-slot dent mirror. Middle/High/Ultra keep the same dent deformation/POM recovery path and compute spark budget.
+Hardware Impact: Estimated 0-1 microseconds per accepted combat dent signal and 0-1 microseconds per 16-slot sync/flush pass. No speed gain claimed; this is NaN containment.
+
+## Validation Wall Twenty-Eighth Pass
+Problem: Dent scalar hardening touched the GPU-facing hull deformation mirror and needed evidence.
+Solution: Ran rg for raw NaN-prone magnitude/fullIntensity/maxDistance/packed dent patterns; it returned NO_REPAIR_VFX_DENT_SCALAR_RAW_NAN_MATCHES. Ran fixed-string bloat grep across repair/tool/interaction/VFX files; it returned NO_REPAIR_VFX_DENT_SCALAR_HOTPATH_BLOAT_MATCHES. Ran filtered dotnet build with BuildProjectReferences=false; it returned NO_REPAIR_VFX_DENT_SCALAR_BUILD_DIAGNOSTICS and DOTNET_EXIT_CODE=1.
+Rejected Alternatives: Skipping build after C# changes would be weak evidence. Reporting a nonzero build as clean would be false.
+Scalability potential: No gameplay contract changed; shader mirror ingress is finite-gated before CPU and GPU state mutation.
+Hardware Impact: No validation hardware gain; branch cost described above.
+
+## RepairTool Integrity Diagnosis NaN Guard
+Problem: RepairTool's module service path still divided `CurrentIntegrity / MaxIntegrity` directly for diagnostics and compared raw module integrity fields for sealed/restored state. A NaN from a damaged module could poison HUD diagnosis or suppress the correct repair state.
+Solution: Added finite helpers for module integrity percentage and sealed/below-max tests. Diagnostics and restored/healthy transitions now reject non-finite current/max integrity before ratio or comparison logic.
+Rejected Alternatives: Trusting BaseModule to sanitize every producer would leave the tool-domain HUD path exposed. Clamping only the final percent would still allow raw sealed/restored comparisons to lie.
+Scalability potential: Low/MX350 pays only branch checks when module diagnostics are read. Middle/High/Ultra keep the same repair presentation and logs; no new visual or physics work is introduced.
+Hardware Impact: Estimated 0-1 microseconds per diagnosis read or module repair hit. No speed gain claimed; this is fault containment.
+
+## Validation Wall Twenty-Seventh Pass
+Problem: Integrity diagnosis hardening touched compile-relevant RepairTool code and needed source evidence.
+Solution: Ran rg for raw `CurrentIntegrity/MaxIntegrity` ratios and comparisons; it returned NO_REPAIR_INTEGRITY_RAW_RATIO_MATCHES. Ran fixed-string bloat grep across repair/tool/interaction/VFX files; it returned NO_REPAIR_INTEGRITY_DIAG_HOTPATH_BLOAT_MATCHES. Ran filtered dotnet build with BuildProjectReferences=false; it returned NO_REPAIR_INTEGRITY_DIAG_BUILD_DIAGNOSTICS and DOTNET_EXIT_CODE=1.
+Rejected Alternatives: Skipping build after C# changes would leave weaker evidence. Reporting a nonzero build as clean would be false.
+Scalability potential: No gameplay contract changed; diagnostic state is now finite-gated before HUD/log formatting.
+Hardware Impact: No validation hardware gain; branch cost described above.

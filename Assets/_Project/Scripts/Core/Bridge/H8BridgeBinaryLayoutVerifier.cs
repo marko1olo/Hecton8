@@ -41,6 +41,7 @@ namespace Hecton8.Core.Bridge
             VerifyPrefabLoreLink();
             VerifyDesignValue();
             VerifyFacadeTelemetry();
+            VerifyFacadeTelemetryDumpHeader();
             VerifyInputBinding();
             VerifyMacroHeader();
             VerifyDataVaultSignal();
@@ -100,6 +101,16 @@ namespace Hecton8.Core.Bridge
             AssertOffset<H8FacadeTelemetryEntry>(H8BridgeTypeHashes.FacadeTelemetry, nameof(H8FacadeTelemetryEntry.SafeDefault), 24);
             AssertOffset<H8FacadeTelemetryEntry>(H8BridgeTypeHashes.FacadeTelemetry, nameof(H8FacadeTelemetryEntry.LutSwapHash), 28);
             AssertOffset<H8FacadeTelemetryEntry>(H8BridgeTypeHashes.FacadeTelemetry, nameof(H8FacadeTelemetryEntry.Flags), 32);
+        }
+
+        private static void VerifyFacadeTelemetryDumpHeader()
+        {
+            AssertSize<H8FacadeTelemetryDumpHeader>(H8BridgeTypeHashes.FacadeTelemetryDumpHeader, 32);
+            AssertOffset<H8FacadeTelemetryDumpHeader>(H8BridgeTypeHashes.FacadeTelemetryDumpHeader, nameof(H8FacadeTelemetryDumpHeader.Magic), 0);
+            AssertOffset<H8FacadeTelemetryDumpHeader>(H8BridgeTypeHashes.FacadeTelemetryDumpHeader, nameof(H8FacadeTelemetryDumpHeader.EntryCount), 8);
+            AssertOffset<H8FacadeTelemetryDumpHeader>(H8BridgeTypeHashes.FacadeTelemetryDumpHeader, nameof(H8FacadeTelemetryDumpHeader.EntrySizeBytes), 12);
+            AssertOffset<H8FacadeTelemetryDumpHeader>(H8BridgeTypeHashes.FacadeTelemetryDumpHeader, nameof(H8FacadeTelemetryDumpHeader.Cursor), 16);
+            AssertOffset<H8FacadeTelemetryDumpHeader>(H8BridgeTypeHashes.FacadeTelemetryDumpHeader, nameof(H8FacadeTelemetryDumpHeader.PayloadHash), 24);
         }
 
         private static void VerifyInputBinding()
@@ -200,5 +211,6 @@ namespace Hecton8.Core.Bridge
         public const uint DataVaultSignal = 0xB8F00007u;
         public const uint AcousticSignal = 0xB8F00008u;
         public const uint LoreSignal = 0xB8F00009u;
+        public const uint FacadeTelemetryDumpHeader = 0xB8F0000Au;
     }
 }

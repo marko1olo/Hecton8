@@ -9,6 +9,7 @@ using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.World;
 using System.Collections.Generic;
+using Unity.Mathematics;
 
 namespace Hecton8.Biolum
 {
@@ -49,7 +50,10 @@ namespace Hecton8.Biolum
         /// </summary>
         public static Color Sample(Color[] spectrum, float position)
         {
-            position = Mathf.Clamp01(position);
+            if (spectrum == null || spectrum.Length == 0)
+                return Color.black;
+
+            position = math.isfinite(position) ? math.saturate(position) : 0.5f;
             int idx = Mathf.RoundToInt(position * (spectrum.Length - 1));
             return spectrum[idx];
         }
@@ -69,6 +73,10 @@ namespace Hecton8.Biolum
     {
         private const int MaxTrackedActiveZones = 512;
         private const float AupRefreshDistanceSqr = 0.0004f;
+        private const double BiolumTickTimeModulo = 65536d;
+        private const float MaxLegacyLightIntensity = 10f;
+        private const float MaxLegacyLightRange = 160f;
+        private const int BiolumZoneInvalidInputHash = unchecked((int)0x42494F5Au); // BIOZ
         // COLD ALLOC: List<HectonBiolumZone>[512] - active zone registry replacing scene-wide reflection search fallback - owner: HectonBiolumZone
         private static readonly List<HectonBiolumZone> s_ActiveZones = new List<HectonBiolumZone>(MaxTrackedActiveZones);
 
@@ -98,8 +106,12 @@ namespace Hecton8.Biolum
         private AbsoluteUniversePosition _cachedZoneAup;
         private Vector3 _cachedZoneRuntimePosition;
         private bool _cachedZoneAupValid;
+        private double _biolumFallbackTimeSeconds;
+        private float _biolumTickTime;
+        private int _lastInvalidZoneInputFrame = -1;
 
         internal static List<HectonBiolumZone> ActiveZones => s_ActiveZones;
+        protected float BiolumTickTime => _biolumTickTime;
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // DIRTY-FLAG CACHING (Avoid redundant property updates)
@@ -119,6 +131,8 @@ namespace Hecton8.Biolum
 
         protected virtual void Awake()
         {
+            _maxLights = Mathf.Clamp(_maxLights, 1, 16);
+            _updateInterval = Mathf.Max(1, _updateInterval);
             _cachedTransform = transform;
             RefreshCachedAup();
             _activeLights = new Light[_maxLights]; // COLD ALLOC: Light[_maxLights] â€” pooled biolum light references â€” owner: HectonBiolumZone
@@ -194,6 +208,7 @@ namespace Hecton8.Biolum
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugTickInvocations++;
 #endif
+            _biolumTickTime = ResolveBiolumTickTime(deltaTime);
             int frame = Time.frameCount;
             if (frame - _lastUpdateFrame < _updateInterval) return;
             _lastUpdateFrame = frame;
@@ -312,10 +327,10 @@ namespace Hecton8.Biolum
                 light.gameObject.SetActive(true);
             }
 
-            light.transform.position = pos;
-            light.color = color;
-            light.range = range;
-            light.intensity = intensity;
+            light.transform.position = SanitizeLightPosition(pos);
+            light.color = SanitizeLightColor(color);
+            light.range = SanitizeLightRange(range);
+            light.intensity = SanitizeLightIntensity(intensity);
             _activeLightCount++;
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -332,9 +347,16 @@ namespace Hecton8.Biolum
         {
             if (light == null) return;
 
-            light.intensity = intensity;
-            light.range = range;
-            light.color = color;
+            light.intensity = SanitizeLightIntensity(intensity);
+            light.range = SanitizeLightRange(range);
+            light.color = SanitizeLightColor(color);
+        }
+
+        protected void UpdateLightPosition(Light light, Vector3 position)
+        {
+            if (light == null) return;
+
+            light.transform.position = SanitizeLightPosition(position);
         }
 
         /// <summary>
@@ -376,25 +398,124 @@ namespace Hecton8.Biolum
 
         protected float ScaleIntensityByMood(float baseIntensity)
         {
-            float mood = 0.5f + Mathf.Clamp01(_moodLevel);
+            float mood = 0.5f + Sanitize01(_moodLevel, 0.5f);
             HectonBiolumManager manager = GlobalRegistry.BiolumManager;
             float mgr = manager != null
-                ? manager._globalIntensityScale
+                ? SanitizeNonNegative(manager._globalIntensityScale, 1f)
                 : 1f;
-            return baseIntensity * mood * mgr;
+            return math.min(SanitizeNonNegative(baseIntensity, 0f) * mood * mgr, MaxLegacyLightIntensity);
         }
 
         protected float ScaleRangeByHazard(float baseRange)
         {
-            float hazard = 1.5f - Mathf.Clamp01(_hazardLevel);
+            float hazard = 1.5f - Sanitize01(_hazardLevel, 0.1f);
             HectonBiolumManager manager = GlobalRegistry.BiolumManager;
             float mgr = manager != null
-                ? manager._globalRangeScale
+                ? SanitizeNonNegative(manager._globalRangeScale, 1f)
                 : 1f;
-            return baseRange * hazard * mgr;
+            return math.min(SanitizeNonNegative(baseRange, 0f) * hazard * mgr, MaxLegacyLightRange);
         }
 
-        protected Color GetHazardTint() => Color.Lerp(Color.white, Color.red, _hazardLevel * 0.3f);
+        protected Color GetHazardTint() => Color.Lerp(Color.white, Color.red, Sanitize01(_hazardLevel, 0.1f) * 0.3f);
+
+        protected float Sanitize01(float value, float fallback)
+        {
+            if (math.isfinite(value))
+                return math.saturate(value);
+
+            ReportInvalidZoneInput();
+            return math.saturate(fallback);
+        }
+
+        protected float SanitizeNonNegative(float value, float fallback)
+        {
+            if (math.isfinite(value))
+                return math.max(0f, value);
+
+            ReportInvalidZoneInput();
+            return math.max(0f, fallback);
+        }
+
+        protected Color SanitizeBiolumColor(Color color)
+        {
+            bool valid =
+                math.isfinite(color.r) &&
+                math.isfinite(color.g) &&
+                math.isfinite(color.b) &&
+                math.isfinite(color.a);
+            if (valid)
+            {
+                return new Color(
+                    math.clamp(color.r, 0f, MaxLegacyLightIntensity),
+                    math.clamp(color.g, 0f, MaxLegacyLightIntensity),
+                    math.clamp(color.b, 0f, MaxLegacyLightIntensity),
+                    math.saturate(color.a));
+            }
+
+            ReportInvalidZoneInput();
+            return Color.black;
+        }
+
+        private Vector3 SanitizeLightPosition(Vector3 position)
+        {
+            if (MathGuard.IsFinite(position))
+                return position;
+
+            ReportInvalidZoneInput();
+            return _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
+        }
+
+        private Color SanitizeLightColor(Color color)
+        {
+            return SanitizeBiolumColor(color);
+        }
+
+        private float SanitizeLightRange(float range)
+        {
+            return math.clamp(SanitizeNonNegative(range, 0f), 0f, MaxLegacyLightRange);
+        }
+
+        private float SanitizeLightIntensity(float intensity)
+        {
+            return math.clamp(SanitizeNonNegative(intensity, 0f), 0f, MaxLegacyLightIntensity);
+        }
+
+        private void ReportInvalidZoneInput()
+        {
+            int frame = Time.frameCount;
+            if (_lastInvalidZoneInputFrame == frame)
+                return;
+
+            _lastInvalidZoneInputFrame = frame;
+            GlobalTelemetryBus.PublishMathGuardInvalidNumber(BiolumZoneInvalidInputHash);
+        }
+
+        private float ResolveBiolumTickTime(float deltaTime)
+        {
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            if (dispatcher != null)
+            {
+                H8TimeSnapshot snapshot = dispatcher.TimeSnapshot;
+                if (snapshot.Time >= 0d && !double.IsNaN(snapshot.Time) && !double.IsInfinity(snapshot.Time))
+                {
+                    _biolumFallbackTimeSeconds = snapshot.Time;
+                    return (float)(_biolumFallbackTimeSeconds % BiolumTickTimeModulo);
+                }
+            }
+
+            float safeDeltaTime = (!float.IsNaN(deltaTime) && !float.IsInfinity(deltaTime) && deltaTime > 0f)
+                ? Mathf.Min(deltaTime, 0.25f)
+                : 0f;
+            _biolumFallbackTimeSeconds += safeDeltaTime;
+            if (_biolumFallbackTimeSeconds < 0d ||
+                double.IsNaN(_biolumFallbackTimeSeconds) ||
+                double.IsInfinity(_biolumFallbackTimeSeconds))
+            {
+                _biolumFallbackTimeSeconds = 0d;
+            }
+
+            return (float)(_biolumFallbackTimeSeconds % BiolumTickTimeModulo);
+        }
 
         private void RefreshCachedAup()
         {

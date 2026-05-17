@@ -603,3 +603,34 @@ Status: VERIFIED MASTER GRADE - POLISH PASS 24 STATIC VERIFIED
 - Runtime savings remain unmeasured; no Unity Profiler/Burst capture exists in this CLI session.
 - No dotnet rebuild was run for this pass per user instruction.
 - Added work is fixed lock/unlock bookkeeping around a 1 Hz scheduled job; exact cost requires profiler evidence.
+
+---
+
+# ECOSYSTEM_POPULATION_BALANCER Polish Addendum
+
+Timestamp: 2026-05-17
+Status: VERIFIED MASTER GRADE - POLISH PASS 25 STATIC VERIFIED
+
+## What Was Wrong
+
+- Adjacent ecosystem services used `Destroy(gameObject)` when duplicate services were detected.
+- That is unsafe on the shared `__HECTON_ECOSYSTEM_RUNTIME` root because destroying one duplicate can remove sibling ecosystem systems.
+- `MigrationDirector` still used direct persistent `new NativeArray` allocation, no H8Memory job fence, and sequential Pack=4 migration job structs.
+
+## What Was Done
+
+- Replaced duplicate root destruction in `FaunaGeneticsManager`, `EcosystemHealthDirector`, and `MigrationDirector` with non-destructive duplicate suppression.
+- Routed `MigrationDirector` persistent native arrays through `H8Memory.Allocate` / `H8Memory.Release` using `SystemID.AIEcology`.
+- Registered the scheduled migration field job with `H8Memory.RegisterActiveJob`.
+- Converted migration job structs to explicit Pack=1 layouts with fixed `FieldOffset`s.
+- Verified with forbidden-pattern `rg`, struct-layout `rg`, H8Memory ownership `rg`, and `git diff --check`.
+
+## Cinematic Cheats Used
+
+- No new simulation was added. This pass preserves the existing low-frequency migration fake while hardening service boot, ABI layout, and native-memory ownership.
+
+## Exact Microseconds Saved
+
+- Runtime savings remain unmeasured; no Unity Profiler/Burst capture exists in this CLI session.
+- No dotnet rebuild was run for this pass per user instruction.
+- Runtime impact should be boot/job-lifecycle bookkeeping only; exact cost requires profiler evidence.

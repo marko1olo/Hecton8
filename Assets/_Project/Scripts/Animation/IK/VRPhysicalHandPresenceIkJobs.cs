@@ -1105,7 +1105,7 @@ namespace Hecton8.Animation.IK
         private static quaternion SanitizeQuaternion(quaternion value, quaternion fallback)
         {
             float lengthSq = math.lengthsq(value.value);
-            return math.all(math.isfinite(value.value)) && lengthSq > MinLengthSq
+            return math.all(math.isfinite(value.value)) && math.isfinite(lengthSq) && lengthSq > MinLengthSq
                 ? new quaternion(value.value * math.rsqrt(lengthSq))
                 : fallback;
         }

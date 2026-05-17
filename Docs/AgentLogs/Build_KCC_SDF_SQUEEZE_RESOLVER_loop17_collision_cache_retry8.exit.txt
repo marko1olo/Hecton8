@@ -1,0 +1,26 @@
+CSC : warning CS2002: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Core\Contracts\HectonSignalLaneContract.cs' specified multiple times [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1472,25): error CS0103: The name 'TryToFiniteVector3' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1473,25): error CS0103: The name 'TryToFiniteVector3' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1479,25): error CS0103: The name 'TryToFiniteVector3' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1488,17): error CS0103: The name 'TryToFiniteVector3' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1493,13): error CS0246: The type or namespace name 'HectonPlayerMovement' could not be found (are you missing a using directive or an assembly reference?) [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1497,21): error CS0103: The name 'TryToFiniteVector3' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1490,17): error CS0177: The out parameter 'playerPosition' must be assigned to before control leaves the current method [C:\hades\Hecton8\Hecton8.Core.csproj]
+
+Build FAILED.
+
+CSC : warning CS2002: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Core\Contracts\HectonSignalLaneContract.cs' specified multiple times [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1472,25): error CS0103: The name 'TryToFiniteVector3' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1473,25): error CS0103: The name 'TryToFiniteVector3' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1479,25): error CS0103: The name 'TryToFiniteVector3' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1488,17): error CS0103: The name 'TryToFiniteVector3' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1493,13): error CS0246: The type or namespace name 'HectonPlayerMovement' could not be found (are you missing a using directive or an assembly reference?) [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1497,21): error CS0103: The name 'TryToFiniteVector3' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1490,17): error CS0177: The out parameter 'playerPosition' must be assigned to before control leaves the current method [C:\hades\Hecton8\Hecton8.Core.csproj]
+    1 Warning(s)
+    7 Error(s)
+
+Time Elapsed 00:00:39.66
+EXIT_CODE=1
+MEASURED_BUILD_ELAPSED=00:00:40.0633692
+MEASURED_BUILD_ELAPSED_US=40063369

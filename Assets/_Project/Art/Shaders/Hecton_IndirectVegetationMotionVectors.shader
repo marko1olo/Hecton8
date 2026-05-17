@@ -435,7 +435,8 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 if (distSq >= radiusSq)
                     return float3(0.0, 0.0, 0.0);
 
-                float proximity = saturate(1.0 - distSq / radiusSq);
+                float invRadiusSq = rcp(max(radiusSq, 0.00000001));
+                float proximity = saturate(1.0 - distSq * invRadiusSq);
                 proximity *= proximity;
                 float typeScale = instanceType < 0.5 ? 0.72 : (instanceType < 1.5 ? 1.08 : 0.52);
                 return (SafeNormalize3(float3(delta.x, 0.0, delta.z)) + baseNormalWS * 0.04) *

@@ -962,3 +962,143 @@ Verification:
 - `rg` confirms `LegacySourceKeywords` and `DisableLegacySourceKeywords` in `HectonUberNoirMaterialConsolidator.cs`.
 - `git diff --check` passes for the touched consolidator with line-ending warning only.
 - No `dotnet build` or Unity rebuild was run per user instruction.
+
+## 2026-05-17 Loop 49 - Wet-Glass Texture Projection Repair
+
+What was wrong:
+- The generic material snapshot fallback could map Triplebrick `_RoughnessDirt` into UberNoir `_BaseMap`.
+- That treats roughness dirt as albedo for converted wet glass.
+- `_MaskMap` transform was always written as unit scale/zero offset, so source mask tiling could be lost.
+
+What was done:
+- Added `ResolveBaseMapTexture()` and excluded `_RoughnessDirt` from WetGlass base-map fallback.
+- Kept `_RoughnessDirt` available as `_MaskMap`.
+- Added `MaskMapScale` and `MaskMapOffset` to `MaterialSnapshot`.
+- Applied `_MaskMap` scale/offset during conversion.
+
+Cinematic cheats used:
+- None. This preserves the intended fake: mask breakup drives wetness/roughness, not base albedo.
+
+Exact microseconds saved:
+- None measured. This is material projection correctness.
+
+Verification:
+- `rg` confirms `ResolveBaseMapTexture`, `MaskMapScale`, and `MaskMapOffset` in `HectonUberNoirMaterialConsolidator.cs`.
+- Consolidator reports `BraceDelta=0`, `Open=68`, `Close=68`, `IfCount=27`.
+- `git diff --check` passes for the touched consolidator with line-ending warning only.
+- No `dotnet build` or Unity rebuild was run per user instruction.
+
+## 2026-05-17 Loop 50 - Required Pass Re-Enable
+
+What was wrong:
+- Source materials in the conversion roots can serialize disabled shader passes, including `MOTIONVECTORS`.
+- If retained after shader swap, converted UberNoir materials could lose the displaced MotionVectors path even though the shader implements it.
+
+What was done:
+- Added `EnableRequiredShaderPasses()` to the material consolidator.
+- Re-enabled `ForwardLit`, `UniversalForward`, `MotionVectors`, `MOTIONVECTORS`, and `ShadowCaster` after render-state normalization.
+
+Cinematic cheats used:
+- None. This preserves existing STP/shadow correctness.
+
+Exact microseconds saved:
+- None measured. This prevents stale material pass-state artifacts.
+
+Verification:
+- `rg` confirms `EnableRequiredShaderPasses` and `SetShaderPassEnabled` calls in `HectonUberNoirMaterialConsolidator.cs`.
+- Consolidator reports `BraceDelta=0`, `Open=69`, `Close=69`, `IfCount=27`.
+- `git diff --check` passes for the touched consolidator with line-ending warning only.
+- No `dotnet build` or Unity rebuild was run per user instruction.
+
+## 2026-05-17 Loop 51 - Mask ST Shader Consumption
+
+What was wrong:
+- Loop 49 captured `_MaskMap` scale/offset in the material consolidator.
+- UberNoir still sampled `_MaskMap` with the base/POM wear UV, so converted material mask tiling was not actually consumed by the shader.
+
+What was done:
+- Added `_MaskMap_ST` to `UnityPerMaterial`.
+- Replaced TEXCOORD8 `baseUvScale` with `uvAux`: `xy` stores base UV scale, `zw` stores pre-transformed mask UV.
+- Sampled `_MaskMap` with `maskUv`.
+- Applied the POM UV delta to `maskUv` on high tiers so packed masks stay aligned with rust/albedo displacement.
+
+Cinematic cheats used:
+- Vertex-computed UV projection keeps authored roughness/AO/wetness breakup without fragment `TRANSFORM_TEX` work.
+
+Exact microseconds saved:
+- None measured. No texture count change; the correction prevents visual/material projection debt.
+
+Verification:
+- `rg` confirms `_MaskMap_ST`, `uvAux`, `maskUv`, and no stale `input.baseUvScale` usage in `Hecton8_UberNoir.hlsl`.
+- `Hecton8_UberNoir.hlsl` reports `BraceDelta=0`, `Open=66`, `Close=66`, `IfCount=23`, `PreIf=36`, `PreEndif=36`.
+- `git diff --check` passes for the shader with line-ending warning only.
+- No `dotnet build` or Unity rebuild was run per user instruction.
+
+## 2026-05-17 Loop 52 - Wet-Glass Normal Projection Priority
+
+What was wrong:
+- `Triplebrick/Glass` declares and samples `_Normal`.
+- `Mat_LeakWetSheen.mat` also serializes `_BumpMap`, so the consolidator could select the wrong legacy normal slot before the actual wet-glass normal.
+
+What was done:
+- Added `ResolveBumpMapTexture()` to the material consolidator.
+- Wet-glass projection now prefers `_Normal`, then `_NormalMap`, then `_BumpMap`.
+- URP/tool projections keep `_BumpMap` priority because that is their source shader contract.
+
+Cinematic cheats used:
+- None. This preserves the authored wet-glass normal fake that drives sheen/refraction breakup.
+
+Exact microseconds saved:
+- None measured. Runtime texture count and shader math are unchanged.
+
+Verification:
+- `rg` confirms `ResolveBumpMapTexture()` and the wet-glass `_Normal` priority in `HectonUberNoirMaterialConsolidator.cs`.
+- Consolidator reports `BraceDelta=0`, `Open=70`, `Close=70`, `IfCount=28`.
+- `git diff --check` passes for the consolidator with line-ending warning only.
+- No `dotnet build` or Unity rebuild was run per user instruction.
+
+## 2026-05-17 Loop 53 - Dead Variant Strip
+
+What was wrong:
+- UberNoir ForwardLit declared `_ADDITIONAL_LIGHTS`, `_ADDITIONAL_LIGHT_SHADOWS`, `_LIGHT_LAYERS`, and `_LIGHT_COOKIES` variants.
+- `Hecton8_UberNoir.hlsl` does not call additional-light APIs; lighting is main light + SH + caustics + emission.
+
+What was done:
+- Removed the unused additional-light/shadow/layer/cookie `multi_compile` declarations from the ForwardLit pass.
+- Kept main-light shadow variants because `GetMainLight(shadowCoord)` is used.
+
+Cinematic cheats used:
+- Main-light plus SH plus caustic fake remains the controlled noir lighting model instead of expanding per-object light truth.
+
+Exact microseconds saved:
+- None measured. This reduces variant surface/stutter risk; Unity shader import/player proof is still blocked.
+
+Verification:
+- `rg` finds no `_ADDITIONAL_LIGHTS`, `_ADDITIONAL_LIGHT_SHADOWS`, `_LIGHT_LAYERS`, `_LIGHT_COOKIES`, or `GetAdditionalLight` dependency in the UberNoir shader/include.
+- `Hecton8_UberNoir.shader` reports `BraceDelta=0`, `Open=16`, `Close=16`, `Passes=3`, `MultiCompile=15`, `ShaderFeature=2`.
+- `git diff --check` passes for the shader with line-ending warning only.
+- No `dotnet build` or Unity rebuild was run per user instruction.
+
+## 2026-05-17 Loop 54 - Rendering Hygiene Inquisition
+
+What was wrong:
+- After Loops 51-53, the Rendering/URP slice needed a fresh tech-debt scan for the user's data-sovereignty, hot-path, and multiplatform requirements.
+
+What was done:
+- Re-ran static scans over `Assets/_Project/Scripts/Rendering`.
+- Re-ran shader portability scans over the UberNoir shader/include chain.
+- Rechecked Rendering `StructLayout` packing.
+
+Cinematic cheats used:
+- None. This was an evidence pass.
+
+Exact microseconds saved:
+- None. Runtime code was not changed in this loop.
+
+Verification:
+- No `new NativeArray`/NativeList/NativeHashMap/NativeQueue allocations were found in Rendering.
+- `NativeArray<T>` hits are DataVault/texture raw-data views or Scatter job fields, not local persistent ownership.
+- No runtime Rendering `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, legacy `EventBus`, `Action<>`, `Func<>`, or delegate declarations were found; string interpolation hits are Editor-only consolidator report/menu code.
+- UberNoir shader/include chain has no `GrabPass`, `tex2D`, `sampler2D`, UAV, D3D-only macro, or thread-group syntax.
+- Rendering `StructLayout` hits remain `Pack=1`.
+- No `dotnet build` or Unity rebuild was run per user instruction.

@@ -162,8 +162,7 @@ namespace Hecton8.Core
             if (hardware == null)
                 return false;
 
-            byte batteryPercent = hardware.BatteryPercent;
-            return batteryPercent > 0 && batteryPercent < 15;
+            return PlatformBatteryWatchdog.IsCriticalBattery(hardware);
         }
 
         private static bool IsThermalThrottling(out bool critical)

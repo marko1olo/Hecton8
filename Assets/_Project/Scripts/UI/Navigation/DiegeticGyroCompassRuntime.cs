@@ -57,11 +57,16 @@ namespace Hecton8.UI.Navigation
 
         public static void ConfigureOwnedLanes()
         {
-            GlobalSignals.InitializeAllQueues();
+            global::Hecton8.Core.GlobalSignals.InitializeAllQueues();
             SignalBus<AnomalyProximitySignal>.EnsureInitialized();
             SignalBus<CompassCalibratedSignal>.EnsureInitialized();
         }
 
+        /// <summary>
+        /// Publishes a finite compass recalibration command on the owned typed lane.
+        /// </summary>
+        /// <param name="frame">Source frame id for duplicate rejection.</param>
+        /// <param name="quality01">Calibration quality scalar. Non-finite values publish as zero.</param>
         public static void PublishCalibration(uint frame, float quality01)
         {
             ConfigureOwnedLanes();
@@ -69,25 +74,51 @@ namespace Hecton8.UI.Navigation
             {
                 SourceHash = CompassCalibrationLaneHash,
                 Frame = frame,
-                CalibrationQuality01 = math.saturate(quality01),
+                CalibrationQuality01 = SanitizeUnit01(quality01),
                 Flags = 1
             };
             SignalBus<CompassCalibratedSignal>.Push(in signal);
         }
 
+        /// <summary>
+        /// Publishes finite anomaly proximity data for compass drift falsification.
+        /// </summary>
+        /// <param name="sourceAup">Anomaly source AUP. Non-finite local offsets are zeroed.</param>
+        /// <param name="frame">Source frame id for duplicate rejection.</param>
+        /// <param name="proximity01">Normalized proximity scalar.</param>
+        /// <param name="interference01">Normalized interference scalar.</param>
         public static void PublishAnomalyProximity(in AbsoluteUniversePosition sourceAup, uint frame, float proximity01, float interference01)
         {
             ConfigureOwnedLanes();
+            AbsoluteUniversePosition safeAup = SanitizeAup(in sourceAup);
             AnomalyProximitySignal signal = new AnomalyProximitySignal
             {
-                SourceAup = sourceAup,
-                Proximity01 = math.saturate(proximity01),
-                Interference01 = math.saturate(interference01),
+                SourceAup = safeAup,
+                Proximity01 = SanitizeUnit01(proximity01),
+                Interference01 = SanitizeUnit01(interference01),
                 SourceHash = CompassAnomalyLaneHash,
                 Frame = frame,
                 Flags = 1
             };
             SignalBus<AnomalyProximitySignal>.Push(in signal);
+        }
+
+        private static AbsoluteUniversePosition SanitizeAup(in AbsoluteUniversePosition sourceAup)
+        {
+            AbsoluteUniversePosition safeAup = sourceAup;
+            if (!math.isfinite(safeAup.LocalX))
+                safeAup.LocalX = 0f;
+            if (!math.isfinite(safeAup.LocalY))
+                safeAup.LocalY = 0f;
+            if (!math.isfinite(safeAup.LocalZ))
+                safeAup.LocalZ = 0f;
+
+            return safeAup;
+        }
+
+        private static float SanitizeUnit01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
         }
     }
 
@@ -200,10 +231,13 @@ namespace Hecton8.UI.Navigation
         private GraphicsBuffer _publishedDialMatrixBuffer;
         private GraphicsBuffer _boundDialMatrixBuffer;
 
+        /// <inheritdoc />
         public InertialNavigationSnapshot Snapshot => TryGetSnapshot(out InertialNavigationSnapshot snapshot) ? snapshot : default;
 
+        /// <inheritdoc />
         public double3 EstimatedAUP => TryGetSnapshot(out InertialNavigationSnapshot snapshot) ? snapshot.EstimatedAUP : double3.zero;
 
+        /// <inheritdoc />
         public float GyroDriftError => TryGetSnapshot(out InertialNavigationSnapshot snapshot) ? snapshot.GyroDriftError : 0f;
 
         private void Awake()
@@ -239,6 +273,7 @@ namespace Hecton8.UI.Navigation
             ReleaseIndirectBuffers();
         }
 
+        /// <inheritdoc />
         public bool TryGetSnapshot(out InertialNavigationSnapshot snapshot)
         {
             if (TryReadCompassState(out CompassStateDTO state))
@@ -251,6 +286,7 @@ namespace Hecton8.UI.Navigation
             return false;
         }
 
+        /// <inheritdoc />
         public void RequestRecalibration()
         {
             if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
@@ -262,6 +298,7 @@ namespace Hecton8.UI.Navigation
             stateBuffer[0] = state;
         }
 
+        /// <inheritdoc />
         public bool TryAccumulateRecalibrationHold(float deltaTime, out float progress01)
         {
             progress01 = 0f;
@@ -270,6 +307,7 @@ namespace Hecton8.UI.Navigation
 
             float safeDeltaTime = SanitizeDeltaTime(deltaTime);
             CompassStateDTO state = stateBuffer[0];
+            SanitizeCompassStateScalars(ref state);
             state.RecalibrationHold01 = math.saturate(state.RecalibrationHold01 + safeDeltaTime * math.rcp(RecalibrationHoldSeconds));
             progress01 = state.RecalibrationHold01;
             if (state.RecalibrationHold01 >= 1f)
@@ -280,6 +318,7 @@ namespace Hecton8.UI.Navigation
             return true;
         }
 
+        /// <inheritdoc />
         public void CancelRecalibrationHold()
         {
             if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
@@ -353,6 +392,7 @@ namespace Hecton8.UI.Navigation
             ResetParticleDebt();
         }
 
+        /// <inheritdoc />
         public void FastTick(float deltaTime)
         {
             if (!RefreshFastSignalInputs(out CompassStateDTO state))
@@ -364,6 +404,7 @@ namespace Hecton8.UI.Navigation
             ScheduleDrift(SanitizeDeltaTime(deltaTime));
         }
 
+        /// <inheritdoc />
         public void SlowTick()
         {
             if (_playerContext == null || _vault == null)
@@ -378,6 +419,7 @@ namespace Hecton8.UI.Navigation
             ScheduleDrift(DefaultSlowDeltaSeconds);
         }
 
+        /// <inheritdoc />
         public void LateFrameTick()
         {
             CompletePendingJob();
@@ -417,6 +459,9 @@ namespace Hecton8.UI.Navigation
                 return false;
 
             state = stateBuffer[0];
+            if (SanitizeFiniteState(ref state))
+                stateBuffer[0] = state;
+
             return true;
         }
 
@@ -645,6 +690,7 @@ namespace Hecton8.UI.Navigation
                 return false;
 
             state = stateBuffer[0];
+            SanitizeCompassStateScalars(ref state);
             if ((state.Flags & FlagInitialized) == 0u && state.Power01 <= 0f)
                 state.Power01 = 1f;
 
@@ -653,9 +699,10 @@ namespace Hecton8.UI.Navigation
             for (int i = 0; i < anomalySignals.Length; i++)
             {
                 ref readonly AnomalyProximitySignal signal = ref anomalySignals[i];
-                float interference = math.max(signal.Proximity01, signal.Interference01);
-                if (math.isfinite(interference))
-                    anomaly = math.max(anomaly, math.saturate(interference));
+                float interference = math.max(
+                    SanitizeUnit01(signal.Proximity01),
+                    SanitizeUnit01(signal.Interference01));
+                anomaly = math.max(anomaly, interference);
             }
 
             state.AnomalyInterference01 = anomaly;
@@ -717,6 +764,7 @@ namespace Hecton8.UI.Navigation
                 return;
 
             CompassStateDTO state = stateBuffer[0];
+            SanitizeFiniteState(ref state);
             double3 actualAup = pose.Aup.ToAbsoluteDouble3();
             if (!math.all(math.isfinite(actualAup)))
             {
@@ -808,7 +856,7 @@ namespace Hecton8.UI.Navigation
             }
 
             CompassStateDTO state = stateBuffer[0];
-            if (!IsFiniteState(in state))
+            if (SanitizeFiniteState(ref state))
             {
                 state.Flags |= FlagNonFiniteFallback;
                 stateBuffer[0] = state;
@@ -845,10 +893,13 @@ namespace Hecton8.UI.Navigation
                 return;
 
             CompassStateDTO state = stateBuffer[0];
+            if (SanitizeFiniteState(ref state))
+                stateBuffer[0] = state;
+
             CompassPresentationStateDTO presentation = presentationBuffer[0];
-            float power = outputBuffer[(int)CompassOutputSlot.Power01];
-            float heading = outputBuffer[(int)CompassOutputSlot.CurrentHeadingDegrees];
-            float anomaly = outputBuffer[(int)CompassOutputSlot.AnomalyInterference01];
+            float power = SanitizeUnit01(outputBuffer[(int)CompassOutputSlot.Power01]);
+            float heading = NormalizeHeading(outputBuffer[(int)CompassOutputSlot.CurrentHeadingDegrees]);
+            float anomaly = SanitizeUnit01(outputBuffer[(int)CompassOutputSlot.AnomalyInterference01]);
             bool powered = power >= PowerDeathThreshold01;
             int cardinalIndex = powered ? ResolveCardinalIndex(heading) : -1;
             bool presentationDirty = ApplyCardinalText(cardinalIndex, powered, ref presentation);
@@ -883,15 +934,16 @@ namespace Hecton8.UI.Navigation
 
         private bool ApplyDialHeading(float heading, in CompassStateDTO state, ref CompassPresentationStateDTO presentation)
         {
+            float safeHeading = NormalizeHeading(heading);
             if (ShouldDrawIndirectDial(in state))
             {
-                return DrawIndirectDial(heading, ref presentation);
+                return DrawIndirectDial(safeHeading, ref presentation);
             }
 
             if (dialPivot == null)
                 return false;
 
-            dialPivot.localRotation = Quaternion.AngleAxis(heading + dialDegreesOffset, Vector3.up);
+            dialPivot.localRotation = Quaternion.AngleAxis(NormalizeHeading(safeHeading + dialDegreesOffset), Vector3.up);
             return true;
         }
 
@@ -1069,9 +1121,9 @@ namespace Hecton8.UI.Navigation
 
         private bool ApplyChromatic(float chromatic, float power, float overkill, ref CompassPresentationStateDTO presentation)
         {
-            float safeChromatic = math.saturate(chromatic);
-            float safePower = math.saturate(power);
-            float safeOverkill = math.saturate(overkill);
+            float safeChromatic = SanitizeUnit01(chromatic);
+            float safePower = SanitizeUnit01(power);
+            float safeOverkill = SanitizeUnit01(overkill);
             if ((presentation.PresentationFlags & PresentationFlagShaderInitialized) != 0u &&
                 math.abs(presentation.LastCompassGlassChromatic01 - safeChromatic) <= ChromaticEpsilon &&
                 math.abs(presentation.LastCompassPower01 - safePower) <= ChromaticEpsilon &&
@@ -1388,16 +1440,115 @@ namespace Hecton8.UI.Navigation
             return normalized < 0f ? normalized + 360f : normalized;
         }
 
-        private static bool IsFiniteState(in CompassStateDTO state)
+        private static float SanitizeUnit01(float value)
         {
-            return math.all(math.isfinite(state.ActualAUP)) &&
-                   math.all(math.isfinite(state.RawEstimatedAUP)) &&
-                   math.all(math.isfinite(state.EstimatedAUP)) &&
-                   math.all(math.isfinite(state.Velocity)) &&
-                   math.isfinite(state.ActualHeadingDegrees) &&
-                   math.isfinite(state.CurrentHeadingDegrees) &&
-                   math.isfinite(state.DriftDegrees) &&
-                   math.isfinite(state.MaxGyroDriftDegrees);
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static bool SanitizeUnit01(ref float value)
+        {
+            float safe = SanitizeUnit01(value);
+            if (value == safe)
+                return false;
+
+            value = safe;
+            return true;
+        }
+
+        private static bool SanitizeFiniteFloat(ref float value, float fallback)
+        {
+            if (math.isfinite(value))
+                return false;
+
+            value = fallback;
+            return true;
+        }
+
+        private static bool SanitizeAbsFloat(ref float value)
+        {
+            float safe = math.isfinite(value) ? math.abs(value) : 0f;
+            if (value == safe)
+                return false;
+
+            value = safe;
+            return true;
+        }
+
+        private static bool SanitizeHeadingDegrees(ref float value)
+        {
+            float safe = NormalizeHeading(value);
+            if (value == safe)
+                return false;
+
+            value = safe;
+            return true;
+        }
+
+        private static bool SanitizeDouble3Zero(ref double3 value)
+        {
+            if (math.all(math.isfinite(value)))
+                return false;
+
+            value = double3.zero;
+            return true;
+        }
+
+        private static bool SanitizeFloat3Zero(ref float3 value)
+        {
+            if (math.all(math.isfinite(value)))
+                return false;
+
+            value = float3.zero;
+            return true;
+        }
+
+        private static bool SanitizeNoiseClock(ref float value)
+        {
+            float safe = math.isfinite(value) && value >= 0f && value <= 100000f ? value : 0f;
+            if (value == safe)
+                return false;
+
+            value = safe;
+            return true;
+        }
+
+        private static bool SanitizeCompassStateScalars(ref CompassStateDTO state)
+        {
+            bool changed = false;
+            changed |= SanitizeUnit01(ref state.AnomalyInterference01);
+            changed |= SanitizeUnit01(ref state.Power01);
+            changed |= SanitizeUnit01(ref state.Glitch01);
+            changed |= SanitizeUnit01(ref state.RecalibrationHold01);
+            changed |= SanitizeUnit01(ref state.SystemStress01);
+            changed |= SanitizeNoiseClock(ref state.NoiseClockSeconds);
+            changed |= SanitizeAbsFloat(ref state.MaxGyroDriftDegrees);
+            return changed;
+        }
+
+        private static bool SanitizeFiniteState(ref CompassStateDTO state)
+        {
+            bool changed = SanitizeCompassStateScalars(ref state);
+            changed |= SanitizeDouble3Zero(ref state.ActualAUP);
+            changed |= SanitizeDouble3Zero(ref state.RawEstimatedAUP);
+            changed |= SanitizeDouble3Zero(ref state.EstimatedAUP);
+            if (SanitizeDouble3Zero(ref state.PreviousActualAUP))
+            {
+                state.Flags &= ~FlagHasPreviousAup;
+                changed = true;
+            }
+
+            changed |= SanitizeFloat3Zero(ref state.Velocity);
+            changed |= SanitizeHeadingDegrees(ref state.ActualHeadingDegrees);
+            changed |= SanitizeHeadingDegrees(ref state.CurrentHeadingDegrees);
+            changed |= SanitizeFiniteFloat(ref state.DriftDegrees, 0f);
+            float safeDeltaSeconds = SanitizeDeltaTime(state.DeltaSeconds);
+            if (state.DeltaSeconds != safeDeltaSeconds)
+            {
+                state.DeltaSeconds = safeDeltaSeconds;
+                changed = true;
+            }
+
+            return changed;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -1418,13 +1569,17 @@ namespace Hecton8.UI.Navigation
             public void Execute()
             {
                 CompassStateDTO state = State[0];
-                float deltaTime = math.clamp(DeltaSeconds, 0f, MaxIntegrationDeltaSeconds);
+                float deltaTime = math.isfinite(DeltaSeconds) ? math.clamp(DeltaSeconds, 0f, MaxIntegrationDeltaSeconds) : 0f;
+                float catchupRate = SanitizeNonNegative(HeadingCatchupRate);
+                float noiseFrequency = SanitizeNonNegative(DriftNoiseFrequency);
+                float noiseDegrees = SanitizeNonNegative(AnomalyNoiseDegrees);
+                float wildSpinRate = SanitizeNonNegative(WildSpinDegreesPerSecond);
                 float actualHeading = NormalizeAngle(state.ActualHeadingDegrees);
                 float currentHeading = (state.Flags & FlagInitialized) != 0u
                     ? NormalizeAngle(state.CurrentHeadingDegrees)
                     : actualHeading;
-                float power = math.saturate(state.Power01);
-                float anomaly = math.saturate(state.AnomalyInterference01);
+                float power = SanitizeUnit01(state.Power01);
+                float anomaly = SanitizeUnit01(state.AnomalyInterference01);
 
                 uint flags = state.Flags | FlagInitialized;
                 flags &= ~FlagCalibrationApplied;
@@ -1439,21 +1594,21 @@ namespace Hecton8.UI.Navigation
                 else if (power >= PowerDeathThreshold01)
                 {
                     float headingDelta = DeltaAngleDegrees(currentHeading, actualHeading);
-                    float alpha = math.saturate(HeadingCatchupRate * deltaTime);
-                    float noiseValue = ResolveNoiseValue(NoiseTime, DriftNoiseFrequency, flags);
+                    float alpha = SanitizeUnit01(catchupRate * deltaTime);
+                    float noiseValue = ResolveNoiseValue(NoiseTime, noiseFrequency, flags);
                     currentHeading += headingDelta * alpha;
-                    currentHeading += noiseValue * AnomalyNoiseDegrees * anomaly * deltaTime;
+                    currentHeading += noiseValue * noiseDegrees * anomaly * deltaTime;
                     if (anomaly > 0.8f)
                     {
                         float spinSign = noiseValue < 0f ? -1f : 1f;
-                        currentHeading += spinSign * WildSpinDegreesPerSecond * anomaly * deltaTime;
+                        currentHeading += spinSign * wildSpinRate * anomaly * deltaTime;
                     }
                 }
 
                 currentHeading = NormalizeAngle(currentHeading);
                 float drift = DeltaAngleDegrees(actualHeading, currentHeading);
                 float maxDrift = math.max(math.abs(state.MaxGyroDriftDegrees), math.abs(drift));
-                float glitch = math.saturate(anomaly * 1.25f + math.saturate(math.abs(drift) * (1f / 90f)) * 0.25f);
+                float glitch = SanitizeUnit01(anomaly * 1.25f + SanitizeUnit01(math.abs(drift) * (1f / 90f)) * 0.25f);
 
                 if (!math.isfinite(currentHeading) ||
                     !math.isfinite(actualHeading) ||
@@ -1515,6 +1670,9 @@ namespace Hecton8.UI.Navigation
 
             private static float ResolveNoiseValue(float noiseTime, float noiseFrequency, uint flags)
             {
+                if (!math.isfinite(noiseTime) || !math.isfinite(noiseFrequency))
+                    return 0f;
+
                 float t = noiseTime * noiseFrequency;
                 if ((flags & FlagLowTier) != 0u)
                     return TriangleNoise(t);
@@ -1528,8 +1686,21 @@ namespace Hecton8.UI.Navigation
 
             private static float TriangleNoise(float t)
             {
+                if (!math.isfinite(t))
+                    return 0f;
+
                 float phase = math.frac(t);
                 return 1f - math.abs(phase * 4f - 2f);
+            }
+
+            private static float SanitizeUnit01(float value)
+            {
+                return math.isfinite(value) ? math.saturate(value) : 0f;
+            }
+
+            private static float SanitizeNonNegative(float value)
+            {
+                return math.isfinite(value) ? math.max(0f, value) : 0f;
             }
         }
     }

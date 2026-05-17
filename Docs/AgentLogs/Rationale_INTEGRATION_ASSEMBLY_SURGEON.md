@@ -269,3 +269,11 @@ Solution: Rebuilt the current disk again and ran a focused gate before amending.
 Rejected Alternatives: Pushing with a dirty source file, keeping unused local NativeArray tracking helpers after the vault migration, or amending without compile proof was rejected.
 Scalability potential: Low/Quest/Android keep survival database ownership in DataVault without dead local tracking paths. Middle keeps the same lookup behavior. High/Ultra keep richer survival database parameters without private allocator ownership in the gameplay system.
 Hardware Impact: Runtime frame savings are 0 us measured. Final helper-cleanup compile proof cost is 25,936,890.4 us. Static gate reports `SURVIVAL_TRACKED_NATIVE_HELPER_HITS=0`, `GIT_DIFF_CHECK_EXIT=0`, and `CONFLICT_START_END_MARKER_HITS=0`.
+
+## 2026-05-17 New Git Gate Typed-Lane Repair
+
+Problem: A fresh GitHub gate found a dirty current tree. The first current build was green, but static policy found `GlobalSignals.InitializeAllQueues()` had returned in `LockstepStateValidator` and `DiegeticCompassSignals`. Removing those broad init calls exposed a compile wall in `IPlatformIntegration.cs`: the file used `SignalBus<ScalabilityChangedEvent>` after replacing the namespace import with a type alias.
+Solution: Replaced the lockstep and compass broad global queue initialization with explicit owned `SignalBus<T>.Configure(...)` calls using their established capacities and lane hashes. Restored `using Hecton8.Core.Contracts.Signals;` in `IPlatformIntegration.cs` so the typed scalability signal lane compiles without reintroducing broad init.
+Rejected Alternatives: Keeping `GlobalSignals.InitializeAllQueues()` for convenience, pushing a compile-green but policy-red tree, or editing generated project files was rejected.
+Scalability potential: Low/Quest/Android keep bounded typed-lane startup instead of global queue fan-out. Middle keeps deterministic routing. High/Ultra consumers retain rich telemetry and UI signals without cache-hostile global initialization from local systems.
+Hardware Impact: Runtime frame savings are 0 us measured. Failed compile probe after typed-lane repair cost 81,216,823.1 us. Final compile proof cost is 51,027,497.0 us. Static gate reports `TOUCHED_GLOBAL_INIT_HITS=0`, `DUPLICATE_SIGNAL_DECLARATIONS_OUTSIDE_GLOBALSIGNALS=0`, and `GIT_DIFF_CHECK_EXIT=0`.

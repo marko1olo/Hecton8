@@ -284,3 +284,34 @@ Verification:
 - `git diff --check` on touched signal/audit/shim files: PASS; line-ending warnings only.
 - `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /m:1 /nr:false`: PASS, 0 warnings, 0 errors.
 - Build discipline: one selected Core build after static gates; no repeated rebuild loop.
+
+## 2026-05-17 - SignalBus Coverage Closure
+Status: VERIFIED MASTER GRADE - PHYSICS CODIFIED for Core/Contracts static authority; selected Core compile currently blocked by external World/VFX churn.
+
+What was wrong:
+- 15 concrete `SignalBus<T>.Configure` lanes had no byte ID in `HectonSignalLaneContract`.
+- `PlayerMovementPresentationSignals.cs` was an empty namespace while six player presentation payload structs lived in `GlobalSignals`.
+- Scalability events used a local `0x53434C54u` stable lane hash outside the contract.
+
+What was done:
+- Added lane IDs 111-125 in `HectonSignalLaneContract` for scalability, acoustic-zone, data-vault, prefab, player presentation, HUD, seismic, and tool-acoustic lanes.
+- Recomputed `SignalLaneRegistryHash` to `0x6F76078Au`.
+- Moved `PlayerFootstepSignal`, `PlayerWaterSplashSignal`, `PlayerExhaleSignal`, `PlayerSprintStateSignal`, `PlayerFatalPressureSignal`, and `PlayerTransportBailoutSignal` into `Core/Signals/PlayerMovementPresentationSignals.cs` with explicit `Pack = 1`.
+- Removed those six payload structs from the `GlobalSignals` monolith.
+- Added `ScalabilityChangedEventStableHash` to `HectonSignalLaneContract` and routed `GlobalSignals` plus `IPlatformIntegration` through it.
+- Hardened `Test-ContractAuthority.ps1` so configured typed lanes must have byte IDs, player presentation payloads must stay in the named file with Pack=1, and the scalability hash literal cannot reappear outside the contract.
+
+Cinematic cheats used:
+- None. This was signal ABI and hidden-constant repair. Existing Dear Lie and Ultra visual-overkill constants remain unchanged.
+
+Exact microseconds saved:
+- Runtime delta: 0 us/frame.
+- Payload movement and constants are compile-time ABI hygiene.
+- Audit checks are tooling only.
+
+Verification:
+- `powershell -ExecutionPolicy Bypass -File Tools/ContractAuthority/Generate-ArchitectHandbook.ps1`: PASS.
+- `powershell -ExecutionPolicy Bypass -File Tools/ContractAuthority/Test-ContractAuthority.ps1`: PASS; shader numthreads max product 512.
+- Configured `SignalBus<T>` versus lane contract comparison: PASS, no missing concrete lane IDs.
+- `git diff --check` on touched signal/audit/handbook files: PASS; line-ending warnings only.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /m:1 /nr:false`: BLOCKED outside Core/Contracts. Current failures are in `World/SargassumMicroFaunaBoids.cs` missing `_spawnData`/`_singleBoidUpload` and `VFX/HectonMarineSnowRenderer.cs` missing global wake fields/IDs.

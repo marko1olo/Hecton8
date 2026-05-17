@@ -22,6 +22,7 @@ namespace Hecton8.Ecosystem
 
         [SerializeField] private int _worldSeed;
         private bool _serviceRegistered;
+        private bool _duplicateServiceSuppressed;
 
         /// <summary>Persisted deterministic world seed used by ecosystem systems.</summary>
         public int WorldSeed => _worldSeed;
@@ -37,7 +38,7 @@ namespace Hecton8.Ecosystem
             FaunaGeneticsManager registered = GlobalRegistry.FaunaGenetics;
             if (registered != null && registered != this)
             {
-                Destroy(gameObject);
+                SuppressDuplicateService();
                 return;
             }
 
@@ -47,7 +48,13 @@ namespace Hecton8.Ecosystem
 
         private void OnEnable()
         {
+            if (_duplicateServiceSuppressed)
+                return;
+
             TryRegisterService();
+            if (_duplicateServiceSuppressed)
+                return;
+
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
         }
 
@@ -71,12 +78,19 @@ namespace Hecton8.Ecosystem
             FaunaGeneticsManager registered = GlobalRegistry.FaunaGenetics;
             if (registered != null && registered != this)
             {
-                Destroy(gameObject);
+                SuppressDuplicateService();
                 return;
             }
 
             GlobalRegistry.RegisterFaunaGeneticsRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.FaunaGenetics, this);
+        }
+
+        private void SuppressDuplicateService()
+        {
+            _duplicateServiceSuppressed = true;
+            _serviceRegistered = false;
+            enabled = false;
         }
 
         private void TryUnregisterService()

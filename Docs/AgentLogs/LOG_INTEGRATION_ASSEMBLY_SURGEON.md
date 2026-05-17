@@ -813,3 +813,30 @@ Exact Microseconds saved:
 Verification:
 - `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260517_063300_post_fetch_survival_helper_cleanup.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
 - `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260517_063500_post_fetch_survival_helper_gate.txt`: `HEAD_TO_ORIGIN=1 0`, `GIT_DIFF_CHECK_EXIT=0`, conflict start/end markers 0, survival tracked native helper hits 0.
+
+## 2026-05-17 - New Git Gate Typed-Lane Repair
+
+What was wrong:
+- New dirty current tree was build-green but static policy-red.
+- `GlobalSignals.InitializeAllQueues()` had returned in lockstep and compass.
+- After replacing broad init with typed lane configure calls, `IPlatformIntegration.cs` lacked the `SignalBus<T>` namespace import.
+
+What was done:
+- Configured lockstep snapshot/system glitch lanes explicitly.
+- Configured compass anomaly/calibration lanes explicitly.
+- Restored the typed signal namespace import for scalability events.
+- Rebuilt current disk and reran static Git gate.
+
+Cinematic Cheats used:
+- No visual feature was added in this pass.
+- Low tier gets bounded typed-lane startup instead of broad global queue fan-out.
+- High/Ultra keep the same rich signal consumers without new assembly coupling.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured.
+- Failed compile probe after typed-lane patch: 81,216,823.1 us.
+- Final compile proof: 51,027,497.0 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260517_072600_signalbus_namespace_repair.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260517_072800_signalbus_namespace_gate.txt`: `HEAD_TO_ORIGIN=0 0`, `GIT_DIFF_CHECK_EXIT=0`, conflict start/end markers 0, touched global init hits 0, duplicate signal declarations outside `GlobalSignals.cs` 0.

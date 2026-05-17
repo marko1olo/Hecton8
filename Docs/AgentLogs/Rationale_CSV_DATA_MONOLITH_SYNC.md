@@ -275,3 +275,63 @@ Rejected Alternatives: Letting `ValidateRow()` catch missing required values was
 Scalability potential: Low/Middle get clearer authoring failures with no player cost. High/Ultra can expand sheet width while the same structural gate protects every row.
 
 Hardware Impact: i3/MX350 and Quest runtime cost is 0 us. The added checks are cold bake-only: one EOF flag check and one row-width compare per parsed row.
+
+## Decision 23 - UTF8 Babel Hash Sovereignty
+
+Problem: Record IDs are canonical ASCII, but Babel text is human-facing and can be non-ASCII. The previous text hash path reused the ID helper, which lowercases ASCII and hashes only the low byte of each `char`; that is wrong for UTF8 spreadsheet text and creates avoidable collisions for Cyrillic, accented Latin, and non-BMP characters.
+
+Solution: Keep `ComputeFnv1a32(ReadOnlySpan<char>)` for canonical first-column IDs, add `ComputeFnv1a32Utf8(ReadOnlySpan<char>)` for Babel text, route `H8DataBaker.AddString()` through UTF8 byte hashing, and rebake the shipped static/Babel artifacts so source and binary agree. Also make CSV header matching exact-case and strict-decode CSV as UTF8.
+
+Rejected Alternatives: Forcing all display text to ASCII was rejected because Babel/localization must support non-English authoring. Reusing the low-byte hash was rejected because it corrupts Unicode identity. Case-folding names/descriptions was rejected because display strings are not IDs.
+
+Scalability potential: Low/Middle still ship the same compact byte slabs. High/Ultra can carry richer localized text without changing record size or hot lookup contracts.
+
+Hardware Impact: Runtime cost is unchanged: `GetUtf8` still performs one native hash lookup and returns a span. UTF8 hashing and strict decode are cold bake/test work only. Rebaked artifacts now pair at Babel CRC `0xFFF07BB0`.
+
+## Decision 24 - Babel Text Control-Character Sanity
+
+Problem: Strict UTF8 proves byte validity, but it does not prevent embedded control characters in names/descriptions. A tab, NUL, or hidden newline can survive CSV parsing and enter Babel as a valid byte slice, then break UI layout, terminal renderers, or localization consumers later.
+
+Solution: Validate `ColumnType.Text` values for C0 control characters before string pooling. Reject with `[CRITICAL_DATA_TEXT]` and the offending byte in hex.
+
+Rejected Alternatives: Sanitizing text by stripping controls was rejected because it changes authored content silently. Leaving sanitization to UI was rejected because the data compiler is the single source-of-truth firewall.
+
+Scalability potential: Low/Middle keep clean UI strings with no runtime scrub. High/Ultra can add more localized copy while the same cold gate protects all text.
+
+Hardware Impact: Runtime cost is 0 us. The check is a cold O(text length) scan during bake only; current baked artifacts remain paired at CRC `0xFFF07BB0`.
+
+## Decision 25 - Schema Hash Self-Audit
+
+Problem: The runtime header checked `H8StaticDataFormat.SchemaHash`, but the baker did not prove that the hard-coded hash still matched the active schema catalog. A future column/type/range edit could accidentally bake files that the loader accepts under a stale schema stamp.
+
+Solution: Add a deterministic cold schema hash over the expected version, sheet file names, record types, column names, column types, and range gates. `ValidateLayoutContracts()` now rejects the bake if the computed catalog hash differs from `H8StaticDataFormat.SchemaHash`. Re-stamp the shipped static header to `0x5C43DD40` so source and artifact agree.
+
+Rejected Alternatives: Leaving schema hash as a manual constant was rejected because it depends on memory discipline instead of evidence. A runtime CSV/schema parser was rejected because the player must never parse authoring data.
+
+Scalability potential: Low/Middle keep the same 48-byte records and zero-copy lookups. High/Ultra can add new balance columns only by deliberately updating the schema hash, keeping version drift explicit.
+
+Hardware Impact: Runtime cost is unchanged: one native hash lookup, one type compare, and one pointer dereference for `GetRecord<T>`. Schema hashing is cold bake-only work over the schema catalog, not player IO or frame work.
+
+## Decision 26 - Stricter Identity And Text Controls
+
+Problem: The earlier key grammar allowed identities such as `_item`, `item_`, `item__tier`, and `1_item`, and text validation caught only C0 controls. Those cases are legal bytes but weak spreadsheet authority.
+
+Solution: Require IDs to start with a lowercase ASCII letter, reject trailing and repeated underscores, and switch text control detection to `char.IsControl` so DEL/C1 controls are rejected before Babel pooling.
+
+Rejected Alternatives: Auto-normalizing keys was rejected because identity repair hides authoring drift. UI-side text scrub was rejected because the data compiler is the firewall and runtime spans must remain raw.
+
+Scalability potential: Low/Middle get stricter Excel failures with no runtime cost. High/Ultra can carry larger localized dictionaries while preserving clean byte-slice text contracts.
+
+Hardware Impact: i3/MX350 and Quest pay 0 us at runtime. The added work is cold O(key/text length) validation during bake.
+
+## Decision 27 - Self-Describing Blackbox Dumps
+
+Problem: `DumpBlackBox()` exported only raw telemetry entries. Without a magic number, entry count, struct size, schema hash, and payload CRC, a post-mortem parser cannot distinguish a valid static-data dump from a truncated or stale binary blob.
+
+Solution: Add `H8StaticDataDumpHeader` and `H8StaticDataBlackBoxDump.Write()`. Both numeric and Babel receivers now emit the same 32-byte header followed by the vault-owned 300-entry telemetry ring. The baker validates the dump header ABI, and the sanity test verifies dump length, magic, count, and stride.
+
+Rejected Alternatives: Keeping two duplicated raw dump loops was rejected because it allows divergent formats. Adding JSON sidecars was rejected for this pass because the core survival need is a compact binary dump with deterministic bytes.
+
+Scalability potential: Low/Middle get parseable crash evidence without runtime lookup cost. High/Ultra can add richer post-mortem tools around the same fixed header and ring layout.
+
+Hardware Impact: Runtime lookup cost is unchanged. Dump cost is explicit disk IO only: one 32-byte header plus 300 fixed 64-byte telemetry entries. i3/MX350 and Quest pay 0 us during successful `GetRecord<T>` and `GetUtf8` calls.

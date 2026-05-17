@@ -6,8 +6,8 @@
 #define HECTON_FLUID_ADVECTION_THREADS 64
 #define HECTON_BUBBLE_POPPED_FLAG 256u
 #define HECTON_DEBRIS_RESTING_FLAG 512u
-#define HECTON_DYNAMIC_WAKE_CAPACITY 16
-#define HECTON_DYNAMIC_WAKE_LOW_TIER_CAPACITY 4
+#define HECTON_GLOBAL_WAKE_CAPACITY 16
+#define HECTON_GLOBAL_WAKE_LOW_TIER_CAPACITY 4
 #define HECTON_CARVE_DEBRIS_MAX_SPEED 3.5
 #define HECTON_CARVE_DEBRIS_MAX_STEP 0.20
 
@@ -49,8 +49,8 @@ RWStructuredBuffer<uint> _CarveDebrisVisibleIndices;
 RWByteAddressBuffer _CarveDebrisIndirectArgs;
 
 StructuredBuffer<float4> _AbyssalFlowFieldResult;
-float4 _GlobalWakeBuffer[HECTON_DYNAMIC_WAKE_CAPACITY];  // xyz=AUP/runtime position, w=intensity
-float4 _GlobalWakeVectors[HECTON_DYNAMIC_WAKE_CAPACITY]; // xyz=push axis, w=radius
+float4 _GlobalWakeBuffer[HECTON_GLOBAL_WAKE_CAPACITY];  // xyz=AUP/runtime position, w=intensity
+float4 _GlobalWakeVectors[HECTON_GLOBAL_WAKE_CAPACITY]; // xyz=push axis, w=radius
 Texture3D<float4> _AbyssalFlowFieldTexture;
 SamplerState sampler_AbyssalFlowFieldTexture;
 
@@ -130,14 +130,14 @@ float3 SampleAbyssalFlow(float3 positionWS)
 
 float3 ApplyGlobalWakes(float3 positionWS, float3 flow)
 {
-    int rawSlotLimit = min((int)max(0.0, _GlobalWakeParams.x), HECTON_DYNAMIC_WAKE_CAPACITY);
+    int rawSlotLimit = min((int)max(0.0, _GlobalWakeParams.x), HECTON_GLOBAL_WAKE_CAPACITY);
     float lowTierMask = step(0.5, _GlobalWakeParams.y);
-    int slotLimit = min(rawSlotLimit, (int)lerp((float)HECTON_DYNAMIC_WAKE_CAPACITY, (float)HECTON_DYNAMIC_WAKE_LOW_TIER_CAPACITY, lowTierMask));
+    int slotLimit = min(rawSlotLimit, (int)lerp((float)HECTON_GLOBAL_WAKE_CAPACITY, (float)HECTON_GLOBAL_WAKE_LOW_TIER_CAPACITY, lowTierMask));
     if (slotLimit <= 0)
         return Sanitize(flow);
 
     [unroll]
-    for (int i = 0; i < HECTON_DYNAMIC_WAKE_CAPACITY; i++)
+    for (int i = 0; i < HECTON_GLOBAL_WAKE_CAPACITY; i++)
     {
         if (i >= slotLimit)
             continue;

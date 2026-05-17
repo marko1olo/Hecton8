@@ -1,3 +1,5 @@
+using System;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -13,96 +15,13 @@ namespace Hecton8.Gameplay
         SubmergeChanged = 4
     }
 
-    public readonly struct WaterTransitionEvent
-    {
-        public readonly int SourceInstanceId;
-        public readonly WaterTransitionKind Kind;
-        public readonly bool IsSubmerged;
-        public readonly float Intensity;
-        public readonly float SurfaceY;
-        public readonly float VerticalSpeed;
-        public readonly Vector3 RuntimePosition;
-        public readonly AbsoluteUniversePosition AbsolutePosition;
-
-        public WaterTransitionEvent(
-            int sourceInstanceId,
-            WaterTransitionKind kind,
-            bool isSubmerged,
-            float intensity,
-            float surfaceY,
-            float verticalSpeed,
-            Vector3 runtimePosition)
-        {
-            SourceInstanceId = sourceInstanceId;
-            Kind = kind;
-            IsSubmerged = isSubmerged;
-            Intensity = math.saturate(intensity);
-            SurfaceY = surfaceY;
-            VerticalSpeed = math.max(0f, verticalSpeed);
-            RuntimePosition = HectonPlayerMotor.SafeVelocity(runtimePosition);
-            AbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(RuntimePosition);
-        }
-    }
-
-    public interface IWaterTransitionEventListener
-    {
-        void OnWaterTransition(in WaterTransitionEvent transitionEvent);
-    }
-
-    public static class WaterTransitionEvents
-    {
-        private const int MaxListeners = 16;
-        private static readonly IWaterTransitionEventListener[] _listeners = new IWaterTransitionEventListener[MaxListeners]; // COLD ALLOC: IWaterTransitionEventListener[16] - fixed-capacity event listener registry - owner: WaterTransitionEvents
-        private static int _listenerCount;
-
-        public static void Register(IWaterTransitionEventListener listener)
-        {
-            if (listener == null)
-                return;
-
-            for (int i = 0; i < _listenerCount; i++)
-            {
-                if (ReferenceEquals(_listeners[i], listener))
-                    return;
-            }
-
-            if (_listenerCount >= MaxListeners)
-                return;
-
-            _listeners[_listenerCount++] = listener;
-        }
-
-        public static void Unregister(IWaterTransitionEventListener listener)
-        {
-            if (listener == null)
-                return;
-
-            for (int i = 0; i < _listenerCount; i++)
-            {
-                if (!ReferenceEquals(_listeners[i], listener))
-                    continue;
-
-                int lastIndex = --_listenerCount;
-                _listeners[i] = _listeners[lastIndex];
-                _listeners[lastIndex] = null;
-                return;
-            }
-        }
-
-        public static void Publish(in WaterTransitionEvent transitionEvent)
-        {
-            for (int i = 0; i < _listenerCount; i++)
-            {
-                _listeners[i]?.OnWaterTransition(in transitionEvent);
-            }
-        }
-    }
-
     [DisallowMultipleComponent]
-    public sealed class WaterTransitionHandler : MonoBehaviour, IWaterTransitionEventListener
+    public sealed class WaterTransitionHandler : MonoBehaviour
     {
         private HectonPlayerMovement _owner;
-        private int _ownerInstanceId;
+        private uint _ownerSignalSourceId;
+        private uint _lastConsumedWaterTransitionFrame;
+        private bool _hasConsumedWaterTransitionFrame;
         private float _surfaceExitGravityDelaySeconds;
         private float _surfaceExitGravityAcceleration;
         private float _surfaceExitGravityDurationSeconds;
@@ -115,7 +34,7 @@ namespace Hecton8.Gameplay
         public void Bind(HectonPlayerMovement owner)
         {
             _owner = owner;
-            _ownerInstanceId = owner != null ? unchecked((int)EntityId.ToULong(owner.GetEntityId())) : 0;
+            _ownerSignalSourceId = owner != null ? unchecked((uint)EntityId.ToULong(owner.GetEntityId())) : 0u;
         }
 
         public void ConfigureSurfaceBreachGravity(float delaySeconds, float acceleration, float durationSeconds)
@@ -129,21 +48,44 @@ namespace Hecton8.Gameplay
         {
             _surfaceExitGravityDelayTimer = 0f;
             _surfaceExitGravitySpikeTimer = 0f;
+            _lastConsumedWaterTransitionFrame = 0u;
+            _hasConsumedWaterTransitionFrame = false;
         }
 
-        public void OnWaterTransition(in WaterTransitionEvent transitionEvent)
+        public void ConsumeWaterTransitionSignals()
         {
-            if (_owner == null || transitionEvent.SourceInstanceId != _ownerInstanceId)
+            if (_owner == null || _ownerSignalSourceId == 0u)
                 return;
 
-            if (transitionEvent.Kind != WaterTransitionKind.SurfaceExit)
+            ReadOnlySpan<WaterTransitionSignal> signals = SignalBus<WaterTransitionSignal>.GetFrameSnapshot();
+            if (signals.Length == 0)
                 return;
 
-            StartSurfaceExitGravityArc();
+            uint newestFrame = _lastConsumedWaterTransitionFrame;
+            for (int i = 0; i < signals.Length; i++)
+            {
+                WaterTransitionSignal signal = signals[i];
+                newestFrame = math.max(newestFrame, signal.Frame);
+                if (_hasConsumedWaterTransitionFrame && signal.Frame <= _lastConsumedWaterTransitionFrame)
+                    continue;
+
+                if (signal.SourceId != _ownerSignalSourceId)
+                    continue;
+
+                if ((WaterTransitionKind)signal.Kind != WaterTransitionKind.SurfaceExit)
+                    continue;
+
+                StartSurfaceExitGravityArc();
+            }
+
+            _lastConsumedWaterTransitionFrame = newestFrame;
+            _hasConsumedWaterTransitionFrame = true;
         }
 
         public void AdvanceSurfaceBreachGravity(float fixedDeltaTime, Vector3 gravityVector, float gravityMagnitude)
         {
+            ConsumeWaterTransitionSignals();
+
             float safeDeltaTime = math.max(0f, fixedDeltaTime);
             if (safeDeltaTime <= 0f || _owner == null)
                 return;
@@ -171,14 +113,8 @@ namespace Hecton8.Gameplay
             _owner.QueueSubsystemExternalAcceleration(gravityDirection * _surfaceExitGravityAcceleration);
         }
 
-        private void OnEnable()
-        {
-            WaterTransitionEvents.Register(this);
-        }
-
         private void OnDisable()
         {
-            WaterTransitionEvents.Unregister(this);
             ResetRuntimeState();
         }
 

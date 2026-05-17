@@ -2546,25 +2546,14 @@ namespace Hecton8.World
 
         private void UploadSpawnDataToBoidBuffers(int uploadCount)
         {
-            int safeUploadCount = math.clamp(uploadCount, 0, boidCount);
+            NativeArray<BoidData> boidState = ResolveBoidState();
+            int capacity = boidState.IsCreated ? boidState.Length : 0;
+            int safeUploadCount = math.clamp(uploadCount, 0, math.min(boidCount, capacity));
             if (safeUploadCount <= 0)
                 return;
 
-            GraphicsBufferUploadUtility.UploadArray(_boidsBufferA, _spawnData, safeUploadCount);
-            GraphicsBufferUploadUtility.UploadArray(_boidsBufferB, _spawnData, safeUploadCount);
-            SyncBoidStateNativeFromSpawnData(safeUploadCount);
-        }
-
-        private void SyncBoidStateNativeFromSpawnData(int uploadCount)
-        {
-            NativeArray<BoidData> boidState = ResolveVaultBuffer(ref _boidStateHandle);
-            if (!boidState.IsCreated || _spawnData == null)
-                return;
-
-            int safeUploadCount = math.clamp(uploadCount, 0, math.min(_spawnData.Length, boidState.Length));
-            for (int i = 0; i < safeUploadCount; i++)
-                boidState[i] = _spawnData[i];
-
+            GraphicsBufferUploadUtility.UploadNativeArray(_boidsBufferA, boidState, safeUploadCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_boidsBufferB, boidState, safeUploadCount);
             _debugConsumedBoidCount = 0;
             _feedingFrenzyWindowStartTime = -1f;
             _feedingFrenzyKillCount = 0;
@@ -2577,6 +2566,11 @@ namespace Hecton8.World
                 return 0;
 
             return math.clamp(CeilDivPositive(safePopulation, TargetBoidsPerGrazingAnchor), 1, grazingAnchorCount);
+        }
+
+        private NativeArray<BoidData> ResolveBoidState()
+        {
+            return ResolveVaultBuffer(ref _boidStateHandle);
         }
 
         private NativeArray<GrazingAnchorData> ResolveGrazingAnchors()
@@ -3158,6 +3152,10 @@ namespace Hecton8.World
 
         private void BuildStatisticalRematerializedSpawnSet(int rematerializedCount)
         {
+            NativeArray<BoidData> boidState = ResolveBoidState();
+            if (!boidState.IsCreated || boidState.Length <= 0)
+                return;
+
             Vector3 center = ToVector3(_statisticalPopulationCenterAup.ToRuntimeFloat3());
             float radius = math.max(PopulationDensityMinRadiusMeters, _statisticalPopulationPoint.RadiusMeters);
             _fieldCenter = center;
@@ -3166,13 +3164,14 @@ namespace Hecton8.World
             _debugRenderBounds = _renderBounds;
             _densityWorldRect = Vector4.zero;
 
-            for (int i = 0; i < rematerializedCount; i++)
+            int safeRematerializedCount = math.clamp(rematerializedCount, 0, math.min(boidCount, boidState.Length));
+            for (int i = 0; i < safeRematerializedCount; i++)
             {
-                Vector3 offset = BuildSphericalFibonacciOffset(i, rematerializedCount, radius, _statisticalPopulationPoint.CenterCellId);
+                Vector3 offset = BuildSphericalFibonacciOffset(i, safeRematerializedCount, radius, _statisticalPopulationPoint.CenterCellId);
                 Vector3 spawnPosition = center + offset;
                 Vector3 velocity = BuildStatisticalTangentVelocity(offset, i);
 
-                _spawnData[i] = new BoidData
+                boidState[i] = new BoidData
                 {
                     Position = spawnPosition,
                     Velocity = velocity,
@@ -3181,7 +3180,7 @@ namespace Hecton8.World
                 };
             }
 
-            BuildStatisticalGrazingAnchors(center, radius, rematerializedCount);
+            BuildStatisticalGrazingAnchors(center, radius, safeRematerializedCount);
         }
 
         private void BuildStatisticalGrazingAnchors(Vector3 center, float radius, int rematerializedCount)
@@ -3698,8 +3697,9 @@ namespace Hecton8.World
 
         private void BuildLeviathanSpawnSet(int spawnCount)
         {
+            NativeArray<BoidData> boidState = ResolveBoidState();
             NativeArray<LeviathanNodeData> leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
-            if (_leviathanPathNodeCount < 2 || !leviathanNodeFront.IsCreated)
+            if (_leviathanPathNodeCount < 2 || !boidState.IsCreated || !leviathanNodeFront.IsCreated)
                 return;
 
             Vector3 boundsMin = ToVector3(leviathanNodeFront[0].Position);
@@ -3719,7 +3719,7 @@ namespace Hecton8.World
             _renderBounds = new Bounds(_fieldCenter, MaxVector3(boundsMax - boundsMin, new Vector3(4f, 4f, 4f)));
             _debugRenderBounds = _renderBounds;
 
-            int safeSpawnCount = math.clamp(spawnCount, 0, boidCount);
+            int safeSpawnCount = math.clamp(spawnCount, 0, math.min(boidCount, boidState.Length));
             for (int i = 0; i < safeSpawnCount; i++)
             {
                 float bodyT = safeSpawnCount > 1 ? i / (float)(safeSpawnCount - 1) : 0f;
@@ -3742,7 +3742,7 @@ namespace Hecton8.World
                     binormalWS * (CheapSinSigned(angle) * radialDistance * 0.55f);
                 Vector3 spawnPosition = centerlinePosition + spawnOffset;
 
-                _spawnData[i] = new BoidData
+                boidState[i] = new BoidData
                 {
                     Position = spawnPosition,
                     Velocity = tangentWS * cruiseSpeed,
@@ -3754,6 +3754,10 @@ namespace Hecton8.World
 
         private void BuildDeepSpawnSet(int zoneCount, int spawnCount)
         {
+            NativeArray<BoidData> boidState = ResolveBoidState();
+            if (!boidState.IsCreated || boidState.Length <= 0)
+                return;
+
             HectonBiolumZone primaryZone = _deepBiolumZones[0];
             Vector3 primaryPosition = primaryZone != null ? primaryZone.GetZonePosition() : Vector3.zero;
             Vector3 boundsMin = primaryPosition;
@@ -3782,7 +3786,7 @@ namespace Hecton8.World
             _renderBounds = new Bounds(_fieldCenter, MaxVector3(boundsMax - boundsMin, new Vector3(4f, 2f, 4f)));
             _debugRenderBounds = _renderBounds;
 
-            int safeSpawnCount = math.clamp(spawnCount, 0, boidCount);
+            int safeSpawnCount = math.clamp(spawnCount, 0, math.min(boidCount, boidState.Length));
             for (int i = 0; i < safeSpawnCount; i++)
             {
                 int zoneIndex = i % zoneCount;
@@ -3802,7 +3806,7 @@ namespace Hecton8.World
                 else
                     toCenter = FastNormalizeVector3(toCenter, Vector3.forward);
 
-                _spawnData[i] = new BoidData
+                boidState[i] = new BoidData
                 {
                     Position = spawnPosition,
                     Velocity = toCenter * cruiseSpeed,
@@ -3846,6 +3850,10 @@ namespace Hecton8.World
 
         private void BuildSpawnSet(Vector4 densityWorldRect, Vector3 driftOffset, int spawnCount)
         {
+            NativeArray<BoidData> boidState = ResolveBoidState();
+            if (!boidState.IsCreated || boidState.Length <= 0)
+                return;
+
             float sizeX = 1f / math.max(densityWorldRect.z, 0.0001f);
             float sizeZ = 1f / math.max(densityWorldRect.w, 0.0001f);
             float minX = densityWorldRect.x;
@@ -3859,7 +3867,7 @@ namespace Hecton8.World
             _renderBounds = new Bounds(_fieldCenter, new Vector3(sizeX, math.max(2f, maxDepthBelowSurface + 2f), sizeZ));
             _debugRenderBounds = _renderBounds;
 
-            int safeSpawnCount = math.clamp(spawnCount, 0, boidCount);
+            int safeSpawnCount = math.clamp(spawnCount, 0, math.min(boidCount, boidState.Length));
             for (int i = 0; i < safeSpawnCount; i++)
             {
                 Vector3 spawnPosition = fallbackCenter;
@@ -3892,7 +3900,7 @@ namespace Hecton8.World
                 }
 
                 Vector3 velocity = BuildInitialVelocity(i);
-                _spawnData[i] = new BoidData
+                boidState[i] = new BoidData
                 {
                     Position = spawnPosition,
                     Velocity = velocity,
@@ -5218,14 +5226,12 @@ namespace Hecton8.World
             uint predatorId,
             float currentTimeSeconds)
         {
-            NativeArray<BoidData> boidState = ResolveVaultBuffer(ref _boidStateHandle);
+            NativeArray<BoidData> boidState = ResolveBoidState();
             NativeArray<BoidKillSignal> killSignals = ResolveVaultBuffer(ref _killSignalHandle);
             NativeArray<int> killSignalCount = ResolveVaultBuffer(ref _killSignalCountHandle);
             if (!boidState.IsCreated ||
                 !killSignals.IsCreated ||
                 !killSignalCount.IsCreated ||
-                _spawnData == null ||
-                _singleBoidUpload == null ||
                 _activeBoidCount <= 0)
             {
                 return 0;
@@ -5299,7 +5305,7 @@ namespace Hecton8.World
 
         private int DrainPredatorKillSignals(float currentTimeSeconds)
         {
-            NativeArray<BoidData> boidState = ResolveVaultBuffer(ref _boidStateHandle);
+            NativeArray<BoidData> boidState = ResolveBoidState();
             NativeArray<BoidKillSignal> killSignals = ResolveVaultBuffer(ref _killSignalHandle);
             NativeArray<int> killSignalCount = ResolveVaultBuffer(ref _killSignalCountHandle);
             if (!boidState.IsCreated || !killSignals.IsCreated || !killSignalCount.IsCreated || killSignalCount.Length <= 0)
@@ -5314,8 +5320,7 @@ namespace Hecton8.World
                 int boidId = killSignal.BoidId;
                 if (boidId < 0 ||
                     boidId >= _activeBoidCount ||
-                    boidId >= boidState.Length ||
-                    boidId >= _spawnData.Length)
+                    boidId >= boidState.Length)
                 {
                     continue;
                 }
@@ -5336,9 +5341,7 @@ namespace Hecton8.World
                 boid.Velocity = Vector3.zero;
                 boid.StateFlags = (boid.StateFlags & BoidVisualMutationMask) | ConsumedBoidStateFlag;
                 boidState[boidId] = boid;
-                _spawnData[boidId] = boid;
-                _singleBoidUpload[0] = boid;
-                UploadSingleBoidToLiveBuffers(boidId);
+                UploadSingleBoidToLiveBuffers(boidId, in boid);
 
                 PublishPredatorKillDebris(in killSignal, killPositionWS, boidId);
                 RecordFoodChainTelemetry(
@@ -5416,10 +5419,8 @@ namespace Hecton8.World
 
         internal int RegisterWhaleFallScavengerBurst(Vector3 centerWS, uint sourceId, float currentTimeSeconds)
         {
-            NativeArray<BoidData> boidState = ResolveVaultBuffer(ref _boidStateHandle);
+            NativeArray<BoidData> boidState = ResolveBoidState();
             if (!boidState.IsCreated ||
-                _spawnData == null ||
-                _singleBoidUpload == null ||
                 _activeBoidCount <= 0 ||
                 _lastSimulationLodTier != SimulationLodTier.Full)
             {
@@ -5428,7 +5429,7 @@ namespace Hecton8.World
                 return 0;
             }
 
-            int safeActiveCount = math.min(math.min(_activeBoidCount, boidState.Length), _spawnData.Length);
+            int safeActiveCount = math.min(_activeBoidCount, boidState.Length);
             int visualCount = math.clamp(WhaleFallScavengerVisualCount, 0, safeActiveCount);
             if (visualCount <= 0)
                 return 0;
@@ -5453,9 +5454,7 @@ namespace Hecton8.World
                 boid.Panic = 0f;
                 boid.StateFlags = (boid.StateFlags & BoidVisualMutationMask) | DefaultBoidStateFlags;
                 boidState[boidId] = boid;
-                _spawnData[boidId] = boid;
-                _singleBoidUpload[0] = boid;
-                UploadSingleBoidToLiveBuffers(boidId);
+                UploadSingleBoidToLiveBuffers(boidId, in boid);
             }
 
             _fieldCenter = centerWS;
@@ -5484,20 +5483,18 @@ namespace Hecton8.World
             return positionWS;
         }
 
-        private void UploadSingleBoidToLiveBuffers(int boidId)
+        private void UploadSingleBoidToLiveBuffers(int boidId, in BoidData boid)
         {
-            if (_singleBoidUpload == null || boidId < 0)
+            if (boidId < 0)
                 return;
 
-            UploadSingleBoidToBuffer(_boidsBufferA, _singleBoidUpload, boidId);
-            UploadSingleBoidToBuffer(_boidsBufferB, _singleBoidUpload, boidId);
+            UploadSingleBoidToBuffer(_boidsBufferA, in boid, boidId);
+            UploadSingleBoidToBuffer(_boidsBufferB, in boid, boidId);
         }
 
-        private static void UploadSingleBoidToBuffer(GraphicsBuffer buffer, BoidData[] source, int boidId)
+        private static void UploadSingleBoidToBuffer(GraphicsBuffer buffer, in BoidData source, int boidId)
         {
             if (buffer == null ||
-                source == null ||
-                source.Length <= 0 ||
                 boidId < 0 ||
                 boidId >= buffer.count)
             {
@@ -5505,7 +5502,7 @@ namespace Hecton8.World
             }
 
             NativeArray<BoidData> mapped = buffer.LockBufferForWrite<BoidData>(boidId, 1);
-            mapped[0] = source[0];
+            mapped[0] = source;
             buffer.UnlockBufferAfterWrite<BoidData>(1);
         }
 
@@ -6978,7 +6975,6 @@ namespace Hecton8.World
             _inactiveStatisticalSwarmRing.Dispose(disposeDependency);
             _inactiveStatisticalSwarmCenterRing.Dispose(disposeDependency);
 
-            _singleBoidUpload = null;
             _feedingFrenzyWindowStartTime = -1f;
             _feedingFrenzyKillCount = 0;
             _foodChainTelemetryCursor = 0;

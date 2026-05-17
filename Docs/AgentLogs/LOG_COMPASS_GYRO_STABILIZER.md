@@ -439,3 +439,66 @@ Verification:
 - `git diff --check` on touched compass/status/rationale/log files reports only LF-to-CRLF warnings.
 - No `dotnet build` or `dotnet rebuild` was run in loop 18 per explicit user instruction. Latest compiled state remains the loop 17 external dependency wall.
 - No `VERIFIED MASTER GRADE` claim; external compile walls, Unity scene binding, and player build proof remain absent.
+
+## 2026-05-17 - Presentation NaN vaccination
+
+What was wrong:
+- The compass output buffer was trusted before presentation. Non-finite `Power01`, `AnomalyInterference01`, or `CurrentHeadingDegrees` could reach shader globals, particle debt, or direct dial rotation.
+- `GyroDriftJob` trusted serialized drift parameters before writing rendering-fed output slots.
+- Adjacent `SonarHoloCompass` still has local persistent `NativeArray` debt, but moving it to the vault requires adjacent UI ownership and new buffer IDs outside this navigation prompt.
+
+What was done:
+- `ApplyPresentation()` now sanitizes unit output floats and normalizes heading before downstream presentation.
+- Direct pivot rotation now uses normalized heading plus normalized authored offset, preventing NaN `Quaternion.AngleAxis`.
+- `ApplyChromatic()` now rejects non-finite chromatic/power/overkill before `Shader.SetGlobalFloat`.
+- `GyroDriftJob` now sanitizes delta, catch-up rate, noise frequency, noise degrees, wild-spin rate, power, anomaly, glitch math, noise input, and triangle-noise input before output writes.
+- Final signal validation caught `GlobalSignals.InitializeAllQueues()` still inside `DiegeticCompassSignals.ConfigureOwnedLanes()`; it was reclosed to bounded anomaly/calibration `SignalBus<T>.Configure(...)` only.
+
+Cinematic Cheats used:
+- Low/MX350 remains the same cheap triangle-noise drift plus snapped cardinal label.
+- High/Ultra keep indirect dial, chromatic glass scalar, `_CompassOverkill01`, and optional anomaly particles; the patch only prevents invalid numbers from entering those visual paths.
+
+Exact Microseconds saved:
+- 0 us measured.
+- No speed claim. This is GPU/mobile survival hardening, not an optimization pass.
+
+Verification:
+- Re-read status/rationale and exact XML prompt from `Docs/Tasks/CURRENT_BATCH.md`.
+- Re-read AGENTS, domain map, Unity MCP guidance, and selected mandates: diegetic UI, UI data streaming, signal lanes, zero GC, AUP determinism, crash telemetry, and shader stutter.
+- Own-domain forbidden scan returns no `NativeArray`, `NativeArrayUnsafeUtility`, `GlobalSignals.InitializeAllQueues`, consumed-lane `Configure`, standard `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, `Camera.main`, eulers, `ComputeBuffer`, `.SetData`, EventBus, managed delegates, object lookup, coroutine, or direct `H8Memory.Allocate`.
+- Signal scan shows `DiegeticCompassSignals.ConfigureOwnedLanes()` used by both publisher helpers and runtime startup; consumed `SurvivalVitalsChangedSignal`, `SystemHealthSignal`, and `AupShiftSignal` remain `EnsureInitialized()` only.
+- Shader/platform scan finds no `ZTest Always`, compute kernels, threadgroups, RW buffers, groupshared memory, or DirectX-only path in the compass shader/domain.
+- `git diff --check` on touched files reports only LF-to-CRLF warnings.
+- No `dotnet build` or `dotnet rebuild` was run in loop 19 per explicit user instruction. Latest compiled state remains the loop 17 external dependency wall.
+- No `VERIFIED MASTER GRADE` claim; external compile walls, Unity scene binding, and player build proof remain absent.
+
+## 2026-05-17 - Finite signal payload and vault-state quarantine
+
+What was wrong:
+- Loop 20 scan caught `GlobalSignals.InitializeAllQueues()` back inside `DiegeticCompassSignals.ConfigureOwnedLanes()`.
+- Publisher helpers accepted non-finite calibration/anomaly scalars and source AUP local offsets before `SignalBus<T>.Push()`.
+- A corrupted `CompassStateDTO` could be read by service/presentation paths before the next job commit corrected it.
+- Adjacent UI still has debt: `SonarHoloCompass` owns persistent local `NativeArray` scratch, and `SubmarineSonarHoloMapRenderer` has cold `Shader.Find`/runtime material creation.
+
+What was done:
+- Reclosed `DiegeticCompassSignals.ConfigureOwnedLanes()` to bounded compass-owned lane setup only.
+- Added producer-side finite sanitization for calibration quality, anomaly proximity/interference, and anomaly AUP local offsets.
+- Added vault-state sanitation before snapshot reads, recalibration hold accumulation, signal refresh, drift scheduling, completed-state commit, and presentation reads.
+- Cleared `FlagHasPreviousAup` when `PreviousActualAUP` is non-finite so velocity establishes a fresh baseline.
+- Left adjacent sonar/map debt untouched because the correct fix requires adjacent UI vault/material ownership work outside this prompt.
+
+Cinematic Cheats used:
+- Low/MX350 keeps SlowTick, triangle noise, and snapped cardinal text.
+- High/Ultra keep indirect dial, chromatic glass scalar, `_CompassOverkill01`, and optional anomaly particles with finite inputs only.
+
+Exact Microseconds saved:
+- 0 us measured.
+- No speed claim. This pass is correctness/survival hardening.
+
+Verification:
+- Re-read status/rationale and exact XML prompt from `Docs/Tasks/CURRENT_BATCH.md`.
+- Own-domain forbidden scan returns no `NativeArray`, `NativeArrayUnsafeUtility`, `GlobalSignals.InitializeAllQueues`, consumed-lane `Configure`, standard `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, `Camera.main`, eulers, `ComputeBuffer`, `.SetData`, EventBus, managed delegates, object lookup, coroutine, or direct `H8Memory.Allocate`.
+- Signal scan shows owned anomaly/calibration `Configure(...)` and consumed `SurvivalVitalsChangedSignal`, `SystemHealthSignal`, and `AupShiftSignal` `EnsureInitialized()` only.
+- Adjacent scan still reports `SonarHoloCompass` local persistent `NativeArray` ownership and `SubmarineSonarHoloMapRenderer` cold shader/material debt.
+- No `dotnet build` or `dotnet rebuild` was run in loop 20 per explicit user instruction. Latest compiled state remains the loop 17 external dependency wall.
+- No `VERIFIED MASTER GRADE` claim; external compile walls, Unity scene binding, and player build proof remain absent.

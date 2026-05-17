@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Physics;
 using Hecton8.Physics.Determinism;
 using Unity.Burst;
@@ -184,6 +185,8 @@ namespace Hecton8.Core.Determinism
         private const int TelemetryEntryBytes = 64;
         private const int MasterHashHistoryEntryBytes = 32;
         private const int SignalPayloadBytes = 32;
+        private const int LockstepSnapshotSignalCapacity = 16;
+        private const int SystemGlitchSignalCapacity = 8;
         private const int DumpHeaderBytes = 8;
         private const int DumpPayloadBytes = DumpHeaderBytes + (TelemetryFrameCapacity * TelemetryEntryBytes);
         private const int MaxHashElements = 8192;
@@ -194,6 +197,8 @@ namespace Hecton8.Core.Determinism
         private const uint StablePlayerId = 0x504C5952u;
         private const uint ReasonDesyncHash = 0x4453594Eu;
         private const uint ReasonGhostReplayHash = 0x47525350u;
+        private const uint LockstepSnapshotLaneHash = 0x4C535348u;
+        private const uint SystemGlitchLaneHash = 0x5359474Cu;
         private const uint TelemetryFlagHashExecuted = 1u << 0;
         private const uint TelemetryFlagMissingData = 1u << 1;
         private const uint TelemetryFlagTruncated = 1u << 2;
@@ -1117,7 +1122,8 @@ namespace Hecton8.Core.Determinism
                 return;
 
             EnsureReplayWriter();
-            if (_replayStream == null || _writerSignal == null)
+            AutoResetEvent writerSignal = _writerSignal;
+            if (_replayStream == null || writerSignal == null)
                 return;
 
             if (Volatile.Read(ref _writerFaulted) != 0)
@@ -1139,7 +1145,17 @@ namespace Hecton8.Core.Determinism
 
             Volatile.Write(ref _pendingWriteBytes, byteCount);
             Volatile.Write(ref _writeInProgress, 1);
-            _writerSignal.Set();
+            try
+            {
+                writerSignal.Set();
+            }
+            catch (ObjectDisposedException)
+            {
+                telemetryFlags |= TelemetryFlagWriterBusy;
+                Volatile.Write(ref _pendingWriteBytes, 0);
+                Volatile.Write(ref _writeInProgress, 0);
+                Volatile.Write(ref _writerFaulted, 1);
+            }
         }
 
         private int BuildReplayBlock(uint frame, byte[] destination, uint telemetryFlags, int hashCadenceFrames)
@@ -1566,7 +1582,7 @@ namespace Hecton8.Core.Determinism
                 return false;
             }
 
-            buffer = H8Memory.CreateNativeArrayView<T>(handle.ptr, handle.Length);
+            buffer = handle.Resolve(vault);
             return buffer.IsCreated;
         }
 
@@ -1687,51 +1703,77 @@ namespace Hecton8.Core.Determinism
 
         private void ReplayWriterLoop()
         {
-            while (Volatile.Read(ref _writerShouldStop) == 0)
+            try
             {
-                _writerSignal.WaitOne();
-                if (Volatile.Read(ref _writerShouldStop) != 0)
-                    return;
-
-                int byteCount = Volatile.Read(ref _pendingWriteBytes);
-                if (byteCount <= 0)
+                while (Volatile.Read(ref _writerShouldStop) == 0)
                 {
-                    Volatile.Write(ref _writeInProgress, 0);
-                    continue;
-                }
+                    _writerSignal.WaitOne();
+                    if (Volatile.Read(ref _writerShouldStop) != 0)
+                        return;
 
-                try
-                {
-                    lock (_writerGate)
+                    int byteCount = Volatile.Read(ref _pendingWriteBytes);
+                    if (byteCount <= 0)
                     {
-                        _replayStream?.Write(_replayWriteScratch, 0, byteCount);
-                        _replayStream?.Flush(false);
+                        Volatile.Write(ref _writeInProgress, 0);
+                        continue;
+                    }
+
+                    try
+                    {
+                        lock (_writerGate)
+                        {
+                            _replayStream?.Write(_replayWriteScratch, 0, byteCount);
+                            _replayStream?.Flush(false);
+                        }
+                    }
+                    catch
+                    {
+                        Volatile.Write(ref _writerFaulted, 1);
+                        return;
+                    }
+                    finally
+                    {
+                        Volatile.Write(ref _pendingWriteBytes, 0);
+                        Volatile.Write(ref _writeInProgress, 0);
                     }
                 }
-                catch
-                {
-                    Volatile.Write(ref _writerFaulted, 1);
-                    return;
-                }
-                finally
-                {
-                    Volatile.Write(ref _pendingWriteBytes, 0);
-                    Volatile.Write(ref _writeInProgress, 0);
-                }
+            }
+            finally
+            {
+                DisposeReplayWriterResources();
             }
         }
 
         private void StopReplayWriter()
         {
             Thread writerThread = _writerThread;
+            AutoResetEvent writerSignal = _writerSignal;
             Volatile.Write(ref _writerShouldStop, 1);
-            _writerSignal?.Set();
+            try
+            {
+                writerSignal?.Set();
+            }
+            catch (ObjectDisposedException)
+            {
+                // The writer may have completed its own cold cleanup after a previous timeout.
+            }
+
             if (writerThread != null && writerThread.IsAlive && !writerThread.Join(250))
             {
                 Volatile.Write(ref _writerFaulted, 1);
                 return;
             }
 
+            DisposeReplayWriterResources();
+
+            Volatile.Write(ref _writerShouldStop, 0);
+            Volatile.Write(ref _writeInProgress, 0);
+            Volatile.Write(ref _pendingWriteBytes, 0);
+            Volatile.Write(ref _writerFaulted, 0);
+        }
+
+        private void DisposeReplayWriterResources()
+        {
             lock (_writerGate)
             {
                 _writerThread = null;
@@ -1744,7 +1786,6 @@ namespace Hecton8.Core.Determinism
             Volatile.Write(ref _writerShouldStop, 0);
             Volatile.Write(ref _writeInProgress, 0);
             Volatile.Write(ref _pendingWriteBytes, 0);
-            Volatile.Write(ref _writerFaulted, 0);
         }
     }
 

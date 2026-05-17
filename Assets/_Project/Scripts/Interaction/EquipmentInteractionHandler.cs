@@ -186,8 +186,24 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public void ClearQueuedSignals()
         {
+            ClearQueuedSignals(createVaultLane: true);
+        }
+
+        private void ClearQueuedSignals(bool createVaultLane)
+        {
             IDataVault vault = ResolveDataVault();
-            if (vault != null && EnsureSignalQueueHandle() && vault.TryLockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools))
+            bool canClearVaultQueue = false;
+            if (vault != null)
+            {
+                canClearVaultQueue = createVaultLane
+                    ? EnsureSignalQueueHandle()
+                    : _signalQueueHandle.IsCreated &&
+                      _signalQueueHandle.BufferId == BufferID.InteractionSignalQueue &&
+                      _signalQueueHandle.Length >= MaxQueuedSignals &&
+                      vault.ResolveBuffer(ref _signalQueueHandle);
+            }
+
+            if (vault != null && canClearVaultQueue && vault.TryLockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools))
             {
                 try
                 {
@@ -300,7 +316,7 @@ namespace Hecton8.Interaction
             TryUnregisterSignalService();
             _isInitialized = false;
 
-            ClearQueuedSignals();
+            ClearQueuedSignals(createVaultLane: false);
 
             DisposeRaycastBuffers();
             _signalQueueHandle = default;

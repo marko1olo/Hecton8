@@ -211,7 +211,14 @@ namespace Hecton8.Physics
         public float CurrentBackwardPull01 => _backwardPull01;
 
         /// <summary>Cheap visual stress scalar for the procedural tether material.</summary>
-        public float VisualStress01 => math.saturate(math.max(_tension01, _stress01));
+        public float VisualStress01 => ResolveVisualStress01(_tension01, _stress01);
+
+        private static float ResolveVisualStress01(float tension01, float stress01)
+        {
+            float tension = math.isfinite(tension01) ? math.saturate(tension01) : 0f;
+            float stress = math.isfinite(stress01) ? math.saturate(stress01) : 0f;
+            return math.saturate(math.max(tension, stress));
+        }
 
         private NativeArray<float3> _visualSegmentPositions;
         private NativeArray<float3> _visualAnchorPositions;
@@ -551,7 +558,7 @@ namespace Hecton8.Physics
             if (anchorCount < 2)
                 return;
 
-            float safeDeltaTime = math.max(deltaTime, 0f);
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(deltaTime, 0f) : 0f;
             float blendT = ResolveBlendFactor(_visualSegmentSmoothSpeed, safeDeltaTime);
             CopyVisualSolverState(anchorCount);
             BuildVisualCatenaryImmediate(
@@ -563,11 +570,12 @@ namespace Hecton8.Physics
                 _visualSegmentLengths,
                 _visualSegmentPositions);
 
-            Vector3 minBounds = anchorPosition;
-            Vector3 maxBounds = anchorPosition;
+            Vector3 minBounds = IsFinite(anchorPosition) ? anchorPosition : Vector3.zero;
+            Vector3 maxBounds = minBounds;
             for (int i = 0; i < _visualSegmentPositions.Length; i++)
             {
-                float3 blendedPoint = _visualSegmentPositions[i];
+                float3 blendedPoint = SanitizeFinite(_visualSegmentPositions[i]);
+                _visualSegmentPositions[i] = blendedPoint;
                 Vector3 blendedPointV3 = new Vector3(blendedPoint.x, blendedPoint.y, blendedPoint.z);
                 minBounds = Vector3.Min(minBounds, blendedPointV3);
                 maxBounds = Vector3.Max(maxBounds, blendedPointV3);
@@ -590,20 +598,23 @@ namespace Hecton8.Physics
             if (anchorCount < 2 || pointCount <= 0)
                 return;
 
-            float pathLength = math.max(currentLength, MinDistance);
+            float safeCurrentLength = math.isfinite(currentLength) ? math.max(currentLength, MinDistance) : MinDistance;
+            float safeSagScale = math.isfinite(sagScale) ? math.max(0f, sagScale) : 0f;
+            float safeBlendT = math.isfinite(blendT) ? math.saturate(blendT) : 0f;
+            float pathLength = safeCurrentLength;
             float step = pointCount > 1 ? pathLength * math.rcp(pointCount - 1) : pathLength;
             for (int index = 0; index < pointCount; index++)
             {
                 float travelDistance = step * index;
-                float3 targetPoint = SampleVisualPathPoint(anchorCount, travelDistance, anchorPositions, segmentLengths, sagScale);
+                float3 targetPoint = SampleVisualPathPoint(anchorCount, travelDistance, anchorPositions, segmentLengths, safeSagScale);
                 if (index == 0 || index == pointCount - 1)
                 {
-                    visualSegmentPositions[index] = targetPoint;
+                    visualSegmentPositions[index] = SanitizeFinite(targetPoint);
                     continue;
                 }
 
-                float3 currentPoint = visualSegmentPositions[index];
-                visualSegmentPositions[index] = math.lerp(currentPoint, targetPoint, blendT);
+                float3 currentPoint = SanitizeFinite(visualSegmentPositions[index]);
+                visualSegmentPositions[index] = SanitizeFinite(math.lerp(currentPoint, targetPoint, safeBlendT));
             }
         }
 
@@ -615,10 +626,11 @@ namespace Hecton8.Physics
             float sagScale)
         {
             int segmentCount = anchorCount - 1;
-            float remaining = math.max(0f, travelDistance);
+            float remaining = math.isfinite(travelDistance) ? math.max(0f, travelDistance) : 0f;
             for (int segmentIndex = 0; segmentIndex < segmentCount; segmentIndex++)
             {
-                float segmentLength = math.max(segmentLengths[segmentIndex], MinDistance);
+                float rawSegmentLength = segmentLengths[segmentIndex];
+                float segmentLength = math.isfinite(rawSegmentLength) ? math.max(rawSegmentLength, MinDistance) : MinDistance;
                 if (remaining > segmentLength && segmentIndex < segmentCount - 1)
                 {
                     remaining -= segmentLength;
@@ -626,15 +638,15 @@ namespace Hecton8.Physics
                 }
 
                 float segmentT = math.saturate(remaining * math.rcp(segmentLength));
-                float3 start = anchorPositions[segmentIndex];
-                float3 end = anchorPositions[segmentIndex + 1];
+                float3 start = SanitizeFinite(anchorPositions[segmentIndex]);
+                float3 end = SanitizeFinite(anchorPositions[segmentIndex + 1]);
                 float3 basePoint = math.lerp(start, end, segmentT);
                 float sag = segmentLength * sagScale;
                 float sagWeight = 4f * segmentT * (1f - segmentT);
-                return basePoint + new float3(0f, -(sag * sagWeight), 0f);
+                return SanitizeFinite(basePoint + new float3(0f, -(sag * sagWeight), 0f));
             }
 
-            return anchorPositions[anchorCount - 1];
+            return SanitizeFinite(anchorPositions[anchorCount - 1]);
         }
 
         /// <summary>
@@ -1664,6 +1676,9 @@ namespace Hecton8.Physics
 
         private void EmitTensionCreakIfNeeded(Vector3 anchorPosition, Vector3 payloadPosition, float peakTension)
         {
+            if (!math.isfinite(peakTension) || peakTension <= 0f)
+                return;
+
             float snapThreshold = ResolveSnapTensionThreshold();
             float safeMargin = math.max(1f, snapThreshold * TensionCreakSafeMargin01);
             if (peakTension <= safeMargin)
@@ -1673,7 +1688,9 @@ namespace Hecton8.Physics
             if (IsFrameCooldownActive(frame, _lastTensionCreakFrame, TensionCreakCooldownFrames))
                 return;
 
-            Vector3 midpoint = (anchorPosition + payloadPosition) * 0.5f;
+            Vector3 safeAnchorPosition = IsFinite(anchorPosition) ? anchorPosition : Vector3.zero;
+            Vector3 safePayloadPosition = IsFinite(payloadPosition) ? payloadPosition : safeAnchorPosition;
+            Vector3 midpoint = (safeAnchorPosition + safePayloadPosition) * 0.5f;
             if (!IsFinite(midpoint))
                 return;
 
@@ -1699,14 +1716,16 @@ namespace Hecton8.Physics
                 return;
 
             float snapThreshold = ResolveSnapTensionThreshold();
-            Vector3 direction = ResolveSafeDirection(payloadPosition - anchorPosition, Vector3.zero);
+            Vector3 safeAnchorPosition = IsFinite(anchorPosition) ? anchorPosition : Vector3.zero;
+            Vector3 safePayloadPosition = IsFinite(payloadPosition) ? payloadPosition : safeAnchorPosition;
+            Vector3 direction = ResolveSafeDirection(safePayloadPosition - safeAnchorPosition, Vector3.zero);
             float reactiveVfx01 = math.saturate(
                 (peakTension - snapThreshold * ReactiveVfxThreshold01) *
                 math.rcp(math.max(1f, snapThreshold * (1f - ReactiveVfxThreshold01))));
             TetherTensionSignal signal = new TetherTensionSignal
             {
-                AnchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition),
-                PayloadAup = AbsoluteUniversePosition.FromRuntimePosition(payloadPosition),
+                AnchorAup = AbsoluteUniversePosition.FromRuntimePosition(safeAnchorPosition),
+                PayloadAup = AbsoluteUniversePosition.FromRuntimePosition(safePayloadPosition),
                 DirectionToPayload = ToFloat3(direction),
                 TetherId = unchecked((uint)EntityId.ToULong(GetEntityId())),
                 FrameIndex = unchecked((uint)_currentSimulationFrameIndex),
@@ -1724,13 +1743,16 @@ namespace Hecton8.Physics
         private void PublishSnapImpactSignal(Vector3 snapPosition, float peakTension, float snapSeverity)
         {
             if (!IsFinite(snapPosition))
-                snapPosition = transform.position;
+                snapPosition = IsFinite(transform.position) ? transform.position : Vector3.zero;
+
+            float safePeakTension = math.isfinite(peakTension) ? math.max(0f, peakTension) : 0f;
+            float safeSnapSeverity = math.isfinite(snapSeverity) ? math.saturate(snapSeverity) : 0f;
 
             ImpactSignal signal = new ImpactSignal
             {
                 PointAup = AbsoluteUniversePosition.FromRuntimePosition(snapPosition),
-                Force = math.max(0f, peakTension),
-                Intensity = math.saturate(snapSeverity),
+                Force = safePeakTension,
+                Intensity = safeSnapSeverity,
                 MaterialHash = TetherSnapImpactMaterialHash,
                 WeightClass = 2,
                 PrimaryMaterialId = 7,
@@ -1903,6 +1925,7 @@ namespace Hecton8.Physics
 
         private void AdvanceExternalCableSnare(float fixedDeltaTime)
         {
+            float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
             if (_bioCableRequestedThisStep)
             {
                 if (_bioCableRequestedTension01 > 0f)
@@ -1910,20 +1933,25 @@ namespace Hecton8.Physics
             }
             else if (_bioCableHoldTimer > 0f)
             {
-                _bioCableHoldTimer -= fixedDeltaTime;
+                _bioCableHoldTimer -= safeFixedDeltaTime;
                 if (_bioCableHoldTimer < 0f)
                     _bioCableHoldTimer = 0f;
             }
 
             bool keepAlive = _bioCableRequestedThisStep || _bioCableHoldTimer > 0f;
-            float targetTension = keepAlive ? _bioCableRequestedTension01 : 0f;
-            float targetCutProgress = keepAlive ? _bioCableRequestedCutProgress01 : 1f;
-            Vector3 targetAnchor = keepAlive ? _bioCableRequestedAnchorWS : Vector3.zero;
-            float blendT = ResolveBlendFactor(math.max(1f, _bioCableBlendSharpness), fixedDeltaTime);
+            float targetTension = keepAlive && math.isfinite(_bioCableRequestedTension01) ? math.saturate(_bioCableRequestedTension01) : 0f;
+            float targetCutProgress = keepAlive && math.isfinite(_bioCableRequestedCutProgress01) ? math.saturate(_bioCableRequestedCutProgress01) : 1f;
+            Vector3 targetAnchor = keepAlive && IsFinite(_bioCableRequestedAnchorWS) ? _bioCableRequestedAnchorWS : Vector3.zero;
+            float blendSharpness = math.isfinite(_bioCableBlendSharpness) ? math.max(1f, _bioCableBlendSharpness) : 1f;
+            float blendT = ResolveBlendFactor(blendSharpness, safeFixedDeltaTime);
 
-            _bioCableCurrentTension01 = math.lerp(_bioCableCurrentTension01, targetTension, blendT);
-            _bioCableCurrentCutProgress01 = math.lerp(_bioCableCurrentCutProgress01, targetCutProgress, blendT);
-            _bioCableCurrentAnchorWS = Vector3.Lerp(_bioCableCurrentAnchorWS, targetAnchor, blendT);
+            float currentTension = math.isfinite(_bioCableCurrentTension01) ? math.saturate(_bioCableCurrentTension01) : 0f;
+            float currentCutProgress = math.isfinite(_bioCableCurrentCutProgress01) ? math.saturate(_bioCableCurrentCutProgress01) : 1f;
+            Vector3 currentAnchor = IsFinite(_bioCableCurrentAnchorWS) ? _bioCableCurrentAnchorWS : targetAnchor;
+            _bioCableCurrentTension01 = math.saturate(math.lerp(currentTension, targetTension, blendT));
+            _bioCableCurrentCutProgress01 = math.saturate(math.lerp(currentCutProgress, targetCutProgress, blendT));
+            Vector3 blendedAnchor = Vector3.Lerp(currentAnchor, targetAnchor, blendT);
+            _bioCableCurrentAnchorWS = IsFinite(blendedAnchor) ? blendedAnchor : targetAnchor;
 
             _bioCableRequestedTension01 = 0f;
             _bioCableRequestedCutProgress01 = 1f;
@@ -1936,29 +1964,43 @@ namespace Hecton8.Physics
             if (_payloadBody == null)
                 return Vector3.zero;
 
+            Vector3 safePayloadPosition = IsFinite(payloadPosition) ? payloadPosition : (_payloadBody != null && IsFinite(_payloadBody.worldCenterOfMass) ? _payloadBody.worldCenterOfMass : Vector3.zero);
             float time = math.isfinite(fixedStepClockSeconds) ? fixedStepClockSeconds : 0f;
             float3 phantomCurrentSample = CurrentManager.SampleCurrent(
-                new float3(payloadPosition.x, payloadPosition.y, payloadPosition.z),
+                new float3(safePayloadPosition.x, safePayloadPosition.y, safePayloadPosition.z),
                 time,
                 _payloadCurrentNoiseScale,
                 _payloadCurrentTimeScale,
                 _payloadCurrentStrength,
                 _payloadCurrentVerticalFactor);
             Vector3 phantomCurrent = new Vector3(phantomCurrentSample.x, phantomCurrentSample.y, phantomCurrentSample.z);
-            Vector3 authoredCurrent = CurrentVolume.SampleAt(payloadPosition);
-            Vector3 environmentCurrent = phantomCurrent + authoredCurrent;
-            environmentCurrent.y *= _payloadCurrentVerticalFactor;
+            if (!IsFinite(phantomCurrent))
+                phantomCurrent = Vector3.zero;
 
-            Vector3 currentDelta = environmentCurrent - _payloadBody.linearVelocity;
+            Vector3 authoredCurrent = CurrentVolume.SampleAt(safePayloadPosition);
+            if (!IsFinite(authoredCurrent))
+                authoredCurrent = Vector3.zero;
+
+            Vector3 environmentCurrent = phantomCurrent + authoredCurrent;
+            float verticalFactor = math.isfinite(_payloadCurrentVerticalFactor) ? _payloadCurrentVerticalFactor : 0f;
+            environmentCurrent.y *= verticalFactor;
+            if (!IsFinite(environmentCurrent))
+                environmentCurrent = Vector3.zero;
+
+            Vector3 payloadVelocity = IsFinite(_payloadBody.linearVelocity) ? _payloadBody.linearVelocity : Vector3.zero;
+            Vector3 currentDelta = environmentCurrent - payloadVelocity;
             float currentDeltaSq = currentDelta.sqrMagnitude;
             Vector3 playerRight = _owner != null ? _owner.PlayerRight : Vector3.right;
             float sideExposure = 0f;
-            if (currentDeltaSq > MinVectorMagnitudeSq)
+            if (math.isfinite(currentDeltaSq) && currentDeltaSq > MinVectorMagnitudeSq)
                 sideExposure = math.abs(Vector3.Dot(ResolveSafeDirection(currentDelta, Vector3.zero), playerRight));
 
-            float currentScale = math.lerp(0.55f, 1f, _payloadMass01);
-            currentScale *= math.lerp(1f, _payloadSideCurrentBoost, sideExposure);
-            Vector3 currentForce = currentDelta * (_payloadCurrentDamping * currentScale);
+            float safePayloadMass01 = math.isfinite(_payloadMass01) ? math.saturate(_payloadMass01) : 0f;
+            float safeSideBoost = math.isfinite(_payloadSideCurrentBoost) ? math.max(0f, _payloadSideCurrentBoost) : 1f;
+            float safeDamping = math.isfinite(_payloadCurrentDamping) ? math.max(0f, _payloadCurrentDamping) : 0f;
+            float currentScale = math.lerp(0.55f, 1f, safePayloadMass01);
+            currentScale *= math.lerp(1f, safeSideBoost, math.isfinite(sideExposure) ? math.saturate(sideExposure) : 0f);
+            Vector3 currentForce = currentDelta * (safeDamping * currentScale);
             float maxPayloadCurrentForce = math.isfinite(_maxPayloadCurrentForce) ? math.max(0f, _maxPayloadCurrentForce) : 0f;
             float maxPayloadCurrentForceSq = maxPayloadCurrentForce * maxPayloadCurrentForce;
             float currentForceSq = currentForce.sqrMagnitude;
@@ -1977,7 +2019,8 @@ namespace Hecton8.Physics
             if (_payloadBody == null)
                 return;
 
-            if (payloadCurrentForce.sqrMagnitude > MinVectorMagnitudeSq)
+            float payloadCurrentForceSq = payloadCurrentForce.sqrMagnitude;
+            if (math.isfinite(payloadCurrentForceSq) && payloadCurrentForceSq > MinVectorMagnitudeSq)
                 ApplyClampedAcceleration(_payloadBody, payloadCurrentForce, _maxPayloadCurrentForce);
 
             float payloadAngularDamping = math.isfinite(_payloadAngularDamping) ? math.max(0f, _payloadAngularDamping) : 0f;
@@ -2004,22 +2047,27 @@ namespace Hecton8.Physics
 
         private float ApplyExternalCableSnareForce()
         {
-            if (_payloadBody == null || _bioCableCurrentTension01 <= MinDistance)
+            if (_payloadBody == null || !math.isfinite(_bioCableCurrentTension01) || _bioCableCurrentTension01 <= MinDistance)
                 return 0f;
 
-            float cutSuppression = 1f - math.saturate(_bioCableCurrentCutProgress01);
-            float effectiveTension = _bioCableCurrentTension01 * cutSuppression;
+            float cutSuppression = 1f - (math.isfinite(_bioCableCurrentCutProgress01) ? math.saturate(_bioCableCurrentCutProgress01) : 1f);
+            float effectiveTension = math.saturate(_bioCableCurrentTension01) * cutSuppression;
             if (effectiveTension <= MinDistance)
                 return 0f;
 
-            Vector3 toAnchor = _bioCableCurrentAnchorWS - _payloadBody.worldCenterOfMass;
-            if (toAnchor.sqrMagnitude > MinVectorMagnitudeSq)
+            Vector3 payloadCenter = IsFinite(_payloadBody.worldCenterOfMass) ? _payloadBody.worldCenterOfMass : Vector3.zero;
+            Vector3 safeBioAnchor = IsFinite(_bioCableCurrentAnchorWS) ? _bioCableCurrentAnchorWS : payloadCenter;
+            Vector3 toAnchor = safeBioAnchor - payloadCenter;
+            float toAnchorSq = toAnchor.sqrMagnitude;
+            float safePullForce = math.isfinite(_bioCablePayloadPullForce) ? math.max(0f, _bioCablePayloadPullForce) : 0f;
+            if (math.isfinite(toAnchorSq) && toAnchorSq > MinVectorMagnitudeSq && safePullForce > 0f)
             {
-                Vector3 snareForce = ResolveSafeDirection(toAnchor, Vector3.zero) * (_bioCablePayloadPullForce * effectiveTension);
-                ApplyClampedAcceleration(_payloadBody, snareForce, _bioCablePayloadPullForce);
+                Vector3 snareForce = ResolveSafeDirection(toAnchor, Vector3.zero) * (safePullForce * effectiveTension);
+                ApplyClampedAcceleration(_payloadBody, snareForce, safePullForce);
             }
 
-            return _bioCablePayloadPullForce * effectiveTension * math.max(1f, _bioCableStressBuildMultiplier);
+            float stressBuildMultiplier = math.isfinite(_bioCableStressBuildMultiplier) ? math.max(1f, _bioCableStressBuildMultiplier) : 1f;
+            return safePullForce * effectiveTension * stressBuildMultiplier;
         }
 
         private void UpdateLineOfSight(Vector3 anchorPosition, Vector3 payloadPosition, bool allowBendPoints)
@@ -2213,19 +2261,21 @@ namespace Hecton8.Physics
 
         private int BuildAnchorChain(Vector3 anchorPosition, Vector3 payloadPosition)
         {
-            _anchorPositions[0] = anchorPosition;
-            _anchorVelocities[0] = _playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero;
+            Vector3 safeAnchorPosition = IsFinite(anchorPosition) ? anchorPosition : Vector3.zero;
+            Vector3 safePayloadPosition = IsFinite(payloadPosition) ? payloadPosition : safeAnchorPosition;
+            _anchorPositions[0] = safeAnchorPosition;
+            _anchorVelocities[0] = _playerRigidbody != null && IsFinite(_playerRigidbody.linearVelocity) ? _playerRigidbody.linearVelocity : Vector3.zero;
             int anchorCount = 1;
 
             for (int i = 0; i < _bendPointCount; i++)
             {
-                _anchorPositions[anchorCount] = _bendPoints[i];
+                _anchorPositions[anchorCount] = IsFinite(_bendPoints[i]) ? _bendPoints[i] : _anchorPositions[anchorCount - 1];
                 _anchorVelocities[anchorCount] = Vector3.zero;
                 anchorCount++;
             }
 
-            _anchorPositions[anchorCount] = payloadPosition;
-            _anchorVelocities[anchorCount] = _payloadBody != null ? _payloadBody.linearVelocity : Vector3.zero;
+            _anchorPositions[anchorCount] = safePayloadPosition;
+            _anchorVelocities[anchorCount] = _payloadBody != null && IsFinite(_payloadBody.linearVelocity) ? _payloadBody.linearVelocity : Vector3.zero;
             anchorCount++;
 
             PopulateSolverAnchors(anchorCount);
@@ -2239,9 +2289,9 @@ namespace Hecton8.Physics
                 totalLength += segmentLength;
             }
 
-            _currentLength = totalLength;
+            _currentLength = math.isfinite(totalLength) ? math.max(0f, totalLength) : 0f;
             if (_segmentRestLengthsDirty)
-                RecalculateSegmentRestLengths(segmentCount, totalLength);
+                RecalculateSegmentRestLengths(segmentCount, _currentLength);
 
             return anchorCount;
         }
@@ -2251,9 +2301,11 @@ namespace Hecton8.Physics
             if (segmentCount <= 0)
                 return;
 
-            if (totalLength <= MinDistance)
+            float safeRestLength = math.isfinite(_restLength) ? math.max(_restLength, MinDistance) : MinDistance;
+            float safeTotalLength = math.isfinite(totalLength) ? math.max(0f, totalLength) : 0f;
+            if (safeTotalLength <= MinDistance)
             {
-                float uniformLength = _restLength * math.rcp(segmentCount);
+                float uniformLength = safeRestLength * math.rcp(segmentCount);
                 for (int i = 0; i < segmentCount; i++)
                     _segmentRestLengths[i] = uniformLength;
                 _segmentRestLengthsDirty = false;
@@ -2262,8 +2314,9 @@ namespace Hecton8.Physics
 
             for (int i = 0; i < segmentCount; i++)
             {
-                float fraction = _segmentLengths[i] * math.rcp(totalLength);
-                _segmentRestLengths[i] = _restLength * fraction;
+                float segmentLength = math.isfinite(_segmentLengths[i]) ? math.max(0f, _segmentLengths[i]) : 0f;
+                float fraction = segmentLength * math.rcp(safeTotalLength);
+                _segmentRestLengths[i] = safeRestLength * fraction;
             }
 
             _segmentRestLengthsDirty = false;
@@ -2290,8 +2343,10 @@ namespace Hecton8.Physics
                 lineDirection = Vector3.zero;
             }
 
-            _signedLateralPull01 = math.clamp(Vector3.Dot(lineDirection, _owner.PlayerRight), -1f, 1f);
-            _backwardPull01 = math.saturate(-Vector3.Dot(lineDirection, _owner.PlayerForward));
+            float lateralPull = Vector3.Dot(lineDirection, _owner.PlayerRight);
+            float backwardPull = -Vector3.Dot(lineDirection, _owner.PlayerForward);
+            _signedLateralPull01 = math.isfinite(lateralPull) ? math.clamp(lateralPull, -1f, 1f) : 0f;
+            _backwardPull01 = math.isfinite(backwardPull) ? math.saturate(backwardPull) : 0f;
         }
 
         private void UpdateTowDrag()
@@ -2299,46 +2354,62 @@ namespace Hecton8.Physics
             if (_owner == null)
                 return;
 
-            float load01 = math.saturate(math.max(_tension01, _payloadDrift01 * 0.72f) * math.lerp(0.45f, 1f, _payloadMass01));
+            float safeTension01 = math.isfinite(_tension01) ? math.saturate(_tension01) : 0f;
+            float safePayloadDrift01 = math.isfinite(_payloadDrift01) ? math.saturate(_payloadDrift01) : 0f;
+            float safePayloadMass01 = math.isfinite(_payloadMass01) ? math.saturate(_payloadMass01) : 0f;
+            float load01 = math.saturate(math.max(safeTension01, safePayloadDrift01 * 0.72f) * math.lerp(0.45f, 1f, safePayloadMass01));
             _towDragMultiplier = _owner.ResolveTowDragMultiplier(load01);
             _owner.ApplyTowLoad(_towDragMultiplier);
         }
 
         private void UpdateConstraintTelemetry()
         {
-            float extensionTotal = math.max(0f, _currentLength - _restLength);
-            _tension01 = math.saturate(extensionTotal * math.rcp(math.max(_fullTensionExtension, 0.01f)));
+            float safeCurrentLength = math.isfinite(_currentLength) ? math.max(0f, _currentLength) : 0f;
+            float safeRestLength = math.isfinite(_restLength) ? math.max(0f, _restLength) : 0f;
+            float safeFullTensionExtension = math.isfinite(_fullTensionExtension) ? math.max(_fullTensionExtension, 0.01f) : 0.01f;
+            float extensionTotal = math.max(0f, safeCurrentLength - safeRestLength);
+            _tension01 = math.saturate(extensionTotal * math.rcp(safeFullTensionExtension));
         }
 
         private bool UpdateStressAndSnap(float peakTension, float fixedDeltaTime)
         {
+            float safePeakTension = math.isfinite(peakTension) ? math.max(0f, peakTension) : 0f;
+            float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
             float snapThreshold = ResolveSnapTensionThreshold();
-            float snapDuration = math.max(0.1f, _owner != null ? _owner.ResolveSnapStressDuration() : 0.1f);
+            float rawSnapDuration = _owner != null ? _owner.ResolveSnapStressDuration() : 0.1f;
+            float snapDuration = math.isfinite(rawSnapDuration) ? math.max(0.1f, rawSnapDuration) : 0.1f;
 
-            if (peakTension > snapThreshold)
+            if (safePeakTension > snapThreshold)
             {
-                _stressTimer += fixedDeltaTime;
+                _stressTimer += safeFixedDeltaTime;
             }
             else
             {
-                _stressTimer = math.max(0f, _stressTimer - (fixedDeltaTime * 0.5f));
+                _stressTimer = math.max(0f, _stressTimer - (safeFixedDeltaTime * 0.5f));
             }
+
+            if (!math.isfinite(_stressTimer))
+                _stressTimer = 0f;
 
             _stress01 = math.saturate(_stressTimer * math.rcp(snapDuration));
             if (_stressTimer < snapDuration)
                 return false;
 
-            Vector3 ownerAnchor = _owner.ResolveTowAnchorPosition();
+            Vector3 rawOwnerAnchor = _owner != null ? _owner.ResolveTowAnchorPosition() : Vector3.zero;
+            Vector3 ownerAnchor = IsFinite(rawOwnerAnchor) ? rawOwnerAnchor : Vector3.zero;
+            Vector3 payloadCenter = _payloadBody != null && IsFinite(_payloadBody.worldCenterOfMass)
+                ? _payloadBody.worldCenterOfMass
+                : ownerAnchor;
             Vector3 playerSegmentDirection = _bendPointCount > 0
                 ? ResolveSafeDirection(_bendPoints[0] - ownerAnchor, Vector3.zero)
-                : ResolveSafeDirection(_payloadBody.worldCenterOfMass - ownerAnchor, Vector3.zero);
+                : ResolveSafeDirection(payloadCenter - ownerAnchor, Vector3.zero);
             Vector3 payloadSegmentDirection = _bendPointCount > 0
-                ? ResolveSafeDirection(_bendPoints[_bendPointCount - 1] - _payloadBody.worldCenterOfMass, Vector3.zero)
-                : ResolveSafeDirection(ownerAnchor - _payloadBody.worldCenterOfMass, Vector3.zero);
-            float snapSeverity = math.saturate(peakTension * math.rcp(math.max(snapThreshold, 1f)));
+                ? ResolveSafeDirection(_bendPoints[_bendPointCount - 1] - payloadCenter, Vector3.zero)
+                : ResolveSafeDirection(ownerAnchor - payloadCenter, Vector3.zero);
+            float snapSeverity = math.saturate(safePeakTension * math.rcp(math.max(snapThreshold, 1f)));
             ClearDataVaultCableEntry();
-            PublishSnapImpactSignal(ownerAnchor, peakTension, snapSeverity);
-            PublishTetherSnappedSignal(ownerAnchor, peakTension, snapThreshold, snapSeverity, 1);
+            PublishSnapImpactSignal(ownerAnchor, safePeakTension, snapSeverity);
+            PublishTetherSnappedSignal(ownerAnchor, safePeakTension, snapThreshold, snapSeverity, 1);
             InvokeSnapProtocol(playerSegmentDirection, payloadSegmentDirection, snapSeverity, false);
             return true;
         }
@@ -2464,13 +2535,13 @@ namespace Hecton8.Physics
             int safeAnchorCount = math.clamp(anchorCount, 0, MaxAnchors);
             for (int anchorIndex = 0; anchorIndex < safeAnchorCount; anchorIndex++)
             {
-                Vector3 anchorPosition = _anchorPositions[anchorIndex];
+                Vector3 anchorPosition = IsFinite(_anchorPositions[anchorIndex]) ? _anchorPositions[anchorIndex] : Vector3.zero;
                 _visualAnchorPositions[anchorIndex] = new float3(anchorPosition.x, anchorPosition.y, anchorPosition.z);
             }
 
             int segmentCount = math.max(0, safeAnchorCount - 1);
             for (int segmentIndex = 0; segmentIndex < segmentCount; segmentIndex++)
-                _visualSegmentLengths[segmentIndex] = _segmentLengths[segmentIndex];
+                _visualSegmentLengths[segmentIndex] = math.isfinite(_segmentLengths[segmentIndex]) ? math.max(0f, _segmentLengths[segmentIndex]) : 0f;
         }
 
         private bool HasSupportingBendPointForSegment(int segmentIndex, Vector3 hitPoint)
@@ -2483,7 +2554,8 @@ namespace Hecton8.Physics
             if (segmentIndex > 0)
             {
                 Vector3 previousAnchor = _anchorPositions[segmentIndex];
-                if ((previousAnchor - hitPoint).sqrMagnitude <= supportingRadiusSq)
+                float previousDistanceSq = (previousAnchor - hitPoint).sqrMagnitude;
+                if (math.isfinite(previousDistanceSq) && previousDistanceSq <= supportingRadiusSq)
                     return true;
             }
 
@@ -2491,7 +2563,8 @@ namespace Hecton8.Physics
             if (segmentIndex < finalSegmentIndex)
             {
                 Vector3 nextAnchor = _anchorPositions[segmentIndex + 1];
-                if ((nextAnchor - hitPoint).sqrMagnitude <= supportingRadiusSq)
+                float nextDistanceSq = (nextAnchor - hitPoint).sqrMagnitude;
+                if (math.isfinite(nextDistanceSq) && nextDistanceSq <= supportingRadiusSq)
                     return true;
             }
 
@@ -2906,7 +2979,7 @@ namespace Hecton8.Physics
                 return Vector3.zero;
 
             if (sqrMagnitude <= MinVectorMagnitudeSq || safeMaxMagnitude <= 0f)
-                return sqrMagnitude <= MinVectorMagnitudeSq ? Vector3.zero : value;
+                return Vector3.zero;
 
             float maxMagnitudeSq = safeMaxMagnitude * safeMaxMagnitude;
             if (sqrMagnitude <= maxMagnitudeSq)
@@ -3020,8 +3093,11 @@ namespace Hecton8.Physics
             if (!math.isfinite(lengthSq))
                 return float3.zero;
 
+            if (safeMaxVelocity <= 0f)
+                return float3.zero;
+
             float maxSq = safeMaxVelocity * safeMaxVelocity;
-            if (safeMaxVelocity > 0f && lengthSq > maxSq)
+            if (lengthSq > maxSq)
                 return value * (safeMaxVelocity * math.rsqrt(math.max(lengthSq, 0.000001f)));
 
             return value;
@@ -3045,7 +3121,7 @@ namespace Hecton8.Physics
 
         private static float ResolveBlendFactor(float sharpness, float deltaTime)
         {
-            if (sharpness <= 0f || deltaTime <= 0f)
+            if (!math.isfinite(sharpness) || !math.isfinite(deltaTime) || sharpness <= 0f || deltaTime <= 0f)
                 return 0f;
 
             return math.saturate(sharpness * deltaTime);

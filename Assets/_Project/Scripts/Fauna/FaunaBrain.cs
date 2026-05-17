@@ -3512,7 +3512,7 @@ namespace Hecton8.AI
             debris.PositionAup = pointAup;
             debris.SourceEntityId = signal.SourceHash;
             debris.Intensity01 = impact.Intensity;
-            debris.DebrisKind = 1;
+            debris.DebrisKind = DebrisSpawnSignal.DebrisKindSparks;
             debris.Flags = flags;
             GlobalSignals.Publish(in debris);
 

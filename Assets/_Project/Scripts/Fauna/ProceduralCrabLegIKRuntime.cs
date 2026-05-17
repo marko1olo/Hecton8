@@ -768,7 +768,7 @@ namespace Hecton8.AI
             if (_pipelineScheduled || !TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
                 return;
 
-            int activeCount = CaptureFrameState(deltaTime, in buffers);
+            int activeCount = CaptureFrameState(deltaTime, buffers);
             if (activeCount <= 0)
                 return;
 
@@ -812,7 +812,7 @@ namespace Hecton8.AI
 
             ProceduralCrabLegEntityState entity = BuildDefaultEntityState(slotIndex, rootPosition, rootRotation, legCount, scale);
             buffers.Entities[slotIndex] = entity;
-            SeedLegTargets(in entity, in buffers);
+            SeedLegTargets(in entity, buffers);
             return true;
         }
 
@@ -823,7 +823,7 @@ namespace Hecton8.AI
 
             _slotActive[slotIndex] = false;
             ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
-            ClearLegRange(in entity, in buffers);
+            ClearLegRange(in entity, buffers);
             buffers.Entities[slotIndex] = default;
             buffers.BodyPoses[slotIndex] = default;
             _freeSlots[_freeSlotCount] = slotIndex;

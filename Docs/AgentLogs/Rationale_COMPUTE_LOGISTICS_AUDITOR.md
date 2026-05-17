@@ -2,6 +2,7 @@
 
 Status: AUDIT COMPLETE
 Snapshot: 2026-05-16T03:56+04:00
+Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 ## Decision Ledger
 
@@ -142,4 +143,22 @@ Solution: Run a 30-second SQLite live pulse at 05:34, join it with the latest 04
 Rejected Alternatives: Pretending SQLite can produce exact invoice split; rerunning H-Phi without evidence of a large source movement; publishing the full raw CONTENT_AUTHORITY XML prompt title into summary tables.
 Scalability potential: Short pulse gives repeatable burn telemetry; full JSONL and H-Phi remain scheduled heavier passes.
 Hardware Impact: 30-second wait plus read-only SQLite query. No Unity runtime, import, build, or scene impact.
+
+Problem: By 11:38 the post-04:12 source movement was no longer small, so the old H-Phi score was stale.
+Solution: Gate the expensive H-Phi scan on source drift first, then rerun summary H-Phi after confirming 113 modified C# files and 10.8MB touched since 04:12.
+Rejected Alternatives: Continuing to quote the 04:12 H-Phi score after 16,979 runtime-line drift; rerunning H-Phi blindly every prompt without source movement proof.
+Scalability potential: Source-drift gate prevents waste on quiet intervals and still catches real architecture movement.
+Hardware Impact: H-Phi scan took 181,218 ms. Source and JSONL scans were read-only. No Unity runtime/import/build was touched.
+
+Problem: The 11:42 H-Phi improvement included both native ownership gains and managed runtime regressions.
+Solution: Report composite score deltas together with raw counter deltas, especially -162 owner-blocked NativeArray refs and +20 PrimaryManagedRuntimeRisk.
+Rejected Alternatives: Calling the score lift a clean win; calling the managed debt a total failure while DataVault/ownership counters improved.
+Scalability potential: Keeps H-Phi from becoming metric theater; future gates can weight raw debt counters separately.
+Hardware Impact: Static accounting only.
+
+Problem: H-Phi / ash-fi was scattered across reports under inconsistent spellings, making future search fragile.
+Solution: Create a dedicated `COMPUTE_HPHI_SEARCH_INDEX_20260517.md` and add a standard keyword alias line to active H-Phi compute documents.
+Rejected Alternatives: Renaming historical files; relying on one spelling only; adding tags to every ancient unrelated Metric Phi report and generating noisy churn.
+Scalability potential: Future agents can `rg "ash-fi|H-Phi|token-H-Phi-ROI"` and find the canonical compute audit trail.
+Hardware Impact: Documentation-only update.
 

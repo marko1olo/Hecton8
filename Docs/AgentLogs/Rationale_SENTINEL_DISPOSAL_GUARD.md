@@ -313,3 +313,21 @@ Solution: Added bounded cold-path key insertion helpers for pointer lanes and jo
 Rejected Alternatives: Rejected treating duplicate keys as harmless because transition/shutdown loops use those key arrays as deterministic owner iteration surfaces. Rejected rebuilding key lists from hash maps at every transition because the point cleanup is simpler and keeps work attached to owner creation/removal.
 Scalability potential: Low/MX350, Quest/Android, and Steam Deck avoid persistent metadata creep without per-frame polling or disk writes. High/Ultra keep deterministic teardown surfaces so legitimate Ocean/VFX allocations can proceed after old-scene owner proof.
 Hardware Impact: 0 B/frame. Added work is only on cold lane creation and owner teardown paths; exact CPU microseconds are unmeasured. Validation used `dotnet build --no-restore`; no `dotnet rebuild` was run.
+
+Problem: `GlobalRegistry.ClearRuntimeBuckets()` clears the updatable bucket during scene transition, but `SceneRuntimeService._registeredUpdatable` can remain true. That can stop `SceneRuntimeService.Tick()` from being re-registered, which cuts off the 300-frame H8Memory and GlobalDataVault heartbeat after a runtime-state clear.
+Solution: `SceneRuntimeService.ClearRuntimeState()` now asks the active scene runtime to restore its core tick registration after the registry buckets are cleared. The restore path verifies initialization/play mode/active state, checks whether the updatable bucket already contains the service, and otherwise re-runs the normal registration path.
+Rejected Alternatives: Rejected setting `_registeredUpdatable` blindly because it would hide a missing bucket registration. Rejected registering from H8Memory because the memory layer must not own the scene runtime tick surface.
+Scalability potential: Low/MX350, Quest/Android, and Steam Deck keep blackbox heartbeat continuity after transitions without per-frame polling or disk writes. High/Ultra keep the same heartbeat proof before Ocean/VFX domains consume recovered memory.
+Hardware Impact: 0 B/frame. Added work is a cold scene-transition registration check; exact CPU microseconds are unmeasured.
+
+Problem: `H8Memory.ReleaseSentinelReapedRaw()` could force-free an H8-tracked pointer found by `NativeMemorySentinel` without completing the owning system's registered `JobHandle`.
+Solution: If the raw pointer is tracked by H8Memory, the sentinel reap path now reads the allocation record, completes the owner's registered jobs, then calls the existing force-free record path.
+Rejected Alternatives: Rejected falling through to `UnsafeUtility.Free` for tracked pointers because it bypasses owner synchronization and H8Memory bookkeeping. Rejected per-frame leak polling because the sentinel reap path is already the cold fatal path.
+Scalability potential: Low/MX350 and Quest avoid undefined native alias use during forced leak recovery. High/Ultra keep the same deterministic memory barrier before loading expensive Ocean/VFX state.
+Hardware Impact: Cold fatal-leak path only. No gameplay hot-path cost; exact CPU microseconds are unmeasured.
+
+Problem: Player presentation typed-lane payloads briefly existed in two places during parallel compile repair, causing duplicate signal definitions; the alternative state was missing the payloads entirely from the compile gate.
+Solution: Kept a single compiled ABI definition in `GlobalSignals.cs`, including the existing `WaterTransitionSignal` lane validation and initialization. Reduced `Core/Signals/PlayerMovementPresentationSignals.cs` to an empty namespace shell so dotnet/Unity do not compile duplicate payloads while project metadata that references the file remains satisfied.
+Rejected Alternatives: Rejected duplicate signal structs, removing the typed SignalBus lanes, or replacing them with legacy EventBus/managed delegates. Rejected deleting project metadata under a memory-agent pass.
+Scalability potential: Low/Quest/Steam Deck keep compact fixed-size signal payloads and low-tier lane capacities. High/Ultra keep the same typed lanes for richer presentation systems without ABI ambiguity.
+Hardware Impact: Compile/ABI hygiene only. Runtime cost is unchanged; exact CPU microseconds are unmeasured. Validation used `dotnet build --no-restore`; no `dotnet rebuild` was run.

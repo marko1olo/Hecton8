@@ -5,6 +5,7 @@ Agent: COMPUTE_LOGISTICS_AUDITOR
 Domain: Echelon 9 / Meta, Audit, Reporting, Evidence Accounting
 Audit timestamp: 2026-05-15T01:49:02+04:00
 Evidence class: FILESYSTEM / STATIC_DOC / SQLITE / JSONL / WEB_OFFICIAL / CALC. No Unity runtime, profiler, GCMonitor, or billing export proof.
+Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 ## Executive Verdict
 
@@ -1685,6 +1686,54 @@ Top active burners:
 | 5 | Improve bot memory and CRM | 171,246 |
 
 Verdict: burn re-accelerated relative to the 04:46 pulse, but remains below the post-04:12 JSONL window average. It is active, concentrated, and still not a waste conviction without code/value deltas.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 H-Phi Live Rebase 11:42
+
+Source drift after the 04:12 H-Phi artifact: 113 C# files modified, 10,799,862 bytes touched. Current first-party script surface: 1,585 files, 1,035,315 physical LOC, 854,943 meaningful LOC.
+
+H-Phi scan time: 181,218 ms. Artifact: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_CURRENT_20260517_1138.json`.
+
+| Metric | 04:12 | 11:42 | Delta |
+|---|---:|---:|---:|
+| Runtime H-Phi risk | 0.004858813 | 0.005378664 | +0.000519851 |
+| Runtime H-Phi narrow | 0.070286230 | 0.075881112 | +0.005594882 |
+| Data sovereignty | 0.132223543 | 0.141543476 | +0.009319933 |
+| Memory alignment | 0.531571219 | 0.536097561 | +0.004526342 |
+| DataVault refs | 1,112 | 1,216 | +104 |
+| Owner-blocked NativeArray refs | 5,123 | 4,961 | -162 |
+| Primary native ownership risk | 5,781 | 5,606 | -175 |
+| Managed format surface | 543 | 563 | +20 |
+| Primary managed runtime risk | 157 | 177 | +20 |
+
+Token window 04:12-11:42:
+
+| Metric | Value |
+|---|---:|
+| Total tokens | 501,495,243 |
+| Average rate | 18,578.71 tokens/sec |
+| Cache ratio | 95.6619% |
+| Cache-aware cost | USD 397.22 |
+| No-cache equivalent | USD 2,548.92 |
+| Prompt rows | 106 |
+| Peak token minute | 12,973,587 at 2026-05-17T05:07+04:00 |
+| Tokens per +0.001 Runtime H-Phi risk | 964,690,350 |
+| USD per +0.001 Runtime H-Phi risk | USD 764.11 |
+
+SQLite live pulse 11:38:
+
+| Metric | Value |
+|---|---:|
+| Current SQLite tokens | 51,066,572,323 |
+| 30-second delta | 3,001,335 |
+| Tokens/sec | 99,715.11 |
+| Tokens/min | 5,982,906.66 |
+| Estimated current cache-aware total | USD 34,756.09 |
+| Current energy estimate | 2,553.33 MWh |
+| Tokens per meaningful LOC | 59,730.97 |
+
+Verdict: H-Phi moved again and the marginal risk score ROI recovered from the 04:12 plateau. This is still mixed: native ownership improved, but managed runtime debt worsened.
 
 STATUS: AUDIT COMPLETE.
 

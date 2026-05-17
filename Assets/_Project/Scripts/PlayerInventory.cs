@@ -612,7 +612,6 @@ namespace Hecton8.Inventory
         public InventoryGrid Grid => _grid;
         public ItemCatalog ItemCatalog => itemCatalog;
         public int InventoryVersion { get; private set; }
-        public event Action InventoryChanged;
 
         public int SavePriority => 20;
         public int LoadPriority => 20;
@@ -4004,7 +4003,6 @@ namespace Hecton8.Inventory
                 CarryCapacityKg = ResolveCarryCapacityKilograms(),
                 Load01 = math.isfinite(CachedInventoryLoad01) ? math.saturate(CachedInventoryLoad01) : 0f
             });
-            InventoryChanged?.Invoke();
         }
 
         private void RefreshInventorySoAMirrorsAndMask()

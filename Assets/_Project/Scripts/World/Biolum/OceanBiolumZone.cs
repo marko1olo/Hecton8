@@ -58,6 +58,8 @@ namespace Hecton8.Biolum
         protected override void Awake()
         {
             base.Awake();
+            _lightCount = Mathf.Clamp(_lightCount, 1, _maxLights);
+            _scatterRadius = SanitizeNonNegative(_scatterRadius, 10f);
             _lightPositions = new Vector3[_maxLights]; // COLD ALLOC: Vector3[_maxLights] - scattered ocean biolum light offsets - owner: OceanBiolumZone
             _lightColors = new Color[_maxLights]; // COLD ALLOC: Color[_maxLights] - cached scattered ocean biolum light colors - owner: OceanBiolumZone
             GenerateLightPositions();
@@ -92,21 +94,25 @@ namespace Hecton8.Biolum
         /// </summary>
         protected override Color GetBiolumColor()
         {
-            if (_depthRatio < 0.33f)
+            float safeDepthRatio = Sanitize01(_depthRatio, 0.5f);
+            Color color;
+            if (safeDepthRatio < 0.33f)
             {
                 // Surface transition
-                return Color.Lerp(_surfaceBlue, _twilightBlue, _depthRatio * 3f);
+                color = Color.Lerp(_surfaceBlue, _twilightBlue, safeDepthRatio * 3f);
             }
-            else if (_depthRatio < 0.66f)
+            else if (safeDepthRatio < 0.66f)
             {
                 // Twilight zone
-                return Color.Lerp(_twilightBlue, _biolumGreen, (_depthRatio - 0.33f) * 3f);
+                color = Color.Lerp(_twilightBlue, _biolumGreen, (safeDepthRatio - 0.33f) * 3f);
             }
             else
             {
                 // Abyss (exotic colors)
-                return Color.Lerp(_biolumGreen, _biolumPurple, (_depthRatio - 0.66f) * 3f);
+                color = Color.Lerp(_biolumGreen, _biolumPurple, (safeDepthRatio - 0.66f) * 3f);
             }
+
+            return SanitizeBiolumColor(color);
         }
 
         /// <summary>
@@ -115,8 +121,9 @@ namespace Hecton8.Biolum
         /// </summary>
         protected override float GetBiolumIntensity()
         {
+            float safeDepthRatio = Sanitize01(_depthRatio, 0.5f);
             float baseIntensity = _intensityMultiplier * 0.7f; // Ocean lights are dimmer
-            float depthScale = math.lerp(1.2f, 0.6f, math.saturate(_depthRatio)); // Deeper = dimmer
+            float depthScale = math.lerp(1.2f, 0.6f, safeDepthRatio); // Deeper = dimmer
             return ScaleIntensityByMood(baseIntensity) * depthScale;
         }
 
@@ -126,8 +133,9 @@ namespace Hecton8.Biolum
         /// </summary>
         protected override float GetBiolumRange()
         {
+            float safeDepthRatio = Sanitize01(_depthRatio, 0.5f);
             float baseRange = _rangeMultiplier * 0.8f;
-            float depthScale = math.lerp(1f, 0.5f, math.saturate(_depthRatio)); // Deeper = shorter range (water absorption)
+            float depthScale = math.lerp(1f, 0.5f, safeDepthRatio); // Deeper = shorter range (water absorption)
             return ScaleRangeByHazard(baseRange) * depthScale;
         }
 
@@ -141,11 +149,13 @@ namespace Hecton8.Biolum
         /// </summary>
         private void GenerateLightPositions()
         {
-            for (int i = 0; i < _lightCount; i++)
+            int safeLightCount = Mathf.Clamp(_lightCount, 1, _maxLights);
+            float safeScatterRadius = SanitizeNonNegative(_scatterRadius, 10f);
+            for (int i = 0; i < safeLightCount; i++)
             {
-                float angle = (i / (float)_lightCount) * 360f;
-                float distance = _scatterRadius * (0.5f + 0.5f * Hash01(i * 37 + 3));
-                float height = math.lerp(-_scatterRadius * 0.5f, _scatterRadius * 0.5f, Hash01(i * 41 + 7));
+                float angle = (i / (float)safeLightCount) * 360f;
+                float distance = safeScatterRadius * (0.5f + 0.5f * Hash01(i * 37 + 3));
+                float height = math.lerp(-safeScatterRadius * 0.5f, safeScatterRadius * 0.5f, Hash01(i * 41 + 7));
 
                 if (_useNoiseVariation)
                 {
@@ -173,13 +183,14 @@ namespace Hecton8.Biolum
             float baseIntensity = GetBiolumIntensity();
             float baseRange = GetBiolumRange();
 
-            for (int i = 0; i < _lightCount && i < _maxLights; i++)
+            int safeLightCount = Mathf.Clamp(_lightCount, 1, _maxLights);
+            for (int i = 0; i < safeLightCount; i++)
             {
                 Vector3 position = transform.position + _lightPositions[i];
 
                 // Vary color slightly (natural variance)
                 Color variedColor = Color.Lerp(baseColor, _biolumGreen, Hash01(i * 43 + 11) * 0.2f);
-                if (_depthRatio > 0.66f) // Abyss can have purple tints
+                if (Sanitize01(_depthRatio, 0.5f) > 0.66f) // Abyss can have purple tints
                     variedColor = Color.Lerp(variedColor, _biolumPurple, Hash01(i * 47 + 13) * 0.3f);
 
                 GetOrCreateLight(
@@ -199,7 +210,7 @@ namespace Hecton8.Biolum
             Color baseColor = GetBiolumColor();
             float baseIntensity = GetBiolumIntensity();
             float baseRange = GetBiolumRange();
-            float time = Time.time;
+            float time = BiolumTickTime;
 
             for (int i = 0; i < _activeLightCount; i++)
             {

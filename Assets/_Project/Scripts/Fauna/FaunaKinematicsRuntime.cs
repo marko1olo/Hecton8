@@ -965,7 +965,10 @@ namespace Hecton8.AI
                 debris.DebrisKind = DebrisSpawnSignal.DebrisKindSparks;
                 debris.Flags = ResolveBiteDebrisFlags(pose.Flags);
                 debris.Quantity = ResolveBiteDebrisQuantity(_qualityTier, pose.Flags);
-                GlobalSignals.Publish(in debris);
+                if ((debris.Flags & DebrisSpawnSignal.FlagComputeShard) != 0)
+                    SignalBus<DebrisSpawnSignal>.Push(in debris);
+                else
+                    GlobalSignals.Publish(in debris);
                 PublishBiteHullDent(in pose, frame, debris.Intensity01);
 
                 HapticRequest haptic = default;

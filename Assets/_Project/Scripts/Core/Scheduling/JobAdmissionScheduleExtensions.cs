@@ -70,6 +70,13 @@ namespace Hecton8.Core.Scheduling
             out JobHandle handle)
             where TJob : struct, IJobParallelFor
         {
+            if (arrayLength <= 0)
+            {
+                handle = dependsOn;
+                return arrayLength == 0;
+            }
+
+            int safeBatchCount = innerloopBatchCount > 0 ? innerloopBatchCount : 1;
             IJobAdmissionService service = JobAdmissionSchedulerBridge.Service;
             uint jobHash = JobAdmissionHash<TJob>.Value;
             if (service != null && !service.TryAdmitJob(lane, jobHash, out _))
@@ -78,7 +85,7 @@ namespace Hecton8.Core.Scheduling
                 return false;
             }
 
-            handle = jobData.Schedule(arrayLength, innerloopBatchCount, dependsOn);
+            handle = jobData.Schedule(arrayLength, safeBatchCount, dependsOn);
             return true;
         }
 

@@ -5,6 +5,7 @@ using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Burst;
@@ -1010,7 +1011,11 @@ namespace Hecton8.VFX.Debris
 
         private static Vector4 ResolveGlobalWakeParamsForCompute(bool lowTier)
         {
-            Vector4 wakeParams = Shader.GetGlobalVector(GlobalWakeParamsId);
+            return SanitizeGlobalWakeParamsForCompute(Shader.GetGlobalVector(GlobalWakeParamsId), lowTier);
+        }
+
+        private static Vector4 SanitizeGlobalWakeParamsForCompute(Vector4 wakeParams, bool lowTier)
+        {
             if (!IsFiniteVector(wakeParams))
                 return lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
 
@@ -2045,7 +2050,6 @@ namespace Hecton8.VFX.Debris
             destination.UnlockBufferAfterWrite<T>(safeCount);
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct AgeCarveDebrisMirrorJob : IJob
         {
@@ -2085,7 +2089,6 @@ namespace Hecton8.VFX.Debris
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CarveDebrisInjectBatchJob : IJob
         {

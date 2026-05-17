@@ -18,7 +18,10 @@ namespace Hecton8.Core.Bucketing
         private const int RebalanceResultLength = 1;
         private const int FrameStateLength = 1;
         private const int BlackBoxFrameCount = 300;
+        private const int BlackBoxEntrySizeBytes = 64;
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin";
+        private const ulong BlackBoxDumpMagic = 0x00384E4F54434548ul; // HECTON8\0
+        private const uint BlackBoxDumpVersion = 1u;
         private const float DefaultEntityCostMs = 0.025f;
         private const float CatastrophicCostClampMs = 1000f;
         private const float EwmaWeight = 0.10f;
@@ -471,21 +474,27 @@ namespace Hecton8.Core.Bucketing
             NativeArray<int> entityBuckets = ResolveEntityBuckets();
             NativeArray<int> work = ResolveEntityBucketsWork();
             NativeArray<float> costs = ResolveEntityCostEwma();
-            int entityCount = math.min(entityBuckets.Length, math.min(work.Length, costs.Length));
-            for (int i = 0; i < entityCount; i++)
+            if (entityBuckets.IsCreated && work.IsCreated && costs.IsCreated)
             {
-                entityBuckets[i] = -1;
-                work[i] = -1;
-                costs[i] = 0f;
+                int entityCount = math.min(entityBuckets.Length, math.min(work.Length, costs.Length));
+                for (int i = 0; i < entityCount; i++)
+                {
+                    entityBuckets[i] = -1;
+                    work[i] = -1;
+                    costs[i] = 0f;
+                }
             }
 
             NativeArray<float> bucketLoads = ResolveBucketLoadEwma();
             NativeArray<float> rebalanceLoads = ResolveRebalanceBucketLoads();
-            int loadCount = math.min(bucketLoads.Length, rebalanceLoads.Length);
-            for (int i = 0; i < loadCount; i++)
+            if (bucketLoads.IsCreated && rebalanceLoads.IsCreated)
             {
-                bucketLoads[i] = 0f;
-                rebalanceLoads[i] = 0f;
+                int loadCount = math.min(bucketLoads.Length, rebalanceLoads.Length);
+                for (int i = 0; i < loadCount; i++)
+                {
+                    bucketLoads[i] = 0f;
+                    rebalanceLoads[i] = 0f;
+                }
             }
 
             NativeArray<SimulationBucketRebalanceResult> result = ResolveRebalanceResult();
@@ -549,17 +558,20 @@ namespace Hecton8.Core.Bucketing
             {
                 NativeArray<int> front = ResolveEntityBuckets();
                 NativeArray<int> work = ResolveEntityBucketsWork();
-                int count = math.min(front.Length, work.Length);
-                for (int i = 0; i < count; i++)
-                    front[i] = work[i];
+                if (front.IsCreated && work.IsCreated)
+                {
+                    int count = math.min(front.Length, work.Length);
+                    for (int i = 0; i < count; i++)
+                        front[i] = work[i];
+                }
             }
 
             NativeArray<SimulationBucketRebalanceResult> resultBuffer = ResolveRebalanceResult();
             if (resultBuffer.IsCreated && resultBuffer.Length > 0)
             {
                 SimulationBucketRebalanceResult result = resultBuffer[0];
-                _expectedMaxBucketLoadMs = math.isfinite(result.MaxBucketLoadMs) ? math.max(0f, result.MaxBucketLoadMs) : 0f;
-                _expectedMeanBucketLoadMs = math.isfinite(result.MeanBucketLoadMs) ? math.max(0f, result.MeanBucketLoadMs) : 0f;
+                _expectedMaxBucketLoadMs = SanitizeCost(result.MaxBucketLoadMs);
+                _expectedMeanBucketLoadMs = SanitizeCost(result.MeanBucketLoadMs);
                 if (!math.isfinite(result.MaxBucketLoadMs) ||
                     !math.isfinite(result.MeanBucketLoadMs) ||
                     (result.FramePacingFlags & SimulationBucketPacingFlags.NonFiniteCost) != 0u)
@@ -584,7 +596,18 @@ namespace Hecton8.Core.Bucketing
             if (_preSimulationCostMs > SimulationBucketConstants.PreSimulationBudgetMilliseconds)
                 flags |= SimulationBucketPacingFlags.PreSimulationOverBudget;
 
-            float expectedFrameMs = math.max(_expectedMaxBucketLoadMs, _lastActiveBucketLoadMs) + _preSimulationCostMs;
+            float expectedMaxBucketLoadMs = SanitizePacingCost(_expectedMaxBucketLoadMs, ref flags);
+            float lastActiveBucketLoadMs = SanitizePacingCost(_lastActiveBucketLoadMs, ref flags);
+            float preSimulationCostMs = SanitizePacingCost(_preSimulationCostMs, ref flags);
+            float expectedFrameMs = math.max(expectedMaxBucketLoadMs, lastActiveBucketLoadMs) + preSimulationCostMs;
+            if (!math.isfinite(expectedFrameMs))
+            {
+                flags |= SimulationBucketPacingFlags.NonFiniteCost;
+                _nonFiniteCostObserved = true;
+                _pendingBlackBoxDump = true;
+                expectedFrameMs = CatastrophicCostClampMs;
+            }
+
             if (expectedFrameMs > SimulationBucketConstants.TargetFrameMilliseconds)
             {
                 flags |= SimulationBucketPacingFlags.Impossible60Fps;
@@ -679,9 +702,13 @@ namespace Hecton8.Core.Bucketing
                 using (FileStream stream = new FileStream(BlackBoxDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(_rebalanceSequence);
+                    writer.Write(BlackBoxDumpMagic);
+                    writer.Write(BlackBoxDumpVersion);
+                    writer.Write(BlackBoxFrameCount);
+                    writer.Write(BlackBoxEntrySizeBytes);
                     writer.Write(_blackBoxCursor);
                     writer.Write(_currentFrameCount);
+                    writer.Write(_rebalanceSequence);
                     for (int i = 0; i < BlackBoxFrameCount; i++)
                     {
                         int index = _blackBoxCursor + i;
@@ -726,6 +753,17 @@ namespace Hecton8.Core.Bucketing
         {
             int groupCount = math.max(1, _slowBucketGroupMask + 1);
             return math.saturate((_activeSlowBucketGroup + 1) * math.rcp(groupCount));
+        }
+
+        private float SanitizePacingCost(float milliseconds, ref uint flags)
+        {
+            if (math.isfinite(milliseconds) && milliseconds >= 0f)
+                return math.min(milliseconds, CatastrophicCostClampMs);
+
+            flags |= SimulationBucketPacingFlags.NonFiniteCost;
+            _nonFiniteCostObserved = true;
+            _pendingBlackBoxDump = true;
+            return 0f;
         }
 
         private float SanitizeCost(float milliseconds)
@@ -793,7 +831,7 @@ namespace Hecton8.Core.Bucketing
             public int ActiveEntityCount;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = BlackBoxEntrySizeBytes)]
         internal struct SimulationBucketBlackBoxEntry
         {
             public int CurrentFrameCount;

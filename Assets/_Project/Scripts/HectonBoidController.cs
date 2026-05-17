@@ -62,9 +62,11 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -327,10 +329,7 @@ namespace Hecton8.AI.GPU
         private GraphicsBuffer _visibleIndirectArgsBuffer;
         private Texture3D _fallbackVoxelSdfTexture;
         private Texture3D _fallbackAbyssalFlowTexture;
-        private readonly Vector4[] _fallbackFlowFieldData = { Vector4.zero };
         private readonly Vector4[] _cameraFrustumPlaneUpload = new Vector4[6];
-        private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _indirectArgsUpload =
-            new GraphicsBuffer.IndirectDrawIndexedArgs[1];
         private Mesh _indirectArgsMesh;
         private readonly Vector4[] _predatorAupPositions = new Vector4[MaxPredatorAupPositions];
         private int _predatorAupCount;
@@ -374,6 +373,7 @@ namespace Hecton8.AI.GPU
 
         /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ð¹ Transform Ð¸Ð³Ñ€Ð¾ÐºÐ°.</summary>
         private Transform _playerTransform;
+        private IPlayerRuntimeContext _playerRuntimeContext;
 
         /// <summary>Target position (follows player).</summary>
         private Vector3 _targetPosition;
@@ -782,7 +782,7 @@ namespace Hecton8.AI.GPU
                 SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell,
                 SpatialGridCellEntryStride);
             _fallbackFlowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1);
-            GraphicsBufferUploadUtility.UploadArray(_fallbackFlowFieldBuffer, _fallbackFlowFieldData, 1);
+            UploadFallbackFlowField();
             _visibleBoidIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(boidCount);
             _visibleIndirectArgsBuffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
@@ -796,36 +796,7 @@ namespace Hecton8.AI.GPU
             //  One array, uploaded to BOTH buffers.
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            BoidData[] initialData = new BoidData[boidCount];
-
-            for (int i = 0; i < boidCount; i++)
-            {
-                Vector3 randomPos = boundsCenter + ResolveDeterministicScatterVector(i, boundsCenter, 0xB01D5EEDu) * spawnRadius;
-
-                // Clamp Y: full box depth down, 2m below water surface up
-                randomPos.y = Mathf.Clamp(
-                    randomPos.y,
-                    boundsCenter.y - boundsSize.y,
-                    waterSurfaceY - 2f);
-
-                Vector3 randomVel = ResolveDeterministicScatterVector(i, boundsCenter, 0xB01D7101u) * ((minSpeed + maxSpeed) * 0.5f);
-
-                // Ensure minimum speed
-                if (randomVel.sqrMagnitude < minSpeed * minSpeed)
-                    randomVel = ResolveDeterministicCardinalAxis(i, 0xB01D7101u) * minSpeed;
-
-                initialData[i] = new BoidData
-                {
-                    position = randomPos,
-                    velocity = randomVel,
-                    panic = 0f,
-                    stateFlags = 0u
-                };
-            }
-
-            // Upload identical data to BOTH buffers â€” first-frame Read is never garbage
-            GraphicsBufferUploadUtility.UploadArray(_boidsBufferA, initialData, boidCount);
-            GraphicsBufferUploadUtility.UploadArray(_boidsBufferB, initialData, boidCount);
+            UploadSpawnSetToBoidBuffers(boundsCenter, 0xB01D5EEDu, 0xB01D7101u, false);
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  STEP 4: Initialize frame index
@@ -930,12 +901,24 @@ namespace Hecton8.AI.GPU
             _fallbackAbyssalFlowTexture.Apply(false, true);
         }
 
+        private void UploadFallbackFlowField()
+        {
+            if (_fallbackFlowFieldBuffer == null)
+                return;
+
+            NativeArray<Vector4> mapped = _fallbackFlowFieldBuffer.LockBufferForWrite<Vector4>(0, 1);
+            mapped[0] = Vector4.zero;
+            _fallbackFlowFieldBuffer.UnlockBufferAfterWrite<Vector4>(1);
+        }
+
         private void UploadIndirectArgsStaticMeshData()
         {
             if (_visibleIndirectArgsBuffer == null || fishMesh == null || ReferenceEquals(_indirectArgsMesh, fishMesh))
                 return;
 
-            _indirectArgsUpload[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> mapped =
+                _visibleIndirectArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+            mapped[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
                 indexCountPerInstance = fishMesh.GetIndexCount(0),
                 instanceCount = 0u,
@@ -943,8 +926,40 @@ namespace Hecton8.AI.GPU
                 baseVertexIndex = (uint)Mathf.Max(0, fishMesh.GetBaseVertex(0)),
                 startInstance = 0u
             };
-            GraphicsBufferUploadUtility.UploadArray(_visibleIndirectArgsBuffer, _indirectArgsUpload, 1);
+            _visibleIndirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
             _indirectArgsMesh = fishMesh;
+        }
+
+        private void UploadSpawnSetToBoidBuffers(Vector3 center, uint positionSeed, uint velocitySeed, bool useMinimumVelocity)
+        {
+            if (_boidsBufferA == null || _boidsBufferB == null)
+                return;
+
+            int safeCount = math.min(boidCount, math.min(_boidsBufferA.count, _boidsBufferB.count));
+            if (safeCount <= 0)
+                return;
+
+            NativeArray<BoidData> writeA = _boidsBufferA.LockBufferForWrite<BoidData>(0, safeCount);
+            NativeArray<BoidData> writeB = _boidsBufferB.LockBufferForWrite<BoidData>(0, safeCount);
+            float spawnSpeed = useMinimumVelocity ? minSpeed : (minSpeed + maxSpeed) * 0.5f;
+            for (int i = 0; i < safeCount; i++)
+            {
+                Vector3 position = center + ResolveDeterministicScatterVector(i, center, positionSeed) * spawnRadius;
+                position.y = Mathf.Clamp(position.y, center.y - boundsSize.y, waterSurfaceY - 2f);
+
+                BoidData boid = new BoidData
+                {
+                    position = position,
+                    velocity = ResolveDeterministicScatterVector(i, center, velocitySeed) * spawnSpeed,
+                    panic = 0f,
+                    stateFlags = 0u
+                };
+                writeA[i] = boid;
+                writeB[i] = boid;
+            }
+
+            _boidsBufferA.UnlockBufferAfterWrite<BoidData>(safeCount);
+            _boidsBufferB.UnlockBufferAfterWrite<BoidData>(safeCount);
         }
 
         /// <summary>
@@ -1403,14 +1418,9 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private void UpdateTarget()
         {
-            if (_playerTransform == null)
+            if (TryResolvePlayerTargetPosition(out Vector3 playerPosition))
             {
-                FindPlayer();
-            }
-
-            if (_playerTransform != null)
-            {
-                _targetPosition = _playerTransform.position;
+                _targetPosition = playerPosition;
 
                 // Ð”Ð¸Ð½Ð°Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸Ðµ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ñ‹: Ñ†ÐµÐ½Ñ‚Ñ€ ÑÐ»ÐµÐ´ÑƒÐµÑ‚ Ð·Ð° Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð¼ Ð¿Ð¾ X, Y Ð¸ Z.
                 // ÐžÐ³Ñ€Ð°Ð½Ð¸Ñ‡Ð¸Ð²Ð°ÐµÐ¼ Y, Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð²ÐµÑ€Ñ…Ð½ÑÑ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ð° Ð±Ð¾ÐºÑÐ° (center.y + boundsSize.y)
@@ -1436,7 +1446,84 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private void FindPlayer()
         {
-            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
+            _playerRuntimeContext = ResolvePlayerContext();
+            _playerTransform = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerTransform : null;
+            if (_playerTransform == null)
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerContext()
+        {
+            if (_playerRuntimeContext != null)
+                return _playerRuntimeContext;
+
+            _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
+            return _playerRuntimeContext;
+        }
+
+        private bool TryResolvePlayerTargetPosition(out Vector3 playerPosition)
+        {
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null)
+            {
+                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
+                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                {
+                    if (TryToFiniteVector3(movementState.PredictedWorldPosition, out playerPosition) ||
+                        TryToFiniteVector3(movementState.WorldPosition, out playerPosition))
+                    {
+                        return true;
+                    }
+
+                    float3 aupRuntime = movementState.PredictedAup.ToRuntimeFloat3();
+                    if (TryToFiniteVector3(aupRuntime, out playerPosition))
+                        return true;
+                }
+            }
+
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            if (playerContext != null &&
+                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose) &&
+                (pose.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                TryToFiniteVector3(pose.RuntimePosition, out playerPosition))
+            {
+                return true;
+            }
+
+            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (movement != null)
+            {
+                float3 runtime = movement.CurrentAup.ToRuntimeFloat3();
+                if (TryToFiniteVector3(runtime, out playerPosition))
+                    return true;
+            }
+
+            playerPosition = default;
+            return false;
+        }
+
+        private static bool TryToFiniteVector3(Vector3 value, out Vector3 result)
+        {
+            if (float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z))
+            {
+                result = value;
+                return true;
+            }
+
+            result = default;
+            return false;
+        }
+
+        private static bool TryToFiniteVector3(float3 value, out Vector3 result)
+        {
+            if (math.all(math.isfinite(value)))
+            {
+                result = new Vector3(value.x, value.y, value.z);
+                return true;
+            }
+
+            result = default;
+            return false;
         }
 
         /// <summary>
@@ -1453,8 +1540,9 @@ namespace Hecton8.AI.GPU
             if (_playerTransform == null)
                 return false;
 
-            _mainCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null
-                ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            _mainCamera = playerContext != null && playerContext.PlayerCamera != null
+                ? playerContext.PlayerCamera
                 : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
             return _mainCamera != null;
         }
@@ -1613,30 +1701,7 @@ namespace Hecton8.AI.GPU
         {
             if (_boidsBufferA == null || _boidsBufferB == null) return;
 
-            BoidData[] resetData = new BoidData[boidCount];
-            for (int i = 0; i < boidCount; i++)
-            {
-                Vector3 pos = center + ResolveDeterministicScatterVector(i, center, 0xB01D2E57u) * spawnRadius;
-
-                // Clamp Y: full box depth down, 2m below water surface up
-                pos.y = Mathf.Clamp(
-                    pos.y,
-                    center.y - boundsSize.y,
-                    waterSurfaceY - 2f);
-
-                resetData[i] = new BoidData
-                {
-                    position = pos,
-                    velocity = ResolveDeterministicScatterVector(i, center, 0xB01D5A7Eu) * minSpeed,
-                    panic = 0f,
-                    stateFlags = 0u
-                };
-            }
-
-            // Upload to BOTH buffers â€” next frame's Read will have valid data regardless of _frameIndex
-            GraphicsBufferUploadUtility.UploadArray(_boidsBufferA, resetData, boidCount);
-            GraphicsBufferUploadUtility.UploadArray(_boidsBufferB, resetData, boidCount);
-
+            UploadSpawnSetToBoidBuffers(center, 0xB01D2E57u, 0xB01D5A7Eu, true);
             boundsCenter = center;
             _simulationBounds.center = center;
         }

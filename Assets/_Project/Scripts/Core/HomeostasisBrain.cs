@@ -6,6 +6,7 @@ using AOT;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -237,6 +238,7 @@ namespace Hecton8.Core
             if (_initialized)
                 return;
 
+            _dataVault = GlobalRegistry.DataVault;
             if (!TryResolveRuntimeBuffers(
                     out NativeArray<float> hardwareMetrics,
                     out NativeArray<float> frameTimes,
@@ -972,11 +974,10 @@ namespace Hecton8.Core
             frameTimes = default;
             blackBox = default;
 
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            _dataVault = vault;
             if (!_globalHardwareMetricsHandle.IsCreated || !vault.ResolveBuffer(ref _globalHardwareMetricsHandle))
             {
                 _globalHardwareMetricsHandle = vault.GetBufferHandle<float>(
@@ -1018,11 +1019,10 @@ namespace Hecton8.Core
         private static bool TryResolveHardwareMetrics(out NativeArray<float> metrics)
         {
             metrics = default;
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            _dataVault = vault;
             if (!_globalHardwareMetricsHandle.IsCreated || !vault.ResolveBuffer(ref _globalHardwareMetricsHandle))
             {
                 _globalHardwareMetricsHandle = vault.GetBufferHandle<float>(

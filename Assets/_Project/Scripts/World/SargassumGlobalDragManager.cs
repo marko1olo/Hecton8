@@ -71,7 +71,7 @@ namespace Hecton8.World
         private static readonly Quaternion _yawPositiveX = new Quaternion(0f, 0.70710678118f, 0f, 0.70710678118f);
         private static readonly Quaternion _yawNegativeX = new Quaternion(0f, -0.70710678118f, 0f, 0.70710678118f);
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct SargassumFieldSample
         {
             public bool HasInfluence;
@@ -84,7 +84,7 @@ namespace Hecton8.World
             public float Occlusion01;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct EntanglementStrainSignal
         {
             public int SourceInstanceId;
@@ -95,7 +95,7 @@ namespace Hecton8.World
             public float Shake01;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct MassiveDisplacementSignal
         {
             public Vector3 PositionWS;
@@ -104,7 +104,7 @@ namespace Hecton8.World
             public float ExtremePanicRadiusWS;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct CellData
         {
             public float Density;
@@ -112,7 +112,7 @@ namespace Hecton8.World
             public float MaxY;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct NestedAttachmentState
         {
             public Vector3 SampleSpaceAnchorWS;
@@ -132,7 +132,7 @@ namespace Hecton8.World
             MassiveDisplacement = 2
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct DisruptionZoneState
         {
             public Vector3 SampleSpaceCenterWS;
@@ -147,14 +147,14 @@ namespace Hecton8.World
             public byte Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct DisruptionSample
         {
             public float Suppression01;
             public float SinkDepthWS;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct ScavengerHostState
         {
             public SargassumCollapseChunk Chunk;
@@ -164,7 +164,7 @@ namespace Hecton8.World
             public uint Seed;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct ExternalScavengerSiteState
         {
             public Vector3 AnchorWS;
@@ -173,21 +173,21 @@ namespace Hecton8.World
             public uint Seed;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct DebrisTimer
         {
             public int Slot;
             public float RemainingSeconds;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
         private struct DensitySourceData
         {
             public float3 OriginWS;
             public float Scale;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 12)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 12)]
         private struct DensityContributionData
         {
             public float Density;
@@ -2541,7 +2541,8 @@ namespace Hecton8.World
                 if (distanceSq >= radiusSq)
                     continue;
 
-                float radial01 = 1f - Mathf.Clamp01(distanceSq / radiusSq);
+                float invRadiusSq = math.rcp(math.max(radiusSq, 0.000001f));
+                float radial01 = 1f - math.saturate(distanceSq * invRadiusSq);
                 float influence01 = zone01 * radial01 * radial01;
                 if (influence01 > sample.Suppression01)
                     sample.Suppression01 = influence01;

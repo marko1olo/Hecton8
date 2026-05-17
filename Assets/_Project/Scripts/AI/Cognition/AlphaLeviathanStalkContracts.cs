@@ -30,6 +30,20 @@ namespace Hecton8.AI.Cognition
     }
 
     /// <summary>
+    /// Output-side intent bits that are not constrained by the legacy telemetry byte.
+    /// </summary>
+    public static class AlphaLeviathanSteeringIntentFlags
+    {
+        public const byte LowTierRadialFallback = 1 << 0;
+        public const byte SdfContourRequested = 1 << 1;
+        public const byte PlayerGazeBreak = 1 << 2;
+        public const byte AcousticLure = 1 << 3;
+        public const byte LightRetreat = 1 << 4;
+        public const byte ShiftFenceActive = 1 << 5;
+        public const byte FaultedInput = 1 << 6;
+    }
+
+    /// <summary>
     /// Numeric constants for tangent-orbit predator cognition.
     /// </summary>
     public static class AlphaLeviathanStalkConstants
@@ -77,10 +91,11 @@ namespace Hecton8.AI.Cognition
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly double3 ToAbsoluteDouble3()
         {
+            float4 local = math.select(float4.zero, Local, math.isfinite(Local));
             return new double3(
-                (GridX * AlphaLeviathanStalkConstants.AupCellSizeMeters) + Local.x,
-                (GridY * AlphaLeviathanStalkConstants.AupCellSizeMeters) + Local.y,
-                (GridZ * AlphaLeviathanStalkConstants.AupCellSizeMeters) + Local.z);
+                (GridX * AlphaLeviathanStalkConstants.AupCellSizeMeters) + local.x,
+                (GridY * AlphaLeviathanStalkConstants.AupCellSizeMeters) + local.y,
+                (GridZ * AlphaLeviathanStalkConstants.AupCellSizeMeters) + local.z);
         }
     }
 
@@ -154,5 +169,6 @@ namespace Hecton8.AI.Cognition
         public ushort Slot;
         public byte CurrentPhase;
         public byte Flags;
+        public byte IntentFlags;
     }
 }

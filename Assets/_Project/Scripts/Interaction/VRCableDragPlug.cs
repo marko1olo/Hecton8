@@ -264,7 +264,7 @@ namespace Hecton8.Interaction
 
             Vector3 chord = end - start;
             float spanSq = chord.sqrMagnitude;
-            float spanApprox = spanSq > 0.000001f
+            float spanApprox = math.isfinite(spanSq) && spanSq > 0.000001f
                 ? ApproximateMagnitudeNoSqrt(chord)
                 : 0f;
             float handle = math.clamp(spanApprox * 0.35f, 0.05f, 1.75f);
@@ -391,22 +391,41 @@ namespace Hecton8.Interaction
 
             AbsoluteUniversePosition endAup = AbsoluteUniversePosition.FromRuntimePosition(end);
             double lengthSq = AbsoluteUniversePosition.DistanceSq(in sourceAup, in endAup);
-            float safeMaxCableLength = ResolveSafeMaxCableLengthMeters();
-            float maxLengthSq = safeMaxCableLength * safeMaxCableLength;
-            if (lengthSq <= maxLengthSq || lengthSq <= 0.000001f)
-                return;
-
             Vector3 sourceRuntimePosition = (Vector3)sourceAup.ToRuntimeFloat3();
-            float3 aupDelta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in endAup, in sourceAup);
-            float deltaLengthSq = math.lengthsq(aupDelta);
-            if (deltaLengthSq <= 0.000001f || !math.all(math.isfinite(aupDelta)))
+            if (double.IsNaN(lengthSq) || double.IsInfinity(lengthSq))
             {
                 end = sourceRuntimePosition;
                 return;
             }
 
-            float inverseLength = math.rcp(math.max(ApproximateMagnitudeNoSqrt(aupDelta), 0.000001f));
+            float safeMaxCableLength = ResolveSafeMaxCableLengthMeters();
+            float maxLengthSq = safeMaxCableLength * safeMaxCableLength;
+            if (lengthSq <= maxLengthSq || lengthSq <= 0.000001f)
+                return;
+
+            float3 aupDelta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in endAup, in sourceAup);
+            float deltaLengthSq = math.lengthsq(aupDelta);
+            if (!math.isfinite(deltaLengthSq) || deltaLengthSq <= 0.000001f || !math.all(math.isfinite(aupDelta)))
+            {
+                end = sourceRuntimePosition;
+                return;
+            }
+
+            float approximateLength = ApproximateMagnitudeNoSqrt(aupDelta);
+            if (!math.isfinite(approximateLength) || approximateLength <= 0.000001f)
+            {
+                end = sourceRuntimePosition;
+                return;
+            }
+
+            float inverseLength = math.rcp(approximateLength);
             float3 clampedDelta = aupDelta * inverseLength * safeMaxCableLength;
+            if (!math.all(math.isfinite(clampedDelta)))
+            {
+                end = sourceRuntimePosition;
+                return;
+            }
+
             end = sourceRuntimePosition + new Vector3(clampedDelta.x, clampedDelta.y, clampedDelta.z);
         }
 
@@ -504,11 +523,17 @@ namespace Hecton8.Interaction
 
         private static Vector3 SafeNormalize(Vector3 value, Vector3 fallback)
         {
+            Vector3 safeFallback = IsFiniteVector(fallback) ? fallback : Vector3.forward;
             float lengthSq = value.sqrMagnitude;
-            if (lengthSq <= 0.000001f || !math.all(math.isfinite(new float3(value.x, value.y, value.z))))
-                return fallback;
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f || !math.all(math.isfinite(new float3(value.x, value.y, value.z))))
+                return safeFallback;
 
-            return value * math.rcp(math.max(ApproximateMagnitudeNoSqrt(value), 0.000001f));
+            float approximateLength = ApproximateMagnitudeNoSqrt(value);
+            if (!math.isfinite(approximateLength) || approximateLength <= 0.000001f)
+                return safeFallback;
+
+            Vector3 normalized = value * math.rcp(approximateLength);
+            return IsFiniteVector(normalized) ? normalized : safeFallback;
         }
 
         private static float ApproximateMagnitudeNoSqrt(Vector3 value)
@@ -523,9 +548,17 @@ namespace Hecton8.Interaction
                 return 0f;
 
             float largest = math.cmax(absValue);
-            float smallest = math.cmin(absValue);
-            float middle = absValue.x + absValue.y + absValue.z - largest - smallest;
-            return largest + (middle * 0.375f) + (smallest * 0.125f);
+            if (!math.isfinite(largest) || largest <= 0f)
+                return 0f;
+
+            float3 normalized = absValue * math.rcp(largest);
+            float smallest = math.cmin(normalized);
+            float middle = normalized.x + normalized.y + normalized.z - 1f - smallest;
+            float estimate = largest * (1f + (middle * 0.375f) + (smallest * 0.125f));
+            if (math.isfinite(estimate))
+                return estimate;
+
+            return largest;
         }
 
         private static bool IsFiniteVector(Vector3 value)

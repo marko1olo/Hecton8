@@ -323,3 +323,27 @@ Cinematic Cheats used -> No new simulation. The patch spends the existing cheap 
 Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static cost is one boolean mask and reused selects; any downstream saved work is unmeasured.
 
 Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; split scoped scans return `NO_PATHFINDING_TOKENS`, `NO_LOCAL_NATIVE_OR_DELEGATE_TOKENS`, and `NO_HOTPATH_UNITY_TOKENS`; public-struct audit reports `STRUCT_AUDIT_DONE`; `git diff --check` reports only CRLF normalization warnings. No `dotnet build` solution rebuild was run in this pass.
+
+## 2026-05-17 - Telemetry Bit Collision Purge Pass
+
+What was wrong -> AI/Cognition wrote `AcousticLure` to telemetry bit 5 while nearby Fauna telemetry already used bit 5 as `AlphaLeviathanTelemetryNoPlayerTarget`. That made the shared black-box byte ambiguous.
+
+What was done -> Stopped writing acoustic lure into the legacy telemetry byte, renamed the shared bit 5 constant to `LegacyNoPlayerTarget`, and added `AlphaLeviathanSteeringIntentFlags` plus byte-sized `AlphaLeviathanSteeringOutput.IntentFlags`. The output field uses existing tail padding in the 88-byte steering row. Also hardened `AlphaLeviathanAup.ToAbsoluteDouble3()` so raw non-finite local offsets are zeroed before double3 conversion.
+
+Cinematic Cheats used -> Acoustic lure remains a cheap DataVault-driven steer fake. The new intent flags let render/VFX consumers see sonar, SDF, gaze, light, shift, low-tier, and fault intent without abusing the black-box byte.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static cost is seven branchless byte intent selects per row and one float4 finite select per AUP conversion; one colliding telemetry OR was removed.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped AI/Cognition forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `PUBLIC_STRUCT_PACK_SCAN_DONE`; acoustic scan shows no `AlphaLeviathanTelemetryFlags.AcousticLure` references and Fauna's bit 5 remains read-only. `git diff --check` reports only CRLF normalization warnings. No solution rebuild was run.
+
+## 2026-05-17 - Packed Intent ABI Repair Pass
+
+What was wrong -> The intent side-channel was first added as `uint IntentFlags` while preserving `AlphaLeviathanSteeringOutput` at `Size = 88`. Under `Pack = 1`, the row only had 3 tail bytes after `Flags`; a uint field would not fit the declared ABI.
+
+What was done -> Changed steering intent constants and the output field to byte. Seven intent bits still fit, the job remains branchless, and the steering output stays at 88 bytes without forcing DataVault stride churn.
+
+Cinematic Cheats used -> None new. This preserves the existing cheap intent channel for sonar lure, SDF contouring, gaze, light retreat, shift fence, low-tier fallback, and faulted input.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static payload stays 88 bytes instead of expanding to the rejected 92-byte row.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct scan returns `PUBLIC_STRUCT_PACK_SCAN_DONE`; source scan shows `IntentFlags` is byte and `AlphaLeviathanSteeringOutput` remains `Size = 88`. `git diff --check` reports only CRLF normalization warnings. No solution rebuild was run.

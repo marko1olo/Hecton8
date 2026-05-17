@@ -86,7 +86,6 @@ namespace Hecton8.Gameplay
         private const float KelpPushbackMinSpeedMetersPerSecond = 0.5f;
         private const float KelpDragScale = 1.35f;
         private const float KelpMaxDragCoefficient = 2.8f;
-        private const byte SparkDebrisKind = 1;
 
         private static readonly VehicleMotor[] _registeredMotors = new VehicleMotor[MaxRegisteredMotors];
         private static readonly ProfilerMarker _scheduleProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Schedule");
@@ -1837,9 +1836,9 @@ namespace Hecton8.Gameplay
             debris.PositionAup = pointAup;
             debris.SourceEntityId = unchecked((uint)bodyId);
             debris.Intensity01 = impact.Intensity;
-            debris.DebrisKind = SparkDebrisKind;
+            debris.DebrisKind = DebrisSpawnSignal.DebrisKindSparks;
             debris.Flags = (byte)(flags | DebrisSpawnSignal.FlagComputeShard);
-            GlobalSignals.Publish(in debris);
+            SignalBus<DebrisSpawnSignal>.Push(in debris);
 
             HapticRequest haptic = default;
             haptic.Intensity01 = math.saturate(lostKineticEnergy * 0.00008f);

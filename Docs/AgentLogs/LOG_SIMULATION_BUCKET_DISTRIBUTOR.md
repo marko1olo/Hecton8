@@ -484,3 +484,121 @@ Verification:
 - No rebuild was run per user instruction.
 - Static scan found no `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `Debug.Log*`, private `new NativeArray/List/Queue`, `H8Memory.Allocate`, stale dump mirror, or stale rebalance `BucketMask`.
 - `git diff --check` passed for the two edited source files; line-ending warnings only.
+
+## 2026-05-17 - Blackbox Header and Pacing Guard Pass
+What was wrong:
+- Scheduler and job-admission binary fault dumps were raw rings without a self-describing header.
+- Expected-frame pacing math had no final finite guard after combining bucket load and PRE_SIM cost.
+- Current dispatcher source truth no longer matches the older SIM-only dump-path status: CORE_TICK_DILATION restored `Dump_CORE_TICK_DILATION.bin` primary and retained the SIM mirror.
+
+What was done:
+- Added HECTON8 magic/version/count/entry-size/cursor headers to `Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin` and `Dump_SIMULATION_BUCKET_DISTRIBUTOR_JobAdmission.bin`.
+- Clamped rebalance result ingestion and `expectedFrameMs` inputs through finite guards before impossible-60/visual-overkill flag decisions.
+- Superseded the stale SIM-only dispatcher status note with a source-truth recheck instead of reverting another agent's CORE dump ownership.
+
+Cinematic cheats used:
+- Toaster path: fault evidence remains fixed-size and fault-only; no normal-frame disk traffic.
+- High/Ultra path: visual-overkill remains available only after finite under-budget pacing proof.
+
+Exact microseconds saved:
+- 0 us measured. This pass is black-box evidence hardening and NaN survivability, not a profiler-backed speed change.
+
+Verification:
+- No rebuild was run per user instruction.
+- `git diff --check` passed for touched files; line-ending warnings only.
+- Static scan found no `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `Debug.Log*`, private `new NativeArray/List/Queue`, `H8Memory.Allocate`, `StartCoroutine`, `FindObjectOfType`, `GameObject.Find`, or `Camera.main` in the touched scheduler files.
+
+## 2026-05-17 - Admission Hash Null Guard
+What was wrong:
+- `JobAdmissionHash.ComputeFnv1a(string)` could throw on null even though the span overload already supports an empty input with a non-zero sentinel hash.
+
+What was done:
+- Null string input now routes to `ReadOnlySpan<char>.Empty`.
+
+Cinematic cheats used:
+- None. Cold diagnostic helper only.
+
+Exact microseconds saved:
+- 0 us measured. No runtime frame-path effect claimed.
+
+Verification:
+- No rebuild was run per user instruction.
+- Change is single-line cold helper hardening; static scans continue to show no forbidden scheduler-domain hot-path patterns.
+
+## 2026-05-17 - Admission Guard Debt Pass
+What was wrong:
+- Job admission refill could clamp non-finite values but still preserve huge finite budgets/caps that poison downstream telemetry.
+- Denial and non-finite telemetry sink calls could receive unbounded or non-finite millisecond values.
+- `TryScheduleParallelAdmitted` trusted caller-provided work length and batch count.
+
+What was done:
+- Bounded base refill, refill, current budget, cap, next budget, debt-borrow budget, lane-budget readout, denial telemetry, and non-finite fallback telemetry.
+- Added zero/negative work-length and invalid batch-count guards to the parallel admitted scheduler wrapper.
+
+Cinematic cheats used:
+- Toaster path: empty work collapses to the existing dependency handle; corrupted budgets shed/fail finite instead of expanding simulation truth.
+- High/Ultra path: visual-overkill admission cannot be unlocked by corrupted finite budgets.
+
+Exact microseconds saved:
+- 0 us measured. This is stability and telemetry hygiene, not a profiler-backed speed gain.
+
+Verification:
+- No rebuild was run per user instruction.
+- `git diff --check` passed for the touched scheduler files; line-ending warnings only.
+- Domain scan found no `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `Debug.Log`, coroutine, find call, `Camera.main`, `GlobalRegistry` access, `H8Memory.Allocate`, or private native allocation marker in `Core/Scheduling` and `Core/Bucketing`.
+
+## 2026-05-17 - Bucketer Vault Guard Pass
+What was wrong:
+- Bucketer cold clear and rebalance-copy paths still read DataVault buffer lengths before local `IsCreated` checks.
+
+What was done:
+- Added `IsCreated` gates before clearing entity/cost/load buffers.
+- Added `IsCreated` gates before copying work buckets to the front table after a completed rebalance.
+
+Cinematic cheats used:
+- Toaster path: invalid vault state skips nonessential clear/copy work instead of crashing.
+- High/Ultra path: dynamic rebalance still copies normally when vault buffers are valid.
+
+Exact microseconds saved:
+- 0 us measured. Crash prevention only.
+
+Verification:
+- No rebuild was run per user instruction.
+- `git diff --check` passed for the touched bucketer file; line-ending warning only.
+
+## 2026-05-17 - Admission Bridge Publish Guard
+What was wrong:
+- `JobAdmissionSchedulerBridge.SetService` could overwrite an already published service with a different instance.
+
+What was done:
+- Same-instance publish is idempotent.
+- Different-instance publish now succeeds only when the bridge slot is empty via `Interlocked.CompareExchange`.
+
+Cinematic cheats used:
+- None. Bootstrap/ARM64 authority guard only.
+
+Exact microseconds saved:
+- 0 us measured. No frame-path gain claimed.
+
+Verification:
+- No rebuild was run per user instruction.
+- Static scheduling-domain scan remains clean for forbidden hot-path patterns.
+
+## 2026-05-17 - Lane-Aware Admission Debt Clamp
+What was wrong:
+- Admission budget clamps allowed the negative critical-lane debt floor to apply to every lane.
+
+What was done:
+- Lane0 critical keeps the -4 ms debt floor.
+- World, voxel, AI, VFX, and IO lanes now clamp corrupted negative budgets to zero before refill/admission/borrowing/readout/fault snapshot/blackbox writes.
+
+Cinematic cheats used:
+- Toaster path: background work cannot borrow hidden negative budget.
+- High/Ultra path: visual-overkill lanes cannot enter debt; only critical gameplay can borrow.
+
+Exact microseconds saved:
+- 0 us measured. Control correctness only.
+
+Verification:
+- No rebuild was run per user instruction.
+- Static scheduling-domain scan remains clean for forbidden hot-path patterns.

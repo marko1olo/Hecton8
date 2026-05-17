@@ -7,6 +7,7 @@ using Hecton8.Core;
 using Hecton8.Core.Determinism;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Inventory;
 using Hecton8.Physics;
 using Hecton8.Physics.Determinism;

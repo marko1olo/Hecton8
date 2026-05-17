@@ -53,6 +53,16 @@ namespace Hecton8.Tests.PlayMode
                     Assert.AreEqual(0u, wrongType.Hash);
                     Assert.IsTrue(store.TryReload(bake.StaticDataPath));
                     Assert.AreEqual(expectedBabelCrc32, store.BabelCrc32);
+
+                    string dumpPath = Path.Combine(output, "Dump_CSV_DATA_MONOLITH_SYNC.bin");
+                    store.DumpBlackBox(dumpPath);
+                    byte[] dumpBytes = File.ReadAllBytes(dumpPath);
+                    Assert.AreEqual(
+                        H8StaticDataFormat.TelemetryDumpHeaderSizeBytes + (H8StaticDataFormat.TelemetryFrameCount * 64),
+                        dumpBytes.Length);
+                    Assert.AreEqual(H8StaticDataFormat.TelemetryDumpMagic, BitConverter.ToUInt64(dumpBytes, 0));
+                    Assert.AreEqual((uint)H8StaticDataFormat.TelemetryFrameCount, BitConverter.ToUInt32(dumpBytes, 8));
+                    Assert.AreEqual(64u, BitConverter.ToUInt32(dumpBytes, 12));
                     store.Shutdown();
                     store.Shutdown();
                 }
@@ -62,7 +72,7 @@ namespace Hecton8.Tests.PlayMode
                     Assert.IsTrue(babel.Open(bake.BabelPath, expectedBabelCrc32));
                     Assert.AreEqual(expectedBabelCrc32, babel.PayloadCrc32);
 
-                    uint nameHash = H8DataHashTool.ComputeFnv1a32("Scrap Metal".AsSpan());
+                    uint nameHash = H8DataHashTool.ComputeFnv1a32Utf8("Scrap Metal".AsSpan());
                     ReadOnlySpan<byte> utf8 = babel.GetUtf8(nameHash);
                     Assert.Greater(utf8.Length, 0);
                     Assert.AreEqual("Scrap Metal", Encoding.UTF8.GetString(utf8));
@@ -120,6 +130,46 @@ namespace Hecton8.Tests.PlayMode
         }
 
         [Test]
+        public void Bake_RejectsSnakeCaseSeparatorDrift()
+        {
+            string source = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Data", "Balance"));
+            string root = Path.Combine(Path.GetTempPath(), "h8_static_data_bad_separator_key");
+            ResetDirectory(root);
+            CopyBalanceCsvs(source, root);
+
+            string itemsPath = Path.Combine(root, "Items.csv");
+            string text = File.ReadAllText(itemsPath);
+            File.WriteAllText(itemsPath, text.Replace("scrap_metal", "scrap__metal"));
+
+            H8DataBakeResult bake = H8DataBaker.Bake(root, Path.Combine(root, "Baked"));
+            Assert.IsFalse(bake.Success);
+            StringAssert.Contains("[CRITICAL_DATA_KEY]", bake.Message);
+        }
+
+        [Test]
+        public void SchemaHash_MatchesCurrentBakeCatalog()
+        {
+            Assert.AreEqual(H8StaticDataFormat.SchemaHash, H8DataBaker.CurrentSchemaHash);
+        }
+
+        [Test]
+        public void Bake_RejectsHeaderCaseDrift()
+        {
+            string source = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Data", "Balance"));
+            string root = Path.Combine(Path.GetTempPath(), "h8_static_data_bad_header_case");
+            ResetDirectory(root);
+            CopyBalanceCsvs(source, root);
+
+            string itemsPath = Path.Combine(root, "Items.csv");
+            string text = File.ReadAllText(itemsPath);
+            File.WriteAllText(itemsPath, text.Replace("Id,version_id", "id,version_id"));
+
+            H8DataBakeResult bake = H8DataBaker.Bake(root, Path.Combine(root, "Baked"));
+            Assert.IsFalse(bake.Success);
+            StringAssert.Contains("must match exact header case", bake.Message);
+        }
+
+        [Test]
         public void Bake_RejectsUnclosedQuotedField()
         {
             string source = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Data", "Balance"));
@@ -153,6 +203,51 @@ namespace Hecton8.Tests.PlayMode
             H8DataBakeResult bake = H8DataBaker.Bake(root, Path.Combine(root, "Baked"));
             Assert.IsFalse(bake.Success);
             StringAssert.Contains("cells; expected", bake.Message);
+        }
+
+        [Test]
+        public void Bake_RejectsInvalidUtf8()
+        {
+            string source = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Data", "Balance"));
+            string root = Path.Combine(Path.GetTempPath(), "h8_static_data_bad_utf8");
+            ResetDirectory(root);
+            CopyBalanceCsvs(source, root);
+
+            string itemsPath = Path.Combine(root, "Items.csv");
+            byte[] bytes = File.ReadAllBytes(itemsPath);
+            bytes[bytes.Length - 1] = 0xFF;
+            File.WriteAllBytes(itemsPath, bytes);
+
+            H8DataBakeResult bake = H8DataBaker.Bake(root, Path.Combine(root, "Baked"));
+            Assert.IsFalse(bake.Success);
+            StringAssert.Contains("CSV read failed", bake.Message);
+        }
+
+        [Test]
+        public void Bake_RejectsControlCharactersInText()
+        {
+            string source = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Data", "Balance"));
+            string root = Path.Combine(Path.GetTempPath(), "h8_static_data_bad_control_text");
+            ResetDirectory(root);
+            CopyBalanceCsvs(source, root);
+
+            string itemsPath = Path.Combine(root, "Items.csv");
+            string text = File.ReadAllText(itemsPath);
+            File.WriteAllText(itemsPath, text.Replace("Scrap Metal", "Scrap\tMetal"));
+
+            H8DataBakeResult bake = H8DataBaker.Bake(root, Path.Combine(root, "Baked"));
+            Assert.IsFalse(bake.Success);
+            StringAssert.Contains("[CRITICAL_DATA_TEXT]", bake.Message);
+        }
+
+        [Test]
+        public void TextHash_UsesUtf8BytesForBabelKeys()
+        {
+            uint ascii = H8DataHashTool.ComputeFnv1a32Utf8("Scrap Metal".AsSpan());
+            uint cyrillic = H8DataHashTool.ComputeFnv1a32Utf8("Металл".AsSpan());
+            Assert.AreNotEqual(0u, ascii);
+            Assert.AreNotEqual(0u, cyrillic);
+            Assert.AreNotEqual(ascii, cyrillic);
         }
 
         private static void CopyBalanceCsvs(string source, string destination)

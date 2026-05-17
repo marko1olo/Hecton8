@@ -109,6 +109,7 @@ namespace Hecton8.Core.Content.Editor
     public static class ContentPhysicsProxyBaker
     {
         private const string MeshAssetFolder = "Assets/_Project/Data/Generated/ContentPhysicsProxies";
+        private const float MinPhysicsProxyAxisMeters = 0.01f;
 
         [MenuItem("HECTON-8/Content/Bake Selected Physics Proxy")]
         public static void BakeSelected()
@@ -124,12 +125,29 @@ namespace Hecton8.Core.Content.Editor
                 return;
 
             BoxCollider[] boxes = root.GetComponentsInChildren<BoxCollider>(true);
-            if (boxes == null || boxes.Length == 0)
+            if (boxes == null || boxes.Length < 2)
+            {
+                Debug.LogError("[ContentPhysicsProxyBaker] Bake rejected for " + root.name + ": at least two BoxColliders are required.");
                 return;
+            }
 
             Bounds bounds = boxes[0].bounds;
             for (int i = 1; i < boxes.Length; i++)
+            {
+                if (!IsFinite(boxes[i].bounds))
+                {
+                    Debug.LogError("[ContentPhysicsProxyBaker] Bake rejected for " + root.name + ": non-finite BoxCollider bounds.");
+                    return;
+                }
+
                 bounds.Encapsulate(boxes[i].bounds);
+            }
+
+            if (!IsFinite(bounds) || !HasUsableHullSize(bounds.size))
+            {
+                Debug.LogError("[ContentPhysicsProxyBaker] Bake rejected for " + root.name + ": invalid convex hull bounds.");
+                return;
+            }
 
             GameObject proxy = new GameObject("GEN_PhysicsProxyHull");
             Undo.RegisterCreatedObjectUndo(proxy, "Bake physics proxy");
@@ -140,8 +158,9 @@ namespace Hecton8.Core.Content.Editor
 
             Mesh mesh = BuildBoxHullMesh(bounds.size);
             EnsureMeshAssetFolder();
+            string safeName = SanitizeAssetFileStem(root.name);
             string meshPath = AssetDatabase.GenerateUniqueAssetPath(
-                MeshAssetFolder + "/" + root.name + "_PhysicsProxyHull.asset");
+                MeshAssetFolder + "/" + safeName + "_PhysicsProxyHull.asset");
             AssetDatabase.CreateAsset(mesh, meshPath);
 
             MeshCollider hull = proxy.AddComponent<MeshCollider>();
@@ -149,7 +168,10 @@ namespace Hecton8.Core.Content.Editor
             hull.convex = true;
 
             for (int i = 0; i < boxes.Length; i++)
-                UnityEngine.Object.DestroyImmediate(boxes[i], true);
+            {
+                if (boxes[i] != null)
+                    UnityEngine.Object.DestroyImmediate(boxes[i], true);
+            }
 
             EditorUtility.SetDirty(root);
         }
@@ -192,10 +214,57 @@ namespace Hecton8.Core.Content.Editor
 
         private static void EnsureMeshAssetFolder()
         {
+            if (!AssetDatabase.IsValidFolder("Assets/_Project/Data"))
+                AssetDatabase.CreateFolder("Assets/_Project", "Data");
             if (!AssetDatabase.IsValidFolder("Assets/_Project/Data/Generated"))
                 AssetDatabase.CreateFolder("Assets/_Project/Data", "Generated");
             if (!AssetDatabase.IsValidFolder(MeshAssetFolder))
                 AssetDatabase.CreateFolder("Assets/_Project/Data/Generated", "ContentPhysicsProxies");
+        }
+
+        private static string SanitizeAssetFileStem(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return "ObjectBatch";
+
+            char[] chars = value.ToCharArray();
+            for (int i = 0; i < chars.Length; i++)
+            {
+                if (IsSafeAssetFileStemChar(chars[i]))
+                    continue;
+
+                chars[i] = '_';
+            }
+
+            return new string(chars);
+        }
+
+        private static bool IsSafeAssetFileStemChar(char value)
+        {
+            return value == '_' ||
+                   value == '-' ||
+                   char.IsLetterOrDigit(value);
+        }
+
+        private static bool HasUsableHullSize(Vector3 size)
+        {
+            return size.x >= MinPhysicsProxyAxisMeters &&
+                   size.y >= MinPhysicsProxyAxisMeters &&
+                   size.z >= MinPhysicsProxyAxisMeters;
+        }
+
+        private static bool IsFinite(Bounds bounds)
+        {
+            Vector3 center = bounds.center;
+            Vector3 extents = bounds.extents;
+            return IsFinite(center.x) && IsFinite(center.y) && IsFinite(center.z) &&
+                   IsFinite(extents.x) && IsFinite(extents.y) && IsFinite(extents.z) &&
+                   extents.x >= 0f && extents.y >= 0f && extents.z >= 0f;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
     }
 }

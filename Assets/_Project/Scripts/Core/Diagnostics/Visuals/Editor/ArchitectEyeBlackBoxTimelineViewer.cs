@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -11,6 +12,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Hecton8.Core.Diagnostics.Visuals.Editor
 {
@@ -23,9 +25,16 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
         private static bool _capturePois;
         private static bool _teleportAup;
         private ArchitectEyeBlackBoxEntry[] _frames;
+        private VisualElement _timelineRoot;
+        private VisualElement[] _timelineBars;
+        private Label _pathLabel;
+        private Label _emptyLabel;
+        private Label[] _detailLabels;
+        private SliderInt _frameSlider;
+        private Toggle _captureToggle;
+        private Toggle _teleportToggle;
         private string _loadedPath = DefaultDumpPath;
         private int _selectedFrame;
-        private Vector2 _scroll;
 
         [MenuItem("HECTON-8/Diagnostics/Architect Eye/BlackBox Timeline")]
         private static void Open()
@@ -51,65 +60,196 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
             SceneView.duringSceneGui -= OnSceneGui;
         }
 
-        private void OnGUI()
+        private void CreateGUI()
         {
-            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-            if (GUILayout.Button("Load Dump", EditorStyles.toolbarButton, GUILayout.Width(90f)))
-                LoadDump(EditorUtility.OpenFilePanel("Architect Eye Dump", Directory.GetCurrentDirectory(), "bin"));
-            if (GUILayout.Button("Load Default", EditorStyles.toolbarButton, GUILayout.Width(95f)))
-                LoadDump(Path.Combine(Directory.GetCurrentDirectory(), DefaultDumpPath));
-            GUILayout.FlexibleSpace();
-            _capturePois = GUILayout.Toggle(_capturePois, "POI Capture", EditorStyles.toolbarButton, GUILayout.Width(100f));
-            _teleportAup = GUILayout.Toggle(_teleportAup, "Click to Teleport AUP", EditorStyles.toolbarButton, GUILayout.Width(150f));
-            EditorGUILayout.EndHorizontal();
+            rootVisualElement.Clear();
 
-            EditorGUILayout.LabelField("Path", _loadedPath);
+            VisualElement toolbar = new VisualElement();
+            toolbar.style.flexDirection = FlexDirection.Row;
+            toolbar.style.height = 24f;
+            toolbar.style.flexShrink = 0f;
+
+            Button loadDump = new Button(HandleLoadDumpPressed) { text = "Load Dump" };
+            Button loadDefault = new Button(HandleLoadDefaultPressed) { text = "Load Default" };
+            _captureToggle = new Toggle("POI Capture") { value = _capturePois };
+            _teleportToggle = new Toggle("Click to Teleport AUP") { value = _teleportAup };
+            _captureToggle.RegisterValueChangedCallback(OnPoiCaptureChanged);
+            _teleportToggle.RegisterValueChangedCallback(OnTeleportToggleChanged);
+
+            toolbar.Add(loadDump);
+            toolbar.Add(loadDefault);
+            toolbar.Add(_captureToggle);
+            toolbar.Add(_teleportToggle);
+            rootVisualElement.Add(toolbar);
+
+            _pathLabel = new Label();
+            _pathLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
+            _pathLabel.style.marginLeft = 4f;
+            rootVisualElement.Add(_pathLabel);
+
+            _emptyLabel = new Label("No Architect Eye dump loaded.");
+            _emptyLabel.style.marginLeft = 4f;
+            _emptyLabel.style.marginTop = 6f;
+            rootVisualElement.Add(_emptyLabel);
+
+            _frameSlider = new SliderInt("Frame", 0, 0);
+            _frameSlider.RegisterValueChangedCallback(OnFrameSliderChanged);
+            rootVisualElement.Add(_frameSlider);
+
+            _timelineRoot = new VisualElement();
+            _timelineRoot.style.flexDirection = FlexDirection.Row;
+            _timelineRoot.style.alignItems = Align.FlexEnd;
+            _timelineRoot.style.height = 90f;
+            _timelineRoot.style.marginLeft = 4f;
+            _timelineRoot.style.marginRight = 4f;
+            _timelineRoot.style.backgroundColor = new Color(0.02f, 0.02f, 0.025f, 1f);
+            rootVisualElement.Add(_timelineRoot);
+
+            ScrollView details = new ScrollView(ScrollViewMode.Vertical);
+            details.style.flexGrow = 1f;
+            _detailLabels = new Label[10]; // COLD ALLOC: Label[10] - editor blackbox detail rows - owner: ArchitectEyeBlackBoxTimelineViewer
+            for (int i = 0; i < _detailLabels.Length; i++)
+            {
+                Label row = new Label();
+                row.style.marginLeft = 4f;
+                row.style.unityTextAlign = TextAnchor.MiddleLeft;
+                _detailLabels[i] = row;
+                details.Add(row);
+            }
+
+            rootVisualElement.Add(details);
+            RefreshWindow();
+        }
+
+        private void HandleLoadDumpPressed()
+        {
+            LoadDump(EditorUtility.OpenFilePanel("Architect Eye Dump", Directory.GetCurrentDirectory(), "bin"));
+        }
+
+        private void HandleLoadDefaultPressed()
+        {
+            LoadDump(Path.Combine(Directory.GetCurrentDirectory(), DefaultDumpPath));
+        }
+
+        private void OnPoiCaptureChanged(ChangeEvent<bool> evt)
+        {
+            _capturePois = evt.newValue;
+            SceneView.RepaintAll();
+        }
+
+        private void OnTeleportToggleChanged(ChangeEvent<bool> evt)
+        {
+            _teleportAup = evt.newValue;
+            SceneView.RepaintAll();
+        }
+
+        private void OnFrameSliderChanged(ChangeEvent<int> evt)
+        {
+            _selectedFrame = evt.newValue;
+            RefreshSelectedFrame();
+            RefreshTimelineSelection();
+            SceneView.RepaintAll();
+        }
+
+        private void RefreshWindow()
+        {
+            if (_pathLabel != null)
+                _pathLabel.text = $"Path: {_loadedPath}";
+
+            bool hasFrames = _frames != null && _frames.Length > 0;
+            if (_emptyLabel != null)
+                _emptyLabel.style.display = hasFrames ? DisplayStyle.None : DisplayStyle.Flex;
+            if (_frameSlider != null)
+            {
+                _frameSlider.style.display = hasFrames ? DisplayStyle.Flex : DisplayStyle.None;
+                _frameSlider.lowValue = 0;
+                _frameSlider.highValue = hasFrames ? _frames.Length - 1 : 0;
+                _frameSlider.SetValueWithoutNotify(math.clamp(_selectedFrame, 0, hasFrames ? _frames.Length - 1 : 0));
+            }
+
+            RefreshTimeline();
+            RefreshSelectedFrame();
+        }
+
+        private void RefreshTimeline()
+        {
+            if (_timelineRoot == null)
+                return;
+
+            _timelineRoot.Clear();
             if (_frames == null || _frames.Length == 0)
             {
-                EditorGUILayout.HelpBox("No Architect Eye dump loaded.", MessageType.Info);
+                _timelineBars = null;
+                _timelineRoot.style.display = DisplayStyle.None;
                 return;
             }
 
-            _selectedFrame = EditorGUILayout.IntSlider("Frame", _selectedFrame, 0, _frames.Length - 1);
-            DrawTimeline();
-            DrawSelectedFrame();
-        }
-
-        private void DrawTimeline()
-        {
-            Rect rect = GUILayoutUtility.GetRect(10f, 90f, GUILayout.ExpandWidth(true));
-            EditorGUI.DrawRect(rect, new Color(0.02f, 0.02f, 0.025f, 1f));
-            float width = math.max(1f, rect.width / _frames.Length);
+            _timelineRoot.style.display = DisplayStyle.Flex;
+            _timelineBars = new VisualElement[_frames.Length]; // COLD ALLOC: VisualElement[<=300] - editor timeline bars - owner: ArchitectEyeBlackBoxTimelineViewer
             for (int i = 0; i < _frames.Length; i++)
             {
                 ArchitectEyeBlackBoxEntry frame = _frames[i];
                 float health = math.saturate(frame.SystemHealth01);
                 float fault = math.saturate(frame.NonFiniteCount * 0.2f);
+                float barPercent = math.max(3f, 100f * math.max(health, fault));
                 Color color = Color.Lerp(new Color(0.1f, 0.5f, 1f, 0.8f), new Color(1f, 0.08f, 0.02f, 0.95f), fault);
-                float barHeight = math.max(2f, rect.height * math.max(health, fault));
-                Rect bar = new Rect(rect.x + i * width, rect.yMax - barHeight, math.max(1f, width - 1f), barHeight);
-                EditorGUI.DrawRect(bar, color);
+                VisualElement bar = new VisualElement();
+                bar.style.flexGrow = 1f;
+                bar.style.alignSelf = Align.FlexEnd;
+                bar.style.marginRight = 1f;
+                bar.style.height = Length.Percent(barPercent);
+                bar.style.backgroundColor = color;
+                _timelineBars[i] = bar;
+                _timelineRoot.Add(bar);
             }
 
-            float markerX = rect.x + _selectedFrame * width;
-            EditorGUI.DrawRect(new Rect(markerX, rect.y, 2f, rect.height), Color.white);
+            RefreshTimelineSelection();
         }
 
-        private void DrawSelectedFrame()
+        private void RefreshTimelineSelection()
         {
+            if (_timelineBars == null)
+                return;
+
+            for (int i = 0; i < _timelineBars.Length; i++)
+            {
+                VisualElement bar = _timelineBars[i];
+                bool selected = i == _selectedFrame;
+                bar.style.borderTopWidth = selected ? 2f : 0f;
+                bar.style.borderBottomWidth = selected ? 2f : 0f;
+                bar.style.borderLeftWidth = selected ? 1f : 0f;
+                bar.style.borderRightWidth = selected ? 1f : 0f;
+                bar.style.borderTopColor = Color.white;
+                bar.style.borderBottomColor = Color.white;
+                bar.style.borderLeftColor = Color.white;
+                bar.style.borderRightColor = Color.white;
+            }
+        }
+
+        private void RefreshSelectedFrame()
+        {
+            if (_detailLabels == null)
+                return;
+
+            if (_frames == null || _frames.Length == 0)
+            {
+                for (int i = 0; i < _detailLabels.Length; i++)
+                    _detailLabels[i].text = string.Empty;
+                return;
+            }
+
+            _selectedFrame = math.clamp(_selectedFrame, 0, _frames.Length - 1);
             ArchitectEyeBlackBoxEntry frame = _frames[_selectedFrame];
-            _scroll = EditorGUILayout.BeginScrollView(_scroll);
-            EditorGUILayout.LabelField("Frame", frame.Frame.ToString());
-            EditorGUILayout.LabelField("Quads", frame.QuadCount.ToString());
-            EditorGUILayout.LabelField("Signal Lanes", frame.SignalLaneCount.ToString());
-            EditorGUILayout.LabelField("Signal Pressure", frame.SignalPressure01.ToString("0.000"));
-            EditorGUILayout.LabelField("Vault Pressure", frame.VaultPressure01.ToString("0.000"));
-            EditorGUILayout.LabelField("Memory Fragmentation", frame.MemoryFragmentation01.ToString("0.000"));
-            EditorGUILayout.LabelField("Health", frame.SystemHealth01.ToString("0.000"));
-            EditorGUILayout.LabelField("Frame Time Ms", frame.FrameTimeMs.ToString("0.000"));
-            EditorGUILayout.LabelField("Non-Finite", frame.NonFiniteCount.ToString());
-            EditorGUILayout.LabelField("Kill Switch Mask", "0x" + frame.KillSwitchMask.ToString("X8"));
-            EditorGUILayout.EndScrollView();
+            _detailLabels[0].text = $"Frame: {frame.Frame}";
+            _detailLabels[1].text = $"Quads: {frame.QuadCount}";
+            _detailLabels[2].text = $"Signal Lanes: {frame.SignalLaneCount}";
+            _detailLabels[3].text = $"Signal Pressure: {frame.SignalPressure01:0.000}";
+            _detailLabels[4].text = $"Vault Pressure: {frame.VaultPressure01:0.000}";
+            _detailLabels[5].text = $"Memory Fragmentation: {frame.MemoryFragmentation01:0.000}";
+            _detailLabels[6].text = $"Health: {frame.SystemHealth01:0.000}";
+            _detailLabels[7].text = $"Frame Time Ms: {frame.FrameTimeMs:0.000}";
+            _detailLabels[8].text = $"Non-Finite: {frame.NonFiniteCount}";
+            _detailLabels[9].text = $"Kill Switch Mask: 0x{frame.KillSwitchMask:X8}";
         }
 
         private void LoadDump(string path)
@@ -145,6 +285,7 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
             _frames = frames.ToArray();
             _selectedFrame = math.clamp(_selectedFrame, 0, _frames.Length - 1);
             _loadedPath = path;
+            RefreshWindow();
             Repaint();
             SceneView.RepaintAll();
         }
@@ -288,9 +429,11 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
             if (writeHeader)
                 writer.WriteLine("id,hash32,grid_x,grid_y,grid_z,local_x,local_y,local_z");
 
-            string id = "poi_" + DateTime.UtcNow.Ticks.ToString();
-            uint hash = H8DataHash.ComputeFnv1A32(id.AsSpan());
-            writer.Write(id);
+            Span<char> id = stackalloc char[32];
+            int idLength = FormatPoiId(id, DateTime.UtcNow.Ticks);
+            ReadOnlySpan<char> idSpan = id.Slice(0, idLength);
+            uint hash = H8DataHash.ComputeFnv1A32(idSpan);
+            writer.Write(idSpan);
             writer.Write(',');
             writer.Write(hash);
             writer.Write(',');
@@ -300,11 +443,36 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
             writer.Write(',');
             writer.Write(aup.GridZ);
             writer.Write(',');
-            writer.Write(aup.LocalX.ToString("R"));
+            WriteFloatInvariant(writer, aup.LocalX);
             writer.Write(',');
-            writer.Write(aup.LocalY.ToString("R"));
+            WriteFloatInvariant(writer, aup.LocalY);
             writer.Write(',');
-            writer.WriteLine(aup.LocalZ.ToString("R"));
+            WriteFloatInvariant(writer, aup.LocalZ);
+            writer.WriteLine();
+        }
+
+        private static void WriteFloatInvariant(TextWriter writer, float value)
+        {
+            Span<char> buffer = stackalloc char[32];
+            if (!value.TryFormat(buffer, out int charsWritten, "R", CultureInfo.InvariantCulture))
+            {
+                writer.Write(0);
+                return;
+            }
+
+            writer.Write(buffer.Slice(0, charsWritten));
+        }
+
+        private static int FormatPoiId(Span<char> buffer, long ticks)
+        {
+            const string Prefix = "poi_";
+            Prefix.AsSpan().CopyTo(buffer);
+            int length = Prefix.Length;
+            if (ticks.TryFormat(buffer.Slice(length), out int charsWritten, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture))
+                return length + charsWritten;
+
+            buffer[length++] = '0';
+            return length;
         }
     }
 }

@@ -134,11 +134,11 @@ STATUS: PENDING VERIFICATION - static scans pass; Core build command currently h
 
 What was wrong:
 - Dispatcher scalability state was still updated through `IScalabilityChangedEventListener`. That is decoupled, but it is not the strict typed-lane/`ReadOnlySpan<T>` pattern requested for the scheduler.
-- The existing platform event payload was packed but was not an `ISignal`, so using it through `SignalBus<T>` was impossible.
+- A concurrent contracts payload already existed as `Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent`; keeping a local core payload would split the lane.
 - The source still had a stale SIM-bucket-only blackbox dump path in the dispatcher constant.
 
 What was done:
-- `ScalabilityChangedEvent` now implements `ISignal` while keeping `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 2)]`.
+- `ScalabilityEvents` now aliases the existing contracts `ScalabilityChangedEvent`, which is `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]`.
 - `ScalabilityEvents.Raise` now pushes the same payload into `SignalBus<ScalabilityChangedEvent>` with a configured 4-event lane and `SCLT` lane hash.
 - `SystemDispatcher` no longer implements/registers/unregisters `IScalabilityChangedEventListener`.
 - Dispatcher drains `SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot()` after `GlobalSignals.FlushPreSimulation()` and uses the resulting cached tier for job admission and simulation bucketing.

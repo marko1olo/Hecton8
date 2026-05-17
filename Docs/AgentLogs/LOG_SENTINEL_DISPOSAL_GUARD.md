@@ -689,3 +689,35 @@ Verification:
 - `git diff --check` on touched files reported line-ending warnings only and no whitespace errors.
 - `dotnet build Hecton8.Core.csproj --no-restore --nologo /clp:ErrorsOnly` completed in 00:01:15.89 with 0 warnings and 0 errors.
 - No `dotnet rebuild` command was run.
+
+## 2026-05-17 - Continuation Inquisition / Heartbeat Rebind, Reap Fence, Signal Dedupe
+
+What was wrong:
+- `SceneRuntimeService` could lose its updatable registration after `GlobalRegistry.ClearRuntimeBuckets()` while `_registeredUpdatable` stayed true, cutting off the fixed 300-frame memory heartbeat after transition clears.
+- `H8Memory.ReleaseSentinelReapedRaw()` could force-free an H8-tracked pointer from the sentinel leak path without first completing the owning system's registered jobs.
+- Parallel typed-signal repair left player presentation payloads at risk of duplicate definitions; the compile gate alternated between missing payloads and duplicate ABI definitions.
+
+What was done:
+- Added `RestoreCoreTickAfterRuntimeStateClear()` and called it after runtime bucket clearing so H8Memory and GlobalDataVault heartbeat recording continues after scene-transition cleanup.
+- Added owner job completion before `ForceFreeRecordAt()` in the sentinel reap path for H8-tracked raw pointers.
+- Kept one compiled player presentation signal ABI in `GlobalSignals.cs` and reduced `Core/Signals/PlayerMovementPresentationSignals.cs` to an empty namespace shell to satisfy project metadata without duplicate structs.
+
+Cinematic Cheats used:
+- No visual-domain edit was made.
+- Toaster mode: no per-frame polling, no per-frame disk writes, no managed fallback registry.
+- God-mode: deterministic transition heartbeat and leak-reap fences preserve the memory proof needed before high-tier Ocean/VFX allocations.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Sentinel hot path remains 0 B/frame by static inspection.
+- Added work is cold scene-transition rebind and cold fatal-leak owner fencing; exact CPU microseconds are unmeasured.
+
+Verification:
+- Re-extracted the exact `SENTINEL_DISPOSAL_GUARD` XML from `Docs/Tasks/CURRENT_BATCH.md` by CLI.
+- CORE/MEMORY and touched Core bridge scan found no `StructLayout` without `Pack = 1`.
+- CORE/MEMORY scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, `Func<>`, coroutine, or LINQ debt.
+- `.Complete()` scan found only intentional H8Memory owner teardown/shutdown fences.
+- `git diff --check` on touched files reported line-ending warnings only and no whitespace errors.
+- `dotnet build Hecton8.Core.csproj --no-restore --nologo /clp:ErrorsOnly` completed in 00:00:40.78 with 0 warnings and 0 errors.
+- No `dotnet rebuild` command was run.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.

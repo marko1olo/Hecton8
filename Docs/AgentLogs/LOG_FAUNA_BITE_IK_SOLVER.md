@@ -296,3 +296,58 @@ Verification:
 - `rg --pcre2` found no `StructLayout` entry missing `Pack = 1` in the audited bite/adjacent IK/proxy set.
 - Leviathan shader scan found no compute kernels, `numthreads`, RW buffers/textures, D3D-only macros, derivative intrinsics, `tex2Dlod`, or `only_renderers` restrictions in `Hecton_LeviathanTentacleIndirect.shader` and `Hecton_LeviathanOrganic.shader`.
 - Targeted `git diff --check --` on touched fauna/docs files exits 0 with line-ending warnings only.
+
+## 2026-05-17 - Loop 18 Fauna Simulation DataVault Eviction
+What was wrong:
+- `FaunaSimulationMemory` still owned local persistent `NativeArray<T>` buffers and a `NativeQueue<int>` for fauna residency slots.
+- This was outside the original bite kernel, but inside the broad fauna inquisition scan and directly violated the DataVault sovereignty rule.
+
+What was done:
+- Re-read `Status_FAUNA_BITE_IK_SOLVER.md`, `Rationale_FAUNA_BITE_IK_SOLVER.md`, the Unity MCP workflow notes, AGENTS/domain files, eight relevant mandates, and the full original `FAUNA_BITE_IK_SOLVER` XML assignment.
+- Added `FaunaSimulationPoolSlots`, `FaunaSimulationLinearVelocities`, `FaunaSimulationFlags`, and `FaunaSimulationFreeSlots` `BufferID` entries.
+- Replaced local `new NativeArray<T>` residency buffers with `VaultBufferHandle<T>` aliases resolved from `GlobalDataVault` under `SystemID.AICognition`.
+- Replaced the local `NativeQueue<int>` free-list with a fixed-capacity vault-backed stack.
+- Kept `FaunaDirector` behavior intact by resolving local `NativeArray<T>` views before index writes.
+
+Cinematic Cheats used:
+- No new physical simulation was added. Dehydrated fauna still use the cheap data-only LOD motion fake.
+- High-tier predator jaw/tentacle visual overkill remains in the bite IK path; this loop buys memory sovereignty, not extra particles.
+
+Exact Microseconds saved:
+- 0 us measured by profiler. No Unity profiler or GCMonitor capture was available in this CLI session.
+- No CPU speedup is claimed. Static impact is lower leak/stale-view risk and removal of private persistent native lifetime management.
+
+Verification:
+- `rg` found no `new NativeArray`, `NativeQueue`, `NativeMemorySentinel`, `H8Memory.Allocate/Release`, or `SystemID.External` in `FaunaSimulationEngine.cs`.
+- Targeted forbidden-pattern scans found no standard `Update/LateUpdate/FixedUpdate`, legacy EventBus, Unity physics query, `string.Format`, `BiteManager.Instance`, or Animator IK in the audited bite/adjacent fauna set.
+- `rg --pcre2` found no `StructLayout` entry missing `Pack = 1` in the audited set.
+- `dotnet restore Hecton8.Core.csproj` was run once because `project.assets.json` was missing.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly /m:1` exits 1 before C# validation because external source `Assets/_Project/Scripts/Gameplay/WaterTransitionHandler.cs` is referenced but missing.
+
+## 2026-05-17 - Loop 19 Resident LOD Stability Polish
+What was wrong:
+- `DataOnlyFaunaLodJob` still used `FloatMode.Fast` and trusted residency AUP/velocity/delta-time values before writing dehydrated fauna state.
+- `FaunaSimulationFreeSlotStack.Reset()` refilled the vault-backed free-slot stack through `Enqueue()`, resolving the same vault handle once per slot.
+- A residual `PhysicsEventBus` listener remains in `FaunaDirector`; removing it locally would drop old listener-gated acoustic ping producers without a coordinated physics/core rewrite.
+
+What was done:
+- Re-read `Status_FAUNA_BITE_IK_SOLVER.md`, `Rationale_FAUNA_BITE_IK_SOLVER.md`, AGENTS/domain files, Unity MCP workflow notes, eight relevant mandates, and the full original `FAUNA_BITE_IK_SOLVER` XML assignment.
+- Switched the data-only resident LOD job to deterministic Burst mode.
+- Added finite guards for player AUP, slot AUP, distance, delta time, velocity, and next position before resident slot writeback.
+- Guarded long-to-int AUP cell writeback and zeroed corrupt resident velocity instead of propagating NaN/Inf.
+- Resolved the DataVault free-slot buffer once during reset and filled the fixed stack directly.
+
+Cinematic Cheats used:
+- The resident fauna path remains a cheap data-only motion lie for dehydrated creatures. No extra physical simulation was added.
+- High/Ultra bite jaw/tentacle visual overkill is unchanged; this loop spends saved risk budget on stability, not new visuals.
+
+Exact Microseconds saved:
+- 0 us measured by profiler. No Unity profiler or GCMonitor capture was available in this CLI session.
+- Free-slot reset removes O(capacity) repeated handle resolution on cold/emergency reset paths; no per-frame microsecond claim is made.
+
+Verification:
+- Targeted `git diff --check -- Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs` exits 0 with line-ending warnings only.
+- `rg` found no `new NativeArray`, `NativeQueue`, `NativeMemorySentinel`, `H8Memory.Allocate/Release`, `SystemID.External`, Unity physics query, `string.Format`, `BiteManager.Instance`, or Animator IK in the audited bite/adjacent fauna set.
+- `rg --pcre2` found no `StructLayout` entry missing `Pack = 1` in the audited set.
+- Standard `Update/LateUpdate/FixedUpdate` scan stayed clean in the audited set.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly /m:1` exits 1 with 4 external errors in dirty `Core`/`VFX` files: `IPlatformIntegration.cs`, `GlobalSignals.cs`, and `CameraJuiceSystem.cs`. No emitted error targets `FaunaSimulationEngine.cs` or owned bite/fauna IK files.

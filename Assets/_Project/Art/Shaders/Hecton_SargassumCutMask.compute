@@ -39,7 +39,8 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
         float radius = max(command.z, 0.0001);
         float2 delta = uv - command.xy;
         float radiusSq = radius * radius;
-        float normalized = saturate(1.0 - dot(delta, delta) / radiusSq);
+        float invRadiusSq = rcp(max(radiusSq, 0.00000001));
+        float normalized = saturate(1.0 - dot(delta, delta) * invRadiusSq);
         float stamp = normalized * normalized * command.w;
         current = max(current, stamp);
     }

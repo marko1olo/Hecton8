@@ -22,6 +22,7 @@ namespace Hecton8.Core.Bridge.EditorTools
             builder.AppendLine("{");
             builder.AppendLine("    public static class H8DesignFacadeContracts");
             builder.AppendLine("    {");
+            AppendBuiltinDefaultContracts(builder);
 
             for (int i = 0; i < guids.Length; i++)
             {
@@ -39,23 +40,7 @@ namespace Hecton8.Core.Bridge.EditorTools
 
                     int alignedOffsetBytes = H8BridgeFacadeRuntime.AlignFloatOffsetBytes(binding.OffsetBytes);
                     string identifier = MakeIdentifier(binding.DisplayName, assetHash, binding.FieldHash, j);
-                    builder.Append("        public const float ");
-                    builder.Append(identifier);
-                    builder.Append(" = ");
-                    builder.Append(binding.Value.ToString("R", CultureInfo.InvariantCulture));
-                    builder.AppendLine("f;");
-
-                    builder.Append("        public const int ");
-                    builder.Append(identifier);
-                    builder.Append("_OffsetBytes = ");
-                    builder.Append(alignedOffsetBytes.ToString(CultureInfo.InvariantCulture));
-                    builder.AppendLine(";");
-
-                    builder.Append("        public const uint ");
-                    builder.Append(identifier);
-                    builder.Append("_Hash = ");
-                    builder.Append(binding.FieldHash.ToString(CultureInfo.InvariantCulture));
-                    builder.AppendLine("u;");
+                    AppendContract(builder, identifier, binding.Value, alignedOffsetBytes, binding.FieldHash);
                 }
             }
 
@@ -70,6 +55,50 @@ namespace Hecton8.Core.Bridge.EditorTools
             File.WriteAllText(fullPath, builder.ToString());
             AssetDatabase.ImportAsset(OutputPath);
             Debug.Log("[H8Bridge] Design facade contracts generated.");
+        }
+
+        private static void AppendBuiltinDefaultContracts(StringBuilder builder)
+        {
+            AppendBuiltinContract(builder, "Builtin_SubSpeed", "SubSpeed", 12f, 0);
+            AppendBuiltinContract(builder, "Builtin_AddedMass", "AddedMass", 1f, 4);
+            AppendBuiltinContract(builder, "Builtin_VisorSaltCrystalLut01", "VisorSaltCrystalLut01", 1f, 8);
+            AppendBuiltinContract(builder, "Builtin_ToasterTriangleNoise01", "ToasterTriangleNoise01", 0.35f, 12);
+            AppendBuiltinContract(builder, "Builtin_DotProductVisionMask01", "DotProductVisionMask01", 0.75f, 16);
+            AppendBuiltinContract(builder, "Builtin_VolumetricSiltWake01", "VolumetricSiltWake01", 1f, 20);
+            AppendBuiltinContract(builder, "Builtin_ProceduralHullDents01", "ProceduralHullDents01", 1f, 24);
+            AppendBuiltinContract(builder, "Builtin_RaymarchStepBudget", "RaymarchStepBudget", 16f, 28);
+            AppendBuiltinContract(builder, "Builtin_PomTapCount", "PomTapCount", 16f, 32);
+            AppendBuiltinContract(builder, "Builtin_SubsurfaceScatterWeight01", "SubsurfaceScatterWeight01", 0.85f, 36);
+            AppendBuiltinContract(builder, "Builtin_ParticleOverkillBudget01", "ParticleOverkillBudget01", 1f, 40);
+            AppendBuiltinContract(builder, "Builtin_VisorSaltCrystalGrowth01", "VisorSaltCrystalGrowth01", 0.55f, 44);
+        }
+
+        private static void AppendBuiltinContract(StringBuilder builder, string identifier, string fieldName, float value, int offsetBytes)
+        {
+            uint fieldHash = global::Hecton8.Core.Bridge.H8BridgeHashes.ComputeFnv1A(fieldName);
+            int alignedOffsetBytes = H8BridgeFacadeRuntime.AlignFloatOffsetBytes(offsetBytes);
+            AppendContract(builder, identifier, value, alignedOffsetBytes, fieldHash);
+        }
+
+        private static void AppendContract(StringBuilder builder, string identifier, float value, int offsetBytes, uint fieldHash)
+        {
+            builder.Append("        public const float ");
+            builder.Append(identifier);
+            builder.Append(" = ");
+            builder.Append(value.ToString("R", CultureInfo.InvariantCulture));
+            builder.AppendLine("f;");
+
+            builder.Append("        public const int ");
+            builder.Append(identifier);
+            builder.Append("_OffsetBytes = ");
+            builder.Append(offsetBytes.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(";");
+
+            builder.Append("        public const uint ");
+            builder.Append(identifier);
+            builder.Append("_Hash = ");
+            builder.Append(fieldHash.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine("u;");
         }
 
         private static string MakeIdentifier(string source, uint assetHash, uint fieldHash, int bindingIndex)

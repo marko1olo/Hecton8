@@ -9,7 +9,12 @@ namespace Hecton8.Core.Content
     {
         public const int MinSlotIndex = 0;
         public const int MaxSlotIndex = 2;
-        public const int MaxSavePathChars = 30;
+        public const int SaveSlotDirectoryChars = 12;
+        public const int PlayerDeltaFileChars = 10;
+        public const int PlayerDeltaBackupFileChars = 10;
+        public const int PlayerDeltaTempFileChars = 10;
+        public const int MacroDatabaseSectorFileChars = 30;
+        public const int MaxSavePathChars = MacroDatabaseSectorFileChars;
         public const string MacroDatabaseDirectory = "H8_MacroDB";
         public const string SeedDerivedMarker = "WORLD_SEED_DERIVED";
         public const string SaveSlotDirectoryPrefix = "Saves/slot_";

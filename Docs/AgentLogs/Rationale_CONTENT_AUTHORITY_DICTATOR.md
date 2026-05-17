@@ -580,3 +580,136 @@ Solution: Performed static gates only: content-domain banned-pattern scan, first
 Rejected Alternatives: Running dotnet build for every heartbeat cleanup was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
 Scalability potential: Not applicable to verification policy.
 Hardware Impact: Not applicable; verification policy only.
+
+## Phase 38 Batched Compile Checkpoint
+Problem: Phases 34-37 changed compile-relevant C# in the asset registry, editor validator, async tracker, required-hash copy path, and runtime telemetry. Static scans were clean, but the current compile proof was still from phase 30.
+Solution: Ran one batched editor build after the group of changes: `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false`. It exited 0 with 48 warnings and 0 errors.
+Rejected Alternatives: Building after every individual patch was rejected because the user explicitly said not to run dotnet rebuild every time. Leaving the phase 30 build as the only compile evidence was rejected because changed C# must eventually be compiled. Claiming 0 warnings was rejected because the command reports 48 external Unity/third-party warnings.
+Scalability potential: Not applicable to runtime scalability; this is compile proof for the content authority batch.
+Hardware Impact: Verification only. No runtime microseconds claimed.
+
+## Phase 39 Object Batch Bake Input Gate
+Problem: `ObjectBatchBase.ReplacePayload` accepted raw arrays and serialized them into the ScriptableObject without local proof. The later build validator catches malformed batches, but a broken bake could persist empty tables, null mesh/material rows, zero hashes, invalid indices, non-finite transforms, or bad chunk ranges before that checkpoint.
+Solution: Added editor-only `ValidatePayloadInput` before assignment. It rejects empty tables, null mesh/material bindings, zero asset/chunk hashes, invalid mesh/material indices, non-finite matrices/bounds, unsupported LODs, out-of-range chunks, overlapping chunk coverage, and uncovered instances.
+Rejected Alternatives: Relying only on the build validator was rejected because the bake entry point should fail before corrupting the asset. Silently replacing null arrays with empty arrays was rejected because an object batch is required to contain actual static payload data. Runtime validation was rejected because `ReplacePayload` is an editor authoring path.
+Scalability potential: Low/Quest/MX350 avoid serialized BRG chunks that would become invisible debris or bad memory reads. High/Ultra can author denser wreck/debris batches while the editor gate proves each instance is exactly owned by one chunk before build validation.
+Hardware Impact: Editor bake path only. No gameplay Tick, Addressables handle, VRAM ledger, BRG bind loop, or GlobalDataVault path changed.
+
+## Phase 39 Verification Deferral
+Problem: This patch is editor-only and follows the phase 38 batched compile; the user explicitly instructed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused object-batch bake gate scan, and `git diff --check` on `ObjectBatchBase.cs`. Compile remains deferred until the next meaningful batch checkpoint.
+Rejected Alternatives: Running dotnet build immediately after one editor-only bake gate was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 40 Physics Proxy Baker Rejection Gate
+Problem: `ContentPhysicsProxyBaker` could silently accept weak authoring input: one BoxCollider, non-finite bounds, near-zero hull dimensions, and raw GameObject names in generated asset paths. That can produce useless convex hulls or invalid asset paths before anyone runs build validation.
+Solution: Added editor-tool rejection for fewer than two colliders, non-finite collider bounds, invalid final hull bounds, and hull dimensions below 0.01 m. Generated mesh file stems are sanitized to alphanumeric, underscore, and hyphen, and folder creation now ensures `Assets/_Project/Data` exists before creating generated subfolders.
+Rejected Alternatives: Allowing a one-collider bake was rejected because the task is to merge many small colliders into one proxy, not create a redundant proxy. Trusting raw object names was rejected because Unity object names can contain path-hostile characters. Runtime cleanup was rejected because this is an editor bake tool.
+Scalability potential: Low/Quest/MX350 avoid PhysX proxy assets that collapse to zero or never meaningfully reduce collider counts. High/Ultra can still bake larger base/outpost hulls with safer generated asset paths.
+Hardware Impact: Editor tool path only. No gameplay Tick, physics runtime, Addressables, VRAM, BRG, or GlobalDataVault path changed.
+
+## Phase 40 Verification Deferral
+Problem: This is a focused editor-tool guard after phase 38's compile checkpoint, and the user explicitly instructed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused physics proxy baker scan, and `git diff --check` on `ContentAuthorityAssetPostprocessor.cs`. Compile remains deferred until the next meaningful batch checkpoint.
+Rejected Alternatives: Running dotnet build immediately after one editor-tool guard was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 41 Addressables Parent-Group Gate
+Problem: `ValidateAddressableGroups` only failed entries whose `parentGroup` was null. It did not fail a group with a null entry set, a null entry in the set, or an entry listed in one group while pointing at a different parent group. That leaves malformed catalog ownership edges capable of passing validation.
+Solution: The validator now fails null entry sets, null entries, null parent groups, and parent-group mismatches with the listed group name and entry address.
+Rejected Alternatives: Skipping null/corrupt rows was rejected because Addressables catalog corruption must stop the build. Trusting collection enumeration alone was rejected because the entry's own parent pointer is part of the ownership contract.
+Scalability potential: Low/Quest/MX350 cannot ship a catalog row that appears assigned while its parent pointer is broken. High/Ultra can carry more tiered bundles while the catalog edge remains strict.
+Hardware Impact: Build/editor validation only. No gameplay Tick, Addressables runtime handle, VRAM, BRG, or GlobalDataVault path changed.
+
+## Phase 41 Verification Deferral
+Problem: This is a small editor validator hardening patch after the phase 38 compile checkpoint, and the user explicitly instructed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused Addressables parent-group scan, and `git diff --check` on `ContentAuthorityBuildValidators.cs`. Compile remains deferred until the next meaningful batch checkpoint.
+Rejected Alternatives: Running dotnet build immediately after one validator patch was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 42 VFX Prewarm Duplicate Gate
+Problem: `ValidateVfxPrewarmManifests` verified capacity and asset shape, but it allowed duplicate Addressables references in the same manifest. Duplicate prewarm entries can consume the fixed prewarm/resident handle ledgers and load the same VFX asset more than once during the loading screen.
+Solution: Added a manifest-local `HashSet<object>` of Addressables runtime keys and a helper that fails null runtime keys or duplicate particle/compute references.
+Rejected Alternatives: Deduplicating silently at runtime was rejected because the content manifest should be clean and deterministic before build. Comparing only editor assets was rejected because the runtime key is the Addressables identity used by the load path.
+Scalability potential: Low/Quest/MX350 preserve the 64-slot prewarm ledger for unique VFX only. High/Ultra can prewarm richer Overkill effects without duplicate handles wasting residency slots.
+Hardware Impact: Build/editor validation only. No gameplay Tick, Addressables runtime handle path, VFX prewarm loop, VRAM, BRG, or GlobalDataVault path changed.
+
+## Phase 42 Verification Deferral
+Problem: This is a focused editor validator hardening patch after the phase 38 compile checkpoint, and the user explicitly instructed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused VFX duplicate gate scan, and `git diff --check` on `ContentAuthorityBuildValidators.cs`. Compile remains deferred until the next meaningful batch checkpoint.
+Rejected Alternatives: Running dotnet build immediately after one validator patch was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 43 VFX Prewarm Invalid-Handle Diagnostics
+Problem: `StartVfxPrewarm` validated the `AssetReference` before calling `LoadAssetAsync`, but if Addressables returned an invalid handle, the runtime did not log why the VFX prewarm dispatch failed.
+Solution: Added `LogInvalidVfxPrewarmHandle` and routed both particle and compute invalid-handle fallthroughs through it in editor/development builds.
+Rejected Alternatives: Throwing in the loading path was rejected because the build validator owns fatal authoring failures and runtime should remain controlled. Silent fallthrough was rejected because missing prewarmed VFX can become a combat hitch with no trace.
+Scalability potential: Low/Quest/MX350 can diagnose why a loading-screen VFX prewarm failed without release-build log overhead. High/Ultra keeps Overkill VFX prewarm evidence when richer effects fail to dispatch.
+Hardware Impact: Failure path only. No profiler-backed microseconds claimed; no gameplay Tick, Addressables successful handle path, VRAM, BRG, or GlobalDataVault path changed.
+
+## Phase 43 Verification Deferral
+Problem: This is a focused runtime diagnostic patch after the phase 38 compile checkpoint, and the user explicitly instructed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused invalid prewarm handle scan, and `git diff --check` on `ContentRuntimeServices.cs`. Compile remains deferred until the next meaningful batch checkpoint.
+Rejected Alternatives: Running dotnet build immediately after one runtime diagnostic patch was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 44 Batched Compile Wall
+Problem: Phases 39-43 changed C# in content/editor/runtime files. A batched compile was needed after enough changes accumulated, but the current editor build is blocked outside CORE/ASSETS.
+Solution: Ran one batched `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false`. It failed with two errors in `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs`: explicit `IProceduralAudioEventListener` members are declared while the containing type does not implement that interface.
+Rejected Alternatives: Editing Audio ownership from the content authority pass was rejected. Rebuilding after each of the five patches was rejected because the user explicitly said not to run dotnet rebuild every time. Reporting phase 38 green as current was rejected because this newer batched attempt hit an external wall.
+Scalability potential: Not applicable to runtime scalability; this is compile-wall evidence.
+Hardware Impact: Verification only. No runtime microseconds claimed.
+
+## Phase 45 Save Topology Capacity Gate
+Problem: `ContentSaveSlotTopology` exposed one `MaxSavePathChars` constant, but did not expose exact per-path lengths or prove undersized caller spans reject every writer. A caller could size a buffer by convention and only discover false writes later.
+Solution: Added explicit char-count constants for save slot directories, `.sav`, `.bak`, `.tmp`, and macro-sector page names. Editor validation now checks constants against literal topology strings and confirms every writer rejects a one-character-too-small span with zero reported chars.
+Rejected Alternatives: Keeping only a max-path constant was rejected because save topology is authority data and callers need exact buffer contracts. Allocating strings or arrays to validate writer output was rejected because the existing writer contract is caller-owned spans. Runtime exceptions were rejected because false-return contracts are cheaper and deterministic.
+Scalability potential: Low/Quest/MX350 keep delta-save and macro-sector paths deterministic without heap formatting or accidental truncated output. High/Ultra can expand macro-sector use while the build gate proves path writers stay exact.
+Hardware Impact: Build/editor validation plus cold caller contract only. No gameplay Tick, Addressables, VRAM, BRG, lore read, or GlobalDataVault path changed; no profiler-backed microseconds claimed.
+
+## Phase 45 Verification Deferral
+Problem: The save-topology patch is focused and the user explicitly instructed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, and `git diff --check` on the touched content files. Compile remains deferred after the phase 44 batched external Audio wall.
+Rejected Alternatives: Running dotnet build immediately after one topology validator patch was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 46 Visibility Proxy Bounds Vaccination
+Problem: `VisibilityProxyBase` sanitized non-finite or too-small extents, but it allowed huge finite extents to create permanently visible AABBs and only fell back once for non-finite centers. Corrupt transform state could still feed invalid bounds into frustum tests or force heavy math to run too broadly.
+Solution: Added min/max visibility extent constants and clamped extents to `[0.01m, 10000m]`. Center fallback now verifies `transform.position` as well and falls back to `Vector3.zero` if both transformed center and transform position are non-finite.
+Rejected Alternatives: Trusting authored sizes was rejected because imported scale corruption is exactly the type of fault the cheap proxy gate should contain. Throwing exceptions in gameplay was rejected because the proxy must fail controlled and keep the frustum path deterministic. Adding logs was rejected for this scalar guard because visibility checks can be called frequently and log spam would violate hot-path hygiene.
+Scalability potential: Low/Quest/MX350 avoid corrupted bounds turning every heavy SDF/procedural query into always-on work. High/Ultra still get broad visibility where authored, but not unbounded finite garbage.
+Hardware Impact: Adds two scalar comparisons on extent sanitize and a fault-path finite check. No profiler-backed microseconds claimed; no allocation, Tick registration, Addressables, VRAM, BRG, or GlobalDataVault path changed.
+
+## Phase 46 Verification Deferral
+Problem: The visibility patch is a focused scalar runtime guard and the user explicitly instructed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused visibility-symbol scan, and `git diff --check` on `VisibilityProxyBase.cs`. Compile remains deferred after the phase 44 batched external Audio wall.
+Rejected Alternatives: Running dotnet build immediately after one visibility guard was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 47 Addressables Release-Miss Diagnostic
+Problem: The content runtime released non-biome bundles and VRAM-evicted biome bundles through the refcount ledger, but ignored the boolean from `TryReleaseTrackedBundleHandle`. If a hash had no tracked Addressables handle, the refcount entry could be removed while the release edge was silently absent.
+Solution: Both release call sites now log `LogBundleHandleReleaseMiss(hash)` in editor/development builds when the tracked handle is missing. The fixed handle table and refcount vault remain unchanged.
+Rejected Alternatives: Throwing in runtime was rejected because release pressure paths must stay controlled. Auto-removing additional state was rejected because the refcount ledger is already being removed by those call sites and the missing object-reference bridge needs diagnostic evidence, not guessed cleanup. Logging in release builds was rejected to avoid string/log cost on target hardware.
+Scalability potential: Low/Quest/MX350 get evidence for leaked/missing release edges before VRAM pressure becomes a crash. High/Ultra can carry more resident bundles while release integrity remains auditable.
+Hardware Impact: Failure path only and compiled out of release builds by `Conditional` attributes. No new arrays, no Tick work, no Addressables success-path overhead beyond a branch that already consumed the boolean result, and no GlobalDataVault path changed.
+
+## Phase 47 Verification Deferral
+Problem: The release-miss patch is a focused diagnostics guard and the user explicitly instructed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused release-miss scan, and `git diff --check` on `ContentRuntimeServices.cs`. Compile remains deferred after the phase 44 batched external Audio wall.
+Rejected Alternatives: Running dotnet build immediately after one diagnostics patch was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 48 Batched Compile Wall
+Problem: Phases 45-47 changed compile-relevant C# in save topology, visibility bounds, and runtime Addressables release diagnostics. A batched compile was appropriate after three patches, but the current editor build is blocked outside CORE/ASSETS.
+Solution: Ran one batched `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false`. It failed with 19 errors in external `Core/IPlatformIntegration.cs`, `Core/GlobalSignals.cs`, `VFX/HectonMarineSnowRenderer.cs`, and `VFX/CameraJuiceSystem.cs`; no CORE/ASSETS errors appeared.
+Rejected Alternatives: Editing Core/VFX ownership from the content pass was rejected. Rebuilding after each individual patch was rejected because the user explicitly said not to run dotnet rebuild every time. Reporting phase 38 green as current was rejected because this newer batched attempt hit a different external wall.
+Scalability potential: Not applicable to runtime scalability; this is compile-wall evidence.
+Hardware Impact: Verification only. No runtime microseconds claimed.

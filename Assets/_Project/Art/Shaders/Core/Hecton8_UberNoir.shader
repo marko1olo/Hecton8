@@ -77,10 +77,6 @@ Shader "Hecton8/Rendering/UberNoir"
             #pragma shader_feature_local _ H8_UBERNOIR_CAUSTICS_TEXTURED
             #pragma shader_feature_local _ H8_UBERNOIR_SCREEN_REFRACTION
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
-            #pragma multi_compile _ _ADDITIONAL_LIGHTS
-            #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
-            #pragma multi_compile _ _LIGHT_LAYERS
-            #pragma multi_compile _ _LIGHT_COOKIES
 
             #pragma skip_variants SHADOWS_SHADOWMASK DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _SCREEN_SPACE_OCCLUSION
 

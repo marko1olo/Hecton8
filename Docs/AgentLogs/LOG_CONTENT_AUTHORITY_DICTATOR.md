@@ -473,3 +473,146 @@ Exact Microseconds saved -> No profiler-backed microseconds claimed. Determinist
 Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused coalescing scan verified the out-count overload and blackbox count reuse. `git diff --check` on `ContentRuntimeServices.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time.
 
 Status -> CORE/ASSETS Phase 37 content patch complete by static audit. Latest compile checkpoint remains phase 30 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 38 Report - Batched Compile Checkpoint
+What was wrong -> Phases 34-37 had clean static scans but no fresh compile after changing `ContentAssetHashMap`, `ContentRuntimeServices`, and `ContentAuthorityBuildValidators`.
+
+What was done -> Ran one batched editor build: `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false`.
+
+Cinematic Cheats used -> None. This was verification.
+
+Exact Microseconds saved -> Verification only. No runtime claim.
+
+Verification -> Build exited 0. Output: `Build succeeded. 48 Warning(s). 0 Error(s).` The warning count matches external Unity/package-cache/third-party warning noise from prior editor checkpoints; no CORE/ASSETS compiler error appeared.
+
+Status -> CORE/ASSETS Phase 38 compile checkpoint green with external warnings. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 39 Report - Object Batch Bake Input Gate
+What was wrong -> `ObjectBatchBase.ReplacePayload` accepted raw bake arrays and serialized them without checking the same invariants enforced later by build validation.
+
+What was done -> Added an editor-only bake gate for empty tables, null mesh/material rows, zero hashes, bad indices, unsupported LODs, non-finite transforms/bounds, overlapping chunk coverage, and uncovered instances.
+
+Cinematic Cheats used -> Chunked BRG debris remains the cheat: thousands of wreck/static debris instances collapse into authored batch payloads. This patch prevents corrupt baked chunks from entering the asset in the first place.
+
+Exact Microseconds saved -> Editor bake path only. No profiler-backed runtime microseconds claimed; no Tick, Addressables, VRAM, BRG bind, or GlobalDataVault path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused object-batch scan verified the new bake rejection paths. `git diff --check` on `ObjectBatchBase.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time after a single editor-only patch.
+
+Status -> CORE/ASSETS Phase 39 content patch complete by static audit. Latest compile checkpoint remains phase 38 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 40 Report - Physics Proxy Baker Rejection Gate
+What was wrong -> The physics proxy baker could create bad generated hull assets from one collider, non-finite bounds, near-zero hull dimensions, or raw object names unsuitable for asset paths.
+
+What was done -> Added editor-tool rejection for weak collider sets, non-finite/too-small bounds, safe generated-folder creation, and sanitized mesh asset file stems.
+
+Cinematic Cheats used -> Physics proxy baking remains the optimization cheat: many BoxColliders collapse into one convex hull. This patch makes the tool refuse bakes that do not actually buy PhysX simplification.
+
+Exact Microseconds saved -> Editor tool path only. No runtime microseconds claimed; no gameplay Tick, physics runtime, Addressables, VRAM, BRG, or GlobalDataVault path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused baker scan verified the rejection and sanitization paths. `git diff --check` on `ContentAuthorityAssetPostprocessor.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time after a single editor-tool patch.
+
+Status -> CORE/ASSETS Phase 40 content patch complete by static audit. Latest compile checkpoint remains phase 38 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 41 Report - Addressables Parent-Group Gate
+What was wrong -> Addressables validation caught entries with no parent group, but not null entry sets, null entries, or entries listed under one group while pointing at a different parent group.
+
+What was done -> Added strict editor/build failures for null group entry sets, null entries, null parent groups, and parent-group mismatches.
+
+Cinematic Cheats used -> None. This is catalog authority hardening.
+
+Exact Microseconds saved -> Build/editor validation only. No runtime microseconds claimed; no gameplay Tick, Addressables runtime handle, VRAM, BRG, or GlobalDataVault path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused validator scan verified the new Addressables failure paths. `git diff --check` on `ContentAuthorityBuildValidators.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time after a single validator patch.
+
+Status -> CORE/ASSETS Phase 41 content patch complete by static audit. Latest compile checkpoint remains phase 38 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 42 Report - VFX Prewarm Duplicate Gate
+What was wrong -> VFX prewarm manifests could list the same Addressables runtime key more than once, wasting fixed handle ledger slots and risking duplicate loads during loading.
+
+What was done -> Added manifest-local runtime-key uniqueness validation and null runtime-key rejection across particle and compute prewarm references.
+
+Cinematic Cheats used -> Prewarming remains the combat hitch cheat: particle and compute VFX load during loading screens, not mid-fight. This patch ensures the 64-slot budget buys unique effects.
+
+Exact Microseconds saved -> Build/editor validation only. No runtime microseconds claimed; no gameplay Tick, Addressables runtime handle path, VFX prewarm loop, VRAM, BRG, or GlobalDataVault path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused validator scan verified the VFX duplicate/null-key gates. `git diff --check` on `ContentAuthorityBuildValidators.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time after a single validator patch.
+
+Status -> CORE/ASSETS Phase 42 content patch complete by static audit. Latest compile checkpoint remains phase 38 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 43 Report - VFX Prewarm Invalid-Handle Diagnostics
+What was wrong -> Valid VFX `AssetReference` entries could still return invalid Addressables handles, and that runtime failure path was silent.
+
+What was done -> Added editor/development diagnostics for invalid particle and compute prewarm handles returned by `LoadAssetAsync`.
+
+Cinematic Cheats used -> VFX prewarm remains the hitch-avoidance cheat. This patch adds evidence when the cheat cannot dispatch.
+
+Exact Microseconds saved -> Failure path only. No runtime microseconds claimed; no gameplay Tick, successful Addressables handle path, VRAM, BRG, or GlobalDataVault path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused runtime scan verified invalid prewarm handle logging. `git diff --check` on `ContentRuntimeServices.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time after a single runtime diagnostic patch.
+
+Status -> CORE/ASSETS Phase 43 content patch complete by static audit. Latest compile checkpoint remains phase 38 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 44 Report - Batched Compile Wall
+What was wrong -> After five content patches, the compile proof needed refresh. The batched build is now blocked by external Audio code.
+
+What was done -> Ran `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` once after the batch.
+
+Cinematic Cheats used -> None. This was verification.
+
+Exact Microseconds saved -> Verification only. No runtime claim.
+
+Verification -> Build failed with 2 errors, both in `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs` explicit `IProceduralAudioEventListener` declarations. No CORE/ASSETS compiler error appeared. Content static bans and first-party `Resources.Load*` scans were clean before the build.
+
+Status -> CORE/ASSETS Phase 44 compile blocked by external Audio ownership. Latest clean content compile checkpoint remains phase 38 editor build exit 0 with 48 external warnings and 0 errors; phases 39-43 are static-clean and waiting on external compile wall clearance.
+
+## Phase 45 Report - Save Topology Capacity Gate
+What was wrong -> Save topology had a single max buffer constant and no build-time proof that undersized caller spans fail every writer cleanly.
+
+What was done -> Added exact char-count constants for slot directory, `.sav`, `.bak`, `.tmp`, and macro-sector page paths. The editor validator now proves those constants match literal outputs and that one-character-too-small spans return false with zero chars written.
+
+Cinematic Cheats used -> Delta-save topology remains the cheat: `.sav` stores player delta, `H8_MacroDB` stores world state pages, seed-derived state is never duplicated. This patch makes the writer contract exact.
+
+Exact Microseconds saved -> Build/editor and cold path contract only. No runtime microseconds claimed; no gameplay Tick, Addressables, VRAM, BRG, lore read, or GlobalDataVault path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. `git diff --check` on `ContentSaveSlotTopology.cs` and `ContentAuthorityBuildValidators.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild after every focused patch.
+
+Status -> CORE/ASSETS Phase 45 content patch complete by static audit. Latest batched editor build remains phase 44 blocked by external Audio errors; no new compile was run for this one-patch topology gate.
+
+## Phase 46 Report - Visibility Proxy Bounds Vaccination
+What was wrong -> The visibility proxy sanitized non-finite and tiny extents, but huge finite extents could keep heavy math permanently enabled and a non-finite transform fallback could still write bad bounds.
+
+What was done -> Added min/max extent clamps and a second finite center fallback to `Vector3.zero` before `Bounds` construction.
+
+Cinematic Cheats used -> The cheap AABB proxy remains the visual fake: it rejects heavy SDF/procedural work before expensive math runs. This patch keeps corrupt bounds from defeating that fake.
+
+Exact Microseconds saved -> No profiler-backed number claimed. The change is two scalar extent comparisons plus fault-path center validation; no allocation, Addressables, VRAM, BRG, or GlobalDataVault path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused visibility scan verified the max clamp and zero fallback. `git diff --check` on `VisibilityProxyBase.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild after every focused patch.
+
+Status -> CORE/ASSETS Phase 46 content patch complete by static audit. Latest batched editor build remains phase 44 blocked by external Audio errors; no new compile was run for this one-patch visibility guard.
+
+## Phase 47 Report - Addressables Release-Miss Diagnostic
+What was wrong -> Bundle refcount release paths ignored a missing tracked Addressables handle, so a release edge could disappear from evidence while the refcount ledger removed the hash.
+
+What was done -> Normal non-biome release and VRAM biome eviction now emit an editor/development error when `TryReleaseTrackedBundleHandle` cannot find the handle for the released hash.
+
+Cinematic Cheats used -> None. This is release-ledger evidence hardening.
+
+Exact Microseconds saved -> Failure path only. No runtime savings claimed; release success path keeps the same fixed table scan and now consumes its boolean result.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused runtime scan verified the new release-miss diagnostic call sites and method. `git diff --check` on `ContentRuntimeServices.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild after every focused patch.
+
+Status -> CORE/ASSETS Phase 47 content patch complete by static audit. Latest batched editor build remains phase 44 blocked by external Audio errors; no new compile was run for this one-patch diagnostics guard.
+
+## Phase 48 Report - Batched Compile Wall
+What was wrong -> After three content patches, compile proof needed refresh. The batched build is now blocked outside CORE/ASSETS by Core/VFX errors.
+
+What was done -> Ran `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` once after phases 45-47.
+
+Cinematic Cheats used -> None. This was verification.
+
+Exact Microseconds saved -> Verification only. No runtime claim.
+
+Verification -> Build failed with 19 errors in `Assets/_Project/Scripts/Core/IPlatformIntegration.cs`, `Assets/_Project/Scripts/Core/GlobalSignals.cs`, `Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs`, and `Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs`. No CORE/ASSETS compiler error appeared.
+
+Status -> CORE/ASSETS Phase 48 compile blocked by external Core/VFX ownership. Latest content patches remain static-clean; current compile cannot be called green until those external errors are resolved.

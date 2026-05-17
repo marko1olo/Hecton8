@@ -3,6 +3,7 @@ using System.IO;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Gameplay.Mining.Contracts;
@@ -32,6 +33,7 @@ namespace Hecton8.Gameplay.Mining
         private const int InventorySlotCount = 4;
         private const int BlackBoxCapacity = 300;
         private const int SnapCommandCount = 1;
+        private const int MaxVaultDrillInstances = 256;
         private const float DefaultPowerDrawWatts = 50000f;
         private const float WirelessDrainQueueCapWattSeconds = 4096f;
         private const float DefaultExtractionCycleSeconds = 60f;
@@ -41,8 +43,7 @@ namespace Hecton8.Gameplay.Mining
         private const uint DrillDebrisSpeciesHash = 0xD211B10Bu;
         private const byte AcousticChannelThumper = 7;
         private const byte AcousticFlagThreat = 1 << 3;
-        private const string NativeMemoryOwner = nameof(DeployableSdfDrillRuntime);
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_AUTONOMOUS_MINING_ARCHITECT.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_VAULT_SOVEREIGNTY_ENFORCER_DEPLOYABLE_SDF_DRILL.bin";
 
         private static int s_activeDrills;
 
@@ -149,14 +150,16 @@ namespace Hecton8.Gameplay.Mining
         private JobHandle _snapHandle;
         private JobHandle _extractionHandle;
 
-        private NativeArray<ushort> _inventoryQuantities;
-        private NativeArray<ushort> _inventoryCapacities;
-        private NativeArray<uint> _inventoryItemHashes;
-        private NativeArray<uint> _inventoryOreHashes;
+        private int _vaultSlotIndex = -1;
+        private VaultBufferHandle<uint> _slotOwnersHandle;
+        private VaultBufferHandle<ushort> _inventoryQuantitiesHandle;
+        private VaultBufferHandle<ushort> _inventoryCapacitiesHandle;
+        private VaultBufferHandle<uint> _inventoryItemHashesHandle;
+        private VaultBufferHandle<uint> _inventoryOreHashesHandle;
         private VaultBufferHandle<DeployableSdfDrillExtractionResult> _extractionResultHandle;
-        private NativeArray<DeployableSdfDrillTelemetryEntry> _blackBox;
-        private NativeArray<RaycastCommand> _snapCommands;
-        private NativeArray<RaycastHit> _snapHits;
+        private VaultBufferHandle<DeployableSdfDrillTelemetryEntry> _blackBoxHandle;
+        private VaultBufferHandle<RaycastCommand> _snapCommandsHandle;
+        private VaultBufferHandle<RaycastHit> _snapHitsHandle;
         private int _blackBoxCursor;
 
         /// <summary>True once the drill has been destroyed by damage or a fatal state fault.</summary>
@@ -204,7 +207,7 @@ namespace Hecton8.Gameplay.Mining
             acousticIntensity01 = SanitizeRange(acousticIntensity01, 0f, 1f, 0.82f);
             maxHealth = SanitizeAtLeast(maxHealth, 1f, 800f);
 
-            if (_inventoryQuantities.IsCreated && !_extractionPending)
+            if (Application.isPlaying && !_extractionPending && TryResolveInventoryState(out _, out _, out _, out _))
                 ConfigureInventorySlots();
         }
 
@@ -213,6 +216,8 @@ namespace Hecton8.Gameplay.Mining
             if (_cachedTransform == null)
                 _cachedTransform = transform;
 
+            AllocateNativeState();
+            ConfigureInventorySlots();
             CacheRuntimeDependencies();
             if (_lastMacroUpdateUnscaledTime <= 0.0001d)
                 _lastMacroUpdateUnscaledTime = SystemDispatcher.CurrentUnscaledTimeSeconds;
@@ -247,6 +252,8 @@ namespace Hecton8.Gameplay.Mining
         /// </summary>
         public void OnSpawn()
         {
+            AllocateNativeState();
+            ConfigureInventorySlots();
             CacheRuntimeDependencies();
             _broken = false;
             _faultDumped = false;
@@ -424,6 +431,11 @@ namespace Hecton8.Gameplay.Mining
         {
             CompleteExtractionJob(true);
             CaptureAnchorFromTransform();
+            bool hasInventory = TryResolveInventoryState(
+                out NativeSlice<ushort> quantities,
+                out NativeSlice<ushort> capacities,
+                out NativeSlice<uint> itemHashes,
+                out NativeSlice<uint> oreHashes);
 
             record = new DeployableSdfDrillMacroRecord
             {
@@ -438,22 +450,22 @@ namespace Hecton8.Gameplay.Mining
                 SectorHash = _sectorHash,
                 Health = _health,
                 Flags = (ushort)_stateFlags,
-                Slot0Quantity = _inventoryQuantities.IsCreated ? _inventoryQuantities[0] : (ushort)0,
-                Slot1Quantity = _inventoryQuantities.IsCreated ? _inventoryQuantities[1] : (ushort)0,
-                Slot2Quantity = _inventoryQuantities.IsCreated ? _inventoryQuantities[2] : (ushort)0,
-                Slot3Quantity = _inventoryQuantities.IsCreated ? _inventoryQuantities[3] : (ushort)0,
-                Slot0Capacity = _inventoryCapacities.IsCreated ? _inventoryCapacities[0] : (ushort)0,
-                Slot1Capacity = _inventoryCapacities.IsCreated ? _inventoryCapacities[1] : (ushort)0,
-                Slot2Capacity = _inventoryCapacities.IsCreated ? _inventoryCapacities[2] : (ushort)0,
-                Slot3Capacity = _inventoryCapacities.IsCreated ? _inventoryCapacities[3] : (ushort)0,
-                Slot0ItemHash = _inventoryItemHashes.IsCreated ? _inventoryItemHashes[0] : 0u,
-                Slot1ItemHash = _inventoryItemHashes.IsCreated ? _inventoryItemHashes[1] : 0u,
-                Slot2ItemHash = _inventoryItemHashes.IsCreated ? _inventoryItemHashes[2] : 0u,
-                Slot3ItemHash = _inventoryItemHashes.IsCreated ? _inventoryItemHashes[3] : 0u,
-                Slot0OreHash = _inventoryOreHashes.IsCreated ? _inventoryOreHashes[0] : 0u,
-                Slot1OreHash = _inventoryOreHashes.IsCreated ? _inventoryOreHashes[1] : 0u,
-                Slot2OreHash = _inventoryOreHashes.IsCreated ? _inventoryOreHashes[2] : 0u,
-                Slot3OreHash = _inventoryOreHashes.IsCreated ? _inventoryOreHashes[3] : 0u,
+                Slot0Quantity = hasInventory ? quantities[0] : (ushort)0,
+                Slot1Quantity = hasInventory ? quantities[1] : (ushort)0,
+                Slot2Quantity = hasInventory ? quantities[2] : (ushort)0,
+                Slot3Quantity = hasInventory ? quantities[3] : (ushort)0,
+                Slot0Capacity = hasInventory ? capacities[0] : (ushort)0,
+                Slot1Capacity = hasInventory ? capacities[1] : (ushort)0,
+                Slot2Capacity = hasInventory ? capacities[2] : (ushort)0,
+                Slot3Capacity = hasInventory ? capacities[3] : (ushort)0,
+                Slot0ItemHash = hasInventory ? itemHashes[0] : 0u,
+                Slot1ItemHash = hasInventory ? itemHashes[1] : 0u,
+                Slot2ItemHash = hasInventory ? itemHashes[2] : 0u,
+                Slot3ItemHash = hasInventory ? itemHashes[3] : 0u,
+                Slot0OreHash = hasInventory ? oreHashes[0] : 0u,
+                Slot1OreHash = hasInventory ? oreHashes[1] : 0u,
+                Slot2OreHash = hasInventory ? oreHashes[2] : 0u,
+                Slot3OreHash = hasInventory ? oreHashes[3] : 0u,
                 OresExtracted = _oresExtracted
             };
         }
@@ -564,58 +576,83 @@ namespace Hecton8.Gameplay.Mining
 
         private void AllocateNativeState()
         {
-            if (_inventoryQuantities.IsCreated)
+            if (!TryPrepareNativeState(
+                    out NativeSlice<ushort> quantities,
+                    out _,
+                    out _,
+                    out _,
+                    out NativeSlice<DeployableSdfDrillTelemetryEntry> blackBox,
+                    out NativeArray<RaycastCommand> snapCommands,
+                    out NativeArray<RaycastHit> snapHits,
+                    out bool assignedNewSlot))
+            {
+                return;
+            }
+
+            if (!assignedNewSlot)
                 return;
 
-            _inventoryQuantities = new NativeArray<ushort>(InventorySlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ushort>[4] - drill inventory SOA quantities - owner: DeployableSdfDrillRuntime
-            _inventoryCapacities = new NativeArray<ushort>(InventorySlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ushort>[4] - drill inventory SOA capacities - owner: DeployableSdfDrillRuntime
-            _inventoryItemHashes = new NativeArray<uint>(InventorySlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[4] - drill inventory SOA item hashes - owner: DeployableSdfDrillRuntime
-            _inventoryOreHashes = new NativeArray<uint>(InventorySlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[4] - drill inventory SOA ore hashes - owner: DeployableSdfDrillRuntime
-            _blackBox = new NativeArray<DeployableSdfDrillTelemetryEntry>(BlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DeployableSdfDrillTelemetryEntry>[300] - fixed mining blackbox ring - owner: DeployableSdfDrillRuntime
-            _snapCommands = new NativeArray<RaycastCommand>(SnapCommandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] - deploy snap job command - owner: DeployableSdfDrillRuntime
-            _snapHits = new NativeArray<RaycastHit>(SnapCommandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1] - deploy snap job hit - owner: DeployableSdfDrillRuntime
-            _ = TryResolveExtractionResultBuffer(out _);
-
-            RegisterNativeArray(_inventoryQuantities, nameof(_inventoryQuantities));
-            RegisterNativeArray(_inventoryCapacities, nameof(_inventoryCapacities));
-            RegisterNativeArray(_inventoryItemHashes, nameof(_inventoryItemHashes));
-            RegisterNativeArray(_inventoryOreHashes, nameof(_inventoryOreHashes));
-            RegisterNativeArray(_blackBox, nameof(_blackBox));
-            RegisterNativeArray(_snapCommands, nameof(_snapCommands));
-            RegisterNativeArray(_snapHits, nameof(_snapHits));
+            ClearSlice(quantities);
+            ClearSlice(blackBox);
+            ClearNativeArray(snapCommands);
+            ClearNativeArray(snapHits);
+            if (TryResolveExtractionResultBuffer(out NativeSlice<DeployableSdfDrillExtractionResult> extractionResult))
+                extractionResult[0] = default;
         }
 
         private void ConfigureInventorySlots()
         {
-            if (!_inventoryQuantities.IsCreated)
+            if (!TryResolveInventoryState(
+                    out NativeSlice<ushort> quantities,
+                    out NativeSlice<ushort> capacities,
+                    out NativeSlice<uint> itemHashes,
+                    out NativeSlice<uint> oreHashes))
+            {
                 return;
+            }
 
             ushort capacity = (ushort)math.max(1, (int)slotCapacity);
-            SetSlot(0, slot0ItemHash, slot0OreHash, capacity);
-            SetSlot(1, slot1ItemHash, slot1OreHash, capacity);
-            SetSlot(2, slot2ItemHash, slot2OreHash, capacity);
-            SetSlot(3, slot3ItemHash, slot3OreHash, capacity);
+            SetSlot(capacities, itemHashes, oreHashes, 0, slot0ItemHash, slot0OreHash, capacity);
+            SetSlot(capacities, itemHashes, oreHashes, 1, slot1ItemHash, slot1OreHash, capacity);
+            SetSlot(capacities, itemHashes, oreHashes, 2, slot2ItemHash, slot2OreHash, capacity);
+            SetSlot(capacities, itemHashes, oreHashes, 3, slot3ItemHash, slot3OreHash, capacity);
             for (int i = 0; i < InventorySlotCount; i++)
             {
-                if (_inventoryQuantities[i] > _inventoryCapacities[i])
-                    _inventoryQuantities[i] = _inventoryCapacities[i];
+                if (quantities[i] > capacities[i])
+                    quantities[i] = capacities[i];
             }
         }
 
-        private void SetSlot(int index, uint itemHash, uint oreHash, ushort capacity)
+        private static void SetSlot(
+            NativeSlice<ushort> capacities,
+            NativeSlice<uint> itemHashes,
+            NativeSlice<uint> oreHashes,
+            int index,
+            uint itemHash,
+            uint oreHash,
+            ushort capacity)
         {
-            _inventoryCapacities[index] = capacity;
-            _inventoryItemHashes[index] = itemHash != 0u ? itemHash : DeployableSdfDrillMath.DefaultItemHash;
-            _inventoryOreHashes[index] = oreHash != 0u ? oreHash : DeployableSdfDrillMath.DefaultOreHash;
+            capacities[index] = capacity;
+            itemHashes[index] = itemHash != 0u ? itemHash : DeployableSdfDrillMath.DefaultItemHash;
+            oreHashes[index] = oreHash != 0u ? oreHash : DeployableSdfDrillMath.DefaultOreHash;
         }
 
         private void RestoreSlot(int index, ushort quantity, ushort capacity, uint itemHash, uint oreHash)
         {
+            if (!TryResolveInventoryState(
+                    out NativeSlice<ushort> quantities,
+                    out NativeSlice<ushort> capacities,
+                    out NativeSlice<uint> itemHashes,
+                    out NativeSlice<uint> oreHashes))
+            {
+                return;
+            }
+
             ushort safeCapacity = capacity > 0 ? capacity : (ushort)math.max(1, (int)slotCapacity);
-            _inventoryCapacities[index] = safeCapacity;
-            _inventoryQuantities[index] = quantity <= safeCapacity ? quantity : safeCapacity;
-            _inventoryItemHashes[index] = itemHash != 0u ? itemHash : DeployableSdfDrillMath.DefaultItemHash;
-            _inventoryOreHashes[index] = oreHash != 0u ? oreHash : DeployableSdfDrillMath.DefaultOreHash;
+            capacities[index] = safeCapacity;
+            quantities[index] = quantity <= safeCapacity ? quantity : safeCapacity;
+            itemHashes[index] = itemHash != 0u ? itemHash : DeployableSdfDrillMath.DefaultItemHash;
+            oreHashes[index] = oreHash != 0u ? oreHash : DeployableSdfDrillMath.DefaultOreHash;
         }
 
         private bool TryRestoreAnchorFromMacroRecord(in DeployableSdfDrillMacroRecord record)
@@ -734,8 +771,11 @@ namespace Hecton8.Gameplay.Mining
             _snappedToTerrain = false;
             SetFlag(DeployableSdfDrillFlags.Snapped, false);
 
-            if (!_snapCommands.IsCreated || !_snapHits.IsCreated || _cachedTransform == null)
+            if (!TryResolveSnapBuffers(out NativeArray<RaycastCommand> snapCommands, out NativeArray<RaycastHit> snapHits) ||
+                _cachedTransform == null)
+            {
                 return;
+            }
 
             Vector3 position = _cachedTransform.position;
             if (!IsFiniteVector3(position))
@@ -752,14 +792,14 @@ namespace Hecton8.Gameplay.Mining
                 hitMultipleFaces = false
             };
 
-            _snapCommands[0] = new RaycastCommand
+            snapCommands[0] = new RaycastCommand
             {
                 from = position + Vector3.up * math.max(0.1f, snapProbeHeightMeters),
                 direction = Vector3.down,
                 distance = math.max(0.1f, snapProbeHeightMeters + snapProbeDepthMeters),
                 queryParameters = parameters
             };
-            _snapHandle = RaycastCommand.ScheduleBatch(_snapCommands, _snapHits, SnapCommandCount, default);
+            _snapHandle = RaycastCommand.ScheduleBatch(snapCommands, snapHits, SnapCommandCount, default);
             _snapPending = true;
         }
 
@@ -773,7 +813,10 @@ namespace Hecton8.Gameplay.Mining
 
             _snapHandle.Complete();
             _snapPending = false;
-            RaycastHit hit = _snapHits[0];
+            if (!TryResolveSnapBuffers(out _, out NativeArray<RaycastHit> snapHits))
+                return;
+
+            RaycastHit hit = snapHits[0];
             if (hit.collider == null)
             {
                 _snappedToTerrain = false;
@@ -803,8 +846,8 @@ namespace Hecton8.Gameplay.Mining
 
             _snapHandle.Complete();
             _snapPending = false;
-            if (_snapHits.IsCreated)
-                _snapHits[0] = default;
+            if (TryResolveSnapBuffers(out _, out NativeArray<RaycastHit> snapHits))
+                snapHits[0] = default;
         }
 
         private void CaptureAnchorFromTransform()
@@ -849,14 +892,22 @@ namespace Hecton8.Gameplay.Mining
 
         private void ScheduleExtractionJob(double now, DeployableSdfDrillMathLod mathLod, ushort maxCycles)
         {
-            if (_extractionPending || _broken || !_inventoryQuantities.IsCreated)
+            if (_extractionPending ||
+                _broken ||
+                !TryResolveInventoryState(
+                    out NativeSlice<ushort> quantities,
+                    out NativeSlice<ushort> capacities,
+                    out NativeSlice<uint> itemHashes,
+                    out NativeSlice<uint> oreHashes))
+            {
                 return;
+            }
 
             double elapsed = math.max(0d, now - _lastMacroUpdateUnscaledTime);
             if (elapsed < math.max(1f, extractionCycleSeconds))
                 return;
 
-            if (!TryResolveExtractionResultBuffer(out NativeArray<DeployableSdfDrillExtractionResult> extractionResult))
+            if (!TryResolveExtractionResultBuffer(out NativeSlice<DeployableSdfDrillExtractionResult> extractionResult))
                 return;
 
             int biomeId = ResolveBiomeId();
@@ -883,11 +934,11 @@ namespace Hecton8.Gameplay.Mining
             DeployableSdfDrillExtractionJob job = new DeployableSdfDrillExtractionJob
             {
                 Input = input,
-                Quantities = _inventoryQuantities,
-                Capacities = _inventoryCapacities,
-                ItemHashes = _inventoryItemHashes,
-                OreHashes = _inventoryOreHashes,
-                Result = new NativeSlice<DeployableSdfDrillExtractionResult>(extractionResult)
+                Quantities = quantities,
+                Capacities = capacities,
+                ItemHashes = itemHashes,
+                OreHashes = oreHashes,
+                Result = extractionResult
             };
             _extractionHandle = job.Schedule();
             _extractionPending = true;
@@ -908,7 +959,7 @@ namespace Hecton8.Gameplay.Mining
 
         private void CommitExtractionResult(double now)
         {
-            if (!TryResolveExtractionResultBuffer(out NativeArray<DeployableSdfDrillExtractionResult> extractionResult))
+            if (!TryResolveExtractionResultBuffer(out NativeSlice<DeployableSdfDrillExtractionResult> extractionResult))
                 return;
 
             DeployableSdfDrillExtractionResult result = extractionResult[0];
@@ -939,14 +990,22 @@ namespace Hecton8.Gameplay.Mining
 
         private void ApplyOfflineMacroDelta(double now, ushort maxCycles)
         {
-            if (_extractionPending || _broken || !_inventoryQuantities.IsCreated)
+            if (_extractionPending ||
+                _broken ||
+                !TryResolveInventoryState(
+                    out NativeSlice<ushort> quantities,
+                    out NativeSlice<ushort> capacities,
+                    out NativeSlice<uint> itemHashes,
+                    out NativeSlice<uint> oreHashes))
+            {
                 return;
+            }
 
             double elapsed = math.max(0d, now - _lastMacroUpdateUnscaledTime);
             if (elapsed < math.max(1f, extractionCycleSeconds))
                 return;
 
-            if (!TryResolveExtractionResultBuffer(out NativeArray<DeployableSdfDrillExtractionResult> extractionResult))
+            if (!TryResolveExtractionResultBuffer(out NativeSlice<DeployableSdfDrillExtractionResult> extractionResult))
                 return;
 
             DeployableSdfDrillExtractionInput input = new DeployableSdfDrillExtractionInput
@@ -972,11 +1031,11 @@ namespace Hecton8.Gameplay.Mining
             DeployableSdfDrillExtractionJob job = new DeployableSdfDrillExtractionJob
             {
                 Input = input,
-                Quantities = _inventoryQuantities,
-                Capacities = _inventoryCapacities,
-                ItemHashes = _inventoryItemHashes,
-                OreHashes = _inventoryOreHashes,
-                Result = new NativeSlice<DeployableSdfDrillExtractionResult>(extractionResult)
+                Quantities = quantities,
+                Capacities = capacities,
+                ItemHashes = itemHashes,
+                OreHashes = oreHashes,
+                Result = extractionResult
             };
             // COLD SYNC JOB: Macro hydration is an unload/load boundary, not a frame tick; completes once to cap offline inventory.
             JobHandle handle = job.Schedule();
@@ -1122,11 +1181,11 @@ namespace Hecton8.Gameplay.Mining
                 SpeciesHash = DrillDebrisSpeciesHash,
                 SourceEntityId = _sourceId,
                 Intensity01 = 1f,
-                DebrisKind = 9,
+                DebrisKind = DebrisSpawnSignal.DebrisKindSparks,
                 Flags = DebrisSpawnSignal.FlagComputeShard | DebrisSpawnSignal.FlagToolSparks,
                 Quantity = 7
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<DebrisSpawnSignal>.Push(in signal);
         }
 
         private int ResolveBiomeId()
@@ -1239,15 +1298,15 @@ namespace Hecton8.Gameplay.Mining
 
         private int ComputeFillPercent()
         {
-            if (!_inventoryQuantities.IsCreated || !_inventoryCapacities.IsCreated)
+            if (!TryResolveInventoryState(out NativeSlice<ushort> quantities, out NativeSlice<ushort> capacities, out _, out _))
                 return 0;
 
             int quantity = 0;
             int capacity = 0;
             for (int i = 0; i < InventorySlotCount; i++)
             {
-                quantity += _inventoryQuantities[i];
-                capacity += _inventoryCapacities[i];
+                quantity += quantities[i];
+                capacity += capacities[i];
             }
 
             if (capacity <= 0)
@@ -1258,15 +1317,15 @@ namespace Hecton8.Gameplay.Mining
 
         private int ResolveFillPermille()
         {
-            if (!_inventoryQuantities.IsCreated || !_inventoryCapacities.IsCreated)
+            if (!TryResolveInventoryState(out NativeSlice<ushort> quantities, out NativeSlice<ushort> capacities, out _, out _))
                 return 0;
 
             int quantity = 0;
             int capacity = 0;
             for (int i = 0; i < InventorySlotCount; i++)
             {
-                quantity += _inventoryQuantities[i];
-                capacity += _inventoryCapacities[i];
+                quantity += quantities[i];
+                capacity += capacities[i];
             }
 
             if (capacity <= 0)
@@ -1277,11 +1336,11 @@ namespace Hecton8.Gameplay.Mining
 
         private void WriteBlackBox(ushort jobCycles)
         {
-            if (!_blackBox.IsCreated)
+            if (!TryResolveBlackBox(out NativeSlice<DeployableSdfDrillTelemetryEntry> blackBox))
                 return;
 
             int cursor = _blackBoxCursor;
-            _blackBox[cursor] = new DeployableSdfDrillTelemetryEntry
+            blackBox[cursor] = new DeployableSdfDrillTelemetryEntry
             {
                 GridX = _anchorAup.GridX,
                 GridY = _anchorAup.GridY,
@@ -1302,7 +1361,7 @@ namespace Hecton8.Gameplay.Mining
 
         private void DumpBlackBox()
         {
-            if (_faultDumped || !_blackBox.IsCreated)
+            if (_faultDumped || !TryResolveBlackBox(out NativeSlice<DeployableSdfDrillTelemetryEntry> blackBox))
                 return;
 
             _faultDumped = true;
@@ -1321,11 +1380,11 @@ namespace Hecton8.Gameplay.Mining
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    int start = _blackBoxCursor % _blackBox.Length;
-                    for (int i = 0; i < _blackBox.Length; i++)
+                    int start = _blackBoxCursor % blackBox.Length;
+                    for (int i = 0; i < blackBox.Length; i++)
                     {
-                        int index = (start + i) % _blackBox.Length;
-                        DeployableSdfDrillTelemetryEntry entry = _blackBox[index];
+                        int index = (start + i) % blackBox.Length;
+                        DeployableSdfDrillTelemetryEntry entry = blackBox[index];
                         writer.Write(entry.GridX);
                         writer.Write(entry.GridY);
                         writer.Write(entry.GridZ);
@@ -1351,21 +1410,21 @@ namespace Hecton8.Gameplay.Mining
 
         private void ClearInventoryQuantities()
         {
-            if (!_inventoryQuantities.IsCreated)
+            if (!TryResolveInventoryState(out NativeSlice<ushort> quantities, out _, out _, out _))
                 return;
 
-            for (int i = 0; i < _inventoryQuantities.Length; i++)
-                _inventoryQuantities[i] = 0;
+            for (int i = 0; i < quantities.Length; i++)
+                quantities[i] = 0;
         }
 
         private void ClearBlackBox()
         {
             _blackBoxCursor = 0;
-            if (!_blackBox.IsCreated)
+            if (!TryResolveBlackBox(out NativeSlice<DeployableSdfDrillTelemetryEntry> blackBox))
                 return;
 
-            for (int i = 0; i < _blackBox.Length; i++)
-                _blackBox[i] = default;
+            for (int i = 0; i < blackBox.Length; i++)
+                blackBox[i] = default;
         }
 
         private void SetFlag(DeployableSdfDrillFlags flag, bool enabled)
@@ -1444,54 +1503,314 @@ namespace Hecton8.Gameplay.Mining
             return math.clamp(safe, minimum, maximum);
         }
 
-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
-        {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Scene);
-        }
-
         private void DisposeNativeState()
         {
-            DisposeArray(ref _inventoryQuantities);
-            DisposeArray(ref _inventoryCapacities);
-            DisposeArray(ref _inventoryItemHashes);
-            DisposeArray(ref _inventoryOreHashes);
+            ReleaseVaultSlot();
+            _slotOwnersHandle = default;
+            _inventoryQuantitiesHandle = default;
+            _inventoryCapacitiesHandle = default;
+            _inventoryItemHashesHandle = default;
+            _inventoryOreHashesHandle = default;
             _extractionResultHandle = default;
-            DisposeArray(ref _blackBox);
-            DisposeArray(ref _snapCommands);
-            DisposeArray(ref _snapHits);
+            _blackBoxHandle = default;
+            _snapCommandsHandle = default;
+            _snapHitsHandle = default;
+            _blackBoxCursor = 0;
         }
 
-        private bool TryResolveExtractionResultBuffer(out NativeArray<DeployableSdfDrillExtractionResult> extractionResult)
+        private bool TryPrepareNativeState(
+            out NativeSlice<ushort> quantities,
+            out NativeSlice<ushort> capacities,
+            out NativeSlice<uint> itemHashes,
+            out NativeSlice<uint> oreHashes,
+            out NativeSlice<DeployableSdfDrillTelemetryEntry> blackBox,
+            out NativeArray<RaycastCommand> snapCommands,
+            out NativeArray<RaycastHit> snapHits,
+            out bool assignedNewSlot)
         {
-            extractionResult = default;
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null)
-                return false;
+            quantities = default;
+            capacities = default;
+            itemHashes = default;
+            oreHashes = default;
+            blackBox = default;
+            snapCommands = default;
+            snapHits = default;
+            assignedNewSlot = false;
 
-            if (!_extractionResultHandle.IsCreated)
+            if (!TryResolveVaultBuffer(
+                    ref _slotOwnersHandle,
+                    BufferID.DeployableSdfDrillSlotOwners,
+                    MaxVaultDrillInstances,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<uint> slotOwners) ||
+                !TryResolveVaultBuffer(
+                    ref _inventoryQuantitiesHandle,
+                    BufferID.DeployableSdfDrillInventoryQuantities,
+                    MaxVaultDrillInstances * InventorySlotCount,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<ushort> quantityBuffer) ||
+                !TryResolveVaultBuffer(
+                    ref _inventoryCapacitiesHandle,
+                    BufferID.DeployableSdfDrillInventoryCapacities,
+                    MaxVaultDrillInstances * InventorySlotCount,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<ushort> capacityBuffer) ||
+                !TryResolveVaultBuffer(
+                    ref _inventoryItemHashesHandle,
+                    BufferID.DeployableSdfDrillInventoryItemHashes,
+                    MaxVaultDrillInstances * InventorySlotCount,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<uint> itemHashBuffer) ||
+                !TryResolveVaultBuffer(
+                    ref _inventoryOreHashesHandle,
+                    BufferID.DeployableSdfDrillInventoryOreHashes,
+                    MaxVaultDrillInstances * InventorySlotCount,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<uint> oreHashBuffer) ||
+                !TryResolveVaultBuffer(
+                    ref _blackBoxHandle,
+                    BufferID.DeployableSdfDrillBlackBox,
+                    MaxVaultDrillInstances * BlackBoxCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<DeployableSdfDrillTelemetryEntry> blackBoxBuffer) ||
+                !TryResolveVaultBuffer(
+                    ref _snapCommandsHandle,
+                    BufferID.DeployableSdfDrillSnapCommands,
+                    MaxVaultDrillInstances * SnapCommandCount,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<RaycastCommand> snapCommandBuffer) ||
+                !TryResolveVaultBuffer(
+                    ref _snapHitsHandle,
+                    BufferID.DeployableSdfDrillSnapHits,
+                    MaxVaultDrillInstances * SnapCommandCount,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<RaycastHit> snapHitBuffer) ||
+                !EnsureVaultSlot(slotOwners, out assignedNewSlot))
             {
-                _extractionResultHandle = vault.GetBufferHandle<DeployableSdfDrillExtractionResult>(
-                    BufferID.DeployableSdfDrillExtractionResult,
-                    1,
-                    SystemID.GameplayTools,
-                    NativeArrayOptions.ClearMemory);
+                return false;
             }
 
-            if (!_extractionResultHandle.IsCreated)
-                return false;
-
-            extractionResult = _extractionResultHandle.Resolve(vault);
-            return extractionResult.IsCreated && extractionResult.Length >= 1;
+            int inventoryOffset = _vaultSlotIndex * InventorySlotCount;
+            int blackBoxOffset = _vaultSlotIndex * BlackBoxCapacity;
+            int snapOffset = _vaultSlotIndex * SnapCommandCount;
+            return TryBuildSlice(quantityBuffer, inventoryOffset, InventorySlotCount, out quantities) &&
+                TryBuildSlice(capacityBuffer, inventoryOffset, InventorySlotCount, out capacities) &&
+                TryBuildSlice(itemHashBuffer, inventoryOffset, InventorySlotCount, out itemHashes) &&
+                TryBuildSlice(oreHashBuffer, inventoryOffset, InventorySlotCount, out oreHashes) &&
+                TryBuildSlice(blackBoxBuffer, blackBoxOffset, BlackBoxCapacity, out blackBox) &&
+                TryBuildSubArray(snapCommandBuffer, snapOffset, SnapCommandCount, out snapCommands) &&
+                TryBuildSubArray(snapHitBuffer, snapOffset, SnapCommandCount, out snapHits);
         }
 
-        private static void DisposeArray<T>(ref NativeArray<T> array) where T : struct
+        private bool TryResolveInventoryState(
+            out NativeSlice<ushort> quantities,
+            out NativeSlice<ushort> capacities,
+            out NativeSlice<uint> itemHashes,
+            out NativeSlice<uint> oreHashes)
         {
-            if (!array.IsCreated)
+            return TryPrepareNativeState(
+                out quantities,
+                out capacities,
+                out itemHashes,
+                out oreHashes,
+                out _,
+                out _,
+                out _,
+                out _);
+        }
+
+        private bool TryResolveBlackBox(out NativeSlice<DeployableSdfDrillTelemetryEntry> blackBox)
+        {
+            bool resolved = TryPrepareNativeState(
+                out _,
+                out _,
+                out _,
+                out _,
+                out blackBox,
+                out _,
+                out _,
+                out _);
+            return resolved;
+        }
+
+        private bool TryResolveSnapBuffers(
+            out NativeArray<RaycastCommand> snapCommands,
+            out NativeArray<RaycastHit> snapHits)
+        {
+            return TryPrepareNativeState(
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out snapCommands,
+                out snapHits,
+                out _);
+        }
+
+        private bool TryResolveExtractionResultBuffer(out NativeSlice<DeployableSdfDrillExtractionResult> extractionResult)
+        {
+            extractionResult = default;
+            if (!TryResolveVaultBuffer(
+                    ref _extractionResultHandle,
+                    BufferID.DeployableSdfDrillExtractionResult,
+                    MaxVaultDrillInstances,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<DeployableSdfDrillExtractionResult> extractionResults))
+            {
+                return false;
+            }
+
+            if (!EnsureVaultSlot())
+                return false;
+
+            return TryBuildSlice(extractionResults, _vaultSlotIndex, 1, out extractionResult);
+        }
+
+        private bool EnsureVaultSlot()
+        {
+            if (!TryResolveVaultBuffer(
+                    ref _slotOwnersHandle,
+                    BufferID.DeployableSdfDrillSlotOwners,
+                    MaxVaultDrillInstances,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<uint> slotOwners))
+            {
+                return false;
+            }
+
+            return EnsureVaultSlot(slotOwners, out _);
+        }
+
+        private bool EnsureVaultSlot(NativeArray<uint> slotOwners, out bool assignedNewSlot)
+        {
+            assignedNewSlot = false;
+            if (!slotOwners.IsCreated || slotOwners.Length < MaxVaultDrillInstances)
+                return false;
+
+            uint ownerHash = ResolveVaultOwnerHash();
+            if (_vaultSlotIndex >= 0 &&
+                _vaultSlotIndex < MaxVaultDrillInstances &&
+                slotOwners[_vaultSlotIndex] == ownerHash)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < MaxVaultDrillInstances; i++)
+            {
+                if (slotOwners[i] == ownerHash)
+                {
+                    _vaultSlotIndex = i;
+                    return true;
+                }
+            }
+
+            for (int i = 0; i < MaxVaultDrillInstances; i++)
+            {
+                if (slotOwners[i] != 0u)
+                    continue;
+
+                slotOwners[i] = ownerHash;
+                _vaultSlotIndex = i;
+                assignedNewSlot = true;
+                return true;
+            }
+
+            return false;
+        }
+
+        private uint ResolveVaultOwnerHash()
+        {
+            if (_sourceId != 0u)
+                return _sourceId;
+
+            return DeployableSdfDrillMath.Mix(DrillToolHash, unchecked((uint)GetInstanceID()));
+        }
+
+        private void ReleaseVaultSlot()
+        {
+            int slotIndex = _vaultSlotIndex;
+            if (slotIndex < 0)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault != null && _slotOwnersHandle.IsCreated)
+            {
+                NativeArray<uint> slotOwners = _slotOwnersHandle.Resolve(vault);
+                if (slotOwners.IsCreated &&
+                    slotIndex < slotOwners.Length &&
+                    slotOwners[slotIndex] == ResolveVaultOwnerHash())
+                {
+                    slotOwners[slotIndex] = 0u;
+                }
+            }
+
+            _vaultSlotIndex = -1;
+        }
+
+        private static bool TryResolveVaultBuffer<T>(
+            ref VaultBufferHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (!handle.IsCreated || handle.Length < requiredLength)
+                handle = vault.GetBufferHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, options);
+
+            if (!handle.IsCreated)
+                return false;
+
+            buffer = handle.Resolve(vault);
+            return buffer.IsCreated && buffer.Length >= requiredLength;
+        }
+
+        private static bool TryBuildSlice<T>(
+            NativeArray<T> buffer,
+            int offset,
+            int length,
+            out NativeSlice<T> slice) where T : struct
+        {
+            slice = default;
+            if (!buffer.IsCreated || offset < 0 || length <= 0 || offset > buffer.Length - length)
+                return false;
+
+            slice = new NativeSlice<T>(buffer, offset, length);
+            return slice.Length == length;
+        }
+
+        private static bool TryBuildSubArray<T>(
+            NativeArray<T> buffer,
+            int offset,
+            int length,
+            out NativeArray<T> subArray) where T : struct
+        {
+            subArray = default;
+            if (!buffer.IsCreated || offset < 0 || length <= 0 || offset > buffer.Length - length)
+                return false;
+
+            subArray = buffer.GetSubArray(offset, length);
+            return subArray.IsCreated && subArray.Length == length;
+        }
+
+        private static void ClearSlice<T>(NativeSlice<T> slice) where T : struct
+        {
+            for (int i = 0; i < slice.Length; i++)
+                slice[i] = default;
+        }
+
+        private static void ClearNativeArray<T>(NativeArray<T> buffer) where T : struct
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            for (int i = 0; i < buffer.Length; i++)
+                buffer[i] = default;
         }
     }
 }

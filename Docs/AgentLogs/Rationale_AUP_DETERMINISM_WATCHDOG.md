@@ -350,3 +350,23 @@ Solution: Ran one isolated `dotnet build --no-restore` after completing the patc
 Rejected Alternatives: Running repeated rebuild loops was rejected per user instruction. Reporting scan-only success was rejected because public API removal across consumers needs compile evidence.
 Scalability potential: Green compile preserves the current low/high AUP path while enabling future presentation overkill on High/Ultra through typed consumers.
 Hardware Impact: 0.0 us runtime; validation hygiene only.
+
+Problem: The post-interrupt validation state was not actually current after attempt 22. The build log showed player presentation signal visibility fallout and a physics-domain unsafe-context fault in `DockingAutopilotService.TryEvaluateActiveSpline`.
+Solution: Kept the player presentation packets inside the compiled `GlobalSignals.cs` contract surface and marked the docking spline evaluator as `unsafe`, matching the rest of the pointer-backed DataVault spline accessors. Re-ran one isolated `dotnet build --no-restore`; attempt 23 passes with 0 warnings and 0 errors.
+Rejected Alternatives: Repeated rebuild loops were rejected per instruction. Converting the docking spline buffer to managed or copied storage was rejected because the service is a DataVault-backed physics path and already uses pointer access for adjacent read/write/release methods.
+Scalability potential: Low/MX350 keeps zero-copy spline evaluation and bounded typed presentation lanes. Middle/High/Ultra can add richer presentation consumers without adding managed callback edges or changing docking authority storage.
+Hardware Impact: 0.0 us runtime. This is compile and ABI-context closure; the hot path remains the same pointer-backed buffer read plus Bernstein evaluation.
+
+### Phase 16: Water Transition Typed-Lane Closure
+
+Problem: The player water-transition path still used a local managed listener registry (`WaterTransitionEvents` plus `IWaterTransitionEventListener`) after the first presentation purge. That was a direct dependency edge from player movement into a managed callback list.
+Solution: Added packed `WaterTransitionSignal` to the typed signal contract surface, published it from `HectonPlayerMovement`, and converted `WaterTransitionHandler` to drain `ReadOnlySpan<WaterTransitionSignal>` snapshots during the existing surface-breach gravity advance. The handler keeps the same owner source-id filter and surface-exit gravity timers.
+Rejected Alternatives: Keeping the registry because it was fixed-capacity was rejected; it was still a managed listener bus. Adding a second direct call from movement to the handler was rejected because typed lanes are the project contract for cross-component presentation state. A managed `List` or delegate event was rejected under the zero-GC/signal-lane mandate.
+Scalability potential: Low/MX350 gets bounded signal capacity and no listener registry churn. Middle/High/Ultra can attach richer water-entry VFX/audio consumers to `WaterTransitionSignal` without reopening player movement.
+Hardware Impact: 0.0 us measured direct frame gain. Static estimate is neutral-to-sub-microsecond dispatch shift; the practical gain is removing the last managed listener registry in this player water-transition path.
+
+Problem: The water-transition migration needed a current compile gate without repeated rebuild loops.
+Solution: Ran one isolated `dotnet build --no-restore` after targeted scans. Attempt 24 passes with 0 warnings and 0 errors.
+Rejected Alternatives: Reporting scan-only success was rejected because the change touched a cross-component gameplay path. Running repeated rebuilds was rejected per instruction.
+Scalability potential: Compile-green typed water transitions keep low-tier and high-tier presentation consumers on the same bounded lane.
+Hardware Impact: 0.0 us runtime; validation hygiene only.

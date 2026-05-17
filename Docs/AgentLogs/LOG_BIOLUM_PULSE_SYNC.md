@@ -319,3 +319,31 @@ Validation:
 - BIOLUM shader scan still reports only 64-thread compute kernels: `BiolumDiffusion` 4x4x4 and `Hecton_BiolumSSGI` 8x8x1.
 - Path-limited `git diff --check` reports only CRLF normalization warnings.
 - Latest full compile proof remains build attempt 21 from the legacy scalar bridge pass: 0 warnings, 0 errors.
+
+## Diffusion Volume And Zone Time Hardening
+
+What was wrong:
+- `HectonBiolumDiffusionVolume` still had an implicit C#/GPU point payload ABI, hardcoded dispatch group assumptions in C#, raw `Time.time` cascade phase, and finite/HDR trust gaps on serialized volume inputs and zone payloads.
+- Legacy floor/ocean zone pulse drift and manager fallback phase/camera retry paths still read Unity time directly instead of the dispatcher snapshot.
+
+What was done:
+- Added explicit Pack=1 Size=32 layout to `BiolumPointGpuData`.
+- Cached compute kernel group sizes via `GetKernelThreadGroupSizes`, rejected zero or above-1024 portable thread totals, and dispatched per queried kernel size.
+- Sanitized diffusion volume size, delta, cascade parameters, zone gather radius, zone color, range, and weighted intensity into bounded finite values with HDR `[0,10]` clamps.
+- Moved diffusion cascade phase, floor/ocean pulse drift, legacy manager phase fallback, and camera retry cooldown onto `ITickDispatcher` time snapshots with bounded fallback.
+
+Cinematic Cheats used:
+- Kept the glow volume as a bounded visual fake: 32 point emitters, 64-thread compute kernels, triangle-wave legacy zone drift, and no spawned particles or per-renderer state.
+- Low tier keeps cheap predictable pulse math; High/Ultra keeps volumetric glow and SSGI-compatible radiance without expanding buffers.
+
+Exact Microseconds saved:
+- 0 us measured and 0 us claimed.
+- Avoided risk: implicit GPU payload padding, non-finite radiance propagation, direct Unity-time phase drift, and dispatch group mismatch under shader edits.
+
+Validation:
+- No full `dotnet build` was run in this pass per operator instruction.
+- Static scan found no raw `Time.time`, `Time.timeAsDouble`, `Time.unscaledTime`, `Time.deltaTime`, Unity `Update`/`LateUpdate`/`FixedUpdate` message methods, local native allocation debt, MPB, EventBus, managed delegate, `string.Format`, finder API, or coroutine in BIOLUM-owned runtime paths.
+- Struct scan shows BIOLUM telemetry/dump/GPU payload structs are Pack=1 with fixed sizes where they cross ABI boundaries.
+- BIOLUM shader scan still reports only 64-thread compute kernels: `BiolumDiffusion` 4x4x4 and `Hecton_BiolumSSGI` 8x8x1.
+- Path-limited `git diff --check` reports only CRLF normalization warnings.
+- Latest full compile proof remains build attempt 21 from the legacy scalar bridge pass: 0 warnings, 0 errors.

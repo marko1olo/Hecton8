@@ -583,7 +583,27 @@ namespace Hecton8.Core.Memory
         SurvivalDatabaseMassKilograms = 519,
         SurvivalDatabaseVolumeLiters = 520,
         SurvivalDatabaseEnergyDensityMegajoulesPerKilogram = 521,
-        SurvivalDatabaseBaseDurability = 522
+        SurvivalDatabaseBaseDurability = 522,
+        GroundRadarHits = 523,
+        GroundRadarSignalStrength = 524,
+        GroundRadarAgeSeconds = 525,
+        GroundRadarOreTypes = 526,
+        GroundRadarPingGpu = 527,
+        GroundRadarCounters = 528,
+        GroundRadarMaxSignalStrength = 529,
+        GroundRadarTelemetryRing = 530,
+        FaunaSimulationPoolSlots = 531,
+        FaunaSimulationLinearVelocities = 532,
+        FaunaSimulationFlags = 533,
+        FaunaSimulationFreeSlots = 534,
+        DeployableSdfDrillSlotOwners = 535,
+        DeployableSdfDrillInventoryQuantities = 536,
+        DeployableSdfDrillInventoryCapacities = 537,
+        DeployableSdfDrillInventoryItemHashes = 538,
+        DeployableSdfDrillInventoryOreHashes = 539,
+        DeployableSdfDrillBlackBox = 540,
+        DeployableSdfDrillSnapCommands = 541,
+        DeployableSdfDrillSnapHits = 542
     }
 
     [Flags]
@@ -1295,6 +1315,9 @@ namespace Hecton8.Core.Memory
 
             if (_initialized && TryFindRecordIndex((IntPtr)pointer, out int recordIndex))
             {
+                H8AllocationRecord record = _records[recordIndex];
+                CompleteOwnerJobs(record.Owner);
+
                 H8AllocationRecord releasedRecord;
                 return ForceFreeRecordAt(recordIndex, removeOwnerPointer: true, out releasedRecord);
             }

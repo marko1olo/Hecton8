@@ -10,6 +10,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Physics;
@@ -22,6 +23,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.Serialization;
+using AudioEvent = Hecton8.Core.Contracts.Signals.AudioEvent;
 
 namespace Hecton8.Audio
 {
@@ -59,7 +61,7 @@ namespace Hecton8.Audio
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AudioListener))]
     [RequireComponent(typeof(AudioReverbFilter))]
-    public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IProceduralAudioEventListener, IPhysicsImpactEventListener, ISonarPingEventListener, IAcousticEchoEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IPhysicsImpactEventListener, ISonarPingEventListener, IAcousticEchoEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const SystemID VaultOwner = SystemID.AudioPlayerCritical;
         private const float TwoPi = 6.28318530718f;
@@ -785,6 +787,7 @@ namespace Hecton8.Audio
         private int _lastAcousticImpulseSignalFrame = -4096;
         private int _lastLaserCutterSignalFrame = -4096;
         private int _lastDirectSonarPingFrame = -4096;
+        private int _lastProceduralAudioSignalFrame = -4096;
         private float _lastDirectSonarPingIntensity;
         private Vector3 _lastDirectSonarPingOrigin;
         private bool _buffersInitialized;
@@ -1671,7 +1674,6 @@ namespace Hecton8.Audio
             RefreshAudioRuntimeServicesCold();
             TryRegisterHotSwapListener();
             PhysicsEvents.Register(this);
-            ProceduralAudioEvents.Register(this);
             SpectrumEvents.RegisterSonarPingListener(this);
             SpectrumEvents.RegisterAcousticEchoListener(this);
             TryRegister();
@@ -1684,7 +1686,6 @@ namespace Hecton8.Audio
             TryUnregisterHotSwapListener();
             SpectrumEvents.UnregisterAcousticEchoListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
-            ProceduralAudioEvents.Unregister(this);
             PhysicsEvents.Unregister(this);
             AudioSettings.OnAudioConfigurationChanged -= HandleAudioConfigurationChanged;
             UnsubscribeTransportCoordinator();
@@ -1958,6 +1959,7 @@ namespace Hecton8.Audio
             ConsumeScalabilitySignals();
             UpdateCaveReverb(deltaTime);
             ConsumeLaserCutterEventSignals();
+            ConsumeProceduralAudioSignals();
 
             if (playerMovement == null || _playerRigidbody == null)
             {
@@ -4868,7 +4870,35 @@ namespace Hecton8.Audio
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, stress);
         }
 
-        void IProceduralAudioEventListener.OnAudioPingTriggered(in AudioPingTriggerInfo info)
+        private void ConsumeProceduralAudioSignals()
+        {
+            int frame = Time.frameCount;
+            if (_lastProceduralAudioSignalFrame == frame)
+                return;
+
+            _lastProceduralAudioSignalFrame = frame;
+            ReadOnlySpan<AudioEvent> signals = SignalBus<AudioEvent>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                AudioEvent audioEvent = signals[i];
+                HandleProceduralAudioEvent(in audioEvent);
+            }
+        }
+
+        private void HandleProceduralAudioEvent(in AudioEvent audioEvent)
+        {
+            switch (audioEvent.Kind)
+            {
+                case AudioEventKind.AudioPing:
+                    HandleAudioPingTriggered(in audioEvent.AudioPing);
+                    break;
+                case AudioEventKind.StructuralStress:
+                    HandleStructuralStressTriggered(in audioEvent.StructuralStress);
+                    break;
+            }
+        }
+
+        private void HandleAudioPingTriggered(in AudioPingTriggerInfo info)
         {
             if (info.Kind == ProceduralAudioPingKind.PredatorKill)
                 HandlePredatorKillAudioPing(in info);
@@ -4879,11 +4909,6 @@ namespace Hecton8.Audio
                 HandleMechanicalWhirrAudioPing(in info);
             else if (info.Kind == ProceduralAudioPingKind.LeviathanRoar)
                 HandleLeviathanRoarAudioPing(in info);
-        }
-
-        void IProceduralAudioEventListener.OnStructuralStressTriggered(in StructuralStressAudioInfo info)
-        {
-            HandleStructuralStressTriggered(in info);
         }
 
         private void HandlePredatorKillAudioPing(in AudioPingTriggerInfo info)

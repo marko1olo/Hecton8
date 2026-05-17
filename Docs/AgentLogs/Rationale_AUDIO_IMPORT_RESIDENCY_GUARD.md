@@ -372,3 +372,31 @@ Solution: Verified by `rg`: no `IScalabilityChangedEventListener`, `ScalabilityE
 Rejected Alternatives: Running another dotnet build was rejected per requested cadence. Ignoring stale smoke assertions was rejected; `AdvancedAcousticsSmokeTester` was updated to enforce the typed path.
 Scalability potential: Verification only; runtime path now aligns better with Low/Middle/High/Ultra tier changes.
 Hardware Impact: 0 us runtime from verification. Audio residency remains 4.669 MB preloaded source bytes, 45.331 MB under the 50 MB cap.
+
+## Decision 53: Loop 20 Audio-Wide Scalability Listener Purge
+Problem: After the player-critical migration, three audio consumers still used `IScalabilityChangedEventListener` and `ScalabilityEvents.Register(this)`: `SpatialAudioManager`, `VocalWarningSystem`, and `PrologueAcousticOrchestrator`. That left CORE/AUDIO split between typed `SignalBus<ScalabilityChangedEvent>` snapshots and a managed listener registry for the same payload.
+Solution: Removed the listener interface and lifecycle register/unregister calls from all three systems. Each system now drains `ReadOnlySpan<ScalabilityChangedEvent>` from `SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot()` behind a frame guard and applies the latest payload through a private handler. The prologue bridge uses its cached low-memory flag when applying payloads, avoiding `GlobalRegistry` reads from the hot signal-drain path.
+Rejected Alternatives: Keeping listener compatibility in audio was rejected because it preserves interface dispatch and duplicate topology for a payload that already implements `ISignal`. Polling `GlobalRegistry.ScalabilityTier` every frame was rejected because it hides hot-path service reads and does not preserve transient scalability payload order.
+Scalability potential: Low/Mx350/Quest keep sample-rate, voice-limit, and VWS policy changes without listener fanout. Middle keeps current behavior. High/Ultra can react to quality upgrades through the same typed lane without adding another event registry.
+Hardware Impact: 0 B/frame GC. Expected CPU gain is small but deterministic: removes three listener registrations and managed interface callback paths. New work is bounded snapshot scanning once per active audio consumer frame.
+
+## Decision 54: Loop 20 No-Build Verification
+Problem: The user explicitly said not to run dotnet rebuild every time, but the audio-wide scalability purge needed source proof and regression-lock coverage.
+Solution: Ran targeted `rg` scans over `SpatialAudioManager`, `VocalWarningSystem`, `PrologueAcousticOrchestrator`, and `AdvancedAcousticsSmokeTester`. The scan finds zero legacy scalability listener/register/unregister/public-handler tokens and finds the new typed snapshot drains. `git diff --check` reports only CRLF warnings. No dotnet build was run in this loop.
+Rejected Alternatives: Running another build immediately was rejected because this was a focused listener-topology edit and the requested cadence is static proof unless a compile gate is specifically needed. Skipping smoke-test updates was rejected because stale assertions would normalize the removed listener registry.
+Scalability potential: Verification only. The runtime path now has one scalability delivery model across player-critical, spatial, prologue, and VWS audio systems.
+Hardware Impact: 0 us runtime from verification. The residency budget remains governed by the existing build gate and the last disk proof of 4.669 MB preloaded audio against the 50 MB cap.
+
+## Decision 55: Loop 21 Procedural Audio Typed Snapshot
+Problem: `PlayerCriticalProceduralAudioRenderer` still depended on `IProceduralAudioEventListener`, and `ProceduralAudioEvents` returned early when listener count was zero. Removing only the renderer registration would have dropped predator, meteor, mechanical, leviathan, and structural stress cues.
+Solution: Made `AudioEvent` an `ISignal` payload and published every procedural ping/stress event to `SignalBus<AudioEvent>` before the legacy listener-count gate. The renderer now drains `ReadOnlySpan<AudioEvent>` with a frame guard and routes through the existing ping/stress handlers. The old listener API remains for other systems and smoke tests, but CORE/AUDIO renderer consumption is typed-lane only.
+Rejected Alternatives: Rewriting every producer to call the renderer directly was rejected because producers span fauna, gameplay, construction, world, and spatial systems. Deleting the legacy listener API was rejected because dev smoke tests and other consumers still use it. A second player-critical-only signal was rejected because `AudioEvent` already expresses the bridge payload.
+Scalability potential: Low/Mx350/Quest get the same procedural audio cues without listener fanout and without asset residency. Middle keeps current behavior. High/Ultra can add richer procedural cue consumers on the same typed lane without increasing producer coupling.
+Hardware Impact: 0 B/frame GC. Removes one renderer-side listener registration and interface callback path. New work is a bounded `ReadOnlySpan<AudioEvent>` snapshot scan once per renderer tick.
+
+## Decision 56: Loop 21 No-Build Verification
+Problem: The procedural lane edit touched source code in a compile-sensitive path, but the requested cadence forbids rebuild spam.
+Solution: Ran targeted scans proving no procedural listener/register/unregister/interface-handler tokens remain in `PlayerCriticalProceduralAudioRenderer`, while positive scans prove `AudioEvent : ISignal`, `SignalBus<AudioEvent>.Push`, `ConsumeProceduralAudioSignals`, and `ReadOnlySpan<AudioEvent>` are present. A forbidden hot-path/layout scan over the touched files returned no hits. `git diff --check` reports only CRLF warnings. No dotnet build was run in this loop.
+Rejected Alternatives: Running another dotnet build immediately was rejected per user instruction. Claiming Unity/runtime proof was rejected because no Unity MCP/editor runtime is exposed in this session.
+Scalability potential: Verification only; the procedural audio route now survives listener removal while preserving legacy producers.
+Hardware Impact: 0 us runtime from verification. The hard audio residency budget remains under the last measured disk proof: 4.669 MB preloaded source bytes, 45.331 MB below the 50 MB cap.

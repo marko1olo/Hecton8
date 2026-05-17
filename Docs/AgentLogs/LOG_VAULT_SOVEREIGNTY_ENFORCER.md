@@ -525,3 +525,77 @@ Verification:
 - `python -m unittest Tools.test_data_vault_sovereignty_audit` passes 6 tests.
 - `rg -n "RegisterTrackedNativeArray|DisposeTrackedNativeArray|\.Dispose\(\)" Assets/_Project/Scripts/HectonSurvivalSystem.cs` returns no matches.
 - `git diff --check -- Assets/_Project/Scripts/HectonSurvivalSystem.cs Assets/_Project/Scripts/Core/Memory/H8Memory.cs Docs/AgentLogs/DataVaultSovereigntyAudit_VAULT_SOVEREIGNTY_ENFORCER.md Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCER.json` exits 0 with only CRLF warnings.
+
+## 2026-05-17 - Ground Radar Vault Lane Eviction
+
+Status: DATAVAULT NO-REGRESSION V2 GATE GREEN; FOCUSED CORE BUILD BLOCKED BY ACTIVE CROSS-DOMAIN COMPILE WALL; ZERO-DEBT SOVEREIGNTY STILL PENDING.
+
+What was wrong:
+- `GroundPenetratingRadarRuntime` retained eight persistent NativeArray lanes for radar hits, signal strengths, decay ages, ore types, GPU pings, counters, max signal, and blackbox telemetry.
+- `GroundRadarRaymarchJob` declared borrowed views as NativeArray fields.
+- `GroundRadarTelemetryEntry` had no explicit packed ABI evidence.
+
+What was done:
+- Added eight `BufferID.GroundRadar*` lanes.
+- Replaced retained radar arrays with `VaultBufferHandle<T>` fields using `SystemID.WorldStreaming`.
+- Resolved public read-only GPR contract views from DataVault handles.
+- Converted raymarch job fields to `NativeSlice<T>`.
+- Removed local native-array registration/disposal helpers from the radar runtime.
+- Packed `GroundRadarTelemetryEntry` as Pack=1/Size=36.
+- Refreshed the DataVault sovereignty v2 baseline and report.
+
+Cinematic Cheats used:
+- Low tier keeps the existing 16-ray scan path and 128 ping cap.
+- High/Ultra retain indirect GPU ping rendering without CPU-side private native arrays.
+- No extra visual overkill was added in this memory pass; the saved ownership budget remains available for richer scan feedback.
+
+Exact Microseconds saved:
+- Runtime hot path: 0 us claimed.
+- Cold allocator churn removed: eight persistent GPR NativeArray constructors.
+- Static sovereignty delta: direct constructors are 1120 total / 1114 forbidden; field-like declarations are 2691 total / 2685 forbidden.
+- No dotnet rebuild was rerun because the current focused build wall is already external and documented.
+
+Verification:
+- `python Tools\DataVaultSovereigntyAudit.py --fail-on-regression --no-report` exits 0 with 1120 direct constructors total, 1114 forbidden constructors, 2691 declarations total, and 2685 forbidden declarations.
+- `python Tools\DataVaultSovereigntyAudit.py --write-baseline` exits 0 and refreshes schema v2 report/baseline.
+- `python -m unittest Tools.test_data_vault_sovereignty_audit` passes 6 tests.
+- `git diff --check -- Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs Assets/_Project/Scripts/World/GPR/GroundRadarJobs.cs Assets/_Project/Scripts/Core/Memory/H8Memory.cs Docs/AgentLogs/DataVaultSovereigntyAudit_VAULT_SOVEREIGNTY_ENFORCER.md Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCER.json` exits 0 with only CRLF warnings.
+
+## 2026-05-17 - Deployable Drill Per-Instance Vault Lane Eviction
+
+Status: DATAVAULT NO-REGRESSION V2 GATE GREEN; FOCUSED CORE BUILD BLOCKED BY ACTIVE CROSS-DOMAIN COMPILE WALL; ZERO-DEBT SOVEREIGNTY STILL PENDING.
+
+What was wrong:
+- `DeployableSdfDrillRuntime` retained private persistent NativeArray lanes for inventory quantities, capacities, item hashes, ore hashes, blackbox telemetry, snap raycast commands, and snap raycast hits.
+- The drill extraction job declared inventory views as `NativeArray<T>` fields.
+- A naive single global drill buffer would alias multiple deployed drills, corrupting inventory, snap, blackbox, and extraction result state.
+- Drill input, macro, and telemetry payloads were not all explicitly packed for ARM64/Quest ABI evidence.
+
+What was done:
+- Added `BufferID.DeployableSdfDrillSlotOwners`, inventory, blackbox, and snap vault lanes.
+- Added a 256-slot vault owner table keyed by drill source hash so every drill resolves isolated per-instance slices.
+- Expanded the existing drill extraction result lane to per-slot slices instead of one shared result.
+- Replaced retained private arrays with `VaultBufferHandle<T>` fields and borrowed `NativeSlice<T>`/subarray views.
+- Converted extraction job inventory fields to `NativeSlice<T>`.
+- Removed drill local native-array registration and raw disposal helpers.
+- Packed `DeployableSdfDrillExtractionInput`, `DeployableSdfDrillMacroRecord`, and `DeployableSdfDrillTelemetryEntry` with Pack=1 and explicit sizes.
+- Redirected drill blackbox dump output to a `VAULT_SOVEREIGNTY_ENFORCER` dump path.
+- Refreshed the DataVault sovereignty v2 baseline and report.
+
+Cinematic Cheats used:
+- Low tier keeps the existing SDF visual skip, one-cycle runtime extraction cap, and fixed vault pool under global memory pressure.
+- Middle/High/Ultra retain higher offline/runtime cycle caps without per-component native ownership.
+- No extra VFX was added in this memory pass; the centralized drill pool preserves budget for richer drill debris, silt, and contact feedback in the presentation lane.
+
+Exact Microseconds saved:
+- Runtime hot path: 0 us claimed.
+- Cold allocator churn removed: seven persistent drill NativeArray constructors.
+- Static sovereignty delta: direct constructors are 1106 total / 1100 forbidden; field-like declarations are 2677 total / 2671 forbidden.
+- No dotnet rebuild was rerun because the current focused build wall is already external and documented.
+
+Verification:
+- `python Tools\DataVaultSovereigntyAudit.py --fail-on-regression --no-report` exits 0 with 1106 direct constructors total, 1100 forbidden constructors, 2677 declarations total, and 2671 forbidden declarations.
+- `python Tools\DataVaultSovereigntyAudit.py --write-baseline` exits 0 and refreshes schema v2 report/baseline.
+- `python -m unittest Tools.test_data_vault_sovereignty_audit` passes 6 tests.
+- `rg -n "new NativeArray<|private NativeArray<|public NativeArray<|protected NativeArray<|internal NativeArray<|NativeArray<ushort> Quantities|NativeArray<ushort> Capacities|NativeArray<uint> ItemHashes|NativeArray<uint> OreHashes" Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs Assets/_Project/Scripts/Gameplay/Mining/Contracts/DeployableSdfDrillContracts.cs` returns no matches.
+- `git diff --check -- Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs Assets/_Project/Scripts/Gameplay/Mining/Contracts/DeployableSdfDrillContracts.cs Assets/_Project/Scripts/Core/Memory/H8Memory.cs Docs/AgentLogs/DataVaultSovereigntyAudit_VAULT_SOVEREIGNTY_ENFORCER.md Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCER.json` exits 0 with only CRLF warnings.

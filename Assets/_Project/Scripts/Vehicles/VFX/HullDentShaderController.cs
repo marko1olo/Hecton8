@@ -224,21 +224,24 @@ namespace Hecton8.Vehicles.VFX
             if (!math.all(math.isfinite(localPoint)))
                 return false;
 
-            float maxDistance = math.max(1f, maxLocalImpactDistanceMeters);
+            float maxDistance = FiniteAtLeast(maxLocalImpactDistanceMeters, 1f);
             return math.lengthsq(localPoint) <= maxDistance * maxDistance;
         }
 
         private float ResolveDentRadius(float magnitude)
         {
-            float radius = baseDentRadiusMeters + math.max(0f, magnitude) * radiusPerMagnitude;
+            float safeMagnitude = FiniteNonNegativeOrZero(magnitude);
+            float radius = FiniteNonNegativeOrZero(baseDentRadiusMeters) +
+                           safeMagnitude * FiniteNonNegativeOrZero(radiusPerMagnitude);
             return math.clamp(radius, 0.25f, 15.9f);
         }
 
         private float ResolveDentDepth(float magnitude)
         {
-            float intensity01 = math.saturate(math.max(0f, magnitude) * math.rcp(math.max(1f, fullIntensityMagnitude)));
-            float rawDepth = math.max(0f, magnitude) * depthMetersPerMagnitude * math.max(0.25f, intensity01);
-            return math.clamp(rawDepth, 0f, maxDentDepthMeters);
+            float safeMagnitude = FiniteNonNegativeOrZero(magnitude);
+            float intensity01 = math.saturate(safeMagnitude * math.rcp(FiniteAtLeast(fullIntensityMagnitude, 1f)));
+            float rawDepth = safeMagnitude * FiniteNonNegativeOrZero(depthMetersPerMagnitude) * math.max(0.25f, intensity01);
+            return math.clamp(rawDepth, 0f, FiniteNonNegativeOrZero(maxDentDepthMeters));
         }
 
         private void PushDent(float3 localPoint, float radius, float depth)
@@ -284,7 +287,9 @@ namespace Hecton8.Vehicles.VFX
             if (_breachReadModel == null || !_breachReadModel.IsReady || _activeDentCount <= 0)
                 return false;
 
-            float fadeDelta = math.max(0f, deltaTime) * math.max(0f, repairFadeMetersPerSecond);
+            float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
+            float safeRepairFade = FiniteNonNegativeOrZero(repairFadeMetersPerSecond);
+            float fadeDelta = safeDeltaTime * safeRepairFade;
             if (fadeDelta <= 0f)
                 return false;
 
@@ -416,7 +421,7 @@ namespace Hecton8.Vehicles.VFX
                 {
                     float4 dent = dents[i];
                     Vector4 next = math.all(math.isfinite(dent))
-                        ? new Vector4(dent.x, dent.y, dent.z, math.max(0f, dent.w))
+                        ? new Vector4(dent.x, dent.y, dent.z, SanitizePackedDentValue(dent.w))
                         : Vector4.zero;
                     if (_dentBuffer[i] != next)
                         changed = true;
@@ -464,7 +469,7 @@ namespace Hecton8.Vehicles.VFX
                 {
                     Vector4 dent = _dentBuffer[i];
                     dents[i] = IsFiniteVector(dent)
-                        ? new float4(dent.x, dent.y, dent.z, math.max(0f, dent.w))
+                        ? new float4(dent.x, dent.y, dent.z, SanitizePackedDentValue(dent.w))
                         : float4.zero;
                 }
 
@@ -496,7 +501,7 @@ namespace Hecton8.Vehicles.VFX
                     return false;
                 }
 
-                dents[dentIndex] = new float4(dent.x, dent.y, dent.z, math.max(0f, dent.w));
+                dents[dentIndex] = new float4(dent.x, dent.y, dent.z, SanitizePackedDentValue(dent.w));
                 return true;
             }
             finally
@@ -552,7 +557,7 @@ namespace Hecton8.Vehicles.VFX
             for (int i = 0; i < MaxHullDents; i++)
                 scar = math.max(scar, UnpackDepth(_dentBuffer[i].w));
 
-            return math.saturate(scar * math.rcp(math.max(0.01f, maxDentDepthMeters)));
+            return math.saturate(scar * math.rcp(FiniteAtLeast(maxDentDepthMeters, 0.01f)));
         }
 
         private void ClearLocalDentBuffer()
@@ -567,7 +572,7 @@ namespace Hecton8.Vehicles.VFX
 
         private void PublishHullDeformedSignal(in CombatDamageSignal signal, float3 localPoint, float radius, float depth)
         {
-            float intensity01 = math.saturate(depth * math.rcp(math.max(0.01f, maxDentDepthMeters)));
+            float intensity01 = math.saturate(depth * math.rcp(FiniteAtLeast(maxDentDepthMeters, 0.01f)));
             byte flags = 0;
             if (_lowTier)
                 flags |= HullDeformedSignal.LowTierVisualOnlyFlag;
@@ -602,20 +607,22 @@ namespace Hecton8.Vehicles.VFX
 
         private static float PackRadiusDepth(float radius, float depth)
         {
-            int radiusQ = Mathf.Clamp(Mathf.RoundToInt(math.clamp(radius, 0f, 15.9375f) * RadiusQuantizationStepsPerMeter), 0, 255);
-            int depthQ = Mathf.Clamp(Mathf.RoundToInt(math.saturate(depth) * 255f), 0, 255);
+            float safeRadius = math.min(FiniteNonNegativeOrZero(radius), 15.9375f);
+            float safeDepth = math.saturate(FiniteNonNegativeOrZero(depth));
+            int radiusQ = Mathf.Clamp(Mathf.RoundToInt(safeRadius * RadiusQuantizationStepsPerMeter), 0, 255);
+            int depthQ = Mathf.Clamp(Mathf.RoundToInt(safeDepth * 255f), 0, 255);
             return (depthQ << 8) | radiusQ;
         }
 
         private static float UnpackRadius(float packed)
         {
-            int packedInt = Mathf.Max(0, Mathf.RoundToInt(packed));
+            int packedInt = Mathf.Max(0, Mathf.RoundToInt(SanitizePackedDentValue(packed)));
             return (packedInt & 255) * InvRadiusQuantizationStepsPerMeter;
         }
 
         private static float UnpackDepth(float packed)
         {
-            int packedInt = Mathf.Max(0, Mathf.RoundToInt(packed));
+            int packedInt = Mathf.Max(0, Mathf.RoundToInt(SanitizePackedDentValue(packed)));
             return ((packedInt >> 8) & 255) * InvDepthQuantizationSteps;
         }
 
@@ -674,6 +681,21 @@ namespace Hecton8.Vehicles.VFX
                    float.IsFinite(value.y) &&
                    float.IsFinite(value.z) &&
                    float.IsFinite(value.w);
+        }
+
+        private static float FiniteNonNegativeOrZero(float value)
+        {
+            return float.IsFinite(value) && value > 0f ? value : 0f;
+        }
+
+        private static float FiniteAtLeast(float value, float minimum)
+        {
+            return float.IsFinite(value) && value > minimum ? value : minimum;
+        }
+
+        private static float SanitizePackedDentValue(float value)
+        {
+            return float.IsFinite(value) && value > 0f ? value : 0f;
         }
 
         private static float ResolveSafeScale(float scale)

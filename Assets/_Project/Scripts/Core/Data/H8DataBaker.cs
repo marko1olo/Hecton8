@@ -99,6 +99,11 @@ namespace Hecton8.Core.Data
                 Path.Combine(projectRoot, "Data", "Balance", "Baked"));
         }
 
+        /// <summary>
+        /// Deterministic hash of the active cold bake schema catalog.
+        /// </summary>
+        public static uint CurrentSchemaHash => ComputeSchemaHash();
+
         public static H8DataBakeResult Bake(string balanceDirectory, string outputDirectory)
         {
             if (!BitConverter.IsLittleEndian)
@@ -192,7 +197,12 @@ namespace Hecton8.Core.Data
             {
                 int index = table.FindHeader(schema.Columns[i].Name);
                 if (index < 0)
+                {
+                    if (table.CountHeaderIgnoreCase(schema.Columns[i].Name) > 0)
+                        return Fail("[CRITICAL_DATA_SCHEMA]: Column '" + schema.Columns[i].Name + "' in " + schema.FileName + " must match exact header case.");
+
                     return Fail("[CRITICAL_DATA_VOID]: Column '" + schema.Columns[i].Name + "' in " + schema.FileName + " is empty.");
+                }
 
                 if (table.CountHeader(schema.Columns[i].Name) != 1)
                     return Fail("[CRITICAL_DATA_SCHEMA]: Column '" + schema.Columns[i].Name + "' in " + schema.FileName + " is duplicated.");
@@ -248,6 +258,8 @@ namespace Hecton8.Core.Data
                             return Fail("[CRITICAL_DATA_KEY]: Column '" + spec.Name + "' in " + schema.FileName + " must be lowercase ASCII snake_case, got '" + value + "'.");
                         break;
                     case ColumnType.Text:
+                        if (TryFindControlCharacter(value, out char controlCharacter))
+                            return Fail("[CRITICAL_DATA_TEXT]: Column '" + spec.Name + "' in " + schema.FileName + " contains control character 0x" + ((int)controlCharacter).ToString("X2", CultureInfo.InvariantCulture) + ".");
                         break;
                     case ColumnType.Version:
                         if (!string.Equals(value, ExpectedVersionText, StringComparison.Ordinal))
@@ -315,6 +327,11 @@ namespace Hecton8.Core.Data
             if (string.IsNullOrEmpty(value))
                 return false;
 
+            char first = value[0];
+            if (first < 'a' || first > 'z')
+                return false;
+
+            char previous = '\0';
             for (int i = 0; i < value.Length; i++)
             {
                 char c = value[i];
@@ -323,9 +340,30 @@ namespace Hecton8.Core.Data
                              c == '_';
                 if (!valid)
                     return false;
+
+                if (c == '_' && (i == value.Length - 1 || previous == '_'))
+                    return false;
+
+                previous = c;
             }
 
             return true;
+        }
+
+        private static bool TryFindControlCharacter(string value, out char controlCharacter)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                if (char.IsControl(c))
+                {
+                    controlCharacter = c;
+                    return true;
+                }
+            }
+
+            controlCharacter = default;
+            return false;
         }
 
         private static PendingRecord BuildRecord(
@@ -621,6 +659,8 @@ namespace Hecton8.Core.Data
                 return Fail("Babel entry ABI drift: expected 16 bytes.");
             if (UnsafeUtility.SizeOf<H8StaticDataTelemetryEntry>() != 64)
                 return Fail("Static data telemetry ABI drift: expected 64 bytes.");
+            if (UnsafeUtility.SizeOf<H8StaticDataDumpHeader>() != H8StaticDataFormat.TelemetryDumpHeaderSizeBytes)
+                return Fail("Static data telemetry dump header ABI drift: expected 32 bytes.");
             if (UnsafeUtility.SizeOf<H8ItemStaticRecord>() != 48 ||
                 UnsafeUtility.SizeOf<H8EconomyStaticRecord>() != 48 ||
                 UnsafeUtility.SizeOf<H8PhysicsStaticRecord>() != 48 ||
@@ -629,12 +669,64 @@ namespace Hecton8.Core.Data
                 return Fail("Static data record ABI drift: expected 48-byte records.");
             }
 
+            uint schemaHash = ComputeSchemaHash();
+            if (schemaHash != H8StaticDataFormat.SchemaHash)
+                return Fail("Static data schema hash drift: expected 0x" + H8StaticDataFormat.SchemaHash.ToString("X8", CultureInfo.InvariantCulture) + " but computed 0x" + schemaHash.ToString("X8", CultureInfo.InvariantCulture) + ".");
+
             return new H8DataBakeResult { Success = true };
+        }
+
+        private static uint ComputeSchemaHash()
+        {
+            uint hash = H8DataHashTool.FnvOffset32;
+            hash = HashAsciiTerminated(hash, ExpectedVersionText);
+            hash = HashByte(hash, (byte)Schemas.Length);
+            for (int i = 0; i < Schemas.Length; i++)
+            {
+                SheetSchema schema = Schemas[i];
+                hash = HashAsciiTerminated(hash, schema.FileName);
+                hash = HashUShort(hash, schema.RecordType);
+                hash = HashByte(hash, (byte)schema.Columns.Length);
+                for (int c = 0; c < schema.Columns.Length; c++)
+                {
+                    ColumnSpec column = schema.Columns[c];
+                    hash = HashAsciiTerminated(hash, column.Name);
+                    hash = HashByte(hash, (byte)column.Type);
+                    hash = HashByte(hash, column.HasMin ? (byte)1 : (byte)0);
+                    hash = HashByte(hash, column.HasMax ? (byte)1 : (byte)0);
+                    if (column.HasMin)
+                        hash = HashAsciiTerminated(hash, column.MinValue.ToString("R", CultureInfo.InvariantCulture));
+                    if (column.HasMax)
+                        hash = HashAsciiTerminated(hash, column.MaxValue.ToString("R", CultureInfo.InvariantCulture));
+                }
+            }
+
+            return hash == 0u ? H8DataHashTool.FnvOffset32 : hash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint HashByte(uint hash, byte value)
+        {
+            return unchecked((hash ^ value) * H8DataHashTool.FnvPrime32);
+        }
+
+        private static uint HashUShort(uint hash, ushort value)
+        {
+            hash = HashByte(hash, (byte)value);
+            return HashByte(hash, (byte)(value >> 8));
+        }
+
+        private static uint HashAsciiTerminated(uint hash, string value)
+        {
+            for (int i = 0; i < value.Length; i++)
+                hash = HashByte(hash, (byte)value[i]);
+
+            return HashByte(hash, 0);
         }
 
         private static uint AddString(Dictionary<uint, string> stringPool, string value)
         {
-            uint hash = H8DataHashTool.ComputeFnv1a32(value.AsSpan());
+            uint hash = H8DataHashTool.ComputeFnv1a32Utf8(value.AsSpan());
             if (stringPool.TryGetValue(hash, out string existing))
             {
                 if (!string.Equals(existing, value, StringComparison.Ordinal))
@@ -835,7 +927,7 @@ namespace Hecton8.Core.Data
         {
             for (int i = 0; i < _headers.Length; i++)
             {
-                if (string.Equals(_headers[i], name, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(_headers[i], name, StringComparison.Ordinal))
                     return i;
             }
 
@@ -843,6 +935,18 @@ namespace Hecton8.Core.Data
         }
 
         public int CountHeader(string name)
+        {
+            int count = 0;
+            for (int i = 0; i < _headers.Length; i++)
+            {
+                if (string.Equals(_headers[i], name, StringComparison.Ordinal))
+                    count++;
+            }
+
+            return count;
+        }
+
+        public int CountHeaderIgnoreCase(string name)
         {
             int count = 0;
             for (int i = 0; i < _headers.Length; i++)
@@ -858,12 +962,13 @@ namespace Hecton8.Core.Data
     internal static class H8CsvReader
     {
         private const int CsvReadBufferBytes = 64 * 1024;
+        private static readonly Encoding StrictUtf8 = new UTF8Encoding(false, true);
 
         public static H8CsvTable Read(string path)
         {
             string text;
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, CsvReadBufferBytes, FileOptions.SequentialScan))
-            using (StreamReader reader = new StreamReader(stream, Encoding.UTF8, true))
+            using (StreamReader reader = new StreamReader(stream, StrictUtf8, true))
                 text = reader.ReadToEnd();
 
             List<string[]> rows = new List<string[]>(64);

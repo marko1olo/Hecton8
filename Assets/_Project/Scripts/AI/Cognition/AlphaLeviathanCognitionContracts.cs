@@ -44,8 +44,8 @@ namespace Hecton8.AI.Cognition
         /// <summary>Invalid or non-finite stalk math was detected.</summary>
         public const byte Fault = 1 << 4;
 
-        /// <summary>Current anchor was sourced from an acoustic lure.</summary>
-        public const byte AcousticLure = 1 << 5;
+        /// <summary>Legacy Fauna-side marker for Alpha rows without a player target. AI/Cognition must not write this bit.</summary>
+        public const byte LegacyNoPlayerTarget = 1 << 5;
 
         /// <summary>Headlight exposure forced retreat behavior.</summary>
         public const byte LightRetreat = 1 << 6;

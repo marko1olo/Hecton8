@@ -69,13 +69,14 @@ namespace Hecton8.Gameplay
             if (chest == null)
                 return;
 
-            Vector3 origin = _cachedTransform.position;
-            Vector3 direction = _cachedTransform.forward;
-            float runtimeRange = GetRuntimeMaxRange(rangeMeters);
+            Vector3 origin = SanitizePosition(_cachedTransform.position, Vector3.zero);
+            Vector3 direction = ResolveSafeDirection(_cachedTransform.forward, Vector3.forward);
+            float runtimeRange = ResolveSafePositive(GetRuntimeMaxRange(rangeMeters), 0.1f, 0.1f);
+            float sphereRadius = ResolveSafePositive(sphereRadiusMeters, 0.05f, 1.25f);
             float halfRange = runtimeRange * 0.5f;
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 origin + direction * halfRange,
-                halfRange + sphereRadiusMeters,
+                halfRange + sphereRadius,
                 _tetherOverlapCandidates,
                 ResolveTetherLayerMask(),
                 QueryTriggerInteraction.Collide);
@@ -84,9 +85,10 @@ namespace Hecton8.Gameplay
                 Debug.LogWarning("[GravityTetherTool] Tether candidate buffer saturated; results truncated.");
 #endif
             float rangeSq = runtimeRange * runtimeRange;
-            float tubeRadiusSq = sphereRadiusMeters * sphereRadiusMeters;
-            float pickupDistanceSq = pickupDistanceMeters * pickupDistanceMeters;
-            Vector3 chestPosition = chest.position;
+            float tubeRadiusSq = sphereRadius * sphereRadius;
+            float pickupDistance = ResolveSafePositive(pickupDistanceMeters, 0.05f, 0.65f);
+            float pickupDistanceSq = pickupDistance * pickupDistance;
+            Vector3 chestPosition = SanitizePosition(chest.position, origin);
 
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
@@ -95,17 +97,20 @@ namespace Hecton8.Gameplay
                     continue;
 
                 Vector3 candidatePosition = ResolveTetherCandidatePosition(candidate);
+                if (!IsFinite(candidatePosition))
+                    continue;
+
                 Vector3 fromOrigin = candidatePosition - origin;
                 float distanceSq = fromOrigin.sqrMagnitude;
-                if (distanceSq > rangeSq)
+                if (!math.isfinite(distanceSq) || distanceSq > rangeSq)
                     continue;
 
                 float forwardMeters = math.dot((float3)fromOrigin, (float3)direction);
-                if (forwardMeters < 0f || forwardMeters > runtimeRange)
+                if (!math.isfinite(forwardMeters) || forwardMeters < 0f || forwardMeters > runtimeRange)
                     continue;
 
                 float radialSq = distanceSq - forwardMeters * forwardMeters;
-                if (radialSq > tubeRadiusSq)
+                if (!math.isfinite(radialSq) || radialSq > tubeRadiusSq)
                     continue;
 
                 ProcessTetherHit(candidate, candidatePosition, chest, chestPosition, pickupDistanceSq);
@@ -115,9 +120,9 @@ namespace Hecton8.Gameplay
         public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
         {
             AppendText(ref buffer, "GRAV TETHER // RNG ");
-            buffer.AppendFloat(GetRuntimeMaxRange(rangeMeters), 1);
+            buffer.AppendFloat(ResolveSafePositive(GetRuntimeMaxRange(rangeMeters), 0.1f, 0.1f), 1);
             AppendText(ref buffer, "M // FORCE ");
-            buffer.AppendFloat(GetRuntimePowerScalar(pullVelocityChange), 1);
+            buffer.AppendFloat(ResolveSafePositive(GetRuntimePowerScalar(pullVelocityChange), 0f, 0f), 1);
         }
 
         public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
@@ -133,8 +138,8 @@ namespace Hecton8.Gameplay
 
         protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
         {
-            profile.MaxRange = math.max(0.1f, rangeMeters);
-            profile.PowerScalar = math.max(0.1f, pullVelocityChange);
+            profile.MaxRange = ResolveSafePositive(rangeMeters, 0.1f, 0.1f);
+            profile.PowerScalar = ResolveSafePositive(pullVelocityChange, 0f, 0f);
         }
 
         private void ProcessTetherHit(
@@ -147,8 +152,14 @@ namespace Hecton8.Gameplay
             if (hitCollider == null)
                 return;
 
+            if (!IsFinite(interactionPoint) || !IsFinite(chestPosition))
+                return;
+
             Vector3 toChest = chestPosition - interactionPoint;
             float sqrDistance = toChest.sqrMagnitude;
+            if (!math.isfinite(sqrDistance))
+                return;
+
             if (sqrDistance <= pickupDistanceSq &&
                 TryResolvePickupSource(hitCollider, out IInventoryPickupSource pickupSource))
             {
@@ -164,13 +175,26 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 pullDirection = toChest * math.rsqrt(sqrDistance);
-            PhysicsForceRouter.QueueForce(body, pullDirection * GetRuntimePowerScalar(pullVelocityChange), ForceMode.VelocityChange);
+            float pullPower = ResolveSafePositive(GetRuntimePowerScalar(pullVelocityChange), 0f, 0f);
+            if (pullPower <= 0f)
+                return;
+
+            Vector3 velocityChange = pullDirection * pullPower;
+            if (!IsFinite(velocityChange))
+                return;
+
+            PhysicsForceRouter.QueueForce(body, velocityChange, ForceMode.VelocityChange);
         }
 
         private static Vector3 ResolveTetherCandidatePosition(Collider hitCollider)
         {
             Rigidbody body = hitCollider.attachedRigidbody;
-            return body != null ? body.worldCenterOfMass : hitCollider.transform.position;
+            Vector3 position = body != null ? body.worldCenterOfMass : hitCollider.transform.position;
+            if (IsFinite(position))
+                return position;
+
+            Transform hitTransform = hitCollider.transform;
+            return hitTransform != null && IsFinite(hitTransform.position) ? hitTransform.position : Vector3.zero;
         }
 
         private bool TryResolvePickupSource(Collider hitCollider, out IInventoryPickupSource pickupSource)
@@ -215,6 +239,40 @@ namespace Hecton8.Gameplay
         {
             int mask = interactableMask.value;
             return HectonLayerMasks.IsEverythingLayerMask(mask) ? _DefaultTetherLayerMask : mask;
+        }
+
+        private static float ResolveSafePositive(float value, float minimum, float fallback)
+        {
+            return math.isfinite(value) ? math.max(minimum, value) : fallback;
+        }
+
+        private static Vector3 SanitizePosition(Vector3 value, Vector3 fallback)
+        {
+            return IsFinite(value) ? value : fallback;
+        }
+
+        private static Vector3 ResolveSafeDirection(Vector3 value, Vector3 fallback)
+        {
+            if (IsFinite(value))
+            {
+                float lengthSq = value.sqrMagnitude;
+                if (math.isfinite(lengthSq) && lengthSq > MinimumPullDistanceSq)
+                    return value * math.rsqrt(lengthSq);
+            }
+
+            if (IsFinite(fallback))
+            {
+                float fallbackLengthSq = fallback.sqrMagnitude;
+                if (math.isfinite(fallbackLengthSq) && fallbackLengthSq > MinimumPullDistanceSq)
+                    return fallback * math.rsqrt(fallbackLengthSq);
+            }
+
+            return Vector3.forward;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
         }
 
         private static bool AppendText(ref FixedCharBuffer buffer, string value)

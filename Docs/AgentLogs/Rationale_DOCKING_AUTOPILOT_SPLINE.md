@@ -347,3 +347,15 @@ Rejected Alternatives: Keeping one resolver for all call sites was rejected beca
 Scalability potential: Low/MX350 and Quest avoid hidden registry repair during active spline evaluation. Middle/High/Ultra keep the same Bezier/Hermite behavior and still feed visual overkill through typed wake/fluid/completion lanes.
 
 Hardware Impact: 0 B/frame. No measured profiler microseconds are claimed. Static impact is removal of possible registry-backed repair branches from active spline reads and the module evaluation tick. Focused build remains blocked externally with no docking file errors in the captured log.
+
+## Decision 30 - Adjacent Compile Surface Triage
+
+Problem: After the cached-only spline read patch, the focused core build was still blocked by adjacent shared-worktree debt: player presentation signal structs had been moved out of `GlobalSignals` but were not part of the focused compile surface, `FaunaDirector` wrote through `NativeArray<T>` properties returned by the new vault facade, `WaterTransitionHandler` was left as a deleted source while `HectonPlayerMovement` and the project file still referenced it, and `BioCableIK` had NaN-hardening call sites without the helper methods.
+
+Solution: Keep docking code stable and clear only the compile-surface failures. The current focused project now compiles `PlayerMovementPresentationSignals.cs`; `FaunaDirector` resolves vault-backed array views into local `NativeArray<T>` variables before index writes; `WaterTransitionHandler` is present again and consumes typed `WaterTransitionSignal` snapshots instead of the old listener event surface; `BioCableIK` now defines finite position, velocity, color, range, delta-time, and segment-length sanitizers for the half-applied NaN guard path.
+
+Rejected Alternatives: Duplicating player signal structs back into `GlobalSignals` was rejected because it would create duplicate contracts. Editing dirty `FaunaSimulationEngine` ownership was rejected because another agent owns that facade; local write views in `FaunaDirector` were sufficient. Reintroducing the old `WaterTransitionEvents` listener bus was rejected because the working file already migrated to typed signals. Removing BioCableIK hardening was rejected because NaN vaccination is the correct direction.
+
+Scalability potential: Low/MX350 keeps zero-GC signal snapshots, vault-backed fauna residency memory, and clamped cable math. Middle/High/Ultra keep the same visible behavior while stronger rigs can spend budget downstream on water, cable, and docking VFX; no new always-on simulation was added.
+
+Hardware Impact: 0 B/frame. No measured profiler microseconds are claimed. Runtime impact is compile-surface and finite-guard maintenance only. Latest focused `dotnet build Hecton8.Core.csproj` exits 0 with `0 Warning(s)` and `0 Error(s)`.

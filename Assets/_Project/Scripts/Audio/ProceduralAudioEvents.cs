@@ -1,9 +1,11 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Collections;
 using UnityEngine;
+using AudioEvent = Hecton8.Core.Contracts.Signals.AudioEvent;
 
 namespace Hecton8.Audio
 {
@@ -20,6 +22,7 @@ namespace Hecton8.Audio
     /// <summary>
     /// Zero-allocation payload for sample-accurate procedural audio triggers.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct AudioPingTriggerInfo
     {
         /// <summary>
@@ -90,6 +93,7 @@ namespace Hecton8.Audio
     /// <summary>
     /// Zero-allocation habitat pressure impulse consumed by structural granular synthesis.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct HullStressSignal
     {
         /// <summary>
@@ -191,6 +195,7 @@ namespace Hecton8.Audio
     /// <summary>
     /// Zero-allocation payload for habitat structural stress groan synthesis.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct StructuralStressAudioInfo
     {
         /// <summary>
@@ -262,35 +267,6 @@ namespace Hecton8.Audio
     }
 
     /// <summary>
-    /// Canonical zero-GC procedural audio bridge payload.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct AudioEvent
-    {
-        public AudioEventKind Kind;
-        public AudioPingTriggerInfo AudioPing;
-        public StructuralStressAudioInfo StructuralStress;
-
-        public static AudioEvent FromAudioPing(in AudioPingTriggerInfo info)
-        {
-            return new AudioEvent
-            {
-                Kind = AudioEventKind.AudioPing,
-                AudioPing = info
-            };
-        }
-
-        public static AudioEvent FromStructuralStress(in StructuralStressAudioInfo info)
-        {
-            return new AudioEvent
-            {
-                Kind = AudioEventKind.StructuralStress,
-                StructuralStress = info
-            };
-        }
-    }
-
-    /// <summary>
     /// Listener contract for deferred procedural audio notifications.
     /// </summary>
     public interface IProceduralAudioEventListener
@@ -343,6 +319,7 @@ namespace Hecton8.Audio
         private static int _lastListenerRejectedTelemetryFrame = -1;
         private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
+        private static bool _typedSignalLaneConfigured;
 
         /// <summary>
         /// Number of procedural audio events waiting for LateUpdate dispatch.
@@ -395,6 +372,7 @@ namespace Hecton8.Audio
             _lastListenerRejectedTelemetryFrame = -1;
             _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
+            _typedSignalLaneConfigured = false;
             _listeners.Clear();
         }
 
@@ -486,6 +464,10 @@ namespace Hecton8.Audio
         /// <param name="chirpDurationSeconds">Primary chirp duration in seconds.</param>
         public static void RaiseAudioPingTriggered(long startSampleFrame, int sampleRate, float intensity, float chirpDurationSeconds)
         {
+            AudioPingTriggerInfo info = new AudioPingTriggerInfo(startSampleFrame, sampleRate, intensity, chirpDurationSeconds);
+            AudioEvent audioEvent = AudioEvent.FromAudioPing(in info);
+            PublishTypedAudioEvent(in audioEvent);
+
             if (_listeners.Count <= 0)
                 return;
 
@@ -496,7 +478,6 @@ namespace Hecton8.Audio
                 return;
             }
 
-            AudioPingTriggerInfo info = new AudioPingTriggerInfo(startSampleFrame, sampleRate, intensity, chirpDurationSeconds);
             EnqueueAudioPing(in info);
         }
 
@@ -508,6 +489,16 @@ namespace Hecton8.Audio
             float lowPassCutoffHz,
             ProceduralAudioPingKind kind)
         {
+            AudioPingTriggerInfo info = new AudioPingTriggerInfo(
+                worldPosition,
+                intensity,
+                chirpDurationSeconds,
+                acousticTransmission01,
+                lowPassCutoffHz,
+                kind);
+            AudioEvent audioEvent = AudioEvent.FromAudioPing(in info);
+            PublishTypedAudioEvent(in audioEvent);
+
             if (_listeners.Count <= 0)
                 return;
 
@@ -518,13 +509,6 @@ namespace Hecton8.Audio
                 return;
             }
 
-            AudioPingTriggerInfo info = new AudioPingTriggerInfo(
-                worldPosition,
-                intensity,
-                chirpDurationSeconds,
-                acousticTransmission01,
-                lowPassCutoffHz,
-                kind);
             EnqueueAudioPing(in info);
         }
 
@@ -567,6 +551,9 @@ namespace Hecton8.Audio
         /// </summary>
         public static void RaiseStructuralStressTriggered(in StructuralStressAudioInfo info)
         {
+            AudioEvent audioEvent = AudioEvent.FromStructuralStress(in info);
+            PublishTypedAudioEvent(in audioEvent);
+
             if (_listeners.Count <= 0)
                 return;
 
@@ -577,6 +564,11 @@ namespace Hecton8.Audio
                 return;
             }
 
+            EnqueueStructuralStress(in info);
+        }
+
+        private static void EnqueueStructuralStress(in StructuralStressAudioInfo info)
+        {
             if (_isDispatching)
             {
                 _nextFrameAudioEvents.Enqueue(AudioEvent.FromStructuralStress(in info));
@@ -589,6 +581,22 @@ namespace Hecton8.Audio
                 _pendingAudioEventCount++;
                 _pendingStructuralStressCount++;
             }
+        }
+
+        private static void PublishTypedAudioEvent(in AudioEvent audioEvent)
+        {
+            EnsureTypedSignalLaneConfigured();
+            SignalBus<AudioEvent>.Push(in audioEvent);
+        }
+
+        private static void EnsureTypedSignalLaneConfigured()
+        {
+            if (_typedSignalLaneConfigured)
+                return;
+
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<AudioEvent>.EnsureInitialized();
+            _typedSignalLaneConfigured = true;
         }
 
         private static void EnsureInitialized()

@@ -3360,10 +3360,12 @@ namespace Hecton8.Caves
                 SpeciesHash = _VoxelDebrisSignalHash,
                 SourceEntityId = sourceId,
                 Intensity01 = intensity01,
-                DebrisKind = (request.SourceFlags & CarveSourceLaser) != 0 ? (byte)1 : (byte)0,
+                DebrisKind = (request.SourceFlags & CarveSourceLaser) != 0
+                    ? DebrisSpawnSignal.DebrisKindSparks
+                    : DebrisSpawnSignal.DebrisKindRockShard,
                 Flags = (byte)(request.SourceFlags | DebrisSpawnSignal.FlagComputeShard)
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<DebrisSpawnSignal>.Push(in signal);
         }
 
         private void PublishVoxelChunkModifiedEvent(HectonVoxelVolume volume, float voxelSize)

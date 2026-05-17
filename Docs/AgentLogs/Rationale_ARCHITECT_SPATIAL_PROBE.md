@@ -165,3 +165,57 @@ Solution: Added `ArchitectEyeVisualizer.BlackBoxDumpRelativePath`, routed runtim
 Rejected Alternatives: Keeping duplicate string constants, accepting short-read zero padding, or scanning both old and new dump names. Deterministic crash artifact paths matter more than convenience.
 Scalability potential: All tiers use the same 300-frame postmortem artifact; Steam Deck/MicroSD reads remain capped and sequential.
 Hardware Impact: Runtime savings are 0 us; editor IO correctness improved without increasing read budget.
+
+Problem: The editor blackbox timeline viewer still used IMGUI (`OnGUI`, `EditorGUILayout`, `GUILayout`, `EditorGUI`) and explicit `.ToString()` formatting, which violated the local audit rule even though it was editor-only.
+Solution: Rebuilt the viewer on UI Toolkit `CreateGUI` with fixed toolbar controls, a `SliderInt`, 300-frame timeline bars, and fixed detail labels. Dump loading remains capped to 300 frames with sequential IO, SceneView sector/teleport/POI hooks remain editor-only, and POI float writes now use `TryFormat` into a stack span with invariant formatting.
+Rejected Alternatives: Keeping IMGUI because it is editor-only, adding a runtime Canvas, or deleting the viewer. IMGUI is cheap to write but fails the project rule; Canvas would violate the diagnostic rendering mandate; deletion would remove blackbox visibility.
+Scalability potential: Runtime Low/Middle/High/Ultra paths are unchanged. Editor postmortem work keeps the same capped dump budget and avoids unbounded MicroSD reads on Steam Deck developer kits.
+Hardware Impact: Runtime savings are 0 us because this is editor-only. Editor allocations are moved out of gameplay and remain bounded to load/rebuild moments for at most 300 bars and 10 detail rows.
+
+Problem: Static audit found `ArchitectEyeVisualizer.BlackBoxDumpRelativePath` had drifted back to `Dump_ARCHITECT_EYE_VISUALIZER.bin`.
+Solution: Restored the constant to `Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin`; the editor viewer already resolves through that single constant.
+Rejected Alternatives: Leaving the alternate name or supporting both. The batch mandate names the dump by agent ID; dual names create postmortem ambiguity.
+Scalability potential: All tiers and platforms keep one deterministic crash artifact path.
+Hardware Impact: Runtime savings are 0 us; crash lookup correctness is restored.
+
+Problem: The Vault block map used yellow for fragmented free blocks, but the XML contract states Blue = Active, Grey = Free, Red = Fragmented. Yellow is reserved for pointer relocation flashes.
+Solution: Restored fragmented block and fragmentation gauge color to red while leaving pointer relocation warning lines yellow.
+Rejected Alternatives: Keeping yellow for visual variety or changing the contract text in docs. Diagnostics must preserve literal color semantics for fast forensic reading.
+Scalability potential: Low/Middle/High/Ultra all read the same memory-state color language.
+Hardware Impact: Runtime savings are 0 us; this is correctness of visual encoding.
+
+Problem: `CreateMaterial` used `Shader.Find` during cold runtime resource creation.
+Solution: Added a serialized `Shader` reference and editor-only `AssetDatabase.LoadAssetAtPath` fallback in `OnValidate`/`ResolveQuadShader`. Runtime player paths no longer execute `Shader.Find`.
+Rejected Alternatives: Leaving `Shader.Find` because it is cold, using `Resources.Load`, or creating a runtime material wrapper asset. The project rule forbids runtime shader string lookup; Resources is also forbidden; a wrapper asset is unnecessary for a first-party hidden shader already in the domain.
+Scalability potential: All tiers keep the same indirect shader and draw path; shader reference is resolved by serialized asset data instead of string search.
+Hardware Impact: Runtime savings are 0 us claimed; this removes a cold-path platform and stripping risk, not a measured frame-time cost.
+
+Problem: The signal waterfall rendered 48 blackbox history bars even though the XML contract requires the last 50 signal entries.
+Solution: Increased the waterfall history window to 50 and tightened the horizontal step so the full history still fits the same physical overlay band.
+Rejected Alternatives: Leaving 48 as visually close enough or increasing the blackbox size. Literal task contracts matter, and the existing 300-frame source is already sufficient.
+Scalability potential: Low/Middle/High/Ultra all use the same fixed 50-entry visible waterfall over the 300-frame blackbox.
+Hardware Impact: Runtime cost increase is two additional indirect quads per slow diagnostic build; no new draw call, no new allocation, no microsecond savings claimed.
+
+Problem: `DebugSignalKind.VramBudgetSlice` still rendered independent bars, so Task 18's diegetic PDA pie-chart contract was only approximate.
+Solution: Replaced the bar proxy with a cumulative pie/ring Dear Lie built from bounded indirect screen quads. Low uses 12 full-circle segment budget and two radial rings; Mid/High/Ultra increase segment density, with High/Ultra using a third ring, all through the existing `Graphics.DrawMeshInstancedIndirect` path.
+Rejected Alternatives: Canvas pie meshes, a new shader mode, CPU mesh rebuilds, or texture/compute generation. Those add runtime UI debt, platform shader risk, or new data owners for a diagnostic overlay.
+Scalability potential: Low/MX350 shows a coarse readable VRAM distribution for Flora/Sub/UI/SDF style slice IDs. Middle improves arc continuity. High and Ultra spend saved budget on denser ring fill without additional draw calls.
+Hardware Impact: 0 us saved claimed; this is literal-contract and visual clarity polish. Cost is bounded by the existing quad capacity, no allocations, and no new draw submission.
+
+Problem: Re-audit found live code drift contradicting previous status: the blackbox dump constant pointed at `Dump_ARCHITECT_EYE_VISUALIZER.bin`, `F12` was absent from `Render()`, and fragmentation gauge color still had yellow semantics.
+Solution: Restored `Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin`, reinserted the `KeyCode.F12` toggle before the `_enabled` early return, and set fragmented Vault blocks/gauge to red while leaving yellow only for pointer relocation flashes.
+Rejected Alternatives: Trusting stale log text, supporting two dump names, or accepting yellow fragmentation because it is visually distinct. Forensic tools need deterministic artifacts, literal color contracts, and a global operator kill switch.
+Scalability potential: Low/Middle/High/Ultra all preserve the same operator toggle and memory-state color language. Dump automation has one path on every platform.
+Hardware Impact: 0 us saved claimed; runtime cost is one diagnostics-only key-state check before rendering and no allocations.
+
+Problem: A subsequent file audit found `VaultProbeUtility.TryBufferBytes<T>()` had been reintroduced, exposing mutable `Span<byte>` access to GlobalDataVault buffers from a diagnostics read bridge.
+Solution: Removed the mutable probe again and kept only `TryReadOnlyBufferBytes<T>()`, typed handle inspection, and finite scanners. Also removed unused imports from the debug-bus shim.
+Rejected Alternatives: Keeping the write-capable span because it was unused, or documenting it as an advanced escape hatch. Diagnostics visualizers must observe Vault state, not provide a generic mutation tunnel.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; all tiers retain read-only forensic visibility while preserving data ownership boundaries.
+Hardware Impact: 0 us saved claimed; this removes a data-sovereignty hazard with no added runtime work.
+
+Problem: `DumpBlackBox` wrote a raw `ReadOnlySpan<byte>` over native `ArchitectEyeBlackBoxEntry` memory. Pack=1 reduced ABI risk, but raw postmortem dumps are still coupled to native field encoding and ring memory representation.
+Solution: Added an explicit 64-byte little-endian writer for every blackbox entry using stack memory and `BinaryPrimitives`, preserving the existing 300-frame file size and editor reader contract.
+Rejected Alternatives: Keeping raw native memory because all current targets are little-endian, or adding a managed binary writer. Raw memory dumps are weaker forensic evidence; managed writers add failure-path heap and culture/format risk.
+Scalability potential: Low/Middle/High/Ultra runtime frame work is unchanged. Fault dumps become deterministic across PC, Steam Deck, Quest/Android, and Metal/Mac little-endian targets.
+Hardware Impact: 0 us frame-time saved claimed; dump cost is fault-path only, bounded to 300 entries, with no managed byte-array staging.

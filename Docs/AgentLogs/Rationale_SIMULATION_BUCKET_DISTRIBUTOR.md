@@ -384,3 +384,66 @@ Solution: Ran attempt45 with isolated `BaseIntermediateOutputPath` and `OutputPa
 Rejected Alternatives: Killing `csc`/dotnet processes from other agents was rejected. Reporting attempt41 or attempt44 as source failure was rejected because attempt45 proves the current source compiles.
 Scalability potential: Validation-only; no low/high tier behavior change.
 Hardware Impact: Compile validation only. No runtime microsecond claim.
+
+## Decision: Blackbox Header Hardening Without Rebuild
+Problem: `Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin` and `Dump_SIMULATION_BUCKET_DISTRIBUTOR_JobAdmission.bin` wrote raw ring payloads without magic/version/count/entry-size headers. Postmortem tooling would need file-specific guesswork after a fault.
+Solution: Added HECTON8 magic, version, 300-entry count, packed entry size, cursor, and sequence/frame metadata before writing each ring. The normal path is unchanged; headers are written only on fault dump.
+Rejected Alternatives: Keeping raw dumps was rejected because black-box evidence must be self-describing. Adding per-frame disk writes was rejected because Steam Deck/MicroSD I/O pressure must stay zero on normal frames.
+Scalability potential: Low/Middle keep fault-only I/O; High/Ultra get the same deterministic postmortem header without increasing simulation cadence.
+Hardware Impact: Measured microseconds saved: 0 us. Normal runtime cost is unchanged; fault path writes a small header.
+
+## Decision: Pacing Finite Sum Guard
+Problem: A prior poisoned scalar or huge finite rebalance result could survive into `expectedFrameMs`, corrupting impossible-60/visual-overkill flag decisions.
+Solution: Rebalance result ingestion now reuses the 1000 ms finite cost clamp, and `UpdatePacingFlags` sanitizes expected max, last active load, pre-simulation cost, and the final sum before flagging.
+Rejected Alternatives: Trusting only call-site cost sanitizers was rejected because the prompt explicitly requires NaN vaccination for persistent state. Clamping to the 16.667 ms target was rejected because impossible work must remain visible to homeostasis.
+Scalability potential: Toaster mode gets finite failure and load-shed flags instead of poisoned cadence. High/Ultra visual-overkill remains gated behind a finite under-budget proof.
+Hardware Impact: Measured microseconds saved: 0 us. This is NaN/INF survival and decision correctness, not a benchmarked optimization.
+
+## Decision: Dispatcher Dump Path Source Truth Recheck
+Problem: The SIMULATION_BUCKET status still claimed the dispatcher stale mirror was purged, but current `SystemDispatcher.cs` and CORE_TICK_DILATION logs show the source now writes `Dump_CORE_TICK_DILATION.bin` as primary and keeps `Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin` as a compatibility mirror.
+Solution: Recorded the source truth as a superseding recheck instead of reverting another agent's CORE_TICK_DILATION ownership restoration.
+Rejected Alternatives: Forcing SIM-only dispatcher dumps again was rejected because it would revert another domain owner's documented handoff. Leaving the SIM status uncorrected was rejected because the files are the only truth.
+Scalability potential: Steam Deck fault I/O remains fault-only; normal frames are unaffected. High/Ultra diagnostics keep both owner IDs available for cross-agent postmortem correlation.
+Hardware Impact: Normal runtime gain 0 us. Fault path writes the current two dispatcher artifacts; no profiler benchmark was run.
+
+## Decision: Job Admission Hash Null Guard
+Problem: The public `ComputeFnv1a(string)` compatibility wrapper delegated directly to `text.AsSpan()`. A null diagnostic caller would throw before producing a stable non-zero hash.
+Solution: Treat null as `ReadOnlySpan<char>.Empty`, preserving the existing non-zero sentinel result.
+Rejected Alternatives: Throwing on null was rejected because this is a cold diagnostic/helper surface, not a contract that benefits from crashing. Removing the string overload was rejected as public API churn.
+Scalability potential: No tier behavior change. Cold diagnostics remain deterministic on Low/Middle/High/Ultra.
+Hardware Impact: Measured microseconds saved: 0 us. This is cold-path robustness only.
+
+## Decision: Job Admission Finite Telemetry Surface
+Problem: Admission refill had finite guards, but huge finite values could still leave lane budgets, cap math, telemetry readouts, or denial sink payloads outside the finite bounded surface expected by typed signal consumers.
+Solution: Clamped base refill, refill delta, current budget, cap, next budget, debt-borrow budgets, public lane-budget readout, denied-job telemetry, and non-finite fallback telemetry through the existing lane debt floor and 1000 ms catastrophic ceiling.
+Rejected Alternatives: Trusting initialization defaults was rejected because DataVault contents can be stale or corrupted. Clamping to the 16.667 ms target was rejected because impossible work must remain visible to debt/homeostasis decisions.
+Scalability potential: Low tier gets finite load-shed and denial surfaces instead of poisoned telemetry; High/Ultra cannot admit visual-overkill jobs from corrupted budgets.
+Hardware Impact: Measured microseconds saved: 0 us. This is cross-platform NaN/INF survival and diagnostic correctness, not a benchmarked speed pass.
+
+## Decision: Parallel Admission Input Guard
+Problem: `TryScheduleParallelAdmitted` forwarded invalid `arrayLength` or `innerloopBatchCount` directly into Unity's job scheduler. Negative lengths or zero batch counts can throw before the admission layer can provide a safe no-work dependency handle.
+Solution: Return the incoming dependency for zero-length work, reject negative lengths without scheduling, and clamp invalid batch count to 1 before scheduling positive work.
+Rejected Alternatives: Throwing argument exceptions was rejected because admission wrappers are used to keep frame scheduling controllable. Silently scheduling negative work was impossible and would rely on Unity internals.
+Scalability potential: Toaster paths can collapse empty work to a dependency handle without exception overhead. High/Ultra still schedule full positive ranges with normal admission.
+Hardware Impact: Measured microseconds saved: 0 us. This prevents scheduler exceptions; no profiler benchmark was run.
+
+## Decision: Bucketer Vault Length Guards
+Problem: `ClearEntityState` and accepted rebalance copy paths read DataVault buffer `.Length` immediately after resolving handles, relying on earlier initialization proof. A teardown, relocation, or invalidated handle could make a default NativeArray reach those length reads.
+Solution: Added local `IsCreated` gates before entity/cost/load clearing and before copying work buckets into the front bucket table.
+Rejected Alternatives: Assuming vault handles cannot change after initialization was rejected because the project explicitly runs many agents and systems concurrently and treats files/DataVault as the authority. Adding private fallback arrays was rejected by data sovereignty.
+Scalability potential: Low/Middle/High/Ultra all fail by skipping the cold clear/copy block instead of crashing on an invalid native buffer.
+Hardware Impact: Measured microseconds saved: 0 us. This is crash prevention, not performance work.
+
+## Decision: Job Admission Bridge Double Publish Guard
+Problem: `JobAdmissionSchedulerBridge.SetService` used a volatile write, so a second publisher could overwrite the active admission service without going through owner-checked clear.
+Solution: Made publication idempotent for the same instance and otherwise uses `Interlocked.CompareExchange` to publish only into an empty bridge slot.
+Rejected Alternatives: Blind overwrite was rejected because admission authority must not drift under concurrent bootstrap/domain reload pressure. Throwing was rejected because this bridge is a small static handoff surface without logging dependency.
+Scalability potential: No tier behavior change. Low/Middle/High/Ultra all keep one admission authority until the owner clears it.
+Hardware Impact: Measured microseconds saved: 0 us. This is ARM64/bootstrap correctness only.
+
+## Decision: Job Admission Lane-Aware Debt Clamp
+Problem: The generic millisecond clamp used `LaneDebtFloorMs` for all admission lanes. That allowed corrupted negative budgets to survive on world/voxel/AI/VFX/IO lanes even though only lane0 critical is allowed to borrow debt.
+Solution: Added lane-aware budget clamping. Lane0 critical keeps the -4 ms debt floor; lanes1-5 clamp to zero before refill, admission, debt borrowing, readout, denial telemetry, fault snapshot telemetry, and black-box writes.
+Rejected Alternatives: Keeping one lane-agnostic clamp was rejected because it lets non-critical lanes masquerade as debt-bearing lanes. Forcing all lanes to zero floor was rejected because critical lane borrowing is intentional.
+Scalability potential: Low tier avoids poisoned negative background lanes. High/Ultra preserve critical debt semantics without letting visual-overkill lanes borrow budget.
+Hardware Impact: Measured microseconds saved: 0 us. This is control correctness and telemetry hygiene.

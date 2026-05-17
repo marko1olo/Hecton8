@@ -491,3 +491,91 @@ Verification:
 Status:
 - Owned source validation is green for this checkpoint.
 - Unity runtime, Quest IL2CPP, Metal, Steam Deck I/O, and profiler/GCMonitor proof remain pending because no Unity Editor/device runtime channel is exposed in this session.
+
+## 2026-05-17 | GRAB_IK_PROJECTION | LEVIATHAN MATRIX FINITE-OUTPUT PASS
+
+What was wrong:
+- `WriteMatrices` sanitized a segment position for the current bone matrix but did not write that sanitized value back to `SegmentPositions`.
+- A corrupted last active segment could still become the tail seed for filler bones.
+- `LookRotationSafe` results were trusted without a final quaternion finite/normalization guard before `float4x4.TRS`.
+
+What was done:
+- Sanitized active segment positions are now written back before matrix emission.
+- Neighbor tangent reads now use sanitized fallback positions.
+- Bone rotations now pass through a finite quaternion sanitizer.
+- Filler bones now start from a finite tail seed and sanitize each propagated tail position.
+
+Cinematic cheats used:
+- Kept leviathan body presentation as constrained S-curve bone/VAT math, not Unity physics bodies.
+- The failover is visual continuity along owner-forward, not expensive physical recovery.
+
+Exact microseconds saved:
+- No savings claimed.
+- Added cost is bounded to active leviathan segment count, max 20 sanitize writes plus quaternion guards.
+- Expected added cost remains below 1 us on i3/MX350/Quest-class silicon; 0 B/frame GC.
+
+Verification:
+- Targeted Roslyn probe over `VRPhysicalHandPresenceIkJobs.cs`, `LeviathanTerrainIkJobs.cs`, and `LowerBodyPresenceIkJobs.cs` reports `TARGETED_IK_COMPILE_PROBE_CLEAN`, exit 0.
+- Owned IK forbidden-pattern scan returns no hits.
+- `git diff --check` reports one CRLF normalization warning for `LeviathanTerrainIkJobs.cs`.
+- Full project rebuild was intentionally not run in this loop per current instruction; latest known full-project wall remains outside Animation/IK.
+
+Status:
+- Owned source validation is green for this checkpoint.
+- Unity runtime, Quest IL2CPP, Metal, Steam Deck I/O, and profiler/GCMonitor proof remain pending because no Unity Editor/device runtime channel is exposed in this session.
+
+## 2026-05-17 | GRAB_IK_PROJECTION | LEVIATHAN BLACKBOX FALLBACK VISIBILITY
+
+What was wrong:
+- Loop 27 finite matrix repair could sanitize poisoned segment data before `HasInvalidSegment` ran.
+- That made blackbox telemetry look clean after a correction occurred, weakening postmortem evidence.
+
+What was done:
+- `WriteMatrices` now returns whether it used any finite vector or rotation fallback.
+- The caller ORs that result into `TelemetryFlagInvalid` before writing the 300-frame terrain IK blackbox entry.
+- No new buffers, no local `NativeArray`, no hot-path I/O, and no cross-domain dependency were added.
+
+Cinematic cheats used:
+- Dear Lie: keep the visual pose finite and stable, but mark the blackbox as invalid when the presentation layer had to correct poison.
+- Visual overkill path remains available because Ultra/High bone emission gets stable matrices without hiding corrected fault state.
+
+Exact microseconds saved:
+- Prevents downstream renderer/animation poison without adding a second validation pass; avoided cost is estimated at 1-3 us per frame on low-end silicon.
+- Added bool accumulation is below 1 us and only rides existing matrix emission work.
+
+Verification:
+- Targeted IK Roslyn probe reports `TARGETED_IK_COMPILE_PROBE_CLEAN`.
+- Owned forbidden-pattern scan remains clean.
+- Full project rebuild intentionally not run per current instruction.
+- `git diff --check` reports CRLF normalization warnings only for touched text/source files.
+
+Status:
+- Owned source validation is green for this checkpoint.
+- Unity runtime, Quest IL2CPP, Metal, Steam Deck I/O, and profiler/GCMonitor proof remain pending because no Unity Editor/device runtime channel is exposed in this session.
+
+## 2026-05-17 | GRAB_IK_PROJECTION | HAND QUATERNION OVERFLOW VACCINATION
+
+What was wrong:
+- `VRPhysicalHandPresenceJob.SanitizeQuaternion` checked finite quaternion components but not finite squared length.
+- Huge finite components could overflow `math.lengthsq` to infinity and normalize through `math.rsqrt(infinity)`, producing a zero rotation instead of using the fallback.
+
+What was done:
+- Added a finite squared-length gate before quaternion normalization.
+- Kept the existing caller-provided fallback path, ABI, DataVault lanes, and telemetry format unchanged.
+
+Cinematic cheats used:
+- Dear Lie: preserve stable hand presentation by rejecting impossible rotations instead of trying to physically recover the pose.
+
+Exact microseconds saved:
+- Avoids downstream rotation poison without adding a matrix validation pass; avoided failure cost is unbounded during fault recovery.
+- Added cost is one scalar finite check in an inline helper; expected below 1 us for two hands on i3/MX350/Quest-class silicon.
+
+Verification:
+- Targeted IK Roslyn probe reports `TARGETED_IK_COMPILE_PROBE_CLEAN`.
+- Owned forbidden-pattern scan remains clean.
+- Full project rebuild intentionally not run per current instruction.
+- `git diff --check` reports CRLF normalization warnings only for touched text/source files.
+
+Status:
+- Owned source validation is green for this checkpoint.
+- Unity runtime, Quest IL2CPP, Metal, Steam Deck I/O, and profiler/GCMonitor proof remain pending because no Unity Editor/device runtime channel is exposed in this session.

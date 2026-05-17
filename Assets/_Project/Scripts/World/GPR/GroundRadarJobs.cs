@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -21,6 +22,7 @@ namespace Hecton8.World.GPR
         public const uint AupShiftFlag = 1u << 1;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 36)]
     public struct GroundRadarTelemetryEntry
     {
         public uint Frame;
@@ -35,17 +37,17 @@ namespace Hecton8.World.GPR
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct GroundRadarRaymarchJob : IJob
     {
-        [ReadOnly] public NativeArray<byte> EncodedSdf;
-        [ReadOnly] public NativeArray<float3> OrePositions;
-        [ReadOnly] public NativeArray<int> OreTypes;
+        [ReadOnly] public NativeSlice<byte> EncodedSdf;
+        [ReadOnly] public NativeSlice<float3> OrePositions;
+        [ReadOnly] public NativeSlice<int> OreTypes;
 
-        public NativeArray<float3> GprHits;
-        public NativeArray<float> GprSignalStrength;
-        public NativeArray<float> GprAgeSeconds;
-        public NativeArray<int> GprOreTypes;
-        public NativeArray<float4> GprPingGpu;
-        public NativeArray<int> Counters;
-        public NativeArray<float> MaxSignalStrength;
+        public NativeSlice<float3> GprHits;
+        public NativeSlice<float> GprSignalStrength;
+        public NativeSlice<float> GprAgeSeconds;
+        public NativeSlice<int> GprOreTypes;
+        public NativeSlice<float4> GprPingGpu;
+        public NativeSlice<int> Counters;
+        public NativeSlice<float> MaxSignalStrength;
 
         public int3 GridDimensions;
         public float3 VolumeOrigin;
@@ -70,7 +72,7 @@ namespace Hecton8.World.GPR
 
             int rayCount = math.clamp(RequestedRayCount, 1, GroundRadarConstants.MaxRays);
             int maxSteps = math.clamp(MaxSteps, 1, GroundRadarConstants.MaxRaymarchSteps);
-            if ((Flags & GroundRadarConstants.ScanFlag) != 0u && HasWritablePingStorage() && HasValidSdf() && OrePositions.IsCreated && OreTypes.IsCreated && OreScanCount > 0)
+            if ((Flags & GroundRadarConstants.ScanFlag) != 0u && HasWritablePingStorage() && HasValidSdf() && OrePositions.Length > 0 && OreTypes.Length > 0 && OreScanCount > 0)
             {
                 float scanRadius = math.max(1f, ScanRadiusMeters);
                 float stepMeters = math.max(0.5f, StepMeters);
@@ -116,7 +118,7 @@ namespace Hecton8.World.GPR
                 }
             }
 
-            if (Counters.IsCreated)
+            if (Counters.Length > 0)
             {
                 if (Counters.Length > 0)
                     Counters[0] = writeIndex;
@@ -128,7 +130,7 @@ namespace Hecton8.World.GPR
                     Counters[3] = maxSteps;
             }
 
-            if (MaxSignalStrength.IsCreated && MaxSignalStrength.Length > 0)
+            if (MaxSignalStrength.Length > 0)
                 MaxSignalStrength[0] = highestSignal;
         }
 
@@ -174,8 +176,7 @@ namespace Hecton8.World.GPR
 
         private bool HasValidSdf()
         {
-            return EncodedSdf.IsCreated &&
-                   EncodedSdf.Length > 0 &&
+            return EncodedSdf.Length > 0 &&
                    GridDimensions.x > 1 &&
                    GridDimensions.y > 1 &&
                    GridDimensions.z > 1 &&
@@ -187,11 +188,11 @@ namespace Hecton8.World.GPR
 
         private bool HasWritablePingStorage()
         {
-            return GprHits.IsCreated &&
-                   GprSignalStrength.IsCreated &&
-                   GprAgeSeconds.IsCreated &&
-                   GprOreTypes.IsCreated &&
-                   GprPingGpu.IsCreated;
+            return GprHits.Length > 0 &&
+                   GprSignalStrength.Length > 0 &&
+                   GprAgeSeconds.Length > 0 &&
+                   GprOreTypes.Length > 0 &&
+                   GprPingGpu.Length > 0;
         }
 
         private float SampleDensity(float3 runtimePosition)

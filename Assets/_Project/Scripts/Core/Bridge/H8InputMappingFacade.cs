@@ -99,6 +99,7 @@ namespace Hecton8.Core.Bridge
             Thread.MemoryBarrier();
             ClearBuffer(bufferPtr, buffer.Length);
 
+            int activeCount = 0;
             for (int i = 0; i < count; i++)
             {
                 Binding binding = bindings[i];
@@ -106,12 +107,12 @@ namespace Hecton8.Core.Bridge
                     continue;
 
                 binding.RebuildHashes();
-                bufferPtr[i] = binding.ToEntry();
+                bufferPtr[activeCount++] = binding.ToEntry();
             }
 
             Thread.MemoryBarrier();
-            PublishInputUpdateSignal(count);
-            GlobalTelemetryBus.PublishModTelemetry(H8BridgeHashes.InputFacade, H8BridgeHashes.InputFacade, count);
+            PublishInputUpdateSignal(activeCount);
+            GlobalTelemetryBus.PublishModTelemetry(H8BridgeHashes.InputFacade, H8BridgeHashes.InputFacade, activeCount);
             return true;
         }
 

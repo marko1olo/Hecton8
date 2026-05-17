@@ -195,6 +195,8 @@ namespace Hecton8.Rendering.Editor
             public Vector2 BaseMapScale;
             public Vector2 BaseMapOffset;
             public Texture MaskMap;
+            public Vector2 MaskMapScale;
+            public Vector2 MaskMapOffset;
             public Texture BumpMap;
             public Color BaseColor;
             public Color EmissionColor;
@@ -215,9 +217,9 @@ namespace Hecton8.Rendering.Editor
                 MaterialSnapshot snapshot = new MaterialSnapshot
                 {
                     Kind = kind,
-                    BaseMap = ReadTexture(material, "_BaseMap", "_MainTex", "_RoughnessDirt"),
+                    BaseMap = ResolveBaseMapTexture(material, kind),
                     MaskMap = ReadTexture(material, "_MaskMap", "_MetallicGlossMap", "_OcclusionMap", "_RoughnessDirt", "_MainTex"),
-                    BumpMap = ReadTexture(material, "_BumpMap", "_NormalMap", "_Normal", "_HectonMicroNormalTex"),
+                    BumpMap = ResolveBumpMapTexture(material, kind),
                     BaseColor = ReadColor(material, Color.white, "_BaseColor", "_Color", "_TintColor"),
                     EmissionColor = ReadColor(material, Color.black, "_EmissionColor", "_HighlightColor"),
                     RustTint = ReadColor(material, new Color(0.45f, 0.24f, 0.10f, 1f), "_RustSaltColor", "_TintColor"),
@@ -234,6 +236,7 @@ namespace Hecton8.Rendering.Editor
                 };
 
                 ReadTextureTransform(material, "_BaseMap", "_MainTex", "_RoughnessDirt", out snapshot.BaseMapScale, out snapshot.BaseMapOffset);
+                ReadTextureTransform(material, "_MaskMap", "_MetallicGlossMap", "_RoughnessDirt", out snapshot.MaskMapScale, out snapshot.MaskMapOffset);
                 snapshot.ProjectSourceSpecificDefaults();
                 return snapshot;
             }
@@ -282,7 +285,7 @@ namespace Hecton8.Rendering.Editor
             public void Apply(Material material)
             {
                 SetTexture(material, "_BaseMap", BaseMap, BaseMapScale, BaseMapOffset);
-                SetTexture(material, "_MaskMap", MaskMap, Vector2.one, Vector2.zero);
+                SetTexture(material, "_MaskMap", MaskMap, MaskMapScale, MaskMapOffset);
                 SetTexture(material, "_BumpMap", BumpMap, Vector2.one, Vector2.zero);
                 SetColor(material, "_BaseColor", BaseColor);
                 SetColor(material, "_EmissionColor", EmissionColor);
@@ -305,6 +308,7 @@ namespace Hecton8.Rendering.Editor
                 SetKeyword(material, CausticsKeyword, Kind != ProjectionKind.WetGlassSheen);
                 SetKeyword(material, RefractionKeyword, RefractionStrength > 0.0001f);
                 ApplyRenderState(material);
+                EnableRequiredShaderPasses(material);
                 material.enableInstancing = true;
             }
 
@@ -384,6 +388,22 @@ namespace Hecton8.Rendering.Editor
             return null;
         }
 
+        private static Texture ResolveBaseMapTexture(Material material, ProjectionKind kind)
+        {
+            if (kind == ProjectionKind.WetGlassSheen)
+                return ReadTexture(material, "_BaseMap", "_MainTex");
+
+            return ReadTexture(material, "_BaseMap", "_MainTex", "_RoughnessDirt");
+        }
+
+        private static Texture ResolveBumpMapTexture(Material material, ProjectionKind kind)
+        {
+            if (kind == ProjectionKind.WetGlassSheen)
+                return ReadTexture(material, "_Normal", "_NormalMap", "_BumpMap");
+
+            return ReadTexture(material, "_BumpMap", "_NormalMap", "_Normal", "_HectonMicroNormalTex");
+        }
+
         private static Color ReadColor(Material material, Color fallback, params string[] names)
         {
             for (int i = 0; i < names.Length; i++)
@@ -460,6 +480,15 @@ namespace Hecton8.Rendering.Editor
         {
             for (int i = 0; i < LegacySourceKeywords.Length; i++)
                 material.DisableKeyword(LegacySourceKeywords[i]);
+        }
+
+        private static void EnableRequiredShaderPasses(Material material)
+        {
+            material.SetShaderPassEnabled("ForwardLit", true);
+            material.SetShaderPassEnabled("UniversalForward", true);
+            material.SetShaderPassEnabled("MotionVectors", true);
+            material.SetShaderPassEnabled("MOTIONVECTORS", true);
+            material.SetShaderPassEnabled("ShadowCaster", true);
         }
     }
 }

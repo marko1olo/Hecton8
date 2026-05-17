@@ -491,3 +491,39 @@ Rejected Alternatives: Clearing the DataVault telemetry ring on enable was rejec
 Scalability potential: Low/MX350 keeps normal-play hash skips and pays only a cold O(300) scan when the validator is created. Steam Deck gets safer replay shutdown under slow MicroSD flushes. High/Ultra retain 60-frame hash evidence and typed glitch lanes without global signal queue setup. Ultra keeps stricter crash evidence continuity after component churn.
 
 Hardware Impact: No profiler microseconds are claimed. Normal fixed-tick cost is unchanged and hot-path heap remains 0 B. The cursor restore is one cold 300-slot DataVault scan; the writer fence is cold shutdown-only. Static scans pass; no rebuild was rerun per the explicit instruction to avoid rebuild loops.
+
+## 2026-05-17 Near-Domain Occupancy Audit
+
+Problem: The user requested continued tech-debt cleanup in the lockstep domain and nearby domains, but the nearby Core signal surface is actively changing. During inspection, `PlayerMovementPresentationSignals.cs` temporarily appeared as only `WaterTransitionKind`, while `GlobalSignals.cs` then changed to contain the player presentation payload structs and `WaterTransitionSignal` again. That is live adjacent ownership churn, not a safe idle target for the lockstep role.
+
+Solution: Keep the lockstep domain bounded and verify it against disk truth: typed snapshot/glitch lanes are present, broad `GlobalSignals.InitializeAllQueues()` is absent from determinism, the replay writer self-cleanup fence is present, Pack=1 scans are clean, and no hot-path allocation/string/update debt was found. Record the Core/Signals observation as an occupancy audit instead of moving payload structs or creating duplicate contracts.
+
+Rejected Alternatives: Moving player presentation payloads between `GlobalSignals.cs` and `PlayerMovementPresentationSignals.cs` was rejected because those files changed during the read-only audit and are outside `CORE/DETERMINISM`. Duplicating signal structs was rejected because it would create ABI ambiguity. Running another `dotnet build` was rejected because this pass made no new source patch after the writer cleanup and the user explicitly rejected rebuild loops.
+
+Scalability potential: Low/MX350 retains the no-normal-play-hash path and bounded lockstep typed lanes. Steam Deck keeps the fenced replay writer shutdown for slow removable storage. High/Ultra keep 60-frame hash evidence and typed glitch signals without broad global queue initialization.
+
+Hardware Impact: 0us hot-path runtime change in this audit. No profiler microseconds are claimed. Static scans only; existing writer-cleanup build evidence remains external-wall-only with 0 `LockstepStateValidator` and 0 `Hecton8.Core.Determinism` hits.
+
+## 2026-05-17 Raw Hash Regression And Writer Signal Guard
+
+Problem: The raw hash-source path drifted back through `VaultBufferHandle.Resolve(vault)`. `Resolve()` calls `GlobalDataVault.ResolveBuffer()`, and `ResolveBuffer()` calls `SanitizeFinitePayload<T>()`; that can erase NaN evidence before `HashDouble3ArrayJob`, `HashFloat3ArrayJob`, and room/player hash jobs can set the non-finite flags. A second cold race remained in `StageReplayWrite()`: `_writerSignal.Set()` could throw after the background writer completed self-cleanup from a previous I/O fault.
+
+Solution: Restore direct raw native views for lockstep hash-source acquisition with `H8Memory.CreateNativeArrayView<T>(handle.ptr, handle.Length)` after the local alignment gate. Snapshot the replay writer signal in `StageReplayWrite()` and classify disposed-handle races as `TelemetryFlagWriterBusy`, clearing pending write state and setting `_writerFaulted` for controlled recovery.
+
+Rejected Alternatives: Changing `GlobalDataVault.ResolveBuffer()` was rejected because that sanitizer is shared memory-domain behavior outside `CORE/DETERMINISM`. Leaving `handle.Resolve(vault)` was rejected because it falsifies NaN vaccination. Letting `AutoResetEvent.Set()` escape was rejected because the 300-frame blackbox must classify survival faults. Patching dirty `IPlatformIntegration`, `GlobalSignals`, `CameraJuiceSystem`, or `HectonMarineSnowRenderer` was rejected because those files are active nearby/external work, not idle lockstep ownership.
+
+Scalability potential: Low/MX350 still skips normal-play hashing and pays nothing outside replay/hash cadence. Steam Deck gets stricter replay writer fault classification under slow or failing storage. High/Ultra keep 60-frame validation with raw corruption evidence instead of sanitized clean hashes.
+
+Hardware Impact: No profiler microseconds are claimed. Normal fixed-tick work is unchanged except the existing hash-cadence raw view creation; the writer signal guard is cold fault-path only. The targeted build log exits on external dirty files with 0 `LockstepStateValidator` and 0 `Hecton8.Core.Determinism` diagnostics.
+
+## 2026-05-17 Post-Documentation Typed Lane Drift Repair
+
+Problem: The final verification after status/rationale updates found `GlobalSignals.InitializeAllQueues()` restored again inside `ConfigureSignalLanes()`, and the local snapshot/glitch capacity/hash constants were missing. That invalidated the freshly written claim that the validator used only typed lanes.
+
+Solution: Re-apply the local `LockstepSnapshotSignal` and `SystemGlitchSignal` capacity/lane-hash constants and narrow `SignalBus.Configure` calls, then re-run the static lockstep scan.
+
+Rejected Alternatives: Leaving broad global queue initialization was rejected because the validator owns two lanes, not the whole global queue registry. Running another build was rejected because the source returned to the same typed-lane state already covered by `Build_LOCKSTEP_STATE_VALIDATOR_20260517_writer_signal_guard_dotnet.log`, and the known wall is external dirty Core/VFX code.
+
+Scalability potential: Low/MX350 keeps bounded cold signal setup. High/Ultra keep 60-frame hash snapshot evidence through typed lanes without broad global queue churn.
+
+Hardware Impact: 0us hot-path runtime. This is cold `OnEnable` configuration only; no profiler microseconds are claimed.

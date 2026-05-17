@@ -1,6 +1,8 @@
 param(
     [string]$ContractsPath = "Assets/_Project/Scripts/Core/Contracts",
     [string]$ScriptsPath = "Assets/_Project/Scripts",
+    [string]$CoreSignalsPath = "Assets/_Project/Scripts/Core/Signals",
+    [string]$GlobalSignalsPath = "Assets/_Project/Scripts/Core/GlobalSignals.cs",
     [string]$ShaderPath = "Assets/_Project/Art/Shaders",
     [string]$HandbookPath = "Docs/ARCHITECT_HANDBOOK.md"
 )
@@ -79,6 +81,17 @@ if ($aupExit -eq 0) {
     Add-Failure ("AUP literal rg failed with exit " + $aupExit)
 }
 
+$scalabilityHashLines = @(& rg -n "0x53434C54u" $ScriptsPath -g "*.cs")
+$scalabilityHashExit = $LASTEXITCODE
+if ($scalabilityHashExit -eq 0) {
+    $badScalabilityHashLines = @($scalabilityHashLines | Where-Object { $_ -notmatch "Core[\\/]Contracts[\\/]HectonSignalLaneContract\.cs" })
+    if ($badScalabilityHashLines.Count -gt 0) {
+        Add-Failure ("FORBID external scalability signal lane hash literals`n" + ($badScalabilityHashLines -join "`n"))
+    }
+} elseif ($scalabilityHashExit -gt 1) {
+    Add-Failure ("Scalability signal hash rg failed with exit " + $scalabilityHashExit)
+}
+
 $requiredAuthorityClasses = @(
     "HectonPhysicsContract",
     "HectonSurvivalContract",
@@ -116,10 +129,12 @@ if (Test-Path -Path $signalContractPath) {
 
     $laneMatches = [regex]::Matches($laneText, "public\s+const\s+byte\s+(?<name>[A-Za-z0-9_]+)\s*=\s*(?<value>\d+)\s*;")
     $seenLanes = @{}
+    $laneNameSet = @{}
     [uint32]$laneRegistryHash = 2166136261
     foreach ($match in $laneMatches) {
         $laneName = $match.Groups["name"].Value
         $laneValue = [int]$match.Groups["value"].Value
+        $laneNameSet[$laneName] = $true
         if ($laneValue -le 0 -or $laneValue -gt $maxLane) {
             Add-Failure ("FORBID invalid SignalBus lane id: " + $laneName + "=" + $laneValue + " max=" + $maxLane)
         }
@@ -153,12 +168,60 @@ if (Test-Path -Path $signalContractPath) {
             Add-Failure ("SignalLaneRegistryHash mismatch. declared=0x{0:X8} computed=0x{1:X8}" -f $declaredHash, $laneRegistryHash)
         }
     }
+
+    if (Test-Path -Path $GlobalSignalsPath) {
+        $globalSignalsText = Get-Content -Raw -Path $GlobalSignalsPath
+        $configuredLanes = [regex]::Matches($globalSignalsText, "SignalBus<(?<name>[A-Za-z_][A-Za-z0-9_]*)>\.Configure") |
+            ForEach-Object { $_.Groups["name"].Value } |
+            Sort-Object -Unique
+        foreach ($configuredLane in $configuredLanes) {
+            if ($configuredLane -eq "T") {
+                continue
+            }
+
+            if (!$laneNameSet.ContainsKey($configuredLane)) {
+                Add-Failure ("SignalBus lane configured without HectonSignalLaneContract byte id: " + $configuredLane)
+            }
+        }
+    } else {
+        Add-Failure ("Missing GlobalSignals source for lane audit: " + $GlobalSignalsPath)
+    }
 } else {
     Add-Failure ("Missing signal lane contract: " + $signalContractPath)
 }
 
 Assert-FileContains (Join-Path $ContractsPath "HectonContractVersion.cs") "HectonSignalLaneContract.SignalLaneRegistryHash" "Contract version mixes signal lane registry hash"
 Assert-FileContains "Directory.Build.targets" "PlayerMovementPresentationSignals.cs" "Generated Core shim includes player movement presentation signals"
+
+$playerSignalPath = Join-Path $CoreSignalsPath "PlayerMovementPresentationSignals.cs"
+if (Test-Path -Path $playerSignalPath) {
+    $playerSignalText = Get-Content -Raw -Path $playerSignalPath
+    $presentationSignals = @(
+        "PlayerFootstepSignal",
+        "PlayerWaterSplashSignal",
+        "WaterTransitionSignal",
+        "PlayerExhaleSignal",
+        "PlayerSprintStateSignal",
+        "PlayerFatalPressureSignal",
+        "PlayerTransportBailoutSignal"
+    )
+
+    foreach ($presentationSignal in $presentationSignals) {
+        $layoutPattern = "(?s)\[StructLayout\(LayoutKind\.Explicit,\s*Pack\s*=\s*1,\s*Size\s*=\s*\d+\)\]\s*public\s+struct\s+" + $presentationSignal + "\s*:\s*ISignal"
+        if (![regex]::IsMatch($playerSignalText, $layoutPattern)) {
+            Add-Failure ("Player presentation signal missing explicit Pack=1 layout in named file: " + $presentationSignal)
+        }
+
+        if (Test-Path -Path $GlobalSignalsPath) {
+            $globalSignalsText = Get-Content -Raw -Path $GlobalSignalsPath
+            if ([regex]::IsMatch($globalSignalsText, "public\s+struct\s+" + $presentationSignal + "\s*:\s*ISignal")) {
+                Add-Failure ("Player presentation signal still defined in GlobalSignals monolith: " + $presentationSignal)
+            }
+        }
+    }
+} else {
+    Add-Failure ("Missing player presentation signal payload file: " + $playerSignalPath)
+}
 
 if (Test-Path -Path $ShaderPath) {
     $threadLines = @(& rg -n "\[numthreads\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)\)\]" $ShaderPath -g "*.compute" -g "*.hlsl" -g "*.shader")

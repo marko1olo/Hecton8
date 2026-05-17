@@ -3,5 +3,41 @@ namespace Hecton8.Core.Bridge.Generated
 {
     public static class H8DesignFacadeContracts
     {
+        public const float Builtin_SubSpeed = 12f;
+        public const int Builtin_SubSpeed_OffsetBytes = 0;
+        public const uint Builtin_SubSpeed_Hash = 1851760112u;
+        public const float Builtin_AddedMass = 1f;
+        public const int Builtin_AddedMass_OffsetBytes = 4;
+        public const uint Builtin_AddedMass_Hash = 3404710065u;
+        public const float Builtin_VisorSaltCrystalLut01 = 1f;
+        public const int Builtin_VisorSaltCrystalLut01_OffsetBytes = 8;
+        public const uint Builtin_VisorSaltCrystalLut01_Hash = 2079560360u;
+        public const float Builtin_ToasterTriangleNoise01 = 0.35f;
+        public const int Builtin_ToasterTriangleNoise01_OffsetBytes = 12;
+        public const uint Builtin_ToasterTriangleNoise01_Hash = 2219817116u;
+        public const float Builtin_DotProductVisionMask01 = 0.75f;
+        public const int Builtin_DotProductVisionMask01_OffsetBytes = 16;
+        public const uint Builtin_DotProductVisionMask01_Hash = 1450786772u;
+        public const float Builtin_VolumetricSiltWake01 = 1f;
+        public const int Builtin_VolumetricSiltWake01_OffsetBytes = 20;
+        public const uint Builtin_VolumetricSiltWake01_Hash = 3324081930u;
+        public const float Builtin_ProceduralHullDents01 = 1f;
+        public const int Builtin_ProceduralHullDents01_OffsetBytes = 24;
+        public const uint Builtin_ProceduralHullDents01_Hash = 1496409986u;
+        public const float Builtin_RaymarchStepBudget = 16f;
+        public const int Builtin_RaymarchStepBudget_OffsetBytes = 28;
+        public const uint Builtin_RaymarchStepBudget_Hash = 1214986517u;
+        public const float Builtin_PomTapCount = 16f;
+        public const int Builtin_PomTapCount_OffsetBytes = 32;
+        public const uint Builtin_PomTapCount_Hash = 3830773031u;
+        public const float Builtin_SubsurfaceScatterWeight01 = 0.85f;
+        public const int Builtin_SubsurfaceScatterWeight01_OffsetBytes = 36;
+        public const uint Builtin_SubsurfaceScatterWeight01_Hash = 3566554901u;
+        public const float Builtin_ParticleOverkillBudget01 = 1f;
+        public const int Builtin_ParticleOverkillBudget01_OffsetBytes = 40;
+        public const uint Builtin_ParticleOverkillBudget01_Hash = 1475409191u;
+        public const float Builtin_VisorSaltCrystalGrowth01 = 0.55f;
+        public const int Builtin_VisorSaltCrystalGrowth01_OffsetBytes = 44;
+        public const uint Builtin_VisorSaltCrystalGrowth01_Hash = 813772454u;
     }
 }

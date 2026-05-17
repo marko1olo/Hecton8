@@ -4,6 +4,7 @@ Status: AUDIT COMPLETE
 Scope: HECTON-8 only. Timaert excluded.
 Evidence class: static H-Phi source scan + bounded JSONL token window + SQLite live pulse.
 Invoice status: NOT AN INVOICE.
+Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 ## Artifacts
 

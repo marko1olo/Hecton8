@@ -315,3 +315,39 @@ Rejected Alternatives: Keeping `TryGetDynamicWakeGpuPayload` was rejected becaus
 Scalability potential: Low/MX350 remains a 4-slot visual fake with dot/radial flow and no private GPU wake buffer. Middle/High/Ultra use the same 16-slot wake wash as flora, boids, silt, bubbles, and debris, so high-tier cycles buy denser MarineSnow turbulence instead of maintaining a duplicate side-channel.
 
 Hardware Impact: 0 us/frame low-tier cost change because the loop cap remains 4. High/Ultra restore the existing estimated 2-6 us/frame GPU wake-silt budget to the authoritative global wake source. No build timing is reported for this pass because no build was run.
+
+## Decision 27 - Nearby Vegetation NaN Guard and Sargassum Packing Pass
+
+Problem: Adjacent vegetation/cut-volume shaders still had raw radius-square division in falloff math, and `SargassumGlobalDragManager` carried default/`Pack = 4` layout declarations on native/event-adjacent structs. These are small but real multiplatform risks: degenerate radius input can poison GPU math, and implicit layout drift is unacceptable on ARM64/Quest.
+
+Solution: Converted the three radius falloff sites in `Hecton_TerrainDamageVolume.compute`, `Hecton_SargassumCutMask.compute`, and `Hecton_IndirectVegetationMotionVectors.shader` to guarded reciprocal multiplies. Converted `SargassumGlobalDragManager` struct layout metadata to `Pack = 1` while preserving explicit density payload sizes.
+
+Rejected Alternatives: Rewriting `SargassumGlobalDragManager` private NativeQueue event lanes was rejected in this pass because it is larger than a safe adjacent-domain correction and needs a signal-contract migration plan. Touching dirty non-wake VFX files such as active bioluminescence work was rejected under shared-workspace discipline. Raw divide sites were rejected because `rcp(max(radiusSq, eps))` is equivalent for visuals and safer on mobile GPUs.
+
+Scalability potential: Low/MX350 keeps the same cheap vegetation/cut-mask mathematical fake. Middle/High/Ultra keep the visual overkill budget for dense wake silt, MarineSnow, flora motion vectors, and cut-volume response; this pass removes platform risk without adding simulation.
+
+Hardware Impact: 0 us/frame measured/runtime claim. The reciprocal form has no supported timing claim here; it is a NaN survival guard. The packing pass reduces ARM64 layout risk with no frame-time cost. No build timing is reported because no build was run for this pass.
+
+## Decision 28 - Active CameraJuice Compile Wall Boundary
+
+Problem: A single controlled Core build after the nearby tech-debt pass failed on `Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs(1301,81)` because `Hecton8.Core.CameraJuiceImpactSignal` is missing. That file was already dirty and outside the wake/MarineSnow/Sargassum correction set for this pass, so blindly patching it would risk overwriting an active nearby VFX owner.
+
+Solution: Recorded the exact build wall, preserved the wake-owned changes, and kept validation focused on the touched wake-adjacent files. The reported compiler error does not name `Hecton_MarineSnow.compute`, `HectonMarineSnowRenderer`, `SargassumGlobalDragManager`, terrain damage, Sargassum cut mask, or vegetation motion-vector shader paths.
+
+Rejected Alternatives: Patching `CameraJuiceSystem` without ownership context was rejected because the file is dirty and active. Reverting another agent's work was rejected under shared-worktree discipline. Claiming a green build was rejected because the controlled build reported one external compile error.
+
+Scalability potential: No wake visual tier change. Low/MX350 remains capped to cheap radial/global wake fakes, while High/Ultra keep the 16-slot global wake budget for silt, MarineSnow, normal shimmer, and boid scatter.
+
+Hardware Impact: 0 us/frame. This is a compile-wall boundary, not a runtime change. No microsecond savings are claimed.
+
+## Decision 29 - Reactive Fluid Dynamic Wake Re-Purge
+
+Problem: A fresh scan found `Hecton_FluidAdvection.compute` and `CarveDebrisComputeRenderer` had regressed back to `_DynamicWakes`, `_DynamicWakeVectors`, `_DynamicWakeParams`, and `TryGetDynamicWakeGpuPayload`. That reintroduced a second wake authority beside the global shader arrays and could make silt/debris react to a private fluid-engine payload instead of the DataVault-backed global wake source.
+
+Solution: Replaced the fluid advection shader path with `_GlobalWakeBuffer`, `_GlobalWakeVectors`, and `_GlobalWakeParams` arrays and renamed the function to `ApplyGlobalWakes`. Removed dynamic wake buffer IDs and bindings from `CarveDebrisComputeRenderer`; the renderer now mirrors only sanitized global wake params into the compute dispatch, matching the MarineSnow path.
+
+Rejected Alternatives: Keeping the dynamic GPU buffer path was rejected because it violates the raw global shader array mandate. Copying the global arrays into renderer-owned buffers was rejected because it creates private wake state. Running another build was rejected for this pass because the known active compile wall is `CameraJuiceSystem.cs`, and another build would only repeat that external blocker.
+
+Scalability potential: Low/MX350 still clamps global wake sampling to 4 slots and stays on cheap dot/radial/triangle math. Middle/High/Ultra use the full 16-slot global wake source for silt, debris, MarineSnow, normal shimmer, and boid scatter.
+
+Hardware Impact: 0 us/frame low-tier cost change because the cap remains 4. High/Ultra restore the existing estimated 2-6 us/frame GPU wake-silt/debris budget to the single global source instead of a duplicate side-channel.

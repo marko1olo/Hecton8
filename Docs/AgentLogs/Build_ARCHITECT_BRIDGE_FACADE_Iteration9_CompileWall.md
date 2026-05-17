@@ -227,3 +227,82 @@ Static verification:
 Compile note:
 - No `dotnet build` was run in Iteration 19 because the operator explicitly instructed not to rebuild every time.
 - Last recorded active compile wall remains outside Bridge in `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs`.
+
+## Iteration 20 Refresh
+
+Date: 2026-05-17
+
+Bridge patch verification:
+- Changed `Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistryRuntimeBinder.cs`.
+- Bindable prefab/lore rows are now compacted into a dense active prefix before dirty-lane publication.
+- Runtime prefab registry registration and frame reads are gated behind play mode.
+
+Static verification:
+- Refined Bridge method-declaration scan found no `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`.
+- Bridge ownership scan found no `NativeArray<`, `new NativeArray`, `Allocator.`, or direct `GetBuffer<`.
+- Bridge lane scan found no legacy `EventBus`, managed event/delegate lane, `UnityEvent`, or `string.Format`.
+- SignalBus scan shows all Bridge `Push` calls use `in`.
+- `git diff --check -- Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistryRuntimeBinder.cs` exited 0 with line-ending normalization warning only.
+
+Compile note:
+- No `dotnet build` was run in Iteration 20 because the operator explicitly instructed not to rebuild every time.
+- Last recorded active compile wall remains outside Bridge in `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs`.
+
+## Iteration 21 Refresh
+
+Date: 2026-05-17
+
+Bridge patch verification:
+- Changed `Assets/_Project/Scripts/Core/Bridge/H8InputMappingFacade.cs`.
+- Non-null input bindings are now compacted into a dense active prefix before dirty-lane publication.
+- `DataVaultUpdateSignal.NewValue` for `BridgeInputFacadeBindings` now matches the active prefix length.
+
+Static verification:
+- Refined Bridge method-declaration scan found no `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`.
+- Bridge ownership scan found no `NativeArray<`, `new NativeArray`, `Allocator.`, or direct `GetBuffer<`.
+- Bridge lane scan found no legacy `EventBus`, managed event/delegate lane, `UnityEvent`, or `string.Format`.
+- Active-span scan confirms prefab/lore and input dense-prefix writes.
+- `git diff --check` on touched Bridge files exited 0 with line-ending normalization warnings only.
+
+Compile note:
+- No `dotnet build` was run in Iteration 21 because the operator explicitly instructed not to rebuild every time.
+- Last recorded active compile wall remains outside Bridge in `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs`.
+
+## Iteration 22 Refresh
+
+Date: 2026-05-17
+
+Bridge patch verification:
+- Changed `Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistryRuntimeBinder.cs`.
+- Registries with serialized rows but zero active bindable prefabs now unregister their VRAM budget record after tombstoning the Vault lanes.
+- XML assignment was re-read after the three-task interval.
+
+Static verification:
+- Refined Bridge method-declaration scan found no `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`.
+- Bridge ownership scan found no `NativeArray<`, `new NativeArray`, `Allocator.`, or direct `GetBuffer<`.
+- Active-span/VRAM scan confirms prefab/lore and input dense-prefix writes plus zero-active VRAM unregister.
+- `git diff --check` on touched Bridge files exited 0 with line-ending normalization warnings only.
+
+Compile note:
+- No `dotnet build` was run in Iteration 22 because the operator explicitly instructed not to rebuild every time.
+- Last recorded active compile wall remains outside Bridge in `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs`.
+
+## Iteration 23 Refresh
+
+Date: 2026-05-17
+
+Bridge patch verification:
+- Changed `Assets/_Project/Scripts/Core/Bridge/H8BridgeContracts.cs`.
+- Changed `Assets/_Project/Scripts/Core/Bridge/H8BridgeBinaryLayoutVerifier.cs`.
+- Changed `Assets/_Project/Scripts/Core/Bridge/H8BridgeFacadeRuntime.cs`.
+- Bridge blackbox dumps now include a packed `H8FacadeTelemetryDumpHeader` and ordered telemetry entries.
+
+Static verification:
+- Refined Bridge method-declaration scan found no `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`.
+- Bridge ownership scan found no `NativeArray<`, `new NativeArray`, `Allocator.`, or direct `GetBuffer<`.
+- Layout scan confirms `H8FacadeTelemetryDumpHeader` is `Pack = 1`, size 32, and covered by verifier offsets.
+- `git diff --check` on touched Bridge files exited 0 with line-ending normalization warnings only.
+
+Compile note:
+- No `dotnet build` was run in Iteration 23 because the operator explicitly instructed not to rebuild every time.
+- Last recorded active compile wall remains outside Bridge in `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs`.

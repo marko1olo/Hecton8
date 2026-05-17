@@ -100,7 +100,7 @@ namespace Hecton8.Gameplay
             get
             {
                 if (_toolMetadata == null) return 1f;
-                return CurrentDurability / math.max(1f, _toolMetadata.maxDurability);
+                return math.saturate(FiniteNonNegativeOrZero(CurrentDurability) / FiniteAtLeast(_toolMetadata.maxDurability, 1f));
             }
         }
 
@@ -316,67 +316,76 @@ namespace Hecton8.Gameplay
         protected float GetEfficiency()
         {
             float fallback = _toolMetadata == null ? 1f : _toolMetadata.GetTotalEfficiency();
-            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+            float value = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetEfficiencyScalar(_runtimeToolId, fallback)
                 : fallback;
+            return FiniteAtLeast(value, 0.1f);
         }
 
         protected float GetSpeed()
         {
             float fallback = _toolMetadata == null ? 1f : _toolMetadata.GetTotalSpeed();
-            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+            float value = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetSpeedScalar(_runtimeToolId, fallback)
                 : fallback;
+            return FiniteAtLeast(value, 0.1f);
         }
 
         protected float GetEnergyConsumption()
         {
             float fallback = _toolMetadata == null ? 0f : _toolMetadata.GetTotalEnergyConsumption();
-            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+            float value = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetBatteryDrainPerSecond(_runtimeToolId, fallback)
                 : fallback;
+            return FiniteNonNegativeOrZero(value);
         }
 
         protected float GetRuntimeMaxRange(float fallback)
         {
-            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+            float value = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetMaxRange(_runtimeToolId, fallback)
                 : fallback;
+            return FiniteNonNegativeOrZero(value);
         }
 
         protected float GetRuntimePowerScalar(float fallback)
         {
-            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+            float value = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetPowerScalar(_runtimeToolId, fallback)
                 : fallback;
+            return math.isfinite(value) ? value : (math.isfinite(fallback) ? fallback : 1f);
         }
 
         protected float GetRuntimeHeatGenerationRate(float fallback)
         {
-            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+            float value = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetHeatGenerationRate(_runtimeToolId, fallback)
                 : fallback;
+            return FiniteNonNegativeOrZero(value);
         }
 
         protected float GetRuntimeCooldownRate(float fallback)
         {
-            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+            float value = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetCooldownRate(_runtimeToolId, fallback)
                 : fallback;
+            return FiniteNonNegativeOrZero(value);
         }
 
         protected float GetRuntimeRecoilImpulse(float fallback)
         {
-            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+            float value = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetRecoilImpulse(_runtimeToolId, fallback)
                 : fallback;
+            return FiniteNonNegativeOrZero(value);
         }
 
         protected float GetRuntimeBatteryNormalized(float fallback)
         {
-            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+            float value = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetBatteryNormalized(_runtimeToolId, fallback)
                 : fallback;
+            return math.isfinite(value) ? math.saturate(value) : math.saturate(fallback);
         }
 
         protected bool HasModularUpgrade(ToolUpgradeBits flag)
@@ -392,7 +401,14 @@ namespace Hecton8.Gameplay
             if (!_runtimeToolRegistered || !(GlobalRegistry.ModularEquipment is ModularEquipmentEngine runtime))
                 return false;
 
-            return runtime.TryGetWirelessBrownoutFeedback(_runtimeToolId, out flickerScalar);
+            if (!runtime.TryGetWirelessBrownoutFeedback(_runtimeToolId, out flickerScalar) || !math.isfinite(flickerScalar))
+            {
+                flickerScalar = 0f;
+                return false;
+            }
+
+            flickerScalar = math.saturate(flickerScalar);
+            return true;
         }
 
         protected bool TryGetToolBrownoutFlicker(out float flickerScalar)
@@ -401,7 +417,14 @@ namespace Hecton8.Gameplay
             if (!_runtimeToolRegistered || !(GlobalRegistry.ModularEquipment is ModularEquipmentEngine runtime))
                 return false;
 
-            return runtime.TryGetToolBrownoutFeedback(_runtimeToolId, out flickerScalar);
+            if (!runtime.TryGetToolBrownoutFeedback(_runtimeToolId, out flickerScalar) || !math.isfinite(flickerScalar))
+            {
+                flickerScalar = 0f;
+                return false;
+            }
+
+            flickerScalar = math.saturate(flickerScalar);
+            return true;
         }
 
         protected bool HasToolEnergyOrWirelessPath()
@@ -431,11 +454,17 @@ namespace Hecton8.Gameplay
         {
             var system = Hecton8.Core.GlobalRegistry.ToolDurability;
             if (system == null || _toolMetadata == null) return;
-            float drainRate = isPrimary ? _toolMetadata.durabilityDrainRate : _toolMetadata.durabilityDrainRateSecondary;
+            float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
+            float drainRate = FiniteNonNegativeOrZero(isPrimary ? _toolMetadata.durabilityDrainRate : _toolMetadata.durabilityDrainRateSecondary);
             float multiplier = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetDurabilityDrainMultiplier(_runtimeToolId, 1f)
                 : 1f;
-            system.DrainDurabilityByTime(_toolMetadata.toolID, ResolveToolItemHash(), drainRate * multiplier * deltaTime, _toolMetadata.maxDurability);
+            float safeMultiplier = FiniteNonNegativeOrZero(multiplier);
+            system.DrainDurabilityByTime(
+                _toolMetadata.toolID,
+                ResolveToolItemHash(),
+                drainRate * safeMultiplier * safeDeltaTime,
+                FiniteAtLeast(_toolMetadata.maxDurability, 1f));
             SyncModularDurability();
         }
 
@@ -462,14 +491,14 @@ namespace Hecton8.Gameplay
                 ToolId = ResolveRuntimeToolId(),
                 MaxRange = 1f,
                 PowerScalar = 1f,
-                EfficiencyScalar = _toolMetadata != null ? math.max(0.1f, _toolMetadata.efficiency) : 1f,
-                SpeedScalar = _toolMetadata != null ? math.max(0.1f, _toolMetadata.speed) : 1f,
-                HeatGenerationRate = _toolMetadata != null ? math.max(0f, _toolMetadata.authoredHeatGenerationRate) : 0f,
-                CooldownRate = _toolMetadata != null ? math.max(0f, _toolMetadata.authoredCooldownRate) : 0f,
+                EfficiencyScalar = _toolMetadata != null ? FiniteAtLeast(_toolMetadata.efficiency, 0.1f) : 1f,
+                SpeedScalar = _toolMetadata != null ? FiniteAtLeast(_toolMetadata.speed, 0.1f) : 1f,
+                HeatGenerationRate = _toolMetadata != null ? FiniteNonNegativeOrZero(_toolMetadata.authoredHeatGenerationRate) : 0f,
+                CooldownRate = _toolMetadata != null ? FiniteNonNegativeOrZero(_toolMetadata.authoredCooldownRate) : 0f,
                 BatteryCapacity = 1f,
-                BatteryDrainPerSecond = _toolMetadata != null ? math.max(0f, _toolMetadata.energyConsumptionRate) : 0f,
+                BatteryDrainPerSecond = _toolMetadata != null ? FiniteNonNegativeOrZero(_toolMetadata.energyConsumptionRate) : 0f,
                 DurabilityDrainMultiplier = 1f,
-                RecoilImpulse = _toolMetadata != null ? math.max(0f, _toolMetadata.authoredRecoilImpulse) : 0f,
+                RecoilImpulse = _toolMetadata != null ? FiniteNonNegativeOrZero(_toolMetadata.authoredRecoilImpulse) : 0f,
                 ModuleSlotCount = (byte)math.clamp(_toolMetadata != null ? _toolMetadata.maxUpgradeSlots : 0, 0, ToolUpgradeSystem.MaxModuleSlots)
             };
 
@@ -529,8 +558,10 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            float safeDeltaTime = math.max(0f, deltaTime);
+            float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
             float requestedDrain = GetEnergyConsumption() * safeDeltaTime;
+            if (!math.isfinite(requestedDrain))
+                requestedDrain = 0f;
             if (requestedDrain <= 0f)
                 return true;
 
@@ -541,13 +572,16 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.PowerGrid != null &&
                 GlobalRegistry.PowerGrid.TryQueueWirelessToolDrain(requestedDrain, out float grantedDrain))
             {
-                remainingDrain = math.max(0f, requestedDrain - grantedDrain);
+                remainingDrain = math.isfinite(grantedDrain)
+                    ? FiniteNonNegativeOrZero(requestedDrain - grantedDrain)
+                    : requestedDrain;
             }
 
             if (remainingDrain <= 0f)
                 return true;
 
-            float batteryBefore = service.GetBatteryNormalized(_runtimeToolId, 0f);
+            float rawBatteryBefore = service.GetBatteryNormalized(_runtimeToolId, 0f);
+            float batteryBefore = math.isfinite(rawBatteryBefore) ? math.saturate(rawBatteryBefore) : 0f;
             float remainingDrainRate = safeDeltaTime > 0f ? remainingDrain / safeDeltaTime : 0f;
             service.ConsumeBattery(_runtimeToolId, remainingDrainRate, safeDeltaTime);
             return batteryBefore + 0.0001f >= remainingDrain;
@@ -561,7 +595,7 @@ namespace Hecton8.Gameplay
 
         protected bool TryQueuePlayerToolRecoil(Vector3 usageDirection, float impulseMagnitude)
         {
-            if (impulseMagnitude <= 0.0001f)
+            if (!math.isfinite(impulseMagnitude) || impulseMagnitude <= 0.0001f)
                 return false;
 
             Vector3 safeDirection = NormalizeOrCachedForward(usageDirection);
@@ -578,8 +612,11 @@ namespace Hecton8.Gameplay
 
         private Vector3 NormalizeOrCachedForward(Vector3 direction)
         {
+            if (!IsFiniteVector(direction))
+                return ResolveCachedForward();
+
             float sqrMagnitude = direction.sqrMagnitude;
-            if (sqrMagnitude > 0.0001f)
+            if (math.isfinite(sqrMagnitude) && sqrMagnitude > 0.0001f)
             {
                 if (math.abs(sqrMagnitude - 1f) <= 0.02f)
                     return direction;
@@ -587,10 +624,19 @@ namespace Hecton8.Gameplay
                 return direction * math.rsqrt(sqrMagnitude);
             }
 
+            return ResolveCachedForward();
+        }
+
+        private Vector3 ResolveCachedForward()
+        {
             if (_cachedBaseTransform == null)
                 _cachedBaseTransform = transform;
 
-            return _cachedBaseTransform != null ? _cachedBaseTransform.forward : Vector3.forward;
+            if (_cachedBaseTransform == null)
+                return Vector3.forward;
+
+            Vector3 forward = _cachedBaseTransform.forward;
+            return IsFiniteVector(forward) ? forward : Vector3.forward;
         }
 
         protected void QueueToolHapticFeedback(float powerDelivered, float ratedPower, byte priority = 1)
@@ -598,8 +644,24 @@ namespace Hecton8.Gameplay
             ToolHapticsRuntime.EnqueueToolFeedback(powerDelivered, ratedPower, priority);
         }
 
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        private static float FiniteNonNegativeOrZero(float value)
+        {
+            return math.isfinite(value) && value > 0f ? value : 0f;
+        }
+
+        private static float FiniteAtLeast(float value, float minimum)
+        {
+            return math.isfinite(value) ? math.max(minimum, value) : minimum;
+        }
+
         protected bool TryBeginToolUse(float deltaTime, bool isPrimary)
         {
+            float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
             if (IsBroken)
             {
                 OnToolBrokenWhileUsing();
@@ -616,13 +678,13 @@ namespace Hecton8.Gameplay
 
             if (enableEnergyConsumption && _toolMetadata != null)
             {
-                float energyDeltaTime = isPrimary ? deltaTime : deltaTime * 0.5f;
+                float energyDeltaTime = isPrimary ? safeDeltaTime : safeDeltaTime * 0.5f;
                 if (!HasToolEnergyOrWirelessPath() || !TryConsumeRuntimeEnergy(energyDeltaTime))
                     return false;
             }
 
             if (enableDurabilityDrain && _toolMetadata != null)
-                ApplyDurabilityDrain(deltaTime, isPrimary);
+                ApplyDurabilityDrain(safeDeltaTime, isPrimary);
 
             _lastUseTime = Time.time;
             _lastUseWasPrimary = isPrimary;
@@ -656,7 +718,7 @@ namespace Hecton8.Gameplay
                 playerContext.PlayerTransform.TryGetComponent(out playerHealth);
 
             if (playerHealth != null)
-                playerHealth.TakeDamage(math.max(0f, playerDamage), true);
+                playerHealth.TakeDamage(FiniteNonNegativeOrZero(playerDamage), true);
         }
 
         private uint ResolveRuntimeToolId()
@@ -710,7 +772,7 @@ namespace Hecton8.Gameplay
         internal uint RuntimeToolId => _runtimeToolId;
         internal float LastUseTime => _lastUseTime;
         internal bool LastUseWasPrimary => _lastUseWasPrimary;
-        internal bool WasRecentlyUsed(float maxIdleSeconds) => IsEquipped && (Time.time - _lastUseTime <= math.max(0.05f, maxIdleSeconds));
+        internal bool WasRecentlyUsed(float maxIdleSeconds) => IsEquipped && (Time.time - _lastUseTime <= FiniteAtLeast(maxIdleSeconds, 0.05f));
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void PublishLifecycleDebug(uint markerHash)
         {

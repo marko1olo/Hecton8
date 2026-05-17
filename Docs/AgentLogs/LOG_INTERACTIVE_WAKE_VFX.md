@@ -283,3 +283,78 @@ Verification:
 - Global wake scans found `_GlobalWakeBuffer`, `_GlobalWakeVectors`, `_GlobalWakeParams`, `ResolveGlobalWakeFlow`, `RefreshGlobalWakeBinding`, `SanitizeGlobalWakeParams`, and `GlobalWakeCount`.
 - Shader/domain ban scans found no `distance()`, raw `normalize()`, `string.Format`, `WindZone`, `forceOverLifetime`, `ParticleSystemForceField`, or `ForceField` hits in the checked wake paths.
 - `git diff --check` returned only LF-to-CRLF warnings.
+
+## 2026-05-17 - Nearby Vegetation NaN Guard and Sargassum Packing Pass
+
+What was wrong:
+- Nearby vegetation/cut-volume shaders still used raw radius-square division for falloff.
+- `SargassumGlobalDragManager` had native/event-adjacent structs with default layout or `Pack = 4`.
+
+What was done:
+- Replaced raw `dot(...) / radiusSq` and `distSq / radiusSq` with guarded `rcp(max(radiusSq, eps))` multiplies in terrain damage volume, Sargassum cut mask, and indirect vegetation motion vectors.
+- Converted the Sargassum global drag native/event-adjacent struct layout declarations to `Pack = 1`, preserving explicit `Size` declarations where present.
+- Reapplied MarineSnow global wake binding after shared-workspace churn reintroduced dynamic wake symbols.
+
+Cinematic Cheats used:
+- Kept all affected paths as mathematical shader fakes: radius falloff, cut masks, motion-vector flora push, and global wake silt advection.
+- No new physical simulation or Unity force component was introduced.
+
+Exact Microseconds saved:
+- Radius reciprocal pass: 0 us/frame claimed; this is NaN survival, not a timing claim.
+- Sargassum packing pass: 0 us/frame; ARM64 layout risk reduction only.
+- MarineSnow global wake correction: 0 us/frame low-tier change; preserves the existing 2-6 us/frame high/ultra GPU wake-silt budget.
+
+Verification:
+- No `dotnet build` was run for this pass, respecting the no-rebuild-every-time instruction.
+- Targeted scans found no raw radius-square divides in touched vegetation/cut-volume shaders.
+- Targeted scans found no non-`Pack = 1` struct declarations in the touched wake/Sargassum layout surface.
+- `git diff --check` returned only LF-to-CRLF warnings.
+
+## 2026-05-17 - Active CameraJuice Compile Wall Boundary
+
+What was wrong:
+- A controlled Core build after the nearby tech-debt pass failed in `Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs(1301,81)`.
+- The exact compiler error was `CS0234`: `Hecton8.Core.CameraJuiceImpactSignal` does not exist.
+- `CameraJuiceSystem.cs` was already dirty in the shared workspace and was not part of the wake/MarineSnow/Sargassum edit set.
+
+What was done:
+- Recorded the compile wall instead of claiming a green build.
+- Left the active dirty `CameraJuiceSystem.cs` file untouched.
+- Kept wake-adjacent validation scoped to the files actually modified by this pass.
+
+Cinematic Cheats used:
+- None. This is a compile-boundary report. The wake visuals remain the same bounded mathematical fakes: low-tier capped radial response, high-tier 16-slot global wake wash.
+
+Exact Microseconds saved:
+- 0 us/frame. Boundary documentation only.
+
+Verification:
+- Build command: `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false -v:minimal -clp:ErrorsOnly`.
+- Result: 1 reported error in active nearby VFX owner `CameraJuiceSystem.cs`; no reported error named the touched wake, MarineSnow, Sargassum, terrain damage, cut-mask, or vegetation motion-vector files.
+
+## 2026-05-17 - Reactive Fluid Dynamic Wake Re-Purge
+
+What was wrong:
+- `Hecton_FluidAdvection.compute` had regressed to `_DynamicWakes`, `_DynamicWakeVectors`, `_DynamicWakeParams`, and `ApplyDynamicWakes`.
+- `CarveDebrisComputeRenderer` had regressed to binding dynamic wake buffers and calling `TryGetDynamicWakeGpuPayload`.
+- This was a duplicate wake authority beside the global DataVault-backed shader arrays.
+
+What was done:
+- Replaced the fluid shader wake input with `_GlobalWakeBuffer`, `_GlobalWakeVectors`, and `_GlobalWakeParams`.
+- Renamed the compute helper to `ApplyGlobalWakes` and kept the 16-slot full-tier / 4-slot low-tier cap.
+- Removed dynamic wake buffer IDs, buffer binds, and payload lookup from `CarveDebrisComputeRenderer`.
+- The debris renderer now sends sanitized `_GlobalWakeParams` only, matching MarineSnow and the global shader contract.
+
+Cinematic Cheats used:
+- Low/MX350 remains the capped 4-slot radial/triangle wake fake.
+- High/Ultra use the same 16-slot global wake source for silt/debris turbulence as flora, boids, and MarineSnow.
+
+Exact Microseconds saved:
+- Low tier: 0 us/frame cost change.
+- High/Ultra: restores the existing 2-6 us/frame GPU wake-silt/debris budget to the authoritative global source.
+- No new runtime system or allocation was added.
+
+Verification:
+- Targeted scans found no `_DynamicWake`, `DynamicWake`, `TryGetDynamicWakeGpuPayload`, dynamic wake buffer bind, or dynamic wake sanitizer hits in fluid advection, MarineSnow, carve debris renderer, or MarineSnow renderer paths.
+- Global wake scans found `_GlobalWakeBuffer`, `_GlobalWakeVectors`, `_GlobalWakeParams`, `ApplyGlobalWakes`, `ResolveGlobalWakeParamsForCompute`, and `SanitizeGlobalWakeParamsForCompute`.
+- No rebuild was rerun because the active build wall is already recorded in dirty `CameraJuiceSystem.cs`.

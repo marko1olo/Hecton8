@@ -215,3 +215,39 @@ Cinematic Cheats used: No new physical simulation. Low tier keeps billboard/tria
 Exact Microseconds saved: No measured microseconds. Expected runtime delta is negligible: three double casts before existing double distance arithmetic. No GC, NativeArray ownership, file I/O, shader work, draw call, or CPU matrix path was added.
 
 Verification: Source scan for raw `GridX - GridX` / `GridY - GridY` / `GridZ - GridZ` integer subtraction in `AmbientBiotaDirector.cs` returned no raw long-subtract pattern. Static time audit returned no C# `Time.` or shader `_Time` in ambient. Static forbidden-pattern scan returned no matches. `Tick(float deltaTime)` remains free of `GlobalRegistry.`. `AmbientBiotaDriftJob.Execute` still has no `if (` branch source. `git diff --check` passed with CRLF warnings only. `dotnet build` was not rerun per user instruction. Unity shader import/compiler and runtime profiler validation remain unavailable.
+
+## 2026-05-17 - Loop 19 Runtime Pose NaN Guard And Mesh Args Gate
+
+What was wrong: The ambient Burst/AUP path was guarded, but the runtime `Vector3` bridge path still trusted `pose.RuntimePosition`. A non-finite upstream pose could reach ecology biomass sampling, abyssal flow sampling, indirect draw bounds, and `_HectonBiotaOriginWS`. `UploadIndirectArgs` also assumed submesh 0 exists after resolving a mesh.
+
+What was done: Added a runtime-position sanitizer and routed `Tick`/`SlowTick` through it. `RefreshEcologyInputs` now keeps deterministic default biomass/capacity when the position is invalid. `RefreshAbyssalFlow` now falls back to the default current before calling the vegetation bridge with bad coordinates. `UploadIndirectArgs` rejects zero-submesh meshes before reading index data. Ambient macro spawn and organic scrap notifications now push directly through `SignalBus<EntitySpawnSignal>` and `SignalBus<DebrisSpawnSignal>`.
+
+Cinematic Cheats used: No new physical simulation. Low tier keeps default biomass/flow fakes when upstream pose is corrupt. High/Ultra keep panic biolume, silt, salt glints, SSS, and 16-step procedural parallax from the last finite origin instead of poisoning render bounds.
+
+Exact Microseconds saved: No measured microseconds. This is a stability and lane-hygiene repair. Expected cost is a few scalar finite checks and one cold render-path mesh guard; direct typed lanes remove the ambient `GlobalSignals.Publish` wrapper calls but no measured frame-time number exists. No GC, NativeArray ownership, file I/O, shader work, draw call, public API change, or CPU matrix path was added.
+
+Verification: Static time audit returned no C# `Time.` or shader `_Time` in ambient. Static forbidden-pattern scan returned no matches. Shader portability audit returned no DirectX-only/mobile-hostile terms. `Tick(float deltaTime)` remains free of `GlobalRegistry.`. `AmbientBiotaDriftJob.Execute` still has no `if (` branch source. Stale/raw-source scan returned no stale `_lastRecountTimeSeconds`, no raw AUP grid subtraction, and no direct `_lastPlayerRuntimePosition = pose.RuntimePosition`. Typed-lane audit shows `SignalBus<EntitySpawnSignal>.Push`, `SignalBus<DebrisSpawnSignal>.Push`, and `SignalBus<BiomeChangedSignal>.GetFrameSnapshot`; no ambient `GlobalSignals.Publish` remains. `git diff --check` passed with CRLF warnings only. `dotnet build` intentionally not rerun per user instruction. Unity shader import/compiler and runtime profiler validation remain unavailable.
+
+## 2026-05-17 - Loop 20 AUP Offset Overflow And Hot Allocation Guard
+
+What was wrong: `OffsetAup` could still perform signed grid addition after deriving a sector shift from local deltas. If the origin grid was near `long.MinValue`/`long.MaxValue`, wrap could corrupt AUP truth before downstream local-float checks. The fallback quad mesh was also created lazily from `TryResolveDrawMesh`, meaning the first active indirect draw could allocate a `Mesh` and managed vertex/index arrays during gameplay.
+
+What was done: Added finite/range checks to `OffsetAup`, including non-representable shift rejection and `CanAddGridOffset` guard before signed grid addition. Moved fallback quad preparation to cold `OnEnable` via `EnsureFallbackDrawMeshReady`; `TryResolveDrawMesh` now only returns already-existing meshes. `UploadIndirectArgs` rejects zero-index meshes and caches submesh values before writing locked args.
+
+Cinematic Cheats used: No new physical simulation. Low tier keeps billboard/triangle-wave biota without first-draw fallback allocation. High/Ultra keep panic biolume, silt, salt glints, SSS, and 16-step procedural parallax fed by safer AUP-local coordinates.
+
+Exact Microseconds saved: No measured microseconds. This pass removes a potential first-draw managed allocation burst and prevents AUP overflow corruption; it does not claim a measured frame-time win. Added cost is scalar range checks in the AUP helper and a cold indirect-args mesh guard.
+
+Verification: Static time audit returned no C# `Time.` or shader `_Time` in ambient. Static forbidden-pattern scan returned no matches, including no ambient `GlobalSignals.Publish`. Shader portability audit returned no DirectX-only/mobile-hostile terms. `Tick(float deltaTime)` remains free of `GlobalRegistry.`. `AmbientBiotaDriftJob.Execute` still has no `if (` branch source. Stale/raw-source scan returned no stale `_lastRecountTimeSeconds`, no raw AUP grid subtraction, and no direct `_lastPlayerRuntimePosition = pose.RuntimePosition`. `git diff --check` passed with CRLF warnings only. `dotnet build` intentionally not rerun per user instruction. Unity shader import/compiler and runtime profiler validation remain unavailable.
+
+## 2026-05-17 - Loop 21 Typed Signal Lane Cold Prewarm
+
+What was wrong: Ambient now publishes directly to typed lanes, but if bootstrap had not already initialized those closed generic `SignalBus<T>` lanes, the first ambient biome read, macro spawn publish, or organic debris publish could trigger native queue/snapshot initialization too late in the frame lifecycle.
+
+What was done: Added `EnsureSignalLanesReady()` and call it from cold `OnEnable` before runtime registration. The ambient director now configures and initializes `BiomeChangedSignal`, `EntitySpawnSignal`, and `DebrisSpawnSignal` lanes with the same capacities and FNV hashes used by core signal bootstrap. `DebrisSpawnSignal` keeps the existing low-tier cap of 16 frame signals.
+
+Cinematic Cheats used: No new physical simulation. Low tier remains billboard/triangle-wave biota with bounded organic debris traffic. High/Ultra keep panic biolume, silt, salt glints, SSS, and 16-step procedural parallax while lane traffic stays typed and prewarmed.
+
+Exact Microseconds saved: No measured microseconds. This pass moves possible native signal-lane cold allocation out of gameplay ticks and late-frame drains; it does not claim a measured frame-time win. After initialization, gameplay-frame cost is unchanged.
+
+Verification: Static time audit returned no C# `Time.` or shader `_Time` in ambient. Static forbidden-pattern scan returned no matches, including no ambient `GlobalSignals.Publish`. Shader portability audit returned no DirectX-only/mobile-hostile terms. `Tick(float deltaTime)` remains free of `GlobalRegistry.`. `AmbientBiotaDriftJob.Execute` body still has no `if (` branch source. Typed-lane audit shows configured and initialized `BiomeChangedSignal`, `EntitySpawnSignal`, and `DebrisSpawnSignal` lanes. Stale/raw-source scan returned no stale `_lastRecountTimeSeconds`, raw AUP grid subtraction, direct `_lastPlayerRuntimePosition = pose.RuntimePosition`, or ambient `GlobalSignals.Publish`. `git diff --check` passed with CRLF warnings only. `dotnet build` intentionally not rerun per user instruction. Unity shader import/compiler and runtime profiler validation remain unavailable.

@@ -197,3 +197,46 @@ PROMPT IDENTIFIED: ARCHITECT_BRIDGE_FACADE | DOMAIN: CORE/INTERFACES | TASK COUN
 - Status: BRIDGE STATIC AUDIT CLEAN AFTER RUNTIME-ONLY SIGNALBUS GATE; FULL CORE/EDITOR COMPILE NOT RERUN BY USER INSTRUCTION.
 - Compile state: not refreshed in Iteration 19. Last recorded active wall remains outside Bridge in `World/SargassumMicroFaunaBoids.cs`.
 - Known integration notes: manual edit-mode sync can still mutate DataVault when a valid vault is provided, but typed runtime signals are now play-mode only.
+
+## Iteration 20: GO AGAIN Prefab Active-Span Coherence
+- [x] Mandatory disk recovery, Unity skill, mandates, domain, and XML reread | DOD: status/rationale were read before response; Unity workflow notes, Bridge mandates, domain map, and `Docs/Tasks/Prompt_ARCHITECT_BRIDGE_FACADE.xml` were re-read from disk. Rejected: trusting compressed chat memory. Static estimate: 0 us runtime.
+- [x] Runtime registry edit-mode isolation | DOD: prefab binding now touches `GlobalRegistry.PrefabRegistryRuntime` and `Time.frameCount` only when `Application.isPlaying`; edit-mode bind can still update cold Vault rows without mutating the runtime prefab registry. Rejected: registering editor preview objects in the runtime visual registry. Static estimate: explicit bind only; 0 us steady-state.
+- [x] Active prefab span compaction | DOD: bindable prefab/lore rows are written densely to `BridgePrefabMapping` and `BridgePrefabLoreLinks`, and the existing `DataVaultUpdateSignal.NewValue` count now matches the valid prefix length. Rejected: publishing active count while leaving holes at serialized tombstone indices. Static estimate: cold bind only; 0 us steady-state.
+- [x] Static verification without rebuild | DOD: per operator instruction, `dotnet build` was not rerun. Lifecycle scan found no Bridge `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`; ownership/lane scan found no Bridge local `NativeArray`, local allocator, direct `GetBuffer<`, legacy `EventBus`, managed event/delegate lane, `UnityEvent`, or `string.Format`; SignalBus scan shows all Bridge pushes use `in`; `git diff --check` on the binder exits 0 with line-ending warning only.
+
+## Current State
+- Status: BRIDGE STATIC AUDIT CLEAN AFTER PREFAB ACTIVE-SPAN COHERENCE PASS; FULL CORE/EDITOR COMPILE NOT RERUN BY USER INSTRUCTION.
+- Compile state: not refreshed in Iteration 20. Last recorded active compile wall remains outside Bridge in `World/SargassumMicroFaunaBoids.cs`.
+- Known integration notes: `DataVaultUpdateSignal.NewValue` for prefab/lore buffers now represents the dense active row prefix length, not total serialized registry rows.
+
+## Iteration 21: GO AGAIN Input Active-Span Coherence
+- [x] Input binding dense prefix | DOD: `H8InputMappingFacade.SyncToVault` now compacts non-null input bindings into a dense prefix before publishing `BridgeInputFacadeBindings` dirty state. Rejected: exposing null serialized list holes as live input rows. Static estimate: explicit sync only; 0 us steady-state.
+- [x] Input dirty count repair | DOD: `DataVaultUpdateSignal.NewValue` and telemetry now carry active input binding count, matching the valid prefix length in the Vault lane. Rejected: publishing total serialized list length and forcing consumers to scan tombstones. Static estimate: explicit sync only.
+- [x] Static verification without rebuild | DOD: per operator instruction, `dotnet build` was not rerun. Lifecycle scan found no Bridge `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`; ownership/lane scan found no Bridge local `NativeArray`, local allocator, direct `GetBuffer<`, legacy `EventBus`, managed event/delegate lane, `UnityEvent`, or `string.Format`; active-span scan confirms prefab and input buffers publish dense active counts; `git diff --check` on the touched Bridge files exits 0 with line-ending warnings only.
+
+## Current State
+- Status: BRIDGE STATIC AUDIT CLEAN AFTER INPUT ACTIVE-SPAN COHERENCE PASS; FULL CORE/EDITOR COMPILE NOT RERUN BY USER INSTRUCTION.
+- Compile state: not refreshed in Iteration 21. Last recorded active compile wall remains outside Bridge in `World/SargassumMicroFaunaBoids.cs`.
+- Known integration notes: prefab, lore, and input Bridge dirty counts now describe dense active prefixes.
+
+## Iteration 22: GO AGAIN Empty Prefab VRAM Tombstone
+- [x] XML reread after three-task interval | DOD: `Docs/Tasks/Prompt_ARCHITECT_BRIDGE_FACADE.xml` was re-read before the third post-resume patch. Rejected: drifting from the original prefab/control-panel assignment. Static estimate: 0 us runtime.
+- [x] Empty active prefab VRAM unregister | DOD: prefab registries with serialized rows but zero bindable active prefabs now unregister from `VRAMBudgetTracker` after clearing/publishing tombstones. Rejected: keeping a zero-byte live registry record after all prefabs are removed. Static estimate: cold bind only; 0 us steady-state.
+- [x] Static verification without rebuild | DOD: per operator instruction, `dotnet build` was not rerun. Lifecycle/ownership scans remain clean; active-span/VRAM scan confirms dense prefab/input counts and VRAM unregister when active prefab count is zero; `git diff --check` on touched Bridge files exits 0 with line-ending warnings only.
+
+## Current State
+- Status: BRIDGE STATIC AUDIT CLEAN AFTER EMPTY PREFAB VRAM TOMBSTONE PASS; FULL CORE/EDITOR COMPILE NOT RERUN BY USER INSTRUCTION.
+- Compile state: not refreshed in Iteration 22. Last recorded active compile wall remains outside Bridge in `World/SargassumMicroFaunaBoids.cs`.
+- Known integration notes: prefab registries with zero active bindable rows clear their Vault lanes, publish zero dirty counts in play mode, and unregister their VRAM budget record.
+
+## Iteration 23: GO AGAIN Blackbox Dump Header And Ordered Replay
+- [x] Mandatory disk recovery, Unity skill, mandates, domain, and XML reread | DOD: status/rationale were read before response; Unity workflow notes, selected mandates, domain map, and `Docs/Tasks/Prompt_ARCHITECT_BRIDGE_FACADE.xml` were re-read. Rejected: chat-memory execution. Static estimate: 0 us runtime.
+- [x] Packed dump header | DOD: added `H8FacadeTelemetryDumpHeader` with `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]`, magic/version, entry count, entry size, cursor, capacity, and payload hash. Rejected: raw headerless telemetry bytes. Static estimate: fault/dump path only.
+- [x] Ordered 300-frame replay export | DOD: `RequestBlackBoxDump()` now writes oldest-to-newest ring entries after the header and hashes the ordered payload. Rejected: dumping circular memory in storage order and forcing crash forensics to infer cursor state. Static estimate: fault/dump path only; 0 us steady-state.
+- [x] Layout sentinel coverage | DOD: `H8BridgeBinaryLayoutVerifier` verifies the dump header size and critical offsets at cold boot. Rejected: adding a new binary payload without ARM/Mac layout proof. Static estimate: cold boot only.
+- [x] Static verification without rebuild | DOD: per operator instruction, `dotnet build` was not rerun. Lifecycle/ownership scans remain clean; layout scan confirms the new header is packed; `git diff --check` on touched Bridge files exits 0 with line-ending warnings only.
+
+## Current State
+- Status: BRIDGE STATIC AUDIT CLEAN AFTER BLACKBOX DUMP HEADER PASS; FULL CORE/EDITOR COMPILE NOT RERUN BY USER INSTRUCTION.
+- Compile state: not refreshed in Iteration 23. Last recorded active compile wall remains outside Bridge in `World/SargassumMicroFaunaBoids.cs`.
+- Known integration notes: Bridge dump binary format now starts with `H8BD` header followed by ordered `H8FacadeTelemetryEntry` records.

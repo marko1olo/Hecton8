@@ -32,6 +32,7 @@ namespace Hecton8.Audio.Editor
         private const string SynthesisPath = "Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs";
         private const string TelemetryPath = "Assets/_Project/Scripts/CrashTelemetryBuffer.cs";
         private const string EventsPath = "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs";
+        private const string GlobalSignalsPath = "Assets/_Project/Scripts/Core/GlobalSignals.cs";
         private const string AcousticZonePath = "Assets/_Project/Scripts/AcousticZoneController.cs";
         private const string AudioLogEventsPath = "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs";
         private const string PlayerPdaPath = "Assets/_Project/Scripts/PlayerPDA.cs";
@@ -79,6 +80,7 @@ namespace Hecton8.Audio.Editor
             string synthesis = ReadAssetText(SynthesisPath, builder, ref failureCount);
             string telemetry = ReadAssetText(TelemetryPath, builder, ref failureCount);
             string eventsSource = ReadAssetText(EventsPath, builder, ref failureCount);
+            string globalSignals = ReadAssetText(GlobalSignalsPath, builder, ref failureCount);
             string acousticZone = ReadAssetText(AcousticZonePath, builder, ref failureCount);
             string audioLogEvents = ReadAssetText(AudioLogEventsPath, builder, ref failureCount);
             string playerPda = ReadAssetText(PlayerPdaPath, builder, ref failureCount);
@@ -125,10 +127,12 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spatial, "ResolveAupDelta", "Long-range spatial audio direction uses AUP delta helpers", builder, ref failureCount);
                 AssertContains(spatial, "AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup)", "Spatial audio distance uses int64-sector AUP distance math", builder, ref failureCount);
                 AssertContains(spatial, "AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in listenerAup)", "Doppler/radar direction uses AUP camera-relative math", builder, ref failureCount);
-                AssertContains(spatial, "IScalabilityChangedEventListener", "Spatial audio receives scalability changes through the typed event lane", builder, ref failureCount);
-                AssertContains(spatial, "ScalabilityEvents.Register(this)", "Spatial audio registers for scalability events", builder, ref failureCount);
-                AssertContains(spatial, "ScalabilityEvents.Unregister(this)", "Spatial audio unregisters scalability events", builder, ref failureCount);
-                AssertContains(spatial, "public void OnScalabilityChanged(in ScalabilityChangedEvent payload)", "Spatial audio updates quality policy from scalability payloads", builder, ref failureCount);
+                AssertContains(spatial, "ConsumeScalabilitySignals();", "Spatial audio drains scalability changes from typed signal snapshots", builder, ref failureCount);
+                AssertContains(spatial, "ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();", "Spatial audio consumes scalability through a ReadOnlySpan typed-lane snapshot", builder, ref failureCount);
+                AssertNotContains(spatial, "IScalability" + "ChangedEventListener", "Spatial audio has no legacy scalability listener interface", builder, ref failureCount);
+                AssertNotContains(spatial, "Scalability" + "Events.Register(this)", "Spatial audio does not register with the scalability listener registry", builder, ref failureCount);
+                AssertNotContains(spatial, "Scalability" + "Events.Unregister(this)", "Spatial audio does not unregister from the scalability listener registry", builder, ref failureCount);
+                AssertContains(spatial, "private void HandleScalabilityChanged(in ScalabilityChangedEvent payload)", "Spatial audio updates quality policy from typed scalability payloads", builder, ref failureCount);
                 AssertContains(spatial, "EnsureSpatialAudioPolicyCached()", "Spatial audio hot paths consume cached quality policy", builder, ref failureCount);
                 AssertContains(spatialPolicyCold, "GlobalRegistry.ScalabilityTier", "Spatial audio seeds scalability policy only during cold cache refresh", builder, ref failureCount);
                 AssertContains(spatialPolicyCold, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Spatial audio seeds low-memory policy only during cold cache refresh", builder, ref failureCount);
@@ -241,11 +245,16 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "SignalBus<PhysicsEventPayload>.Push(in payload)", "Critical renderer publishes predator acoustic impulses through the typed physics payload lane", builder, ref failureCount);
                 AssertContains(renderer, "ConsumeLaserCutterEventSignals();", "Critical renderer drains laser cutter state from typed signal snapshots", builder, ref failureCount);
                 AssertContains(renderer, "SignalBus<global::Hecton8.Core.Contracts.Signals.LaserCutterEventPayload>.GetFrameSnapshot()", "Critical renderer consumes laser cutter payloads through the typed SignalBus lane", builder, ref failureCount);
+                AssertContains(renderer, "ConsumeProceduralAudioSignals();", "Critical renderer drains procedural audio from typed signal snapshots", builder, ref failureCount);
+                AssertContains(renderer, "ReadOnlySpan<AudioEvent> signals = SignalBus<AudioEvent>.GetFrameSnapshot();", "Critical renderer consumes procedural audio through a ReadOnlySpan typed-lane snapshot", builder, ref failureCount);
                 AssertNotContains(renderer, "IPhysics" + "AcousticImpulseEventListener", "Critical renderer has no legacy acoustic-impulse listener interface", builder, ref failureCount);
                 AssertNotContains(renderer, "Physics" + "Event" + "Bus.Register(this)", "Critical renderer does not subscribe to the legacy physics event bus", builder, ref failureCount);
                 AssertNotContains(renderer, "ILaser" + "CutterEventListener", "Critical renderer has no legacy laser cutter listener interface", builder, ref failureCount);
                 AssertNotContains(renderer, "LaserCutterEvents." + "Register(this)", "Critical renderer does not subscribe to laser cutter listener queues", builder, ref failureCount);
                 AssertNotContains(renderer, "LaserCutterEvents." + "Unregister(this)", "Critical renderer does not unsubscribe from laser cutter listener queues", builder, ref failureCount);
+                AssertNotContains(renderer, "IProcedural" + "AudioEventListener", "Critical renderer has no legacy procedural audio listener interface", builder, ref failureCount);
+                AssertNotContains(renderer, "ProceduralAudioEvents." + "Register(this)", "Critical renderer does not subscribe to procedural audio listener queues", builder, ref failureCount);
+                AssertNotContains(renderer, "ProceduralAudioEvents." + "Unregister(this)", "Critical renderer does not unsubscribe from procedural audio listener queues", builder, ref failureCount);
                 AssertContains(renderer, "KineticImpactThudStartHertz = 150f", "Kinetic thud starts at 150 Hz", builder, ref failureCount);
                 AssertContains(renderer, "KineticImpactThudEndHertz = 40f", "Kinetic thud descends to 40 Hz", builder, ref failureCount);
                 AssertContains(renderer, "KineticImpactWaterLowPassHertz = 800f", "Underwater kinetic impacts use 800 Hz low-pass", builder, ref failureCount);
@@ -434,10 +443,12 @@ namespace Hecton8.Audio.Editor
                 string prologueLateFrame = ExtractMethodBody(prologueAcoustic, "public void LateFrameTick()");
                 string prologueColdRuntime = ExtractMethodBody(prologueAcoustic, "private void RefreshRuntimeServicesCold()");
                 string prologueColdPolicy = ExtractMethodBody(prologueAcoustic, "private void RefreshQualityPolicyCold()");
-                AssertContains(prologueAcoustic, "IScalabilityChangedEventListener", "Prologue acoustic bridge receives scalability changes through the typed event lane", builder, ref failureCount);
-                AssertContains(prologueAcoustic, "ScalabilityEvents.Register(this)", "Prologue acoustic bridge registers for scalability events", builder, ref failureCount);
-                AssertContains(prologueAcoustic, "ScalabilityEvents.Unregister(this)", "Prologue acoustic bridge unregisters scalability events", builder, ref failureCount);
-                AssertContains(prologueAcoustic, "CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, GlobalRegistry.H8_LOW_MEMORY_PROFILE)", "Prologue acoustic bridge refreshes low-memory policy from scalability events", builder, ref failureCount);
+                AssertContains(prologueAcoustic, "ConsumeScalabilitySignals();", "Prologue acoustic bridge drains scalability changes from typed signal snapshots", builder, ref failureCount);
+                AssertContains(prologueAcoustic, "ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();", "Prologue acoustic bridge consumes scalability through a ReadOnlySpan typed-lane snapshot", builder, ref failureCount);
+                AssertNotContains(prologueAcoustic, "IScalability" + "ChangedEventListener", "Prologue acoustic bridge has no legacy scalability listener interface", builder, ref failureCount);
+                AssertNotContains(prologueAcoustic, "Scalability" + "Events.Register(this)", "Prologue acoustic bridge does not register with the scalability listener registry", builder, ref failureCount);
+                AssertNotContains(prologueAcoustic, "Scalability" + "Events.Unregister(this)", "Prologue acoustic bridge does not unregister from the scalability listener registry", builder, ref failureCount);
+                AssertContains(prologueAcoustic, "CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile)", "Prologue acoustic bridge refreshes cached low-memory policy from scalability payloads", builder, ref failureCount);
                 AssertContains(prologueColdRuntime, "GlobalRegistry.Audio", "Prologue acoustic bridge reads audio service only during cold runtime refresh", builder, ref failureCount);
                 AssertContains(prologueColdRuntime, "GlobalRegistry.TickDispatcher", "Prologue acoustic bridge reads tick dispatcher only during cold runtime refresh", builder, ref failureCount);
                 AssertContains(prologueColdPolicy, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic bridge seeds low-memory policy during cold cache refresh", builder, ref failureCount);
@@ -462,9 +473,12 @@ namespace Hecton8.Audio.Editor
                 string vocalTick = ExtractMethodBody(vocalWarning, "public void Tick(float deltaTime)");
                 string vocalSlowTick = ExtractMethodBody(vocalWarning, "public void SlowTick()");
                 string vocalColdServices = ExtractMethodBody(vocalWarning, "private void RefreshCachedServicesCold()");
-                AssertContains(vocalWarning, "ScalabilityEvents.Register(this)", "Vocal warning system registers for scalability events", builder, ref failureCount);
-                AssertContains(vocalWarning, "ScalabilityEvents.Unregister(this)", "Vocal warning system unregisters scalability events", builder, ref failureCount);
-                AssertContains(vocalWarning, "public void OnScalabilityChanged(in ScalabilityChangedEvent payload)", "Vocal warning quality tier updates through scalability payloads", builder, ref failureCount);
+                AssertContains(vocalWarning, "ConsumeScalabilitySignals();", "Vocal warning system drains scalability changes from typed signal snapshots", builder, ref failureCount);
+                AssertContains(vocalWarning, "ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();", "Vocal warning system consumes scalability through a ReadOnlySpan typed-lane snapshot", builder, ref failureCount);
+                AssertNotContains(vocalWarning, "IScalability" + "ChangedEventListener", "Vocal warning system has no legacy scalability listener interface", builder, ref failureCount);
+                AssertNotContains(vocalWarning, "Scalability" + "Events.Register(this)", "Vocal warning system does not register with the scalability listener registry", builder, ref failureCount);
+                AssertNotContains(vocalWarning, "Scalability" + "Events.Unregister(this)", "Vocal warning system does not unregister from the scalability listener registry", builder, ref failureCount);
+                AssertContains(vocalWarning, "private void HandleScalabilityChanged(in ScalabilityChangedEvent payload)", "Vocal warning quality tier updates through typed scalability payloads", builder, ref failureCount);
                 AssertContains(vocalColdServices, "GlobalRegistry.PlayerCriticalAudio", "Vocal warning renderer service is resolved only during cold cache refresh", builder, ref failureCount);
                 AssertContains(vocalColdServices, "GlobalRegistry.Subtitles", "Vocal warning subtitles service is resolved only during cold cache refresh", builder, ref failureCount);
                 AssertContains(vocalColdServices, "GlobalRegistry.Localization", "Vocal warning localization service is resolved only during cold cache refresh", builder, ref failureCount);
@@ -614,7 +628,18 @@ namespace Hecton8.Audio.Editor
             }
 
             if (eventsSource.Length > 0)
+            {
                 AssertContains(eventsSource, "LeviathanRoar", "Procedural audio event kind routes Leviathan roar", builder, ref failureCount);
+                AssertContains(eventsSource, "SignalBus<AudioEvent>.Push(in audioEvent)", "Procedural audio event source publishes through the typed SignalBus lane", builder, ref failureCount);
+                AssertContains(eventsSource, "GlobalSignals.InitializeAllQueues()", "Procedural audio event source enters through central signal lane authority", builder, ref failureCount);
+            }
+
+            if (globalSignals.Length > 0)
+            {
+                AssertContains(globalSignals, "public struct AudioEvent : ISignal", "Procedural audio event payload is a typed SignalBus payload", builder, ref failureCount);
+                AssertContains(globalSignals, "SignalBus<global::Hecton8.Core.Contracts.Signals.AudioEvent>.Configure", "Procedural audio typed lane has a central stable lane policy", builder, ref failureCount);
+                AssertContains(globalSignals, "laneHash: 0x41554445u", "Procedural audio typed lane preserves the AUDE stable hash", builder, ref failureCount);
+            }
 
             if (acousticZone.Length > 0)
             {

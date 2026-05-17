@@ -394,3 +394,101 @@ Verification:
 - SignalBus scan shows every Bridge `Push` still uses `in`.
 - Guard scan shows Bridge runtime signal paths are gated by `Application.isPlaying` or `publishRuntimeSignals`.
 - `git diff --check` on signal-gated Bridge files exits 0 with line-ending normalization warnings only.
+
+## 2026-05-17 GO AGAIN Prefab Active-Span Coherence
+What was wrong:
+- The prefab binder skipped tombstones but wrote valid rows at serialized indices.
+- After the dirty-lane patch, the published active count could describe a shorter prefix than the highest written row, so prefix-scanning consumers could miss valid prefabs after a deleted slot.
+- Edit-mode bind also had no reason to touch the runtime prefab registry.
+
+What was done:
+- `H8PrefabRegistryRuntimeBinder` now compacts bindable prefab/lore entries into a dense prefix before publishing `DataVaultUpdateSignal`.
+- `DataVaultUpdateSignal.NewValue` and telemetry now carry the active dense row count for prefab and lore buffers.
+- Runtime prefab registry registration and frame reads are gated behind `Application.isPlaying`; edit-mode bind remains a cold Vault setter.
+
+Cinematic Cheats used:
+- Low tier gets a compact row prefix and no tombstone scanning pressure.
+- High/Ultra keep the packed LUT and high-tier visual hashes for prefab overkill consumers without introducing string lookup or frame polling.
+
+Exact Microseconds saved:
+- 0 us runtime steady-state.
+- Cold boot/bind pays one `writeIndex` increment per active prefab. No Unity profiler microseconds were claimed.
+
+Verification:
+- No rebuild was run in this pass per operator instruction.
+- Refined Bridge lifecycle scan found no `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`.
+- Bridge ownership/lane scan found no local `NativeArray`, local allocator, direct `GetBuffer<`, legacy `EventBus`, managed event/delegate lane, `UnityEvent`, or `string.Format`.
+- SignalBus scan shows all Bridge `Push` calls use `in`.
+- Guard/active-span scan confirms `Application.isPlaying`, `publishRuntimeSignals`, `writeIndex`, and active-count dirty publication in the binder.
+- `git diff --check -- Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistryRuntimeBinder.cs` exits 0 with line-ending normalization warning only.
+
+## 2026-05-17 GO AGAIN Input Active-Span Coherence
+What was wrong:
+- `H8InputMappingFacade` could preserve null serialized list elements and still publish total list length as the active input binding count.
+- Raw input consumers would either scan tombstones or treat empty rows as live input data.
+
+What was done:
+- Input sync now writes non-null bindings into a dense prefix of `BridgeInputFacadeBindings`.
+- `DataVaultUpdateSignal.NewValue` and telemetry now carry active non-null binding count.
+
+Cinematic Cheats used:
+- Low tier gets a compact button-mask prefix and avoids tombstone branch churn.
+- High/Ultra retain the same packed input lane for richer control schemes without a runtime string map.
+
+Exact Microseconds saved:
+- 0 us runtime steady-state.
+- Explicit sync pays one active-count increment per valid binding. No Unity profiler microseconds were claimed.
+
+Verification:
+- No rebuild was run in this pass per operator instruction.
+- Lifecycle scan remains clean for Bridge.
+- Ownership/lane scan remains clean for Bridge.
+- Active-span scan confirms prefab/lore and input dense-prefix writes.
+- `git diff --check` on touched Bridge files exits 0 with line-ending normalization warnings only.
+
+## 2026-05-17 GO AGAIN Empty Prefab VRAM Tombstone
+What was wrong:
+- A registry with serialized tombstone rows but zero active bindable prefabs could remain registered in `VRAMBudgetTracker` with a zero-byte cost.
+
+What was done:
+- `H8PrefabRegistryRuntimeBinder` now unregisters the registry hash from `VRAMBudgetTracker` when active prefab count is zero after binding.
+- Non-empty active registries still call `RegisterOrUpdate` with their measured total.
+
+Cinematic Cheats used:
+- Low tier gets cleaner VRAM pressure decisions when designers remove all prefabs from a registry.
+- High/Ultra keep accurate visual-overkill budget accounting for active prefab sets only.
+
+Exact Microseconds saved:
+- 0 us runtime steady-state.
+- Cold bind pays one branch after active-count calculation. No Unity profiler microseconds were claimed.
+
+Verification:
+- No rebuild was run in this pass per operator instruction.
+- XML assignment was re-read after the three-task interval.
+- Lifecycle and ownership scans remain clean for Bridge.
+- Active-span/VRAM scan confirms dense active counts and zero-active unregister behavior.
+- `git diff --check` on touched Bridge files exits 0 with line-ending normalization warnings only.
+
+## 2026-05-17 GO AGAIN Blackbox Dump Header And Ordered Replay
+What was wrong:
+- The Bridge blackbox dump wrote raw circular ring memory without a header or cursor context.
+- Post-mortem readers could not know entry size, valid count, cursor, capacity, or oldest-to-newest order from the file itself.
+
+What was done:
+- Added packed `H8FacadeTelemetryDumpHeader` with `H8BD` magic, version, entry count, entry size, cursor, capacity, and payload hash.
+- `RequestBlackBoxDump()` now writes the header first, then writes valid telemetry entries oldest-to-newest.
+- `H8BridgeBinaryLayoutVerifier` now validates the dump header size and offsets.
+
+Cinematic Cheats used:
+- No visual cheat was added in this pass. This is survival tooling for bad design data and failed live-tuning edits.
+
+Exact Microseconds saved:
+- 0 us runtime steady-state.
+- Dump path pays one linear pass over at most 300 packed entries only on fault/demand. No Unity profiler microseconds were claimed.
+
+Verification:
+- No rebuild was run in this pass per operator instruction.
+- Lifecycle scan remains clean for Bridge.
+- Ownership/lane scan remains clean for Bridge.
+- Layout scan confirms the new dump header is `Pack = 1` and covered by cold boot verifier.
+- `git diff --check` on touched Bridge files exits 0 with line-ending normalization warnings only.

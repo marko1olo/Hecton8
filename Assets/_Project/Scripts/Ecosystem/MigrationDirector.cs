@@ -3,6 +3,7 @@ using Hecton8.AI;
 using Hecton8.Atmosphere;
 using Hecton8.Celestial;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.PDA;
 using Hecton8.Physics;
 using Hecton8.World;
@@ -46,6 +47,7 @@ namespace Hecton8.Ecosystem
         private const ushort MigrationCellFlagNoPopulationSaturated = unchecked((ushort)~MigrationCellFlagPopulationSaturated);
         private const string NativeMemoryOwner = nameof(MigrationDirector);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const SystemID NativeMemorySystemId = SystemID.AIEcology;
 
         private bool _registeredToTick;
         private bool _registeredLateFrameTick;
@@ -64,6 +66,7 @@ namespace Hecton8.Ecosystem
         private bool _migrationFieldScheduled;
         private int _pendingBloodCloudPoiWriteCount;
         private bool _serviceRegistered;
+        private bool _duplicateServiceSuppressed;
 
         private NativeArray<MigrationGridCell> _migrationGridFront;
         private NativeArray<MigrationGridCell> _migrationGridBack;
@@ -122,37 +125,56 @@ namespace Hecton8.Ecosystem
         /// <summary>
         /// Coarse global migration cell. X/Z indices wrap in AUP-space; Y is clamped to the shelf water column.
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
         public struct MigrationGridCell
         {
+            [FieldOffset(0)]
             public int3 AupCell;
+            [FieldOffset(12)]
             public float3 Direction;
+            [FieldOffset(24)]
             public float Magnitude;
+            [FieldOffset(28)]
             public ushort PopulationCount;
+            [FieldOffset(30)]
             public ushort Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
         private struct MigrationBloodCloudPoi
         {
+            [FieldOffset(0)]
             public AbsoluteUniversePositionBlit128 PositionAup;
+            [FieldOffset(48)]
             public float3 PositionFieldAupMeters;
+            [FieldOffset(60)]
             public float RadiusMeters;
+            [FieldOffset(64)]
             public float Strength;
+            [FieldOffset(68)]
             public float ExpireGameTimeSeconds;
+            [FieldOffset(72)]
             public int SourceId;
+            [FieldOffset(76)]
             public int Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 40)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 40)]
         private struct MigrationSwarmState
         {
+            [FieldOffset(0)]
             public int3 AupCell;
+            [FieldOffset(12)]
             public float3 LocalPosition;
+            [FieldOffset(24)]
             public float RadiusMeters;
+            [FieldOffset(28)]
             public float LastWriteGameTimeSeconds;
+            [FieldOffset(32)]
             public ushort PopulationCount;
+            [FieldOffset(34)]
             public ushort SpeciesId;
+            [FieldOffset(36)]
             public uint Flags;
         }
 
@@ -182,7 +204,7 @@ namespace Hecton8.Ecosystem
             MigrationDirector registered = GlobalRegistry.Migration;
             if (registered != null && registered != this)
             {
-                Destroy(gameObject);
+                SuppressDuplicateService();
                 return;
             }
 
@@ -193,8 +215,11 @@ namespace Hecton8.Ecosystem
 
         private void OnEnable()
         {
+            if (_duplicateServiceSuppressed)
+                return;
+
             TryRegisterService();
-            if (Application.isPlaying && !_serviceRegistered)
+            if (Application.isPlaying && (!_serviceRegistered || _duplicateServiceSuppressed))
                 return;
 
             TryRegisterToTickManager();
@@ -205,7 +230,7 @@ namespace Hecton8.Ecosystem
 
         private void Start()
         {
-            if (Application.isPlaying && !_serviceRegistered)
+            if (_duplicateServiceSuppressed || (Application.isPlaying && !_serviceRegistered))
                 return;
 
             TryRegisterToTickManager();
@@ -686,6 +711,7 @@ namespace Hecton8.Ecosystem
             };
 
             _migrationFieldHandle = job.Schedule(_migrationGridCellCount, 64);
+            H8Memory.RegisterActiveJob(NativeMemorySystemId, _migrationFieldHandle);
             _migrationFieldScheduled = true;
         }
 
@@ -1294,17 +1320,23 @@ namespace Hecton8.Ecosystem
             _debugMigrationGridCellCount = requiredCellCount;
 
             // COLD ALLOC: NativeArray<MigrationGridCell>[65536 max] — double-buffered global migration flow field — owner: MigrationDirector
-            _migrationGridFront = new NativeArray<MigrationGridCell>(requiredCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _migrationGridFront = H8Memory.Allocate<MigrationGridCell>(requiredCellCount, NativeMemorySystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_migrationGridFront, NativeMemoryOwner, nameof(_migrationGridFront), NativeMemoryLifetime);
             // COLD ALLOC: NativeArray<MigrationGridCell>[65536 max] — Burst write target for seasonal migration flow updates — owner: MigrationDirector
-            _migrationGridBack = new NativeArray<MigrationGridCell>(requiredCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _migrationGridBack = H8Memory.Allocate<MigrationGridCell>(requiredCellCount, NativeMemorySystemId, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             NativeMemorySentinel.RegisterNativeArray(_migrationGridBack, NativeMemoryOwner, nameof(_migrationGridBack), NativeMemoryLifetime);
             // COLD ALLOC: NativeArray<MigrationBloodCloudPoi>[8] — kill-site vector distortion sources — owner: MigrationDirector
-            _bloodCloudPois = new NativeArray<MigrationBloodCloudPoi>(BloodCloudPoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _bloodCloudPois = H8Memory.Allocate<MigrationBloodCloudPoi>(BloodCloudPoiCapacity, NativeMemorySystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_bloodCloudPois, NativeMemoryOwner, nameof(_bloodCloudPois), NativeMemoryLifetime);
             // COLD ALLOC: NativeArray<MigrationSwarmState>[128] — O(1) statistical swarm population points — owner: MigrationDirector
-            _migrationSwarmStates = new NativeArray<MigrationSwarmState>(MigrationSwarmCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _migrationSwarmStates = H8Memory.Allocate<MigrationSwarmState>(MigrationSwarmCapacity, NativeMemorySystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_migrationSwarmStates, NativeMemoryOwner, nameof(_migrationSwarmStates), NativeMemoryLifetime);
+            if (!IsMigrationNativeStateAllocated)
+            {
+                DisposeMigrationNativeState();
+                return;
+            }
+
             _debugStatisticalSwarmSlotCount = 0;
             _coldTickAccumulator = migrationFieldColdTickIntervalSeconds;
             _lastColdTickRuntimeSeconds = -1f;
@@ -1344,7 +1376,7 @@ namespace Hecton8.Ecosystem
                 return false;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(dependency);
+            H8Memory.Release(ref array, dependency, NativeMemorySystemId);
             array = default;
             return true;
         }
@@ -1357,12 +1389,21 @@ namespace Hecton8.Ecosystem
             MigrationDirector registered = GlobalRegistry.Migration;
             if (registered != null && registered != this)
             {
-                Destroy(gameObject);
+                SuppressDuplicateService();
                 return;
             }
 
             GlobalRegistry.RegisterMigrationDirectorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Migration, this);
+        }
+
+        private void SuppressDuplicateService()
+        {
+            _duplicateServiceSuppressed = true;
+            _serviceRegistered = false;
+            _registeredToTick = false;
+            _registeredLateFrameTick = false;
+            enabled = false;
         }
 
         private void TryUnregisterService()

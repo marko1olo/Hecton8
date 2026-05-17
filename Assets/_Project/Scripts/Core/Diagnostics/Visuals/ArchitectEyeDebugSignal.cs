@@ -1,6 +1,4 @@
-using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts.Signals;
-using Unity.Mathematics;
 using UnityEngine.Scripting;
 
 namespace Hecton8.Core.Diagnostics.Visuals

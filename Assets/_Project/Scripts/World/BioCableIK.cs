@@ -14,6 +14,8 @@ namespace Hecton8.World
     public sealed class BioCableIK : MonoBehaviour
     {
         private const float SegmentDistanceEpsilonSq = 0.00000001f;
+        private const float MaximumDeltaTime = 0.1f;
+        private const float MaximumCableVelocity = 64f;
 
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
@@ -134,7 +136,7 @@ namespace Hecton8.World
             ResolveRuntimeWiring();
             EnsureStorage();
 
-            _anchorPositionWS = anchorPositionWS;
+            _anchorPositionWS = SanitizePosition(anchorPositionWS, SanitizePosition(transform.position, Vector3.zero));
             _anchorUpWS = ResolveSafeDirection(anchorUpWS, Vector3.up);
             _snapVelocityWS = Vector3.zero;
             _snapTimer = 0f;
@@ -146,7 +148,7 @@ namespace Hecton8.World
 
             for (int i = 0; i < _points.Length; i++)
             {
-                _points[i] = _anchorPositionWS - _anchorUpWS * (segmentLength * i);
+                _points[i] = _anchorPositionWS - _anchorUpWS * (ResolveSegmentLength() * i);
                 _velocities[i] = Vector3.zero;
             }
 
@@ -170,7 +172,7 @@ namespace Hecton8.World
             if (!_initialized)
                 InitializeAt(anchorPositionWS, anchorUpWS);
 
-            _anchorPositionWS = anchorPositionWS;
+            _anchorPositionWS = SanitizePosition(anchorPositionWS, _anchorPositionWS);
             _anchorUpWS = ResolveSafeDirection(anchorUpWS, Vector3.up);
             _points[0] = _anchorPositionWS;
             _velocities[0] = Vector3.zero;
@@ -180,44 +182,54 @@ namespace Hecton8.World
             _pendingElasticRupture = false;
             _pendingElasticRuptureVelocityWS = Vector3.zero;
 
-            float deltaTime = Mathf.Max(0f, dt);
-            _oscillationTime += deltaTime;
-            float clampedAttraction = Mathf.Clamp01(attraction01);
-            float clampedWrap = Mathf.Clamp01(wrap01);
-            Vector3 velocityBias = attractorVelocityWS * LerpClamped(0.08f, 0.42f, clampedWrap);
-            Vector3 attractorDirection = ResolveSafeDirection(attractorVelocityWS, Vector3.forward);
+            float deltaTime = ResolveDeltaTime(dt);
+            _oscillationTime = ResolveOscillationTime(_oscillationTime, deltaTime);
+            float clampedAttraction = Clamp01Finite(attraction01);
+            float clampedWrap = Clamp01Finite(wrap01);
+            float safeSegmentLength = ResolveSegmentLength();
+            float safeAttractorSpring = ResolveRange(attractorSpring, 0f, 32f, 9.5f);
+            float safeDamping = ResolveRange(damping, 0f, 4f, 1.45f);
+            float safeWrapStrength = ResolveRange(wrapStrength, 0f, 3f, 1.2f);
+            Vector3 safeAttractorPosition = SanitizePosition(attractorPositionWS, _points[_points.Length - 1]);
+            Vector3 safeAttractorVelocity = SanitizeVelocity(attractorVelocityWS);
+            Vector3 velocityBias = safeAttractorVelocity * LerpClamped(0.08f, 0.42f, clampedWrap);
+            Vector3 attractorDirection = ResolveSafeDirection(safeAttractorVelocity, Vector3.forward);
             Vector3 wrapAxis = Vector3.Cross(_anchorUpWS, attractorDirection);
-            if (wrapAxis.sqrMagnitude <= 0.0001f)
+            float wrapAxisLengthSq = wrapAxis.sqrMagnitude;
+            if (!math.isfinite(wrapAxisLengthSq) || wrapAxisLengthSq <= 0.0001f)
                 wrapAxis = Vector3.Cross(_anchorUpWS, Vector3.right);
             wrapAxis = ResolveSafeDirection(wrapAxis, Vector3.up);
 
             for (int i = 1; i < _points.Length; i++)
             {
                 float tail01 = i / (float)(_points.Length - 1);
-                Vector3 point = _points[i];
-                Vector3 velocity = _velocities[i];
+                Vector3 restFallback = _points[i - 1] - _anchorUpWS * safeSegmentLength;
+                Vector3 point = SanitizePosition(_points[i], restFallback);
+                Vector3 velocity = SanitizeVelocity(_velocities[i]);
 
-                Vector3 restPosition = _points[i - 1] - _anchorUpWS * segmentLength;
+                Vector3 restPosition = _points[i - 1] - _anchorUpWS * safeSegmentLength;
                 Vector3 springForce = (restPosition - point) * LerpClamped(3.6f, 6.8f, tail01);
 
-                Vector3 toAttractor = attractorPositionWS - point;
-                Vector3 attractForce = toAttractor * (attractorSpring * LerpClamped(0.2f, 1f, tail01) * clampedAttraction);
+                Vector3 toAttractor = safeAttractorPosition - point;
+                Vector3 attractForce = toAttractor * (safeAttractorSpring * LerpClamped(0.2f, 1f, tail01) * clampedAttraction);
 
-                Vector3 wrapOffset = wrapAxis * FastTriangleSineSigned(tail01 * 4.5f + _oscillationTime * 1.9f) * segmentLength * 0.55f;
-                Vector3 wrapForce = wrapOffset * (wrapStrength * clampedWrap * Mathf.SmoothStep(0f, 1f, tail01));
+                Vector3 wrapOffset = wrapAxis * FastTriangleSineSigned(tail01 * 4.5f + _oscillationTime * 1.9f) * safeSegmentLength * 0.55f;
+                Vector3 wrapForce = wrapOffset * (safeWrapStrength * clampedWrap * Mathf.SmoothStep(0f, 1f, tail01));
 
-                velocity += (springForce + attractForce + wrapForce + velocityBias) * deltaTime;
-                velocity *= Mathf.Clamp01(1f - damping * deltaTime * 0.35f);
+                Vector3 force = springForce + attractForce + wrapForce + velocityBias;
+                velocity += SanitizeVelocity(force) * deltaTime;
+                velocity *= Clamp01Finite(1f - safeDamping * deltaTime * 0.35f);
+                velocity = SanitizeVelocity(velocity);
 
-                point += velocity * deltaTime;
+                point = SanitizePosition(point + velocity * deltaTime, restPosition);
 
                 point = ConstrainSegmentToLength(_points[i - 1], point);
 
-                _points[i] = point;
+                _points[i] = SanitizePosition(point, restPosition);
                 _velocities[i] = velocity;
             }
 
-            UpdateElasticRupture(deltaTime, attractorPositionWS, clampedAttraction);
+            UpdateElasticRupture(deltaTime, safeAttractorPosition, clampedAttraction);
             UpdateSparkAnchor();
             ApplyVisualState();
             SyncRenderer();
@@ -237,16 +249,20 @@ namespace Hecton8.World
             if (!_initialized)
                 InitializeAt(anchorPositionWS, anchorUpWS);
 
-            _anchorPositionWS = anchorPositionWS;
+            _anchorPositionWS = SanitizePosition(anchorPositionWS, _anchorPositionWS);
             _anchorUpWS = ResolveSafeDirection(anchorUpWS, Vector3.up);
             _points[0] = _anchorPositionWS;
             _velocities[0] = Vector3.zero;
             _pendingElasticRupture = false;
             _pendingElasticRuptureVelocityWS = Vector3.zero;
 
-            float deltaTime = Mathf.Max(0f, dt);
-            _oscillationTime += deltaTime;
-            float recoilGate = _snapDuration > 0.0001f ? Mathf.Clamp01(_snapTimer / _snapDuration) : 0f;
+            float deltaTime = ResolveDeltaTime(dt);
+            _oscillationTime = ResolveOscillationTime(_oscillationTime, deltaTime);
+            float safeSegmentLength = ResolveSegmentLength();
+            float safeDamping = ResolveRange(damping, 0f, 4f, 1.45f);
+            float safeSnapDamping = ResolveRange(snapDamping, 0f, 4f, 1.8f);
+            float safeSnapVelocityCarry = ResolveRange(snapVelocityCarry, 0f, 8f, 2.6f);
+            float recoilGate = _snapDuration > 0.0001f ? Clamp01Finite(_snapTimer / _snapDuration) : 0f;
             if (_snapTimer > 0f)
             {
                 _snapTimer -= deltaTime;
@@ -257,20 +273,22 @@ namespace Hecton8.World
             for (int i = 1; i < _points.Length; i++)
             {
                 float tail01 = i / (float)(_points.Length - 1);
-                Vector3 point = _points[i];
-                Vector3 velocity = _velocities[i];
+                Vector3 restFallback = _points[i - 1] - _anchorUpWS * safeSegmentLength;
+                Vector3 point = SanitizePosition(_points[i], restFallback);
+                Vector3 velocity = SanitizeVelocity(_velocities[i]);
 
-                Vector3 restPosition = _points[i - 1] - _anchorUpWS * segmentLength;
+                Vector3 restPosition = _points[i - 1] - _anchorUpWS * safeSegmentLength;
                 Vector3 springForce = (restPosition - point) * LerpClamped(2.8f, 5.4f, tail01);
-                Vector3 recoilForce = _snapVelocityWS * (snapVelocityCarry * recoilGate * LerpClamped(0.4f, 1f, tail01));
-                velocity += (springForce + recoilForce) * deltaTime;
-                velocity *= Mathf.Clamp01(1f - (damping + snapDamping * recoilGate) * deltaTime * 0.35f);
+                Vector3 recoilForce = SanitizeVelocity(_snapVelocityWS) * (safeSnapVelocityCarry * recoilGate * LerpClamped(0.4f, 1f, tail01));
+                velocity += SanitizeVelocity(springForce + recoilForce) * deltaTime;
+                velocity *= Clamp01Finite(1f - (safeDamping + safeSnapDamping * recoilGate) * deltaTime * 0.35f);
+                velocity = SanitizeVelocity(velocity);
 
-                point += velocity * deltaTime;
+                point = SanitizePosition(point + velocity * deltaTime, restPosition);
 
                 point = ConstrainSegmentToLength(_points[i - 1], point);
 
-                _points[i] = point;
+                _points[i] = SanitizePosition(point, restPosition);
                 _velocities[i] = velocity;
             }
 
@@ -296,8 +314,8 @@ namespace Hecton8.World
         /// </summary>
         public void SetEmpCharge(float charge01, float pulse01)
         {
-            _empCharge01 = Mathf.Clamp01(charge01);
-            _empPulse01 = Mathf.Clamp01(pulse01);
+            _empCharge01 = Clamp01Finite(charge01);
+            _empPulse01 = Clamp01Finite(pulse01);
             ApplyVisualState();
         }
 
@@ -307,14 +325,14 @@ namespace Hecton8.World
         public void TriggerSnapRecoil(Vector3 recoilVelocityWS, float duration)
         {
             EnsureStorage();
-            _snapVelocityWS = recoilVelocityWS;
-            _snapDuration = Mathf.Max(0.1f, duration);
+            _snapVelocityWS = SanitizeVelocity(recoilVelocityWS);
+            _snapDuration = ResolveRange(duration, 0.1f, 2f, 0.1f);
             _snapTimer = _snapDuration;
 
             for (int i = 1; i < _velocities.Length; i++)
             {
                 float tail01 = i / (float)(_velocities.Length - 1);
-                _velocities[i] += recoilVelocityWS * LerpClamped(0.35f, 1f, tail01);
+                _velocities[i] = SanitizeVelocity(_velocities[i] + _snapVelocityWS * LerpClamped(0.35f, 1f, tail01));
             }
         }
 
@@ -351,10 +369,11 @@ namespace Hecton8.World
             {
                 lineRenderer.positionCount = Mathf.Max(2, segmentCount);
                 lineRenderer.widthMultiplier = 1f;
-                lineRenderer.startWidth = rootWidth;
-                lineRenderer.endWidth = tipWidth;
-                lineRenderer.startColor = baseCableColor;
-                lineRenderer.endColor = baseCableColor;
+                lineRenderer.startWidth = ResolveRange(rootWidth, 0.01f, 1f, 0.18f);
+                lineRenderer.endWidth = ResolveRange(tipWidth, 0.01f, ResolveRange(rootWidth, 0.01f, 1f, 0.18f), 0.06f);
+                Color safeBaseColor = SanitizeColor(baseCableColor, new Color(0.12f, 0.52f, 0.46f, 0.92f));
+                lineRenderer.startColor = safeBaseColor;
+                lineRenderer.endColor = safeBaseColor;
                 lineRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 lineRenderer.receiveShadows = false;
                 lineRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
@@ -382,36 +401,57 @@ namespace Hecton8.World
             if (_points == null || _points.Length <= 1)
                 return;
 
-            float restLength = segmentLength * (_points.Length - 1);
+            float safeSegmentLength = ResolveSegmentLength();
+            float safeElasticStretchLimit = ResolveRange(elasticStretchLimit, 1f, 2.5f, 1.42f);
+            float safeElasticBreakHoldTime = ResolveRange(elasticBreakHoldTime, 0.02f, 1f, 0.14f);
+            float safeElasticBreakRecoilMultiplier = ResolveRange(elasticBreakRecoilMultiplier, 0f, 4f, 1.35f);
+            float restLength = safeSegmentLength * (_points.Length - 1);
             if (restLength <= 0.0001f)
                 return;
 
             float tailDistanceSq = (_points[_points.Length - 1] - _anchorPositionWS).sqrMagnitude;
             float attractorDistanceSq = (attractorPositionWS - _anchorPositionWS).sqrMagnitude;
+            if (!math.isfinite(tailDistanceSq) || !math.isfinite(attractorDistanceSq))
+            {
+                _elasticBreakTimer = 0f;
+                _debugStretchRatio = 1f;
+                return;
+            }
+
             float effectiveDistanceSq = math.max(tailDistanceSq, attractorDistanceSq);
             float stretchRatioSq = effectiveDistanceSq / math.max(restLength * restLength, 0.0001f);
             float stretchRatioEstimate = 0.5f * (stretchRatioSq + 1f);
+            if (!math.isfinite(stretchRatioEstimate))
+            {
+                _elasticBreakTimer = 0f;
+                _debugStretchRatio = 1f;
+                return;
+            }
+
             _debugStretchRatio = stretchRatioEstimate;
-            if (stretchRatioEstimate <= elasticStretchLimit)
+            if (stretchRatioEstimate <= safeElasticStretchLimit)
             {
                 _elasticBreakTimer = 0f;
                 return;
             }
 
-            float overStretch01 = Mathf.Clamp01((stretchRatioEstimate - elasticStretchLimit) / Mathf.Max(elasticStretchLimit, 0.001f));
-            _elasticBreakTimer += deltaTime * LerpClamped(0.35f, 1.35f, Mathf.Clamp01(attraction01 + overStretch01));
-            if (_elasticBreakTimer < elasticBreakHoldTime || _pendingElasticRupture)
+            float overStretch01 = Clamp01Finite((stretchRatioEstimate - safeElasticStretchLimit) / math.max(safeElasticStretchLimit, 0.001f));
+            _elasticBreakTimer += ResolveDeltaTime(deltaTime) * LerpClamped(0.35f, 1.35f, Clamp01Finite(attraction01 + overStretch01));
+            if (_elasticBreakTimer < safeElasticBreakHoldTime || _pendingElasticRupture)
                 return;
 
             Vector3 ruptureDirection = _points[_points.Length - 1] - _points[_points.Length - 2];
-            if (ruptureDirection.sqrMagnitude <= 0.0001f)
+            float ruptureLengthSq = ruptureDirection.sqrMagnitude;
+            if (!math.isfinite(ruptureLengthSq) || ruptureLengthSq <= 0.0001f)
                 ruptureDirection = attractorPositionWS - _anchorPositionWS;
-            if (ruptureDirection.sqrMagnitude <= 0.0001f)
+            ruptureLengthSq = ruptureDirection.sqrMagnitude;
+            if (!math.isfinite(ruptureLengthSq) || ruptureLengthSq <= 0.0001f)
                 ruptureDirection = Vector3.up;
 
             _pendingElasticRuptureVelocityWS =
-                ResolveSafeDirection(ruptureDirection, Vector3.up) * (segmentLength * elasticBreakRecoilMultiplier * LerpClamped(1f, 3.2f, overStretch01)) +
-                _velocities[_velocities.Length - 1] * elasticBreakRecoilMultiplier;
+                SanitizeVelocity(
+                    ResolveSafeDirection(ruptureDirection, Vector3.up) * (safeSegmentLength * safeElasticBreakRecoilMultiplier * LerpClamped(1f, 3.2f, overStretch01)) +
+                    SanitizeVelocity(_velocities[_velocities.Length - 1]) * safeElasticBreakRecoilMultiplier);
             _pendingElasticRupture = true;
             _elasticBreakTimer = 0f;
         }
@@ -479,18 +519,21 @@ namespace Hecton8.World
         {
             if (lineRenderer != null)
             {
-                float chargeBlend = Mathf.Clamp01(_empCharge01 * LerpClamped(0.35f, 1f, _empPulse01));
-                Color drawColor = Color.Lerp(baseCableColor, empChargeColor, chargeBlend);
+                float chargeBlend = Clamp01Finite(_empCharge01 * LerpClamped(0.35f, 1f, _empPulse01));
+                Color safeBaseColor = SanitizeColor(baseCableColor, new Color(0.12f, 0.52f, 0.46f, 0.92f));
+                Color safeChargeColor = SanitizeColor(empChargeColor, new Color(0.95f, 0.98f, 1f, 0.98f));
+                Color drawColor = Color.Lerp(safeBaseColor, safeChargeColor, chargeBlend);
                 lineRenderer.startColor = drawColor;
-                lineRenderer.endColor = Color.Lerp(drawColor, empChargeColor, chargeBlend * 0.5f);
-                lineRenderer.widthMultiplier = 1f + empWidthBoost * chargeBlend;
+                lineRenderer.endColor = Color.Lerp(drawColor, safeChargeColor, chargeBlend * 0.5f);
+                lineRenderer.widthMultiplier = 1f + ResolveRange(empWidthBoost, 0f, 4f, 0.3f) * chargeBlend;
             }
 
             if (_sparkParticles != null)
             {
-                float sparkGate = Mathf.Clamp01((_empCharge01 - sparkChargeThreshold) / Mathf.Max(1f - sparkChargeThreshold, 0.001f));
+                float safeSparkThreshold = ResolveRange(sparkChargeThreshold, 0f, 1f, 0.28f);
+                float sparkGate = Clamp01Finite((_empCharge01 - safeSparkThreshold) / math.max(1f - safeSparkThreshold, 0.001f));
                 var emission = _sparkParticles.emission;
-                emission.rateOverTime = sparkEmissionRate * sparkGate * LerpClamped(0.25f, 1f, _empPulse01);
+                emission.rateOverTime = ResolveRange(sparkEmissionRate, 0f, 128f, 42f) * sparkGate * LerpClamped(0.25f, 1f, _empPulse01);
                 if (!_sparkParticles.isPlaying && sparkGate > 0f)
                     _sparkParticles.Play();
                 else if (_sparkParticles.isPlaying && sparkGate <= 0f && (lineRenderer == null || !lineRenderer.enabled))
@@ -505,7 +548,80 @@ namespace Hecton8.World
 
             int sparkIndex = Mathf.Min(2, _points.Length - 1);
             Transform sparkTransform = _sparkParticles.transform;
-            sparkTransform.position = _points[sparkIndex];
+            Vector3 sparkPosition = SanitizePosition(_points[sparkIndex], _anchorPositionWS);
+            if (IsFinite(sparkPosition))
+                sparkTransform.position = sparkPosition;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        private static Vector3 SanitizePosition(Vector3 value, Vector3 fallback)
+        {
+            if (IsFinite(value))
+                return value;
+
+            return IsFinite(fallback)
+                ? fallback
+                : Vector3.zero;
+        }
+
+        private static Vector3 SanitizeVelocity(Vector3 value)
+        {
+            if (!math.isfinite(value.x) || !math.isfinite(value.y) || !math.isfinite(value.z))
+                return Vector3.zero;
+
+            float lengthSq = value.sqrMagnitude;
+            if (!math.isfinite(lengthSq) || lengthSq <= 0f)
+                return Vector3.zero;
+
+            float maxVelocitySq = MaximumCableVelocity * MaximumCableVelocity;
+            if (lengthSq <= maxVelocitySq)
+                return value;
+
+            return value * (MaximumCableVelocity * math.rsqrt(lengthSq));
+        }
+
+        private static Color SanitizeColor(Color value, Color fallback)
+        {
+            if (math.isfinite(value.r) && math.isfinite(value.g) && math.isfinite(value.b) && math.isfinite(value.a))
+                return value;
+
+            return math.isfinite(fallback.r) &&
+                   math.isfinite(fallback.g) &&
+                   math.isfinite(fallback.b) &&
+                   math.isfinite(fallback.a)
+                ? fallback
+                : Color.white;
+        }
+
+        private static float Clamp01Finite(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float ResolveRange(float value, float minimum, float maximum, float fallback)
+        {
+            float safeValue = math.isfinite(value) ? value : fallback;
+            return math.clamp(safeValue, minimum, maximum);
+        }
+
+        private static float ResolveDeltaTime(float deltaTime)
+        {
+            return ResolveRange(deltaTime, 0f, MaximumDeltaTime, 0f);
+        }
+
+        private static float ResolveOscillationTime(float currentTime, float deltaTime)
+        {
+            float nextTime = (math.isfinite(currentTime) ? currentTime : 0f) + deltaTime;
+            return math.isfinite(nextTime) && nextTime <= 4096f ? nextTime : 0f;
+        }
+
+        private float ResolveSegmentLength()
+        {
+            return ResolveRange(segmentLength, 0.1f, 128f, 1.25f);
         }
 
         private static float LerpClamped(float from, float to, float t)
@@ -515,19 +631,25 @@ namespace Hecton8.World
 
         private Vector3 ConstrainSegmentToLength(Vector3 previousPoint, Vector3 point)
         {
-            Vector3 toPrevious = point - previousPoint;
+            float safeSegmentLength = ResolveSegmentLength();
+            Vector3 safePreviousPoint = SanitizePosition(previousPoint, _anchorPositionWS);
+            Vector3 safePoint = SanitizePosition(point, safePreviousPoint - _anchorUpWS * safeSegmentLength);
+            Vector3 toPrevious = safePoint - safePreviousPoint;
             float distanceSq = toPrevious.sqrMagnitude;
-            if (distanceSq > SegmentDistanceEpsilonSq)
-                return previousPoint + toPrevious * (segmentLength * math.rsqrt(distanceSq));
+            if (math.isfinite(distanceSq) && distanceSq > SegmentDistanceEpsilonSq)
+                return safePreviousPoint + toPrevious * (safeSegmentLength * math.rsqrt(distanceSq));
 
-            return previousPoint - _anchorUpWS * segmentLength;
+            return safePreviousPoint - _anchorUpWS * safeSegmentLength;
         }
 
         private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
         {
+            if (!IsFinite(direction))
+                direction = fallback;
+
             float lengthSq = direction.sqrMagnitude;
-            if (lengthSq <= 0.0001f)
-                return fallback;
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.0001f)
+                return SanitizePosition(fallback, Vector3.up);
 
             float invLength = math.rsqrt(lengthSq);
             return direction * invLength;
@@ -539,8 +661,15 @@ namespace Hecton8.World
                 return;
 
             lineRenderer.positionCount = _points.Length;
-            lineRenderer.startWidth = rootWidth;
-            lineRenderer.endWidth = tipWidth;
+            lineRenderer.startWidth = ResolveRange(rootWidth, 0.01f, 1f, 0.18f);
+            lineRenderer.endWidth = ResolveRange(tipWidth, 0.01f, ResolveRange(rootWidth, 0.01f, 1f, 0.18f), 0.06f);
+            float safeSegmentLength = ResolveSegmentLength();
+            for (int i = 0; i < _points.Length; i++)
+            {
+                Vector3 fallback = i == 0 ? _anchorPositionWS : _points[i - 1] - _anchorUpWS * safeSegmentLength;
+                _points[i] = SanitizePosition(_points[i], fallback);
+            }
+
             lineRenderer.SetPositions(_points);
         }
 
@@ -571,20 +700,20 @@ namespace Hecton8.World
             }
 
             segmentCount = Mathf.Clamp(segmentCount, 4, 24);
-            segmentLength = Mathf.Max(0.1f, segmentLength);
-            attractorSpring = Mathf.Clamp(attractorSpring, 0f, 32f);
-            damping = Mathf.Clamp(damping, 0f, 4f);
-            wrapStrength = Mathf.Clamp(wrapStrength, 0f, 3f);
-            rootWidth = Mathf.Clamp(rootWidth, 0.01f, 1f);
-            tipWidth = Mathf.Clamp(tipWidth, 0.01f, rootWidth);
-            sparkChargeThreshold = Mathf.Clamp01(sparkChargeThreshold);
-            sparkEmissionRate = Mathf.Clamp(sparkEmissionRate, 0f, 128f);
-            empWidthBoost = Mathf.Clamp(empWidthBoost, 0f, 4f);
-            snapDamping = Mathf.Clamp(snapDamping, 0f, 4f);
-            snapVelocityCarry = Mathf.Clamp(snapVelocityCarry, 0f, 8f);
-            elasticStretchLimit = Mathf.Clamp(elasticStretchLimit, 1f, 2.5f);
-            elasticBreakHoldTime = Mathf.Clamp(elasticBreakHoldTime, 0.02f, 1f);
-            elasticBreakRecoilMultiplier = Mathf.Clamp(elasticBreakRecoilMultiplier, 0f, 4f);
+            segmentLength = ResolveRange(segmentLength, 0.1f, 128f, 1.25f);
+            attractorSpring = ResolveRange(attractorSpring, 0f, 32f, 9.5f);
+            damping = ResolveRange(damping, 0f, 4f, 1.45f);
+            wrapStrength = ResolveRange(wrapStrength, 0f, 3f, 1.2f);
+            rootWidth = ResolveRange(rootWidth, 0.01f, 1f, 0.18f);
+            tipWidth = ResolveRange(tipWidth, 0.01f, rootWidth, 0.06f);
+            sparkChargeThreshold = Clamp01Finite(sparkChargeThreshold);
+            sparkEmissionRate = ResolveRange(sparkEmissionRate, 0f, 128f, 42f);
+            empWidthBoost = ResolveRange(empWidthBoost, 0f, 4f, 0.3f);
+            snapDamping = ResolveRange(snapDamping, 0f, 4f, 1.8f);
+            snapVelocityCarry = ResolveRange(snapVelocityCarry, 0f, 8f, 2.6f);
+            elasticStretchLimit = ResolveRange(elasticStretchLimit, 1f, 2.5f, 1.42f);
+            elasticBreakHoldTime = ResolveRange(elasticBreakHoldTime, 0.02f, 1f, 0.14f);
+            elasticBreakRecoilMultiplier = ResolveRange(elasticBreakRecoilMultiplier, 0f, 4f, 1.35f);
 
             if (lineRenderer == null)
                 TryGetComponent(out lineRenderer);
@@ -593,8 +722,8 @@ namespace Hecton8.World
             {
                 lineRenderer.positionCount = Mathf.Max(2, segmentCount);
                 lineRenderer.widthMultiplier = 1f;
-                lineRenderer.startWidth = rootWidth;
-                lineRenderer.endWidth = tipWidth;
+                lineRenderer.startWidth = ResolveRange(rootWidth, 0.01f, 1f, 0.18f);
+                lineRenderer.endWidth = ResolveRange(tipWidth, 0.01f, ResolveRange(rootWidth, 0.01f, 1f, 0.18f), 0.06f);
             }
 
             if (_initialized && _points != null && _points.Length == Mathf.Clamp(segmentCount, 4, 24))

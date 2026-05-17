@@ -3,7 +3,7 @@
 Agent ID: AMBIENT_BIOTA_DIRECTOR
 Domain: AI/ENVIRONMENT
 Task Count: 18
-Status: VERIFIED MASTER GRADE - BIOTA PULSING (AMBIENT STATIC CLEAN AFTER LOOP 18 AUP DELTA OVERFLOW GUARD; DOTNET BUILD NOT RERUN PER USER; LAST GLOBAL DOTNET BUILD GREEN BEFORE LOOP 16; AMBIENT BEE BLOCKED BY MISSING CORE REF; UNITY RUNTIME PENDING)
+Status: VERIFIED MASTER GRADE - BIOTA PULSING (AMBIENT STATIC CLEAN AFTER LOOP 21 TYPED LANE COLD PREWARM; DOTNET BUILD NOT RERUN PER USER; LAST GLOBAL DOTNET BUILD GREEN BEFORE LOOP 16; AMBIENT BEE BLOCKED BY MISSING CORE REF; UNITY RUNTIME PENDING)
 
 ## Prompt Extraction Evidence
 
@@ -418,3 +418,61 @@ Status: VERIFIED MASTER GRADE - BIOTA PULSING (AMBIENT STATIC CLEAN AFTER LOOP 1
 - [x] Compile status: NOT RERUN PER USER REQUEST
   - User instruction: do not run `dotnet` rebuild every time.
   - Current validation for Loop 18 is static only; Unity shader import/compiler validation is still unavailable.
+
+## Loop 19: Runtime Pose NaN Guard And Mesh Args Gate
+
+- [x] Mandatory memory re-read before loop: `Docs/Tasks/Status_AMBIENT_BIOTA_DIRECTOR.md` and `Docs/AgentLogs/Rationale_AMBIENT_BIOTA_DIRECTOR.md` were read from disk before visible continuation and before edits.
+- [x] Prompt re-read before loop: `CURRENT_BATCH.md` still contains the complete `<AGENT_PROMPT id="AMBIENT_BIOTA_DIRECTOR">` block, 18 tasks, authoritative domain `Assets/_Project/Scripts/AI/Ambient/`, and the Omega branchless-advection mandate.
+- [x] Relevant mandates re-read: Zero-GC, Native Memory/Jobs, AUP determinism, Signal Lane Segregation, GPU Compute Warp Sizing Mobile, and GPU Sovereignty.
+- [x] Runtime pose NaN guard: `Tick` and `SlowTick` now sanitize `pose.RuntimePosition` against the last valid runtime position before it feeds ecology, flow, render bounds, or shader origin parameters.
+- [x] Ecology/flow finite gate: `RefreshEcologyInputs` returns defaults on non-finite runtime position; `RefreshAbyssalFlow` falls back to deterministic default current instead of sampling a foreign bridge with NaN coordinates.
+- [x] Indirect mesh guard: `UploadIndirectArgs` now rejects meshes with `subMeshCount <= 0` before reading `GetIndexCount(0)`, `GetIndexStart(0)`, or `GetBaseVertex(0)`.
+- [x] Direct typed lanes: ambient macro spawn now uses `SignalBus<EntitySpawnSignal>.Push(in spawnSignal)` and organic scrap uses `SignalBus<DebrisSpawnSignal>.Push(in debrisSignal)`; no ambient `GlobalSignals.Publish` wrapper remains.
+- [x] Struct layout audit: ambient-used `AbsoluteUniversePosition`, `AmbientBiotaState`, `AmbientBiotaTelemetryEntry`, `BiomeChangedSignal`, `DebrisSpawnSignal`, `EntitySpawnSignal`, and `MacroSwarm` are explicit `Pack = 1` structs.
+- [x] Static time audit: no C# `Time.` or shader `_Time` remains in `Assets/_Project/Scripts/AI/Ambient`.
+- [x] Static forbidden-pattern audit: no `SetData`, `private NativeArray`, `new NativeArray`, direct `H8Memory.Allocate`, Unity `Update`, `LateUpdate`, `FixedUpdate`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, `System.Random`, `UnityEngine.Random`, legacy `EventBus`, managed delegate patterns, scene search, coroutine, or `Resources.Load` remains in ambient C#.
+- [x] Shader portability audit: the ambient shader still contains no `long`, `int64_t`, `uint64_t`, `RWStructuredBuffer`, `RWByteAddressBuffer`, `Interlocked`, group barriers, `numthreads`, wave intrinsics, derivatives, texture objects, texture sampling, or raw `normalize(`.
+- [x] Tick hot-path audit: `Tick(float deltaTime)` still contains no `GlobalRegistry.` access.
+- [x] Omega advection audit: `AmbientBiotaDriftJob.Execute` still contains no `if (` branch source.
+- [x] Stale/raw-source audit: no stale `_lastRecountTimeSeconds`, raw grid subtraction, or direct `_lastPlayerRuntimePosition = pose.RuntimePosition` remains.
+- [x] Diff hygiene: `git diff --check` passed for ambient code and agent docs; only CRLF normalization warnings were reported.
+- [x] Compile status: NOT RERUN PER USER REQUEST
+  - User instruction: do not run `dotnet` rebuild every time.
+  - Current validation for Loop 19 is static only; Unity shader import/compiler validation is still unavailable.
+
+## Loop 20: AUP Offset Overflow And Hot Allocation Guard
+
+- [x] Mandatory memory re-read before loop: `Docs/Tasks/Status_AMBIENT_BIOTA_DIRECTOR.md` and `Docs/AgentLogs/Rationale_AMBIENT_BIOTA_DIRECTOR.md` were read from disk before visible continuation and before edits.
+- [x] Prompt re-read before loop: `CURRENT_BATCH.md` still contains the complete `<AGENT_PROMPT id="AMBIENT_BIOTA_DIRECTOR">` block, 18 tasks, authoritative domain `Assets/_Project/Scripts/AI/Ambient/`, and the Omega branchless-advection mandate.
+- [x] Fallback mesh allocation guard: fallback indirect quad creation now happens from cold `OnEnable` setup through `EnsureFallbackDrawMeshReady`; `TryResolveDrawMesh` no longer creates mesh/array data from the render path.
+- [x] Indirect args zero-index guard: `UploadIndirectArgs` now rejects `indexCount == 0` before locking the args buffer and caches submesh index values before writing the indirect args packet.
+- [x] AUP offset overflow guard: `OffsetAup` now rejects non-finite local deltas, non-representable grid shifts, and unsafe signed `long` grid additions, returning the origin as the deterministic fallback.
+- [x] Static time audit: no C# `Time.` or shader `_Time` remains in `Assets/_Project/Scripts/AI/Ambient`.
+- [x] Static forbidden-pattern audit: no `GlobalSignals.Publish`, `SetData`, `private NativeArray`, `new NativeArray`, direct `H8Memory.Allocate`, Unity `Update`, `LateUpdate`, `FixedUpdate`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, `System.Random`, `UnityEngine.Random`, legacy `EventBus`, managed delegate patterns, scene search, coroutine, or `Resources.Load` remains in ambient C#.
+- [x] Shader portability audit: the ambient shader still contains no `long`, `int64_t`, `uint64_t`, `RWStructuredBuffer`, `RWByteAddressBuffer`, `Interlocked`, group barriers, `numthreads`, wave intrinsics, derivatives, texture objects, texture sampling, or raw `normalize(`.
+- [x] Tick hot-path audit: `Tick(float deltaTime)` still contains no `GlobalRegistry.` access.
+- [x] Omega advection audit: `AmbientBiotaDriftJob.Execute` still contains no `if (` branch source.
+- [x] Stale/raw-source audit: no stale `_lastRecountTimeSeconds`, raw grid subtraction, or direct `_lastPlayerRuntimePosition = pose.RuntimePosition` remains.
+- [x] Diff hygiene: `git diff --check` passed for ambient code and agent docs; only CRLF normalization warnings were reported.
+- [x] Compile status: NOT RERUN PER USER REQUEST
+  - User instruction: do not run `dotnet` rebuild every time.
+  - Current validation for Loop 20 is static only; Unity shader import/compiler validation is still unavailable.
+
+## Loop 21: Typed Signal Lane Cold Prewarm
+
+- [x] Mandatory memory re-read before loop: `Docs/Tasks/Status_AMBIENT_BIOTA_DIRECTOR.md` and `Docs/AgentLogs/Rationale_AMBIENT_BIOTA_DIRECTOR.md` were read from disk before visible continuation and before edits.
+- [x] Prompt re-read before loop: `CURRENT_BATCH.md` still contains the complete `<AGENT_PROMPT id="AMBIENT_BIOTA_DIRECTOR">` block, 18 tasks, authoritative domain `Assets/_Project/Scripts/AI/Ambient/`, and the Omega branchless-advection mandate.
+- [x] Unity MCP workflow note: `unity-mcp-orchestrator` instructions were read; no Unity MCP editor tools/resources are exposed, so Unity import/console/playmode/shader-compiler validation remains unavailable.
+- [x] Relevant mandates re-read: Zero-GC, Native Memory/Jobs, Signal Lane Segregation, AUP determinism, GPU Compute Warp Sizing Mobile, and GPU Sovereignty.
+- [x] Typed lane cold prewarm: `OnEnable` now calls `EnsureSignalLanesReady()` before runtime registration. Ambient-owned biome reads, macro spawn publishes, and organic debris publishes now have their `SignalBus<T>` lanes configured and initialized before gameplay ticks can hit them.
+- [x] Lane capacity parity: ambient prewarms `BiomeChangedSignal` at 64, `EntitySpawnSignal` at 128, and `DebrisSpawnSignal` at 128 with low-tier frame scan capped to the existing 16 organic debris signals per late frame. Lane hashes match the project FNV signal hashes used by `GlobalSignals`.
+- [x] Static time audit: no C# `Time.` or shader `_Time` remains in `Assets/_Project/Scripts/AI/Ambient`.
+- [x] Static forbidden-pattern audit: no `GlobalSignals.Publish`, `SetData`, `private NativeArray`, `new NativeArray`, direct `H8Memory.Allocate`, Unity `Update`, `LateUpdate`, `FixedUpdate`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, `System.Random`, `UnityEngine.Random`, legacy `EventBus`, managed delegate patterns, scene search, coroutine, or `Resources.Load` remains in ambient C#.
+- [x] Shader portability audit: the ambient shader still contains no `long`, `int64_t`, `uint64_t`, `RWStructuredBuffer`, `RWByteAddressBuffer`, `Interlocked`, group barriers, `numthreads`, wave intrinsics, derivatives, texture objects, texture sampling, or raw `normalize(`.
+- [x] Tick hot-path audit: `Tick(float deltaTime)` still contains no `GlobalRegistry.` access.
+- [x] Omega advection audit: `AmbientBiotaDriftJob.Execute` still contains no `if (` branch source.
+- [x] Stale/raw-source audit: no stale `_lastRecountTimeSeconds`, raw grid subtraction, direct `_lastPlayerRuntimePosition = pose.RuntimePosition`, or ambient `GlobalSignals.Publish` remains.
+- [x] Diff hygiene: `git diff --check` passed for ambient code and agent docs; only CRLF normalization warnings were reported.
+- [x] Compile status: NOT RERUN PER USER REQUEST
+  - User instruction: do not run `dotnet` rebuild every time.
+  - Current validation for Loop 21 is static only; Unity shader import/compiler validation is still unavailable.

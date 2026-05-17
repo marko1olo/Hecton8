@@ -300,3 +300,31 @@ Solution: Added play-mode guards around Bridge DataVault dirty signals and cache
 Rejected Alternatives: Leaving editor SignalBus pushes in place was rejected because it creates hidden authoring-time queue traffic. Adding separate editor events was rejected because editor tooling already has direct inspector/window refresh paths and the runtime lane should stay typed and singular.
 Scalability potential: Low tier avoids edit-mode queue churn and preserves zero steady-state cost. Middle/High/Ultra keep runtime dirty pulses for prefab, lore, acoustic, input, and design consumers without adding frame polling.
 Hardware Impact: 0 us steady-state. The guard is evaluated only on explicit sync/bind paths, not per frame. No Unity profiler microseconds were claimed.
+
+## Decision 044 - Prefab Active-Span Coherence
+Problem: The prefab binder skipped tombstone rows but originally wrote valid entries at their serialized indices. After the dirty-lane patch, publishing the active bindable count while leaving holes meant a consumer scanning the first `NewValue` rows could miss a later valid prefab after a deleted registry slot.
+Solution: Compact bindable prefab and lore rows into a dense prefix during the cold bind. The same active count is written to `DataVaultUpdateSignal.NewValue` and telemetry. Runtime registry registration and frame reads remain gated behind `Application.isPlaying`, so edit-mode binds do not mutate the runtime visual registry.
+Rejected Alternatives: Publishing total serialized row count was rejected because it exposes tombstones as live work to GPU/PDA/SONAR consumers. Keeping holes and adding a second active-index side table was rejected because the packed Vault lane should be directly iterable without managed indirection. Reordering the authoring list was rejected because designer asset order should not be rewritten by a runtime binder.
+Scalability potential: Low tier scans fewer rows and avoids tombstone branch churn. Middle/High/Ultra get the same compact prefab, lore, acoustic, LUT, and high-tier visual hash lanes for richer visual consumers without adding hot-path string lookup or per-frame facade sync.
+Hardware Impact: 0 us steady-state. Cold boot/bind pays one integer `writeIndex` increment per active prefab. No Unity profiler microseconds were claimed.
+
+## Decision 045 - Input Active-Span Coherence
+Problem: Unity serialized class lists can contain null elements. The input facade cleared the Vault but wrote non-null bindings at serialized indices and published total list length, which made null rows observable to consumers and inflated dirty-count work.
+Solution: Compact non-null input bindings into a dense prefix during explicit sync. Publish that active count through the existing `DataVaultUpdateSignal` lane and telemetry.
+Rejected Alternatives: Removing null list slots during validation was rejected because inspector list shape is designer-owned authoring data. Leaving consumers to skip tombstones was rejected because the Bridge facade can make the packed lane cheaper and clearer at setter time.
+Scalability potential: Low tier input orchestration scans fewer rows. Middle/High/Ultra retain the same packed button-mask lane and dropdown authoring surface without adding a managed runtime map.
+Hardware Impact: 0 us steady-state. Explicit input sync pays one integer increment per valid binding. No Unity profiler microseconds were claimed.
+
+## Decision 046 - Empty Prefab VRAM Tombstone
+Problem: A prefab registry can contain serialized tombstone rows but zero bindable prefabs. The binder cleared the Vault lanes and published active count zero, but still left a zero-byte live record in `VRAMBudgetTracker`.
+Solution: When active prefab count is zero after binding, unregister the registry hash from the VRAM tracker. Non-empty active registries still register/update their measured byte total.
+Rejected Alternatives: Keeping a zero-byte registry record was rejected because VRAM budget consumers should not need to distinguish empty live registries from removed registries. Deleting serialized registry rows was rejected because authoring order and tombstones belong to the designer.
+Scalability potential: Low tier avoids stale budget records that can confuse MX350 pressure decisions. Middle/High/Ultra retain accurate visual-overkill budget accounting for active prefab sets.
+Hardware Impact: 0 us steady-state. Cold bind pays one branch after the active-count loop. No Unity profiler microseconds were claimed.
+
+## Decision 047 - Blackbox Dump Header And Ordered Replay
+Problem: The Bridge blackbox ring existed, but the dump path wrote raw circular memory without a header, cursor, entry size, or ordered replay. That makes crash forensics depend on out-of-band knowledge and can obscure the last 300 facade writes.
+Solution: Added a packed `H8FacadeTelemetryDumpHeader` and changed `RequestBlackBoxDump()` to write oldest-to-newest ring entries with a payload hash. The binary layout verifier now validates the new header at cold boot.
+Rejected Alternatives: Keeping raw ring bytes was rejected because "unknown crash" prevention needs self-describing evidence. Allocating a managed list or reordering the DataVault ring was rejected because the DataVault ring must remain fixed and cold.
+Scalability potential: Low tier pays nothing during steady state. Middle/High/Ultra get deterministic forensic payloads when visual-overkill controls or live tuning inject bad data.
+Hardware Impact: 0 us steady-state. Fault/dump path pays one linear pass over at most 300 packed entries. No Unity profiler microseconds were claimed.

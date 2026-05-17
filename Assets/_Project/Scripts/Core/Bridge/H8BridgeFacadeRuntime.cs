@@ -413,14 +413,68 @@ namespace Hecton8.Core.Bridge
                 if (ptr == null)
                     return;
 
-                int bytes = ring.Length * UnsafeUtility.SizeOf<H8FacadeTelemetryEntry>();
+                H8FacadeTelemetryEntry* ringPtr = (H8FacadeTelemetryEntry*)ptr;
+                int capacity = math.min(ring.Length, BlackBoxFrameCount);
+                int cursor = Volatile.Read(ref _blackBoxCursor);
+                if (cursor < 0)
+                    cursor = 0;
+
+                int entryCount = math.min(cursor, capacity);
+                int startIndex = cursor >= capacity && capacity > 0 ? cursor % capacity : 0;
+                int entrySize = UnsafeUtility.SizeOf<H8FacadeTelemetryEntry>();
+                uint payloadHash = ComputeTelemetryDumpHash(ringPtr, startIndex, entryCount, capacity);
+                H8FacadeTelemetryDumpHeader header = new H8FacadeTelemetryDumpHeader
+                {
+                    Magic = H8BridgeHashes.TelemetryDumpMagic,
+                    Version = H8BridgeHashes.TelemetryDumpVersion,
+                    EntryCount = unchecked((uint)entryCount),
+                    EntrySizeBytes = unchecked((uint)entrySize),
+                    Cursor = unchecked((uint)cursor),
+                    Capacity = unchecked((uint)capacity),
+                    PayloadHash = payloadHash
+                };
+
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                    stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
+                {
+                    stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<H8FacadeTelemetryDumpHeader>()));
+                    for (int i = 0; i < entryCount; i++)
+                    {
+                        int index = (startIndex + i) % capacity;
+                        stream.Write(new ReadOnlySpan<byte>(&ringPtr[index], entrySize));
+                    }
+                }
             }
             catch (Exception)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(PointerFenceFaultHash, H8BridgeHashes.DesignFacade, 0f);
             }
+        }
+
+        private static uint ComputeTelemetryDumpHash(
+            H8FacadeTelemetryEntry* ringPtr,
+            int startIndex,
+            int entryCount,
+            int capacity)
+        {
+            if (ringPtr == null || entryCount <= 0 || capacity <= 0)
+                return H8BridgeHashes.FnvOffset;
+
+            uint hash = H8BridgeHashes.Mix(H8BridgeHashes.FnvOffset, H8BridgeHashes.TelemetryDumpMagic);
+            for (int i = 0; i < entryCount; i++)
+            {
+                H8FacadeTelemetryEntry entry = ringPtr[(startIndex + i) % capacity];
+                hash = H8BridgeHashes.Mix(hash, entry.Frame);
+                hash = H8BridgeHashes.Mix(hash, entry.FacadeHash);
+                hash = H8BridgeHashes.Mix(hash, entry.FieldHash);
+                hash = H8BridgeHashes.Mix(hash, unchecked((uint)entry.OffsetBytes));
+                hash = H8BridgeHashes.Mix(hash, H8BridgeHashes.FloatToUInt32Bits(entry.OldValue));
+                hash = H8BridgeHashes.Mix(hash, H8BridgeHashes.FloatToUInt32Bits(entry.NewValue));
+                hash = H8BridgeHashes.Mix(hash, H8BridgeHashes.FloatToUInt32Bits(entry.SafeDefault));
+                hash = H8BridgeHashes.Mix(hash, entry.LutSwapHash);
+                hash = H8BridgeHashes.Mix(hash, entry.Flags);
+            }
+
+            return hash;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

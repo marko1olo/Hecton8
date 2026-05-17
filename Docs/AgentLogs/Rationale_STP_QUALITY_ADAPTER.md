@@ -1,6 +1,6 @@
 # STP_QUALITY_ADAPTER Rationale
 
-Status: CORE COMPLETE - LOOP 17 STATIC POLISHED - DOTNET SOURCE GATE 21 PRE-LOOP14 PASSED 0 WARNINGS 0 ERRORS - POST-LOOPS14-17 DOTNET GATE DEFERRED BY OPERATOR - UNITY RUNTIME VALIDATION PENDING
+Status: CORE COMPLETE - LOOP 18 STATIC POLISHED - DOTNET SOURCE GATE 21 PRE-LOOP14 PASSED 0 WARNINGS 0 ERRORS - POST-LOOPS14-18 DOTNET GATE DEFERRED BY OPERATOR - UNITY RUNTIME VALIDATION PENDING
 
 ## Session Start
 
@@ -421,3 +421,11 @@ Solution: Clamp `renderScale` with the same STP `ClampRenderScale()` guard and w
 Rejected Alternatives: Mutating camera `allowDynamicResolution` flags in scenes/prefabs would risk dragging UI/diegetic cameras into STP, violating the UI exclusion requirement. Adding a new render pass or RenderGraph blit is unnecessary and outside the Unity 6000 dynamic-resolution bridge.
 Scalability potential: Low/i3/MX350 and Quest still reach 0.5/0.35 through the runtime; if runtime binding is absent, direct fallback now changes both URP asset scale and scalable-buffer scale. High/Ultra are unchanged.
 Hardware Impact: No measured microseconds. This is a fallback correctness repair; normal runtime path cost is unchanged.
+
+## Loop 18 Dynamic Resolution Runtime NaN Vaccination
+
+Problem: The STP adapter was clamped, but the nearby `IDynamicResolutionRuntime` bridge could still accept non-finite serialized/debug/platform values. `_maxRenderScale`, startup grace, debug render scale, frame-time trend, platform pressure minimums, reduction/increase percentages, and snapshot frame time could poison the concrete URP render-scale writer or publish a non-finite runtime snapshot back to STP consumers.
+Solution: Added finite fallback helpers in `DynamicResolutionScaler`, routed default/max/startup/frame-time reads through them, guarded debug overrides and platform pressure inputs, sanitized reduction/increase percentages, clamped current/target scale before writing `UniversalRenderPipelineAsset.renderScale` or `ScalableBufferManager.ResizeBuffers`, sanitized snapshot frame-time/scale publication, and removed a development-only string concatenation log.
+Rejected Alternatives: Rebuilding the world scaler wholesale, touching adjacent dirty render/VR/platform domains, or running another dotnet gate after every source-level polish pass. The bridge is a critical STP interface; unrelated render and platform files are left to their owning agents.
+Scalability potential: Low/i3/MX350/Quest no longer lose the emergency 0.35 path to NaN poisoning from inspector/debug harness values. Mid keeps its normal 0.82-style target path. High/Ultra keep full-scale visual-overkill policy for visor salt, volumetric silt, procedural hull dents, 16-tap POM, SSS, and raymarch consumers.
+Hardware Impact: Not measured. Source-level stability fix only; expected gain is crash/poison avoidance and preserving the intended pixel-count reduction under corrupt inputs, not a measured CPU microsecond win.

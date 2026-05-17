@@ -5,6 +5,7 @@ using System.Threading;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Core.Memory;
 using Hecton8.UI;
 using Unity.Collections;
@@ -16,7 +17,7 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Audio/Vocal Warning System")]
-    public sealed class VocalWarningSystem : MonoBehaviour, IVocalWarningSystem, IUpdatable, ISlowTickable, ILocalizationLanguageChangedListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class VocalWarningSystem : MonoBehaviour, IVocalWarningSystem, IUpdatable, ISlowTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         [Serializable]
         private struct VocalWarningLocalizedClipBundle
@@ -99,12 +100,12 @@ namespace Hecton8.Audio
         private int _registeredUpdate;
         private int _registeredSlowTick;
         private int _registeredLocalization;
-        private int _registeredScalability;
         private int _registeredHotSwap;
         private int _registeredRuntime;
         private int _nativeAllocated;
         private int _telemetryDumpRequested;
         private int _telemetryDumped;
+        private int _lastScalabilitySignalFrame = -4096;
         private PlayerCriticalProceduralAudioRenderer _renderer;
         private SubtitleManager _subtitles;
         private LocalizationManager _localization;
@@ -151,8 +152,6 @@ namespace Hecton8.Audio
                 _registeredSlowTick = 1;
             LocalizationEvents.RegisterLanguageListener(this);
             _registeredLocalization = 1;
-            ScalabilityEvents.Register(this);
-            _registeredScalability = 1;
         }
 
         private void OnDisable()
@@ -171,8 +170,6 @@ namespace Hecton8.Audio
             CancelRendererPlaybackAndClearQueues();
             if (Interlocked.Exchange(ref _registeredLocalization, 0) != 0)
                 LocalizationEvents.UnregisterLanguageListener(this);
-            if (Interlocked.Exchange(ref _registeredScalability, 0) != 0)
-                ScalabilityEvents.Unregister(this);
             if (Interlocked.Exchange(ref _registeredHotSwap, 0) != 0)
                 GlobalRegistry.UnregisterHotSwapListener(this);
             if (Interlocked.Exchange(ref _registeredSlowTick, 0) != 0)
@@ -192,6 +189,7 @@ namespace Hecton8.Audio
             if (Volatile.Read(ref _nativeAllocated) == 0)
                 return;
 
+            ConsumeScalabilitySignals();
             DrainSignals();
             PollRendererState();
             WriteTelemetry();
@@ -279,10 +277,24 @@ namespace Hecton8.Audio
             SelectActiveClipBundle(language);
         }
 
-        /// <inheritdoc />
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        private void HandleScalabilityChanged(in ScalabilityChangedEvent payload)
         {
             _qualityTier = payload.CurrentQualityTier;
+        }
+
+        private void ConsumeScalabilitySignals()
+        {
+            int frame = Time.frameCount;
+            if (_lastScalabilitySignalFrame == frame)
+                return;
+
+            _lastScalabilitySignalFrame = frame;
+            ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ScalabilityChangedEvent payload = signals[i];
+                HandleScalabilityChanged(in payload);
+            }
         }
 
         /// <inheritdoc />

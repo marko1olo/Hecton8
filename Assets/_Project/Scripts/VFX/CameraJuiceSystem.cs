@@ -11,6 +11,8 @@ using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using CameraJuiceImpactSignal = Hecton8.Core.Contracts.Signals.CameraJuiceImpactSignal;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
@@ -1472,14 +1474,14 @@ namespace Hecton8.VFX
             if (lengthSq <= 0.000001f)
                 return float3.zero;
 
-            float3 normalized = worldDirection * math.rsqrt(lengthSq);
+            float3 normalized = worldDirection * math.rsqrt(math.max(lengthSq, 0.000001f));
             if (_cameraTransform == null)
                 return normalized;
 
             Vector3 local = _cameraTransform.InverseTransformDirection(new Vector3(normalized.x, normalized.y, normalized.z));
             float3 local3 = new float3(local.x, local.y, local.z);
             float localLengthSq = math.lengthsq(local3);
-            return localLengthSq > 0.000001f ? local3 * math.rsqrt(localLengthSq) : float3.zero;
+            return localLengthSq > 0.000001f ? local3 * math.rsqrt(math.max(localLengthSq, 0.000001f)) : float3.zero;
         }
 
         private float3 ResolvePhysicsImpactDirection(in PhysicsImpactSignal impactSignal)
@@ -1788,7 +1790,7 @@ namespace Hecton8.VFX
             if (distanceSq <= 0.000001f)
                 return Vector3.zero;
 
-            return offset * (maxShakeDisplacement * math.rsqrt(distanceSq));
+            return offset * (maxShakeDisplacement * math.rsqrt(math.max(distanceSq, 0.000001f)));
         }
 
         private void EnsureCameraSpeedLineParticles()

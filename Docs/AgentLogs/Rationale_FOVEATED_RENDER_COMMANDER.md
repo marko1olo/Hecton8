@@ -172,6 +172,13 @@ Rejected Alternatives: Trusting `[Range]` metadata, adding a managed validation 
 Scalability potential: Low/Quest still gets predictable high fixed FFR; Middle pressure-tiered FFR cannot be silently starved by corrupted cadence; High/Ultra PC VR keeps no-pressure full pixels but can still react to thermal/GPU pressure inside the intended window.
 Hardware Impact: Adds two integer branches per policy scheduling event. Exact measured GPU microseconds saved remain 0; this is stability protection, not a measured runtime win. Full rebuild intentionally skipped per current user instruction.
 
+## Fresh GPU-Time Escalation
+Problem: XR app GPU time is sampled by `XRDisplaySubsystem.TryGetAppGPUTimeLastFrame` inside `ApplyDisplayState`, after the target foveation level has already been selected. A fresh over-budget sample could therefore wait until the next policy interval before increasing FFR aggressiveness.
+Solution: Reuse the corrected millisecond GPU-time value immediately after the display pass. If previous pressure was false but the fresh sample is >= 10.75ms, mark `FlagFreshGpuTimeEscalation`, clear the high-end fixed-disable flag, resolve the high-pressure target, and reapply hardware foveation in the same policy commit.
+Rejected Alternatives: Sampling every frame, lowering the threshold, relying only on `SystemHealthSignal.GpuUtil01`, accepting one-sample thermal lag, or adding another signal lane for a value the XR display subsystem already exposes.
+Scalability potential: Low/Quest keeps fixed-high FFR. Middle and pressured standalone VR no longer wait an extra policy interval before high FFR. High/Ultra PC VR still keeps full pixels when unpressured, but if the current XR GPU sample crosses budget it spends foveation immediately instead of waiting.
+Hardware Impact: Normal path adds one finite comparison helper. Threshold-crossing path performs one extra XR display enumeration and hardware foveation write in that policy commit. Exact measured GPU microseconds saved remain 0 until headset profiling is run.
+
 ## Compile Wall Boundary
 Problem: The shared build moved between external compile walls and green states while this VR domain was being polished.
 Solution: Did not edit or revert unrelated domains. After the Quest identity false-latch repair, ran filtered foveation diagnostics and then a full build with restore/analyzers/shared compilation disabled; the current full build is clean.

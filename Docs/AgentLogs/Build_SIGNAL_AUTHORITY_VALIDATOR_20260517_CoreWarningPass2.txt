@@ -1,0 +1,2 @@
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1591,22): error CS0111: Type 'HectonBoidController' already defines a member called 'UploadSpawnSetToBoidBuffers' with the same parameter types [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonBoidController.cs(1579,29): error CS0111: Type 'HectonBoidController' already defines a member called 'TryToFiniteVector3' with the same parameter types [C:\hades\Hecton8\Hecton8.Core.csproj]

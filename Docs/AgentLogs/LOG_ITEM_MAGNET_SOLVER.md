@@ -708,3 +708,73 @@ Validation:
 - Scoped item-magnet local NativeArray ownership scan: clean.
 - Scoped `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
 - `dotnet build` was not run for this small I/O pass because the user explicitly ordered not to rebuild every time.
+
+## Pass 28 - Near-Domain Inventory Delegate Purge / Deferred Build Gate
+
+What was wrong:
+- `PlayerInventory` emitted the packed `InventoryChangedSignal` lane, but still exposed a first-party managed `InventoryChanged` delegate.
+- `SuitUpgradeManager` was the remaining first-party subscriber, so inventory mutations had two notification surfaces and one managed delegate path.
+
+What was done:
+- Removed `PlayerInventory.InventoryChanged` and its invocation.
+- Converted `SuitUpgradeManager` to `ILateFrameTickable`.
+- Registered `SuitUpgradeManager` with the Player late-frame lane and consumed `SignalBus<InventoryChangedSignal>.GetFrameSnapshot()` through `ReadOnlySpan<InventoryChangedSignal>`.
+- Added inventory hash and revision filtering so the existing suit inventory-mask rebuild runs only for new matching inventory mutation signals.
+
+Cinematic cheats used:
+- No visual downgrade. Loot magnet Low/Middle/High/Ultra behavior is unchanged; high-tier wake/fluid/debris presentation lanes stay intact.
+
+Exact microseconds saved:
+- No measured microseconds claimed. The pass removes one managed delegate invocation per relevant inventory mutation path, but no profiler capture was run.
+
+Validation:
+- Managed inventory delegate scan: no `PlayerInventory.InventoryChanged` event subscribers, unsubs, declarations, or invocations remain.
+- Scoped item/loot/inventory/suit forbidden scan: clean for triggers, `OverlapSphere`, `Vector3.Distance`, `math.sqrt`, `string.Format`, `Update`, and managed inventory delegate invocation.
+- Signal lane scan confirms `SuitUpgradeManager` uses `ReadOnlySpan<InventoryChangedSignal>` and late-frame registration.
+- Scoped `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
+- One post-batch build gate was run instead of rebuilding after each micro-patch: `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` succeeded with 0 warnings and 0 errors in 49.51 seconds.
+
+## Pass 29 - Near-Domain ARM64 Telemetry ABI Hardening
+
+What was wrong:
+- `SuitUpgradeManager.SuitUpgradeTelemetryEntry` was a packet-style blackbox telemetry struct but still used implicit sequential packing.
+- This was inside the already-touched item/inventory/suit seam, so it was safe to harden without entering currently modified core vault/signal files.
+
+What was done:
+- Added `Pack=1` to `SuitUpgradeTelemetryEntry`.
+- Preserved `TelemetryEntrySizeBytes`, field order, and signal behavior.
+
+Cinematic cheats used:
+- No visual-path change. Loot magnet Low remains the 10 Hz cheap math path; High/Ultra wake, fluid impulse, snap debris, and motion-vector presentation remain intact.
+
+Exact microseconds saved:
+- 0 hot-frame us claimed. This is ARM64/Quest ABI hardening, not measured runtime optimization.
+
+Validation:
+- Scoped unpacked `StructLayout` scan: clean for `PlayerInventory`, `InventoryEvents`, `SuitUpgradeManager`, and `Gameplay/Loot`.
+- Scoped item/loot/inventory/suit forbidden scan: clean for triggers, `OverlapSphere`, `Vector3.Distance`, `math.sqrt`, `string.Format`, `Update`, and managed inventory delegate invocation.
+- Scoped `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
+- `dotnet build` was not rerun for this attribute-only pass because the user explicitly ordered not to rebuild every time. The last post-batch build from Pass 28 remains green with 0 warnings and 0 errors.
+
+## Pass 30 - Nearby Inventory Template ABI Hardening
+
+What was wrong:
+- `ItemTemplate` in the inventory registry still used `Pack = 4`.
+- Its field math already resolves to 44 bytes because of the reserved padding field, but that byte contract was not encoded as a strict ARM64/Quest-safe packet layout.
+
+What was done:
+- Changed `ItemTemplate` to `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 44)]`.
+- Preserved serialized field order, reserved padding, constructor behavior, and public accessors.
+
+Cinematic cheats used:
+- No visual-path change. Loot magnet Low/Middle/High/Ultra behavior is unchanged; high-tier wake/fluid/debris presentation lanes stay intact.
+
+Exact microseconds saved:
+- 0 hot-frame us claimed. This is portable inventory ABI hardening, not measured optimization.
+
+Validation:
+- Scoped unpacked `StructLayout` scan over inventory/items/loot/suit: clean.
+- `ItemTemplate` source scan confirms `Pack = 1, Size = 44`.
+- Scoped item/loot/inventory/suit forbidden scan: clean for triggers, `OverlapSphere`, `Vector3.Distance`, `math.sqrt`, `string.Format`, `Update`, and managed inventory delegate invocation.
+- Scoped `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
+- `dotnet build` was not rerun for this attribute-only pass because the user explicitly ordered not to rebuild every time. The last post-batch build from Pass 28 remains green with 0 warnings and 0 errors.

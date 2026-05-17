@@ -55,6 +55,7 @@ StructuredBuffer<H8UberNoirInstanceData> _H8UberNoirInstanceData;
 
 CBUFFER_START(UnityPerMaterial)
     float4 _BaseMap_ST;
+    float4 _MaskMap_ST;
     float4 _RustDetailMap_ST;
     float4 _BaseColor;
     float4 _EmissionColor;
@@ -139,7 +140,7 @@ struct H8UberNoirVaryings
     half fogFactor : TEXCOORD5;
     half instanceSeed : TEXCOORD6;
     half instanceFade : TEXCOORD7;
-    float2 baseUvScale : TEXCOORD8;
+    float4 uvAux : TEXCOORD8; // xy=base UV scale, zw=mask UV
     half3 extinctionColor : TEXCOORD9;
     UNITY_VERTEX_INPUT_INSTANCE_ID
     UNITY_VERTEX_OUTPUT_STEREO
@@ -842,14 +843,16 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
     float2 baseUv = input.uvPack.xy;
     float2 rawUv = input.uvPack.zw;
     float2 wearUv = baseUv;
+    float2 maskUv = input.uvAux.zw;
 #if !defined(_MATH_LOD_LOW)
     half4 rustPacked;
     half rustMask;
-    wearUv = H8UberNoirResolveRustPomUv(rawUv, baseUv, input.baseUvScale, input.viewDirWS, input.normalWS, input.tangentWS, rustPacked, rustMask);
+    wearUv = H8UberNoirResolveRustPomUv(rawUv, baseUv, input.uvAux.xy, input.viewDirWS, input.normalWS, input.tangentWS, rustPacked, rustMask);
+    maskUv += wearUv - baseUv;
 #endif
 
     half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, wearUv) * _BaseColor;
-    half4 ormSample = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, wearUv);
+    half4 ormSample = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, maskUv);
 
 #if defined(_MATH_LOD_LOW)
     half roughness = max(saturate(1.0h - ormSample.b * (half)_Smoothness), (half)_UberNoirLightingParams.y);
@@ -1168,7 +1171,7 @@ H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
     output.viewDirWS = (half3)viewDirWS;
     float2 rawUv = input.uv;
     output.uvPack = float4(rawUv * _BaseMap_ST.xy + _BaseMap_ST.zw, rawUv);
-    output.baseUvScale = _BaseMap_ST.xy;
+    output.uvAux = float4(_BaseMap_ST.xy, rawUv * _MaskMap_ST.xy + _MaskMap_ST.zw);
     output.fogFactor = ComputeFogFactor(output.positionCS.z);
     output.instanceSeed = (half)saturate(frac(safeInstanceSeed));
     output.instanceFade = (half)safeInstanceFade;

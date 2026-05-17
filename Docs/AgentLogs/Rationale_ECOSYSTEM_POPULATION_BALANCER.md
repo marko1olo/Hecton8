@@ -390,3 +390,15 @@ Scalability potential: Low/Quest/Steam Deck avoid relocation/teardown races whil
 
 Hardware Impact: Runtime microseconds remain unmeasured. Added work is fixed lock/unlock scalar bookkeeping around a 1 Hz scheduled job, not per-frame entity math. No runtime savings or costs are claimed without Unity Profiler/Burst evidence.
 
+## Loop 25 - Adjacent Ecosystem Service and Native-Memory Cleanup
+
+Problem: The closest ecosystem integration services still contained two local hazards. First, `FaunaGeneticsManager`, `EcosystemHealthDirector`, and `MigrationDirector` destroyed their whole `gameObject` when detecting a duplicate service, which is unsafe because `EcosystemRuntimeInstaller` mounts sibling ecosystem systems on one shared runtime root. A duplicate component could delete unrelated sibling services. Second, `MigrationDirector` owned persistent `NativeArray` fields through direct `new NativeArray(..., Allocator.Persistent)` calls, scheduled a migration job without an H8Memory owner fence, and kept job structs as sequential Pack=4 layouts.
+
+Solution: Replace duplicate-root destruction with non-destructive duplicate suppression: mark the duplicate component suppressed, clear local registration flags, and disable the component before it can register ticks/save/service state. Route `MigrationDirector` persistent native allocation and deferred release through `H8Memory.Allocate` and `H8Memory.Release` with `SystemID.AIEcology`, while preserving the existing `NativeMemorySentinel` registration/unregistration. Register the scheduled migration-field job with `H8Memory.RegisterActiveJob`. Convert `MigrationGridCell`, `MigrationBloodCloudPoi`, and `MigrationSwarmState` to explicit Pack=1 layouts with fixed field offsets.
+
+Rejected Alternatives: Rejected leaving `Destroy(gameObject)` because deleting a shared runtime root is cross-system damage. Rejected a full DataVault migration for `MigrationDirector` in this pass because that is a wider contract change touching migration consumers and buffer IDs, not a safe adjacent cleanup. Rejected another full dotnet rebuild because the user explicitly told this agent not to rebuild every pass; this loop used targeted source reads, `rg`, and `git diff --check`.
+
+Scalability potential: Low/Quest/Steam Deck gain safer service boot and ABI-stable migration job payloads without increasing simulation cadence. Middle/High/Ultra keep the same migration field behavior and can still spend saved population cycles on presentation hooks outside this kernel.
+
+Hardware Impact: Runtime microseconds remain unmeasured. Duplicate suppression is boot/registration-path only. H8Memory ownership adds cold allocation/release bookkeeping and an active-job fence around an existing scheduled job; no per-cell migration math was added.
+

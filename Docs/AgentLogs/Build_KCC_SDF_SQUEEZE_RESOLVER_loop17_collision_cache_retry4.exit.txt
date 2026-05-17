@@ -1,0 +1,12 @@
+CSC : error CS2001: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Core\Signals\PlayerMovementPresentationSignals.cs' could not be found. [C:\hades\Hecton8\Hecton8.Core.csproj]
+
+Build FAILED.
+
+CSC : error CS2001: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Core\Signals\PlayerMovementPresentationSignals.cs' could not be found. [C:\hades\Hecton8\Hecton8.Core.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:07.92
+EXIT_CODE=1
+MEASURED_BUILD_ELAPSED=00:00:08.3565304
+MEASURED_BUILD_ELAPSED_US=8356530

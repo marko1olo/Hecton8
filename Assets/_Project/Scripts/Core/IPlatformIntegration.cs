@@ -1,8 +1,10 @@
 using System;
 using System.Runtime.CompilerServices;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Collections;
 using UnityEngine;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 
 namespace Hecton8.Core
 {
@@ -145,7 +147,7 @@ namespace Hecton8.Core
         public static void Raise(in ScalabilityChangedEvent payload)
         {
             EnsureTypedSignalLaneConfigured();
-            SignalBus<ScalabilityChangedEvent>.Push(in payload);
+            global::Hecton8.Core.Contracts.Signals.SignalBus<ScalabilityChangedEvent>.Push(in payload);
 
             if (_listeners.Count <= 0)
                 return;
@@ -256,7 +258,7 @@ namespace Hecton8.Core
                 return;
 
             GlobalSignals.InitializeAllQueues();
-            SignalBus<ScalabilityChangedEvent>.EnsureInitialized();
+            global::Hecton8.Core.Contracts.Signals.SignalBus<ScalabilityChangedEvent>.EnsureInitialized();
             _typedSignalLaneConfigured = true;
         }
 

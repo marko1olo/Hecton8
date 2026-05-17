@@ -427,9 +427,9 @@ namespace Hecton8.Animation.IK
             }
 
             PullDistanceConstraints(activeCount, segmentLength, ownerForward);
-            WriteMatrices(activeCount, maxUsableSegments, segmentLength, bodyRadius, up, ownerForward);
+            bool matrixFallback = WriteMatrices(activeCount, maxUsableSegments, segmentLength, bodyRadius, up, ownerForward);
 
-            bool invalid = HasInvalidSegment(activeCount);
+            bool invalid = matrixFallback || HasInvalidSegment(activeCount);
             if (invalid)
                 telemetryFlags |= LeviathanTerrainIkConstants.TelemetryFlagInvalid;
 
@@ -503,32 +503,56 @@ namespace Hecton8.Animation.IK
             }
         }
 
-        private void WriteMatrices(int activeCount, int maxUsableSegments, float segmentLength, float bodyRadius, float3 up, float3 ownerForward)
+        private bool WriteMatrices(int activeCount, int maxUsableSegments, float segmentLength, float bodyRadius, float3 up, float3 ownerForward)
         {
+            bool usedFallback = false;
             float3 tailForward = ownerForward;
+            float3 safeScale = new float3(bodyRadius, bodyRadius, segmentLength);
             for (int i = 0; i < activeCount; i++)
             {
-                float3 position = SanitizeFinite(SegmentPositions[i], float3.zero);
+                float3 rawPosition = SegmentPositions[i];
+                float3 position = SanitizeFinite(rawPosition, float3.zero);
+                usedFallback |= !math.all(math.isfinite(rawPosition));
+                SegmentPositions[i] = position;
                 float3 tangent;
                 if (i + 1 < activeCount)
-                    tangent = position - SegmentPositions[i + 1];
+                {
+                    float3 rawNext = SegmentPositions[i + 1];
+                    usedFallback |= !math.all(math.isfinite(rawNext));
+                    tangent = position - SanitizeFinite(rawNext, position - tailForward * segmentLength);
+                }
                 else
-                    tangent = SegmentPositions[i - 1] - position;
+                {
+                    float3 rawPrevious = SegmentPositions[i - 1];
+                    usedFallback |= !math.all(math.isfinite(rawPrevious));
+                    tangent = SanitizeFinite(rawPrevious, position + tailForward * segmentLength) - position;
+                }
 
                 tangent = NormalizeSafe(tangent, tailForward);
                 tailForward = tangent;
                 quaternion rotation = quaternion.LookRotationSafe(tangent, up);
-                LeviathanBones[i] = float4x4.TRS(position, rotation, new float3(bodyRadius, bodyRadius, segmentLength));
+                usedFallback |= !IsValidQuaternion(rotation);
+                rotation = SanitizeQuaternion(rotation, quaternion.identity);
+                LeviathanBones[i] = float4x4.TRS(position, rotation, safeScale);
             }
 
-            float3 tail = SegmentPositions[activeCount - 1];
+            float3 rawTail = SegmentPositions[activeCount - 1];
+            float3 tail = SanitizeFinite(rawTail, float3.zero);
+            usedFallback |= !math.all(math.isfinite(rawTail));
             for (int i = activeCount; i < maxUsableSegments; i++)
             {
-                tail -= tailForward * segmentLength;
+                float3 nextTail = tail - tailForward * segmentLength;
+                usedFallback |= !math.all(math.isfinite(nextTail));
+                tail = SanitizeFinite(nextTail, float3.zero);
                 SegmentPositions[i] = tail;
                 PreviousSegmentPositions[i] = tail;
-                LeviathanBones[i] = float4x4.TRS(tail, quaternion.LookRotationSafe(tailForward, up), new float3(bodyRadius, bodyRadius, segmentLength));
+                quaternion rawRotation = quaternion.LookRotationSafe(tailForward, up);
+                usedFallback |= !IsValidQuaternion(rawRotation);
+                quaternion rotation = SanitizeQuaternion(rawRotation, quaternion.identity);
+                LeviathanBones[i] = float4x4.TRS(tail, rotation, safeScale);
             }
+
+            return usedFallback;
         }
 
         private bool TrySampleSdfTrilinear(float3 worldPosition, float3 invCellSize, float sdfRange, out float density)
@@ -818,6 +842,20 @@ namespace Hecton8.Animation.IK
                 return fallback;
 
             return value * math.rsqrt(lengthSq);
+        }
+
+        private static quaternion SanitizeQuaternion(quaternion value, quaternion fallback)
+        {
+            float lengthSq = math.lengthsq(value.value);
+            return IsValidQuaternion(value)
+                ? new quaternion(value.value * math.rsqrt(lengthSq))
+                : fallback;
+        }
+
+        private static bool IsValidQuaternion(quaternion value)
+        {
+            float lengthSq = math.lengthsq(value.value);
+            return math.all(math.isfinite(value.value)) && math.isfinite(lengthSq) && lengthSq > MinLengthSq;
         }
 
         private static float SanitizePositiveFinite(float value, float fallback, float minValue)

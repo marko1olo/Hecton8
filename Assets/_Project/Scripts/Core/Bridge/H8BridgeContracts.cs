@@ -94,6 +94,20 @@ namespace Hecton8.Core.Bridge
 
     [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    public struct H8FacadeTelemetryDumpHeader
+    {
+        public uint Magic;
+        public uint Version;
+        public uint EntryCount;
+        public uint EntrySizeBytes;
+        public uint Cursor;
+        public uint Capacity;
+        public uint PayloadHash;
+        public uint Reserved;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct H8InputFacadeBindingEntry
     {
         public uint ActionNameHash;
@@ -137,6 +151,8 @@ namespace Hecton8.Core.Bridge
         public const uint InputFacade = 0x1A7F0008u;
         public const uint MacroHeaderMagic = 0x48384246u; // H8BF
         public const uint MacroHeaderVersion = 1u;
+        public const uint TelemetryDumpMagic = 0x48384244u; // H8BD
+        public const uint TelemetryDumpVersion = 1u;
         public const uint AcousticSeed = 0xA60C57C5u;
         public const uint LoreSeed = 0x10AE0001u;
         public const uint AddressSeed = 0xADAD0001u;

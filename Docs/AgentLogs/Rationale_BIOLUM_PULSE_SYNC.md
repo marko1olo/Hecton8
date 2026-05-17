@@ -493,3 +493,27 @@ Rejected Alternatives: Reintroducing an unlocked resolver, keeping dump calls in
 Scalability potential: Low/MX350 and High/Ultra share the same fixed 32-byte telemetry record and locked ring path. Visual tiers do not increase blackbox memory, and invalid data dumps do not poison the live heartbeat.
 
 Hardware Impact: 0 us claimed. Static validation found no stale `TryResolveTelemetryRing`, no `new NativeArray`/`Allocator.*`/private `NativeArray`, no sequential StructLayout, no MPB/EventBus/`string.Format`/finder/coroutine debt in the BIOLUM runtime plus legacy bridge, and BIOLUM compute kernels remain at 64 threads.
+
+## Decision 41 - Diffusion Volume ABI And Dispatch Hardening
+
+Problem: `HectonBiolumDiffusionVolume` feeds the flora glow volume but still trusted implicit GPU payload layout, hardcoded 4x4x4 dispatch groups in C#, direct `Time.time` cascade phase, and unbounded serialized/zone inputs.
+
+Solution: Add explicit `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]` to the two-vector GPU point payload, query each compute kernel's actual thread-group size, reject zero or above-1024 groups back to the known portable 4x4x4 shape, and sanitize volume size, delta, diffusion, cascade, point color, range, and weighted intensity before GPU upload. Cascade time now comes from `ITickDispatcher.TimeSnapshot` with a bounded local fallback.
+
+Rejected Alternatives: Keep the hardcoded thread-group constant, trust Unity `Vector4` layout implicitly, add CPU particles, or expand the point buffer. Hardcoded dispatch is weaker on shader edits; implicit layout is avoidable ARM64/Quest risk; extra particles and buffers widen VFX ownership for a glow volume that can stay bounded.
+
+Scalability potential: Low/MX350 keeps 32 maximum zone points, one bounded glow volume, 64-thread compute groups, and HDR clamps. High/Ultra retain volumetric diffusion and SSGI-compatible glow without unbounded payload or dispatch risk.
+
+Hardware Impact: 0 us measured and 0 us claimed. This is survival and portability hardening. Bounded work remains 32 diffusion points and 64 compute threads per group, below the Metal 1024 limit.
+
+## Decision 42 - Dispatcher Time For Legacy Zone Pulses
+
+Problem: `FloorBiolumZone`, `OceanBiolumZone`, and legacy manager fallback paths still read Unity `Time.time`, `Time.timeAsDouble`, or `Time.unscaledTime` directly. That bypasses the dispatcher time contract and can desync AUP/global heartbeat behavior during dilation, pause, bootstrap, or platform timing variance.
+
+Solution: `HectonBiolumZone` now resolves a shared protected `BiolumTickTime` from `ITickDispatcher.TimeSnapshot`, with a NaN-guarded local delta fallback. Floor/ocean zone pulses and drift consume that shared time. `HectonBiolumManager` resolves celestial fallback phase and camera retry cooldown from dispatcher snapshots, falling back through bounded local/SystemDispatcher time only when the dispatcher is unavailable.
+
+Rejected Alternatives: Leave raw Unity time, pass time through every abstract zone method, or move zone light pools into the new global VFX runtime. Raw Unity time violates execution ownership; abstract signature churn is unnecessary; moving pooled legacy lights would cross a larger world-system boundary.
+
+Scalability potential: Low/MX350 gets predictable cheap triangle-wave light drift under the same dispatcher cadence. High/Ultra keeps the richer legacy pooled-light drift while staying phase-compatible with the global pulse sync.
+
+Hardware Impact: 0 us measured and 0 us claimed. The practical gain is deterministic phase ownership and no direct Unity time reads in BIOLUM-owned runtime paths.

@@ -283,3 +283,31 @@ Verification:
 - One focused `dotnet build --no-restore` was run after the consolidated Phase 13 code changes, not after every small edit.
 - Build exits 1 on external missing player signal types (`PlayerFootstepSignal`, `PlayerWaterSplashSignal`, `PlayerExhaleSignal`, `PlayerSprintStateSignal`, `PlayerFatalPressureSignal`, `PlayerTransportBailoutSignal`) plus `World/Biolum/HectonBiolumManager.TryResolveTelemetryRing`.
 - Captured build log contains no `VehicleDockingModule`, `DockingAutopilotService`, `DroneDockingSignals`, or docking automation file errors.
+
+## 2026-05-17 - Phase 14 Adjacent Compile Surface Triage
+
+What was wrong:
+- Player movement presentation signal structs had been moved out of `GlobalSignals`, but the focused core compile surface did not see the moved signal file.
+- `FaunaDirector` wrote directly through `NativeArray<T>` properties returned by the vault-backed `FaunaSimulationMemory` facade, which is illegal C# for index writes.
+- `WaterTransitionHandler.cs` was missing while `HectonPlayerMovement` and the core project still referenced it.
+- `BioCableIK` had NaN-hardening call sites without the local sanitize/clamp helper methods.
+
+What was done:
+- Kept the moved player signal contracts as typed lane payloads and compiled the moved file in the focused project.
+- Changed `FaunaDirector` write call sites to copy vault-backed `NativeArray<T>` views into locals before index assignment.
+- Restored `WaterTransitionHandler` as the current typed `WaterTransitionSignal` consumer; the legacy `WaterTransitionEvents` listener surface is not present.
+- Added finite position, velocity, color, range, delta-time, and segment-length helpers to `BioCableIK`.
+
+Cinematic Cheats used:
+- No new physical simulation was added. The work preserves cheap finite guards and typed signal snapshots so saved budget remains available to downstream water/cable/docking presentation.
+
+Exact Microseconds saved:
+- No measured profiler data. No microsecond saving is claimed.
+- Runtime impact is 0 B/frame for the triage paths; no new containers or per-frame allocations were added.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj -v:minimal -m:1 /nr:false -p:UseSharedCompilation=false -p:BuildProjectReferences=false -p:BaseIntermediateOutputPath=Temp/obj_docking/ -p:OutputPath=Temp/bin_docking/` exits 0.
+- Build log: `Docs/AgentLogs/Build_DOCKING_AUTOPILOT_SPLINE_latest.txt` reports `0 Warning(s)` and `0 Error(s)`.
+- Docking-domain forbidden-pattern scan remains clean.
+- `FaunaDirector` has no remaining direct property-index writes through `_faunaSimulationMemory.PoolSlots`, `LinearVelocities`, or `SimulationFlags`.
+- `WaterTransitionHandler` has no `WaterTransitionEvents`, `IWaterTransitionEventListener`, or `WaterTransitionEvent` surface.

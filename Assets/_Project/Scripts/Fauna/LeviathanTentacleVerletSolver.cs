@@ -600,7 +600,7 @@ namespace Hecton8.AI
                 return;
 
             ApplyPendingOriginShiftRebase();
-            CaptureTentacleInputs(in buffers);
+            CaptureTentacleInputs(buffers);
             ResolveFlowInput();
             TryQueueGrabDamage(deltaTime, in buffers);
             float safeDeltaTime = math.isfinite(deltaTime) ? math.min(math.max(0f, deltaTime), 0.05f) : 0f;

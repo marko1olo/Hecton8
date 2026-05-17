@@ -223,3 +223,29 @@ Cinematic Cheats used: None in rendering. The low-tier trick is preserving evide
 Exact Microseconds saved: No profiler microseconds are claimed. Fixed-tick cost is unchanged. Added work is a cold O(300) DataVault scan on enable plus a cold shutdown branch; hot-path heap remains 0 B.
 
 Verification: Static scan shows typed snapshot/glitch constants and `SignalBus.Configure` calls, `TryGetHashSourceBuffer`, `RestoreTelemetryCursorFromVault`, and the fenced `StopReplayWriter()`. It finds no `GlobalSignals.InitializeAllQueues()` in `Core/Determinism`, no determinism `foreach`, no Update-family methods, no `string.Format`, no local NativeArray allocation, no private persistent NativeArray fields, no `H8Memory.Allocate`, no direct physics/transform authority reads, no stale signal namespace, no per-byte `WriteByte`, and no Pack=1 drift. `git diff --check` reports only CRLF normalization warnings. No dotnet rebuild was run in this pass per explicit instruction.
+
+## 2026-05-17 Near-Domain Occupancy Audit
+
+What was wrong: Nearby Core signal files showed active churn while the lockstep domain was stable. `PlayerMovementPresentationSignals.cs` and `GlobalSignals.cs` presented different states during inspection, with player presentation payload contracts moving around the global signal surface.
+
+What was done: Re-scanned `LockstepStateValidator.cs` and confirmed typed snapshot/glitch lanes, DataVault-owned state, raw hash-source access, telemetry cursor restore, and replay writer fencing are still present. Read the nearby signal files and project includes, then did not edit them because the files are dirty and changed under inspection.
+
+Cinematic Cheats used: None. This is ownership hygiene and deterministic evidence preservation.
+
+Exact Microseconds saved: 0us hot-path change. No profiler timing is claimed.
+
+Verification: Current lockstep static scan finds no broad global signal init, no determinism `foreach`, no Update-family methods, no string formatting, no local NativeArray allocation, no private persistent NativeArray fields, no `H8Memory.Allocate`, no physics/transform authority reads, no `UnityEngine.Random`, and no Pack=1 drift. `git diff --check` reports only CRLF normalization warnings. No rebuild was run because this was a read-only audit after the prior writer cleanup.
+
+## 2026-05-17 Raw Hash Regression / Writer Signal Guard
+
+What was wrong: `TryGetHashSourceBuffer()` had drifted back to `handle.Resolve(vault)`, reintroducing the DataVault finite sanitizer into the hash-source read path. That could hide NaN/corruption evidence before master hashing. `StageReplayWrite()` also called `_writerSignal.Set()` without guarding a disposed wait handle after writer self-cleanup.
+
+What was done: Restored direct aligned raw native views for hash-source lanes. Added a guarded writer signal set that records `TelemetryFlagWriterBusy`, clears pending write state, and marks the writer faulted on disposed-handle races.
+
+Cinematic Cheats used: None. This is determinism evidence and Steam Deck I/O survival work.
+
+Exact Microseconds saved: No profiler microseconds are claimed. Normal hot path remains 0 B heap; writer guard is cold fault-path only.
+
+Verification: Static scans show no broad signal init, no `handle.Resolve(` in the hash-source path, no determinism sanitizer call, no `foreach`, no Update-family methods, no string formatting, no local NativeArray allocation, no private persistent NativeArray fields, no `H8Memory.Allocate`, no physics/transform authority reads, no `UnityEngine.Random`, no per-byte `WriteByte`, and no Pack=1 drift. `Build_LOCKSTEP_STATE_VALIDATOR_20260517_writer_signal_guard_dotnet.log` exits 1 on dirty nearby/external Core/VFX files and reports 0 lockstep diagnostics.
+
+Post-doc drift repair: a final source scan caught `GlobalSignals.InitializeAllQueues()` restored again in `ConfigureSignalLanes()`. I restored typed snapshot/glitch lane constants and `SignalBus.Configure` calls, then re-scanned clean. No second build was run because this returned the file to the same source state covered by the writer-signal build log; the compile wall remains external dirty Core/VFX code.

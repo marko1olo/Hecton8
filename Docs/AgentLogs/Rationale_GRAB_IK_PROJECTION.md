@@ -249,3 +249,39 @@ Solution: Re-ran the targeted IK Roslyn probe plus owned forbidden-pattern scan 
 Rejected Alternatives: Claiming the Loop 25 probe covered this terrain patch was rejected because `LeviathanTerrainIkJobs.cs` changed after that evidence.
 Scalability potential: Current source proof covers the owned hand, leviathan terrain, and lower-body IK files touched by this pass.
 Hardware Impact: Verification-only; no runtime cost.
+
+Problem: `LeviathanTerrainIkJob.WriteMatrices` sanitized the local position used for the current matrix, but did not write that sanitized value back before tail filler generation. A corrupted last active segment could still seed non-finite filler positions and matrices.
+Solution: Write sanitized active positions back to `SegmentPositions`, sanitize neighbor tangent reads, sanitize `LookRotationSafe` results, and seed filler bones from a finite tail value.
+Rejected Alternatives: Adding a second validation pass over all matrices was rejected because the write site is the correct containment point; clamping world coordinates to an arbitrary radius was rejected because AUP/world authority is outside this IK job.
+Scalability potential: Low tier and high tier both emit finite pose buffers with the same segment counts. Ultra visual fidelity can rely on stable VAT/bone presentation instead of hiding corrupted matrices downstream.
+Hardware Impact: Up to 20 segment sanitization writes and two quaternion finite checks per segment in the existing VISUAL_SYNC-style bone emission path; expected cost remains below 1 us on i3/MX350/Quest-class silicon.
+
+Problem: The matrix finite-output patch changed owned terrain IK rendering-path code after Loop 26 verification.
+Solution: Re-ran the targeted IK Roslyn probe, owned forbidden-pattern scan, and diff check. Full project rebuild was not run per current instruction.
+Rejected Alternatives: Treating telemetry invalid flags as sufficient was rejected because telemetry explains a crash after the renderer has already received poison.
+Scalability potential: Source proof remains current for owned hand, terrain, and lower-body IK files.
+Hardware Impact: Verification-only; no runtime cost.
+
+Problem: Loop 27 prevented poisoned leviathan terrain IK matrices, but sanitizing segment state before `HasInvalidSegment` could hide that a fallback correction occurred.
+Solution: Return a `matrixFallback` bool from `WriteMatrices` and OR it into `TelemetryFlagInvalid`, preserving blackbox visibility while still emitting finite matrices.
+Rejected Alternatives: Leaving telemetry clean after a correction was rejected because corrected poison is still fault evidence; emitting file I/O from the job was rejected because it would break Burst and Steam Deck I/O discipline.
+Scalability potential: Low/Middle/High/Ultra keep the same buffers and segment counts; blackbox fidelity improves without runtime disk traffic.
+Hardware Impact: One bool accumulator and scalar finite checks already in matrix emission; expected below 1 us on i3/MX350/Quest-class silicon.
+
+Problem: The blackbox visibility patch changed owned terrain IK after Loop 27 verification.
+Solution: Re-ran targeted IK Roslyn probe, owned forbidden-pattern scan, and diff check. Full project rebuild was not run per current instruction.
+Rejected Alternatives: Reusing Loop 27 verification was rejected because `LeviathanTerrainIkJobs.cs` changed after that evidence; rebuilding the full project again was rejected by current user instruction and because latest known full wall is outside Animation/IK.
+Scalability potential: Current source proof covers hand, leviathan terrain, and lower-body IK files in the owned folder for all math LOD tiers.
+Hardware Impact: Verification-only; no runtime cost.
+
+Problem: Hand quaternion sanitation accepted finite components without proving the squared length stayed finite, so extreme finite values could overflow `math.lengthsq` and normalize through `math.rsqrt(infinity)`.
+Solution: Add `math.isfinite(lengthSq)` to `VRPhysicalHandPresenceJob.SanitizeQuaternion` before the `math.rsqrt` normalization branch.
+Rejected Alternatives: Clamping quaternion components was rejected because it invents orientation; falling back to the caller-provided quaternion is deterministic and already part of the solver contract.
+Scalability potential: Low/Middle/High/Ultra hand paths now share the same overflow-proof rotation fallback without changing ABI or visual LOD policy.
+Hardware Impact: One scalar finite check in an existing inline helper; expected below 1 us for two hands on i3/MX350/Quest-class silicon.
+
+Problem: The quaternion overflow guard changed owned hand IK after Loop 28 verification.
+Solution: Re-ran targeted IK Roslyn probe, owned forbidden-pattern scan, and diff check. Full project rebuild was not run per current instruction.
+Rejected Alternatives: Reusing Loop 28 proof was rejected because `VRPhysicalHandPresenceIkJobs.cs` changed after that evidence.
+Scalability potential: Source proof remains current for the owned hand, leviathan terrain, and lower-body IK files.
+Hardware Impact: Verification-only; no runtime cost.

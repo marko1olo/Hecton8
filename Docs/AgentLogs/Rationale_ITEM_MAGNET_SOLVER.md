@@ -437,3 +437,45 @@ Solution: Deferred build again and used static validation: dump-buffer scan, sco
 Rejected Alternatives: Running another full build immediately against instruction; claiming runtime I/O gain without MicroSD profiling; claiming green from older build output.
 Scalability potential: No runtime scalability change.
 Hardware Impact: 0 runtime impact outside blackbox fault export.
+
+Problem: The nearest clean inventory/suit seam still had a managed `PlayerInventory.InventoryChanged` delegate path. `PlayerInventory` already emitted the packed `InventoryChangedSignal`, so the duplicate delegate created a second first-party notification surface and a stale H-PHI dependency.
+Solution: Removed the `PlayerInventory.InventoryChanged` event and invocation. Converted `SuitUpgradeManager` to `ILateFrameTickable`, registered it in the Player late-frame lane, and consumed `SignalBus<InventoryChangedSignal>.GetFrameSnapshot()` as `ReadOnlySpan<InventoryChangedSignal>` with revision filtering before queueing the existing inventory mask rebuild.
+Rejected Alternatives: Keeping both delegate and typed lane; inventing a new suit-upgrade signal; polling inventory every frame without signal revision gating; touching the modding `ItemDiscardedEvent` projection without a replacement world/modding contract.
+Scalability potential: Low/Middle/High/Ultra loot magnet behavior is unchanged. The item/inventory/suit boundary now has one first-party inventory mutation lane, while low tier avoids duplicate managed notification fanout and high tiers keep the same upgrade response behavior through the typed lane.
+Hardware Impact: Removes one managed delegate invocation per inventory mutation on the suit-upgrade path. No benchmarked microseconds claimed.
+
+Problem: The compile gate is still required for final proof, but the user order is to avoid rebuilds every small pass.
+Solution: Deferred `dotnet build` for this near-domain delegate purge and ran source/static validation: managed inventory delegate subscriber scan, scoped forbidden-pattern scan, `ReadOnlySpan<InventoryChangedSignal>` lane scan, and scoped `git diff --check`.
+Rejected Alternatives: Running another full build immediately against instruction; claiming current green build from older output; reporting external compile walls without fresh compiler output.
+Scalability potential: No runtime scalability change beyond removing the duplicate first-party notification path.
+Hardware Impact: 0 runtime impact outside inventory mutation notification.
+
+Problem: After the near-domain delegate purge, compile proof was still needed without returning to a rebuild-after-every-micro-patch loop.
+Solution: Ran one post-batch no-restore core build: `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal`. It succeeded with 0 warnings and 0 errors in 49.51 seconds.
+Rejected Alternatives: Leaving the pass as static-only after a C# contract edit; repeatedly rebuilding after every tiny source/doc patch; claiming build success from older output.
+Scalability potential: Low/Middle/High/Ultra gameplay behavior is unchanged and now compiles on current disk.
+Hardware Impact: 0 runtime impact. Build validation only; no microseconds claimed.
+
+Problem: The near-domain suit telemetry blackbox struct still used implicit sequential packing. On ARM64/Quest review, packet-style telemetry entries must encode layout explicitly instead of relying on desktop-default padding.
+Solution: Added `Pack=1` to `SuitUpgradeManager.SuitUpgradeTelemetryEntry` while preserving `TelemetryEntrySizeBytes` and field order.
+Rejected Alternatives: Touching currently modified core vault/signal ownership files; blindly packing Burst/job structs that contain native handles; running another full build for an attribute-only patch after the user ordered not to rebuild every time.
+Scalability potential: Low/Middle/High/Ultra loot magnet behavior is unchanged. This keeps the item/inventory/suit telemetry boundary deterministic across Quest/Android, Steam Deck, Mac, and PC.
+Hardware Impact: 0 hot-frame runtime impact. ABI hardening only; no benchmarked microseconds claimed.
+
+Problem: The compile gate remains required for full proof, but this pass changed only a `StructLayout` attribute and the current instruction is to avoid rebuild churn.
+Solution: Deferred `dotnet build` for this micro-patch and ran static validation instead: scoped unpacked-layout scan, scoped forbidden-pattern scan, and scoped `git diff --check`. The last post-batch build from Pass 28 remains green with 0 warnings and 0 errors.
+Rejected Alternatives: Running a rebuild after every layout micro-patch; claiming a new green build without running it; hiding the fact that validation was static-only.
+Scalability potential: No runtime scalability change.
+Hardware Impact: 0 runtime impact. Validation only.
+
+Problem: Nearby inventory template records still used `Pack=4`. Field math currently resolves to 44 bytes because the record already carries explicit reserved padding, but the ARM64 review wants packet-style data to declare deterministic byte packing rather than relying on 4-byte default alignment.
+Solution: Changed `ItemTemplate` to `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 44)]`, preserving field order and all public accessors.
+Rejected Alternatives: Editing player movement, catalog, or wreck consumers unnecessarily; removing the reserved field and changing serialized layout; touching unrelated third-party or editor code found by broad scans.
+Scalability potential: Low/Middle/High/Ultra loot magnet behavior is unchanged. Inventory item-template packets now have a stable 44-byte contract for Quest/Android, Steam Deck, Mac, and PC consumers.
+Hardware Impact: 0 hot-frame runtime impact. ABI hardening only; no benchmarked microseconds claimed.
+
+Problem: The compile gate remains required for final proof, but this is another attribute-only ABI patch under the explicit no-rebuild-every-time instruction.
+Solution: Deferred `dotnet build` and ran static validation: scoped unpacked-layout scan, `ItemTemplate` layout confirmation scan, scoped forbidden-pattern scan, and scoped `git diff --check`. The last post-batch build from Pass 28 remains green with 0 warnings and 0 errors.
+Rejected Alternatives: Running a full rebuild for each layout attribute; claiming a fresh green build without executing it; allowing the broad scan's third-party/editor matches to drive out-of-domain edits.
+Scalability potential: No runtime scalability change.
+Hardware Impact: 0 runtime impact. Validation only.

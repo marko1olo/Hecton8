@@ -20,6 +20,7 @@ using Hecton8.Construction;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;

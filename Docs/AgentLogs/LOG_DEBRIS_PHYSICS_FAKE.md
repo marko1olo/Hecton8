@@ -451,6 +451,37 @@ Status:
 - VERIFIED MASTER GRADE - SHARDS ACTIVE by debris source/static validation.
 - Current core compile, Unity debris assembly import, shader import, player builds, and platform/profiler timings remain `[BLOCKED BY DEPENDENCY]` outside DEBRIS/VFX ownership.
 
+## 2026-05-17 - Compute-Shard Typed Lane Exclusivity
+
+What was wrong:
+- Compute-marked debris producers still used `GlobalSignals.Publish`, which also enqueues the legacy global debris queue before mirroring to `SignalBus<DebrisSpawnSignal>`.
+- Nearby impact/mining producers kept literal or private spark/drill debris kind values even though `DebrisSpawnSignal` now owns the shared kind constants.
+
+What was done:
+- Routed drill break debris, voxel carve debris, outcrop shards, ambient organic scraps, player impact sparks, vehicle impact sparks, and high-tier fauna bite shards directly through `SignalBus<DebrisSpawnSignal>`.
+- Kept fauna low-tier bite sparks on `GlobalSignals.Publish` only when `FlagComputeShard` is absent.
+- Replaced drill/player/vehicle/fauna spark literals with `DebrisSpawnSignal.DebrisKindSparks`.
+- Replaced voxel carve default kind split with `DebrisKindSparks` for laser and `DebrisKindRockShard` for rock chips.
+
+Cinematic Cheats used:
+- No new simulation truth. This is a routing/data hygiene pass that preserves the GPU shard fake: low tier stays bounded and cheap, high tier spends the signal on dense indirect shards.
+
+Exact Microseconds saved:
+- Measured: none. No rebuild/profiler run per instruction.
+- Static: compute-marked events no longer duplicate into the old global debris queue; no runtime microsecond number is claimed.
+
+Verification:
+- Legacy service scan still reports only `DebrisManager`, `GlobalRegistry`, and the `IDebrisService` contract.
+- Patched route scan: compute-marked drill, voxel, outcrop, ambient, player, vehicle, and high-tier fauna bite producers use `SignalBus<DebrisSpawnSignal>.Push`.
+- Patched route scan: no `DebrisKind = 9`, no `DebrisKind = 1`, and no private `SparkDebrisKind` remain in the patched set.
+- Forbidden-pattern scan over debris plus patched mining/voxel/impact files returned no `Instantiate`, `Object.Instantiate`, `DebrisManager.Instance`, `GraphicsBuffer.SetData`, `ComputeBuffer`, `ForceNoMotion`, `string.Format`, or standard `Update()` matches.
+- `git diff --check` returned no whitespace errors; only existing LF-to-CRLF warnings.
+- `dotnet build` was deliberately not run for this pass.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by debris source/static validation.
+- Unity import/player/shader/platform/profiler proof remains `[BLOCKED BY DEPENDENCY]` until external assembly walls are repaired.
+
 ## 2026-05-17 - Producer Legacy Service Purge
 
 What was wrong:

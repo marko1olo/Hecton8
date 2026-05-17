@@ -713,3 +713,28 @@ Validation:
 - No full `dotnet build` was run for this pass by explicit user instruction.
 - Targeted source scan confirmed `MinSampleIntervalFrames`, `MaxSampleIntervalFrames`, and `ClampSampleIntervalFrames` are present in `FoveatedRenderCommander.cs`.
 - Static forbidden-pattern scan found no `Update()`, `LateUpdate()`, `FixedUpdate()`, `foreach`, LINQ, `string.Format`, `VRSManager.Instance`, direct `RenderPipelineManager`, `new NativeArray`, `NativeArray<`, `Marshal.SizeOf`, legacy `EventBus`, managed delegate fields, object find calls, `Camera.main`, `Resources.Load`, `StartCoroutine`, `Time.deltaTime`, or `Time.fixedDeltaTime` in the VR commander or legacy foveation shim.
+
+## 2026-05-17 - Escalation Polish / Fresh GPU-Time Escalation
+
+What was wrong:
+- XR app GPU time is sampled during the display-state commit, after the foveation target has already been selected.
+- A fresh GPU-time spike over 10.75ms could wait until the next policy sample before increasing foveation aggressiveness.
+
+What was done:
+- Added `FlagFreshGpuTimeEscalation` to blackbox flags.
+- Added `IsGpuTimePressureActive()` so stale and freshly sampled GPU-time checks use the same finite millisecond gate.
+- If fresh XR GPU time crosses 10.75ms during `ApplyPolicy`, the commander now clears the high-end fixed-disable flag, resolves a high-pressure target, and reapplies the hardware state immediately.
+
+Cinematic Cheats used:
+- Preserved the pressure-reactive edge-rate fake. The system spends foveation immediately when the current XR GPU sample says the frame is over budget.
+- No shader, render target, compute pass, disk I/O, or new signal lane was introduced.
+
+Exact microseconds saved:
+- Exact measured GPU microseconds saved: 0. No Quest/PC VR headset profile capture was run.
+- Estimated CPU cost: one finite comparison on the normal policy path; one extra XR display enumeration only on a fresh GPU-time threshold crossing.
+- Static hot-path GC: 0 B/frame by source audit.
+
+Validation:
+- No full `dotnet build` was run for this pass by standing user instruction.
+- Targeted source scan confirmed `FlagFreshGpuTimeEscalation` and `IsGpuTimePressureActive` are present in `FoveatedRenderCommander.cs`.
+- Static forbidden-pattern scan found no `Update()`, `LateUpdate()`, `FixedUpdate()`, `foreach`, LINQ, `string.Format`, `VRSManager.Instance`, direct `RenderPipelineManager`, `new NativeArray`, `NativeArray<`, `Marshal.SizeOf`, legacy `EventBus`, managed delegate fields, object find calls, `Camera.main`, `Resources.Load`, `StartCoroutine`, `Time.deltaTime`, or `Time.fixedDeltaTime` in the VR commander or legacy foveation shim.

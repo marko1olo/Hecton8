@@ -503,3 +503,39 @@ Rejected Alternatives: Continuing to output motion while faulted was rejected be
 Scalability potential: Low tier avoids false 5Hz interpolation and particle work from corrupt rows. Middle/High/Ultra retain visual overkill for clean rows only; bad data buys black-box evidence, not extra rendering.
 
 Hardware Impact: Measured savings: 0 us. Static cost is one combined boolean mask and existing `math.select` gates; possible saved downstream work is not measured and not claimed.
+
+## Decision 43: Acoustic Lure Must Not Reuse Legacy Fauna Telemetry Bit 5
+
+Problem: A read-only nearby-domain scan found `PredatorCognitionDomain` already writes `AlphaLeviathanTelemetryNoPlayerTarget = 1 << 5` into `AlphaLeviathanTelemetryEntry.Flags`. AI/Cognition also defined `AlphaLeviathanTelemetryFlags.AcousticLure = 1 << 5`, so the same byte value meant both "no player target" and "sonar lure" depending on writer.
+
+Solution: Removed the AI job write to telemetry bit 5, renamed the shared byte constant to `LegacyNoPlayerTarget`, and added `AlphaLeviathanSteeringIntentFlags` plus `AlphaLeviathanSteeringOutput.IntentFlags` for acoustic lure and presentation intent. The field is byte-sized so it fits in the existing tail padding of the 88-byte steering output and does not expand the declared struct size.
+
+Rejected Alternatives: Editing dirty Fauna code was rejected because this pass has ownership only over AI/Cognition and the Fauna file is already modified by another domain. Expanding the telemetry entry was rejected because the 64-byte black-box ABI is locked for Quest/Android and dump readers. Reusing bit 3 or bit 6 was rejected because those already mean roar/light evidence in the shared byte.
+
+Scalability potential: Low tier keeps the same cheap acoustic lure behavior without corrupting black-box flags. Middle/High/Ultra consumers now get a wider output intent channel for VFX and steering presentation without parsing legacy telemetry collisions.
+
+Hardware Impact: Measured savings: 0 us. Static cost is seven branchless byte intent selects per row and one removed telemetry OR; no profiler timing was captured.
+
+## Decision 44: AUP Absolute Conversion Must Sanitize Local Offsets
+
+Problem: `LeviathanStalkJob` sanitized AUP locals before conversion, but `AlphaLeviathanAup.ToAbsoluteDouble3()` itself still added raw `Local` components. Any future caller using the helper directly could reintroduce NaN/INF absolute coordinates outside the job-local vaccine.
+
+Solution: `ToAbsoluteDouble3()` now applies `math.select(float4.zero, Local, math.isfinite(Local))` before adding local offsets to the int64 grid cell coordinates. This keeps the method Burst-friendly, branchless, and size-neutral.
+
+Rejected Alternatives: Adding a second sanitized conversion method was rejected because it leaves the unsafe helper as the easiest call. Throwing or logging on bad AUP data was rejected because this is Burst-compatible data math and fault signaling belongs in the job/black-box path. Clearing grid coordinates was rejected because the poison is the float local offset, not the sector identity.
+
+Scalability potential: Low tier avoids NaN steering recovery loops from future producer mistakes. Middle/High/Ultra retain double3 distance stability across large worlds while keeping SDF and VFX intent gated by valid rows.
+
+Hardware Impact: Measured savings: 0 us. Static cost is one float4 finite select per conversion; the benefit is preventing NaN propagation on ARM64/Quest, Android, Steam Deck, and low-end PC.
+
+## Decision 45: Intent Flags Must Fit The Declared Packed Steering Row
+
+Problem: The first intent side-channel patch used `uint IntentFlags` while keeping `AlphaLeviathanSteeringOutput` at `StructLayout(..., Pack = 1, Size = 88)`. With `Pack = 1`, the old row had only three tail bytes after `Flags`; a `uint` would require an 89-byte natural field layout and invalidate the 88-byte stride claim.
+
+Solution: Changed `AlphaLeviathanSteeringIntentFlags` constants and `AlphaLeviathanSteeringOutput.IntentFlags` to byte. Seven intent bits fit in one byte, leaving two tail bytes under the existing 88-byte size. The job still writes the field through branchless `math.select` casts.
+
+Rejected Alternatives: Expanding the steering row to 92 bytes was rejected because it would churn the DataVault stride and downstream consumers for no need. Removing intent flags was rejected because acoustic lure would lose a collision-free consumer channel. Packing intent into the legacy telemetry byte was rejected because that is the collision this pass removed.
+
+Scalability potential: Low tier keeps the same byte-scale output channel with no stride expansion. Middle/High/Ultra still get all current VFX/steering intent bits while preserving ARM64/Quest predictable layout.
+
+Hardware Impact: Measured savings: 0 us. Static effect is three bytes less output payload than the rejected 92-byte expansion; no profiler timing was captured.

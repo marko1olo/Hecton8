@@ -49,9 +49,10 @@ namespace Hecton8.Core.Bridge
             ClearBuffer(loreLinkPtr, loreLinks.Length);
 
             long totalVramBytes = 0L;
-            PrefabRegistry runtimeRegistry = GlobalRegistry.PrefabRegistryRuntime;
-            uint frame = unchecked((uint)Time.frameCount);
             bool publishRuntimeSignals = Application.isPlaying;
+            PrefabRegistry runtimeRegistry = publishRuntimeSignals ? GlobalRegistry.PrefabRegistryRuntime : null;
+            uint frame = publishRuntimeSignals ? unchecked((uint)Time.frameCount) : 0u;
+            int activeCount = 0;
 
             for (int i = 0; i < count; i++)
             {
@@ -59,12 +60,13 @@ namespace Hecton8.Core.Bridge
                 if (entry == null || !entry.IsRuntimeBindable)
                     continue;
 
+                int writeIndex = activeCount++;
                 uint runtimePrefabId = 0u;
                 if (runtimeRegistry != null && entry.Prefab != null)
                     runtimePrefabId = unchecked((uint)runtimeRegistry.GetOrRegisterPrefab(entry.Prefab));
 
-                mappingPtr[i] = entry.ToMappingEntry(runtimePrefabId);
-                loreLinkPtr[i] = entry.ToLoreLinkEntry();
+                mappingPtr[writeIndex] = entry.ToMappingEntry(runtimePrefabId);
+                loreLinkPtr[writeIndex] = entry.ToLoreLinkEntry();
                 totalVramBytes += entry.EstimatedVramBytes > 0L ? entry.EstimatedVramBytes : 0L;
 
                 if (!publishRuntimeSignals)
@@ -95,10 +97,14 @@ namespace Hecton8.Core.Bridge
             }
 
             Thread.MemoryBarrier();
-            PublishRegistryUpdateSignal(registry.RegistryHash, BufferID.BridgePrefabMapping, count);
-            PublishRegistryUpdateSignal(registry.RegistryHash, BufferID.BridgePrefabLoreLinks, count);
-            VRAMBudgetTracker.RegisterOrUpdate(registry.RegistryHash, totalVramBytes);
-            GlobalTelemetryBus.PublishModTelemetry(H8BridgeHashes.PrefabRegistry, registry.RegistryHash, count);
+            PublishRegistryUpdateSignal(registry.RegistryHash, BufferID.BridgePrefabMapping, activeCount);
+            PublishRegistryUpdateSignal(registry.RegistryHash, BufferID.BridgePrefabLoreLinks, activeCount);
+            if (activeCount > 0)
+                VRAMBudgetTracker.RegisterOrUpdate(registry.RegistryHash, totalVramBytes);
+            else
+                VRAMBudgetTracker.Unregister(registry.RegistryHash);
+
+            GlobalTelemetryBus.PublishModTelemetry(H8BridgeHashes.PrefabRegistry, registry.RegistryHash, activeCount);
             return true;
         }
 

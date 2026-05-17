@@ -27,6 +27,7 @@ namespace Hecton8.Ecosystem
         private readonly long[] _exploredChunkBuffer = new long[ExplorationMapDTO.MaxExploredChunks];
         private bool _registeredToTick;
         private bool _serviceRegistered;
+        private bool _duplicateServiceSuppressed;
 
         /// <summary>Active runtime owner while the gameplay scene is loaded.</summary>
         public static EcosystemHealthDirector Instance => GlobalRegistry.EcosystemHealth;
@@ -42,19 +43,28 @@ namespace Hecton8.Ecosystem
             EcosystemHealthDirector registered = GlobalRegistry.EcosystemHealth;
             if (registered != null && registered != this)
             {
-                Destroy(gameObject);
+                SuppressDuplicateService();
             }
         }
 
         private void OnEnable()
         {
+            if (_duplicateServiceSuppressed)
+                return;
+
             TryRegisterService();
+            if (_duplicateServiceSuppressed)
+                return;
+
             TryRegisterToTickManager();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
         }
 
         private void Start()
         {
+            if (_duplicateServiceSuppressed)
+                return;
+
             TryRegisterToTickManager();
         }
 
@@ -266,12 +276,20 @@ namespace Hecton8.Ecosystem
             EcosystemHealthDirector registered = GlobalRegistry.EcosystemHealth;
             if (registered != null && registered != this)
             {
-                Destroy(gameObject);
+                SuppressDuplicateService();
                 return;
             }
 
             GlobalRegistry.RegisterEcosystemHealthRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.EcosystemHealth, this);
+        }
+
+        private void SuppressDuplicateService()
+        {
+            _duplicateServiceSuppressed = true;
+            _serviceRegistered = false;
+            _registeredToTick = false;
+            enabled = false;
         }
 
         private void TryUnregisterService()

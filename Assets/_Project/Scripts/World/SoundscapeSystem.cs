@@ -23,6 +23,7 @@ using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Unity.Collections;

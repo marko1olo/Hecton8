@@ -335,14 +335,28 @@ namespace Hecton8.Core.Content.Editor
                 hasHighRes |= string.Equals(groupName, HighResGroupName, StringComparison.Ordinal);
                 hasOverkill |= string.Equals(groupName, OverkillGroupName, StringComparison.Ordinal);
 
+                if (group.entries == null)
+                    Fail("Addressable group has no entry set: " + groupName);
+
                 HashSet<AddressableAssetEntry>.Enumerator enumerator = group.entries.GetEnumerator();
                 while (enumerator.MoveNext())
                 {
                     AddressableAssetEntry entry = enumerator.Current;
-                    if (entry == null || entry.parentGroup != null)
-                        continue;
+                    if (entry == null)
+                        Fail("Addressable group contains a null entry: " + groupName);
 
-                    Fail("Addressable entry has no group: " + entry.address);
+                    if (entry.parentGroup == null)
+                    {
+                        Fail("Addressable entry has no group: " + entry.address);
+                        continue;
+                    }
+
+                    if (!ReferenceEquals(entry.parentGroup, group))
+                    {
+                        Fail("Addressable entry parent group mismatch: " +
+                             entry.address + " listedIn=" + groupName +
+                             " parent=" + entry.parentGroup.Name);
+                    }
                 }
             }
 
@@ -550,6 +564,7 @@ namespace Hecton8.Core.Content.Editor
 
         private static void ValidateSaveTopologyWriters()
         {
+            ValidateTopologyLengthConstants();
             Span<char> buffer = stackalloc char[ContentSaveSlotTopology.MaxSavePathChars];
 
             bool wrote = ContentSaveSlotTopology.TryWriteSaveSlotDirectory(0, buffer, out int written);
@@ -572,6 +587,73 @@ namespace Hecton8.Core.Content.Editor
             {
                 Fail("Save topology accepted a slot outside slot_0..slot_2.");
             }
+
+            ValidateTopologySmallBufferRejections();
+        }
+
+        private static void ValidateTopologyLengthConstants()
+        {
+            ValidateTopologyLengthConstant(
+                ContentSaveSlotTopology.SaveSlotDirectoryChars,
+                "Saves/slot_0",
+                "save slot directory");
+            ValidateTopologyLengthConstant(
+                ContentSaveSlotTopology.PlayerDeltaFileChars,
+                "slot_1.sav",
+                "player delta file");
+            ValidateTopologyLengthConstant(
+                ContentSaveSlotTopology.PlayerDeltaBackupFileChars,
+                "slot_2.bak",
+                "player delta backup file");
+            ValidateTopologyLengthConstant(
+                ContentSaveSlotTopology.PlayerDeltaTempFileChars,
+                "slot_0.tmp",
+                "player delta temp file");
+            ValidateTopologyLengthConstant(
+                ContentSaveSlotTopology.MacroDatabaseSectorFileChars,
+                "sector_0123456789ABCDEF.h8page",
+                "macro database sector file");
+
+            if (ContentSaveSlotTopology.MaxSavePathChars != ContentSaveSlotTopology.MacroDatabaseSectorFileChars)
+                Fail("Save topology max path length no longer matches the macro database sector path.");
+        }
+
+        private static void ValidateTopologyLengthConstant(int actual, string expectedPath, string label)
+        {
+            if (actual != expectedPath.Length)
+                Fail("Save topology length constant drift: " + label);
+        }
+
+        private static void ValidateTopologySmallBufferRejections()
+        {
+            int written;
+            Span<char> smallBuffer = stackalloc char[ContentSaveSlotTopology.SaveSlotDirectoryChars - 1];
+            bool wrote = ContentSaveSlotTopology.TryWriteSaveSlotDirectory(0, smallBuffer, out written);
+            ValidateTopologyRejection(wrote, written, "undersized save slot directory buffer");
+
+            smallBuffer = stackalloc char[ContentSaveSlotTopology.PlayerDeltaFileChars - 1];
+            wrote = ContentSaveSlotTopology.TryWritePlayerDeltaFile(1, smallBuffer, out written);
+            ValidateTopologyRejection(wrote, written, "undersized player delta file buffer");
+
+            smallBuffer = stackalloc char[ContentSaveSlotTopology.PlayerDeltaBackupFileChars - 1];
+            wrote = ContentSaveSlotTopology.TryWritePlayerDeltaBackupFile(2, smallBuffer, out written);
+            ValidateTopologyRejection(wrote, written, "undersized player delta backup buffer");
+
+            smallBuffer = stackalloc char[ContentSaveSlotTopology.PlayerDeltaTempFileChars - 1];
+            wrote = ContentSaveSlotTopology.TryWritePlayerDeltaTempFile(0, smallBuffer, out written);
+            ValidateTopologyRejection(wrote, written, "undersized player delta temp buffer");
+
+            smallBuffer = stackalloc char[ContentSaveSlotTopology.MacroDatabaseSectorFileChars - 1];
+            wrote = ContentSaveSlotTopology.TryWriteMacroDatabaseSectorFile(0x0123456789ABCDEFUL, smallBuffer, out written);
+            ValidateTopologyRejection(wrote, written, "undersized macro database sector buffer");
+        }
+
+        private static void ValidateTopologyRejection(bool wrote, int written, string label)
+        {
+            if (wrote)
+                Fail("Save topology writer accepted " + label);
+            if (written != 0)
+                Fail("Save topology writer reported chars for rejected write: " + label);
         }
 
         private static void ValidateTopologyWrite(
@@ -872,6 +954,7 @@ namespace Hecton8.Core.Content.Editor
                 }
 
 #if UNITY_ADDRESSABLES_EXIST
+                HashSet<object> prewarmRuntimeKeys = new HashSet<object>(manifest.TotalCount);
                 for (int particleIndex = 0; particleIndex < manifest.ParticleSystemCount; particleIndex++)
                 {
                     AssetReference particleReference = manifest.GetParticleSystem(particleIndex);
@@ -880,6 +963,8 @@ namespace Hecton8.Core.Content.Editor
                         Fail("VFX prewarm manifest has invalid particle Addressable reference: " +
                              path + " index=" + particleIndex);
                     }
+
+                    ValidateUniqueVfxPrewarmReference(prewarmRuntimeKeys, particleReference, path, particleIndex, true);
 
                     if (!IsValidParticlePrewarmAsset(particleReference.editorAsset))
                     {
@@ -903,6 +988,8 @@ namespace Hecton8.Core.Content.Editor
                              path + " index=" + computeIndex);
                     }
 
+                    ValidateUniqueVfxPrewarmReference(prewarmRuntimeKeys, computeReference, path, computeIndex, false);
+
                     if (!(computeReference.editorAsset is ComputeShader))
                     {
                         Fail("VFX prewarm manifest compute reference is not a ComputeShader: " +
@@ -910,6 +997,25 @@ namespace Hecton8.Core.Content.Editor
                     }
                 }
 #endif
+            }
+        }
+
+        private static void ValidateUniqueVfxPrewarmReference(
+            HashSet<object> runtimeKeys,
+            AssetReference reference,
+            string path,
+            int index,
+            bool particle)
+        {
+            object runtimeKey = reference.RuntimeKey;
+            if (runtimeKey == null)
+                Fail("VFX prewarm manifest has null runtime key: " + path + " index=" + index);
+
+            if (!runtimeKeys.Add(runtimeKey))
+            {
+                string kind = particle ? "particle" : "compute";
+                Fail("VFX prewarm manifest has duplicate " + kind + " Addressable reference: " +
+                     path + " index=" + index);
             }
         }
 

@@ -30,6 +30,12 @@ namespace Hecton8.AI.Ambient
         private const int MacroHydrationCounterCount = 4;
         private const int MacroVisualBoidsPerBiomassUnit = 64;
         private const int MaxDebrisSignalsPerLateFrame = 16;
+        private const int BiomeChangedSignalLaneCapacity = 64;
+        private const int EntitySpawnSignalLaneCapacity = 128;
+        private const int DebrisSpawnSignalLaneCapacity = 128;
+        private const uint BiomeChangedSignalLaneHash = 0xBE8113A5u;
+        private const uint EntitySpawnSignalLaneHash = 0x573BB0DDu;
+        private const uint DebrisSpawnSignalLaneHash = 0x40D0075Du;
         private const float TelemetryDeltaTimeClampSeconds = 0.25f;
         private const float MacroHydrationStressCullThreshold01 = 0.7f;
         private const float DefaultFlowX = 0.08f;
@@ -151,6 +157,8 @@ namespace Hecton8.AI.Ambient
             CacheDependencies();
             RefreshQualityPolicy();
             EnsureVaultBuffers();
+            EnsureFallbackDrawMeshReady();
+            EnsureSignalLanesReady();
             RegisterRuntime();
         }
 
@@ -201,7 +209,7 @@ namespace Hecton8.AI.Ambient
                 return;
 
             _lastPlayerAup = pose.Aup;
-            _lastPlayerRuntimePosition = pose.RuntimePosition;
+            _lastPlayerRuntimePosition = SanitizeRuntimePosition(pose.RuntimePosition, _lastPlayerRuntimePosition);
             _lastPlayerForward = SanitizeForward(pose.Forward, _lastPlayerForward);
 
             int activeBucket = ResolveActiveBucket();
@@ -247,7 +255,7 @@ namespace Hecton8.AI.Ambient
 
             RefreshBiomeSignalState();
             _lastPlayerAup = pose.Aup;
-            _lastPlayerRuntimePosition = pose.RuntimePosition;
+            _lastPlayerRuntimePosition = SanitizeRuntimePosition(pose.RuntimePosition, _lastPlayerRuntimePosition);
             _lastPlayerForward = SanitizeForward(pose.Forward, _lastPlayerForward);
             RefreshEcologyInputs(_lastPlayerRuntimePosition, out float preyBiomass01, out float carryingCapacity01);
             RefreshAbyssalFlow(_lastPlayerRuntimePosition);
@@ -372,7 +380,7 @@ namespace Hecton8.AI.Ambient
                                (spawnQualityTier >= 3 ? EntitySpawnSignal.FlagHighTierOverkill : 0)),
                 Frame = _frameIndex
             };
-            GlobalSignals.Publish(in spawnSignal);
+            SignalBus<EntitySpawnSignal>.Push(in spawnSignal);
             return true;
         }
 
@@ -738,7 +746,7 @@ namespace Hecton8.AI.Ambient
             preyBiomass01 = 0.35f;
             carryingCapacity01 = 0.5f;
             IEcosystemDirectorService ecosystem = _ecosystem;
-            if (ecosystem == null || !ecosystem.IsInitialized)
+            if (ecosystem == null || !ecosystem.IsInitialized || !math.all(math.isfinite(runtimePosition)))
                 return;
 
             Vector3 position = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
@@ -751,6 +759,12 @@ namespace Hecton8.AI.Ambient
 
         private void RefreshAbyssalFlow(float3 runtimePosition)
         {
+            if (!math.all(math.isfinite(runtimePosition)))
+            {
+                _flowVector = new float3(DefaultFlowX, DefaultFlowY, DefaultFlowZ);
+                return;
+            }
+
             HectonMapMagicVegetationBridge bridge = _vegetationBridge;
             if (bridge != null)
             {
@@ -908,7 +922,7 @@ namespace Hecton8.AI.Ambient
         private bool UploadIndirectArgs(Mesh mesh, int capacity, out GraphicsBuffer argsBuffer)
         {
             argsBuffer = null;
-            if (mesh == null || capacity <= 0 || !AreIndirectArgsBuffersValid())
+            if (mesh == null || capacity <= 0 || mesh.subMeshCount <= 0 || !AreIndirectArgsBuffersValid())
             {
                 return false;
             }
@@ -916,6 +930,12 @@ namespace Hecton8.AI.Ambient
             if (ReferenceEquals(_indirectArgsMesh, mesh) && _indirectArgsCapacity == capacity)
                 return TryResolveIndirectArgsReadBuffer(out argsBuffer);
 
+            uint indexCount = mesh.GetIndexCount(0);
+            if (indexCount == 0u)
+                return false;
+
+            uint startIndex = mesh.GetIndexStart(0);
+            uint baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0));
             int writeIndex = 1 - _indirectArgsBufferIndex;
             if (!TryResolveIndirectArgsBuffer(writeIndex, out GraphicsBuffer writeBuffer))
                 return false;
@@ -924,10 +944,10 @@ namespace Hecton8.AI.Ambient
                 writeBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
             argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
-                indexCountPerInstance = mesh.GetIndexCount(0),
+                indexCountPerInstance = indexCount,
                 instanceCount = (uint)capacity,
-                startIndex = mesh.GetIndexStart(0),
-                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                startIndex = startIndex,
+                baseVertexIndex = baseVertexIndex,
                 startInstance = 0u
             };
             writeBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
@@ -1042,11 +1062,24 @@ namespace Hecton8.AI.Ambient
             if (mesh != null)
                 return true;
 
-            if (_runtimeFallbackMesh == null)
-                _runtimeFallbackMesh = CreateFallbackQuadMesh();
-
             mesh = _runtimeFallbackMesh;
             return mesh != null;
+        }
+
+        private void EnsureFallbackDrawMeshReady()
+        {
+            if (!enableIndirectDraw || biotaQuadMesh != null || _runtimeFallbackMesh != null)
+                return;
+
+            _runtimeFallbackMesh = CreateFallbackQuadMesh();
+        }
+
+        private static void EnsureSignalLanesReady()
+        {
+            global::Hecton8.Core.GlobalSignals.InitializeAllQueues();
+            SignalBus<BiomeChangedSignal>.EnsureInitialized();
+            SignalBus<EntitySpawnSignal>.EnsureInitialized();
+            SignalBus<DebrisSpawnSignal>.EnsureInitialized();
         }
 
         private static Mesh CreateFallbackQuadMesh()
@@ -1143,7 +1176,7 @@ namespace Hecton8.AI.Ambient
                     Flags = DebrisSpawnSignal.FlagComputeShard,
                     Quantity = (ushort)(_highTierOverkillEnabled != 0 ? 6 : 2)
                 };
-                GlobalSignals.Publish(in debrisSignal);
+                SignalBus<DebrisSpawnSignal>.Push(in debrisSignal);
 
                 states[i] = default;
                 aups[i] = default;
@@ -1796,26 +1829,39 @@ namespace Hecton8.AI.Ambient
 
         private static AbsoluteUniversePosition OffsetAup(in AbsoluteUniversePosition origin, double3 deltaMeters)
         {
-            double localX = origin.LocalX + deltaMeters.x;
-            double localY = origin.LocalY + deltaMeters.y;
-            double localZ = origin.LocalZ + deltaMeters.z;
+            double3 local = new double3(
+                origin.LocalX + deltaMeters.x,
+                origin.LocalY + deltaMeters.y,
+                origin.LocalZ + deltaMeters.z);
+            if (!IsFinite(local))
+                return origin;
 
-            long shiftX = (long)math.floor(localX / AupCellSizeMetersDouble);
-            long shiftY = (long)math.floor(localY / AupCellSizeMetersDouble);
-            long shiftZ = (long)math.floor(localZ / AupCellSizeMetersDouble);
+            double3 shiftDouble = math.floor(local * (1.0d / AupCellSizeMetersDouble));
+            if (!IsFinite(shiftDouble) || !IsRepresentableGridShift(shiftDouble))
+                return origin;
 
-            localX -= shiftX * AupCellSizeMetersDouble;
-            localY -= shiftY * AupCellSizeMetersDouble;
-            localZ -= shiftZ * AupCellSizeMetersDouble;
+            long shiftX = (long)shiftDouble.x;
+            long shiftY = (long)shiftDouble.y;
+            long shiftZ = (long)shiftDouble.z;
+            if (!CanAddGridOffset(origin.GridX, shiftX) ||
+                !CanAddGridOffset(origin.GridY, shiftY) ||
+                !CanAddGridOffset(origin.GridZ, shiftZ))
+            {
+                return origin;
+            }
+
+            double3 normalizedLocal = local - new double3(shiftX, shiftY, shiftZ) * AupCellSizeMetersDouble;
+            if (!IsFinite(normalizedLocal))
+                return origin;
 
             return new AbsoluteUniversePosition
             {
                 GridX = origin.GridX + shiftX,
                 GridY = origin.GridY + shiftY,
                 GridZ = origin.GridZ + shiftZ,
-                LocalX = (float)localX,
-                LocalY = (float)localY,
-                LocalZ = (float)localZ
+                LocalX = (float)normalizedLocal.x,
+                LocalY = (float)normalizedLocal.y,
+                LocalZ = (float)normalizedLocal.z
             };
         }
 
@@ -1843,6 +1889,29 @@ namespace Hecton8.AI.Ambient
             return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
         }
 
+        private static bool IsRepresentableGridShift(double3 shift)
+        {
+            return shift.x >= long.MinValue &&
+                   shift.x <= long.MaxValue &&
+                   shift.y >= long.MinValue &&
+                   shift.y <= long.MaxValue &&
+                   shift.z >= long.MinValue &&
+                   shift.z <= long.MaxValue;
+        }
+
+        private static bool CanAddGridOffset(long value, long offset)
+        {
+            if (offset > 0L)
+                return value <= long.MaxValue - offset;
+
+            if (offset < 0L)
+                return offset == long.MinValue
+                    ? value >= 0L
+                    : value >= long.MinValue - offset;
+
+            return true;
+        }
+
         private static bool IsFiniteAup(in AbsoluteUniversePosition aup)
         {
             return math.isfinite(aup.LocalX) &&
@@ -1855,6 +1924,11 @@ namespace Hecton8.AI.Ambient
             bool fault = false;
             float3 normalized = AmbientBiotaDriftJob.SafeNormalize(forward, fallback, ref fault);
             return math.all(math.isfinite(normalized)) ? normalized : new float3(0f, 0f, 1f);
+        }
+
+        private static float3 SanitizeRuntimePosition(float3 position, float3 fallback)
+        {
+            return math.all(math.isfinite(position)) ? position : fallback;
         }
 
         private static float ResolveBiomeEmissionBias(uint biomeHash, uint slotHash)

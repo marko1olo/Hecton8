@@ -149,9 +149,9 @@ Hardware Impact: 0 us runtime; build pipeline only.
 
 ## TYPED SCALABILITY SIGNALBUS BRIDGE
 
-Problem: The previous scalability hookup still made `SystemDispatcher` a legacy listener on `ScalabilityEvents`. That preserved event decoupling, but it did not satisfy the stricter typed-lane/read-only-span requirement for scheduler authority.
-Solution: Reused the existing packed `ScalabilityChangedEvent` payload as the signal. It now implements `ISignal`; `ScalabilityEvents.Raise` pushes the payload to `SignalBus<ScalabilityChangedEvent>` with a 4-event configured lane; and `SystemDispatcher` drains `SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot()` after `GlobalSignals.FlushPreSimulation()`.
-Rejected Alternatives: A new `ScalabilityTierSignal` would duplicate an existing platform contract. Keeping the dispatcher as an `IScalabilityChangedEventListener` would leave scheduler state dependent on listener capacity and callback dispatch. Polling `GlobalRegistry.ScalabilityTierProfileByte` would reintroduce a hot registry read.
+Problem: The previous scalability hookup still made `SystemDispatcher` a legacy listener on `ScalabilityEvents`. That preserved event decoupling, but it did not satisfy the stricter typed-lane/read-only-span requirement for scheduler authority. A concurrent contracts change also introduced `Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent`, making a local `Hecton8.Core.ScalabilityChangedEvent` a duplicate.
+Solution: Reused the existing packed contracts payload as the single signal. `ScalabilityEvents.Raise` pushes the payload to `SignalBus<ScalabilityChangedEvent>` with a 4-event configured lane; and `SystemDispatcher` drains `SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot()` after `GlobalSignals.FlushPreSimulation()`.
+Rejected Alternatives: A new/local `ScalabilityTierSignal` would duplicate an existing platform contract. Keeping the dispatcher as an `IScalabilityChangedEventListener` would leave scheduler state dependent on listener capacity and callback dispatch. Polling `GlobalRegistry.ScalabilityTierProfileByte` would reintroduce a hot registry read.
 Scalability potential: Low/MX350 keeps a 4-event platform lane and an empty-span idle path. Middle keeps deterministic tier state. High/Ultra still receive quality-tier switches for visual overkill systems without adding scheduler math.
 Hardware Impact: Measured proof absent. Expected idle cost is below 0.002 us/frame for an empty span length check; event path is rare and bounded to 4 payloads, 0 B/frame managed allocation.
 

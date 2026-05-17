@@ -740,3 +740,162 @@ Validation:
 - Broader grep still finds legacy string-returning operational summary bridges in `PlayerTool`; those are API-contract legacy paths, not the hull repair tick.
 - Filtered `dotnet build` returned `NO_REPAIR_PLAYERTOOL_TELEMETRY_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
 - Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Twenty-Fifth Pass Interaction Shutdown Vault Lifecycle
+What was wrong:
+- `ShutdownServiceState()` used public `ClearQueuedSignals()`.
+- Public clear ensures/creates `BufferID.InteractionSignalQueue`.
+- During teardown that could allocate or reacquire a vault lane only to clear it.
+
+What was done:
+- Split clear into public `ClearQueuedSignals()` and private `ClearQueuedSignals(bool createVaultLane)`.
+- Normal runtime clear still passes `true`.
+- Shutdown now passes `false`, clearing only an already-created valid vault handle.
+
+Cinematic Cheats used:
+- No new signal.
+- No new allocation.
+- Runtime dispatch behavior unchanged.
+
+Exact Microseconds saved:
+- Normal runtime: 0 us.
+- Shutdown sparse-session path: estimated 1-3 us by avoiding needless vault lane creation/reacquire.
+
+Validation:
+- `rg` confirmed public true-path and shutdown false-path.
+- Fixed-string grep returned `NO_REPAIR_SHUTDOWN_VAULT_HOTPATH_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_SHUTDOWN_VAULT_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Twenty-Sixth Pass HullDent VFX Fade NaN Guard
+What was wrong:
+- `HullDentShaderController.ApplyRepairCoupling` built `fadeDelta` with `math.max(0f, deltaTime)` and `math.max(0f, repairFadeMetersPerSecond)`.
+- That did not guarantee NaN rejection before visual dent depth was integrated and mirrored to the shader lane.
+
+What was done:
+- Added `FiniteNonNegativeOrZero(float)`.
+- Used it for dispatcher delta and repair fade speed before calculating `fadeDelta`.
+- Left the existing vault mirror and shader upload contract unchanged.
+
+Cinematic Cheats used:
+- No new simulation.
+- The low-tier and high-tier visual paths stay on the same cheap shader mirror; this only rejects invalid scalars before they can poison dent fade.
+
+Exact Microseconds saved:
+- No speed gain claimed.
+- Estimated 0-1 us branch cost on active fade frames.
+- Prevents a NaN propagation path into repair VFX state.
+
+Validation:
+- Fixed-string grep returned `NO_REPAIR_VFX_FADE_NAN_HOTPATH_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_VFX_FADE_NAN_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- `git diff --check` reports only the existing LF/CRLF warning for the touched source file.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Twenty-Seventh Pass RepairTool Integrity Diagnosis NaN Guard
+What was wrong:
+- `RepairTool` still divided `module.CurrentIntegrity / module.MaxIntegrity` directly for diagnostics.
+- The sealed/restored HUD transitions compared raw module integrity fields.
+- Non-finite module state could poison diagnosis output or lie about module status.
+
+What was done:
+- Added `ResolveModuleIntegrity01`, `ResolveModuleIntegrityPercent`, `IsModuleIntegrityAtMax`, `IsIntegrityAtMax`, and `IsIntegrityBelowMax`.
+- Replaced raw integrity ratio and sealed/restored comparisons in the module service path.
+
+Cinematic Cheats used:
+- No new simulation.
+- No new UI string path.
+- This keeps the repair HUD as a cheap diagnosis layer instead of adding a deeper module polling system.
+
+Exact Microseconds saved:
+- No speed gain claimed.
+- Estimated 0-1 us branch cost per diagnosis read or module repair hit.
+- Prevents non-finite integrity from entering repair diagnosis and state messaging.
+
+Validation:
+- `rg` returned `NO_REPAIR_INTEGRITY_RAW_RATIO_MATCHES`.
+- Fixed-string grep returned `NO_REPAIR_INTEGRITY_DIAG_HOTPATH_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_INTEGRITY_DIAG_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Twenty-Eighth Pass HullDent VFX Dent Scalar NaN Guard
+What was wrong:
+- `HullDentShaderController` still used `math.max` around combat magnitude and authored dent scalar fields.
+- Packed dent values from the vault were only nonnegative-clamped, not finite-clamped, before CPU mirror and shader upload.
+
+What was done:
+- Sanitized dent magnitude, radius/depth multipliers, full-intensity denominator, max local impact distance, and max dent depth before dent math.
+- Sanitized packed dent values in Pack/Unpack, vault sync, vault flush, and single-dent vault writes.
+- Kept the existing 16-slot `HullDents` mirror and shader global contract.
+
+Cinematic Cheats used:
+- No new simulation.
+- Still a cheap shader deformation/POM recovery fake backed by a fixed 16-slot dent lane.
+- High-tier visual budget remains available for compute sparks and hull surface polish instead of CPU repair simulation.
+
+Exact Microseconds saved:
+- No speed gain claimed.
+- Estimated 0-1 us branch cost per accepted combat dent signal.
+- Estimated 0-1 us branch cost per 16-slot sync/flush pass.
+- Prevents non-finite dent scalars from entering GPU-facing state.
+
+Validation:
+- `rg` returned `NO_REPAIR_VFX_DENT_SCALAR_RAW_NAN_MATCHES`.
+- Fixed-string grep returned `NO_REPAIR_VFX_DENT_SCALAR_HOTPATH_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_VFX_DENT_SCALAR_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Twenty-Ninth Pass RepairTool Raw Delta / Packed Dent NaN Guard
+What was wrong:
+- `RepairTool.UsePrimary` accepted sanitized energy/durability from `PlayerTool`, then still passed raw `deltaTime` into airlock weld override, module repair amount, and submarine damage repair.
+- RepairTool's HullDent pack/unpack helpers still used NaN-prone packed value clamps.
+- Haptic rated power used `math.max(1f, repairSpeed)`, which did not reject NaN repairSpeed.
+
+What was done:
+- Added an early safe-delta gate in `UsePrimary`.
+- Passed `safeDeltaTime` to airlock weld override, submarine damage repair, damage target queuing, and BaseModule repair amount.
+- Replaced haptic rated repair speed with `FiniteAtLeast(repairSpeed, 1f)`.
+- Sanitized RepairTool HullDent radius/depth/packed values before Pack/Unpack quantization.
+
+Cinematic Cheats used:
+- No new simulation.
+- No new signal.
+- The hull repair kernel remains the fixed 16-slot mathematical erase path.
+
+Exact Microseconds saved:
+- No speed gain claimed.
+- Estimated 0-1 us branch cost per primary-use call.
+- Estimated 0-1 us branch cost per dent pack/unpack call.
+- Prevents bad dt or packed values from entering repair math.
+
+Validation:
+- `rg` returned `NO_REPAIR_RAW_DELTA_PACKED_NAN_MATCHES`.
+- Fixed-string grep returned `NO_REPAIR_RAW_DELTA_PACKED_HOTPATH_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_RAW_DELTA_PACKED_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Thirtieth Pass Repair Spark AUP Guard
+What was wrong:
+- `PublishRepairSparkSignal` converted `worldPoint` to AUP without proving the source point was finite.
+- The converted AUP was not checked before pushing `DebrisSpawnSignal`.
+- A bad hit point could poison local sparks or the high-tier compute-shard spark lane.
+
+What was done:
+- Added a finite world-point gate before AUP conversion.
+- Added a finite converted-AUP gate before `AbsoluteUniversePosition.FromAbsolutePosition` and `SignalBus<DebrisSpawnSignal>.Push`.
+
+Cinematic Cheats used:
+- No new simulation.
+- Low-tier fake sparks and high-tier compute sparks remain the same lane split.
+- Invalid spark authority is discarded instead of trying to repair it visually.
+
+Exact Microseconds saved:
+- No speed gain claimed.
+- Estimated 0-1 us branch cost per spark publication attempt.
+- Prevents non-finite AUP data from entering spark VFX.
+
+Validation:
+- Source grep confirmed finite guards before DebrisSpawnSignal publication.
+- Fixed-string grep returned `NO_REPAIR_SPARK_AUP_GUARD_HOTPATH_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_SPARK_AUP_GUARD_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.

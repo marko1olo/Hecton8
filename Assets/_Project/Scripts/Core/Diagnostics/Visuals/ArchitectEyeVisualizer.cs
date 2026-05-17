@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -14,6 +15,9 @@ using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Scripting;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using DebugSignal = Hecton8.Core.Contracts.Signals.DebugSignal;
 using DebugSignalKind = Hecton8.Core.Contracts.Signals.DebugSignalKind;
 
@@ -81,12 +85,14 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private const int BlackBoxFrameCount = 300;
         private const int SignalLaneCapacity = 256;
         private const int SectorHashCapacity = 512;
+        private const int BlackBoxEntrySizeBytes = 64;
         private const int GlyphCellPixels = 8;
         private const int GlyphAtlasColumns = 16;
         private const int GlyphAtlasRows = 8;
         private const int GlyphAtlasPixels = GlyphCellPixels * GlyphAtlasColumns * GlyphCellPixels * GlyphAtlasRows;
         private const int DefaultMaxQuads = 8192;
-        public const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin";
+        private const string QuadShaderAssetPath = "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeIndirectQuads.shader";
+        public const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_ARCHITECT_EYE_VISUALIZER.bin";
         private const float ScreenDepth = 0.25f;
         private const float HashToUnit = 1f / 65535f;
         private const uint StateFlagRawStp = 1u << 0;
@@ -124,6 +130,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
         [SerializeField] private float _labelMeters = 0.18f;
         [SerializeField] private float _vectorScale = 0.08f;
         [SerializeField] private float _lineThicknessMeters = 0.025f;
+        [SerializeField] private Shader _quadShader;
 
         private readonly Bounds _drawBounds = new Bounds(Vector3.zero, new Vector3(20000f, 20000f, 20000f));
         private readonly char[] _labelScratch = new char[128]; // COLD ALLOC: char[128] - fixed label formatting buffer - owner: ArchitectEyeVisualizer
@@ -192,10 +199,18 @@ namespace Hecton8.Core.Diagnostics.Visuals
             ReleaseResources();
         }
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (_quadShader == null)
+                _quadShader = AssetDatabase.LoadAssetAtPath<Shader>(QuadShaderAssetPath);
+        }
+#endif
+
         private static void ValidatePackedStructSizes()
         {
             if (UnsafeUtility.SizeOf<ArchitectEyeQuadInstance>() != 80 ||
-                UnsafeUtility.SizeOf<ArchitectEyeBlackBoxEntry>() != 64 ||
+                UnsafeUtility.SizeOf<ArchitectEyeBlackBoxEntry>() != BlackBoxEntrySizeBytes ||
                 UnsafeUtility.SizeOf<ArchitectEyeRuntimeState>() != 64 ||
                 UnsafeUtility.SizeOf<DebugSignal>() != 64)
             {
@@ -321,13 +336,6 @@ namespace Hecton8.Core.Diagnostics.Visuals
         {
             if (!IsDiagnosticsRuntimeAllowed())
                 return;
-
-            if (UnityEngine.Input.GetKeyDown(KeyCode.F12))
-            {
-                _enabled = !_enabled;
-                if (!_enabled)
-                    _frontCount = 0;
-            }
 
             if (!_enabled || _frontCount <= 0 || _quadMesh == null || _material == null || _argsBuffer == null)
                 return;
@@ -499,7 +507,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 EmitScreenQuad(quads, ref count, capacity, new float2(x, y), new float2(math.max(0.003f, lanePressure * 0.16f), 0.007f), color, 0f, new float4(0f, 0f, 1f, 1f));
             }
 
-            int history = math.min(blackBox.Length, 48);
+            int history = math.min(blackBox.Length, 50);
             for (int i = 0; i < history; i++)
             {
                 int index = state.BlackBoxCursor - 1 - i;
@@ -507,7 +515,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                     index += blackBox.Length;
                 ArchitectEyeBlackBoxEntry entry = blackBox[index % blackBox.Length];
                 float p = SaturateFinite(entry.SignalPressure01);
-                float x = -0.93f + (history - 1 - i) * 0.012f;
+                float x = -0.93f + (history - 1 - i) * 0.0115f;
                 float4 color = math.select(new float4(0.05f, 0.7f, 1f, 0.42f), new float4(1f, 0.2f, 0.05f, 0.7f), p > 0.66f);
                 EmitScreenQuad(quads, ref count, capacity, new float2(x, 0.86f + p * 0.035f), new float2(0.004f, math.max(0.004f, p * 0.04f)), color, 0f, new float4(0f, 0f, 1f, 1f));
             }
@@ -526,6 +534,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
         {
             ReadOnlySpan<DebugSignal> signals = SignalBus<DebugSignal>.GetFrameSnapshot();
             int limit = math.min(signals.Length, ResolveEntityBudget());
+            float vramPieCursorRadians = -1.5707964f;
+            float vramPieRemaining01 = 1f;
             for (int i = 0; i < limit; i++)
             {
                 DebugSignal signal = signals[i];
@@ -610,7 +620,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                         EmitBillboardQuad(quads, ref count, capacity, signal.Position, new float2(0.18f, 0.42f), new float4(0.4f, 0.85f, 1f, 0.18f), new float4(0f, 0f, 1f, 1f));
                         break;
                     case DebugSignalKind.VramBudgetSlice:
-                        BuildVramSlice(quads, ref count, capacity, signal.Aux0, SaturateFinite(signal.Value0));
+                        BuildVramSlice(quads, ref count, capacity, signal.Aux0, SaturateFinite(signal.Value0), ref vramPieCursorRadians, ref vramPieRemaining01);
                         break;
                     case DebugSignalKind.AupTeleportPreview:
                         EmitWorldLine(quads, ref count, capacity, signal.Position + new float3(-1f, 0f, 0f), signal.Position + new float3(1f, 0f, 0f), _lineThicknessMeters, new float4(0.1f, 1f, 0.8f, 0.9f));
@@ -764,7 +774,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                     ? new float4(0.35f, 0.37f, 0.39f, 0.58f)
                     : new float4(0.1f, 0.45f, 1f, 0.5f);
                 if (free && descriptor.Bytes < largest && fragmentation01 > 0.35f)
-                    color = new float4(1f, 0.08f, 0.02f, 0.72f);
+                    color = new float4(1f, 0.92f, 0.08f, 0.72f);
                 EmitScreenQuad(quads, ref count, capacity, new float2(x + w, -0.94f), new float2(w, 0.012f), color, 0f, new float4(0f, 0f, 1f, 1f));
                 x += w * 2f + 0.004f;
                 if (x > 0.95f)
@@ -884,13 +894,14 @@ namespace Hecton8.Core.Diagnostics.Visuals
             int saltCount = tier == HectonQualityTier.Ultra ? 1024 : 256;
             int siltCount = tier == HectonQualityTier.Ultra ? 1536 : 384;
             int dentCount = tier == HectonQualityTier.Ultra ? 768 : 192;
-            uint frameSeed = state.LastFrame + 0xA3C59AC3u;
+            float timePhase = (state.LastFrame & 1023u) * (1f / 1024f);
 
             for (int i = 0; i < saltCount && count < capacity; i++)
             {
-                float h0 = Hash01(frameSeed, (uint)i, 0x53414C54u);
-                float h1 = Hash01(frameSeed, (uint)i, 0x43525953u);
-                float growth = Triangle01(h0 + signalPressure01 + gasCo201);
+                uint index = (uint)i;
+                float h0 = Hash01(index, 0x53414C54u, 0x43525953u);
+                float h1 = Hash01(index, 0x43525953u, 0x41414141u);
+                float growth = Triangle01(h0 + timePhase * 0.37f + signalPressure01 + gasCo201);
                 float2 center = new float2(-0.96f + h0 * 0.42f, 0.44f + h1 * 0.48f);
                 float size = math.lerp(0.0025f, 0.015f, growth);
                 float alpha = math.lerp(0.035f, 0.22f, growth);
@@ -899,9 +910,10 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
             for (int i = 0; i < siltCount && count < capacity; i++)
             {
-                float h0 = Hash01(frameSeed, (uint)i, 0x53494C54u);
-                float h1 = Hash01(frameSeed, (uint)i, 0x57414B45u);
-                float orbit = Triangle01(h0 + stpStress01);
+                uint index = (uint)i;
+                float h0 = Hash01(index, 0x53494C54u, 0x57414B45u);
+                float h1 = Hash01(index, 0x57414B45u, 0x53555247u);
+                float orbit = Triangle01(h0 + timePhase * 0.61f + stpStress01);
                 float2 center = new float2(0.18f + (h0 - 0.5f) * 1.65f, -0.22f + (h1 - 0.5f) * 0.58f + orbit * 0.12f);
                 float size = math.lerp(0.002f, 0.010f, h1);
                 float alpha = math.lerp(0.025f, 0.18f, orbit);
@@ -910,8 +922,9 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
             for (int i = 0; i < dentCount && count < capacity; i++)
             {
-                float h0 = Hash01(frameSeed, (uint)i, 0x44454E54u);
-                float h1 = Hash01(frameSeed, (uint)i, 0x48554C4Cu);
+                uint index = (uint)i;
+                float h0 = Hash01(index, 0x44454E54u, 0x48554C4Cu);
+                float h1 = Hash01(index, 0x48554C4Cu, 0x504F4D33u);
                 float stress = SaturateFinite(stpStress01 + signalPressure01 * 0.5f);
                 float2 center = new float2(0.45f + h0 * 0.5f, -0.82f + h1 * 0.28f);
                 float2 size = new float2(math.lerp(0.006f, 0.038f, h0), math.lerp(0.002f, 0.012f, h1));
@@ -943,13 +956,62 @@ namespace Hecton8.Core.Diagnostics.Visuals
             EmitScreenQuad(quads, ref count, capacity, new float2(x - 0.08f + health01 * 0.16f, y + 0.02f), new float2(0.004f, 0.035f), new float4(1f - health01, health01, 0.12f, 0.86f), 0f, new float4(0f, 0f, 1f, 1f));
         }
 
-        private void BuildVramSlice(NativeArray<ArchitectEyeQuadInstance> quads, ref int count, int capacity, uint sliceId, float fraction01)
+        private void BuildVramSlice(
+            NativeArray<ArchitectEyeQuadInstance> quads,
+            ref int count,
+            int capacity,
+            uint sliceId,
+            float fraction01,
+            ref float cursorRadians,
+            ref float remaining01)
         {
-            float angle = (sliceId & 15u) * 0.3926991f;
-            math.sincos(angle, out float s, out float c);
-            float2 center = new float2(0.76f + c * 0.05f, -0.58f + s * 0.05f);
-            float4 color = new float4(0.15f + ((sliceId * 53u) & 127u) * (1f / 255f), 0.45f + ((sliceId * 97u) & 127u) * (1f / 255f), 0.95f, 0.42f + fraction01 * 0.4f);
-            EmitScreenQuad(quads, ref count, capacity, center, new float2(math.max(0.006f, fraction01 * 0.04f), 0.012f), color, 0f, new float4(0f, 0f, 1f, 1f));
+            fraction01 = math.min(SaturateFinite(fraction01), math.max(0f, remaining01));
+            if (fraction01 <= 0.0001f)
+                return;
+
+            float sweepRadians = fraction01 * 6.2831855f;
+            float tier = ResolveVisualTierScalar();
+            int fullCircleSegments = 12 + (int)(tier * 8f);
+            int segments = math.clamp((int)math.ceil(fraction01 * fullCircleSegments), 1, 36);
+            int rings = tier >= 2f ? 3 : 2;
+            float invSegments = SafeRcp(segments);
+            float invRings = SafeRcp(rings + 1f);
+            float2 pieCenter = new float2(0.78f, -0.58f);
+            float4 color = ResolveVramSliceColor(sliceId, fraction01);
+
+            for (int segment = 0; segment < segments; segment++)
+            {
+                float segmentT = (segment + 0.5f) * invSegments;
+                float angle = cursorRadians + sweepRadians * segmentT;
+                math.sincos(angle, out float s, out float c);
+                float2 direction = new float2(c, s);
+
+                for (int ring = 0; ring < rings; ring++)
+                {
+                    float radialT = (ring + 1f) * invRings;
+                    float radius = math.lerp(0.012f, 0.058f, radialT);
+                    float beadSize = math.lerp(0.0042f, 0.0072f, radialT) + fraction01 * 0.002f;
+                    EmitScreenQuad(quads, ref count, capacity, pieCenter + direction * radius, new float2(beadSize, beadSize), color, 0f, new float4(0f, 0f, 1f, 1f));
+                }
+            }
+
+            cursorRadians += sweepRadians;
+            remaining01 = math.max(0f, remaining01 - fraction01);
+        }
+
+        private static float4 ResolveVramSliceColor(uint sliceId, float fraction01)
+        {
+            switch (sliceId & 3u)
+            {
+                case 0u:
+                    return new float4(0.18f, 0.95f, 0.38f, 0.42f + fraction01 * 0.4f);
+                case 1u:
+                    return new float4(0.16f, 0.62f, 1f, 0.42f + fraction01 * 0.4f);
+                case 2u:
+                    return new float4(0.92f, 0.94f, 1f, 0.38f + fraction01 * 0.35f);
+                default:
+                    return new float4(0.9f, 0.32f, 1f, 0.42f + fraction01 * 0.4f);
+            }
         }
 
         private void RecordBlackBox(
@@ -1059,17 +1121,45 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
                 using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                unsafe
+                Span<byte> entryBytes = stackalloc byte[BlackBoxEntrySizeBytes];
+                for (int i = 0; i < blackBox.Length; i++)
                 {
-                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
-                    int bytes = blackBox.Length * UnsafeUtility.SizeOf<ArchitectEyeBlackBoxEntry>();
-                    stream.Write(new ReadOnlySpan<byte>(source, bytes));
+                    ArchitectEyeBlackBoxEntry entry = blackBox[i];
+                    WriteBlackBoxEntryLittleEndian(entryBytes, in entry);
+                    stream.Write(entryBytes);
                 }
             }
             catch (Exception)
             {
                 _dumpWrittenThisFault = true;
             }
+        }
+
+        private static void WriteBlackBoxEntryLittleEndian(Span<byte> destination, in ArchitectEyeBlackBoxEntry entry)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(4, 2), entry.QuadCount);
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(6, 2), entry.SignalLaneCount);
+            WriteFloatLittleEndian(destination.Slice(8, 4), entry.SignalPressure01);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.VaultPressure01);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.MemoryFragmentation01);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.SystemHealth01);
+            WriteFloatLittleEndian(destination.Slice(24, 4), entry.FrameTimeMs);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(28, 4), entry.NonFiniteCount);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(32, 4), entry.KillSwitchMask);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(36, 4), entry.Flags);
+            WriteFloatLittleEndian(destination.Slice(40, 4), entry.LastFaultPosition.x);
+            WriteFloatLittleEndian(destination.Slice(44, 4), entry.LastFaultPosition.y);
+            WriteFloatLittleEndian(destination.Slice(48, 4), entry.LastFaultPosition.z);
+            WriteFloatLittleEndian(destination.Slice(52, 4), entry.GasCo201);
+            WriteFloatLittleEndian(destination.Slice(56, 4), entry.GasO201);
+            WriteFloatLittleEndian(destination.Slice(60, 4), entry.StpScale01);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination, math.asuint(math.isfinite(value) ? value : 0f));
         }
 
         private float3 ResolveFallbackProbePosition(IDataVault vault)
@@ -1381,7 +1471,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private void CreateMaterial()
         {
-            Shader shader = Shader.Find("Hidden/Hecton8/Diagnostics/ArchitectEyeIndirectQuads");
+            Shader shader = ResolveQuadShader();
             if (shader == null)
                 return;
 
@@ -1391,6 +1481,19 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 enableInstancing = true
             };
             _material.SetTexture(GlyphAtlasId, _glyphAtlas);
+        }
+
+        private Shader ResolveQuadShader()
+        {
+            if (_quadShader != null)
+                return _quadShader;
+
+#if UNITY_EDITOR
+            _quadShader = AssetDatabase.LoadAssetAtPath<Shader>(QuadShaderAssetPath);
+            return _quadShader;
+#else
+            return null;
+#endif
         }
 
         private void EnsureBufferCapacity(int requiredCapacity)

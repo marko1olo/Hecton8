@@ -63,6 +63,7 @@ using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
@@ -370,7 +371,7 @@ namespace Hecton8.Audio
     /// Runtime audio service accessed through the core audio registry.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
-    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IServiceHeartbeat, IServiceShutdown
     {
         private const float SoundSpeedWaterMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         private const float MassiveDistanceFixedAudioDelayMeters = 740f;
@@ -921,8 +922,8 @@ namespace Hecton8.Audio
         private bool _isInitialized;
         private bool _runtimeResourcesInitialized;
         private bool _eventsSubscribed;
-        private bool _scalabilityEventsRegistered;
         private bool _hotSwapRegistered;
+        private int _lastScalabilitySignalFrame = -4096;
         private IPlayerRuntimeContext _cachedPlayerRuntimeContext;
         private IWeatherService _cachedWeatherService;
         private AcousticZoneController _cachedAcousticZone;
@@ -971,7 +972,6 @@ namespace Hecton8.Audio
             if (_isInitialized)
             {
                 RefreshSpatialAudioPolicyCold();
-                TryRegisterScalabilityEvents();
                 TrySubscribeAudioEvents();
             }
             TryRegisterOriginShiftListener();
@@ -997,7 +997,6 @@ namespace Hecton8.Audio
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
-            TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
             TryUnsubscribeAudioEvents();
             if (_isInitialized)
@@ -1181,7 +1180,6 @@ namespace Hecton8.Audio
             TryRegisterHotSwapListener();
             RefreshSpatialAudioPolicyCold();
             ApplyAmbientOutputSampleRatePolicy();
-            TryRegisterScalabilityEvents();
             TryRegisterOriginShiftListener();
             RefreshVirtualPhysicalVoiceLimit(true);
             RefreshFoveatedDirector();
@@ -1252,6 +1250,7 @@ namespace Hecton8.Audio
                 return;
 
             float safeDeltaTime = math.max(0f, deltaTime);
+            ConsumeScalabilitySignals();
             AdvanceVirtualVoiceStealFades(safeDeltaTime);
             float blendT = FastDecayBlend(HaasBlendSharpness, safeDeltaTime);
             float now = Time.unscaledTime;
@@ -1362,10 +1361,25 @@ namespace Hecton8.Audio
             ApplyParasiteRoomAcousticState(safeDeltaTime);
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        private void HandleScalabilityChanged(in ScalabilityChangedEvent payload)
         {
             CacheSpatialAudioPolicy(payload.CurrentQualityTier, _cachedLowMemoryProfile, Time.frameCount);
             ApplyAmbientOutputSampleRatePolicy();
+        }
+
+        private void ConsumeScalabilitySignals()
+        {
+            int frame = Time.frameCount;
+            if (_lastScalabilitySignalFrame == frame)
+                return;
+
+            _lastScalabilitySignalFrame = frame;
+            ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ScalabilityChangedEvent payload = signals[i];
+                HandleScalabilityChanged(in payload);
+            }
         }
 
         public void OnGlobalRegistryServiceRebound(
@@ -3068,24 +3082,6 @@ namespace Hecton8.Audio
             configuration.sampleRate = LowTierAmbientOutputSampleRate;
             if (AudioSettings.Reset(configuration))
                 _lastAudioOutputSampleRate = LowTierAmbientOutputSampleRate;
-        }
-
-        private void TryRegisterScalabilityEvents()
-        {
-            if (_scalabilityEventsRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityEventsRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityEvents()
-        {
-            if (!_scalabilityEventsRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityEventsRegistered = false;
         }
 
         private void TryRegisterHotSwapListener()

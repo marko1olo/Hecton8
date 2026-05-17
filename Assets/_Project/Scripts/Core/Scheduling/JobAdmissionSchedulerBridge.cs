@@ -20,7 +20,11 @@ namespace Hecton8.Core.Scheduling
             if (service == null)
                 return;
 
-            Volatile.Write(ref _service, service);
+            IJobAdmissionService current = Volatile.Read(ref _service);
+            if (ReferenceEquals(current, service))
+                return;
+
+            Interlocked.CompareExchange(ref _service, service, null);
         }
 
         /// <summary>Clears the bridge when the owning service shuts down.</summary>

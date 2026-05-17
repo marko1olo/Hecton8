@@ -399,3 +399,32 @@ Validation:
 - `git diff --check` reported only line-ending normalization warnings.
 - Dotnet was not run for this loop by explicit user instruction not to rebuild every pass.
 - Unity runtime and profiler validation were not executed.
+
+## 2026-05-17 - Adjacent Cable/Tool NaN Debt Pass
+
+What was wrong:
+- `GravityTetherTool` trusted raw transform origin/forward, runtime range/radius, pickup distance, candidate centers, chest position, and pull scalar before overlap filtering and `PhysicsForceRouter`.
+- `BioCableIK` could push non-finite anchor/recoil/rupture data into `_points`, `LineRenderer.SetPositions`, particle spark anchors, and `math.rsqrt` direction/constraint helpers.
+- `VRCableDragPlug` used a cheap magnitude approximation that could overflow to infinity, then multiply `maxfloat * 0` during normalization or AUP cable-length clamping.
+
+What was done:
+- Added finite origin/direction/range/radius/pickup/candidate/chest guards to `GravityTetherTool`.
+- Added safe dt, segment length, scalar, color, velocity, anchor, rupture, recoil, and renderer-position sanitation to `BioCableIK`.
+- Hardened `VRCableDragPlug` control-point span, AUP clamp, `SafeNormalize`, and `ApproximateMagnitudeNoSqrt` against overflowed squared magnitudes and non-finite approximate lengths.
+
+Cinematic Cheats used:
+- Kept the cheap math path. No new physical cable truth was added outside the Verlet owner.
+- MX350 keeps approximated cable spline/IK and cheap overlap filtering; High/Ultra can keep richer line/plug visuals with cleaner inputs instead of spending cycles recovering from NaNs.
+
+Exact Microseconds saved:
+- No measured microsecond saving is claimed.
+- Added work is bounded finite checks in small fixed arrays or interaction handoff paths.
+- Expected value is stability: avoids NaN propagation into physics force queues, line renderers, plug spline control points, and mobile/Quest GPU state.
+
+Validation:
+- Confirmed `GravityTetherTool`, `BioCableIK`, and `VRCableDragPlug` were not already dirty before adjacent edits.
+- Static scan found no `Update` family, `string.Format`, Unity Joint, legacy EventBus/delegate, private `NativeQueue`, Unity time-global, singleton, `math.distance`, or `distance(` hits in the three touched adjacent files.
+- Targeted `math.rsqrt` / `math.rcp` scan reviewed remaining direct normalization sites; remaining calls are guarded by finite length or approximate-length checks.
+- `git diff --check` reported only line-ending normalization warnings.
+- Dotnet was not run by explicit user instruction not to rebuild every pass.
+- Unity runtime and profiler validation were not executed.

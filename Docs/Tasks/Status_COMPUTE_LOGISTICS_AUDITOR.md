@@ -3,6 +3,7 @@
 Status: AUDIT COMPLETE
 Snapshot: 2026-05-16T03:56+04:00
 Scope: HECTON-8 compute/token accounting. Timaert excluded.
+Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 ## Checklist
 
@@ -38,6 +39,9 @@ Scope: HECTON-8 compute/token accounting. Timaert excluded.
 - [x] Run post-04:12 bounded JSONL token window and write `COMPUTE_TOKEN_LIVE_REBASE_20260517_0446.md`.
 - [x] Run 04:46 per-thread SQLite live burner attribution and refresh current code ratios.
 - [x] Run 05:34 SQLite live pulse and write `COMPUTE_LIVE_PULSE_20260517_0534.md`.
+- [x] Detect large source drift after 04:12 and rerun H-Phi scan at 11:42.
+- [x] Compute token/cost window between 04:12 and 11:42 H-Phi artifacts.
+- [x] Create H-Phi / ash-fi search index and add keyword aliases to active H-Phi compute docs.
 
 ## Current Evidence
 
@@ -50,6 +54,8 @@ Primary output:
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_RECENT_JSONL_RATE_AUDIT_20260517.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_LIVE_REBASE_20260517_0446.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_PULSE_20260517_0534.md`
+- `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_SEARCH_INDEX_20260517.md`
+- `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1142.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_0412.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_0217.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_BUDGET_GATE_ATTEMPT_20260517.md`
@@ -156,3 +162,17 @@ No Unity compile/run was required. This task is accounting, not runtime validati
 - Energy estimate: 2,547.68 MWh.
 - Tokens per meaningful LOC: 60,726.33.
 - Active delta threads: 5; top burners `Enforce DataVault statelessness`, `CONTENT_AUTHORITY_DICTATOR`, `Move reports to batch006`, `Build ballast PID`, `Improve bot memory and CRM`.
+
+2026-05-17T11:42+04:00:
+
+- H-Phi scan justified by source drift: 113 C# files changed after 04:12, 10,799,862 bytes touched.
+- Runtime H-Phi risk: 0.005378664.
+- Runtime H-Phi narrow: 0.075881112.
+- Data sovereignty: 0.141543476.
+- Delta vs 04:12 H-Phi: +0.000519851 risk, +0.005594882 narrow, +104 DataVault refs, -162 owner-blocked NativeArray refs, -175 PrimaryNativeOwnershipRisk, +20 PrimaryManagedRuntimeRisk.
+- Token window between H-Phi artifacts: 501,495,243 tokens; USD 397.22 cache-aware; USD 2,548.92 no-cache.
+- SQLite thread tokens: 51,066,572,323.
+- 11:38 live burn: 3,001,335 tokens; 99,715.11 tokens/sec.
+- First-party meaningful LOC: 854,943.
+- Tokens per meaningful LOC: 59,730.97.
+- Energy estimate: 2,553.33 MWh.

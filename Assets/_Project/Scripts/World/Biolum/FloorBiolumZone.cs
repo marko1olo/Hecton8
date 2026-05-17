@@ -62,6 +62,8 @@ namespace Hecton8.Biolum
         protected override void Awake()
         {
             base.Awake();
+            _clusterCount = Mathf.Clamp(_clusterCount, 1, _maxLights);
+            _clusterSize = SanitizeNonNegative(_clusterSize, 3f);
             _clusterCenters = new Vector3[_maxLights]; // COLD ALLOC: Vector3[_maxLights] - floor biolum cluster centers - owner: FloorBiolumZone
             _lightsPerCluster = new int[_maxLights]; // COLD ALLOC: int[_maxLights] - floor biolum lights per cluster - owner: FloorBiolumZone
             GenerateClusterCenters();
@@ -76,7 +78,8 @@ namespace Hecton8.Biolum
         /// </summary>
         protected override void EvaluateBiolumState()
         {
-            _pulsePhase = Time.time * _pulseFrequency;
+            float safePulseFrequency = math.min(SanitizeNonNegative(_pulseFrequency, 0.5f), 2f);
+            _pulsePhase = BiolumTickTime * safePulseFrequency;
 
             if (_activeLightCount == 0)
             {
@@ -97,7 +100,7 @@ namespace Hecton8.Biolum
         /// </summary>
         protected override Color GetBiolumColor()
         {
-            return _clusterType switch
+            Color color = _clusterType switch
             {
                 FloorClusterType.Coral => Color.Lerp(_coralRed, _coralOrange, Cheap01Wave(_pulsePhase)),
                 FloorClusterType.Fungi => _fungiGreen,
@@ -105,6 +108,7 @@ namespace Hecton8.Biolum
                 FloorClusterType.Garden => Color.Lerp(_gardenCyan, _fungiGreen, Cheap01Wave(_pulsePhase * 0.5f)),
                 _ => Color.white
             };
+            return SanitizeBiolumColor(color);
         }
 
         /// <summary>
@@ -114,7 +118,8 @@ namespace Hecton8.Biolum
         protected override float GetBiolumIntensity()
         {
             float baseIntensity = _intensityMultiplier * 1.2f; // Floor clusters are bright
-            float pulse = math.lerp(1f - _pulseIntensity, 1f + _pulseIntensity, Cheap01Wave(_pulsePhase));
+            float safePulseIntensity = Sanitize01(_pulseIntensity, 0.3f);
+            float pulse = math.lerp(1f - safePulseIntensity, 1f + safePulseIntensity, Cheap01Wave(_pulsePhase));
             return ScaleIntensityByMood(baseIntensity) * pulse;
         }
 
@@ -136,10 +141,12 @@ namespace Hecton8.Biolum
         /// </summary>
         private void GenerateClusterCenters()
         {
-            for (int i = 0; i < _clusterCount && i < _maxLights; i++)
+            int safeClusterCount = Mathf.Clamp(_clusterCount, 1, _maxLights);
+            float safeClusterSize = SanitizeNonNegative(_clusterSize, 3f);
+            for (int i = 0; i < safeClusterCount; i++)
             {
-                float angle = (i / (float)_clusterCount) * 360f;
-                float distance = _clusterSize * 1.5f;
+                float angle = (i / (float)safeClusterCount) * 360f;
+                float distance = safeClusterSize * 1.5f;
                 Vector3 offset = new Vector3(
                     CinematicMath.FastCos(angle * Mathf.Deg2Rad) * distance,
                     -1f, // On floor
@@ -159,7 +166,9 @@ namespace Hecton8.Biolum
             float baseIntensity = GetBiolumIntensity();
             float baseRange = GetBiolumRange();
 
-            for (int cluster = 0; cluster < _clusterCount && _activeLightCount < _maxLights; cluster++)
+            int safeClusterCount = Mathf.Clamp(_clusterCount, 1, _maxLights);
+            float safeClusterSize = SanitizeNonNegative(_clusterSize, 3f);
+            for (int cluster = 0; cluster < safeClusterCount && _activeLightCount < _maxLights; cluster++)
             {
                 Vector3 clusterCenter = transform.position + _clusterCenters[cluster];
                 int lightsInCluster = _lightsPerCluster[cluster];
@@ -167,7 +176,7 @@ namespace Hecton8.Biolum
                 for (int light = 0; light < lightsInCluster && _activeLightCount < _maxLights; light++)
                 {
                     // Scatter lights within cluster
-                    Vector3 scatter = DeterministicScatter(cluster, light, _clusterSize * 0.3f);
+                    Vector3 scatter = DeterministicScatter(cluster, light, safeClusterSize * 0.3f);
                     Vector3 lightPos = clusterCenter + scatter;
 
                     // Slight color variation within cluster
@@ -191,7 +200,8 @@ namespace Hecton8.Biolum
             Color baseColor = GetBiolumColor();
             float baseIntensity = GetBiolumIntensity();
             float baseRange = GetBiolumRange();
-            float time = Time.time;
+            float time = BiolumTickTime;
+            int safeClusterCount = Mathf.Clamp(_clusterCount, 1, _maxLights);
 
             for (int i = 0; i < _activeLightCount; i++)
             {
@@ -201,11 +211,11 @@ namespace Hecton8.Biolum
                 // Slight position drift (organic movement)
                 float drift = CheapSignedWave((time * 0.2f) + Hash01((i * 23) + 7));
                 int clusterIdx = i / 3; // Rough cluster assignment
-                if (clusterIdx < _clusterCount)
+                if (clusterIdx < safeClusterCount)
                 {
                     Vector3 newPos = transform.position + _clusterCenters[clusterIdx];
                     newPos += new Vector3(drift, drift * 0.5f, drift) * 0.3f;
-                    light.transform.position = newPos;
+                    UpdateLightPosition(light, newPos);
                 }
 
                 UpdateLight(

@@ -3,7 +3,7 @@
 Agent: CSV_DATA_MONOLITH_SYNC  
 Domain: CORE/DATA_PIPELINE  
 Task count: 20  
-Current status: VERIFIED MASTER GRADE - DATA MONOLITH ONLINE (Loop 13 data-domain verified; no rebuild rerun by user directive; prior full Core compile wall is cross-domain World/Submarine errors)
+Current status: VERIFIED MASTER GRADE - DATA MONOLITH ONLINE (Loop 17 blackbox dump header verified; no rebuild rerun by user directive; prior full Core compile wall is cross-domain World/Submarine errors)
 
 ## Mandates Loaded
 
@@ -141,3 +141,38 @@ Loop 4 validation: Core build exits 0 with 1990 existing warnings and 0 errors. 
 - [x] Row-width drift rejection | DOD: After header parse, every CSV data row must have the same cell count as the header row before the table is accepted. Alternative rejected: silently ignoring orphan cells or relying on downstream required-column checks. Estimate: one cold integer compare per row.
 - [x] CSV regression tests | DOD: Added PlayMode tests for unclosed quoted fields and orphan extra cells. Alternative rejected: manual spreadsheet inspection. Estimate: test-only.
 - [x] No-rebuild verification | DOD: Per user directive, no `dotnet build` rerun was executed. Source scans confirm the new error gates and tests, runtime store forbidden-token scans remain clean, Core/Data update/parser scan remains clean, tracked `git diff --check` reports only CRLF warnings, and baked files pass `CSV_PARSER_HARDENING_BINARY_SCAN_CLEAN crc=0x694BA34A staticBytes=896 babelBytes=1284`. Alternative rejected: another full build while cross-domain blockers remain known. Estimate: verification-only.
+
+## Loop 14 - UTF8 Babel Hash Sovereignty
+
+- [x] Exact-case header gate | DOD: CSV header lookup now requires exact ordinal header names and reports `[CRITICAL_DATA_SCHEMA]` for case drift such as `id` instead of `Id`. Alternative rejected: case-insensitive headers that hide spreadsheet identity drift. Estimate: cold header scan only.
+- [x] Strict UTF8 CSV decode | DOD: CSV reads now use `new UTF8Encoding(false, true)` so invalid source bytes fail the bake instead of entering Babel as replacement characters. Alternative rejected: permissive decoder fallback. Estimate: cold decode only; 0 us runtime.
+- [x] UTF8 FNV for Babel text | DOD: Added `H8DataHashTool.ComputeFnv1a32Utf8(ReadOnlySpan<char>)` and routed Babel string keys through UTF8 byte hashing while leaving canonical ASCII record IDs on the original first-column hash path. Alternative rejected: low-byte `char` hashing for non-ASCII names/descriptions. Estimate: cold string-pool hashing only.
+- [x] Tests extended | DOD: Added header-case drift, invalid UTF8, and non-ASCII UTF8 hash regression coverage. Alternative rejected: ASCII-only assumptions for human-facing text. Estimate: test-only.
+- [x] Baked artifacts synchronized | DOD: Regenerated `Data/Balance/Baked/H8StaticData.bin` and `Babel_Dictionary.h8bin` to match UTF8 Babel hashes; verified `Scrap Metal` static `NameHash` and Babel key both equal `0x0A551605`, and `LOOP14_UTF8_BABEL_SCAN_CLEAN crc=0xFFF07BB0 staticBytes=896 babelBytes=1295`. Alternative rejected: leaving source and shipped baked files split. Estimate: bake-time only.
+- [x] No-rebuild verification | DOD: Per user directive, no `dotnet build` rerun was executed. Runtime store forbidden-token scans remain clean, Core/Data update/parser scan remains clean, and tracked `git diff --check` reports only CRLF warnings. Alternative rejected: another full build while cross-domain compile blockers remain known. Estimate: verification-only.
+
+## Loop 15 - Babel Text Control-Character Sanity
+
+- [x] Text control-character rejection | DOD: `ColumnType.Text` validation now rejects C0 control characters before names/descriptions enter the Babel string pool. Alternative rejected: allowing tabs/NUL/newlines into UI-facing byte slices. Estimate: cold O(text length) scan; 0 us runtime.
+- [x] NASA-grade text error | DOD: Bad text now fails with `[CRITICAL_DATA_TEXT]` and reports the offending control byte as hex. Alternative rejected: generic parse failure. Estimate: cold failure path only.
+- [x] Regression coverage | DOD: Added a PlayMode test that injects a tab into `Items.csv` text and asserts `[CRITICAL_DATA_TEXT]`. Alternative rejected: relying on UI consumers to sanitize corrupted labels. Estimate: test-only.
+- [x] No-rebuild verification | DOD: Per user directive, no `dotnet build` rerun was executed. Source scans confirm the text gate and test, runtime store forbidden-token scans remain clean, Core/Data update/parser scan remains clean, `git diff --check` reports only CRLF warnings, and baked files pass `LOOP15_TEXT_SANITY_SCAN_CLEAN crc=0xFFF07BB0 staticBytes=896 babelBytes=1295`. Alternative rejected: another full build while cross-domain compile blockers remain known. Estimate: verification-only.
+
+## Loop 16 - Schema Self-Audit And Key Grammar Tightening
+
+- [x] XML and mandate reload | DOD: Re-read `Status_CSV_DATA_MONOLITH_SYNC.md`, `Rationale_CSV_DATA_MONOLITH_SYNC.md`, `AGENTS.md`, the Core/Data domain boundary, the `CSV_DATA_MONOLITH_SYNC` XML block, and the zero-GC/checksum/telemetry/IO mandates before edits. Alternative rejected: continuing from chat memory. Estimate: authority read only.
+- [x] Deterministic schema self-audit | DOD: `H8DataBaker.CurrentSchemaHash` now recomputes the active schema catalog from version, file names, record types, column names, column types, and numeric range gates; `ValidateLayoutContracts()` rejects a bake if the computed hash does not match `H8StaticDataFormat.SchemaHash`. Alternative rejected: trusting a stale hard-coded schema hash after future column edits. Estimate: cold bake-only O(schema column count); 0 us runtime.
+- [x] Static artifact header re-stamped | DOD: `Data/Balance/Baked/H8StaticData.bin` header `SchemaHash` is now `0x5C43DD40`, matching the recomputed catalog while preserving the payload CRC and static/Babel pair CRC. Alternative rejected: leaving shipped header on the old schema hash. Estimate: header-only artifact maintenance.
+- [x] Canonical key grammar tightened | DOD: IDs must now start with `a-z`, cannot end with `_`, and cannot contain `__`; bad separator drift still fails with `[CRITICAL_DATA_KEY]`. Alternative rejected: accepting `_hidden`, `1_item`, or `item__tier` identities that drift from clear spreadsheet keys. Estimate: cold O(key length); 0 us runtime.
+- [x] Unicode control-character gate | DOD: text validation now uses `char.IsControl`, catching C0, DEL, and C1 controls before Babel pooling. Alternative rejected: only rejecting `< 0x20` and letting other control code points into UI-facing spans. Estimate: cold O(text length); 0 us runtime.
+- [x] Regression coverage | DOD: Added PlayMode tests for schema hash/catalog parity and double-underscore key rejection. Alternative rejected: relying on manual schema review. Estimate: test-only.
+- [x] No-rebuild verification | DOD: Per user directive, no `dotnet build` rerun was executed. Baked files pass `LOOP16_SCHEMA_SCAN_CLEAN schema=0x5C43DD40 crc=0xFFF07BB0 lookup=13 records=13 staticBytes=896 babelBytes=1295`; runtime store forbidden-token scans remain clean; Core/Data update/parser scan remains clean; tracked `git diff --check` reports only CRLF warnings. Alternative rejected: another full build while prior compile blockers are cross-domain. Estimate: verification-only.
+
+## Loop 17 - Blackbox Dump Format Debt Removal
+
+- [x] Adjacent-domain safety check | DOD: `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` and `H8Memory.cs` are already dirty, so this pass did not edit adjacent Core/Memory. Alternative rejected: fighting another worker in a shared workspace. Estimate: coordination scan only.
+- [x] Self-describing dump header | DOD: Added `H8StaticDataDumpHeader` with magic, entry count, entry size, schema hash, payload CRC, and flags before the 300-entry telemetry ring. Alternative rejected: raw ring bytes with no version or stride evidence. Estimate: explicit dump-only 32-byte header write; 0 us runtime lookup path.
+- [x] Shared dump writer | DOD: `StaticDataStore.DumpBlackBox()` and `BabelDictionaryStore.DumpBlackBox()` now call `H8StaticDataBlackBoxDump.Write()` instead of duplicating raw file loops. Alternative rejected: two divergent dump formats for numeric and text receivers. Estimate: dump-only code path; no frame work.
+- [x] ABI gate extended | DOD: `H8DataBaker.ValidateLayoutContracts()` now rejects dump-header size drift at 32 bytes. Alternative rejected: trusting header layout by source review. Estimate: cold bake-only size check.
+- [x] Dump regression coverage | DOD: PlayMode sanity test now writes a dump and verifies file length, magic, entry count, and entry stride. Alternative rejected: binary dump format without automated readback. Estimate: test-only.
+- [x] No-rebuild verification | DOD: Per user directive, no `dotnet build` rerun was executed. Source scan confirms dump header/writer/test coverage; runtime store forbidden-token scans remain clean; Core/Data update/parser scan remains clean; baked files pass `LOOP17_BINARY_PAIR_SCAN_CLEAN schema=0x5C43DD40 crc=0xFFF07BB0 staticBytes=896 babelBytes=1295`; tracked `git diff --check` reports only CRLF warnings. Alternative rejected: another full rebuild while prior compile blockers are cross-domain. Estimate: verification-only.

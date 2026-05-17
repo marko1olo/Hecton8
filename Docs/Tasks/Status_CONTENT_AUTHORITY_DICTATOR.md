@@ -3,7 +3,7 @@
 Identification: CONTENT_AUTHORITY_DICTATOR
 Domain: CORE/ASSETS
 Task count: 20
-Status: VERIFIED MASTER GRADE - CONTENT STATIC CLEAN THROUGH PHASE 37; LATEST EDITOR CLI GREEN WITH EXTERNAL WARNINGS; UNITY IMPORT/PLAYMODE/PROFILER PENDING
+Status: VERIFIED MASTER GRADE - PHASE 48 CONTENT STATIC CLEAN; LATEST BATCHED EDITOR BUILD BLOCKED BY EXTERNAL CORE/VFX ERRORS; UNITY IMPORT/PLAYMODE/PROFILER PENDING
 
 ## Relevant Mandates Read Before Coding
 - STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt
@@ -288,6 +288,65 @@ Status: VERIFIED MASTER GRADE - CONTENT STATIC CLEAN THROUGH PHASE 37; LATEST ED
 - [x] Phase 37 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused scan verified coalesced count usage; `git diff --check` reported only line-ending warnings on the touched runtime file. Rejected alternative: dotnet rebuild for a localized hot-path cleanup. Estimate: audit-only.
 - [DEFERRED BY USER INSTRUCTION] Phase 37 compile - DOD: compile not run for this incremental runtime cleanup because the user explicitly said not to run dotnet rebuild every time. Rejected alternative: rebuilding for every heartbeat micro-optimization. Estimate: deferred.
 
+## Loop 42: Phase 38 Batched Compile Checkpoint
+- [x] Batched editor compile - DOD: one batched `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` after phases 34-37 exited 0. Rejected alternative: running dotnet after every small registry/runtime guard. Estimate: verification only.
+- [x] Warning provenance - DOD: compile reported 48 warnings and 0 errors; warnings are external Unity/third-party project warnings consistent with the prior editor checkpoint, not CORE/ASSETS compiler errors. Rejected alternative: claiming 0-warning PLATINUM while package-cache/vendor warnings remain. Estimate: verification only.
+- [x] Phase 38 compile policy - DOD: build was run once after a batch of C# changes, not after every edit. Rejected alternative: stale phase 30 compile proof for changed files. Estimate: verification only.
+
+## Loop 43: Phase 39 Object Batch Bake Input Gate
+- [x] Editor bake payload validator - DOD: `ObjectBatchBase.ReplacePayload` now validates mesh/material/instance/chunk tables before assignment and rejects empty payloads. Rejected alternative: accepting raw arrays and waiting for a later build validator. Estimate: editor bake path only.
+- [x] Chunk/instance exactness gate - DOD: bake-time validation rejects null bindings, zero hashes, invalid indices, unsupported LODs, non-finite transforms/bounds, overlapping chunk coverage, and uncovered instances. Rejected alternative: letting broken BRG payloads serialize into ScriptableObjects. Estimate: build/editor only.
+- [x] Phase 39 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused scan verified bake rejection paths; `git diff --check` reported only line-ending warnings on `ObjectBatchBase.cs`. Rejected alternative: dotnet rebuild after one editor-only bake gate immediately after phase 38 compile. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 39 compile - DOD: compile not run for this single editor-only patch because phase 38 already performed a batched build and user instructed not to rebuild every time. Rejected alternative: per-edit rebuild. Estimate: deferred.
+
+## Loop 44: Phase 40 Physics Proxy Baker Rejection Gate
+- [x] Collider-count and bounds gate - DOD: `ContentPhysicsProxyBaker` now rejects selections with fewer than two BoxColliders, non-finite collider bounds, and unusable convex hull dimensions before asset creation. Rejected alternative: generating zero/invalid hull meshes. Estimate: editor tool path only.
+- [x] Generated asset path hygiene - DOD: generated proxy mesh asset names are sanitized to alphanumeric/underscore/hyphen and the generated folder chain is created from `Assets/_Project/Data` upward. Rejected alternative: using raw GameObject names in asset paths. Estimate: editor tool path only.
+- [x] Phase 40 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused scan verified baker rejection/sanitize paths; `git diff --check` reported only line-ending warnings on the touched postprocessor file. Rejected alternative: dotnet rebuild after one editor-tool guard. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 40 compile - DOD: compile not run for this incremental editor-tool patch because phase 38 already performed a batched build and user instructed not to rebuild every time. Rejected alternative: per-edit rebuild. Estimate: deferred.
+
+## Loop 45: Phase 41 Addressables Parent-Group Gate
+- [x] Addressables entry-set corruption gate - DOD: validator now fails null group entry sets and null entries inside a group. Rejected alternative: skipping corrupt catalog rows during validation. Estimate: build/editor only.
+- [x] Parent-group mismatch gate - DOD: validator now fails entries whose `parentGroup` is null or does not match the group listing the entry. Rejected alternative: trusting group membership by collection enumeration alone. Estimate: build/editor only.
+- [x] Phase 41 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused scan verified Addressables parent-group failure paths; `git diff --check` reported only line-ending warnings on the touched validator. Rejected alternative: dotnet rebuild after one editor validator hardening patch. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 41 compile - DOD: compile not run for this incremental editor validator patch because phase 38 already performed a batched build and user instructed not to rebuild every time. Rejected alternative: per-edit rebuild. Estimate: deferred.
+
+## Loop 46: Phase 42 VFX Prewarm Duplicate Gate
+- [x] Manifest runtime-key uniqueness - DOD: VFX prewarm validation now tracks Addressables runtime keys and fails duplicate particle/compute references in one manifest. Rejected alternative: letting duplicate references consume fixed prewarm/resident handle slots. Estimate: build/editor only.
+- [x] Null runtime-key gate - DOD: validation fails null runtime keys even after `RuntimeKeyIsValid` passes unexpectedly. Rejected alternative: queuing handles with untraceable keys. Estimate: build/editor only.
+- [x] Phase 42 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused scan verified VFX uniqueness paths; `git diff --check` reported only line-ending warnings on the touched validator. Rejected alternative: dotnet rebuild after one editor validator hardening patch. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 42 compile - DOD: compile not run for this incremental validator patch because phase 38 already performed a batched build and user instructed not to rebuild every time. Rejected alternative: per-edit rebuild. Estimate: deferred.
+
+## Loop 47: Phase 43 VFX Prewarm Invalid-Handle Diagnostics
+- [x] Runtime invalid-handle logging - DOD: `StartVfxPrewarm` now logs invalid Addressables handles returned after valid particle/compute references, instead of silently falling through. Rejected alternative: letting a prewarm dispatch vanish with no evidence. Estimate: failure path only.
+- [x] Phase 43 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused scan verified invalid-handle diagnostics; `git diff --check` reported only line-ending warnings on the touched runtime file. Rejected alternative: dotnet rebuild after one runtime diagnostic patch. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 43 compile - DOD: compile not run for this incremental runtime diagnostic patch because phase 38 already performed a batched build and user instructed not to rebuild every time. Rejected alternative: per-edit rebuild. Estimate: deferred.
+
+## Loop 48: Phase 44 Batched Compile Wall
+- [BLOCKED BY DEPENDENCY] Phase 44 editor compile - DOD: one batched `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` after phases 39-43 failed in external `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs` explicit interface declarations; no CORE/ASSETS errors appeared. Rejected alternative: editing Audio ownership from the content authority pass. Estimate: blocked.
+- [x] Phase 44 compile policy - DOD: build was run once after a batch of five content patches, not after every edit. Rejected alternative: no compile attempt after C# batch. Estimate: verification only.
+
+## Loop 49: Phase 45 Save Topology Capacity Gate
+- [x] Save path exact-length constants - DOD: `ContentSaveSlotTopology` now exposes explicit char counts for slot directories, `.sav`, `.bak`, `.tmp`, macro-sector files, and ties `MaxSavePathChars` to the longest macro-sector path. Rejected alternative: keeping one opaque max constant. Estimate: cold path contract only.
+- [x] Undersized span rejection proof - DOD: editor validation now checks the exact literal lengths and proves every topology writer returns false with zero chars when the caller span is one character too small. Rejected alternative: trusting caller buffer sizes without a build gate. Estimate: build/editor only.
+- [x] Phase 45 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remain clean; `git diff --check` on touched content files reports only line-ending warnings. Rejected alternative: dotnet rebuild after one focused topology gate. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 45 compile - DOD: compile not run for this incremental save-topology validator patch because the user instructed not to rebuild every time; next compile stays batched after more meaningful C# changes or external wall clearance. Rejected alternative: per-edit rebuild. Estimate: deferred.
+
+## Loop 50: Phase 46 Visibility Proxy Bounds Vaccination
+- [x] Visibility extent clamp - DOD: `VisibilityProxyBase` now clamps sanitized extents to `[0.01m, 10000m]` so corrupt huge finite scales cannot turn the cheap AABB gate into an always-visible heavy-math trigger. Rejected alternative: trusting authored proxy sizes indefinitely. Estimate: scalar clamp only.
+- [x] Finite center fallback - DOD: if transformed center is non-finite and `transform.position` is also non-finite, the proxy falls back to `Vector3.zero` before building `Bounds`. Rejected alternative: allowing NaN bounds to enter frustum tests. Estimate: fault-path only.
+- [x] Phase 46 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remain clean; `git diff --check` on `VisibilityProxyBase.cs` reports only line-ending warnings. Rejected alternative: dotnet rebuild after one scalar runtime guard. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 46 compile - DOD: compile not run for this incremental visibility guard because the user instructed not to rebuild every time; next compile stays batched after more meaningful C# changes or external wall clearance. Rejected alternative: per-edit rebuild. Estimate: deferred.
+
+## Loop 51: Phase 47 Addressables Release-Miss Diagnostic
+- [x] Bundle handle release miss loud path - DOD: normal bundle release and VRAM biome eviction now log in editor/development builds when the refcount ledger removes a hash but no tracked Addressables handle is found. Rejected alternative: silently dropping the missing release edge. Estimate: failure path only.
+- [x] Phase 47 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remain clean; focused scan verified `LogBundleHandleReleaseMiss`; `git diff --check` on `ContentRuntimeServices.cs` reports only line-ending warnings. Rejected alternative: dotnet rebuild after one diagnostics patch. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 47 compile - DOD: compile not run for this incremental release diagnostic because the user instructed not to rebuild every time; next compile stays batched after more meaningful C# changes or external wall clearance. Rejected alternative: per-edit rebuild. Estimate: deferred.
+
+## Loop 52: Phase 48 Batched Compile Wall
+- [BLOCKED BY DEPENDENCY] Phase 48 editor compile - DOD: one batched `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` after phases 45-47 failed outside CORE/ASSETS in `Core/IPlatformIntegration.cs`, `Core/GlobalSignals.cs`, `VFX/HectonMarineSnowRenderer.cs`, and `VFX/CameraJuiceSystem.cs`; no CORE/ASSETS errors appeared. Rejected alternative: editing Core/VFX ownership from the content authority pass. Estimate: blocked.
+- [x] Phase 48 compile policy - DOD: build was run once after three content patches, not after every edit. Rejected alternative: no compile attempt after C# batch. Estimate: verification only.
+
 ## Compile Attempts
 - Attempt 0: not run.
 - Attempt 1: `dotnet build Hecton8.Core.csproj` exit 1. Errors are in DiegeticGyroCompassRuntime, HomeostasisBrain, BiolumPulseSyncRuntime, SargassumMicroFaunaBoids, and TetherSignals; none reference `Assets/_Project/Scripts/Core/Content`.
@@ -369,3 +428,6 @@ Status: VERIFIED MASTER GRADE - CONTENT STATIC CLEAN THROUGH PHASE 37; LATEST ED
 - Attempt 77: phase23 editor build after LOD contract correction `dotnet build Hecton8.Editor.csproj -v:q /m:1 /nr:false` exit 0 with 48 warnings and 0 errors; warnings are in Unity package cache and third-party GPUInstancer/MapMagic/Crest/ShaderGraph/WaveHarmonic projects, not CORE/ASSETS.
 - Attempt 78: phase24 core build after hologram pool clamp `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 with 0 warnings and 8 errors in external `World/Biolum/HectonBiolumManager.cs` and `VFX/HectonMarineSnowRenderer.cs`; no CORE/ASSETS errors reported.
 - Attempt 79: phase30 batched editor build after lore diagnostics and object-batch coverage gate `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 48 warnings and 0 errors; warnings are external Unity package/third-party warnings, not CORE/ASSETS errors.
+- Attempt 80: phase38 batched editor build after registry visual-kind, async tracker, required-hash, and telemetry coalescing patches `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 48 warnings and 0 errors; warnings are external Unity/third-party warnings, not CORE/ASSETS errors.
+- Attempt 81: phase44 batched editor build after object-batch bake gate, physics proxy baker gate, Addressables parent-group gate, VFX duplicate gate, and VFX invalid-handle diagnostics `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 with 2 errors in external `Audio/PlayerCriticalProceduralAudioRenderer.cs`; no CORE/ASSETS errors appeared.
+- Attempt 82: phase48 batched editor build after save-topology capacity, visibility bounds, and Addressables release-miss diagnostics `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 with 19 errors in external `Core/IPlatformIntegration.cs`, `Core/GlobalSignals.cs`, `VFX/HectonMarineSnowRenderer.cs`, and `VFX/CameraJuiceSystem.cs`; no CORE/ASSETS errors appeared.

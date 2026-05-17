@@ -4,6 +4,7 @@ using System.IO;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.World.GPR;
 using Unity.Collections;
@@ -44,15 +45,14 @@ namespace Hecton8.World
         [SerializeField] private float ringScaleMeters = 1.4f;
         [SerializeField] private ShadowCastingMode shadowCastingMode = ShadowCastingMode.Off;
 
-        [NonSerialized] public NativeArray<float3> GprHits;
-        [NonSerialized] public NativeArray<float> GprSignalStrength;
-
-        private NativeArray<float> _gprAgeSeconds;
-        private NativeArray<int> _gprOreTypes;
-        private NativeArray<float4> _gprPingGpu;
-        private NativeArray<int> _gprCounters;
-        private NativeArray<float> _maxSignalStrength;
-        private NativeArray<GroundRadarTelemetryEntry> _telemetryRing;
+        private VaultBufferHandle<float3> _gprHitsHandle;
+        private VaultBufferHandle<float> _gprSignalStrengthHandle;
+        private VaultBufferHandle<float> _gprAgeSecondsHandle;
+        private VaultBufferHandle<int> _gprOreTypesHandle;
+        private VaultBufferHandle<float4> _gprPingGpuHandle;
+        private VaultBufferHandle<int> _gprCountersHandle;
+        private VaultBufferHandle<float> _maxSignalStrengthHandle;
+        private VaultBufferHandle<GroundRadarTelemetryEntry> _telemetryRingHandle;
         private GraphicsBuffer _gprPingBuffer;
         private GraphicsBuffer _gprArgsBuffer;
         private Mesh _runtimeQuadMesh;
@@ -81,8 +81,8 @@ namespace Hecton8.World
         public int OreFilterType => _oreFilterType;
         public float3 LastProbeOrigin => _lastProbeOrigin;
         public float ScanRadiusMeters => scanRadiusMeters;
-        public NativeArray<float3>.ReadOnly GprHitsReadOnly => GprHits.IsCreated ? GprHits.AsReadOnly() : default;
-        public NativeArray<float>.ReadOnly GprSignalStrengthReadOnly => GprSignalStrength.IsCreated ? GprSignalStrength.AsReadOnly() : default;
+        public NativeArray<float3>.ReadOnly GprHitsReadOnly => TryResolveGprHits(out NativeArray<float3> hits) ? hits.AsReadOnly() : default;
+        public NativeArray<float>.ReadOnly GprSignalStrengthReadOnly => TryResolveGprSignalStrength(out NativeArray<float> signalStrength) ? signalStrength.AsReadOnly() : default;
 
         private void Awake()
         {
@@ -147,14 +147,16 @@ namespace Hecton8.World
 
             ReleaseGraphicsBuffer(ref _gprPingBuffer);
             ReleaseGraphicsBuffer(ref _gprArgsBuffer);
-            DisposeNativeArray(ref GprHits);
-            DisposeNativeArray(ref GprSignalStrength);
-            DisposeNativeArray(ref _gprAgeSeconds);
-            DisposeNativeArray(ref _gprOreTypes);
-            DisposeNativeArray(ref _gprPingGpu);
-            DisposeNativeArray(ref _gprCounters);
-            DisposeNativeArray(ref _maxSignalStrength);
-            DisposeNativeArray(ref _telemetryRing);
+            _gprHitsHandle = default;
+            _gprSignalStrengthHandle = default;
+            _gprAgeSecondsHandle = default;
+            _gprOreTypesHandle = default;
+            _gprPingGpuHandle = default;
+            _gprCountersHandle = default;
+            _maxSignalStrengthHandle = default;
+            _telemetryRingHandle = default;
+            _activeGprPings = 0;
+            _highestSignalStrength = 0f;
 
             if (_runtimeQuadMesh != null)
             {
@@ -171,7 +173,7 @@ namespace Hecton8.World
 
         public void Tick(float deltaTime)
         {
-            if (!GprHits.IsCreated || _scanJobScheduled)
+            if (_scanJobScheduled || !TryResolveGprHits(out _))
                 return;
 
             bool scannerActive = TryResolveScannerActive(out int scannerSequence);
@@ -246,12 +248,16 @@ namespace Hecton8.World
         public bool TryCopyGprPings(NativeArray<float4> destination, out int copiedCount)
         {
             copiedCount = 0;
-            if (!destination.IsCreated || !_gprPingGpu.IsCreated || _activeGprPings <= 0)
+            if (!destination.IsCreated ||
+                _activeGprPings <= 0 ||
+                !TryResolveGprPingGpu(out NativeArray<float4> pingGpu))
+            {
                 return false;
+            }
 
             copiedCount = math.min(destination.Length, _activeGprPings);
             for (int i = 0; i < copiedCount; i++)
-                destination[i] = _gprPingGpu[i];
+                destination[i] = pingGpu[i];
             return copiedCount > 0;
         }
 
@@ -262,33 +268,227 @@ namespace Hecton8.World
 
         private void AllocatePersistentState()
         {
-            if (GprHits.IsCreated)
+            if (_gprHitsHandle.IsCreated && _gprPingBuffer != null && _gprArgsBuffer != null)
                 return;
 
-            GprHits = new NativeArray<float3>(GroundRadarConstants.MaxPings, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[128] - subsurface GPR hit positions - owner: TERRAIN_GPR_SYSTEM
-            GprSignalStrength = new NativeArray<float>(GroundRadarConstants.MaxPings, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[128] - subsurface GPR signal strengths - owner: TERRAIN_GPR_SYSTEM
-            _gprAgeSeconds = new NativeArray<float>(GroundRadarConstants.MaxPings, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[128] - subsurface GPR decay age - owner: TERRAIN_GPR_SYSTEM
-            _gprOreTypes = new NativeArray<int>(GroundRadarConstants.MaxPings, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[128] - ore type lane for GPR refiltering - owner: TERRAIN_GPR_SYSTEM
-            _gprPingGpu = new NativeArray<float4>(GroundRadarConstants.MaxPings, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4>[128] - GPU GPR ping payload - owner: TERRAIN_GPR_SYSTEM
-            _gprCounters = new NativeArray<int>(4, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[4] - GPR job counters - owner: TERRAIN_GPR_SYSTEM
-            _maxSignalStrength = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - strongest GPR return - owner: TERRAIN_GPR_SYSTEM
-            _telemetryRing = new NativeArray<GroundRadarTelemetryEntry>(GroundRadarConstants.TelemetryFrames, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<GroundRadarTelemetryEntry>[300] - blackbox GPR telemetry - owner: TERRAIN_GPR_SYSTEM
-            RegisterNativeArray(GprHits, nameof(GprHits));
-            RegisterNativeArray(GprSignalStrength, nameof(GprSignalStrength));
-            RegisterNativeArray(_gprAgeSeconds, nameof(_gprAgeSeconds));
-            RegisterNativeArray(_gprOreTypes, nameof(_gprOreTypes));
-            RegisterNativeArray(_gprPingGpu, nameof(_gprPingGpu));
-            RegisterNativeArray(_gprCounters, nameof(_gprCounters));
-            RegisterNativeArray(_maxSignalStrength, nameof(_maxSignalStrength));
-            RegisterNativeArray(_telemetryRing, nameof(_telemetryRing));
+            if (!TryPrepareGprState(
+                out NativeArray<float3> hits,
+                out NativeArray<float> signalStrength,
+                out NativeArray<float> ageSeconds,
+                out NativeArray<int> oreTypes,
+                out NativeArray<float4> pingGpu,
+                out NativeArray<int> counters,
+                out NativeArray<float> maxSignalStrength,
+                out NativeArray<GroundRadarTelemetryEntry> telemetryRing))
+            {
+                return;
+            }
 
-            _gprPingBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(GroundRadarConstants.MaxPings); // COLD ALLOC: GraphicsBuffer[128 float4] - shared GPR StructuredBuffer - owner: TERRAIN_GPR_SYSTEM
-            _gprArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - GPR indirect draw args - owner: TERRAIN_GPR_SYSTEM
+            ClearNativeArray(hits);
+            ClearNativeArray(signalStrength);
+            ClearNativeArray(ageSeconds);
+            ClearNativeArray(oreTypes);
+            ClearNativeArray(pingGpu);
+            ClearNativeArray(counters);
+            ClearNativeArray(maxSignalStrength);
+            ClearNativeArray(telemetryRing);
+            _activeGprPings = 0;
+            _highestSignalStrength = 0f;
+            _telemetryWriteIndex = 0;
+
+            if (_gprPingBuffer == null)
+                _gprPingBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(GroundRadarConstants.MaxPings); // COLD ALLOC: GraphicsBuffer[128 float4] - shared GPR StructuredBuffer - owner: TERRAIN_GPR_SYSTEM
+            if (_gprArgsBuffer == null)
+                _gprArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - GPR indirect draw args - owner: TERRAIN_GPR_SYSTEM
             UpdateIndirectArgsBuffer(0u);
+        }
+
+        private bool TryPrepareGprState(
+            out NativeArray<float3> hits,
+            out NativeArray<float> signalStrength,
+            out NativeArray<float> ageSeconds,
+            out NativeArray<int> oreTypes,
+            out NativeArray<float4> pingGpu,
+            out NativeArray<int> counters,
+            out NativeArray<float> maxSignalStrength,
+            out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
+        {
+            hits = default;
+            signalStrength = default;
+            ageSeconds = default;
+            oreTypes = default;
+            pingGpu = default;
+            counters = default;
+            maxSignalStrength = default;
+            telemetryRing = default;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            _gprHitsHandle = vault.GetBufferHandle<float3>(
+                BufferID.GroundRadarHits,
+                GroundRadarConstants.MaxPings,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            _gprSignalStrengthHandle = vault.GetBufferHandle<float>(
+                BufferID.GroundRadarSignalStrength,
+                GroundRadarConstants.MaxPings,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            _gprAgeSecondsHandle = vault.GetBufferHandle<float>(
+                BufferID.GroundRadarAgeSeconds,
+                GroundRadarConstants.MaxPings,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            _gprOreTypesHandle = vault.GetBufferHandle<int>(
+                BufferID.GroundRadarOreTypes,
+                GroundRadarConstants.MaxPings,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            _gprPingGpuHandle = vault.GetBufferHandle<float4>(
+                BufferID.GroundRadarPingGpu,
+                GroundRadarConstants.MaxPings,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            _gprCountersHandle = vault.GetBufferHandle<int>(
+                BufferID.GroundRadarCounters,
+                4,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            _maxSignalStrengthHandle = vault.GetBufferHandle<float>(
+                BufferID.GroundRadarMaxSignalStrength,
+                1,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            _telemetryRingHandle = vault.GetBufferHandle<GroundRadarTelemetryEntry>(
+                BufferID.GroundRadarTelemetryRing,
+                GroundRadarConstants.TelemetryFrames,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+
+            return TryResolveGprState(
+                vault,
+                out hits,
+                out signalStrength,
+                out ageSeconds,
+                out oreTypes,
+                out pingGpu,
+                out counters,
+                out maxSignalStrength,
+                out telemetryRing);
+        }
+
+        private bool TryResolveGprState(
+            out NativeArray<float3> hits,
+            out NativeArray<float> signalStrength,
+            out NativeArray<float> ageSeconds,
+            out NativeArray<int> oreTypes,
+            out NativeArray<float4> pingGpu,
+            out NativeArray<int> counters,
+            out NativeArray<float> maxSignalStrength,
+            out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
+        {
+            return TryResolveGprState(
+                GlobalRegistry.DataVault,
+                out hits,
+                out signalStrength,
+                out ageSeconds,
+                out oreTypes,
+                out pingGpu,
+                out counters,
+                out maxSignalStrength,
+                out telemetryRing);
+        }
+
+        private bool TryResolveGprState(
+            IDataVault vault,
+            out NativeArray<float3> hits,
+            out NativeArray<float> signalStrength,
+            out NativeArray<float> ageSeconds,
+            out NativeArray<int> oreTypes,
+            out NativeArray<float4> pingGpu,
+            out NativeArray<int> counters,
+            out NativeArray<float> maxSignalStrength,
+            out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
+        {
+            bool resolvedHits = TryResolveVaultBuffer(vault, ref _gprHitsHandle, GroundRadarConstants.MaxPings, out hits);
+            bool resolvedSignal = TryResolveVaultBuffer(vault, ref _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out signalStrength);
+            bool resolvedAge = TryResolveVaultBuffer(vault, ref _gprAgeSecondsHandle, GroundRadarConstants.MaxPings, out ageSeconds);
+            bool resolvedOreTypes = TryResolveVaultBuffer(vault, ref _gprOreTypesHandle, GroundRadarConstants.MaxPings, out oreTypes);
+            bool resolvedPingGpu = TryResolveVaultBuffer(vault, ref _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
+            bool resolvedCounters = TryResolveVaultBuffer(vault, ref _gprCountersHandle, 4, out counters);
+            bool resolvedMaxSignal = TryResolveVaultBuffer(vault, ref _maxSignalStrengthHandle, 1, out maxSignalStrength);
+            bool resolvedTelemetry = TryResolveVaultBuffer(vault, ref _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out telemetryRing);
+
+            return resolvedHits &&
+                resolvedSignal &&
+                resolvedAge &&
+                resolvedOreTypes &&
+                resolvedPingGpu &&
+                resolvedCounters &&
+                resolvedMaxSignal &&
+                resolvedTelemetry;
+        }
+
+        private bool TryResolveGprHits(out NativeArray<float3> hits)
+        {
+            return TryResolveVaultBuffer(GlobalRegistry.DataVault, ref _gprHitsHandle, GroundRadarConstants.MaxPings, out hits);
+        }
+
+        private bool TryResolveGprSignalStrength(out NativeArray<float> signalStrength)
+        {
+            return TryResolveVaultBuffer(GlobalRegistry.DataVault, ref _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out signalStrength);
+        }
+
+        private bool TryResolveGprPingGpu(out NativeArray<float4> pingGpu)
+        {
+            return TryResolveVaultBuffer(GlobalRegistry.DataVault, ref _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
+        }
+
+        private bool TryResolveGprTelemetry(out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
+        {
+            return TryResolveVaultBuffer(GlobalRegistry.DataVault, ref _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out telemetryRing);
+        }
+
+        private static bool TryResolveVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultBufferHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0 || !handle.IsCreated)
+                return false;
+
+            buffer = handle.Resolve(vault);
+            return buffer.IsCreated && buffer.Length >= requiredLength;
+        }
+
+        private static void ClearNativeArray<T>(NativeArray<T> buffer) where T : struct
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            for (int i = 0; i < buffer.Length; i++)
+                buffer[i] = default;
         }
 
         private void ScheduleRadarJob(float3 probeOrigin, float deltaTime, bool scanDue, bool hasShift, float3 aupShift)
         {
+            if (!TryResolveGprState(
+                out NativeArray<float3> hits,
+                out NativeArray<float> signalStrength,
+                out NativeArray<float> ageSeconds,
+                out NativeArray<int> gprOreTypes,
+                out NativeArray<float4> pingGpu,
+                out NativeArray<int> counters,
+                out NativeArray<float> maxSignalStrength,
+                out _))
+            {
+                return;
+            }
+
             NativeArray<byte> encodedSdf = default;
             int3 gridDimensions = default;
             float3 volumeOrigin = default;
@@ -300,19 +500,19 @@ namespace Hecton8.World
 
             TryResolveOreSource(out NativeArray<float3> orePositions, out NativeArray<int> oreTypes, out int oreCount);
 
-            _maxSignalStrength[0] = 0f;
+            maxSignalStrength[0] = 0f;
             GroundRadarRaymarchJob job = new GroundRadarRaymarchJob
             {
-                EncodedSdf = encodedSdf,
-                OrePositions = orePositions,
-                OreTypes = oreTypes,
-                GprHits = GprHits,
-                GprSignalStrength = GprSignalStrength,
-                GprAgeSeconds = _gprAgeSeconds,
-                GprOreTypes = _gprOreTypes,
-                GprPingGpu = _gprPingGpu,
-                Counters = _gprCounters,
-                MaxSignalStrength = _maxSignalStrength,
+                EncodedSdf = encodedSdf.IsCreated ? new NativeSlice<byte>(encodedSdf) : default,
+                OrePositions = orePositions.IsCreated ? new NativeSlice<float3>(orePositions) : default,
+                OreTypes = oreTypes.IsCreated ? new NativeSlice<int>(oreTypes) : default,
+                GprHits = new NativeSlice<float3>(hits),
+                GprSignalStrength = new NativeSlice<float>(signalStrength),
+                GprAgeSeconds = new NativeSlice<float>(ageSeconds),
+                GprOreTypes = new NativeSlice<int>(gprOreTypes),
+                GprPingGpu = new NativeSlice<float4>(pingGpu),
+                Counters = new NativeSlice<int>(counters),
+                MaxSignalStrength = new NativeSlice<float>(maxSignalStrength),
                 GridDimensions = gridDimensions,
                 VolumeOrigin = volumeOrigin,
                 CellSize = cellSize,
@@ -337,14 +537,27 @@ namespace Hecton8.World
 
         private void CommitCompletedScan()
         {
+            if (!TryResolveGprState(
+                out _,
+                out _,
+                out _,
+                out _,
+                out NativeArray<float4> pingGpu,
+                out NativeArray<int> counters,
+                out NativeArray<float> maxSignalStrength,
+                out _))
+            {
+                return;
+            }
+
             int previousCount = _activeGprPings;
-            _activeGprPings = _gprCounters.IsCreated && _gprCounters.Length > 0
-                ? math.clamp(_gprCounters[0], 0, GroundRadarConstants.MaxPings)
+            _activeGprPings = counters.IsCreated && counters.Length > 0
+                ? math.clamp(counters[0], 0, GroundRadarConstants.MaxPings)
                 : 0;
-            int addedCount = _gprCounters.IsCreated && _gprCounters.Length > 1 ? math.max(0, _gprCounters[1]) : 0;
-            int rayCount = _gprCounters.IsCreated && _gprCounters.Length > 2 ? _gprCounters[2] : 0;
-            _highestSignalStrength = _maxSignalStrength.IsCreated && _maxSignalStrength.Length > 0
-                ? math.saturate(_maxSignalStrength[0])
+            int addedCount = counters.IsCreated && counters.Length > 1 ? math.max(0, counters[1]) : 0;
+            int rayCount = counters.IsCreated && counters.Length > 2 ? counters[2] : 0;
+            _highestSignalStrength = maxSignalStrength.IsCreated && maxSignalStrength.Length > 0
+                ? math.saturate(maxSignalStrength[0])
                 : 0f;
 
             int macroSwarmAddedCount = AppendMacroSwarmRadarPings();
@@ -356,7 +569,7 @@ namespace Hecton8.World
 
             if (_activeGprPings > 0 && _gprPingBuffer != null)
             {
-                GraphicsBufferUploadUtility.UploadNativeArray(_gprPingBuffer, _gprPingGpu, _activeGprPings);
+                GraphicsBufferUploadUtility.UploadNativeArray(_gprPingBuffer, pingGpu, _activeGprPings);
                 _drawBounds = new Bounds(
                     new Vector3(_lastProbeOrigin.x, _lastProbeOrigin.y - stepMeters * maxRaymarchSteps * 0.5f, _lastProbeOrigin.z),
                     Vector3.one * math.max(16f, scanRadiusMeters * 3f));
@@ -390,14 +603,22 @@ namespace Hecton8.World
 
             if (ecosystem == null ||
                 !ecosystem.IsInitialized ||
-                !_gprPingGpu.IsCreated ||
-                _activeGprPings >= GroundRadarConstants.MaxPings)
+                _activeGprPings >= GroundRadarConstants.MaxPings ||
+                !TryResolveGprState(
+                    out NativeArray<float3> hits,
+                    out NativeArray<float> signalStrength,
+                    out NativeArray<float> ageSeconds,
+                    out NativeArray<int> gprOreTypes,
+                    out NativeArray<float4> pingGpu,
+                    out _,
+                    out _,
+                    out _))
             {
                 return 0;
             }
 
             int remaining = GroundRadarConstants.MaxPings - _activeGprPings;
-            NativeArray<float4> destination = _gprPingGpu.GetSubArray(_activeGprPings, remaining);
+            NativeArray<float4> destination = pingGpu.GetSubArray(_activeGprPings, remaining);
             if (!ecosystem.TryCopyMacroSwarmRadarPings(destination, _lastProbeOrigin, scanRadiusMeters * 4f, out int copiedCount))
                 return 0;
 
@@ -406,11 +627,11 @@ namespace Hecton8.World
             for (int i = 0; i < copiedCount; i++)
             {
                 int pingIndex = startIndex + i;
-                float4 ping = _gprPingGpu[pingIndex];
-                GprHits[pingIndex] = ping.xyz;
-                GprSignalStrength[pingIndex] = math.saturate(ping.w);
-                _gprAgeSeconds[pingIndex] = 0f;
-                _gprOreTypes[pingIndex] = WorldOreTypeIds.None;
+                float4 ping = pingGpu[pingIndex];
+                hits[pingIndex] = ping.xyz;
+                signalStrength[pingIndex] = math.saturate(ping.w);
+                ageSeconds[pingIndex] = 0f;
+                gprOreTypes[pingIndex] = WorldOreTypeIds.None;
             }
 
             _activeGprPings += copiedCount;
@@ -616,11 +837,11 @@ namespace Hecton8.World
 
         private void WriteTelemetry(int addedCount, int rayCount, float highestStrength, uint flags)
         {
-            if (!_telemetryRing.IsCreated || _telemetryRing.Length == 0)
+            if (!TryResolveGprTelemetry(out NativeArray<GroundRadarTelemetryEntry> telemetryRing) || telemetryRing.Length == 0)
                 return;
 
-            int index = _telemetryWriteIndex % _telemetryRing.Length;
-            _telemetryRing[index] = new GroundRadarTelemetryEntry
+            int index = _telemetryWriteIndex % telemetryRing.Length;
+            telemetryRing[index] = new GroundRadarTelemetryEntry
             {
                 Frame = (uint)Time.frameCount,
                 ActiveGprPings = _activeGprPings,
@@ -630,12 +851,12 @@ namespace Hecton8.World
                 ProbeOrigin = _lastProbeOrigin,
                 Flags = flags
             };
-            _telemetryWriteIndex = (_telemetryWriteIndex + 1) % _telemetryRing.Length;
+            _telemetryWriteIndex = (_telemetryWriteIndex + 1) % telemetryRing.Length;
         }
 
         private void DumpBlackBox()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolveGprTelemetry(out NativeArray<GroundRadarTelemetryEntry> telemetryRing))
                 return;
 
             try
@@ -643,11 +864,11 @@ namespace Hecton8.World
                 string path = Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_TERRAIN_GPR_SYSTEM.bin");
                 using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
                 using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(_telemetryRing.Length);
+                writer.Write(telemetryRing.Length);
                 writer.Write(_telemetryWriteIndex);
-                for (int i = 0; i < _telemetryRing.Length; i++)
+                for (int i = 0; i < telemetryRing.Length; i++)
                 {
-                    GroundRadarTelemetryEntry entry = _telemetryRing[i];
+                    GroundRadarTelemetryEntry entry = telemetryRing[i];
                     writer.Write(entry.Frame);
                     writer.Write(entry.ActiveGprPings);
                     writer.Write(entry.AddedGprPings);
@@ -737,21 +958,6 @@ namespace Hecton8.World
                 startInstance = 0u
             };
             _gprArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
-        }
-
-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
-        {
-            NativeMemorySentinel.RegisterNativeArray(array, OwnerName, label, NativeAllocationLifetime.Scene);
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)

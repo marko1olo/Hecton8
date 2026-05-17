@@ -387,43 +387,19 @@ namespace Hecton8.Gameplay.Loot
             if (allowAllocate)
             {
                 EnsureManagedSidecars();
-                views.EntityAups = vault.GetBuffer<AbsoluteUniversePosition>(
-                    BufferID.EntityAUPs,
-                    capacity,
-                    SystemID.GameplayLoot,
-                    NativeArrayOptions.ClearMemory);
-                views.EntityFlags = vault.GetBuffer<uint>(
-                    BufferID.EntityFlags,
-                    capacity,
-                    SystemID.GameplayLoot,
-                    NativeArrayOptions.ClearMemory);
-                views.EntityVelocities = vault.GetBuffer<float3>(
-                    BufferID.EntityVelocities,
-                    capacity,
-                    SystemID.GameplayLoot,
-                    NativeArrayOptions.ClearMemory);
-                views.EntityItemHashes = vault.GetBuffer<uint>(
-                    BufferID.EntityItemHashes,
-                    capacity,
-                    SystemID.GameplayLoot,
-                    NativeArrayOptions.ClearMemory);
-                views.EntityQuantities = vault.GetBuffer<ushort>(
-                    BufferID.EntityQuantities,
-                    capacity,
-                    SystemID.GameplayLoot,
-                    NativeArrayOptions.ClearMemory);
-                views.SignalEvents = vault.GetBuffer<LootMagnetSignalEvent>(
-                    BufferID.EntityLootMagnetSignalEvents,
-                    capacity,
-                    SystemID.GameplayLoot,
-                    NativeArrayOptions.ClearMemory);
-                views.Telemetry = vault.GetBuffer<LootMagnetTelemetryEntry>(
-                    BufferID.EntityLootMagnetTelemetry,
-                    LootMagnetConstants.TelemetryFrameCount,
-                    SystemID.GameplayLoot,
-                    NativeArrayOptions.ClearMemory);
+                if (!TryResolveVaultView(vault, BufferID.EntityAUPs, capacity, allowAllocate, out views.EntityAups) ||
+                    !TryResolveVaultView(vault, BufferID.EntityFlags, capacity, allowAllocate, out views.EntityFlags) ||
+                    !TryResolveVaultView(vault, BufferID.EntityVelocities, capacity, allowAllocate, out views.EntityVelocities) ||
+                    !TryResolveVaultView(vault, BufferID.EntityItemHashes, capacity, allowAllocate, out views.EntityItemHashes) ||
+                    !TryResolveVaultView(vault, BufferID.EntityQuantities, capacity, allowAllocate, out views.EntityQuantities) ||
+                    !TryResolveVaultView(vault, BufferID.EntityLootMagnetSignalEvents, capacity, allowAllocate, out views.SignalEvents) ||
+                    !TryResolveVaultView(vault, BufferID.EntityLootMagnetTelemetry, LootMagnetConstants.TelemetryFrameCount, allowAllocate, out views.Telemetry))
+                {
+                    _dependencyTelemetryFlags |= TelemetryVaultUnavailableFlag;
+                    return false;
+                }
             }
-            else if (!TryReadExistingVaultViews(vault, out views))
+            else if (!TryReadExistingVaultViews(vault, capacity, out views))
             {
                 _dependencyTelemetryFlags |= TelemetryVaultUnavailableFlag;
                 return false;
@@ -451,16 +427,41 @@ namespace Hecton8.Gameplay.Loot
             return true;
         }
 
-        private static bool TryReadExistingVaultViews(IDataVault vault, out LootMagnetVaultViews views)
+        private static bool TryReadExistingVaultViews(IDataVault vault, int requiredCapacity, out LootMagnetVaultViews views)
         {
             views = default;
-            return vault.TryGetBuffer(BufferID.EntityAUPs, out views.EntityAups) &&
-                   vault.TryGetBuffer(BufferID.EntityFlags, out views.EntityFlags) &&
-                   vault.TryGetBuffer(BufferID.EntityVelocities, out views.EntityVelocities) &&
-                   vault.TryGetBuffer(BufferID.EntityItemHashes, out views.EntityItemHashes) &&
-                   vault.TryGetBuffer(BufferID.EntityQuantities, out views.EntityQuantities) &&
-                   vault.TryGetBuffer(BufferID.EntityLootMagnetSignalEvents, out views.SignalEvents) &&
-                   vault.TryGetBuffer(BufferID.EntityLootMagnetTelemetry, out views.Telemetry);
+            return TryResolveVaultView(vault, BufferID.EntityAUPs, requiredCapacity, allowAllocate: false, out views.EntityAups) &&
+                   TryResolveVaultView(vault, BufferID.EntityFlags, requiredCapacity, allowAllocate: false, out views.EntityFlags) &&
+                   TryResolveVaultView(vault, BufferID.EntityVelocities, requiredCapacity, allowAllocate: false, out views.EntityVelocities) &&
+                   TryResolveVaultView(vault, BufferID.EntityItemHashes, requiredCapacity, allowAllocate: false, out views.EntityItemHashes) &&
+                   TryResolveVaultView(vault, BufferID.EntityQuantities, requiredCapacity, allowAllocate: false, out views.EntityQuantities) &&
+                   TryResolveVaultView(vault, BufferID.EntityLootMagnetSignalEvents, requiredCapacity, allowAllocate: false, out views.SignalEvents) &&
+                   TryResolveVaultView(vault, BufferID.EntityLootMagnetTelemetry, LootMagnetConstants.TelemetryFrameCount, allowAllocate: false, out views.Telemetry);
+        }
+
+        private static bool TryResolveVaultView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            bool allowAllocate,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            VaultBufferHandle<T> handle = allowAllocate
+                ? vault.GetBufferHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    SystemID.GameplayLoot,
+                    NativeArrayOptions.ClearMemory)
+                : default;
+            if (!allowAllocate && !vault.TryGetBufferHandle(bufferId, out handle))
+                return false;
+
+            buffer = handle.Resolve(vault);
+            return buffer.IsCreated && buffer.Length >= requiredLength;
         }
 
         private static bool ExistingVaultViewsCover(in LootMagnetVaultViews views, int requiredCapacity)
@@ -1004,7 +1005,7 @@ namespace Hecton8.Gameplay.Loot
 
             IDataVault vault = _vault ?? GlobalRegistry.DataVault;
             if (vault == null ||
-                !TryReadExistingVaultViews(vault, out LootMagnetVaultViews views) ||
+                !TryReadExistingVaultViews(vault, math.max(_activeCount, 1), out LootMagnetVaultViews views) ||
                 !views.IsCreated)
             {
                 return;

@@ -39,7 +39,7 @@ namespace Hecton8.Gameplay.Mining.Contracts
     /// <summary>
     /// Blittable input consumed by the Burst extraction job.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 68)]
     public struct DeployableSdfDrillExtractionInput
     {
         public long GridX;
@@ -90,7 +90,7 @@ namespace Hecton8.Gameplay.Mining.Contracts
     /// <summary>
     /// Macro database record used to dehydrate and rehydrate unloaded drills.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 110)]
     public struct DeployableSdfDrillMacroRecord
     {
         public long GridX;
@@ -126,7 +126,7 @@ namespace Hecton8.Gameplay.Mining.Contracts
     /// <summary>
     /// Fixed-size blackbox entry written by the drill telemetry ring.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 56)]
     public struct DeployableSdfDrillTelemetryEntry
     {
         public long GridX;
@@ -151,10 +151,10 @@ namespace Hecton8.Gameplay.Mining.Contracts
     public struct DeployableSdfDrillExtractionJob : IJob
     {
         public DeployableSdfDrillExtractionInput Input;
-        public NativeArray<ushort> Quantities;
-        [ReadOnly] public NativeArray<ushort> Capacities;
-        [ReadOnly] public NativeArray<uint> ItemHashes;
-        [ReadOnly] public NativeArray<uint> OreHashes;
+        public NativeSlice<ushort> Quantities;
+        [ReadOnly] public NativeSlice<ushort> Capacities;
+        [ReadOnly] public NativeSlice<uint> ItemHashes;
+        [ReadOnly] public NativeSlice<uint> OreHashes;
         public NativeSlice<DeployableSdfDrillExtractionResult> Result;
 
         public void Execute()
@@ -163,7 +163,7 @@ namespace Hecton8.Gameplay.Mining.Contracts
             uint seed = DeployableSdfDrillMath.Mix(Input.DrillSeed, Input.SectorHash ^ (uint)Input.BiomeId);
             result.NewSeed = seed;
 
-            if (!Quantities.IsCreated || !Capacities.IsCreated || !ItemHashes.IsCreated || !OreHashes.IsCreated ||
+            if (Quantities.Length <= 0 || Capacities.Length <= 0 || ItemHashes.Length <= 0 || OreHashes.Length <= 0 ||
                 Result.Length <= 0)
             {
                 return;
@@ -237,8 +237,8 @@ namespace Hecton8.Gameplay.Mining.Contracts
 
         private static bool IsInventoryFull(
             int slotCount,
-            NativeArray<ushort> quantities,
-            NativeArray<ushort> capacities)
+            NativeSlice<ushort> quantities,
+            NativeSlice<ushort> capacities)
         {
             for (int i = 0; i < slotCount; i++)
             {

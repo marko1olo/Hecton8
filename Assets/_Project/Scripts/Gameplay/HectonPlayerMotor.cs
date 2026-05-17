@@ -1,6 +1,7 @@
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Caves;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
@@ -73,7 +74,6 @@ namespace Hecton8.Gameplay
             1f / (1f + HydrodynamicAddedMassAccelerationScale);
         private const float WallSlideTelemetryMaxNormalY = 0.75f;
         private const float HighVelocityWallImpactThresholdMetersPerSecond = 4.0f;
-        private const byte SparkDebrisKind = 1;
         private const float VoxelProxySlideDistanceRetain = 0.92f;
         private const float VoxelProxySlideVelocityRetain = 0.65f;
         private const float VoxelProxyGlideFallbackMetersPerSecond = 0.35f;
@@ -1387,9 +1387,9 @@ namespace Hecton8.Gameplay
             debris.PositionAup = pointAup;
             debris.SourceEntityId = unchecked((uint)bodyId);
             debris.Intensity01 = impact.Intensity;
-            debris.DebrisKind = SparkDebrisKind;
+            debris.DebrisKind = DebrisSpawnSignal.DebrisKindSparks;
             debris.Flags = (byte)(flags | DebrisSpawnSignal.FlagComputeShard);
-            GlobalSignals.Publish(in debris);
+            SignalBus<DebrisSpawnSignal>.Push(in debris);
 
             HapticRequest haptic = default;
             haptic.Intensity01 = math.saturate(lostKineticEnergy * 0.0002f);

@@ -275,6 +275,7 @@ namespace Hecton8.Biolum
         private VaultBufferHandle<BiolumTelemetryEntry> _telemetryRingHandle;
         private uint _vaultGenerationId = 0u;
         private bool _disposed = false;
+        private double _fallbackCelestialTimeSeconds;
 
         #if UNITY_EDITOR
         [SerializeField] private bool _debugLogUpdates = false;
@@ -584,7 +585,7 @@ namespace Hecton8.Biolum
 
         private void PublishGlobalBiolumPhase(float deltaTime)
         {
-            ResolveCelestialBiolumState(out double celestialTime);
+            ResolveCelestialBiolumState(deltaTime, out double celestialTime);
             ResolveAbyssalFlowFrequencyScale();
 
             float phaseStep = math.max(0f, deltaTime) * GlobalBiolumPhaseRateHz * _flowFrequencyScale;
@@ -640,7 +641,7 @@ namespace Hecton8.Biolum
             return syncParams.x > 0.5f;
         }
 
-        private void ResolveCelestialBiolumState(out double celestialTime)
+        private void ResolveCelestialBiolumState(float safeDeltaTime, out double celestialTime)
         {
             CelestialRuntimeSnapshot snapshot = GlobalRegistry.CelestialRuntimeSnapshot;
             bool valid = (snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u;
@@ -657,7 +658,31 @@ namespace Hecton8.Biolum
 
             _daylightMask = daylightShallow ? 0f : 1f;
             _eclipseMask = eclipse ? 1f : 0f;
-            celestialTime = valid ? snapshot.AbsoluteUniverseTime : Time.timeAsDouble;
+            celestialTime = valid ? snapshot.AbsoluteUniverseTime : ResolveFallbackCelestialTimeSeconds(safeDeltaTime);
+        }
+
+        private double ResolveFallbackCelestialTimeSeconds(float safeDeltaTime)
+        {
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            if (dispatcher != null)
+            {
+                H8TimeSnapshot timeSnapshot = dispatcher.TimeSnapshot;
+                if (timeSnapshot.Time >= 0d && !double.IsNaN(timeSnapshot.Time) && !double.IsInfinity(timeSnapshot.Time))
+                {
+                    _fallbackCelestialTimeSeconds = timeSnapshot.Time;
+                    return _fallbackCelestialTimeSeconds;
+                }
+            }
+
+            _fallbackCelestialTimeSeconds += math.min(math.max(safeDeltaTime, 0f), 0.25f);
+            if (_fallbackCelestialTimeSeconds < 0d ||
+                double.IsNaN(_fallbackCelestialTimeSeconds) ||
+                double.IsInfinity(_fallbackCelestialTimeSeconds))
+            {
+                _fallbackCelestialTimeSeconds = 0d;
+            }
+
+            return _fallbackCelestialTimeSeconds;
         }
 
         private void ResolveAbyssalFlowFrequencyScale()
@@ -1474,7 +1499,7 @@ namespace Hecton8.Biolum
             if (_cachedCameraTransform != null)
                 return true;
 
-            float currentTime = Time.unscaledTime;
+            float currentTime = ResolveCameraResolveTimeSeconds();
             if (!force && currentTime < _nextCameraResolveTime)
                 return false;
 
@@ -1500,6 +1525,22 @@ namespace Hecton8.Biolum
             }
 
             return false;
+        }
+
+        private static float ResolveCameraResolveTimeSeconds()
+        {
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            if (dispatcher != null)
+            {
+                H8TimeSnapshot snapshot = dispatcher.TimeSnapshot;
+                if (snapshot.UnscaledTime >= 0d && !double.IsNaN(snapshot.UnscaledTime) && !double.IsInfinity(snapshot.UnscaledTime))
+                    return (float)(snapshot.UnscaledTime % 65536d);
+            }
+
+            double unscaledTime = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            return unscaledTime >= 0d && !double.IsNaN(unscaledTime) && !double.IsInfinity(unscaledTime)
+                ? (float)(unscaledTime % 65536d)
+                : 0f;
         }
 
         private bool TrySampleDominantZone(List<HectonBiolumZone> zones, in AbsoluteUniversePosition referenceAup, out Color sampledColor, out float sampledStrength)

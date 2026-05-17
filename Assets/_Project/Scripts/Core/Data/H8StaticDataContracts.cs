@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Collections.LowLevel.Unsafe;
@@ -14,13 +15,15 @@ namespace Hecton8.Core.Data
         public const string BabelDictionaryFileName = "Babel_Dictionary.h8bin";
         public const int AlignmentBytes = 16;
         public const int TelemetryFrameCount = 300;
+        public const int TelemetryDumpHeaderSizeBytes = 32;
         public const ushort FormatVersion = 1;
         public const ushort ExpectedSchemaMajor = 1;
         public const ushort ExpectedSchemaMinor = 2;
         public const uint StaticDataMagic = 0x44533848u;
         public const uint BabelMagic = 0x42413848u;
+        public const ulong TelemetryDumpMagic = 0x484543544F4E3800ul;
         public const uint LittleEndianFlag = 1u;
-        public const uint SchemaHash = 0xC5AD1200u;
+        public const uint SchemaHash = 0x5C43DD40u;
         public const ushort RecordTypeItem = 1;
         public const ushort RecordTypeEconomy = 2;
         public const ushort RecordTypePhysics = 3;
@@ -287,6 +290,21 @@ namespace Hecton8.Core.Data
     }
 
     /// <summary>
+    /// Fixed header for static-data black-box dumps. Size: 32 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    public struct H8StaticDataDumpHeader
+    {
+        public ulong Magic;
+        public uint EntryCount;
+        public uint EntrySizeBytes;
+        public uint SchemaHash;
+        public uint PayloadCrc32;
+        public uint Flags;
+        public uint Reserved0;
+    }
+
+    /// <summary>
     /// Bake result for cold-path editor and test callers.
     /// </summary>
     public struct H8DataBakeResult
@@ -336,6 +354,66 @@ namespace Hecton8.Core.Data
             }
 
             return hash == 0u ? FnvOffset32 : hash;
+        }
+
+        /// <summary>
+        /// Computes FNV-1a over the UTF8 byte representation of human-facing Babel text.
+        /// </summary>
+        public static uint ComputeFnv1a32Utf8(ReadOnlySpan<char> value)
+        {
+            uint hash = FnvOffset32;
+            for (int i = 0; i < value.Length; i++)
+            {
+                uint codePoint;
+                char c = value[i];
+                if (char.IsHighSurrogate(c) && i + 1 < value.Length && char.IsLowSurrogate(value[i + 1]))
+                {
+                    codePoint = (uint)char.ConvertToUtf32(c, value[i + 1]);
+                    i++;
+                }
+                else if (char.IsSurrogate(c))
+                {
+                    codePoint = 0xFFFDu;
+                }
+                else
+                {
+                    codePoint = c;
+                }
+
+                hash = HashUtf8CodePoint(hash, codePoint);
+            }
+
+            return hash == 0u ? FnvOffset32 : hash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint HashByte(uint hash, byte value)
+        {
+            return unchecked((hash ^ value) * FnvPrime32);
+        }
+
+        private static uint HashUtf8CodePoint(uint hash, uint codePoint)
+        {
+            if (codePoint <= 0x7Fu)
+                return HashByte(hash, (byte)codePoint);
+
+            if (codePoint <= 0x7FFu)
+            {
+                hash = HashByte(hash, (byte)(0xC0u | (codePoint >> 6)));
+                return HashByte(hash, (byte)(0x80u | (codePoint & 0x3Fu)));
+            }
+
+            if (codePoint <= 0xFFFFu)
+            {
+                hash = HashByte(hash, (byte)(0xE0u | (codePoint >> 12)));
+                hash = HashByte(hash, (byte)(0x80u | ((codePoint >> 6) & 0x3Fu)));
+                return HashByte(hash, (byte)(0x80u | (codePoint & 0x3Fu)));
+            }
+
+            hash = HashByte(hash, (byte)(0xF0u | (codePoint >> 18)));
+            hash = HashByte(hash, (byte)(0x80u | ((codePoint >> 12) & 0x3Fu)));
+            hash = HashByte(hash, (byte)(0x80u | ((codePoint >> 6) & 0x3Fu)));
+            return HashByte(hash, (byte)(0x80u | (codePoint & 0x3Fu)));
         }
 
         public static H8DataBakeResult GenerateHashManifest(string csvPath, string outputPath)
@@ -401,6 +479,48 @@ namespace Hecton8.Core.Data
             }
 
             return ~crc;
+        }
+    }
+
+    internal static unsafe class H8StaticDataBlackBoxDump
+    {
+        public static void Write(
+            string path,
+            H8StaticDataTelemetryEntry* ring,
+            int cursorValue,
+            uint payloadCrc32,
+            uint flags)
+        {
+            if (ring == null || string.IsNullOrEmpty(path))
+                return;
+
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            if ((uint)cursorValue >= H8StaticDataFormat.TelemetryFrameCount)
+                cursorValue = 0;
+
+            int entrySize = UnsafeUtility.SizeOf<H8StaticDataTelemetryEntry>();
+            H8StaticDataDumpHeader header = new H8StaticDataDumpHeader
+            {
+                Magic = H8StaticDataFormat.TelemetryDumpMagic,
+                EntryCount = H8StaticDataFormat.TelemetryFrameCount,
+                EntrySizeBytes = (uint)entrySize,
+                SchemaHash = H8StaticDataFormat.SchemaHash,
+                PayloadCrc32 = payloadCrc32,
+                Flags = flags
+            };
+
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            {
+                stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<H8StaticDataDumpHeader>()));
+                for (int i = 0; i < H8StaticDataFormat.TelemetryFrameCount; i++)
+                {
+                    int sourceIndex = (cursorValue + i) % H8StaticDataFormat.TelemetryFrameCount;
+                    stream.Write(new ReadOnlySpan<byte>(ring + sourceIndex, entrySize));
+                }
+            }
         }
     }
 }

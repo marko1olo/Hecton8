@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.UI;
 using Unity.Burst;
 using Unity.Collections;
@@ -287,6 +288,7 @@ namespace Hecton8.Graphics.Scalability
             _bootHardwareTier = ResolveBootHardwareTier();
             _cachedQualityTier = ResolveInitialScalabilityTier(_bootHardwareTier);
             _hardwareTier = (byte)_cachedQualityTier;
+            RebindDataVault(GlobalRegistry.DataVault);
             TryEnsureTelemetryHandle();
             TryEnsureScaleStateHandle();
             UpdateVisualBudget((HectonQualityTier)_hardwareTier, _latestSystemStressEwma01);
@@ -304,6 +306,8 @@ namespace Hecton8.Graphics.Scalability
 
             if (Application.isPlaying)
             {
+                RebindDataVault(GlobalRegistry.DataVault);
+                RebindDynamicResolutionRuntime(GlobalRegistry.DynamicResolutionRuntime);
                 RegisterResolutionScalerService();
                 InstallSystemDynamicResolutionScaler();
                 CommitRenderScale(0);
@@ -616,6 +620,8 @@ namespace Hecton8.Graphics.Scalability
 
         private void CommitRenderScale(byte flags)
         {
+            _currentScale = ClampRenderScale(_currentScale);
+            _targetScale = ClampRenderScale(_targetScale);
             s_systemScalePercentage = _currentScale * 100f;
             DynamicResolutionHandler.SetActiveDynamicScalerSlot(DynamicResScalerSlot.System);
 
@@ -640,10 +646,12 @@ namespace Hecton8.Graphics.Scalability
             IDynamicResolutionRuntime runtime = _dynamicResolutionRuntime;
             if (runtime != null)
             {
+                float currentScale = ClampRenderScale(_currentScale);
+                float targetScale = ClampRenderScale(_targetScale);
                 runtime.ApplySystemOverrideRenderScale(
-                    _currentScale,
-                    _targetScale,
-                    _latestFrameTimeEwmaMs,
+                    currentScale,
+                    targetScale,
+                    SanitizePositive(_latestFrameTimeEwmaMs, TargetFrameTimeMs),
                     _pressureLevel,
                     flags);
             }
@@ -651,19 +659,14 @@ namespace Hecton8.Graphics.Scalability
 
         private bool TryEnsureScaleStateHandle()
         {
-            if (_dataVault == null)
-            {
-                IDataVault vault = GlobalRegistry.DataVault;
-                if (vault == null)
-                    return false;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
 
-                RebindDataVault(vault);
-            }
-
-            if (!_dataVault.TryGetBufferHandle(BufferID.ResolutionScaleState, out _scaleStateHandle) ||
+            if (!vault.TryGetBufferHandle(BufferID.ResolutionScaleState, out _scaleStateHandle) ||
                 !_scaleStateHandle.IsCreated)
             {
-                _scaleStateHandle = _dataVault.GetBufferHandle<ResolutionScaleState>(
+                _scaleStateHandle = vault.GetBufferHandle<ResolutionScaleState>(
                     BufferID.ResolutionScaleState,
                     1,
                     SystemID.GraphicsScalability,
@@ -725,19 +728,14 @@ namespace Hecton8.Graphics.Scalability
 
         private bool TryEnsureTelemetryHandle()
         {
-            if (_dataVault == null)
-            {
-                IDataVault vault = GlobalRegistry.DataVault;
-                if (vault == null)
-                    return false;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
 
-                RebindDataVault(vault);
-            }
-
-            if (!_dataVault.TryGetBufferHandle(BufferID.ResolutionScaleTelemetry, out _telemetryHandle) ||
+            if (!vault.TryGetBufferHandle(BufferID.ResolutionScaleTelemetry, out _telemetryHandle) ||
                 !_telemetryHandle.IsCreated)
             {
-                _telemetryHandle = _dataVault.GetBufferHandle<DrsTelemetryEntry>(
+                _telemetryHandle = vault.GetBufferHandle<DrsTelemetryEntry>(
                     BufferID.ResolutionScaleTelemetry,
                     TelemetryCapacity,
                     SystemID.GraphicsScalability,
@@ -980,7 +978,7 @@ namespace Hecton8.Graphics.Scalability
 
         private void TryRegisterScalabilityListener()
         {
-            if (_scalabilityListenerRegistered)
+            if (_scalabilityListenerRegistered || !Application.isPlaying)
                 return;
 
             ScalabilityEvents.Register(this);
@@ -1004,12 +1002,7 @@ namespace Hecton8.Graphics.Scalability
             _dynamicResolutionRuntime = runtime;
             if (_dynamicResolutionRuntime != null)
             {
-                _dynamicResolutionRuntime.ApplySystemOverrideRenderScale(
-                    _currentScale,
-                    _targetScale,
-                    _latestFrameTimeEwmaMs,
-                    _pressureLevel,
-                    _stpActive ? FlagStpActive : (byte)0);
+                CommitRuntimeSnapshot(_stpActive ? FlagStpActive : (byte)0);
             }
             else
             {
@@ -1341,6 +1334,7 @@ namespace Hecton8.Graphics.Scalability
 
         private static int ScaleToMilli(float scale)
         {
+            scale = ClampRenderScale(scale);
             return (int)math.round(scale * 1000f);
         }
 

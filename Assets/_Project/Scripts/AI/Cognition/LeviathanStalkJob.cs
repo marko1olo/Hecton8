@@ -153,10 +153,17 @@ namespace Hecton8.AI.Cognition
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.LowTierRadialFallback, lowTier & safeToAct);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.SdfDiveRequested, highTierSdf);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.PlayerGazeBreak, playerGazeBreak);
-            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.AcousticLure, safeToAct & sonarActive);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.LightRetreat, lightRetreat);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.ShiftFenceReset, shiftChanged | shiftFenceActive);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.Fault, faultedInput & eligibleToAct);
+            byte intentFlags = 0;
+            intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.LowTierRadialFallback, lowTier & safeToAct);
+            intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.SdfContourRequested, highTierSdf);
+            intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.PlayerGazeBreak, playerGazeBreak);
+            intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.AcousticLure, safeToAct & sonarActive);
+            intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.LightRetreat, lightRetreat);
+            intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.ShiftFenceActive, shiftChanged | shiftFenceActive);
+            intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.FaultedInput, faultedInput & eligibleToAct);
 
             uint stateHash = BuildStateHash(index, (byte)phase, flags, aggression, Frame);
             state.LeviathanAup = leviathanAup;
@@ -215,6 +222,7 @@ namespace Hecton8.AI.Cognition
                 Slot = slotId,
                 CurrentPhase = (byte)phase,
                 Flags = flags,
+                IntentFlags = intentFlags,
             };
 
             int telemetrySlot = math.min(index, AlphaLeviathanStalkConstants.MaxLeviathanSlots - 1);

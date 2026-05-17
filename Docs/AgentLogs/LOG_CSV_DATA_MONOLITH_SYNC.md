@@ -132,6 +132,34 @@ Verification: No `dotnet build` was rerun in this loop per user directive. Stati
 
 STATUS: VERIFIED MASTER GRADE - DATA MONOLITH ONLINE (DATA DOMAIN VERIFIED; FULL CORE COMPILE NOT RERUN BY USER DIRECTIVE)
 
+## Loop 17 Blackbox Dump Format Debt Report
+
+What was wrong: Static/Babel blackbox dumps wrote raw 300-entry telemetry rings with no header. That left post-mortem tooling unable to prove magic, entry count, entry size, schema, payload CRC, or flags from the dump itself.
+
+What was done: Added `H8StaticDataDumpHeader` and shared `H8StaticDataBlackBoxDump.Write()`. `StaticDataStore.DumpBlackBox()` and `BabelDictionaryStore.DumpBlackBox()` now emit the same self-describing binary format. `H8DataBaker.ValidateLayoutContracts()` checks the 32-byte header ABI. PlayMode sanity coverage writes a dump and verifies length, magic, entry count, and 64-byte stride.
+
+Cinematic Cheats used: Crash evidence stays fixed-width and binary. No runtime JSON, no managed parser, no string-heavy sidecar path in the data receiver.
+
+Exact Microseconds saved: No profiler microsecond delta was captured. Successful lookups are unchanged: expected O(1), 0 bytes GC. Dump overhead is explicit file IO only and writes 32 bytes of header plus the existing 300 fixed telemetry entries.
+
+Verification: No `dotnet build` was rerun per user directive. Source scan confirms header/writer/test coverage. Runtime store forbidden-token scans are clean. Core/Data scan found no standard `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `string.Split`, `float.Parse`, or `double.Parse`. Baked files pass `LOOP17_BINARY_PAIR_SCAN_CLEAN schema=0x5C43DD40 crc=0xFFF07BB0 staticBytes=896 babelBytes=1295`. `git diff --check` reports only CRLF warnings.
+
+STATUS: VERIFIED MASTER GRADE - DATA MONOLITH ONLINE (DATA DOMAIN VERIFIED; FULL CORE COMPILE NOT RERUN BY USER DIRECTIVE)
+
+## Loop 16 Schema Self-Audit And Key Grammar Report
+
+What was wrong: The schema hash was enforced by the runtime loader but not recomputed by the baker. That left a stale-contract path where a future schema edit could bake a binary under an old stamp. Identity keys also still accepted weak separator patterns, and text validation did not cover DEL/C1 control code points.
+
+What was done: Added `H8DataBaker.CurrentSchemaHash`, deterministic schema catalog hashing, and a bake-time schema drift gate in `ValidateLayoutContracts()`. Re-stamped `H8StaticData.bin` to schema hash `0x5C43DD40`. Tightened canonical IDs to start with lowercase ASCII and reject trailing/repeated underscores. Switched Babel text control validation to `char.IsControl`. Added PlayMode coverage for schema hash parity and separator drift.
+
+Cinematic Cheats used: Spreadsheet freedom stays in the cold compiler. Runtime still sees fixed-width records, hashes, and UTF8 spans only; no CSV/schema parser was added to the player.
+
+Exact Microseconds saved: No profiler microsecond delta was captured. Runtime cost remains unchanged. Schema hashing and key/text scans are cold bake-only; successful `GetRecord<T>` remains expected O(1), returns `ref readonly T`, and allocates 0 bytes GC.
+
+Verification: No `dotnet build` was rerun per user directive. Baked files pass `LOOP16_SCHEMA_SCAN_CLEAN schema=0x5C43DD40 crc=0xFFF07BB0 lookup=13 records=13 staticBytes=896 babelBytes=1295`. Runtime store forbidden-token scans are clean. Core/Data scan found no standard `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `string.Split`, `float.Parse`, or `double.Parse`. `git diff --check` reports only CRLF warnings.
+
+STATUS: VERIFIED MASTER GRADE - DATA MONOLITH ONLINE (DATA DOMAIN VERIFIED; FULL CORE COMPILE NOT RERUN BY USER DIRECTIVE)
+
 ## Loop 11 Static/Babel Pair CRC Gate Report
 
 What was wrong: The static header carried the baked Babel checksum, but runtime code did not expose or consume it. A stale `Babel_Dictionary.h8bin` could pass its own CRC while no longer matching the numeric monolith that references its hashes.
@@ -171,5 +199,33 @@ Cinematic Cheats used: The spreadsheet remains the authoring engine, but the com
 Exact Microseconds saved: No profiler microsecond delta was captured. Runtime cost is 0 us because these checks exist only in the cold baker. Bake-time cost is one EOF quote check and one integer cell-count compare per row.
 
 Verification: No `dotnet build` was rerun in this loop per user directive. Source scans confirm the new parser gates and tests. Runtime store forbidden-token scans remain clean. Core/Data scan remains clean for standard `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `string.Split`, `float.Parse`, and `double.Parse`. Baked files pass `CSV_PARSER_HARDENING_BINARY_SCAN_CLEAN crc=0x694BA34A staticBytes=896 babelBytes=1284`. `git diff --check` reports only CRLF warnings.
+
+STATUS: VERIFIED MASTER GRADE - DATA MONOLITH ONLINE (DATA DOMAIN VERIFIED; FULL CORE COMPILE NOT RERUN BY USER DIRECTIVE)
+
+## Loop 14 UTF8 Babel Hash Sovereignty Report
+
+What was wrong: Babel string hashes reused the first-column ID hash helper. That helper is fine for canonical ASCII IDs, but it lowercases ASCII and hashes only low `char` bytes, which is not valid for non-ASCII display text. CSV decode also allowed permissive replacement behavior, and header matching accepted case drift.
+
+What was done: Added exact-case CSV header matching, strict UTF8 CSV decode, `H8DataHashTool.ComputeFnv1a32Utf8(ReadOnlySpan<char>)`, and routed Babel string-pool keys through UTF8 byte hashing. Added tests for header case drift, invalid UTF8, and non-ASCII text hashing. Regenerated `Data/Balance/Baked/H8StaticData.bin` and `Babel_Dictionary.h8bin` so shipped artifacts match the new text hash contract.
+
+Cinematic Cheats used: IDs stay cheap and ASCII. Human-facing text gets a byte-accurate UTF8 hash while runtime still sees only numeric hashes and aligned byte slices.
+
+Exact Microseconds saved: No profiler microsecond delta was captured. Runtime hot path is unchanged: one native hash lookup plus span return for Babel; 0 bytes GC. UTF8 hashing and strict decode are cold bake/test work only.
+
+Verification: No `dotnet build` was rerun in this loop per user directive. Static/Babel artifacts pass `LOOP14_UTF8_BABEL_SCAN_CLEAN crc=0xFFF07BB0 staticBytes=896 babelBytes=1295`; `Scrap Metal` static `NameHash` and Babel key both equal `0x0A551605`. Runtime store forbidden-token scans remain clean. Core/Data scan remains clean for standard `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `string.Split`, `float.Parse`, and `double.Parse`. `git diff --check` reports only CRLF warnings.
+
+STATUS: VERIFIED MASTER GRADE - DATA MONOLITH ONLINE (DATA DOMAIN VERIFIED; FULL CORE COMPILE NOT RERUN BY USER DIRECTIVE)
+
+## Loop 15 Babel Text Control-Character Sanity Report
+
+What was wrong: Valid UTF8 text could still carry hidden control characters into Babel. That would preserve structurally valid bytes while poisoning UI names/descriptions downstream.
+
+What was done: `ColumnType.Text` validation now rejects C0 control characters before string pooling and reports `[CRITICAL_DATA_TEXT]` with the offending byte in hex. Added a PlayMode regression test that injects a tab into item text and expects the new failure.
+
+Cinematic Cheats used: UI text remains a clean byte atlas. The compiler pays for sanitation; runtime still receives raw spans without scrub work.
+
+Exact Microseconds saved: No profiler microsecond delta was captured. Runtime cost is 0 us. The added text scan is cold bake-only and proportional to text length.
+
+Verification: No `dotnet build` was rerun in this loop per user directive. Source scans confirm the text gate and test. Runtime store forbidden-token scans remain clean. Core/Data scan remains clean for standard `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `string.Split`, `float.Parse`, and `double.Parse`. Baked files pass `LOOP15_TEXT_SANITY_SCAN_CLEAN crc=0xFFF07BB0 staticBytes=896 babelBytes=1295`. `git diff --check` reports only CRLF warnings.
 
 STATUS: VERIFIED MASTER GRADE - DATA MONOLITH ONLINE (DATA DOMAIN VERIFIED; FULL CORE COMPILE NOT RERUN BY USER DIRECTIVE)

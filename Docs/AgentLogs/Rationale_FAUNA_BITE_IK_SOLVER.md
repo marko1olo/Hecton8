@@ -225,3 +225,38 @@ Solution: Scan `Hecton_LeviathanTentacleIndirect.shader` and `Hecton_LeviathanOr
 Rejected Alternatives: Treating shader compliance as irrelevant to animation IK would miss the Leviathan tentacle/jaw visual upload surface. Editing shaders without a detected violation was rejected as churn.
 Scalability potential: Low keeps CPU-side cheap IK/proxy paths; High/Ultra retain existing Leviathan visual surfaces without introducing Metal-incompatible overkill.
 Hardware Impact: 0 us measured. Static expectation is lower platform risk only; no frame-time claim.
+
+## Decision 32 - Fauna Simulation DataVault Eviction
+Problem: The broad fauna inquisition found `FaunaSimulationMemory` still owning persistent local `NativeArray<T>` buffers and a `NativeQueue<int>` for residency pool slots, velocities, flags, and free slots.
+Solution: Add `FaunaSimulation*` `BufferID` values, store only `VaultBufferHandle<T>` metadata in `FaunaSimulationMemory`, and replace the free-slot queue with a fixed-capacity DataVault-backed stack. `FaunaDirector` mutation sites resolve local `NativeArray<T>` views before index writes so the existing residency behavior stays intact.
+Rejected Alternatives: Keeping the `NativeQueue<int>` with a sentinel label would still be a private native island. Reusing bite, tentacle, or procedural crab buffers would corrupt ownership. Moving the whole `FaunaDirector` residency system into this agent's domain was rejected as broad AI/gameplay ownership drift.
+Scalability potential: Low/MX350 keeps cheap dehydrated fauna data-only motion without private memory ownership; Middle/High/Ultra keep the same residency fidelity and can spend saved governance risk on richer visible IK/VFX instead of allocator churn. This is memory sovereignty, not a new visual feature.
+Hardware Impact: 0 us measured. Static expectation is lower leak/stale-view risk on Quest/Android and Steam Deck, no per-frame allocation, and no claimed CPU speedup beyond removing private native lifetime management.
+
+## Decision 33 - Loop 18 External Compile Wall
+Problem: Compile validation cannot currently reach a clean C# proof after the fauna simulation memory patch.
+Solution: Run `dotnet restore Hecton8.Core.csproj` only because `Temp/obj/Hecton8.Core/project.assets.json` was missing, then run one serialized `dotnet build --no-restore`; it exits 1 on missing external source `Assets/_Project/Scripts/Gameplay/WaterTransitionHandler.cs`.
+Rejected Alternatives: Rebuilding repeatedly would violate the user's instruction and would not fix a missing gameplay source. Editing the `.csproj` or recreating `WaterTransitionHandler.cs` from the animation IK slice would cross ownership and risk erasing another agent's work.
+Scalability potential: Bite IK Low/Middle/High/Ultra behavior is unchanged. Fauna simulation DataVault ownership is in place, but full integration proof waits on the external gameplay file reference.
+Hardware Impact: No runtime impact from the compile wall.
+
+## Decision 34 - Data-Only Fauna LOD NaN Guard
+Problem: The adjacent fauna residency job still ran with `FloatMode.Fast` and wrote dehydrated slot position from unguarded AUP, delta-time, velocity, and distance math.
+Solution: Switch `DataOnlyFaunaLodJob` to deterministic Burst mode, reject non-finite player/slot AUP and distance state, zero bad velocity, and only write back finite next positions.
+Rejected Alternatives: Trusting dehydrated slot data would allow one bad velocity or origin value to poison resident AUP state on mobile. Routing the pass through Unity physics was rejected as slower and non-deterministic.
+Scalability potential: Low/MX350 keeps the same cheap data-only movement fake; Middle/High/Ultra get the same deterministic residency path while visible IK/VFX can spend frame budget elsewhere.
+Hardware Impact: No profiler capture was produced, so 0 us measured. Static expectation is lower crash risk on Quest/Android/Steam Deck at the cost of a few scalar finite checks on the low-frequency resident LOD cadence.
+
+## Decision 35 - Vault Free-Slot Reset Collapse
+Problem: `FaunaSimulationFreeSlotStack.Reset()` refilled the fixed free-slot stack by calling `Enqueue()` once per slot, resolving the same DataVault handle on every iteration.
+Solution: Resolve the vault-backed slot buffer once, then fill the stack directly up to the resolved capacity.
+Rejected Alternatives: Keeping per-slot handle resolution was unnecessary cold-path debt. Reintroducing a local `NativeQueue<int>` was rejected because Loop 18 already evicted free-slot ownership to the vault.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; cold reset and emergency reset paths are cleaner and still fixed-capacity.
+Hardware Impact: No measured microseconds. Static estimate is reduced cold reset overhead proportional to resident capacity by removing repeated vault handle resolution, with no per-frame allocation.
+
+## Decision 36 - Loop 19 Compile Wall
+Problem: After the resident LOD stability patch, repository compilation still cannot prove green.
+Solution: Run one meaningful serialized build after compile-impacting edits; it exits 1 with 4 errors in currently dirty Core/VFX files: missing `HectonSignalLaneContract` context, `AudioEvent` not satisfying `ISignal`, and ambiguous `CameraJuiceImpactSignal`.
+Rejected Alternatives: Rebuilding repeatedly would waste time and violate the user's instruction. Editing dirty Core/VFX files from the animation IK slice would cross ownership and risk overwriting active work by other agents.
+Scalability potential: Bite IK and fauna resident LOD scalability remain unchanged; final build proof waits on the external signal/VFX compile wall.
+Hardware Impact: No runtime impact from the compile wall.

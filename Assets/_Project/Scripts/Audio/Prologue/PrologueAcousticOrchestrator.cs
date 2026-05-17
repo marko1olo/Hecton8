@@ -2,6 +2,7 @@ using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace Hecton8.Audio.Prologue
     /// Visual-sync bridge from orbital prologue stage signals into procedural helmet DSP.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PrologueAcousticOrchestrator : MonoBehaviour, ILateFrameTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class PrologueAcousticOrchestrator : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const uint SourceHash = 0xAC0571C5u;
         private const uint PrologueSequenceSourceHash = PrologueSignalSourceHashes.SequenceDirector;
@@ -38,13 +39,13 @@ namespace Hecton8.Audio.Prologue
         private ITickDispatcher _tickDispatcher;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
-        private bool _scalabilityEventsRegistered;
         private bool _lowMemoryProfile;
         private bool _lowTier;
         private byte _qualityTierByte;
         private int _lastLateFrame = -1;
         private int _lastAtmosphericFrame = -1;
         private int _lastCompleteFrame = -1;
+        private int _lastScalabilitySignalFrame = -4096;
         private uint _transitionSequence;
         private ushort _lastCompleteSequence;
         private ushort _lastWhiteoutCompleteSequence;
@@ -89,13 +90,10 @@ namespace Hecton8.Audio.Prologue
                 _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
             }
 
-            TryRegisterScalabilityEvents();
         }
 
         private void OnDisable()
         {
-            TryUnregisterScalabilityEvents();
-
             if (_lateFrameRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -151,16 +149,31 @@ namespace Hecton8.Audio.Prologue
 
             _lastLateFrame = frame;
             _tickCount++;
+            ConsumeScalabilitySignals();
             ConsumeAtmosphericSignals();
             ConsumePrologueCompleteSignals();
             AdvanceFilterSweep(ResolveUnscaledDeltaTime());
             PublishAudioTransition(frame);
         }
 
-        /// <inheritdoc />
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        private void HandleScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, GlobalRegistry.H8_LOW_MEMORY_PROFILE);
+            CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile);
+        }
+
+        private void ConsumeScalabilitySignals()
+        {
+            int frame = Time.frameCount;
+            if (_lastScalabilitySignalFrame == frame)
+                return;
+
+            _lastScalabilitySignalFrame = frame;
+            ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ScalabilityChangedEvent payload = signals[i];
+                HandleScalabilityChanged(in payload);
+            }
         }
 
         /// <inheritdoc />
@@ -429,24 +442,6 @@ namespace Hecton8.Audio.Prologue
         {
             CacheAudioService(GlobalRegistry.Audio);
             _tickDispatcher = GlobalRegistry.TickDispatcher;
-        }
-
-        private void TryRegisterScalabilityEvents()
-        {
-            if (_scalabilityEventsRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityEventsRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityEvents()
-        {
-            if (!_scalabilityEventsRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityEventsRegistered = false;
         }
 
         private void RefreshQualityPolicyCold()
