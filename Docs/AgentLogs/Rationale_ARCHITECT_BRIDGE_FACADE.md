@@ -237,3 +237,66 @@ Solution: Verified the contract source files exist under `Assets/_Project/Script
 Rejected Alternatives: Creating or rewriting the Core Contracts project from the Bridge domain was rejected as cross-domain project-generation ownership. Editing dozens of non-Bridge consumers to inline constants was rejected as destructive and non-DOD.
 Scalability potential: High for integration discipline. Bridge remains independently cold-setter-only while the contract assembly owner restores the missing generated project/reference.
 Hardware Impact: 0 us runtime.
+
+## Decision 035 - Boot Binder Serialized Field Honesty
+Problem: `H8PrefabRegistryBootBinder` no longer uses `Awake()`, but the serialized inspector field was still named `bindOnAwake`, creating false authoring semantics and confusing static review.
+Solution: Renamed the field to `bindOnStart` and added `[FormerlySerializedAs("bindOnAwake")]` so existing scene/prefab values migrate without YAML edits.
+Rejected Alternatives: Leaving the stale field name was rejected because Bridge is the human-control layer and its authoring surface must state the actual lifecycle. Raw YAML migration was rejected because Unity serialization attributes are safer.
+Scalability potential: Low/Middle/High/Ultra unchanged. The bind remains boot/cold only, with no added frame work.
+Hardware Impact: 0 us runtime; serialization metadata only.
+
+## Decision 036 - Current Build Contention And Non-Bridge Fluid Wall
+Problem: Fresh isolated Core verification first failed outside Bridge in `SubmarineFluidDynamics.cs` due missing exterior thermal-anomaly fields. Later retries could not produce a stable diagnostic because many concurrent Core builds were running in the same workspace and a file-logged build terminated before compiler diagnostics.
+Solution: Kept the Bridge change scoped, reran Bridge static audits, and recorded the active compile state as non-Bridge/blocking rather than claiming Platinum compile.
+Rejected Alternatives: Taking ownership of submarine fluid state from the Bridge prompt was rejected as domain overreach. Killing other agents' build processes was rejected without proof they were stale.
+Scalability potential: High for integration discipline. Bridge remains a cold DataVault setter/binder while the submarine-fluid owner restores its missing storage contract.
+Hardware Impact: 0 us runtime. No profiler microseconds claimed.
+
+## Decision 037 - Live Tuning Stress Gate Semantics
+Problem: `H8BridgeFacadeRuntime.LiveTuningBlockedByStress()` mixed `SignalBusRegistry.SystemStress01` with `HomeostasisBrain.SystemHealthIndex01`, even though the Bridge mandate is explicitly `SystemStress01 > 0.9`. The name mismatch made the gate hard to audit and risked suppressing designer live tuning from the wrong semantic lane.
+Solution: Gate live tuning on the typed stress lane plus normalized Homeostasis pressure level (`PressureLevel / 3`). The setter remains cold and still bypasses the block when Designer Override is active.
+Rejected Alternatives: Polling Homeostasis every frame was rejected because the facade is a setter, not a runtime controller. Keeping the raw `SystemHealthIndex01` read was rejected because it hides stress semantics behind a misleading property name.
+Scalability potential: Low tier suppresses live authoring churn only when the runtime is actually under emergency pressure. Middle/High/Ultra retain live tuning while healthy and can still drive raymarch/POM/SSS/particle visual-overkill knobs through packed hashes.
+Hardware Impact: 0 us steady-state. Explicit live-edit sync pays two scalar reads and a max operation only when a designer changes a facade value; no profiler microseconds were claimed.
+
+## Decision 038 - Editor Verification Path Honesty
+Problem: Isolated `Hecton8.Editor.csproj` builds with custom `OutputPath`/`BaseIntermediateOutputPath` break the generated Unity package project graph: package DLL references are expected in the same generated output layout and several package projects report circular `ResolveProjectReferences`.
+Solution: Treat isolated Editor-output failures as invalid verification for this graph. Core is verified with isolated output; Editor must be verified with default Unity project output when the shared workspace is quiet.
+Rejected Alternatives: Rewriting generated package csproj references from the Bridge domain was rejected as project-generation sabotage. Claiming the isolated Editor failure as a Bridge compile error was rejected because it fails before Bridge editor code is compiled.
+Scalability potential: Medium. Accurate verification discipline prevents false regressions from blocking the design-control layer while preserving generated Unity project ownership.
+Hardware Impact: 0 us runtime; build-system verification only.
+
+## Decision 039 - Current World Compile Wall
+Problem: After the Bridge stress-gate repair compiled once in isolated Core output, the workspace moved again. Default-output Editor verification and a fresh isolated Core verification now fail outside Bridge in `World/SargassumMicroFaunaBoids.cs` because several storage fields are missing.
+Solution: Record the active wall and stop at the Bridge boundary. The missing `_grazingAnchors`, `_formationBeacons`, `_formationObstacles`, and `_massiveThreats` fields belong to the World/Sargassum system, not the Bridge facade/control-panel domain.
+Rejected Alternatives: Creating world boid storage from the Bridge prompt was rejected as cross-domain interference with another agent's ownership. Claiming the older green Core result as current was rejected because disk truth changed.
+Scalability potential: High for integration discipline. Bridge remains a cold setter/binder with packed visual metadata while World owners restore their simulation storage contract.
+Hardware Impact: 0 us runtime from Bridge; compile-wall documentation only.
+
+## Decision 040 - Intentional Empty Facade Tombstones
+Problem: `OnValidate()` reseeding and early zero-count returns made "delete every binding" ambiguous. A designer could empty the input or design facade in the inspector, but validation could resurrect defaults or the runtime setter could report success while stale raw Vault rows remained readable.
+Solution: Split list initialization from default seeding. Defaults now come from `Reset()` or explicit context-menu seeding, while `OnValidate()` preserves an intentionally empty list. The design facade tracks binding-count changes, and `SyncDesignData()` clears `BridgeDesignFacadeValues`, publishes a heartbeat `DataVaultUpdateSignal`, and persists the MacroDB header when the count is zero.
+Rejected Alternatives: Keeping default reseeding in `OnValidate()` was rejected because it makes the control panel fight the designer. Treating zero bindings as a no-op was rejected because raw consumers read Vault buffers, not managed ScriptableObject intent. Clearing the Vault without a typed-lane signal was rejected because runtime listeners must see the same notification path as normal value edits. Adding a managed "active count" side table was rejected because a zeroed Vault lane is cheaper and clearer for DOD consumers.
+Scalability potential: Low tier avoids stale input/balance work after controls are removed. Middle/High/Ultra keep the same packed raw lanes and visual-overkill hashes; deletion no longer leaves invisible state that can poison raymarch/POM/SSS/particle controls.
+Hardware Impact: 0 us steady-state. Explicit empty sync pays one existing-span `MemClear` and two pointer fences only when the designer intentionally clears a facade. No Unity profiler microseconds were claimed.
+
+## Decision 041 - Typed Dirty Lanes For Non-Design Vault Buffers
+Problem: Prefab and input Bridge buffers were written directly into DataVault with telemetry but without a typed dirty signal. That forces consumers to poll raw buffers or depend on side effects, which violates the SignalBus lane mandate and makes empty tombstones harder to observe.
+Solution: Reused the existing packed `DataVaultUpdateSignal` lane for `BridgePrefabMapping`, `BridgePrefabLoreLinks`, and `BridgeInputFacadeBindings`. Cold sync paths now publish buffer-level dirty pulses after writes and after empty clears. Clear paths also compute `MemClear` byte counts through `long` multiplication with pointer fences.
+Rejected Alternatives: Adding new private input/prefab dirty signals was rejected as interface chaos because `DataVaultUpdateSignal` already exists for buffer mutation. Leaving consumers to poll was rejected because the facade is the setter, not a hidden live state bus. Keeping int-sized clear byte math was rejected because scalable Vault buffers should not rely on pre-widened integer multiplication.
+Scalability potential: Low tier avoids polling and stale raw rows. Middle/High/Ultra receive the same dense prefab/input lanes for visual-overkill consumers, PDA lore links, acoustic resonance, and input orchestration without adding per-frame work.
+Hardware Impact: 0 us steady-state. Explicit sync/bind pays one or two typed signal pushes and fenced clears only when a designer syncs or a registry binds. No Unity profiler microseconds were claimed.
+
+## Decision 042 - Visor Salt Crystal Control As Facade Data
+Problem: The default design facade exposed silt wake, hull dents, raymarch, POM, SSS, and particles, but not the requested visor salt-crystal growth control. That leaves a high-tier visual-overkill feature outside the human-control layer.
+Solution: Added `VisorSaltCrystalGrowth01` as a default visual binding at aligned offset 44 with 1D LUT and high-tier visual hashes. The renderer can consume the raw float/hash lane without a string lookup or facade polling.
+Rejected Alternatives: Hard-coding salt coverage in a renderer or shader keyword path was rejected because the Bridge facade exists to make these knobs human-controllable. Auto-inserting the binding into every existing asset during `OnValidate()` was rejected because intentional asset lists must stay stable unless the designer resets or explicitly seeds defaults.
+Scalability potential: Low tier can map salt growth to a cheap 1D LUT or dot-product mask. Middle can drive a static decal/normal blend. High/Ultra can spend saved cycles on crystalline visor buildup, raymarched wet edges, or particle sparkle while reading the same packed control lane.
+Hardware Impact: 0 us steady-state. The new binding is authoring/default data only; setter cost occurs only during explicit facade sync. No Unity profiler microseconds were claimed.
+
+## Decision 043 - Runtime-Only SignalBus Gate
+Problem: Manual editor/window sync paths can call the same cold setters as play mode. Without an explicit play-mode gate, a valid edit-mode Vault could cause Bridge SignalBus pushes outside runtime, contradicting the assignment's "OnValidate in Editor and SignalBus in Runtime" split.
+Solution: Added play-mode guards around Bridge DataVault dirty signals and cached `Application.isPlaying` inside the prefab binder loop before acoustic/lore signal publication. DataVault writes and telemetry remain cold setter behavior; typed SignalBus traffic is runtime-only.
+Rejected Alternatives: Leaving editor SignalBus pushes in place was rejected because it creates hidden authoring-time queue traffic. Adding separate editor events was rejected because editor tooling already has direct inspector/window refresh paths and the runtime lane should stay typed and singular.
+Scalability potential: Low tier avoids edit-mode queue churn and preserves zero steady-state cost. Middle/High/Ultra keep runtime dirty pulses for prefab, lore, acoustic, input, and design consumers without adding frame polling.
+Hardware Impact: 0 us steady-state. The guard is evaluated only on explicit sync/bind paths, not per frame. No Unity profiler microseconds were claimed.

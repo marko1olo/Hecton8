@@ -362,7 +362,6 @@ namespace Hecton8.VFX
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
-        private bool _movementEventsHooked;
         private bool _hotSwapRegistered;
         private bool _scalabilityEventsRegistered;
         private float _nextDependencyResolveTime;
@@ -465,12 +464,7 @@ namespace Hecton8.VFX
             if (Application.isPlaying)
                 CameraJuiceSignals.EnsurePrewarmed();
 
-            if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
-            {
-                bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
-                bool slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
-                _registered = updateRegistered || slowTickRegistered;
-            }
+            TryRegisterDispatcherTicks();
             TryRegisterLateFrame();
 
             TryResolveGameplayDependencies();
@@ -551,6 +545,16 @@ namespace Hecton8.VFX
             }
         }
 
+        private void TryRegisterDispatcherTicks()
+        {
+            if (_registered || !Application.isPlaying || _dispatcher == null)
+                return;
+
+            bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            bool slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
+            _registered = updateRegistered || slowTickRegistered;
+        }
+
         private void TryRegisterToGlobalRegistry()
         {
             if (_serviceRegistered || !Application.isPlaying)
@@ -580,7 +584,7 @@ namespace Hecton8.VFX
 
         private void TryRegisterLateFrame()
         {
-            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredLateFrame || !Application.isPlaying || _dispatcher == null)
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
@@ -588,7 +592,7 @@ namespace Hecton8.VFX
 
         private void TryUnregisterLateFrame()
         {
-            if (!_registeredLateFrame || GlobalRegistry.Dispatcher == null)
+            if (!_registeredLateFrame)
                 return;
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
@@ -668,7 +672,18 @@ namespace Hecton8.VFX
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _dispatcher = currentService as ITickDispatcher;
+                    ITickDispatcher dispatcher = currentService as ITickDispatcher;
+                    if (!ReferenceEquals(_dispatcher, dispatcher))
+                    {
+                        TryUnregister();
+                        _dispatcher = dispatcher;
+                    }
+
+                    if (_dispatcher != null)
+                    {
+                        TryRegisterDispatcherTicks();
+                        TryRegisterLateFrame();
+                    }
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     BindPlayerRuntime(currentService as IPlayerRuntimeContext);
@@ -748,6 +763,7 @@ namespace Hecton8.VFX
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             float startTime = Time.realtimeSinceStartup;
 #endif
+            ConsumePlayerSprintSignals();
 
             try
             {
@@ -1185,6 +1201,18 @@ namespace Hecton8.VFX
         public bool DebugAdaptiveDisableInteractionDoF => _adaptiveDisableInteractionDoF;
 
         // ═══ PRIVATE METHODS ═══
+
+        private void ConsumePlayerSprintSignals()
+        {
+            ReadOnlySpan<PlayerSprintStateSignal> signals = SignalBus<PlayerSprintStateSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                if (signals[i].IsSprinting != 0)
+                    HandleSprintStarted();
+                else
+                    HandleSprintEnded();
+            }
+        }
 
         private void HandleSprintStarted()
         {
@@ -2302,22 +2330,10 @@ namespace Hecton8.VFX
 
         private void SyncDependencySubscriptions()
         {
-            if (_playerMovement != null && !_movementEventsHooked)
-            {
-                _playerMovement.OnSprintStarted += HandleSprintStarted;
-                _playerMovement.OnSprintEnded += HandleSprintEnded;
-                _movementEventsHooked = true;
-            }
         }
 
         private void UnhookDependencyEvents()
         {
-            if (_playerMovement != null && _movementEventsHooked)
-            {
-                _playerMovement.OnSprintStarted -= HandleSprintStarted;
-                _playerMovement.OnSprintEnded -= HandleSprintEnded;
-                _movementEventsHooked = false;
-            }
         }
 
         private void UpdateHealthPostProcessing()

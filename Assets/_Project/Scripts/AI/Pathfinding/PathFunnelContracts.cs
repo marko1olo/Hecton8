@@ -28,6 +28,7 @@ namespace Hecton8.AI.Pathfinding
         public const byte PortalFlagWfcDoor = 1 << 0;
         public const byte PortalFlagNoRadiusShrink = 1 << 1;
         public const byte WfcDoorOpenFlag = (byte)WfcOutpostCellStateFlags.DoorOpen;
+        public const byte WfcMutableFlagMask = WfcOutpostPersistenceConstants.MutableFlagMask;
         public const uint SourceHash = 0x50464E4Cu; // PFNL
     }
 
@@ -77,6 +78,10 @@ namespace Hecton8.AI.Pathfinding
         public const uint PartialLookAhead = 1u << 7;
         public const uint SdfClearanceClamped = 1u << 8;
         public const uint InvalidMathLod = 1u << 9;
+        public const uint InvalidWfcCell = 1u << 10;
+        public const uint PortalInputClamped = 1u << 11;
+        public const uint AupOutputClamped = 1u << 12;
+        public const uint AgentRadiusClamped = 1u << 13;
     }
 
     /// <summary>
@@ -166,6 +171,8 @@ namespace Hecton8.AI.Pathfinding
     public static class PathFunnelTelemetryFlags
     {
         public const ushort BlackBoxDumpFailed = 1 << 0;
+        public const ushort WfcVaultSignalMismatch = 1 << 1;
+        public const ushort TransientFrameMask = WfcVaultSignalMismatch;
     }
 
     /// <summary>

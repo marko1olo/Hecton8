@@ -48,7 +48,7 @@ Extracted from Docs/Tasks/CURRENT_BATCH.md with id SCREEN_SPACE_REFRACTION.
 - [x] 15. HOMEOSTASIS_ADAPTATION | Done | DOD: low-tier memory detection and hull-stress threshold force chromatic-only fallback | Alternative rejected: constant expensive path under load | Estimate: saves high-path Snell branch under fallback; exact us pending profiler
 - [x] 16. DEPTH_TEST | Done | DOD: `SuitVisor.shader` compares scene depth against glass depth via `HectonDepthBehindMask`; fluid pass binds camera depth and fades by valid scene depth | Alternative rejected: full-screen blind distortion | Estimate: static depth sample/ALU; exact us pending profiler
 - [x] 17. MASK_DIRT | Done | DOD: refraction strength is multiplied by inverse dirt/grime/frost/crack/dust masks | Alternative rejected: uniform distortion through dirty glass | Estimate: static ALU mask; exact us pending profiler
-- [x] 18. FINAL_VALIDATION | Done with caveat | DOD: a clean normal build checkpoint succeeded with 0 warnings and 0 errors before later shared-workspace regressions; latest normal and SourceLink-disabled retries are blocked outside VFX/POST in `EcosystemDirector.cs` and `LockstepStateValidator.cs`; Unity shader/runtime/profiler verification remains pending | Alternative rejected: claiming runtime/profiler numbers from C# build validation or editing unrelated domains | Estimate: exact us pending profiler
+- [x] 18. FINAL_VALIDATION | Done with caveat | DOD: clean build checkpoints succeeded earlier before later shared-workspace regressions; latest SourceLink-disabled retry is blocked outside VFX/POST in `TetherManager.cs`; Unity shader/runtime/profiler verification remains pending | Alternative rejected: claiming runtime/profiler numbers from C# build validation or editing unrelated domains | Estimate: exact us pending profiler
 
 ## Verification Log
 
@@ -205,4 +205,65 @@ Extracted from Docs/Tasks/CURRENT_BATCH.md with id SCREEN_SPACE_REFRACTION.
 - Checkpoint `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:ContinuousIntegrationBuild=false -p:EnableSourceControlManagerQueries=false -v:minimal -clp:Summary` succeeded: `Hecton8.Core -> Temp/bin/Debug/Hecton8.Core.dll`, 0 warnings, 0 errors, elapsed 00:00:01.90.
 - Latest normal retry now fails outside VFX/POST with 5 errors in `EcosystemDirector.cs(5970-6027)`: duplicate `ResolveVaultIndexCapacity`, `ClearIndexEntries`, `TryUpsertIndexEntry`, and `TryFindIndexEntry` members.
 - Latest SourceLink-disabled retry now fails outside VFX/POST with 8 errors in `LockstepStateValidator.cs(408-417)`: missing `LockstepSnapshotSignalCapacity`, `LockstepSnapshotLaneHash`, `SystemGlitchSignalCapacity`, and `SystemGlitchLaneHash`.
+- Unity runtime shader compilation, RenderGraph Frame Debugger ordering, platform shader compilation on Quest/Android/Metal/Steam Deck, and exact profiler microseconds remain pending.
+
+## Uber Post And Suit Raw Uniform Recheck - 2026-05-16
+
+- [x] 53. UBER_POST_PLATFORM_TARGET | Done | DOD: `HectonVisorUberPost.shader` dropped from `#pragma target 4.5` to `#pragma target 3.5` after static audit found no compute, UAV, group memory, or SM4.5-only path | Alternative rejected: carrying a higher shader model without a feature requirement | Estimate: 0.0 us/frame CPU; platform shader compile pending
+- [x] 54. UBER_POST_LOW_TIER_SHED | Done | DOD: non-mobile 16-tap light shafts now return zero when `_HectonUberLowTier` is active, and per-tap `pow` was replaced by `FastRadialFalloff01` polynomial falloff | Alternative rejected: letting MX350 pay high-sample post cost or using real volumetric shafts in toaster mode | Estimate: saves the 16-tap shaft loop on low tier; exact GPU us pending profiler
+- [x] 55. UBER_AND_SUIT_FINITE_BOUNDARY | Done | DOD: Uber post now consumes shared finite helpers for screen params, waterline, brine, light shaft, comfort, dirt, crack, pressure, heat, hypoxia, bleeding, and UV offset boundaries; `SuitVisor.shader` now finite-guards droplet density, chromatic strength, sonar vectors, hypoxia, HUD tint alpha, smoothness, reflection strength, and screen-size static noise | Alternative rejected: trusting material ranges or Unity global params as final GPU boundary | Estimate: GPU ALU only; exact us pending profiler
+- [x] 56. POST_UBER_BUILD_RETRY | BLOCKED BY DEPENDENCY | DOD: SourceLink-disabled `dotnet build` reached C# and failed outside VFX/POST in `SubmarineFluidDynamics.cs` ambiguous `float3`/`Vector3` subtraction | Alternative rejected: editing submarine/fluid ownership to force a green build | Estimate: blocker, no frame estimate
+
+## Uber Post And Suit Raw Uniform Verification Log
+
+- `rg` confirmed `HectonVisorUberPost.shader` has `#pragma target 3.5` and no `#pragma target 4.5`, `pow`, `tex2D`, `SV_Group`, `numthreads`, `groupshared`, `GroupMemoryBarrier`, `RWTexture`, `RWStructured`, or `GrabPass` hits.
+- Targeted `SuitVisor.shader` scan found no remaining raw hot-path uses of `_WaterDropletDensity`, `_ScaledScreenParams.xy`, `_ChromaticAberration`, `saturate(_SonarGridParams0`, `_SonarRevealWaveParams.w`, `_SonarRevealOriginWS.xyz`, `saturate(_HypoxiaLevel`, `saturate(_HUD_Color.a`, `saturate(_Smoothness`, or `_EnvReflStrength` beyond declarations and finite boundary aliases.
+- Broader shader risk scan for `#pragma target 4.5`, `pow`, raw `saturate(_...)`, `length`, direct arithmetic `/`, DX compute tokens, and `GrabPass` reports only benign shader file header text and `#pragma target 3.5` declarations in touched visor/refraction shaders.
+- `git diff --check` reported no whitespace errors for touched shader/code files, only existing LF/CRLF warnings.
+- Latest normal `dotnet build` retry failed before C# at SourceLink file lock: `Temp/obj/Hecton8.Core/Hecton8.Core.sourcelink.json` is held by another process.
+- Latest SourceLink-disabled `dotnet build` retry failed outside VFX/POST with 2 errors: `SubmarineFluidDynamics.cs(1853,60)` and `(4582,68)` ambiguous operator resolution between `float3.operator -(float3,float3)` and `Vector3.operator -(Vector3,Vector3)`.
+- Unity runtime shader compilation, RenderGraph Frame Debugger ordering, platform shader compilation on Quest/Android/Metal/Steam Deck, and exact profiler microseconds remain pending.
+
+## Uber Fragment Boundary Recheck - 2026-05-17
+
+- [x] 57. UBER_FRAGMENT_UV_FINITE_CLOSURE | Done | DOD: `HectonVisorUberPost.shader` now sanitizes the stereo-transformed fragment UV once in `Frag`; internal water, droplet, comfort, lens dirt, and brine fog helpers also fail closed on non-finite UV/world-position inputs | Alternative rejected: assuming XR stereo transform and world-position reconstruction can never return invalid coordinates | Estimate: GPU ALU only; exact us pending profiler
+- [x] 58. POST_FRAGMENT_BOUNDARY_STATIC_AUDIT | Done | DOD: Uber post risk scan reports no `#pragma target 4.5`, `pow`, raw `saturate(_...)`, direct arithmetic `/`, `tex2D`, compute thread tokens, RW resources, or `GrabPass`; only `rawUv` finite-boundary assignment remains | Alternative rejected: manual-only shader review | Estimate: 0.0 us/frame CPU
+- [x] 59. POST_FRAGMENT_BOUNDARY_BUILD_RETRY | BLOCKED BY DEPENDENCY | DOD: SourceLink-disabled `dotnet build` reached C# and failed outside VFX/POST in `TetherManager.cs(20,92)` missing `ISlowTickable.SlowTick()` | Alternative rejected: editing tether ownership to force a green build | Estimate: blocker, no frame estimate
+
+## Uber Fragment Boundary Verification Log
+
+- `rg -n "#pragma target 4\.5|pow\(|saturate\(_|abs\(_|max\(_|min\(_|length\(|/ |tex2D|SV_Group|numthreads|groupshared|GroupMemoryBarrier|RWTexture|RWStructured|GrabPass|ComputeWorldSpacePosition\(uv|floor\(uv"` on `HectonVisorUberPost.shader` reports only `rawUv` assignment and finite-boundary sanitization lines.
+- Forbidden hot-path scan returned no `NativeArray`, `EventBus`, managed delegate lane, standard `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, Unity object search, singleton `.Instance`, `AddBlitPass`, `RenderGraphUtils`, `GrabPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files.
+- `git diff --check` reported no whitespace errors for touched shader/code/log files, only existing LF/CRLF warnings.
+- Latest SourceLink-disabled `dotnet build Hecton8.Core.csproj --no-restore` failed outside VFX/POST with 1 error: `TetherManager.cs(20,92) CS0535 TetherManager does not implement ISlowTickable.SlowTick()`.
+- Unity runtime shader compilation, RenderGraph Frame Debugger ordering, platform shader compilation on Quest/Android/Metal/Steam Deck, and exact profiler microseconds remain pending.
+
+## Screen Params Boundary Recheck - 2026-05-17
+
+- [x] 60. SHARED_FINITE2_HELPER | Done | DOD: added `HectonFinite2` to `Hecton_SnellRefractionCore.hlsl` so float2 UV/screen-space boundaries share the same fail-closed shader helper family as scalar/vector4 refraction guards | Alternative rejected: duplicating local float2 guard code in each shader | Estimate: GPU ALU only; exact us pending profiler
+- [x] 61. VISOR_SCREEN_PARAM_UV_CLOSURE | Done | DOD: `Hecton_VisorFluidDistortion.shader` and `SuitVisor.shader` now sanitize fullscreen/stereo UVs, helper UVs, HUD-distorted UVs, tile scales, and `_ScreenParams`/`_ScaledScreenParams` use before hash/floor/static/noise paths | Alternative rejected: trusting engine screen params and interpolated UVs as always finite on mobile/Metal | Estimate: CPU 0.0 us/frame; GPU finite-check ALU only, exact us pending profiler
+- [x] 62. POST_SCREEN_PARAM_BUILD_RETRY | BLOCKED BY DEPENDENCY | DOD: static shader and hot-path scans passed after screen-param closure; SourceLink-disabled `dotnet build` reached C# and failed outside VFX/POST in `FaunaBrain.Compatibility.cs` on missing `FlagsAttribute`/`Flags` | Alternative rejected: editing Fauna compatibility ownership to force a green build | Estimate: blocker, no frame estimate
+
+## Screen Params Boundary Verification Log
+
+- Targeted `_ScreenParams` scan now reports only finite boundary aliases in `HectonVisorUberPost.shader`, `SuitVisor.shader`, and `Hecton_VisorFluidDistortion.shader`; raw `_ScreenParams.xy`, `_ScreenParams.yx`, `_ScreenParams.y`, and `_ScaledScreenParams.xy` use no longer appear in touched visor/refraction shaders.
+- Broader shader risk scan for `#pragma target 4.5`, `pow`, raw `saturate(_...)`, direct arithmetic `/`, DX compute tokens, `GrabPass`, and raw `_ScreenParams` paths reports only the `SuitVisor.shader` file header comment.
+- Forbidden hot-path scan returned no `NativeArray`, `EventBus`, managed delegate lane, standard `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, Unity object search, singleton `.Instance`, `AddBlitPass`, `RenderGraphUtils`, `GrabPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files.
+- `git diff --check` reported no whitespace errors for touched shader/code/log files, only existing LF/CRLF warnings.
+- Latest SourceLink-disabled `dotnet build Hecton8.Core.csproj --no-restore` failed outside VFX/POST with 1 warning and 2 errors: `FaunaBrain.Compatibility.cs(109,6) CS0246 FlagsAttribute could not be found` and `FaunaBrain.Compatibility.cs(109,6) CS0246 Flags could not be found`. Warning: duplicate `System.Runtime.CompilerServices` using in `HectonPlayerMovement.cs`.
+- Unity runtime shader compilation, RenderGraph Frame Debugger ordering, platform shader compilation on Quest/Android/Metal/Steam Deck, and exact profiler microseconds remain pending.
+
+## Depth Boundary Recheck - 2026-05-17
+
+- [x] 63. SHARED_DEPTH_VALIDITY_HELPERS | Done | DOD: added `HectonFinite3`, `HectonInvalidSceneRawDepth`, `HectonFiniteSceneRawDepth`, and `HectonSceneDepthValid01` to the shared Snell core so raw depth and world-position boundaries fail closed per reversed-Z mode | Alternative rejected: repeating platform-specific depth-valid preprocessor blocks in each shader | Estimate: GPU ALU only; exact us pending profiler
+- [x] 64. VISOR_DEPTH_SAMPLE_CLOSURE | Done | DOD: fullscreen fluid, mesh visor, and Uber post now finite-sanitize `SampleSceneDepth`, `_ZBufferParams`, `LinearEyeDepth`, reconstructed world positions, sonar contour depth offsets, and low-tier/mobile waterline depth fallback before refraction/shaft/brine/sonar decisions | Alternative rejected: trusting depth buffer and `_ZBufferParams` as always finite on mobile/Metal | Estimate: CPU 0.0 us/frame; GPU finite-check ALU only, exact us pending profiler
+- [x] 65. POST_DEPTH_BUILD_RETRY | BLOCKED BY VALIDATION CONTENTION | DOD: static shader and hot-path scans passed; SourceLink-disabled `dotnet build` was retried but timed out after 184 seconds while multiple concurrent `dotnet` builds were active in the shared workspace | Alternative rejected: killing unknown concurrent build processes or editing unrelated Fauna/tether/world systems | Estimate: validation blocker, no frame estimate
+
+## Depth Boundary Verification Log
+
+- Depth scan now shows `SampleSceneDepth` calls wrapped by `HectonFiniteSceneRawDepth`, `LinearEyeDepth` calls using finite `zBufferParams`, and raw `UNITY_REVERSED_Z`/depth-valid `step` logic centralized in `Hecton_SnellRefractionCore.hlsl`.
+- Broader shader risk scan for `#pragma target 4.5`, `pow`, raw `saturate(_...)`, direct arithmetic `/`, DX compute tokens, raw `_ScreenParams` paths, raw `_ZBufferParams`, and raw depth-valid checks reports only the shared helper's intentional validity checks plus the `SuitVisor.shader` file header comment.
+- Forbidden hot-path scan returned no `NativeArray`, `EventBus`, managed delegate lane, standard `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, Unity object search, singleton `.Instance`, `AddBlitPass`, `RenderGraphUtils`, `GrabPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files.
+- `git diff --check` reported no whitespace errors for touched shader/code/log files, only existing LF/CRLF warnings.
+- Latest SourceLink-disabled `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false ...` timed out after 184 seconds. Process inspection showed another `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /maxcpucount:1 -nr:false` still active; it was not killed.
 - Unity runtime shader compilation, RenderGraph Frame Debugger ordering, platform shader compilation on Quest/Android/Metal/Steam Deck, and exact profiler microseconds remain pending.

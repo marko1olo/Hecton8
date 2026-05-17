@@ -109,7 +109,10 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
 
             float ResolveInterleavedGradientNoise(float2 uv, float2 offset)
             {
-                float2 pixel = floor(uv * _ScreenParams.xy + offset);
+                float2 safeUv = saturate(HectonFinite2(uv, float2(0.5, 0.5)));
+                float2 safeOffset = HectonFinite2(offset, float2(0.0, 0.0));
+                float2 screenParams = max(HectonFinite4(_ScreenParams, float4(1.0, 1.0, 1.0, 1.0)).xy, float2(1.0, 1.0));
+                float2 pixel = floor(safeUv * screenParams + safeOffset);
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
@@ -199,11 +202,13 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 if (ambientReveal <= 0.0001)
                     return 0.0;
 
-                float ignNoise = ResolveInterleavedGradientNoise(uv, float2(0.0, 0.0));
+                float2 safeUv = saturate(HectonFinite2(uv, float2(0.5, 0.5)));
+                float2 screenParams = max(HectonFinite4(_ScreenParams, float4(1.0, 1.0, 1.0, 1.0)).xy, float2(1.0, 1.0));
+                float ignNoise = ResolveInterleavedGradientNoise(safeUv, float2(0.0, 0.0));
                 float specks = smoothstep(1.0 - ambientReveal * 0.62, 1.0 - ambientReveal * 0.18, ignNoise);
-                float scratchNoise = Hash21(floor(uv * _ScreenParams.xy * 0.18) + float2(7.0, 19.0));
+                float scratchNoise = Hash21(floor(safeUv * screenParams * 0.18) + float2(7.0, 19.0));
                 float scratch = smoothstep(0.72, 0.97, scratchNoise) * ambientReveal;
-                float centerProtection = smoothstep(0.0, 0.22, abs(uv.x - 0.5) + abs(uv.y - 0.5));
+                float centerProtection = smoothstep(0.0, 0.22, abs(safeUv.x - 0.5) + abs(safeUv.y - 0.5));
                 return saturate((specks * (0.32 + edgeMask * 0.68) + scratch * 0.35) * centerProtection);
             }
 
@@ -229,6 +234,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
 
             float ComputeSuspendedSiltMask(float2 uv, float wetness, float rainIntensity, float inverseDirtRefraction, float depthRefractionMask, float lowTierMode, float4 localVelocity)
             {
+                float2 safeUv = saturate(HectonFinite2(uv, float2(0.5, 0.5)));
+                float2 screenParams = max(HectonFinite4(_ScreenParams, float4(1.0, 1.0, 1.0, 1.0)).xy, float2(1.0, 1.0));
                 float overkill = HectonFinite01(_HectonVisorFluidVisualOverkill);
                 float activity = max(HectonFinite01(wetness), HectonFinite01(rainIntensity) * 0.45);
                 float siltDrive = HectonFinite01(overkill * activity * HectonFinite01(inverseDirtRefraction) * HectonFinite01(depthRefractionMask) * (1.0 - HectonFinite01(lowTierMode)));
@@ -238,11 +245,11 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float2 flow = float2(
                     localVelocity.x * 0.038 + 0.017,
                     -0.023 - abs(localVelocity.z) * 0.016);
-                float slowSwirl = ValueNoise(uv * float2(8.0, 13.0) + flow * (_Time.y * 0.37));
-                float2 siltUV = uv * lerp(float2(46.0, 88.0), float2(84.0, 148.0), overkill);
+                float slowSwirl = ValueNoise(safeUv * float2(8.0, 13.0) + flow * (_Time.y * 0.37));
+                float2 siltUV = safeUv * lerp(float2(46.0, 88.0), float2(84.0, 148.0), overkill);
                 siltUV += float2(slowSwirl * 0.21, -slowSwirl * 0.13) + flow * _Time.y;
                 float filament = 1.0 - smoothstep(0.11, 0.41, abs(frac(siltUV.y + slowSwirl * 0.31) - 0.5));
-                float speckSeed = Hash21(floor(uv * _ScreenParams.xy * lerp(0.07, 0.145, overkill)) + floor(_Time.y * 3.0));
+                float speckSeed = Hash21(floor(safeUv * screenParams * lerp(0.07, 0.145, overkill)) + floor(_Time.y * 3.0));
                 float speck = step(0.965 - overkill * 0.035, speckSeed);
                 return saturate((filament * 0.32 + speck * 0.86) * siltDrive);
             }
@@ -334,7 +341,9 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-                float2 screenUV = ResolveXRStereoScreenUV(input.screenUV);
+                float2 screenUV = saturate(HectonFinite2(ResolveXRStereoScreenUV(input.screenUV), float2(0.5, 0.5)));
+                float2 screenParams = max(HectonFinite4(_ScreenParams, float4(1.0, 1.0, 1.0, 1.0)).xy, float2(1.0, 1.0));
+                float4 zBufferParams = HectonFinite4(_ZBufferParams, float4(1.0, 1.0, 1.0, 1.0));
                 float4 localVelocity = HectonFinite4(_HectonVisorFluidLocalVelocity, float4(0.0, 0.0, 0.0, 0.0));
                 float wetness = HectonFinite01(_HectonVisorFluidWetness);
                 float hullStress = HectonFinite01(_HectonVisorFluidHullStress);
@@ -353,13 +362,9 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float fluidActivity = HectonFinite01(max(wetness, hullStress) * intensity * (1.0 - thermalMotionCull));
                 float rainIntensity = HectonFinite01(_RainIntensity);
                 float lightningFlash = HectonFinite01(_HectonLightningFlash);
-                float rawSceneDepth = SampleSceneDepth(screenUV);
-#if UNITY_REVERSED_Z
-                float sceneDepthValid = step(0.0001, rawSceneDepth);
-#else
-                float sceneDepthValid = step(rawSceneDepth, 0.9999);
-#endif
-                float linearSceneDepth = LinearEyeDepth(rawSceneDepth, _ZBufferParams);
+                float rawSceneDepth = HectonFiniteSceneRawDepth(SampleSceneDepth(screenUV));
+                float sceneDepthValid = HectonSceneDepthValid01(rawSceneDepth);
+                float linearSceneDepth = HectonFiniteNonNegative(LinearEyeDepth(rawSceneDepth, zBufferParams), 0.0);
                 float depthSoftness = HectonFiniteNonNegative(_HectonVisorFluidDepthSoftness, 0.0);
                 float depthRefractionMask = sceneDepthValid * smoothstep(0.12, max(0.13, depthSoftness + 0.12), linearSceneDepth);
 
@@ -447,7 +452,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     color.r = red;
                     color.b = blue;
 
-                    float staticNoise = saturate(ValueNoise(screenUV * _ScreenParams.xy * 0.08 + _Time.y * 18.0) - 0.68) * glitchAmount;
+                    float staticNoise = saturate(ValueNoise(screenUV * screenParams * 0.08 + _Time.y * 18.0) - 0.68) * glitchAmount;
                     color.rgb += staticNoise * half3(0.055, 0.08, 0.1);
                 }
                 [branch]

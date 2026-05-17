@@ -177,6 +177,7 @@ namespace Hecton8.Core.Bridge
         [SerializeField] private uint highTierVisualHash;
         [SerializeField] private List<FloatBinding> floatBindings = new List<FloatBinding>(32);
         [SerializeField] private uint lastChangedFieldHash;
+        [SerializeField] private int lastAppliedBindingCount;
 
         public uint FacadeHash => facadeHash == 0u ? H8BridgeHashes.DesignFacade : facadeHash;
         public bool LiveTuningEnabled => liveTuningEnabled;
@@ -224,11 +225,22 @@ namespace Hecton8.Core.Bridge
             ValidateBindings(pushLive: true);
         }
 
-        private void EnsureDefaultBindings()
+        [ContextMenu("Seed Default Design Bindings")]
+        private void SeedDefaultBindings()
+        {
+            EnsureDefaultBindings();
+            ValidateBindings(pushLive: false);
+        }
+
+        private void EnsureBindingList()
         {
             if (floatBindings == null)
                 floatBindings = new List<FloatBinding>(32);
+        }
 
+        private void EnsureDefaultBindings()
+        {
+            EnsureBindingList();
             if (floatBindings.Count > 0)
                 return;
 
@@ -275,11 +287,15 @@ namespace Hecton8.Core.Bridge
             FloatBinding particleBudget = new FloatBinding();
             particleBudget.ConfigureDefaults("ParticleOverkillBudget01", 40, 1f, 0f, 1f, false);
             floatBindings.Add(particleBudget);
+
+            FloatBinding saltCrystals = new FloatBinding();
+            saltCrystals.ConfigureVisualDefaults("VisorSaltCrystalGrowth01", 44, 0.55f, 0f, 1f, 1024, 1024, 6, 4);
+            floatBindings.Add(saltCrystals);
         }
 
         private void ValidateBindings(bool pushLive)
         {
-            EnsureDefaultBindings();
+            EnsureBindingList();
             if (facadeHash == 0u)
                 facadeHash = H8BridgeHashes.DesignFacade;
             if (oneDimensionalLutHash == 0u)
@@ -288,6 +304,7 @@ namespace Hecton8.Core.Bridge
                 highTierVisualHash = H8BridgeHashes.ComputeFnv1A(name, H8BridgeHashes.VisualOverkillSeed);
 
             bool changed = false;
+            int previousBindingCount = lastAppliedBindingCount;
             for (int i = 0; i < floatBindings.Count; i++)
             {
                 FloatBinding binding = floatBindings[i];
@@ -299,6 +316,13 @@ namespace Hecton8.Core.Bridge
                     changed = true;
                     lastChangedFieldHash = binding.FieldHash;
                 }
+            }
+
+            if (floatBindings.Count != previousBindingCount)
+            {
+                changed = true;
+                lastChangedFieldHash = H8BridgeHashes.BridgeHeartbeat;
+                lastAppliedBindingCount = floatBindings.Count;
             }
 
             if (!pushLive || !changed || !liveTuningEnabled || !Application.isPlaying)

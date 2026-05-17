@@ -78,6 +78,7 @@ Shader "Hecton8/Ambient/BiotaIndirect"
                 float _HectonBiotaSystemStress01;
                 float4 _HectonBiotaFlowVector;
                 float _HectonBiotaOverkill01;
+                float _HectonBiotaVisualTime;
                 float4 _HectonBiotaOriginWS;
             CBUFFER_END
 
@@ -175,7 +176,7 @@ Shader "Hecton8/Ambient/BiotaIndirect"
                 float lowTier = (biota.StateFlags & HECTON_BIOTA_LOW_TIER) != 0u ? 1.0 : 0.0;
                 float hash = biota.VisualParams.z;
                 float age01 = biota.VisualParams.x;
-                float pulse = TriangleSigned(hash + _Time.y * lerp(0.17, 0.41, _HectonBiotaOverkill01));
+                float pulse = TriangleSigned(hash + _HectonBiotaVisualTime * lerp(0.17, 0.41, _HectonBiotaOverkill01));
                 float squash = lerp(1.0, 1.0 + pulse * 0.16, _HectonBiotaOverkill01);
                 float2 quad = input.positionOS.xy;
                 quad.x *= lerp(1.0, 1.0 + age01 * 0.22, lowTier);
@@ -225,7 +226,7 @@ Shader "Hecton8/Ambient/BiotaIndirect"
 
                 float3 viewDirWS = SafeNormalize3(_WorldSpaceCameraPos.xyz - input.positionWS, float3(0.0, 0.0, 1.0));
                 float rim = pow(saturate(1.0 - dot(SafeNormalize3(input.normalWS, float3(0.0, 0.0, 1.0)), viewDirWS)), _SssPower);
-                float silt = TriPulse(dot(input.positionWS.xz, _HectonBiotaFlowVector.xz * 0.19 + float2(0.031, 0.047)) + _Time.y * 0.07 + hash * 9.7);
+                float silt = TriPulse(dot(input.positionWS.xz, _HectonBiotaFlowVector.xz * 0.19 + float2(0.031, 0.047)) + _HectonBiotaVisualTime * 0.07 + hash * 9.7);
                 float salt = pow(saturate(edge * TriPulse(uv.x * 11.0 + uv.y * 7.0 + hash * 19.0)), 8.0);
 
                 half3 color = baseColor;

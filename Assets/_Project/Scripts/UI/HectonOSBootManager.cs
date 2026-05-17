@@ -1,5 +1,7 @@
 using Hecton.Localization;
+using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Modding;
 using Hecton8.World;
@@ -86,6 +88,7 @@ namespace Hecton8.UI
             RebindOwnerSubscriptions();
             PDAIntrusionEvents.Register(this);
             PDAEvents.Register(this);
+            RegisterToTickManager();
 
             if (ShouldArmLoadBootFromContext())
                 _awaitingLoadBoot = true;
@@ -117,6 +120,8 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            ConsumeFatalPressureSignals();
+
             if (_consoleLabel == null || _overlayGroup == null || _state == SequenceState.Hidden)
                 return;
 
@@ -146,7 +151,6 @@ namespace Hecton8.UI
                     if (_overlayGroup.alpha <= HiddenAlphaCutoff)
                     {
                         HideOverlay();
-                        UnregisterFromTickManager();
                     }
                     break;
             }
@@ -204,7 +208,13 @@ namespace Hecton8.UI
                 return;
 
             HideOverlay();
-            UnregisterFromTickManager();
+        }
+
+        private void ConsumeFatalPressureSignals()
+        {
+            ReadOnlySpan<PlayerFatalPressureSignal> signals = SignalBus<PlayerFatalPressureSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+                HandleFatalPressureSequence(signals[i].Intensity01);
         }
 
         private void HandleFatalPressureSequence(float intensity)
@@ -244,14 +254,10 @@ namespace Hecton8.UI
             UnbindOwnerSubscriptions();
             ResolveOwners();
 
-            if (_playerMovement != null)
-                _playerMovement.OnFatalPressureSequence += HandleFatalPressureSequence;
         }
 
         private void UnbindOwnerSubscriptions()
         {
-            if (_playerMovement != null)
-                _playerMovement.OnFatalPressureSequence -= HandleFatalPressureSequence;
         }
 
         private bool ResolveOwners()
@@ -645,9 +651,9 @@ namespace Hecton8.UI
             {
                 Transform child = parent.GetChild(i);
                 if (Application.isPlaying)
-                    Object.Destroy(child.gameObject);
+                    UnityEngine.Object.Destroy(child.gameObject);
                 else
-                    Object.DestroyImmediate(child.gameObject);
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
         }
     }

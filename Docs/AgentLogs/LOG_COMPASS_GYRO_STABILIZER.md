@@ -315,3 +315,127 @@ Verification:
 - `dotnet build Assembly-CSharp.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false -m:1 -v:quiet -clp:ErrorsOnly` fails outside compass with 216 missing-source `RealtimeCSG.csproj` CS2001 errors.
 - `git diff --check` on touched files reports only LF-to-CRLF warnings.
 - Final status remains not `VERIFIED MASTER GRADE`; Unity scene binding and full project build proof are still blocked.
+
+## 2026-05-16 - Teardown job and signal drift repair
+
+What was wrong:
+- Current disk truth had drifted back to `GlobalSignals.InitializeAllQueues()` inside `DiegeticGyroCompassRuntime.ConfigureSignalLanes()`.
+- `OnDisable()` and `OnDestroy()` still called `CompletePendingJob()`, which put a possible job wait in teardown.
+- The docs still claimed loop 14 Core green as if it were the latest validation state.
+
+What was done:
+- Replaced broad global signal initialization with explicit bounded `SignalBus<T>.Configure(...)` for the two compass-owned lanes: `AnomalyProximitySignal` and `CompassCalibratedSignal`.
+- Kept consumed lanes as `EnsureInitialized()` only: `SurvivalVitalsChangedSignal`, `SystemHealthSignal`, `AupShiftSignal`.
+- Removed `CompletePendingJob()` from `OnDisable()` and `OnDestroy()`. The only `.Complete()` left in the runtime is the LateFrame end-of-frame completion path.
+- Moved blackbox heartbeat writing into `GyroDriftJob` through vault-backed `NativeSlice` views so the 300-frame ring is updated by the scheduled job instead of relying on a teardown commit.
+- Updated status and rationale to stop claiming a latest green Core build.
+
+Cinematic Cheats used:
+- No new physical simulation. Low/MX350 keeps triangle drift and snapped cardinal text.
+- High/Ultra keep the existing visual spend: indirect dial, glass chromatic scalar, and optional local anomaly particles.
+
+Exact Microseconds saved:
+- 0 us measured.
+- Potential teardown stall removed; no microsecond number is claimed without profiler proof.
+- Signal repair reduces cold initialization fan-out risk, not a measured frame saving.
+
+Verification:
+- Re-read status/rationale and the exact XML assignment from `Docs/Tasks/CURRENT_BATCH.md`.
+- Static scan now finds no `GlobalSignals.InitializeAllQueues`, standard `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, `Camera.main`, eulers, `ComputeBuffer`, `.SetData`, private/local `NativeArray` allocation, EventBus, managed delegates, object lookup, coroutine, or direct `H8Memory.Allocate` in the compass navigation path.
+- `Complete()` scan shows completion only inside `CompletePendingJob()`, called from `LateFrameTick()`, not teardown.
+- `git diff --check` on the touched runtime file reports only LF-to-CRLF warnings.
+- Loop 15 build validation is not green: `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:minimal` timed out after 246 seconds; follow-up no-restore builds returned no diagnostic text; the diagnostic run wrote `Docs/AgentLogs/Build_COMPASS_GYRO_STABILIZER_loop15_core_diag.log` and was stopped after runaway MSBuild/csc workers. No compass/navigation compiler error was found in the partial diagnostic log.
+- Final status remains not `VERIFIED MASTER GRADE`; scene binding and full build proof are still blocked.
+
+## 2026-05-17 - Native view sovereignty and platform audit
+
+What was wrong:
+- Current disk truth still configured consumed cross-domain lanes from the compass runtime. That is not lane ownership.
+- The navigation runtime still contained `NativeArray<T>` and `NativeArrayUnsafeUtility` tokens in helper/job/upload surfaces, even though the buffers were vault-owned.
+- Loop 15 evidence still allowed a broad audit to report native-array ownership ambiguity.
+
+What was done:
+- Removed consumed-lane `Configure(...)` calls and their capacity/hash constants. `SurvivalVitalsChangedSignal`, `SystemHealthSignal`, and `AupShiftSignal` are now only ensured by the compass runtime.
+- Kept explicit bounded configuration only for compass-owned `AnomalyProximitySignal` and `CompassCalibratedSignal`.
+- Converted compass helper/job/dump signatures to `NativeSlice<T>` views over `GlobalDataVault` buffers.
+- Removed explicit `NativeArrayOptions` usage in the runtime buffer requests.
+- Replaced GPU lock-write copies from `NativeArrayUnsafeUtility.GetUnsafePtr(mapped)` to `mapped.GetUnsafePtr()`.
+
+Cinematic Cheats used:
+- No new physical simulation. Low/MX350 keeps triangle drift, SlowTick fallback, and snapped cardinal text.
+- High/Ultra keep the existing visual spend: indirect physical dial, glass chromatic scalar, `_CompassOverkill01`, and optional local anomaly particles.
+
+Exact Microseconds saved:
+- 0 us measured.
+- This pass is structural ownership cleanup and platform-audit hardening, not a measured frame-time optimization.
+
+Verification:
+- Re-read status/rationale, XML prompt, AGENTS, domain map, and relevant mandates from disk.
+- Navigation scan returns no `NativeArray`, `NativeArrayUnsafeUtility`, `GlobalSignals.InitializeAllQueues`, standard `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, `Camera.main`, eulers, `ComputeBuffer`, `.SetData`, EventBus, managed delegates, object lookup, coroutine, or direct `H8Memory.Allocate`.
+- Shader/platform scan finds no `ZTest Always`, compute kernels, threadgroups, RW buffers, groupshared memory, or DirectX-only path in the compass shader/domain.
+- Struct scan verifies `CompassBlackBoxEntry` = 40 bytes, `CompassPresentationStateDTO` = 80 bytes, `CompassStateDTO` = 176 bytes, and `InertialNavigationSnapshot` = 120 bytes, all with `Pack = 1`.
+- `git diff --check` on touched files reports only LF-to-CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:ErrorsOnly` succeeds with 0 warnings and 0 errors after the final signal-lane reapply.
+- `dotnet build Assembly-CSharp.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false -m:1 -v:minimal -clp:ErrorsOnly` fails before compile because `Temp/obj/Assembly-CSharp/project.assets.json` is missing.
+- `dotnet restore Assembly-CSharp.csproj -v:minimal` exits 1 after `Determining projects to restore...` without diagnostic text.
+- No `VERIFIED MASTER GRADE` claim; scene binding, Unity import/play proof, and full player build proof remain absent.
+
+## 2026-05-17 - Owned signal capacity reclosure
+
+What was wrong:
+- Current disk truth no longer matched loop 16 evidence. `ConfigureSignalLanes()` ensured the compass-owned `AnomalyProximitySignal` and `CompassCalibratedSignal` lanes but did not configure bounded capacities or stable hashes.
+- The consumed lanes were still correctly ensure-only, so the defect was owned-lane capacity drift, not broad global initialization.
+
+What was done:
+- Restored constants for the two compass-owned lanes in `DiegeticGyroCompassRuntime`.
+- Re-applied explicit `SignalBus<AnomalyProximitySignal>.Configure(8, maxFrameSignals: 16, lowTierFrameSignals: 4, laneHash: 0xC06A5512)` before `EnsureInitialized()`.
+- Re-applied explicit `SignalBus<CompassCalibratedSignal>.Configure(4, maxFrameSignals: 8, lowTierFrameSignals: 2, laneHash: 0xC06A5511)` before `EnsureInitialized()`.
+- Left `SurvivalVitalsChangedSignal`, `SystemHealthSignal`, and `AupShiftSignal` as `EnsureInitialized()` only.
+
+Cinematic Cheats used:
+- No new simulation. Low/MX350 keeps triangle drift, SlowTick fallback, and snapped cardinal text.
+- High/Ultra keep the existing indirect physical dial, glass chromatic scalar, `_CompassOverkill01`, and optional local anomaly particles.
+
+Exact Microseconds saved:
+- 0 us measured.
+- No speed claim. This pass restores bounded signal ownership and prevents default-capacity drift.
+
+Verification:
+- Re-read status/rationale, XML prompt, domain map, `ShaderCompassRibbon`, `SonarHoloCompass`, signal contracts, and compass shader from disk.
+- Navigation scan returns no `NativeArray`, `NativeArrayUnsafeUtility`, `GlobalSignals.InitializeAllQueues`, consumed-lane `Configure`, standard `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, `Camera.main`, eulers, `ComputeBuffer`, `.SetData`, EventBus, managed delegates, object lookup, coroutine, or direct `H8Memory.Allocate`.
+- Signal scan shows owned-lane `Configure(...)` calls for anomaly/calibration and ensure-only consumed lanes.
+- Shader/platform scan finds no `ZTest Always`, compute kernels, threadgroups, RW buffers, groupshared memory, or DirectX-only path in the compass shader/domain.
+- Struct scan still verifies `CompassBlackBoxEntry` = 40 bytes, `CompassPresentationStateDTO` = 80 bytes, `CompassStateDTO` = 176 bytes, `InertialNavigationSnapshot` = 120 bytes, `AnomalyProximitySignal` = 80 bytes, and `CompassCalibratedSignal` = 32 bytes, all with `Pack = 1`.
+- `git diff --check` on touched compass/status/rationale/log files reports only LF-to-CRLF warnings.
+- One no-restore Core build was run after the C# patch, not a rebuild loop. It fails outside compass in `ScreenSpaceLightShaftRuntime.cs`, `ContentRuntimeServices.cs`, `HectonOSBootManager.cs`, `CameraJuiceSystem.cs`, and `InternalFloodWaterlineRuntime.cs`. No `DiegeticGyroCompass`, `Hecton8.UI.Navigation`, compass signal, or inertial-navigation compiler error is present.
+- No `VERIFIED MASTER GRADE` claim; external compile walls, Unity scene binding, and player build proof remain absent.
+
+## 2026-05-17 - Publisher-first signal configuration repair
+
+What was wrong:
+- `DiegeticCompassSignals.PublishCalibration()` and `PublishAnomalyProximity()` could be the first touch of the compass-owned typed lanes.
+- If a publisher won that race before runtime startup, `SignalBus<T>.Push()` could initialize default-capacity storage before the bounded compass lane policy was applied.
+- The runtime and publisher helpers did not share one lane-ownership source of truth.
+
+What was done:
+- Moved anomaly/calibration lane capacities and hashes into `DiegeticCompassSignals`.
+- Added `DiegeticCompassSignals.ConfigureOwnedLanes()` and made both publishers call it before `Push()`.
+- Changed `DiegeticGyroCompassRuntime.ConfigureSignalLanes()` to reuse `DiegeticCompassSignals.ConfigureOwnedLanes()`.
+- Re-read `SignalBus<T>.Configure(...)`: it updates capacity/hash and does not clear queued signals; `EnsureInitialized()` is the allocation boundary.
+
+Cinematic Cheats used:
+- No new simulation. Low/MX350 keeps triangle drift, SlowTick fallback, and snapped cardinal text.
+- High/Ultra keep the existing indirect physical dial, glass chromatic scalar, `_CompassOverkill01`, and optional local anomaly particles.
+
+Exact Microseconds saved:
+- 0 us measured.
+- No speed claim. This pass fixes initialization order and lane policy correctness, not frame time.
+
+Verification:
+- Re-read status/rationale and the exact XML prompt from `Docs/Tasks/CURRENT_BATCH.md`.
+- Navigation scan returns no `NativeArray`, `NativeArrayUnsafeUtility`, `GlobalSignals.InitializeAllQueues`, consumed-lane `Configure`, standard `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, `Camera.main`, eulers, `ComputeBuffer`, `.SetData`, EventBus, managed delegates, object lookup, coroutine, or direct `H8Memory.Allocate`.
+- Signal scan shows `DiegeticCompassSignals.ConfigureOwnedLanes()` used by both publisher helpers and runtime startup; consumed `SurvivalVitalsChangedSignal`, `SystemHealthSignal`, and `AupShiftSignal` remain `EnsureInitialized()` only.
+- Shader/platform scan finds no `ZTest Always`, compute kernels, threadgroups, RW buffers, groupshared memory, or DirectX-only path in the compass shader/domain.
+- `git diff --check` on touched compass/status/rationale/log files reports only LF-to-CRLF warnings.
+- No `dotnet build` or `dotnet rebuild` was run in loop 18 per explicit user instruction. Latest compiled state remains the loop 17 external dependency wall.
+- No `VERIFIED MASTER GRADE` claim; external compile walls, Unity scene binding, and player build proof remain absent.

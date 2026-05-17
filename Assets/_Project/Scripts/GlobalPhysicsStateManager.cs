@@ -515,7 +515,7 @@ namespace Hecton8.Physics
                 if (AbyssalDepthCull != 0)
                     effectiveSleepDistance *= AbyssalDepthSleepDistanceScale;
 
-                float3 safeCameraForward = math.normalizesafe(CameraForward, new float3(0f, 0f, 1f));
+                float3 safeCameraForward = NormalizeWithRsqrtGuard(CameraForward, new float3(0f, 0f, 1f));
                 double behindDot =
                     playerRelativeAup.x * safeCameraForward.x +
                     playerRelativeAup.y * safeCameraForward.y +
@@ -2000,7 +2000,10 @@ namespace Hecton8.Physics
             float3 point3 = new float3(point.x, point.y, point.z);
             float3 normal3 = new float3(normal.x, normal.y, normal.z);
             if (!math.all(math.isfinite(point3)))
-                point3 = (float3)primaryBody.worldCenterOfMass;
+            {
+                Vector3 centerOfMass = primaryBody.worldCenterOfMass;
+                point3 = new float3(centerOfMass.x, centerOfMass.y, centerOfMass.z);
+            }
             float normalSq = math.lengthsq(normal3);
             if (!math.all(math.isfinite(normal3)) || normalSq <= 0.000001f)
                 normal3 = new float3(0f, 1f, 0f);
@@ -2900,7 +2903,7 @@ namespace Hecton8.Physics
                 if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
                     playerAup = movementState.PredictedAup;
-                    cameraForward = math.normalizesafe(movementState.CameraForward, new float3(0f, 0f, 1f));
+                    cameraForward = NormalizeWithRsqrtGuard(movementState.CameraForward, new float3(0f, 0f, 1f));
                     float rawDepthMeters = movementState.DepthMeters;
                     depthMeters = math.isfinite(rawDepthMeters) ? math.max(0f, rawDepthMeters) : 0f;
                     return IsFinite(in playerAup) && math.all(math.isfinite(cameraForward));
@@ -3843,6 +3846,19 @@ namespace Hecton8.Physics
             return math.isfinite(value.LocalX) &&
                 math.isfinite(value.LocalY) &&
                 math.isfinite(value.LocalZ);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 NormalizeWithRsqrtGuard(float3 value, float3 fallback)
+        {
+            if (!math.all(math.isfinite(value)))
+                return fallback;
+
+            float lengthSq = math.lengthsq(value);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+                return fallback;
+
+            return value * math.rsqrt(math.max(lengthSq, 0.0001f));
         }
     }
 

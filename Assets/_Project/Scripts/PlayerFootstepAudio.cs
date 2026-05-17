@@ -43,7 +43,9 @@
 //   Element 5: biomeIndex=-1, tag="WetFloor",   clips=[wet_01..03]   ← flooded compartments
 // ============================================================================
 
+using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
 using UnityEngine;
@@ -86,7 +88,7 @@ namespace Hecton8.Audio
     }
 
     [DisallowMultipleComponent]
-    public sealed class PlayerFootstepAudio : MonoBehaviour
+    public sealed class PlayerFootstepAudio : MonoBehaviour, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -177,6 +179,8 @@ namespace Hecton8.Audio
         private bool _surfaceHitValid;
         private int _lastClipIndex = -1;
         private uint _footstepRandomState;
+        private uint _lastConsumedFootstepSignalFrame;
+        private bool _registeredUpdate;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -184,7 +188,7 @@ namespace Hecton8.Audio
 
         private void Awake()
         {
-            if (playerMovement != null)
+            if (Application.isPlaying && playerMovement != null && !_registeredUpdate)
             {
                 _playerRb = playerMovement.GetComponent<Rigidbody>();
             }
@@ -196,9 +200,9 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
-            if (playerMovement != null)
+            if (_registeredUpdate)
             {
-                playerMovement.OnFootstep += HandleFootstep;
+                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             }
         }
 
@@ -206,13 +210,28 @@ namespace Hecton8.Audio
         {
             if (playerMovement != null)
             {
-                playerMovement.OnFootstep -= HandleFootstep;
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registeredUpdate = false;
             }
         }
 
         // ══════════════════════════════════════════════════════════
         //  EVENT HANDLER — Zero GC
         // ══════════════════════════════════════════════════════════
+
+        public void Tick(float deltaTime)
+        {
+            ReadOnlySpan<PlayerFootstepSignal> signals = SignalBus<PlayerFootstepSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerFootstepSignal signal = signals[i];
+                if (signal.Frame == _lastConsumedFootstepSignalFrame)
+                    continue;
+
+                _lastConsumedFootstepSignalFrame = signal.Frame;
+                HandleFootstep();
+            }
+        }
 
         private void HandleFootstep()
         {

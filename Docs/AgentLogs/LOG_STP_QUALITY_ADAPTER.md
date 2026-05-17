@@ -213,3 +213,160 @@ Validation:
 - `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_restore_attempt15.txt`: restore succeeded.
 - `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt15_outdir.txt`: build succeeded in 4.51s with 0 warnings and 0 errors after the blackbox two-write patch.
 - Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION.
+
+## 2026-05-17 - Loop 12 / DataVault Scale-State Lock Closure
+
+What was wrong:
+- Main-thread `ResolutionScaleState` reads/writes still resolved a raw DataVault pointer without a short lock, even though the EWMA job path and telemetry path were fenced.
+- The unlocked telemetry resolver remained as dead code after the loop 11 changes.
+
+What was done:
+- Removed the long-lived main-thread scale pointer from `Tick()`.
+- `TryGetScaleState()` and `UpdateScaleState()` now lock `BufferID.ResolutionScaleState` with `SystemID.GraphicsScalability`, resolve the pointer, copy/read one record, and unlock in `finally`.
+- `ScheduleStressEwmaJob()` now owns its own `ResolutionScaleState` lock acquisition and keeps the cross-frame lock until `CompletePendingStressJob()`.
+- Removed the obsolete unlocked telemetry resolver.
+- Re-ran domain scans for `NativeArray<T>`, `new NativeArray`, `Allocator.Persistent`, EventBus/delegate/event paths, `string.Format`, `Update/LateUpdate/FixedUpdate`, unsafe normalization debt, duplicate STP signals, explicit packed layouts, and STP-owned shader/platform hazards.
+
+Cinematic cheats used:
+- Toaster mode remains render-scale 0.5, emergency 0.35, STP reconstruction, sharpen scalar, and `DearLie01=1`.
+- High/Ultra remain full-scale with visual budget flags for visor salt crystals, volumetric silt, procedural hull dents, 16-tap POM, SSS, and raymarched fog consumers.
+- No new render pass, compute pass, physics simulation, or shader variant was added.
+
+Exact microseconds saved:
+- Not measured. No Unity profiler, player build, GC capture, or timeline exists for this loop.
+- Loop 12 is a pointer-lifetime correctness fix. It adds a short lock/unlock around one 64B state read/write and removes an unused unlocked resolver; no frame-time savings are claimed.
+
+Validation:
+- Adapter scan has no local `NativeArray<T>`, `new NativeArray`, `Allocator.Persistent`, `EventBus`, managed delegate/event, `string.Format`, `Update/LateUpdate/FixedUpdate`, `.normalized`, or `math.normalize`.
+- The only zero-GC scan hit is the Android-only cold `List<XRDisplaySubsystem>[4]` scratch buffer, preallocated under `UNITY_ANDROID && !UNITY_EDITOR` and reused only on scale changes.
+- Duplicate-signal scan found exactly one definition each for `SystemHealthSignal`, `FrameTimeSignal`, `AupShiftSignal`, `ResolutionChangedSignal`, `HUDNotificationSignal`, and `ThermalStateChangedSignal`.
+- Layout scan confirms explicit `Pack=1` records: `DrsTelemetryEntry` 48B, `ResolutionScaleState` 64B, `HardwareThermalSnapshot` 20B, and `DynamicResolutionRuntimeSnapshot` 24B.
+- Shader/platform scan found no STP-owned compute shader, `numthreads`, DirectX-only shortcut, legacy blit, `ScriptableRenderPass.Execute`, or unsafe RenderGraph path.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt16_outdir.txt`: failed with 11 external errors in UI Navigation, Gameplay motor, Tether, and Interaction contracts; no STP adapter/scalability contract errors appeared.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt17_outdir.txt`: failed with one external `Interaction/EquipmentInteractionContracts.cs` conversion error; no STP adapter/scalability contract errors appeared.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt18_outdir.txt`: failed with three external `HectonPlayerMovement.cs` `MethodImpl` errors; no STP adapter/scalability contract errors appeared.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt19_outdir.txt`: build passed in 2.89s with 0 warnings and 0 errors after the external compile wall cleared.
+- Current full-project source validation is source-green on gate 19; Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION.
+
+## 2026-05-17 - Loop 13 / Burst EWMA Profiler Marker
+
+What was wrong:
+- `SystemStressEwmaJob` was Burst-compiled but had no profiler marker, so Unity profiler captures would not attribute the STP worker cost cleanly.
+
+What was done:
+- Added `Unity.Profiling.ProfilerMarker` instrumentation inside `SystemStressEwmaJob.Execute()`.
+- Added `Unity.Profiling.Core` to `Hecton8.Graphics.Scalability.asmdef`.
+- Re-ran the STP-domain scans for local NativeArrays, persistent allocator use, legacy events/delegates, string formatting, Unity `Update` methods, unsafe normalization debt, shader/RenderGraph hazards, and duplicate typed signal lanes.
+
+Cinematic cheats used:
+- No visual or policy change. Toaster remains 0.5 base / 0.35 emergency with STP reconstruction and sharpen; High/Ultra remain full-scale with visual-overkill flags for visor salt, volumetric silt, procedural hull dents, 16-tap POM, SSS, and raymarched fog consumers.
+
+Exact microseconds saved:
+- Not measured. This loop adds profiler attribution for a worker job and does not claim frame-time savings.
+
+Validation:
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt20_outdir.txt`: command timed out after 185s with an empty log and no output DLL; classified as build-lane contention, not source evidence.
+- `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt21_outdir.txt`: build passed in 4.40s with 0 warnings and 0 errors.
+- Static scan of `Assets/_Project/Scripts/Graphics/Scalability/` has no local `NativeArray<T>`, `new NativeArray`, `Allocator.Persistent`, `EventBus`, managed delegate/event, `string.Format`, `Update/LateUpdate/FixedUpdate`, `.normalized`, `math.normalize`, STP-owned compute shader, legacy blit, or RenderGraph compatibility path.
+- Duplicate signal scan still finds one definition each for `SystemHealthSignal`, `FrameTimeSignal`, `AupShiftSignal`, `ResolutionChangedSignal`, `HUDNotificationSignal`, and `ThermalStateChangedSignal`.
+- Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION because Unity MCP resources are empty in this session.
+
+## 2026-05-17 - Loop 14 / Burst Marker Shape Tightening
+
+What was wrong:
+- The STP EWMA profiler marker used `ProfilerMarker.Auto()` inside the Burst job body. Dotnet accepted it, but `Auto()` is an `IDisposable` scope shape; explicit marker bracketing is cleaner for Unity job/Burst validation.
+
+What was done:
+- Replaced `using (Marker.Auto())` with `Marker.Begin()` / `Marker.End()`.
+- Removed the early return from `SystemStressEwmaJob.Execute()` so the marker always closes.
+- Kept the EWMA math, DataVault pointer ownership, render-scale policy, signal lanes, visual-overkill flags, and telemetry format unchanged.
+
+Cinematic cheats used:
+- No visual-policy change. Low/MX350/Quest remain 0.5 base / 0.35 emergency with STP reconstruction and sharpen. High/Ultra remain full-scale with visor salt, volumetric silt, procedural hull dents, 16-tap POM, SSS, and raymarched fog consumer flags.
+
+Exact microseconds saved:
+- Not measured. This is Unity Burst/import risk reduction and profiler-shape cleanup, not a frame-time optimization claim.
+
+Validation:
+- No dotnet gate was run in this loop because the operator explicitly requested not to rebuild on every pass.
+- Static scan found no `ProfilerMarker.Auto`, local `NativeArray<T>`, `new NativeArray`, `Allocator.Persistent`, `EventBus`, managed delegate/event, `string.Format`, `Update/LateUpdate/FixedUpdate`, `.normalized`, `math.normalize`, STP-owned compute/threadgroup path, legacy blit, or RenderGraph compatibility path in `Assets/_Project/Scripts/Graphics/Scalability/`.
+- `git diff --check` reported only CRLF conversion warnings.
+- Latest compile evidence remains gate 21 before this loop: 0 warnings, 0 errors. Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION.
+
+## 2026-05-17 - Loop 15 / DataVault Registry Poll Removal
+
+What was wrong:
+- Scale-state and telemetry ensure paths still read `GlobalRegistry.DataVault` during steady-state operation despite the adapter owning hot-swap listener callbacks.
+
+What was done:
+- `TryEnsureScaleStateHandle()` now uses cached `_dataVault` unless the cache is null.
+- `TryEnsureTelemetryHandle()` now uses cached `_dataVault` unless the cache is null.
+- The cold fallback still binds `GlobalRegistry.DataVault` if the adapter starts before the vault is available.
+- DataVault buffer ownership, lock/unlock owner id, STP telemetry format, render-scale policy, and signal lanes were not changed.
+
+Cinematic cheats used:
+- No visual-policy change. Low/MX350/Quest remain 0.5 base / 0.35 emergency with STP reconstruction and sharpen. High/Ultra remain full-scale with visual-overkill consumer flags.
+
+Exact microseconds saved:
+- Not measured. This removes a small source-level registry touch from the hot ensure path, but no profiler capture exists.
+
+Validation:
+- No dotnet gate was run in this loop because the operator explicitly requested not to rebuild on every pass.
+- Static scan shows only two `GlobalRegistry.DataVault` reads in the adapter, both guarded by `_dataVault == null`.
+- Static scan found no `ProfilerMarker.Auto`, local `NativeArray<T>`, `new NativeArray`, `Allocator.Persistent`, `EventBus`, managed delegate/event, `string.Format`, `Update/LateUpdate/FixedUpdate`, `.normalized`, `math.normalize`, STP-owned compute/threadgroup path, legacy blit, or RenderGraph compatibility path in `Assets/_Project/Scripts/Graphics/Scalability/`.
+- `git diff --check` reported only CRLF conversion warnings.
+- Latest compile evidence remains gate 21 before loops 14-15: 0 warnings, 0 errors. Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION.
+
+## 2026-05-17 - Loop 16 / Runtime Bridge Clamp Repair and Signal Audit
+
+What was wrong:
+- The STP adapter's low-tier emergency policy targets 0.35, but `World/DynamicResolutionScaler.ApplySystemOverrideRenderScale()` clamped registry-owned system overrides to 0.5.
+- That meant the adapter, DataVault, shader globals, and HUD notification path could report the 0.35 emergency policy while the actual registry render-scale writer refused to go below 0.5.
+- `ScalabilityEvents` needed a source audit because it is not a `SignalBus<T>` lane.
+
+What was done:
+- Changed only `SystemOverrideMinimumRenderScale` in `Assets/_Project/Scripts/World/DynamicResolutionScaler.cs` from 0.5f to 0.25f.
+- Left the old autonomous scaler's quality floor intact; the change applies only to STP/system override calls through `IDynamicResolutionRuntime`.
+- Audited `Core/IPlatformIntegration.cs` and confirmed `ScalabilityEvents` is a typed `NativeQueue<ScalabilityChangedEvent>` lane drained by `SystemDispatcher`, not a legacy string EventBus.
+- Re-ran static scans for STP-domain `NativeArray<T>`, local persistent allocations, EventBus/delegate/event paths, `string.Format`, Unity `Update/LateUpdate/FixedUpdate`, unsafe normalization, STP-owned compute/threadgroup paths, legacy blits, and RenderGraph hazards.
+
+Cinematic cheats used:
+- Low/MX350/Quest emergency scale can now actually reach 0.35 through the runtime bridge.
+- High/Ultra policy stayed full-scale with visual-overkill consumer flags for visor salt, volumetric silt, procedural hull dents, 16-tap POM, SSS, and raymarched fog.
+
+Exact microseconds saved:
+- Not measured. This is a correctness fix for pixel-count reduction, not a measured CPU optimization.
+- Expected GPU gain is proportional to active pixel-count reduction only when the 0.35 path is reached; no profiler capture exists.
+
+Validation:
+- No dotnet gate was run in this loop because the operator explicitly requested not to rebuild on every pass.
+- Static scan of `Assets/_Project/Scripts/Graphics/Scalability/` found no forbidden STP-domain hits.
+- Runtime bridge scan confirms `SystemOverrideMinimumRenderScale = 0.25f` and `ApplySystemOverrideRenderScale()` clamps system overrides through that lower bound.
+- `git diff --check` reported only CRLF conversion warnings.
+- Latest compile evidence remains gate 21 before loops 14-16: 0 warnings, 0 errors. Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION.
+
+## 2026-05-17 - Loop 17 / Direct Fallback Render-Scale Repair
+
+What was wrong:
+- `ThermalDynamicResolutionAdapter.ApplyDirectRenderScale(renderScale, bufferScale)` ignored its `renderScale` argument.
+- If `GlobalRegistry.DynamicResolutionRuntime` was absent, the fallback resized scalable buffers but could leave `UniversalRenderPipelineAsset.renderScale` unchanged.
+- Scene/prefab camera YAML currently shows `m_AllowDynamicResolution: 0`, so relying on camera dynamic-resolution flags alone is not a complete fallback.
+
+What was done:
+- Added `renderScale = ClampRenderScale(renderScale)` in `ApplyDirectRenderScale()`.
+- Added `_urpAsset.renderScale = renderScale` before `ScalableBufferManager.ResizeBuffers(...)` when the URP asset exists.
+- Left the registry runtime path unchanged because `DynamicResolutionScaler.ApplyRenderScale()` already writes URP asset render scale.
+
+Cinematic cheats used:
+- No policy change. Low/MX350/Quest remain 0.5 base / 0.35 emergency with STP reconstruction and sharpen.
+- High/Ultra remain full-scale with visual-overkill consumer flags.
+
+Exact microseconds saved:
+- Not measured. This is fallback correctness, not a measured frame-time optimization.
+
+Validation:
+- No dotnet gate was run in this loop because the operator explicitly requested not to rebuild on every pass.
+- Static scan found no forbidden STP-domain hits after the change.
+- Direct fallback now writes both URP asset render scale and scalable-buffer scale.
+- `git diff --check` reported only CRLF conversion warnings.
+- Latest compile evidence remains gate 21 before loops 14-17: 0 warnings, 0 errors. Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION.

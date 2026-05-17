@@ -270,7 +270,7 @@ namespace Hecton8.UI
             if (renderCamera == null)
                 return;
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 _runtimeVoxelMesh,
                 0,
                 _runtimeMaterial,

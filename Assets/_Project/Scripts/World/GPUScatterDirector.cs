@@ -575,7 +575,7 @@ namespace Hecton8.World
                 receiveShadows = receiveShadows,
                 camera = viewCamera
             };
-            Graphics.RenderMeshIndirect(renderParams, scatterMesh, _argsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, scatterMesh, _argsBuffer, 1, 0);
 
             _debugGridResolution = _gridResolution;
             _debugDrawBounds = drawBounds;

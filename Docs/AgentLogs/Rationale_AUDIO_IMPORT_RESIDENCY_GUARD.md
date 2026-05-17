@@ -246,3 +246,129 @@ Solution: Ran source scans for `EventBus`, `IPhysicsAcousticImpulseEventListener
 Rejected Alternatives: Repairing HectonEcology/Scalability/Survival/Physics contract constants was rejected as outside CORE/AUDIO authority. Reporting a green compile was rejected because both build commands fail.
 Scalability potential: Not runtime-relevant; verification state only.
 Hardware Impact: 0 us runtime impact from the verification boundary.
+
+## Decision 35: Loop 13 Disk Meta Enforcement
+Problem: The code-level importer dictator existed, but disk truth still contained stale `.meta` settings. Ten 21-25 MB `Atmos *.wav` files and `Underwater Ambient.wav` had old non-streaming/high-rate import settings, and some committed assets did not reflect the batch policy.
+Solution: Ran an audio asset duration audit with `ffprobe`, made the short-clip ADPCM rule absolute in `ResolveCompressionFormat`, and mechanically normalized committed `.meta` files under `Assets/_Project/Audio` to match the policy: long clips Streaming/non-preloaded, short one-shots DecompressOnLoad/ADPCM, spatial non-music domains force-mono, non-music sample rate 22050 Hz, short VO stubs 16000 Hz ADPCM.
+Rejected Alternatives: Trusting Unity to reimport later was rejected because the prompt says disk is truth and current `.meta` files are what CI/build machines consume. Keeping dialogue/environment/music exceptions ahead of the sub-2s ADPCM rule was rejected because Task 2 says all clips under 2.0 seconds, not most clips.
+Scalability potential: Low/Quest avoids catastrophic boot residency and halves many ambient/player sample rates. Middle keeps streamed Vorbis beds. High/Ultra can still spend cycles on DSP/visual overkill because raw ambience WAVs are no longer pinned in RAM.
+Hardware Impact: The direct preloaded set is now 28 short player/interface clips totaling 4.669 MB by source-file size, giving 45.331 MB headroom below the 50 MB cap. The 20-32 MB ambience WAVs are no longer boot-resident; expected Quest/i3 boot RAM relief is tens to hundreds of MB versus stale DecompressOnLoad settings.
+
+## Decision 36: Loop 13 Import Policy Drift Gate
+Problem: A one-time batch apply is not enough; another stale `.meta` or manual inspector edit can silently bypass the 50 MB budget until build time or device boot.
+Solution: Added `ValidateImportPolicyDrift` to the existing build gate and call it before the RAM budget validation. It resolves the same `AudioImportPolicy` used by `ApplyPolicy`, compares actual importer fields, and aborts with exact asset/field differences.
+Rejected Alternatives: Reapplying policy during build was rejected because mutating assets inside build validation hides bad source control state. Warning-only validation was rejected because a Quest OOM is a hard failure class.
+Scalability potential: Low/Middle/High/Ultra all get deterministic import state from source control. The build now fails on policy drift before platform-specific RAM behavior can diverge.
+Hardware Impact: 0 us runtime cost and editor-only build cost. It prevents stale high-rate/preloaded clips from re-entering Android/Quest builds.
+
+## Decision 37: Loop 13 Verification Boundary
+Problem: After changing editor importer code and many audio metas, compile and budget proof needed a fresh verdict.
+Solution: Ran preloaded `.meta` budget scan, audio-domain static scans, `git diff --check`, focused Core build, focused Hecton8.Editor build, solution restore, and full solution build. Core and Hecton8.Editor exit 0. Full solution reaches `RealtimeCSG.csproj` and fails on 216 missing `Assets/RealtimeCSG/...` source files.
+Rejected Alternatives: Reporting platinum solution compile was rejected because `dotnet build Hecton8.slnx --no-restore -v:minimal /m:1 /nr:false` exits 1. Repairing or deleting RealtimeCSG references was rejected as outside CORE/AUDIO authority and third-party/editor ownership.
+Scalability potential: Runtime scalability state is verified for audio; solution-level failure is unrelated to audio residency.
+Hardware Impact: 0 us runtime impact from verification. The important hardware result is proven residency: 4.669 MB direct preloaded source bytes versus 50 MB budget.
+
+## Decision 38: Loop 14 Player Prefab Boot Ambience
+Problem: `Assets/_Project/Prefabs/Player.prefab` still had the Main Camera `AudioSource` configured to loop `Underwater Ambient.wav` with `m_PlayOnAwake: 1`. The clip is now streaming/non-preloaded, but boot-starting the source still bypasses acoustic residency consent and can create early disk I/O on Steam Deck MicroSD or Quest storage before the menu/runtime gates are ready.
+Solution: Set that prefab source to `m_PlayOnAwake: 0` and keep the streaming clip reference intact so the existing `AcousticZoneController` can intentionally start it when the player-local ambient path is audible. Added `AudioSourceResidencyBuildGate` to abort builds on future first-party prefab sources that are play-on-awake or looping preloaded non-streaming clips.
+Rejected Alternatives: Removing the AudioSource or clearing the clip was rejected because `AcousticZoneController` already resolves and controls this player-local ambient source. Textually stripping every prefab AudioSource was rejected because audio pool prefabs and player tool/footstep sources are valid when cold and controlled.
+Scalability potential: Low keeps boot silent and avoids early stream pressure. Middle preserves controlled underwater ambience. High/Ultra can still play richer ambience after the acoustic-zone system authorizes the source, but not before residency policy can account for it.
+Hardware Impact: 0 us recurring runtime cost. Boot saves one immediate loop source activation and avoids premature streaming I/O for a 32 MB-class ambience asset; expected low-end benefit is reduced boot/micro-stutter risk rather than a stable per-frame number.
+
+## Decision 39: Loop 14 Audit-Text Hygiene
+Problem: `AdvancedAcousticsSmokeTester` still contained the word `delegate` inside assertion descriptions. Runtime audio code had no managed delegates, but the audit scan reported those strings and weakened the evidence trail.
+Solution: Reworded those assertion messages from "delegates registry reads" to "routes registry reads" while preserving the same `AssertNotContains` checks and resolver coverage.
+Rejected Alternatives: Deleting the smoke tests was rejected because they guard GlobalRegistry resolver boundaries. Keeping source-scan false positives was rejected because the current mandate treats source evidence as the primary truth.
+Scalability potential: Runtime behavior is unchanged across Low/Middle/High/Ultra. The value is audit reliability: scan failures now point at real code instead of diagnostic prose.
+Hardware Impact: 0 us runtime impact; editor-only text changed.
+
+## Decision 40: Loop 14 Verification Boundary
+Problem: The new prefab gate and prefab edit needed proof, but the workspace compile state is degraded by missing generated/temp assemblies and a Core build termination with no audio diagnostics.
+Solution: Ran prefab and runtime-audio source scans. `rg` finds zero `m_PlayOnAwake: 1` under first-party prefabs; forbidden audio runtime scans find zero managed-delegate tokens, legacy EventBus tokens, `string.Format`, standard Unity update methods, private NativeArray allocation, or Sentinel NativeArray ownership. `StructLayout` declarations remain `Pack = 1`. `git diff --check` reports no whitespace errors. Editor build is blocked on missing `Temp/bin/Debug` dependency DLLs; Core build exits -1 after Roslyn invocation without emitted diagnostics.
+Rejected Alternatives: Claiming compile success was rejected because both commands failed. Repairing global Temp/bin generated assembly state or broad Core project termination was rejected as outside the scoped prefab-residency edit and current CORE/AUDIO authority.
+Scalability potential: Audio residency state is verified by source and disk scans; solution-level compile health remains a project integration dependency.
+Hardware Impact: 0 us runtime impact from verification. The enforced effect remains boot residency protection and continued 4.669 MB preloaded-audio source-byte proof from Loop 13.
+
+## Decision 41: Loop 15 Acoustic Zone Typed-Lane Purge
+Problem: `AcousticZoneEvents` still used a managed `IAcousticZoneEventListener` registry plus two private NativeQueues to bridge acoustic-zone changes into music. That violated the current SignalBus mandate and left local native ownership in an audio event path.
+Solution: Made `AcousticZoneChangedEvent` implement `ISignal` and reduced `AcousticZoneEvents` to a typed `SignalBus<AcousticZoneChangedEvent>` facade. `HectonMusicDirector` now consumes `ReadOnlySpan<AcousticZoneChangedEvent>` with a per-frame guard and uses the existing `HandleAcousticZoneChanged` logic.
+Rejected Alternatives: Keeping a compatibility listener fanout was rejected because it preserved the managed interface path. Creating a new music-only acoustic signal was rejected because the existing packed acoustic-zone payload already expresses the state and duplicate signals create interface chaos.
+Scalability potential: Low gets the cheapest signal path and no private NativeQueue residency. Middle keeps current music routing. High/Ultra can add richer music/acoustic reactions by reading the same typed lane without new listener registrations.
+Hardware Impact: 0 B/frame GC. Expected CPU gain is small but deterministic: removes listener registry scans, interface dispatch, and two private acoustic-zone NativeQueue owners from the audio path.
+
+## Decision 42: Loop 15 Prefab Clip Residency Gate Tightening
+Problem: The prefab gate blocked play-on-awake and looping preloaded clips, but a non-looping prefab-held preloaded non-streaming clip can still pull decoded audio data too early when the prefab or scene loads.
+Solution: Changed `AudioSourceResidencyBuildGate` to fail any prefab AudioSource that references a preloaded non-streaming clip. The only remaining first-party prefab audio reference is `Player.prefab` -> `Underwater Ambient.wav`, and that clip is Streaming with `preloadAudioData: 0`.
+Rejected Alternatives: Only checking `playOnAwake` was rejected because it misses clip residency caused by serialized references. Clearing all prefab clip references was rejected because the player underwater ambient source is intentionally controlled by `AcousticZoneController` and already points to a streaming/non-preloaded asset.
+Scalability potential: Low/Quest/Steam Deck prevent hidden boot residency. Middle keeps controlled ambient playback. High/Ultra can keep richer authored beds because streaming clips remain legal and gated.
+Hardware Impact: 0 us runtime cost. Prevents future prefab-held ADPCM/DecompressOnLoad clips from silently adding to boot residency; current direct preloaded audio remains 4.669 MB against the 50 MB cap.
+
+## Decision 43: Loop 15 Verification Boundary
+Problem: The typed-lane purge and prefab-gate tightening needed proof without overstating the current global compile state.
+Solution: Ran owned audio scans for acoustic listener/event debt, managed delegates, legacy EventBus tokens, string formatting, standard Unity update methods, private NativeArray ownership, Sentinel NativeArray ownership, and non-1 struct packing. Scans are clean. Preloaded disk proof remains 28 clips, 4.669 MB, 45.331 MB headroom. Focused Core compile exits 1 on unrelated `FaunaBrain.Compatibility.cs` missing `FlagsAttribute`/`Flags`; Editor remains blocked by absent `Hecton8.Core.dll`.
+Rejected Alternatives: Editing Fauna compatibility code was rejected as outside CORE/AUDIO. Claiming platinum compile was rejected because the command exits 1.
+Scalability potential: Runtime audio residency and signal topology are verified; global compile remains an integration dependency.
+Hardware Impact: 0 us runtime impact from verification. The hardware-relevant proof is unchanged audio residency under cap plus removal of private acoustic-zone queues.
+
+## Decision 44: Loop 16 Acoustic-Zone Signal ABI Lock
+Problem: After moving acoustic-zone transitions to `SignalBus<AcousticZoneChangedEvent>`, the smoke tests still asserted the removed private NativeQueue bridge and the signal payload had mutable fields. That left a regression path back to managed listeners/private queues and weaker ARM64 evidence.
+Solution: Made `AcousticZoneChangedEvent` a readonly `ISignal` payload with readonly byte/reserved fields and explicit `StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)`. Updated `AdvancedAcousticsSmokeTester` to require `SignalBus<AcousticZoneChangedEvent>.Push`, snapshot/drop telemetry, and `ReadOnlySpan<AcousticZoneChangedEvent>` music consumption while rejecting the old listener/registry/local-queue path.
+Rejected Alternatives: Keeping stale NativeQueue smoke assertions was rejected because they would force the removed architecture back into the code. Leaving the struct mutable was rejected because signal payloads should be immutable after enqueue and snapshot.
+Scalability potential: Low keeps the cheapest typed-lane zone transition path. Middle/High/Ultra can consume the same lane for richer acoustic/music reactions without adding listener fanout or duplicate signals.
+Hardware Impact: 0 us runtime delta. The practical gain is platform safety and audit reliability: no implicit/mutable acoustic-zone signal ABI drift on Quest/Android, and no private acoustic-zone queue residency.
+
+## Decision 45: Loop 16 Verification Cadence
+Problem: Rebuilding the full solution on every polish pass wastes time and creates noise in a workspace with unrelated third-party/generated project churn.
+Solution: For Loop 16, focused Core and Editor smoke assemblies were compiled once after actual code edits and missing editor dependencies were restored. Full solution build was attempted once and timed out after 244 seconds without audio diagnostics. Going forward, verification defaults to source scans, budget scans, `git diff --check`, and targeted compiles only when a code edit requires a compile verdict.
+Rejected Alternatives: Running `dotnet build` after every scan-only pass was rejected because it does not improve audio evidence and burns iteration time. Claiming full platinum compile was rejected because the full solution command timed out.
+Scalability potential: Not runtime-relevant. This keeps engineering time focused on audio residency and signal debt instead of broad workspace churn.
+Hardware Impact: 0 us runtime impact. Current hardware-relevant proof remains the 4.669 MB preloaded-audio disk budget against the 50 MB cap.
+
+## Decision 46: Loop 17 Music Director Listener Purge
+Problem: `HectonMusicDirector` still consumed biome, depth-zone, and DirectorAI changes through managed listener interfaces and `Events.Register(this)` calls. That violated the current typed-lane/read-only-span direction and kept the music path coupled to listener registries.
+Solution: Removed the music director's `IBiomeMatrixEventListener`, `IDepthZoneEventListener`, and `IDirectorAIEventListener` implementations and lifecycle subscriptions. Biome/depth state is now observed from existing runtime director properties during `SlowTick`, while preserving the existing handlers for context and stinger routing.
+Rejected Alternatives: Adding duplicate unmanaged biome/depth signals carrying profile object references was rejected because `ISignal` payloads must be unmanaged and profile references would break the lane contract. Polling every frame was rejected; the observation runs in the existing `SlowTick` cadence.
+Scalability potential: Low avoids listener dispatch and keeps music routing cheap. Middle/High/Ultra retain dynamic biome/depth music transitions and stingers through edge observation, with no new allocation path.
+Hardware Impact: Expected runtime change is <3 us per SlowTick for profile/tier/zone comparisons and 0 B/frame. It removes three managed listener registrations and their interface dispatch from the music path.
+
+## Decision 47: Loop 17 DirectorAI Typed Music Signal
+Problem: DirectorAI music cues include transient events such as horde, rare discovery, predator pressure, and threat spikes. Polling only current AI state would lose some one-shot stinger intent, but keeping `IDirectorAIEventListener` in audio preserved the managed listener path.
+Solution: Added `DirectorAIMusicSignal`, a readonly unmanaged `ISignal` payload with `StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)`. `DirectorAIEvents` now pushes this typed signal before legacy listener enqueue, and `HectonMusicDirector` drains `ReadOnlySpan<DirectorAIMusicSignal>` once per frame.
+Rejected Alternatives: Dropping rare-discovery/threat-spike music cues was rejected because it would regress authored tension feedback. Fully rewriting the shared DirectorAI listener bus was rejected as outside the minimal cross-domain interface needed by CORE/AUDIO.
+Scalability potential: Low receives the cheapest typed cue path without audio listener registration. High/Ultra can add richer music/DSP reactions by reading the same typed lane without increasing DirectorAI producer complexity.
+Hardware Impact: 0 B/frame GC. CPU impact is bounded to one typed snapshot scan per music tick frame. Music-side listener fanout is removed; legacy listeners in other domains remain untouched for compatibility.
+
+## Decision 48: Loop 17 No-Build Verification
+Problem: The user explicitly instructed not to run `dotnet rebuild every time`; verification still needed evidence without wasting another full compile pass.
+Solution: Ran static source scans, struct-layout scans, `git diff --check`, and audio budget proof only. The scans prove `HectonMusicDirector` has no remaining listener interface methods or `Events.Register(this)`/`Events.Unregister(this)` calls. The new `DirectorAIMusicSignal` and touched DirectorAI native raycast input both scan as `Pack = 1`.
+Rejected Alternatives: Running another dotnet build immediately was rejected per instruction and because Loop 16 already had focused Core/Editor compile success after code edits. Skipping verification was rejected because source truth still matters.
+Scalability potential: Verification only. Runtime scalability is unchanged except for the lighter music event topology.
+Hardware Impact: 0 us runtime impact. Audio residency remains 28 preloaded clips / 4.669 MB / 45.331 MB headroom under the hard 50 MB cap.
+
+## Decision 49: Loop 18 Laser Cutter Typed Snapshot Consumption
+Problem: `PlayerCriticalProceduralAudioRenderer` still subscribed to `LaserCutterEvents` through `ILaserCutterEventListener`, even though `LaserCutterEventPayload` is already an unmanaged `ISignal` published through `SignalBus<LaserCutterEventPayload>`.
+Solution: Removed the renderer's laser cutter listener interface and lifecycle register/unregister calls. Added `ConsumeLaserCutterEventSignals()` to scan `ReadOnlySpan<LaserCutterEventPayload>` once per frame and call the existing heat/beam handling path.
+Rejected Alternatives: Creating another cutter audio signal was rejected because the typed payload already exists. Keeping the listener facade was rejected because it preserves interface dispatch in a CORE/AUDIO hot consumer.
+Scalability potential: Low keeps tool heat/beam audio updates on the cheapest typed path. Middle/High/Ultra preserve the same procedural cutter heat/cavitation behavior without listener fanout.
+Hardware Impact: Removes one listener registration and one interface dispatch path for player-critical cutter events. New work is a bounded <=16 payload span scan once per frame, 0 B/frame.
+
+## Decision 50: Loop 18 No-Build Verification
+Problem: The change was source-local and the user explicitly instructed not to rebuild every time, but the laser purge still needed proof.
+Solution: Ran source scans for `ILaserCutterEventListener`, `LaserCutterEvents.Register(this)`, `LaserCutterEvents.Unregister(this)`, and `OnLaserCutterEvent`; all are absent from `PlayerCriticalProceduralAudioRenderer`. Verified the new snapshot call and frame guard are present, struct layout scan remains `Pack = 1`, and `git diff --check` returns only CRLF warnings.
+Rejected Alternatives: Running another dotnet build immediately was rejected per current verification cadence. Trusting the edit without source scans was rejected.
+Scalability potential: Verification only. Runtime scalability improves by reducing listener topology in the player-critical renderer.
+Hardware Impact: 0 us runtime from verification. Audio preloaded disk state remains 4.669 MB against the 50 MB cap.
+
+## Decision 51: Loop 19 Player-Critical Scalability Snapshot
+Problem: `PlayerCriticalProceduralAudioRenderer` still consumed scalability changes through `IScalabilityChangedEventListener`, even though `ScalabilityChangedEvent` is already an unmanaged typed signal and `SystemDispatcher` already reads its SignalBus snapshot.
+Solution: Removed the renderer's scalability listener interface, registration state, and register/unregister calls. Added `ConsumeScalabilitySignals()` to read `ReadOnlySpan<ScalabilityChangedEvent>` once per frame and apply the latest payload through the existing quality-cache writer.
+Rejected Alternatives: Polling `GlobalRegistry.ScalabilityTier` every frame was rejected because the renderer already has a cached quality policy and hot registry reads were previously removed. Keeping listener dispatch was rejected because the signal lane already exists.
+Scalability potential: Low/Mx350/Quest keep the low-memory quality change path with no listener registration. High/Ultra retain immediate quality tier upgrades for richer DSP without registry polling.
+Hardware Impact: 0 B/frame GC. Removes one listener registration and interface dispatch path. New work is one frame-guarded typed snapshot read per renderer tick.
+
+## Decision 52: Loop 19 No-Build Verification
+Problem: The user forbade rebuild spam, and this was another targeted typed-lane edit.
+Solution: Verified by `rg`: no `IScalabilityChangedEventListener`, `ScalabilityEvents.Register(this)`, `ScalabilityEvents.Unregister(this)`, `OnScalabilityChanged`, or scalability register helper remains in `PlayerCriticalProceduralAudioRenderer`. Struct scan remains clean for `Pack = 1`; `git diff --check` reports only CRLF warnings.
+Rejected Alternatives: Running another dotnet build was rejected per requested cadence. Ignoring stale smoke assertions was rejected; `AdvancedAcousticsSmokeTester` was updated to enforce the typed path.
+Scalability potential: Verification only; runtime path now aligns better with Low/Middle/High/Ultra tier changes.
+Hardware Impact: 0 us runtime from verification. Audio residency remains 4.669 MB preloaded source bytes, 45.331 MB under the 50 MB cap.

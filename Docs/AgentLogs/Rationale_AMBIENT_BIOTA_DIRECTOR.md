@@ -371,3 +371,87 @@ Rejected Alternatives: Adding a new `BufferID.CurrentBiome` or new registry inte
 Scalability potential: Low = O(signal count) slow/cold biome update and cheap tint/species bias. Middle = stable biome hash between transitions. High/Ultra = shader still uses biome hash to bias rich biolume/parallax/silt color without extra CPU spatial queries.
 
 Hardware Impact: Exact microseconds are unmeasured. Expected low-end cost remains typically sub-1 us when no biome transition signals are present; no MicroSD I/O and no persistent local NativeArray ownership are added.
+
+## Decision 32: Close Editor Metadata Debt And Shader Rsqrt Edge Cases
+
+Problem: The ambient runtime was statically clean, but the owning MonoBehaviour still had serialized fields without explicit inspector tooltips/headers, and the shader safe-normalize helpers still passed raw `lengthSq` into `rsqrt`. HLSL ternaries/selects are not a hard guarantee that the unused expression will never be evaluated on every backend, so zero-length vectors needed a max-epsilon guard at the `rsqrt` argument itself.
+
+Solution: Added explicit `Tooltip` metadata and capacity/presentation headers to every serialized field in `AmbientBiotaDirector`. Renamed the stale macro-hydration `sdfEmergenceBias` local to `verticalBias` so the code no longer implies foreign cave/SDF truth after that dependency was purged. Updated `SafeNormalize2` and `SafeNormalize3` to compute `rsqrt(max(lengthSq, 1e-8))`, routed drift direction through `SafeNormalize3`, and removed unused shader defines.
+
+Rejected Alternatives: Leaving editor metadata absent was rejected because `AGENTS.md` requires tooltips on serialized fields and this is cheap cold-path clarity. Leaving direct `velocity * rsqrt(velocityLenSq)` was rejected because it leaves backend-dependent NaN risk even when a ternary fallback is present. Removing high-tier parallax/SSS/silt/salt visuals was rejected because the correct fix is safe math, not flattening the Ultra path.
+
+Scalability potential: Low = same no-texture billboard soup with stronger NaN resistance and no extra CPU work. Middle = stable translucent biota presentation from the same 64 B packet. High = keeps panic biolume, SSS, flow silt, and procedural depth. Ultra = retains 16-step parallax and salt glints without adding CPU simulation truth or runtime file I/O.
+
+Hardware Impact: Exact microseconds remain unmeasured; no Unity profiler run was available. Expected low-end effect is stability, not a frame-time claim. CPU hot-path cost is unchanged. GPU impact is a couple of scalar `max` operations inside shader normalize helpers, with no managed allocation and no MicroSD I/O.
+
+## Decision 33: Remove Unity Frame Count From Macro Spawn Signal
+
+Problem: `TryHydrateMacroSwarms` published `EntitySpawnSignal.Frame` with `Time.frameCount`. That signal is not a gameplay seed, but it is still a cross-domain metadata field emitted by the ambient director. Letting Unity's global frame counter leak into this path weakens deterministic cadence and makes replay/blackbox comparison noisier than necessary.
+
+Solution: Replaced `Time.frameCount` with the director-owned `_frameIndex`, which is already advanced by ambient spawn/drift/macro hydration cadence. This preserves the existing `EntitySpawnSignal` contract and avoids any public API change.
+
+Rejected Alternatives: Leaving `Time.frameCount` was rejected because the ambient director already has a local deterministic frame counter. Adding a new signal field was rejected because interface churn and duplicate signal expansion are forbidden during the batch. Replacing the signal lane was rejected because the existing typed `GlobalSignals.Publish(in EntitySpawnSignal)` path is already the established cross-domain broadcast.
+
+Scalability potential: Low = identical visual behavior and no extra CPU work. Middle = cleaner replay/telemetry cadence. High = same macro hydration and biolume overkill path with less Unity-frame coupling. Ultra = deterministic metadata remains compatible with dense shader-side visual overkill without creating new CPU truth.
+
+Hardware Impact: Exact microseconds remain unmeasured. Expected runtime frame-time change is effectively 0 us; this is a determinism/telemetry hygiene repair. It adds no managed allocation, no NativeArray ownership, no file I/O, and no shader work.
+
+## Decision 34: Current Build Wall Is Gameplay/Audio Signal Contract, Not Ambient
+
+Problem: After Loop 14, global `dotnet build` no longer remains green. The fresh compile wall is outside the ambient domain and appears in player kinematics, audio, and acoustic zone code.
+
+Solution: Recorded the current failure in `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt` and did not patch foreign domains. Direct ambient Bee validation still fails before source analysis because `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.ref.dll` is missing.
+
+Rejected Alternatives: Editing `PlayerKinematicsRuntime.cs`, `HectonMusicDirector.cs`, `AcousticZoneController.cs`, or shared signal contracts from the ambient agent was rejected because it crosses the authoritative `Assets/_Project/Scripts/AI/Ambient/` domain. Reporting the build as green was rejected because the current objective log exits 1.
+
+Scalability potential: No runtime scalability change. Ambient Low/Middle/High/Ultra paths remain statically clean; Unity runtime, GCMonitor, and GPU proof remain blocked until foreign compile walls and Unity editor access are repaired.
+
+Hardware Impact: 0 us measured. This is validation state, not runtime behavior. It blocks reliable profiler numbers and runtime visual validation.
+
+## Decision 35: Remove Unity Time From Ambient Telemetry Cadence
+
+Problem: `RecountActiveBiota` still used `Time.unscaledTime` to compute `CullRatePerSecond`. That was not a gameplay seed, but it left blackbox telemetry dependent on Unity wall-clock state while every simulation tick already receives an explicit dispatcher delta.
+
+Solution: Added a director-owned `_telemetryClockSeconds` and `_lastRecountClockSeconds`. `Tick(float deltaTime)` finite-clamps dispatcher delta and advances the telemetry clock before the `_jobPending` early return. `RecountActiveBiota` now computes elapsed time from that clock instead of Unity `Time`. The C# ambient domain now has no `Time.` references.
+
+Rejected Alternatives: Keeping `Time.unscaledTime` was rejected because blackbox cadence should follow the same dispatcher contract as simulation cadence. Passing a delta into `LateFrameTick` was rejected because it would require interface churn outside ambient ownership. Using shader `_Time` as a source was rejected because it is presentation-only and unavailable to CPU telemetry.
+
+Scalability potential: Low = cull-rate telemetry stays tied to cheap dispatcher scalar time with no new buffer, allocation, or registry dependency. Middle = cleaner replay/blackbox comparison across frame pacing. High = same light-reactive and high-density path without Unity wall-clock coupling. Ultra = shader-side overkill remains visual-only while CPU telemetry stays deterministic.
+
+Hardware Impact: Exact microseconds remain unmeasured. Expected frame-time change is effectively 0 us; this is determinism and diagnostic hygiene. It adds two scalar fields and one finite-clamped scalar accumulation per tick, with no managed allocation, no NativeArray ownership, no file I/O, and no shader work.
+
+## Decision 36: Drive Ambient Shader Motion From Dispatcher Time
+
+Problem: The C# director no longer used Unity `Time`, but the ambient indirect shader still used `_Time.y` for billboard pulse and silt shimmer. It was presentation-only, not authority, but it still made visual replay comparison depend on Unity's global shader time instead of the director's owned cadence.
+
+Solution: Added `_HectonBiotaVisualTime` to the ambient shader CBUFFER and a cached `BiotaVisualTimeShaderId` in the director. `RenderIndirectBiota` writes the existing `_telemetryClockSeconds` into the material parameter path, and the shader uses that value for pulse and silt phase.
+
+Rejected Alternatives: Keeping `_Time.y` was rejected because the director already owns a finite-clamped dispatcher clock. Adding a new GPU buffer was rejected because one scalar material parameter is enough and avoids bandwidth waste. Creating a MaterialPropertyBlock was rejected because project rules forbid MPB for standard geometry/SRP batching. Moving pulse/silt to CPU was rejected because the visual fake belongs in the shader and should not create CPU truth.
+
+Scalability potential: Low = same cheap triangle-wave billboard pulse with deterministic dispatcher cadence and no texture samples. Middle = stable biome tint and translucent drift. High = pulse/silt remain synchronized with panic biolume, SSS, salt glints, and 16-step parallax. Ultra = visual overkill remains shader-side while CPU simulation stays a sparse modulo bucket.
+
+Hardware Impact: Exact microseconds remain unmeasured. Expected CPU delta is one scalar material write on the existing indirect render path; GPU instruction count is effectively unchanged because `_Time.y` was replaced by a CBUFFER scalar. No managed allocation, no NativeArray ownership, no MicroSD I/O, and no extra draw call were added.
+
+## Decision 37: Repair Stale Telemetry Clock Identifier
+
+Problem: `ResetCapacityDependentRuntimeState()` still referenced `_lastRecountTimeSeconds` after the telemetry clock was renamed to `_lastRecountClockSeconds`. That stale identifier would block compilation of the ambient director once Unity/Bee reaches this source.
+
+Solution: Replaced the stale reset target with `_lastRecountClockSeconds`. This keeps capacity resets aligned with the dispatcher-owned telemetry clock and avoids introducing another Unity `Time` dependency.
+
+Rejected Alternatives: Reintroducing `_lastRecountTimeSeconds` was rejected because it would preserve duplicate telemetry state and weaken the earlier time-decoupling repair. Running another full `dotnet build` was rejected for this loop because the user explicitly instructed not to rebuild every time; static identifier and forbidden-pattern scans were used instead.
+
+Scalability potential: Low = unchanged cheap dispatcher-clock telemetry with no extra math. Middle = stable cull-rate accounting after capacity changes. High = the same high-density light-reactive path without duplicate time fields. Ultra = shader-side visual overkill continues from `_HectonBiotaVisualTime` while CPU telemetry stays on one clock.
+
+Hardware Impact: Exact microseconds remain unmeasured. Runtime delta is expected to be 0 us because this is a compile-hygiene correction in a cold reset path. No managed allocation, NativeArray ownership, file I/O, shader instruction, or draw-call change was added.
+
+## Decision 38: Prevent AUP Grid Delta Integer Overflow
+
+Problem: `DeltaMeters()` subtracted `long` AUP grid coordinates before multiplying by the sector size. If two AUPs were ever separated by an extreme sector delta, the signed integer subtraction could overflow before conversion to `double`, corrupting cull, retire, and render-local distance checks.
+
+Solution: Cast both grid coordinates to `double` before subtraction on X/Y/Z. The helper still returns a `double3` and all consumers keep squared-distance checks and existing finite guards.
+
+Rejected Alternatives: Leaving the integer subtraction was rejected because AUP is the simulation-scale authority and overflow before finite checks is silent corruption. Adding BigInteger or checked exceptions was rejected because Burst/hot-path AUP math needs deterministic scalar arithmetic, not managed arbitrary precision or gameplay exceptions.
+
+Scalability potential: Low = same cheap squared-distance cull with safer sector math. Middle = stable bucket drift and macro pack/dehydrate checks. High = light-reactive high-density biota keep correct AUP-relative flee/cull vectors. Ultra = dense visual overkill remains driven by correct camera-local deltas, not overflowed sector math.
+
+Hardware Impact: Exact microseconds remain unmeasured. Expected runtime delta is negligible: three double casts before existing double arithmetic in the distance helper. No allocation, file I/O, NativeArray ownership, shader instruction, draw-call change, or public API change was added.

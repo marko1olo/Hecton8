@@ -27,6 +27,10 @@ namespace Hecton8.Gameplay
     /// </summary>
     public abstract class PlayerTool : MonoBehaviour, IPoolable
     {
+        private const uint ToolLifecycleTelemetryHash = 0x544C4946u; // TLIF
+        private const uint ToolLifecycleSpawnHash = 0x544C5350u; // TLSP
+        private const uint ToolLifecycleDespawnHash = 0x544C4453u; // TLDS
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -140,7 +144,7 @@ namespace Hecton8.Gameplay
         public virtual void OnSpawn()
         {
             if (lifecycleDebugLogging)
-                LogLifecycleDebug(nameof(OnSpawn));
+                PublishLifecycleDebug(ToolLifecycleSpawnHash);
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
             _lastUseTime = float.NegativeInfinity;
@@ -166,7 +170,7 @@ namespace Hecton8.Gameplay
         public virtual void OnDespawn()
         {
             if (lifecycleDebugLogging)
-                LogLifecycleDebug(nameof(OnDespawn));
+                PublishLifecycleDebug(ToolLifecycleDespawnHash);
             if (IsEquipped) OnUnequip();
             UnregisterModularRuntime();
             IsEquipped = false;
@@ -708,9 +712,13 @@ namespace Hecton8.Gameplay
         internal bool LastUseWasPrimary => _lastUseWasPrimary;
         internal bool WasRecentlyUsed(float maxIdleSeconds) => IsEquipped && (Time.time - _lastUseTime <= math.max(0.05f, maxIdleSeconds));
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private void LogLifecycleDebug(string message) { if (lifecycleDebugLogging) Debug.Log("[ToolLifecycle] " + message); }
+        private void PublishLifecycleDebug(uint markerHash)
+        {
+            if (lifecycleDebugLogging)
+                GlobalTelemetryBus.PublishModTelemetry(ToolLifecycleTelemetryHash, markerHash, 1f);
+        }
 #else
-        private void LogLifecycleDebug(string message) { }
+        private void PublishLifecycleDebug(uint markerHash) { }
 #endif
 
         private void CacheToolItemHash()

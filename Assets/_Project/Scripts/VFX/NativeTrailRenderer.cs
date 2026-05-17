@@ -11,7 +11,11 @@ namespace Hecton8.VFX
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/VFX/Native Trail Renderer")]
-    public sealed class NativeTrailRenderer : MonoBehaviour, IUpdatable, IRenderable, IOriginShiftListener
+    public sealed class NativeTrailRenderer : MonoBehaviour,
+        IUpdatable,
+        IRenderable,
+        IOriginShiftListener,
+        IGlobalRegistryHotSwapListener
     {
         private const int MinimumCapacity = 2;
         private const int MaximumCapacity = 256;
@@ -51,6 +55,8 @@ namespace Hecton8.VFX
         private readonly Matrix4x4[] _drawMatrices = new Matrix4x4[DrawInstanceCount];
 
         private Mesh _mesh;
+        private ITickDispatcher _tickDispatcher;
+        private RenderDispatcher _renderDispatcher;
         private int _resolvedCapacity;
         private int _headIndex = -1;
         private int _sampleCount;
@@ -59,6 +65,9 @@ namespace Hecton8.VFX
         private bool _registeredUpdate;
         private bool _registeredRender;
         private bool _registeredOriginShift;
+        private bool _registeredHotSwap;
+        private bool _dispatcherReady;
+        private bool _renderDispatcherReady;
         private bool _hasLastSample;
         private AbsoluteUniversePosition _lastSampleAup;
         private Vector3 _lastSampleRuntimePosition;
@@ -71,22 +80,28 @@ namespace Hecton8.VFX
 
         private void OnEnable()
         {
+            RefreshDispatcherReadyCold();
+            TryRegisterHotSwap();
             TryRegister();
         }
 
         private void Start()
         {
+            RefreshDispatcherReadyCold();
+            TryRegisterHotSwap();
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwap();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwap();
             if (_mesh != null)
             {
                 Destroy(_mesh);
@@ -96,7 +111,6 @@ namespace Hecton8.VFX
 
         public void Tick(float deltaTime)
         {
-            TryRegister();
             if (_samples == null || _mesh == null)
                 EnsureBuffers();
 
@@ -128,7 +142,7 @@ namespace Hecton8.VFX
             if (_sampleCount < 2)
                 return;
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 _mesh,
                 0,
                 trailMaterial,
@@ -152,6 +166,53 @@ namespace Hecton8.VFX
             }
 
             _meshDirty = true;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                ITickDispatcher tickDispatcher = currentService as ITickDispatcher;
+                if (!ReferenceEquals(_tickDispatcher, tickDispatcher))
+                {
+                    if (_registeredOriginShift)
+                    {
+                        HectonFloatingOrigin.UnregisterListener(this);
+                        _registeredOriginShift = false;
+                    }
+
+                    if (_registeredUpdate)
+                    {
+                        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                        _registeredUpdate = false;
+                    }
+
+                    _tickDispatcher = tickDispatcher;
+                }
+
+                _dispatcherReady = tickDispatcher != null;
+                TryRegister();
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.RenderDispatcher)
+            {
+                RenderDispatcher renderDispatcher = currentService as RenderDispatcher;
+                if (!ReferenceEquals(_renderDispatcher, renderDispatcher))
+                {
+                    if (_registeredRender)
+                    {
+                        GlobalRegistry.Renderables.TryUnregister(this);
+                        _registeredRender = false;
+                    }
+
+                    _renderDispatcher = renderDispatcher;
+                }
+
+                _renderDispatcherReady = renderDispatcher != null;
+                TryRegister();
+            }
         }
 
         public void ClearTrail()
@@ -340,18 +401,44 @@ namespace Hecton8.VFX
             if (!Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            if (!_registeredUpdate)
+            if (_dispatcherReady && !_registeredUpdate)
                 _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            if (!_registeredRender)
+            if (_renderDispatcherReady && !_registeredRender)
                 _registeredRender = GlobalRegistry.Renderables.TryRegister(this);
-            if (!_registeredOriginShift)
+            if (_dispatcherReady && !_registeredOriginShift)
             {
                 HectonFloatingOrigin.RegisterListener(this);
                 _registeredOriginShift = HectonFloatingOrigin.IsListenerRegistered(this);
             }
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (!Application.isPlaying || _registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void RefreshDispatcherReadyCold()
+        {
+            _tickDispatcher = GlobalRegistry.TickDispatcher;
+            _renderDispatcher = GlobalRegistry.RenderDispatcher;
+            _dispatcherReady = _tickDispatcher != null;
+            _renderDispatcherReady = _renderDispatcher != null;
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+            _tickDispatcher = null;
+            _renderDispatcher = null;
+            _dispatcherReady = false;
+            _renderDispatcherReady = false;
         }
 
         private void TryUnregister()

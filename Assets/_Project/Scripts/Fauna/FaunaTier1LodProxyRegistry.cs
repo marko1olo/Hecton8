@@ -4,7 +4,7 @@ using Unity.Collections;
 
 namespace Hecton8.AI
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     internal struct FaunaTier1LodProxyEntry
     {
         public AbsoluteUniversePositionBlit128 PositionAup;

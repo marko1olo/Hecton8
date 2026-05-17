@@ -2890,7 +2890,7 @@ namespace Hecton8.UI
             ApplyThreatChevronMaterialProperties();
             _threatChevronPropertyBlock.SetVectorArray(_ThreatChevronInstanceDataId, _threatChevronInstanceDataMirror);
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 _threatChevronMesh,
                 0,
                 _threatChevronMaterial,

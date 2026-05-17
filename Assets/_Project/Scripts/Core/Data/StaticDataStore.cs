@@ -23,12 +23,13 @@ namespace Hecton8.Core.Data
     {
         private const string OwnerName = "CSV_DATA_MONOLITH_SYNC.StaticDataStore";
         private const string LookupLabel = "HashToOffset";
-        private const string FallbackBufferLabel = "FallbackStaticDataBytes";
         private const uint StateOpenHash = 0x53444F50u;
         private const uint StateMissHash = 0x53444D49u;
         private const uint StateErrorHash = 0x53444552u;
         private const uint ErrorMissingHash = 0x4D495353u;
         private const uint ErrorCrcHash = 0x43524321u;
+        private const uint ErrorTypeHash = 0x54595045u;
+        private const uint ErrorHeaderHash = 0x48445221u;
         private const int FileStreamBufferBytes = 64 * 1024;
 
 #if HECTON8_STATICDATA_MMF_AVAILABLE
@@ -45,12 +46,12 @@ namespace Hecton8.Core.Data
         private VaultBufferHandle<int> _blackBoxCursorHandle;
         private NativeParallelHashMap<uint, long> _lookup;
         private bool _lookupRegistered;
-        private bool _fallbackRegistered;
 
         public bool IsOpen => _basePointer != null && _mappedBytes >= UnsafeUtility.SizeOf<H8StaticDataHeader>();
         public int LookupCount => IsOpen ? (int)_header.LookupCount : 0;
         public int RecordCount => IsOpen ? (int)_header.RecordCount : 0;
         public uint PayloadCrc32 => IsOpen ? _header.PayloadCrc32 : 0u;
+        public uint BabelCrc32 => IsOpen ? _header.BabelCrc32 : 0u;
 
         public StaticDataStore(IDataVault dataVault = null)
         {
@@ -105,14 +106,19 @@ namespace Hecton8.Core.Data
             _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref _basePointer);
             _mappedBytes = info.Length;
 #else
-            _ownedFallbackPointer = (byte*)UnsafeUtility.Malloc(info.Length, H8StaticDataFormat.AlignmentBytes, Allocator.Persistent);
-            _fallbackRegistered = NativeMemorySentinel.RegisterPointer(
-                _ownedFallbackPointer,
+            _ownedFallbackPointer = (byte*)H8Memory.AllocateRaw(
                 info.Length,
-                OwnerName,
-                FallbackBufferLabel,
-                NativeAllocationLifetime.Session) != 0;
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes))
+                H8StaticDataFormat.AlignmentBytes,
+                SystemID.CoreDataVault,
+                Allocator.Persistent,
+                false);
+            if (_ownedFallbackPointer == null)
+            {
+                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+                return false;
+            }
+
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.SequentialScan))
             {
                 long offset = 0L;
                 while (offset < info.Length)
@@ -154,7 +160,6 @@ namespace Hecton8.Core.Data
 
         public bool TryReload(string path)
         {
-            CloseFile();
             return Open(path);
         }
 
@@ -164,13 +169,22 @@ namespace Hecton8.Core.Data
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref readonly T GetRecord<T>(uint hash) where T : unmanaged
         {
-            if (_basePointer == null || !_lookup.IsCreated || !_lookup.TryGetValue(hash, out long offset))
+            if (_basePointer == null || !_lookup.IsCreated || !_lookup.TryGetValue(hash, out long packedValue))
             {
                 RecordTelemetry(StateMissHash, ErrorMissingHash, hash, 0L);
                 return ref MissingRecord<T>.Value;
             }
 
-            int size = UnsafeUtility.SizeOf<T>();
+            long offset = H8StaticDataFormat.UnpackLookupOffset(packedValue);
+            ushort actualRecordType = H8StaticDataFormat.UnpackLookupRecordType(packedValue);
+            ushort expectedRecordType = RecordContract<T>.RecordType;
+            if (expectedRecordType == 0 || actualRecordType != expectedRecordType)
+            {
+                RecordTelemetry(StateErrorHash, ErrorTypeHash, hash, offset);
+                return ref MissingRecord<T>.Value;
+            }
+
+            int size = RecordContract<T>.SizeBytes;
             if (offset < 0L || offset > _mappedBytes - size)
             {
                 RecordTelemetry(StateErrorHash, ErrorMissingHash, hash, offset);
@@ -263,13 +277,7 @@ namespace Hecton8.Core.Data
 
             if (_ownedFallbackPointer != null)
             {
-                if (_fallbackRegistered)
-                {
-                    NativeMemorySentinel.UnregisterPointer(_ownedFallbackPointer);
-                    _fallbackRegistered = false;
-                }
-
-                UnsafeUtility.Free(_ownedFallbackPointer, Allocator.Persistent);
+                H8Memory.FreeRaw(_ownedFallbackPointer, Allocator.Persistent, SystemID.CoreDataVault);
                 _ownedFallbackPointer = null;
             }
 
@@ -286,6 +294,7 @@ namespace Hecton8.Core.Data
                 }
 
                 _lookup.Dispose();
+                _lookup = default;
             }
         }
 
@@ -301,20 +310,24 @@ namespace Hecton8.Core.Data
                 _header.FileByteLength != _mappedBytes ||
                 (_header.Flags & H8StaticDataFormat.LittleEndianFlag) == 0u)
             {
-                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+                RecordTelemetry(StateErrorHash, ErrorHeaderHash, 0u, 0L);
                 return false;
             }
 
             int lookupEntrySize = UnsafeUtility.SizeOf<H8StaticDataLookupEntry>();
             long lookupBytes = (long)_header.LookupCount * lookupEntrySize;
+            long recordBytes = _mappedBytes - _header.RecordsOffset;
             if (_header.LookupOffset < _header.HeaderSizeBytes ||
                 _header.RecordsOffset < _header.LookupOffset ||
                 _header.FileByteLength < _header.RecordsOffset ||
                 _header.LookupOffset + lookupBytes > _header.RecordsOffset ||
+                _header.RecordCount != _header.LookupCount ||
+                _header.RecordBytes != recordBytes ||
+                (recordBytes & 15L) != 0L ||
                 (_header.LookupOffset & 15u) != 0u ||
                 (_header.RecordsOffset & 15u) != 0u)
             {
-                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+                RecordTelemetry(StateErrorHash, ErrorHeaderHash, 0u, 0L);
                 return false;
             }
 
@@ -345,8 +358,12 @@ namespace Hecton8.Core.Data
             for (int i = 0; i < count; i++)
             {
                 H8StaticDataLookupEntry entry = UnsafeUtility.ReadArrayElement<H8StaticDataLookupEntry>(lookupBase, i);
+                int recordSize = H8StaticDataFormat.RecordSizeBytes(entry.RecordType);
                 if ((entry.Offset & 15L) != 0L ||
-                    entry.ByteSize != H8StaticDataFormat.RecordSizeBytes(entry.RecordType) ||
+                    entry.Hash == 0u ||
+                    !H8StaticDataFormat.CanPackRecordType(entry.RecordType) ||
+                    recordSize <= 0 ||
+                    entry.ByteSize != recordSize ||
                     entry.Offset < _header.RecordsOffset ||
                     entry.Offset > _mappedBytes - entry.ByteSize)
                 {
@@ -354,7 +371,8 @@ namespace Hecton8.Core.Data
                     return false;
                 }
 
-                if (!_lookup.TryAdd(entry.Hash, entry.Offset))
+                long packedValue = H8StaticDataFormat.PackLookupValue(entry.Offset, entry.RecordType);
+                if (!_lookup.TryAdd(entry.Hash, packedValue))
                 {
                     RecordTelemetry(StateErrorHash, ErrorMissingHash, entry.Hash, entry.Offset);
                     return false;
@@ -433,6 +451,12 @@ namespace Hecton8.Core.Data
         private static class MissingRecord<T> where T : unmanaged
         {
             public static T Value;
+        }
+
+        private static class RecordContract<T> where T : unmanaged
+        {
+            public static readonly ushort RecordType = H8StaticDataFormat.RecordTypeOf<T>();
+            public static readonly int SizeBytes = UnsafeUtility.SizeOf<T>();
         }
     }
 }

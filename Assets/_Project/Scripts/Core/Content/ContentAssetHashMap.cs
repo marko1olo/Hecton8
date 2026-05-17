@@ -44,8 +44,13 @@ namespace Hecton8.Core.Content
         public uint Reserved1;
     }
 
+    /// <summary>
+    /// Authoring-only registry row. This type holds managed Unity references and must not be marshalled.
+    /// </summary>
+    /// <remarks>
+    /// Binary/native consumers use <see cref="ContentAssetBinaryRecord"/> produced by <see cref="ToBinaryRecord"/>.
+    /// </remarks>
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct ContentAssetEntry
     {
         [Tooltip("FNV1a-32 authority hash. Zero is invalid and fails validators.")]
@@ -75,13 +80,22 @@ namespace Hecton8.Core.Content
         public bool IsBiomeCache;
         public uint[] DependencyHashes;
 
+        public bool IsVisual3DKind()
+        {
+            return Kind == ContentAssetKind.Prefab ||
+                   Kind == ContentAssetKind.Mesh ||
+                   Kind == ContentAssetKind.Vfx;
+        }
+
         public bool HasVisual3D()
         {
-            return MeshPrefab != null || Mesh != null;
+            return IsVisual3DKind() && (MeshPrefab != null || Mesh != null);
         }
 
         public ContentAssetBinaryRecord ToBinaryRecord(uint dependencyOffset)
         {
+            ValidateBinaryExportShape();
+
             uint flags = 0u;
             if (RequiredInBuild)
                 flags |= 1u;
@@ -91,13 +105,10 @@ namespace Hecton8.Core.Content
                 flags |= 4u;
 
             int dependencyCount = DependencyHashes != null ? DependencyHashes.Length : 0;
-            if (dependencyCount > ushort.MaxValue)
-                dependencyCount = ushort.MaxValue;
-
             return new ContentAssetBinaryRecord
             {
                 Hash = Hash,
-                EstimatedVramBytes = EstimatedVramBytes > 0L ? EstimatedVramBytes : 0L,
+                EstimatedVramBytes = EstimatedVramBytes,
                 DependencyOffset = dependencyOffset,
                 DependencyCount = (ushort)dependencyCount,
                 Kind = Kind,
@@ -106,6 +117,40 @@ namespace Hecton8.Core.Content
                 LodLevel = LodLevel,
                 Flags = (byte)flags
             };
+        }
+
+        private void ValidateBinaryExportShape()
+        {
+            if (Hash == 0u)
+                throw new InvalidOperationException("Content asset binary export rejected zero hash.");
+            if (Kind == ContentAssetKind.Unknown || Kind > ContentAssetKind.Compute)
+                throw new InvalidOperationException("Content asset binary export rejected invalid kind.");
+            if (Tier > ContentTier.Overkill)
+                throw new InvalidOperationException("Content asset binary export rejected invalid tier.");
+            if (LodLevel > 2)
+                throw new InvalidOperationException("Content asset binary export rejected unsupported LOD level.");
+            if (EstimatedVramBytes < 0L)
+                throw new InvalidOperationException("Content asset binary export rejected negative VRAM estimate.");
+
+            uint[] dependencies = DependencyHashes;
+            int dependencyCount = dependencies != null ? dependencies.Length : 0;
+            if (dependencyCount > ushort.MaxValue)
+                throw new InvalidOperationException("Content asset binary export rejected dependency overflow.");
+
+            for (int i = 0; i < dependencyCount; i++)
+            {
+                uint dependency = dependencies[i];
+                if (dependency == 0u)
+                    throw new InvalidOperationException("Content asset binary export rejected zero dependency.");
+                if (dependency == Hash)
+                    throw new InvalidOperationException("Content asset binary export rejected self dependency.");
+
+                for (int j = i + 1; j < dependencyCount; j++)
+                {
+                    if (dependencies[j] == dependency)
+                        throw new InvalidOperationException("Content asset binary export rejected duplicate dependency.");
+                }
+            }
         }
     }
 
@@ -170,18 +215,39 @@ namespace Hecton8.Core.Content
         public int CopyRequiredHashes(uint[] destination)
         {
             EnsureSortState();
-            if (destination == null || entries == null)
+            int requiredCount = CountRequiredBuildHashes();
+            if (requiredCount == 0)
                 return 0;
 
+            int destinationLength = destination != null ? destination.Length : 0;
+            if (destinationLength < requiredCount)
+            {
+                LogRequiredHashDestinationTooSmall(requiredCount, destinationLength);
+                return -1;
+            }
+
             int count = 0;
-            int max = destination.Length;
-            for (int i = 0; i < entries.Length && count < max; i++)
+            for (int i = 0; i < entries.Length; i++)
             {
                 if (!entries[i].RequiredInBuild || entries[i].Hash == 0u)
                     continue;
 
                 destination[count] = entries[i].Hash;
                 count++;
+            }
+
+            return count;
+        }
+
+        public int CountRequiredBuildHashes()
+        {
+            EnsureSortState();
+            int count = 0;
+            int length = entries != null ? entries.Length : 0;
+            for (int i = 0; i < length; i++)
+            {
+                if (entries[i].RequiredInBuild && entries[i].Hash != 0u)
+                    count++;
             }
 
             return count;
@@ -278,6 +344,14 @@ namespace Hecton8.Core.Content
 
             entry = default;
             return false;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogRequiredHashDestinationTooSmall(int requiredCount, int destinationLength)
+        {
+            Debug.LogError("[ContentAssetHashMap] Required-hash copy rejected destinationLength=" +
+                           destinationLength + " required=" + requiredCount + ".");
         }
 
 #if UNITY_EDITOR

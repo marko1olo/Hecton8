@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -10,13 +11,14 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Burst tangent-orbit steering kernel for Alpha Leviathan stalking.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(FloatMode = FloatMode.Strict, FloatPrecision = FloatPrecision.Standard)]
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct LeviathanStalkJob : IJobParallelFor
     {
         public NativeArray<AlphaLeviathanCognitionState> States;
         [ReadOnly] public NativeArray<AlphaLeviathanSensoryStimulus> SensoryStimuli;
         public NativeArray<AlphaLeviathanSteeringOutput> SteeringOutputs;
+        [NativeDisableParallelForRestriction]
         public NativeArray<AlphaLeviathanTelemetryEntry> TelemetryRing;
         public uint Frame;
 
@@ -28,51 +30,74 @@ namespace Hecton8.AI.Cognition
 
             bool active = (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.Active) != 0u;
             bool hasPlayerAnchor = (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.HasPlayerAnchor) != 0u;
+            float sonarPingAge = math.max(0f, math.select(float.MaxValue, stimulus.SonarPingAgeSeconds, math.isfinite(stimulus.SonarPingAgeSeconds)));
+            float sonarPingIntensity = math.saturate(math.select(0f, stimulus.SonarPingIntensity01, math.isfinite(stimulus.SonarPingIntensity01)));
             bool sonarActive =
                 (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.HasSonarPing) != 0u &
-                stimulus.SonarPingAgeSeconds <= AlphaLeviathanStalkConstants.SonarLureHoldSeconds &
-                stimulus.SonarPingIntensity01 > AlphaLeviathanStalkConstants.DirectionEpsilon;
+                sonarPingAge <= AlphaLeviathanStalkConstants.SonarLureHoldSeconds &
+                sonarPingIntensity > AlphaLeviathanStalkConstants.DirectionEpsilon;
             bool hasTrackingAnchor = hasPlayerAnchor | sonarActive;
             bool eligibleToAct = active & hasTrackingAnchor;
             float systemStress = math.saturate(math.select(0f, stimulus.SystemStress01, math.isfinite(stimulus.SystemStress01)));
             bool lowTier =
                 (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.MathLodLow) != 0u |
                 systemStress > 0.8f;
+            bool shiftFenceActive = (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.ShiftFenceActive) != 0u;
+            bool shiftChanged = stimulus.ObservedShiftFrameId != state.LastShiftFrameId;
+            AlphaLeviathanAup rawAnchor = SelectAup(stimulus.PlayerAup, stimulus.PingAup, sonarActive);
+            bool anchorAupFinite = IsAupLocalFinite(in rawAnchor);
+            bool leviathanAupFinite = IsAupLocalFinite(in state.LeviathanAup);
+            AlphaLeviathanAup anchor = SanitizeAupLocal(in rawAnchor);
+            AlphaLeviathanAup leviathanAup = SanitizeAupLocal(in state.LeviathanAup);
+            ushort slotId = (ushort)math.min(index, (int)ushort.MaxValue);
+            bool invalidPersistedState =
+                !math.isfinite(state.AgressionLevel01) |
+                !math.isfinite(state.PhaseStartSeconds) |
+                !math.all(math.isfinite(state.Forward)) |
+                !math.all(math.isfinite(state.PreviousSteeringDirection));
+            float3 stateForward = NormalizeSafe(state.Forward, new float3(0f, 0f, 1f));
+            float3 statePrevious = NormalizeSafe(state.PreviousSteeringDirection, stateForward);
+            float stateAggression = math.saturate(math.select(0f, state.AgressionLevel01, math.isfinite(state.AgressionLevel01)));
+            float statePhaseStartSeconds = math.max(0f, math.select(0f, state.PhaseStartSeconds, math.isfinite(state.PhaseStartSeconds)));
+            float currentTimeSeconds = math.max(0f, math.select(statePhaseStartSeconds, stimulus.CurrentTimeSeconds, math.isfinite(stimulus.CurrentTimeSeconds)));
+
+            double3 anchorAbsolute = anchor.ToAbsoluteDouble3();
+            double3 leviathanAbsolute = leviathanAup.ToAbsoluteDouble3();
+            double3 toAnchorDouble = anchorAbsolute - leviathanAbsolute;
+            double distanceSqDouble = math.lengthsq(toAnchorDouble);
+            bool finiteDelta = math.isfinite(distanceSqDouble);
+            bool separatedDelta = distanceSqDouble > AlphaLeviathanStalkConstants.DoubleDirectionEpsilon;
+            bool validDelta = finiteDelta & separatedDelta;
+            bool invalidAupInput = !finiteDelta | !anchorAupFinite | !leviathanAupFinite;
+            bool faultedInput = invalidAupInput | invalidPersistedState;
+            bool safeToAct = eligibleToAct & !faultedInput;
             bool highTierSdf =
                 (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.HighTierSdfContour) != 0u &
                 !lowTier &
-                eligibleToAct;
-            bool shiftChanged = stimulus.ObservedShiftFrameId != state.LastShiftFrameId;
-            ushort slotId = (ushort)math.min(index, (int)ushort.MaxValue);
-
-            AlphaLeviathanAup anchor = SelectAup(stimulus.PlayerAup, stimulus.PingAup, sonarActive);
-            double3 anchorAbsolute = anchor.ToAbsoluteDouble3();
-            double3 leviathanAbsolute = state.LeviathanAup.ToAbsoluteDouble3();
-            double3 toAnchorDouble = anchorAbsolute - leviathanAbsolute;
-            double distanceSqDouble = math.lengthsq(toAnchorDouble);
-            bool validDelta = math.isfinite(distanceSqDouble) &
-                              distanceSqDouble > AlphaLeviathanStalkConstants.DoubleDirectionEpsilon;
+                safeToAct;
 
             float3 toAnchor = NormalizeDouble3(toAnchorDouble, new float3(0f, 1f, 0f), validDelta);
             float3 awayFromAnchor = -toAnchor;
-            float3 playerForward = NormalizeSafe(stimulus.PlayerForward, awayFromAnchor);
+            float3 playerForward = NormalizeSafe(stimulus.PlayerForward, toAnchor);
             float playerGazeDot = math.saturate(math.dot(playerForward, awayFromAnchor));
-            bool playerGazeBreak = eligibleToAct & playerGazeDot > AlphaLeviathanStalkConstants.PlayerGazeBreakDot;
+            bool playerGazeBreak = safeToAct & playerGazeDot > AlphaLeviathanStalkConstants.PlayerGazeBreakDot;
             float3 tangentFallback = NormalizeSafe(math.cross(new float3(0f, 0f, 1f), toAnchor), new float3(1f, 0f, 0f));
             float3 tangent = NormalizeSafe(math.cross(new float3(0f, 1f, 0f), toAnchor), tangentFallback);
 
             double safeDistanceSq = math.select(
-                AlphaLeviathanStalkConstants.DoubleDirectionEpsilon,
-                math.max(distanceSqDouble, AlphaLeviathanStalkConstants.DoubleDirectionEpsilon),
-                math.isfinite(distanceSqDouble));
-            double distanceMetersDouble = safeDistanceSq * math.rsqrt(safeDistanceSq);
+                0d,
+                math.max(distanceSqDouble, 0d),
+                finiteDelta);
+            double distanceMetersDouble = safeDistanceSq * math.rsqrt(math.max(safeDistanceSq, AlphaLeviathanStalkConstants.DoubleDirectionEpsilon));
             float finiteDistanceMeters = (float)math.min(distanceMetersDouble, (double)float.MaxValue);
             float distanceMeters = math.select(
                 AlphaLeviathanStalkConstants.MinimumFogRingMeters,
                 finiteDistanceMeters,
-                validDelta & math.isfinite(distanceMetersDouble));
+                finiteDelta & math.isfinite(distanceMetersDouble));
 
-            float fogDistance = SanitizePositive(stimulus.FogDistanceMeters, AlphaLeviathanStalkConstants.MinimumFogRingMeters + AlphaLeviathanStalkConstants.FogEdgeOffsetMeters);
+            float fogDistance = math.min(
+                SanitizePositive(stimulus.FogDistanceMeters, AlphaLeviathanStalkConstants.MinimumFogRingMeters + AlphaLeviathanStalkConstants.FogEdgeOffsetMeters),
+                AlphaLeviathanStalkConstants.MaxFogDistanceMeters);
             float ringDistance = math.max(
                 AlphaLeviathanStalkConstants.MinimumFogRingMeters,
                 fogDistance - AlphaLeviathanStalkConstants.FogEdgeOffsetMeters);
@@ -87,54 +112,59 @@ namespace Hecton8.AI.Cognition
             float3 chargeSteer = toAnchor;
             float playerNoise = math.saturate(math.select(0f, stimulus.PlayerNoise01, math.isfinite(stimulus.PlayerNoise01)));
             float noiseThreshold = math.saturate(math.select(1f, stimulus.NoiseThreshold01, math.isfinite(stimulus.NoiseThreshold01)));
+            float deltaTime = math.min(SanitizePositive(stimulus.DeltaTime, 0f), AlphaLeviathanStalkConstants.MaxDeltaTimeSeconds);
             float aggressionDelta = math.select(
                 0f,
-                SanitizePositive(stimulus.DeltaTime, 0f) * AlphaLeviathanStalkConstants.NoiseAggressionGainPerSecond,
-                eligibleToAct & playerNoise > noiseThreshold);
-            float aggression = math.saturate(state.AgressionLevel01 + aggressionDelta);
+                deltaTime * AlphaLeviathanStalkConstants.NoiseAggressionGainPerSecond,
+                safeToAct & playerNoise > noiseThreshold);
+            float aggression = math.saturate(stateAggression + aggressionDelta);
             float headlightDot = math.saturate(math.select(0f, stimulus.HeadlightDot, math.isfinite(stimulus.HeadlightDot)));
-            bool lightRetreat = eligibleToAct & headlightDot > AlphaLeviathanStalkConstants.LightRetreatDot;
-            bool charge = eligibleToAct &
+            bool lightRetreat = safeToAct & headlightDot > AlphaLeviathanStalkConstants.LightRetreatDot;
+            bool charge = safeToAct &
                           aggression > AlphaLeviathanStalkConstants.ChargeAggressionThreshold &
                           distanceMeters <= ringDistance + 12f &
                           !lightRetreat;
 
             int phase = AlphaLeviathanStalkPhase.Circle;
-            phase = math.select(phase, AlphaLeviathanStalkPhase.Idle, !eligibleToAct);
+            phase = math.select(phase, AlphaLeviathanStalkPhase.Idle, !safeToAct);
             phase = math.select(phase, AlphaLeviathanStalkPhase.Charge, charge);
             phase = math.select(phase, AlphaLeviathanStalkPhase.Retreat, lightRetreat);
+            bool phaseChanged = state.CurrentPhase != (byte)phase;
 
             float3 phaseSteer = orbitSteer;
             phaseSteer = math.select(phaseSteer, chargeSteer, phase == AlphaLeviathanStalkPhase.Charge);
             phaseSteer = math.select(phaseSteer, retreatSteer, phase == AlphaLeviathanStalkPhase.Retreat);
-            float3 idleSteer = NormalizeSafe(state.Forward, new float3(0f, 0f, 1f));
+            float3 idleSteer = stateForward;
             phaseSteer = math.select(phaseSteer, idleSteer, phase == AlphaLeviathanStalkPhase.Idle);
-            phaseSteer = NormalizeSafe(phaseSteer, NormalizeSafe(state.Forward, tangent));
+            phaseSteer = math.select(phaseSteer, toAnchor, safeToAct & finiteDelta & !separatedDelta);
+            phaseSteer = NormalizeSafe(phaseSteer, NormalizeSafe(stateForward, tangent));
 
-            float3 previous = NormalizeSafe(state.PreviousSteeringDirection, phaseSteer);
+            float3 previous = NormalizeSafe(statePrevious, phaseSteer);
             previous = math.select(previous, phaseSteer, shiftChanged);
             float blend = math.select(AlphaLeviathanStalkConstants.HighTierSteeringBlend, AlphaLeviathanStalkConstants.LowTierSteeringBlend, lowTier);
             float3 desiredDirection = NormalizeSafe(math.lerp(previous, phaseSteer, blend), phaseSteer);
-            float activeIntent = math.select(0f, 1f, eligibleToAct);
-            float reportedAggression = math.select(0f, aggression, eligibleToAct);
-            float reportedDistanceMeters = math.select(0f, distanceMeters, eligibleToAct);
-            float reportedRingDistance = math.select(0f, ringDistance, eligibleToAct);
-            float3 outputDirection = math.select(float3.zero, desiredDirection, eligibleToAct);
+            float activeIntent = math.select(0f, 1f, safeToAct);
+            float reportedAggression = math.select(0f, aggression, safeToAct);
+            float reportedDistanceMeters = math.select(0f, distanceMeters, safeToAct);
+            float reportedRingDistance = math.select(0f, ringDistance, safeToAct);
+            float3 outputDirection = math.select(float3.zero, desiredDirection, safeToAct);
 
             byte flags = 0;
-            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.LowTierRadialFallback, lowTier & eligibleToAct);
+            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.LowTierRadialFallback, lowTier & safeToAct);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.SdfDiveRequested, highTierSdf);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.PlayerGazeBreak, playerGazeBreak);
-            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.AcousticLure, eligibleToAct & sonarActive);
+            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.AcousticLure, safeToAct & sonarActive);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.LightRetreat, lightRetreat);
-            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.ShiftFenceReset, shiftChanged);
-            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.Fault, !validDelta & eligibleToAct);
+            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.ShiftFenceReset, shiftChanged | shiftFenceActive);
+            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.Fault, faultedInput & eligibleToAct);
 
             uint stateHash = BuildStateHash(index, (byte)phase, flags, aggression, Frame);
-            state.TargetAnchorAup = SelectAup(state.TargetAnchorAup, anchor, eligibleToAct);
-            state.PreviousSteeringDirection = math.select(state.PreviousSteeringDirection, desiredDirection, eligibleToAct | shiftChanged);
-            state.Forward = math.select(state.Forward, desiredDirection, eligibleToAct | shiftChanged);
+            state.LeviathanAup = leviathanAup;
+            state.TargetAnchorAup = SelectAup(state.TargetAnchorAup, anchor, safeToAct);
+            state.PreviousSteeringDirection = math.select(statePrevious, desiredDirection, safeToAct | shiftChanged);
+            state.Forward = math.select(stateForward, desiredDirection, safeToAct | shiftChanged);
             state.AgressionLevel01 = aggression;
+            state.PhaseStartSeconds = math.select(statePhaseStartSeconds, currentTimeSeconds, phaseChanged);
             state.CurrentPhase = (byte)phase;
             state.Flags = flags;
             state.LastShiftFrameId = stimulus.ObservedShiftFrameId;
@@ -143,7 +173,7 @@ namespace Hecton8.AI.Cognition
             state.Reserved0 = 0u;
             States[index] = state;
 
-            float3 targetOffset = math.select(float3.zero, toAnchor * ringDistance, eligibleToAct);
+            float3 targetOffset = math.select(float3.zero, toAnchor * ringDistance, safeToAct);
             float wakeSiltIntensity = math.saturate(
                 (math.abs(radialCorrection) * 0.35f +
                  math.select(0.08f, 0.85f, phase == AlphaLeviathanStalkPhase.Charge) +
@@ -156,21 +186,21 @@ namespace Hecton8.AI.Cognition
                 AlphaLeviathanStalkConstants.HighTierCadenceSeconds,
                 AlphaLeviathanStalkConstants.LowTierCadenceSeconds,
                 lowTier);
-            recommendedCadence = math.select(0f, recommendedCadence, eligibleToAct);
+            recommendedCadence = math.select(0f, recommendedCadence, safeToAct);
             float charge01 = math.select(0f, 1f, phase == AlphaLeviathanStalkPhase.Charge);
-            float saltGrowth = math.select(0f, math.select(0.03f, math.saturate(0.25f + aggression * 0.55f + sdfWeight * 0.2f), highTierSdf), eligibleToAct);
+            float saltGrowth = math.select(0f, math.select(0.03f, math.saturate(0.25f + aggression * 0.55f + sdfWeight * 0.2f), highTierSdf), safeToAct);
             float dentImpulse = math.saturate(charge01 * (aggression * 0.75f + math.abs(radialCorrection) * 0.25f));
             float sssPulse = math.saturate((0.05f + charge01 * 0.8f + math.select(0f, 0.15f, highTierSdf)) * activeIntent);
-            float particleBudget = math.select(0f, math.select(0.18f, 1f, highTierSdf), eligibleToAct);
+            float particleBudget = math.select(0f, math.select(0.18f, 1f, highTierSdf), safeToAct);
             float triangleNoise = Triangle01(((float)((Frame + (uint)(index * 17)) & 1023u)) * AlphaLeviathanStalkConstants.TriangleNoiseInvPeriod + aggression);
-            float silhouetteNoise = math.select(0f, math.select(triangleNoise * 0.2f, triangleNoise, lowTier), eligibleToAct);
+            float silhouetteNoise = math.select(0f, math.select(triangleNoise * 0.2f, triangleNoise, lowTier), safeToAct);
             SteeringOutputs[index] = new AlphaLeviathanSteeringOutput
             {
                 DesiredDirection = outputDirection,
                 TargetRuntimeOffsetMeters = targetOffset,
                 DesiredRingDistanceMeters = reportedRingDistance,
                 DistanceToAnchorMeters = reportedDistanceMeters,
-                BioluminescenceIntensity = math.select(0f, math.select(0.05f, 10f, phase == AlphaLeviathanStalkPhase.Charge), eligibleToAct),
+                BioluminescenceIntensity = math.select(0f, math.select(0.05f, 10f, phase == AlphaLeviathanStalkPhase.Charge), safeToAct),
                 AgressionLevel01 = reportedAggression,
                 StateHash = stateHash,
                 SdfContourWeight01 = sdfWeight,
@@ -205,6 +235,20 @@ namespace Hecton8.AI.Cognition
                 LeviathanAgressivity01 = reportedAggression,
                 Reserved1 = stimulus.ObservedShiftFrameId
             };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsAupLocalFinite(in AlphaLeviathanAup value)
+        {
+            return math.all(math.isfinite(value.Local));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static AlphaLeviathanAup SanitizeAupLocal(in AlphaLeviathanAup value)
+        {
+            AlphaLeviathanAup sanitized = value;
+            sanitized.Local = math.select(float4.zero, value.Local, math.isfinite(value.Local));
+            return sanitized;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

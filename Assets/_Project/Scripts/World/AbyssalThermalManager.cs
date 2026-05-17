@@ -3314,7 +3314,7 @@ namespace Hecton8.World
             if (!_supportsGraphicsFence)
                 return;
 
-            _smokeDispatchFence = Graphics.CreateAsyncGraphicsFence();
+            _smokeDispatchFence = UnityEngine.Graphics.CreateAsyncGraphicsFence();
             _smokeDispatchFenceArmed = true;
 
             if (_ventBufferFences == null ||
@@ -3546,7 +3546,7 @@ namespace Hecton8.World
                 layer = gameObject.layer,
                 lightProbeUsage = LightProbeUsage.Off
             };
-            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, smokeParticleCount);
+            UnityEngine.Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, smokeParticleCount);
         }
 
         private void UpdateSmokeBounds()

@@ -359,3 +359,94 @@ Solution: Split the packed LUT helpers into active-gated and direct active varia
 Rejected Alternatives: Removing all inactive branches was rejected because it would reintroduce packed LUT loads during analytical fallback. Leaving the repeated per-channel checks was rejected because the resolve path already owns the active decision.
 Scalability potential: Low/mobile/Deck remain analytical and descriptor-stripped. High/Ultra keep packed LUT extinction with fewer redundant control checks around the three channel loads.
 Hardware Impact: Active packed-LUT resolves remove three repeated active checks per RGB resolve. No device microseconds claimed without shader compiler/profiler proof.
+
+## Decision 052 - Extinction Wrapper Surface Removal
+Problem: After the active-flag hoist, `H8WaterExtinctionSamplePacked`, `H8WaterExtinctionSampleRgb`, `H8WaterExtinctionSampleRgbByWorld`, and `H8WaterExtinctionSampleRgbByDepthMeters` remained as speculative direct-call wrappers. Project scan showed no external caller outside `Hecton_WaterExtinction.hlsl`, so those wrappers preserved dead branch surface and a stale public API.
+Solution: Removed the uncalled direct wrappers and kept only the active helper pair plus the analytical/packed resolve API used by UberNoir. `H8WaterExtinctionResolveRgbByWorld` and depth resolves still own the inactive-LUT early-out before any packed LUT loads.
+Rejected Alternatives: Keeping wrappers for hypothetical future direct callers was rejected because this pass is consolidation, not API expansion. Removing the active helper pair was rejected because the resolve functions need it to avoid repeated active checks on the High/Ultra path. Branchless `lerp` was rejected because it would pay texture loads during analytical fallback.
+Scalability potential: Low/mobile/Deck still route to analytical Beer-Lambert and avoid packed LUT descriptors/loads. High/Ultra keep the packed LUT route with a smaller helper surface and one active check per RGB resolve.
+Hardware Impact: Static include surface removed four unused functions and two dead inactive-branch sites. No measured device microseconds claimed; shader import/profiling remains blocked by unrelated project compile state.
+
+## Decision 053 - Radius Mask Branchless NaN Guard
+Problem: `H8UberNoirRadiusMask` still used an early `if` to reject non-finite position or center/radius data. The branch did not guard texture work, so it was safe branch debt inside the hull pressure/deformation helper.
+Solution: Replaced the early return with finite masks, sanitized position/center data, zero-radius fallback, and a final `valid` multiplier. Non-finite inputs still produce zero influence, but the helper no longer contributes a scalar guard branch.
+Rejected Alternatives: Leaving the branch was rejected because Omega polish explicitly targets removable branch debt. Sampling or computing buckling unconditionally elsewhere was rejected because the remaining branches skip real vertex work or texture taps.
+Scalability potential: Low/MX350 and Quest keep deterministic zero influence for invalid pressure data without branch divergence. High/Ultra retain hull bowing and pressure dent response when valid data is present.
+Hardware Impact: Static shader `if` count in `Hecton8_UberNoir.hlsl` dropped to 23 with no new texture work. No measured GPU microseconds claimed; shader compiler/player validation remains blocked.
+
+## Decision 054 - Post-Polish Sovereignty Scan
+Problem: After shader hot-path edits, the Rendering slice needed a fresh evidence pass for the user's multiplatform/data-sovereignty requirements instead of relying on the older Loop 31 audit.
+Solution: Re-ran `rg` scans over `Assets/_Project/Scripts/Rendering` and the UberNoir shader include chain for standard Unity updates, managed formatting/delegates, local NativeArray ownership, legacy EventBus use, DirectX-only shader debt, UAVs, compute thread groups, and StructLayout packing. No forbidden hot-path or shader portability hits were found in the owned scan set; Rendering `StructLayout` entries are still `Pack=1`.
+Rejected Alternatives: Expanding edits into Scatter, Visor, or World domains was rejected because no new violation was found in the owned UberNoir scan set, and cross-domain churn would risk parallel-agent conflicts. Claiming player validation was rejected because project compile state still blocks Unity import/player builds.
+Scalability potential: Low/Quest/Steam Deck retain the analytical and texture-shed paths. High/Ultra retain optional packed extinction, POM, caustics, refraction, wake, and hull deformation inside the same shader family.
+Hardware Impact: 0 runtime change. This was evidence refresh; no microseconds claimed.
+
+## Decision 055 - Validation Refresh Boundary
+Problem: After the latest shader polish, validation evidence needed refresh, but the workspace has active concurrent builds and project compile state is not under this Rendering prompt.
+Solution: Attempted `dotnet build .\Hecton8.Core.csproj` with existing obj state and a separate temp obj path. The temp obj path failed with `NETSDK1004` because no `project.assets.json` exists there; the existing-obj attempts returned `EXIT=-1` with empty logs and no MSBuild diagnostics. Active dotnet processes were inspected and left alone because they belong to other agents.
+Rejected Alternatives: Running NuGet restore into a private temp obj path was rejected because this shader task should not mutate dependency restore state. Killing other agents' dotnet builds was rejected because concurrent execution is explicitly expected. Claiming validation success from empty `EXIT=-1` logs was rejected.
+Scalability potential: Source-side low/high shader scalability remains intact, but platform/player validation remains blocked until the shared project build state is stable.
+Hardware Impact: 0 runtime change. Validation inconclusive; no microseconds claimed.
+
+## Decision 056 - CBUFFER-Owned Noir Fog Floors and Depth-Fog Rcp Guards
+Problem: `H8WaterExtinctionApplyFogTint` carried hardcoded noir tint/floor literals, and the dependent hidden `Hecton_NoirDepthFog.shader` still used raw reciprocal calls for density decode, depth range scaling, and the fast negative exponential approximation.
+Solution: Changed the extinction fog-tint helper to take caller-owned `extinctionFloor` and `abyssFloor` colors. UberNoir passes `_NoirFogColor`/`_NoirAbyssFloorColor`; NoirDepthFog passes `_HectonNoirDepthFogShallowColor`/`_HectonNoirDepthFogAbyssColor`. Added `HectonNoirDepthFogFinite` and `HectonNoirDepthFogSafePositiveRcp`, then routed the depth-fog reciprocal math through that helper and marked full-screen early-outs as `[branch]`.
+Rejected Alternatives: Adding a new global palette constant was rejected because the existing material/pass CBUFFERs already own the relevant floor colors. Keeping the hardcoded literals was rejected because the noir mandate wants palette authority outside shared helper bodies. Branchless depth-fog early exits were rejected because they would pay source/depth/fog work on sky/no-fog pixels.
+Scalability potential: Low/MX350 keeps analytical Beer-Lambert and cheap depth-fog exits. High/Ultra keep the same extinction response while the authored fog floor remains controlled per UberNoir material or post pass.
+Hardware Impact: Static safety improvement only. Raw `rcp` in the dependent NoirDepthFog path is now confined to a safe helper; no measured GPU microseconds claimed.
+
+## Decision 057 - Extinction Resolve Order Work-Shed
+Problem: `H8WaterExtinctionResolveRgbByWorld` and `H8WaterExtinctionResolveRgbByDepthMeters` computed the analytical Beer-Lambert RGB fallback before checking whether the packed extinction LUT was active. On High/Ultra active-LUT frames, that exp2 vector was discarded.
+Solution: Moved `H8WaterExtinctionActive()` ahead of analytical fallback computation in LUT-enabled variants. Low/mobile variants still compile directly to analytical fallback; inactive desktop LUT paths still branch to analytical fallback; active desktop LUT paths now go directly to packed RGB sampling.
+Rejected Alternatives: Keeping the eager analytical calculation was rejected because it wastes ALU on the richer path. Branchless blending between analytical and LUT was rejected because it would pay both paths. Removing analytical fallback was rejected because Low/mobile/Deck and inactive LUT states rely on it.
+Scalability potential: Low/Quest/Steam Deck keep the Dear Lie analytical fog. High/Ultra keep the packed LUT fog without also paying the analytical `exp2` resolve.
+Hardware Impact: Active packed-LUT resolves avoid one discarded analytical RGB exp2 resolve per fog sample. No device microseconds claimed without shader compiler/profiler proof.
+
+## Decision 058 - Blackbox Single-Owner Regression Repair
+Problem: The runtime bridge source contradicted the existing status/rationale: `HectonUberNoirRuntimeBridge` still declared `ExtinctionDumpFileName` and wrote full/empty fault dumps to `Dump_EXTINCTION_LUT_SAMPLER.bin`, contaminating another agent's blackbox artifact.
+Solution: Removed the duplicate dump filename constant and the two duplicate write calls. UberNoir faults now write only `Docs/AgentLogs/Dump_UBER_NOIR_INTEGRATOR.bin`.
+Rejected Alternatives: Keeping the duplicate dump was rejected because blackbox ownership must be single-source. Redirecting the extinction filename through a feature flag was rejected because this bridge does not own the Extinction LUT sampler domain. Removing fault dumps entirely was rejected because Task 13 requires a 300-frame telemetry blackbox.
+Scalability potential: Low/Quest/Steam Deck avoid duplicate fault-path I/O. High/Ultra keep the same DataVault telemetry ring and single authoritative dump path.
+Hardware Impact: Hot path unchanged. Fault path writes one binary artifact instead of two; no frame microseconds claimed because dumps are crash/fault-only. Compile validation remains blocked outside UberNoir: no-restore hit missing generated MSBuild editorconfig in `Temp/obj/Hecton8.Core`, and restore/build then failed in `Core/SystemDispatcher.cs` for an unrelated scalability listener interface implementation.
+
+## Decision 059 - Multiplatform Boundary Refresh
+Problem: The user explicitly requested ARM64/Quest struct alignment and Metal thread-group evidence after the latest code churn, but the repo contains concurrent Graphics-domain edits outside the UberNoir ownership boundary.
+Solution: Re-ran static scans. UberNoir-owned Rendering structs remain `Pack=1`, and `HectonUberNoirRuntimeBridge` keeps `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]`. All `numthreads(...)` declarations under `Assets/_Project/Art/Shaders` are <=512 threads, below Metal's 1024 limit. The UberNoir shader chain has no `GrabPass`, legacy `tex2D`/`sampler2D`, UAV, group-shared compute syntax, or compute thread groups.
+Rejected Alternatives: Editing `Assets/_Project/Scripts/Graphics/*` struct layouts was rejected because those files are outside the Rendering/URP domain and some GPU interop structs deliberately use explicit pack/size contracts. Treating cross-domain scan hits as UberNoir failures was rejected because the owned bridge and shader chain are clean.
+Scalability potential: Low/Quest/Android keep the analytical/no-LUT paths and aligned UberNoir telemetry. High/Ultra keep the richer shader variants without Metal thread-group risk in the owned chain.
+Hardware Impact: 0 runtime change. This was evidence refresh; no microseconds claimed.
+
+## Decision 060 - Portable LUT I/O Recheck
+Problem: Steam Deck and mobile targets must not stall on the 32 MB packed water-extinction matrix, especially from MicroSD or StreamingAssets URI paths.
+Solution: Re-verified `LutArrayResolver.ShouldUseAnalyticalFallbackOnly()`. Player Android/VisionOS, SteamDeck-like profiles, and <=2048 MB graphics-memory devices return before matrix path resolution, StreamingAssets staging, texture allocation, and sequential file reads. Non-portable/high-memory paths still stream with `DownloadHandlerFile` for URI staging and a 128 KB scratch buffer for filesystem reads.
+Rejected Alternatives: Loading the LUT universally was rejected because portable devices already have the analytical Beer-Lambert Dear Lie path. Removing the High/Ultra LUT path was rejected because top-tier desktop can afford richer extinction.
+Scalability potential: Low/Quest/Steam Deck use analytical fog only. High/Ultra keep packed LUT extinction without forcing portable I/O.
+Hardware Impact: 0 runtime change in this loop. Static evidence confirms portable targets avoid the 32 MB cold read; no measured microseconds claimed.
+
+## Decision 061 - Previous-Normal Motion Vector Repair
+Problem: `H8UberNoirMotionVertex` transformed previous positions with `UNITY_PREV_MATRIX_M` but reused current-frame `normalWS` for previous hull bending and wake deformation. On rotating or non-uniformly transformed hard-surface meshes, the previous displaced position could be bent along the wrong normal and produce STP ghost trails.
+Solution: Transform `normalOS` with `UNITY_PREV_MATRIX_I_M` and use that `previousNormalWS` for previous dynamic hull bending and wake deformation. Current deformation still uses the current `instanceData.WorldToObject` normal.
+Rejected Alternatives: Leaving current-normal reuse was rejected because Task 11 requires displaced-vertex motion-vector accuracy. Recomputing TBN frames was rejected because Task 17 explicitly uses normal bias, not full TBN rebuild. Adding previous dent/wake history buffers was rejected because no DataVault previous-frame payload exists in this shader contract.
+Scalability potential: Low/MX350 gets more stable temporal output without new textures or buffers. High/Ultra retains hull dents, wake deformation, and STP stability with one extra normal transform in the motion-vector pass only.
+Hardware Impact: One additional previous normal transform in the MotionVectors pass. No measured GPU microseconds claimed; shader import/player validation remains blocked outside this domain.
+
+## Decision 062 - Owned ShadowCaster for Consolidated UberNoir
+Problem: The material consolidator projects DryZone and Triplebrick wet-glass families into UberNoir, but the target shader only had ForwardLit and MotionVectors. Converting those materials without an owned shadow pass would reduce shader-family fragmentation while silently removing shadow casting from displaced hard-surface geometry.
+Solution: Added an UberNoir `ShadowCaster` pass plus `H8UberNoirShadowVertex`/`H8UberNoirShadowFragment`. The shadow vertex applies the same instance load, hull dents, dynamic pressure bend, global wake deformation, and punctual/directional light bias path as the visible geometry. The shadow fragment samples base alpha and routes through the same dither/instance-fade clip helper used by forward and motion paths.
+Rejected Alternatives: Using `UsePass "Universal Render Pipeline/Lit/ShadowCaster"` was rejected because it would not know about UberNoir hull dents, pressure deformation, wake displacement, instance buffer transforms, or dither fade. Leaving shadows disabled was rejected because consolidation must not trade material cleanliness for broken scene grounding. Adding DepthOnly/Meta in this pass was rejected because the immediate defect is shadow loss, and each extra pass increases SetPass pressure.
+Scalability potential: Low/Quest/MX350 shadow casting uses the low-tier branch of the same deformation helpers and keeps analytical/dither fakes; High/Ultra retain deformed, alpha-clipped shadows for rusted hull, wet glass, and hard-surface conversions.
+Hardware Impact: Adds a ShadowCaster pass when shadow maps request it. No measured microseconds claimed; static impact is replacing fragmented inherited/third-party shadow behavior with one owned, deformation-correct pass.
+
+## Decision 063 - Render Queue Normalization in Material Consolidator
+Problem: Triplebrick wet-glass and RuinSeep source materials can carry transparent queue/tag overrides. After shader swap, UberNoir uses dithered alpha clip and ZWrite instead of transparent blending, so stale transparent queues would keep converted hard-surface materials in a late overdraw path.
+Solution: Added `RequiresDitheredCutout()` and `ApplyRenderState()` to the consolidator. Dithered wet/seep or alpha materials are assigned `RenderQueue.AlphaTest` and `RenderType=TransparentCutout`; opaque DryZone/ToolDecay/URP Lit projections are assigned `RenderQueue.Geometry` and `RenderType=Opaque`.
+Rejected Alternatives: Raw YAML queue edits were rejected because material writes must go through Unity's Material API. Leaving previous queue state untouched was rejected because source transparent shaders could preserve late sorting/overdraw after conversion. Forcing every conversion to Geometry was rejected because dithered cutout surfaces need cutout ordering semantics.
+Scalability potential: Low/Quest/MX350 avoid transparent-queue overdraw for converted wet/seep fakes while keeping alpha-to-coverage cutout. High/Ultra keep Snell/refraction/wet-sheen projection without reverting to full transparent material families.
+Hardware Impact: Source/tooling change only until the converter can execute. Expected runtime gain is avoiding stale transparent queue overdraw on converted dithered materials; no profiler microseconds claimed.
+
+## Decision 064 - Legacy Source Keyword Scrub
+Problem: Source materials in the consolidation roots carry keywords such as `_ALPHABLEND_ON`, `_NORMALMAP`, `_SURFACE_TYPE_TRANSPARENT`, and URP/ASE detail keywords. After shader swap, those keywords are no longer the authority for UberNoir behavior and can leave serialized noise or invalid variant pressure on converted materials.
+Solution: Added a fixed `LegacySourceKeywords` list and `DisableLegacySourceKeywords()` to the consolidator. The scrub runs before re-enabling UberNoir's local caustics/refraction keywords, so the post-conversion keyword state is explicitly owned by the target shader family.
+Rejected Alternatives: Leaving legacy keywords untouched was rejected because the purge should not preserve shader-family residue. Clearing every material keyword blindly was rejected because future target-local keywords should not be destroyed accidentally. Raw material YAML cleanup was rejected because material mutation belongs to Unity's Material API.
+Scalability potential: Low/MX350 and Quest avoid stale transparent/normal/detail keyword residue on unified materials. High/Ultra still get only the intended UberNoir caustic/refraction feature variants.
+Hardware Impact: Tooling-side cleanup. Runtime savings are not measured; expected impact is reduced invalid keyword/variant noise after conversion.

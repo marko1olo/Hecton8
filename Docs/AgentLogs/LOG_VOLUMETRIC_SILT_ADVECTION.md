@@ -217,3 +217,175 @@ Validation:
 - Thread-group scan reports 8x8x1, 1x1x1, and 64x1x1 declarations, all under the 1024-thread Metal/Quest limit.
 - `git diff --check` is clean except CRLF normalization warnings.
 - Unity DX12/Vulkan validation is not claimed. A Unity process was already active (`Docs/AgentLogs/UnityProcess_VOLUMETRIC_SILT_ADVECTION_Loop11.log`), so no second platform compile was started.
+
+## Entry 2026-05-17 - VFX Hot-Swap, Release I/O, and Platform Timeout Pass
+
+What was wrong:
+- `BiolumPulseSyncRuntime` still had registry fallback shape, compaction-fence risk, and release path probing outside StreamingAssets.
+- `CarveDebrisComputeRenderer` had a concurrent staged regression that put scalability tier sampling back into the tick path.
+- DX12/Vulkan validation was still unproven.
+
+What was done:
+- Added Biolum hot-swap rebind handling for Dispatcher/DataVault, compaction-fence refusal, vault generation refresh, and removal of the stale DataVault fallback helper.
+- Restricted Biolum profile probing so player builds only check StreamingAssets; project `Docs` probes stay editor/development only.
+- Corrected CarveDebris live source so low/high tier decisions are cached from cold seed or `ScalabilityChangedEvent`, not per-frame `GlobalRegistry` polling.
+- Re-ran VFX debt scans and marine-snow shader portability scans.
+- Attempted Unity batchmode with `-force-d3d12` and `-force-vulkan`; both timed out before shader/API validation and were killed cleanly.
+
+Cinematic Cheats used:
+- Low/Toaster remains fake-first: 8,000 marine-snow particles, radial wake, symmetric hash wander, no 3D noise, no SDF collision.
+- High/Ultra still spend saved budget on 100,000 marine-snow particles, abyssal flow texture, curl fake, headlight emission, sonar glow, fog injection, and debris overkill paths.
+
+Exact Microseconds saved:
+- 0 us measured. No profiler/player capture was run.
+- No frame-time gain is claimed.
+- Release I/O risk is reduced by avoiding project `Docs` profile probes outside editor/development builds.
+
+Validation:
+- Static VFX scans found no standard `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, interpolation `$"`, scene discovery, coroutine, `Resources.Load`, `Camera.main`, `GlobalSignals.Publish`, `GlobalSignals.TryGetLatest`, legacy `EventBus`, or managed delegate patterns under `Assets/_Project/Scripts/VFX`.
+- Marine-snow shader scan found no `distance()`, wave intrinsics, groupshared/SV_Group, `ComputeBuffer`, `SetData`, or `GetData`; thread groups remain under 1024.
+- `dotnet restore` returned EXIT=0. `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies --no-incremental /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` returned EXIT=0 in `Docs/AgentLogs/Dotnet_VOLUMETRIC_SILT_ADVECTION_Loop12_VfxDomain_Long.log` before the final tick-poll correction.
+- Post-correction `dotnet build` reruns returned EXIT=-1 with empty logs while many concurrent `dotnet build` jobs held project state; exact final-source compile success is not claimed.
+- Unity DX12 and Vulkan batchmode logs are `Docs/AgentLogs/Unity_VOLUMETRIC_SILT_ADVECTION_Loop12_DX12.log` and `Docs/AgentLogs/Unity_VOLUMETRIC_SILT_ADVECTION_Loop12_Vulkan.log`; both timed out before platform shader/API validation. Error scan found no `error CS`, shader error, exception, fatal abort, compilation failure, or owned VFX name before timeout.
+
+## Entry 2026-05-17 - Dispatcher Hot-Swap Inquisition
+
+What was wrong:
+- VFX registration paths still had direct `GlobalRegistry.Dispatcher` readiness gates after DataVault and other runtime services had been moved to cached hot-swap state.
+- `NativeTrailRenderer` had a flawed service replacement shape where render-dispatcher readiness could also mark tick-dispatch readiness.
+- Current compile/platform validation still had to be rechecked after these final-source edits.
+
+What was done:
+- `HectonMarineSnowRenderer` now cold-seeds and hot-swaps Dispatcher readiness through `GlobalRegistryServiceSlot.Dispatcher`, then registers ticks from cached readiness.
+- `MaterialDecayRuntime` now uses the same cached Dispatcher readiness instead of checking `GlobalRegistry.Dispatcher` in `TryRegisterTick`.
+- `CameraJuiceSystem` now registers update/slow/late-frame lanes through cached `_dispatcher` service state and no longer gates unregister on a registry read.
+- `NativeTrailRenderer` now registers for GlobalRegistry hot-swap callbacks and keeps separate `_dispatcherReady` and `_renderDispatcherReady` flags.
+- Re-ran static VFX debt scans, struct layout scan, marine-snow shader portability scan, `git diff --check`, and scoped C# build.
+
+Cinematic Cheats used:
+- Low/Toaster remains the cheap marine-snow path: 8,000 particles, radial wake fake, centered hash wander, no 3D flow lookup, no curl texture, no SDF collision.
+- High/Ultra still spend the budget on 100,000 particles, abyssal flow texture, curl fake, headlight emission, sonar glow, fog density injection, and existing camera/material/biolum presentation layers.
+
+Exact Microseconds saved:
+- 0 us measured. No profiler/player capture was run.
+- No frame-time win is claimed. The gain is service hot-swap correctness and removal of direct dispatcher registry reads under VFX.
+
+Validation:
+- Static VFX scans found no direct `GlobalRegistry.Dispatcher`, no standard `Update`/`LateUpdate`/`FixedUpdate`, no `string.Format`, no interpolation `$"`, no scene discovery, no coroutine, no `Resources.Load`, no `Camera.main`, no legacy `EventBus`, and no managed delegate patterns under `Assets/_Project/Scripts/VFX`.
+- VFX struct scan found explicit `Pack = 1` and `Size = ...` on marine snow, camera juice, material decay, biolum, debris, wake, and VFX budget structs.
+- Marine-snow shader scan found no `distance()`, wave intrinsics, groupshared/SV_Group, `ComputeBuffer`, `SetData`, or `GetData`; particle kernels remain 64-thread and clear kernels are under 1024 threads.
+- `git diff --check` is clean except CRLF normalization warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies --no-incremental /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` returned EXIT=1 in `Docs/AgentLogs/Dotnet_VOLUMETRIC_SILT_ADVECTION_Loop13_HotSwapVfx.log` on unrelated `Assets/_Project/Scripts/SubmarineFluidDynamics.cs(729,43) CS0102`; the touched VFX files are not named.
+- Unity DX12/Vulkan validation remains blocked and is not claimed.
+
+## Entry 2026-05-17 - Dispatcher Identity Hot-Swap Pass
+
+What was wrong:
+- Boolean dispatcher readiness was not enough. A dispatcher service could be replaced while VFX systems kept `_registered` true, preventing registration into the replacement dispatcher lanes.
+- `NativeTrailRenderer` had already split tick/render readiness, but it still needed service identity tracking so a replacement RenderDispatcher unregisters the old render registration.
+- Final validation after the hot-swap edits had not completed.
+
+What was done:
+- `HectonMarineSnowRenderer` now tracks cached `ITickDispatcher` identity and unregisters stale update registration when the dispatcher changes.
+- `MaterialDecayRuntime` now tracks cached `ITickDispatcher` identity and re-registers against the current dispatcher only.
+- `CameraJuiceSystem` now compares dispatcher identity, unregisters stale update/slow/late-frame lanes, then registers against the replacement dispatcher.
+- `BiolumPulseSyncRuntime` now gates update registration on cached dispatcher presence and unregisters on dispatcher identity change.
+- `NativeTrailRenderer` now tracks both `ITickDispatcher` and `RenderDispatcher` identities and unregisters stale tick/origin/render registrations independently.
+
+Cinematic Cheats used:
+- Low/Toaster remains fake-first: 8,000 marine-snow particles, radial wake, centered hash wander, no 3D noise, no SDF collision, and cheap presentation reactions.
+- High/Ultra remain overkill: 100,000 marine-snow particles, abyssal flow texture, curl fake, headlight emission, sonar glow, fog density injection, and richer camera/material/biolum responses.
+
+Exact Microseconds saved:
+- 0 us measured. No profiler/player capture was run.
+- No frame-time gain is claimed. The fix prevents stale service registration after dispatcher replacement.
+
+Validation:
+- Static VFX scans found no direct `GlobalRegistry.Dispatcher`, no standard `Update`/`LateUpdate`/`FixedUpdate`, no `string.Format`, no interpolation `$"`, no scene discovery, no coroutine, no `Resources.Load`, no `Camera.main`, no legacy `EventBus`, and no managed delegate patterns under `Assets/_Project/Scripts/VFX`.
+- Native allocation scan found no `new NativeArray`, no `Allocator.Persistent/Temp/TempJob`, no `H8Memory.Allocate`, and no `byte[]` allocation patterns under VFX.
+- Marine-snow shader scan found no `distance()`, wave intrinsics, groupshared/SV_Group, `ComputeBuffer`, `SetData`, or `GetData`; reciprocal and `rsqrt` sites are guarded by max/finite checks.
+- `git diff --check` is clean except CRLF normalization warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies --no-incremental /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` timed out and produced an empty `Docs/AgentLogs/Dotnet_VOLUMETRIC_SILT_ADVECTION_Loop14_DispatcherHotSwapIdentity.log` while many concurrent dotnet/MSBuild jobs were active. Compile success is not claimed.
+- Unity DX12/Vulkan validation remains blocked and is not claimed.
+
+## Entry 2026-05-17 - Dynamic Wake Sovereignty Pass
+
+What was wrong:
+- Marine snow status claimed the FluidEngine `_DynamicWakes` / `_DynamicWakeVectors` GPU ring was used, but the live shader still sampled `_GlobalWakeBuffer[16]`, `_GlobalWakeVectors[16]`, and `_GlobalWakeParams`.
+- That kept marine snow coupled to a global shader vector-array mirror instead of the authoritative FluidEngine wake payload.
+
+What was done:
+- `Hecton_MarineSnow.compute` now declares and samples `StructuredBuffer<float4> _DynamicWakes`, `StructuredBuffer<float4> _DynamicWakeVectors`, and `_DynamicWakeParams`.
+- `HectonMarineSnowRenderer` now binds dynamic wake buffers from cached `HectonFluidEngine.TryGetDynamicWakeGpuPayload`.
+- Wake params are sanitized before dispatch: low tier clamps to 4 slots, high/ultra can use 16 slots, and active count is clamped to slot limit.
+- Empty GPU fallback buffers are bound when FluidEngine has no valid dynamic wake payload.
+
+Cinematic Cheats used:
+- Low/Toaster keeps the cheap fake: 8,000 particles, 4 wake slots, radial low-tier wake behavior, no 3D flow lookup when LOD is low, no SDF collision.
+- High/Ultra keep the overkill path: 100,000 particles, 16 dynamic wake slots, abyssal flow texture, curl fake, headlight emission, sonar glow, and fog injection.
+
+Exact Microseconds saved:
+- 0 us measured. No profiler/player capture was run.
+- No microsecond savings are claimed. The fix is data sovereignty and removal of the stale global wake mirror from marine snow.
+
+Validation:
+- Did not run dotnet rebuild or Unity platform compile in this loop per user instruction.
+- Static scan found no `_GlobalWakeBuffer`, `_GlobalWakeVectors`, `_GlobalWakeParams`, `ResolveGlobalWakeFlow`, or `Shader.GetGlobalVector(ShaderIds.GlobalWake...)` in the owned marine-snow files.
+- Static VFX scans found no standard `Update`/`LateUpdate`/`FixedUpdate`, no `string.Format`, no interpolation `$"`, no scene discovery, no coroutine, no `Resources.Load`, no `Camera.main`, no legacy `EventBus`, no managed delegate patterns, and no forbidden native allocation patterns under VFX.
+- Marine-snow shader scan found no `distance()`, wave intrinsics, groupshared/SV_Group, append/consume buffers, `SetData`, or `GetData`.
+- `git diff --check` is clean except CRLF normalization warnings.
+
+## Entry 2026-05-17 - Dynamic Wake Naming Inquisition
+
+What was wrong:
+- After the dynamic wake binding fix, owned marine-snow code still had `GlobalWake` telemetry/debug names and shader capacity constants.
+- That stale naming contradicted the FluidEngine `_DynamicWakes` authority path and made a repeat regression more likely.
+
+What was done:
+- `Hecton_MarineSnow.compute` now uses `HECTON_DYNAMIC_WAKE_CAPACITY` and `HECTON_DYNAMIC_WAKE_LOW_TIER_CAPACITY`.
+- `HectonMarineSnowRenderer` telemetry/debug names now use `DynamicWakeCount` / `_debugDynamicWakeCount`.
+- The blackbox telemetry struct size and dump write order remain unchanged.
+
+Cinematic Cheats used:
+- Low/Toaster still uses 8,000 particles, 4 dynamic wake slots, radial fake wake behavior, no SDF collision for silt, and no low-tier 3D flow lookup.
+- High/Ultra still use 100,000 particles, 16 dynamic wake slots, abyssal flow texture, curl fake, headlight emission, sonar glow, and fog injection.
+
+Exact Microseconds saved:
+- 0 us measured. No profiler/player capture was run.
+- No runtime savings are claimed. This is an interface clarity and regression-prevention fix.
+
+Validation:
+- Did not run dotnet rebuild or Unity platform compile.
+- Static scan found no `GlobalWake`, `_GlobalWakeBuffer`, `_GlobalWakeVectors`, `_GlobalWakeParams`, `ResolveGlobalWakeFlow`, or `Shader.GetGlobalVector(ShaderIds.GlobalWake...)` in `HectonMarineSnowRenderer.cs` or `Hecton_MarineSnow.compute`.
+- Static VFX scans found no standard `Update`/`LateUpdate`/`FixedUpdate`, no `string.Format`, no interpolation `$"`, no scene discovery, no coroutine, no `Resources.Load`, no `Camera.main`, no legacy `EventBus`, and no managed delegate patterns under VFX.
+- Marine-snow shader scan found no `distance()`, wave intrinsics, groupshared/SV_Group, append/consume buffers, `SetData`, or `GetData`.
+
+## Entry 2026-05-17 - Dynamic Wake Live-Source Regression Repair
+
+What was wrong:
+- The live source had regressed after the previous dynamic wake repair. `Hecton_MarineSnow.compute` again contained `_GlobalWakeBuffer[16]`, `_GlobalWakeVectors[16]`, `_GlobalWakeParams`, and `ResolveGlobalWakeFlow`.
+- `HectonMarineSnowRenderer` again read `Shader.GetGlobalVector(ShaderIds.GlobalWakeParamsId)`, so marine snow was not bound to the FluidEngine dynamic wake GPU ring.
+- The status file was only a claim until the current files were repaired again.
+
+What was done:
+- Replaced the shader global wake arrays with `StructuredBuffer<float4> _DynamicWakes` and `StructuredBuffer<float4> _DynamicWakeVectors`.
+- Replaced `_GlobalWakeParams` with `_DynamicWakeParams` and `ResolveGlobalWakeFlow` with `ResolveDynamicWakeFlow`.
+- `HectonMarineSnowRenderer` now binds `_DynamicWakes`, `_DynamicWakeVectors`, and `_DynamicWakeParams` from cached `HectonFluidEngine.TryGetDynamicWakeGpuPayload`.
+- Dynamic wake buffers are validated with `GraphicsBuffer.IsValid()` and fall back to the existing empty GPU buffer when unavailable.
+- Telemetry naming is `DynamicWakeCount`; blackbox telemetry struct size and dump write order remain unchanged.
+
+Cinematic Cheats used:
+- Low/Toaster keeps 8,000 particles, 4 dynamic wake slots, radial fake wake behavior, no SDF collision, and no low-tier 3D flow lookup.
+- High/Ultra keeps 100,000 particles, 16 dynamic wake slots, abyssal flow texture, curl fake, headlight emission, sonar glow, and fog injection.
+
+Exact Microseconds saved:
+- 0 us measured. No profiler/player capture was run.
+- No microsecond savings are claimed. This repair restores data sovereignty and removes the global wake mirror from the live marine-snow path.
+
+Validation:
+- Did not run dotnet rebuild or Unity platform compile.
+- Static scan found no `GlobalWake`, `_GlobalWakeBuffer`, `_GlobalWakeVectors`, `_GlobalWakeParams`, `ResolveGlobalWakeFlow`, `GlobalWakeParamsId`, `_debugGlobalWake`, or `GlobalWakeCount` in `HectonMarineSnowRenderer.cs` or `Hecton_MarineSnow.compute`.
+- Dynamic wake scan confirms `_DynamicWakes`, `_DynamicWakeVectors`, `_DynamicWakeParams`, `ResolveDynamicWakeFlow`, `DynamicWakeCount`, and `TryGetDynamicWakeGpuPayload`.
+- Marine-snow shader scan found no `distance()`, wave intrinsics, groupshared/SV_Group, append/consume buffers, `SetData`, or `GetData`.
+- VFX update-loop scan found no standard `Update`/`LateUpdate`/`FixedUpdate`.
+- `git diff --check` reports only CRLF normalization warnings.

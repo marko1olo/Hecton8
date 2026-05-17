@@ -286,7 +286,7 @@ namespace Hecton8.EditorTools
 
             try
             {
-                Graphics.Blit(source, temp);
+                UnityEngine.Graphics.Blit(source, temp);
                 RenderTexture.active = temp;
                 readable.ReadPixels(new Rect(0f, 0f, width, height), 0, 0, false);
                 readable.Apply(false, false);
@@ -667,7 +667,7 @@ namespace Hecton8.EditorTools
 
             try
             {
-                Graphics.Blit(texture, temp);
+                UnityEngine.Graphics.Blit(texture, temp);
                 RenderTexture.active = temp;
                 readable.ReadPixels(new Rect(0f, 0f, width, height), 0, 0, false);
                 readable.Apply(false, false);

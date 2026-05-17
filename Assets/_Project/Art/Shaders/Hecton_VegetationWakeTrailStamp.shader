@@ -66,9 +66,11 @@ Shader "Hidden/Hecton8/VegetationWakeTrailStamp"
                 half2 delta = input.uv - _StampUvEllipse.xy;
                 half radius = max(_StampUvEllipse.z, 0.0001h);
                 half halfLength = max(_StampUvEllipse.w, 0.0001h);
+                half invRadius = rcp(radius);
+                half invHalfLength = rcp(halfLength);
                 half verticalImpulse = saturate(_StampDirectionStrength.w);
-                half along = dot(delta, stampDirection) / halfLength;
-                half across = dot(delta, stampBitangent) / radius;
+                half along = dot(delta, stampDirection) * invHalfLength;
+                half across = dot(delta, stampBitangent) * invRadius;
                 half shape = saturate(1.0h - (along * along + across * across));
                 half stampIntensity = shape * shape * saturate(_StampDirectionStrength.z) * lerp(1.0h, 1.55h, verticalImpulse);
 

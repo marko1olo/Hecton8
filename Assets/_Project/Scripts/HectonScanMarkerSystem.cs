@@ -218,7 +218,7 @@ namespace Hecton8.Gameplay
 
             ApplyMarkerMaterialIfNeeded();
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 _runtimeMarkerMesh,
                 0,
                 _runtimeMarkerMaterial,

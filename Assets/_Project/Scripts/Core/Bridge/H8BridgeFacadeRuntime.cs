@@ -29,9 +29,9 @@ namespace Hecton8.Core.Bridge
 
         public static bool LiveTuningBlockedByStress()
         {
-            float registryStress = SignalBusRegistry.SystemStress01;
-            float homeostasisStress = HomeostasisBrain.SystemHealthIndex01;
-            float stress01 = math.max(registryStress, homeostasisStress);
+            float registryStress = math.saturate(SignalBusRegistry.SystemStress01);
+            float pressureStress = math.saturate(HomeostasisBrain.PressureLevel * (1f / 3f));
+            float stress01 = math.max(registryStress, pressureStress);
             return stress01 > 0.9f;
         }
 
@@ -43,7 +43,12 @@ namespace Hecton8.Core.Bridge
             int count = facade.BindingCount;
             RecordHeartbeat(vault, facade.FacadeHash, count, facade.EstimateVramBytes(), extraFlags);
             if (count <= 0)
+            {
+                ClearDesignValueBuffer(vault);
+                PublishDesignClearSignal(facade.FacadeHash, extraFlags);
+                PersistFacadeHeader(facade, vault);
                 return true;
+            }
 
             bool success = true;
             for (int i = 0; i < count; i++)
@@ -60,6 +65,45 @@ namespace Hecton8.Core.Bridge
 
             PersistFacadeHeader(facade, vault);
             return success;
+        }
+
+        private static void ClearDesignValueBuffer(IDataVault vault)
+        {
+            if (vault == null ||
+                !vault.TryGetBufferHandle(BufferID.BridgeDesignFacadeValues, out VaultBufferHandle<byte> bytes) ||
+                !bytes.IsCreated ||
+                bytes.Length <= 0)
+            {
+                return;
+            }
+
+            byte* ptr = (byte*)bytes.ResolvePointer(vault);
+            if (ptr == null)
+                return;
+
+            Thread.MemoryBarrier();
+            UnsafeUtility.MemClear(ptr, bytes.Length);
+            Thread.MemoryBarrier();
+        }
+
+        private static void PublishDesignClearSignal(uint facadeHash, ushort extraFlags)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            DataVaultUpdateSignal signal = new DataVaultUpdateSignal
+            {
+                SourceHash = facadeHash,
+                FieldHash = H8BridgeHashes.BridgeHeartbeat,
+                OffsetBytes = -1,
+                OldValue = 0f,
+                NewValue = 0f,
+                Frame = unchecked((uint)Time.frameCount),
+                BufferId = (ushort)BufferID.BridgeDesignFacadeValues,
+                Flags = extraFlags
+            };
+            SignalBus<DataVaultUpdateSignal>.Push(in signal);
+            GlobalTelemetryBus.PublishModTelemetry(facadeHash, H8BridgeHashes.BridgeHeartbeat, 0f);
         }
 
         public static bool WriteDesignValue(
@@ -119,6 +163,12 @@ namespace Hecton8.Core.Bridge
             }
 
             RecordDelta(vault, facadeHash, entry, oldValue, extraFlags);
+
+            if (!Application.isPlaying)
+            {
+                GlobalTelemetryBus.PublishModTelemetry(facadeHash, entry.FieldHash, value);
+                return true;
+            }
 
             if ((entry.Flags & (ushort)H8DesignValueFlags.LiveTuning) != 0 &&
                 ((entry.Flags | extraFlags) & (ushort)H8DesignValueFlags.DesignerOverride) == 0 &&

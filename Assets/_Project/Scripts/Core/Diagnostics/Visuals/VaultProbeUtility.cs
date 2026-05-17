@@ -10,35 +10,11 @@ using UnityEngine.Scripting;
 namespace Hecton8.Core.Diagnostics.Visuals
 {
     /// <summary>
-    /// Read-only diagnostic bridge from <see cref="IDataVault"/> buffers into byte spans.
+    /// Diagnostic bridge from <see cref="IDataVault"/> buffers into bounded read-only byte spans.
     /// </summary>
     [Preserve]
     public static unsafe class VaultProbeUtility
     {
-        /// <summary>
-        /// Attempts to expose an existing vault buffer as raw bytes without allocating or resizing it.
-        /// </summary>
-        /// <typeparam name="T">Known element type for the requested vault buffer.</typeparam>
-        /// <param name="vault">Vault instance resolved from <see cref="GlobalRegistry.DataVault"/> during cold setup.</param>
-        /// <param name="bufferId">Stable vault buffer identifier.</param>
-        /// <param name="bytes">Raw byte span over the existing native buffer.</param>
-        /// <returns>True when the span points at a live vault buffer.</returns>
-        public static bool TryReadBufferBytes<T>(IDataVault vault, BufferID bufferId, out Span<byte> bytes)
-            where T : unmanaged
-        {
-            bytes = Span<byte>.Empty;
-            if (vault == null || bufferId == BufferID.Unknown)
-                return false;
-
-            if (!vault.TryGetBuffer(bufferId, out NativeArray<T> buffer) || !buffer.IsCreated || buffer.Length <= 0)
-                return false;
-
-            void* pointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffer);
-            int byteLength = buffer.Length * UnsafeUtility.SizeOf<T>();
-            bytes = new Span<byte>(pointer, byteLength);
-            return true;
-        }
-
         /// <summary>
         /// Attempts to expose an existing vault buffer as raw read-only bytes.
         /// </summary>
@@ -46,20 +22,39 @@ namespace Hecton8.Core.Diagnostics.Visuals
             where T : unmanaged
         {
             bytes = ReadOnlySpan<byte>.Empty;
-            if (!TryReadBufferBytes<T>(vault, bufferId, out Span<byte> mutableBytes))
+            if (!TryResolveBuffer<T>(vault, bufferId, out NativeArray<T> buffer, out int byteLength))
                 return false;
 
-            bytes = mutableBytes;
+            void* pointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffer);
+            bytes = new ReadOnlySpan<byte>(pointer, byteLength);
             return true;
         }
 
-        /// <summary>
-        /// Attempts to expose an existing global vault buffer as raw bytes.
-        /// </summary>
-        public static bool TryReadGlobalBufferBytes<T>(BufferID bufferId, out Span<byte> bytes)
+        private static bool TryResolveBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out NativeArray<T> buffer,
+            out int byteLength)
             where T : unmanaged
         {
-            return TryReadBufferBytes<T>(GlobalRegistry.DataVault, bufferId, out bytes);
+            buffer = default;
+            byteLength = 0;
+            if (vault == null || bufferId == BufferID.Unknown)
+                return false;
+
+            if (!vault.TryGetBuffer(bufferId, out buffer) || !buffer.IsCreated || buffer.Length <= 0)
+                return false;
+
+            int elementSize = UnsafeUtility.SizeOf<T>();
+            long bytes = (long)buffer.Length * elementSize;
+            if (bytes <= 0L || bytes > int.MaxValue)
+            {
+                buffer = default;
+                return false;
+            }
+
+            byteLength = (int)bytes;
+            return true;
         }
 
         /// <summary>

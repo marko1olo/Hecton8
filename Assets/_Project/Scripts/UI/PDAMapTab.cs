@@ -726,7 +726,7 @@ namespace Hecton8.UI
                 shadowCastingMode = ShadowCastingMode.Off,
                 receiveShadows = false
             };
-            Graphics.RenderMeshIndirect(renderParams, _pointCloudQuadMesh, _pointCloudIndirectArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, _pointCloudQuadMesh, _pointCloudIndirectArgsBuffer, 1, 0);
         }
 
         private bool TryResolvePointCloudFrame(out Matrix4x4 localToWorld, out Bounds bounds, out Camera renderCamera)

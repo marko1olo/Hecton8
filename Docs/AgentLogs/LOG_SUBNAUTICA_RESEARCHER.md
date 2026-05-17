@@ -476,3 +476,423 @@ Exact Microseconds saved -> Research-only 0us. No frame-time or memory-savings n
 Verification -> Core compile is green now. Editor compile is green now but carries 36 warnings not yet triaged. Current payload facts remain bad: `Assets/AddressableAssetsData` files=0, `Assets/_SourceData` files=0, `Assets/StreamingAssets` missing, `static_data.h8bin` missing, `ContentAssetHashMap` assets=0, `ContentVfxPrewarmManifest` assets=0. Audio metas still show 45 `loadType=0 preload=1` clips, with top WAVs 23-32 MB. ModBuilder still omits `RequiredAPIVersion`, while ModLoader v2 rejects missing/zero required API. H8 page payload constants still do not name `TerrainCellBase`, `ObjectBatchBase`, `VisibilityPhysicsProxyBase`, `AudioBiomeBank`, or `DiscoveryRouteBase`.
 
 Status -> EIGHTH PASS COMPLETE. Build is currently C# green; foundation is not product green. P0 queue remains: 1) populate minimal content authority payload and monolith output, 2) fix mod manifest v2 SDK output, 3) force audio reimport or fail stale meta drift, 4) split managed `ContentAssetEntry` from binary layout claims, 5) move AI/Ecosystem implementation out of root Core or formalize contract-only layout ownership, 6) classify no-Pack structs and local NativeContainer owners, 7) add platform build/player/profiler gates before claiming AAA readiness.
+
+---
+
+## NINTH PASS - FOUNDATION CLEAN-ROOM ARBITRATION (2026-05-16)
+
+Agent: SUBNAUTICA_RESEARCHER
+Domain: External reference research / codebase foundation comparison
+Mode: RESEARCH ONLY. No runtime code changed. No proprietary Subnautica assets/code copied, parsed, decompiled, or extracted.
+
+### What was wrong
+
+1. Several earlier claims were stale after parallel project edits. The largest correction is audio: the big root ambience WAVs are no longer imported as DecompressOnLoad/preload=1. Current metas show `Underwater Ambient.wav` and Atmos loops as Streaming (`loadType: 2`) with `preloadAudioData: 0`.
+2. ContentAuthority has real build validators, but the payload state is still empty. `Assets/AddressableAssetsData` exists with 0 files, `Assets/_SourceData` exists with 0 files, `Assets/StreamingAssets` is missing, and no `ContentAssetHashMap` or `ContentVfxPrewarmManifest` assets were found.
+3. DataMonolith has a compiler, but shipping boot still accepts a missing blob. `GameBootstrapper.InitializeBootstrapDataMonolith` returns true for `H8DataBlobLoadStatus.Missing` because it calls `TryInitializeFromStreamingAssets(... failIfMissing:false ...)`.
+4. `H8StaticDataArena.TryReadWholeFileIntoArena` still stages the entire blob through `File.ReadAllBytes`, causing a managed byte[] copy before native blit and lacking Android/Quest StreamingAssets/JAR proof.
+5. Mod SDK still emits a manifest the runtime rejects. `ModLoader.CurrentAPIVersion = 2` and rejects `RequiredAPIVersion <= 0`; `ModBuilderWindow.ModManifestData` does not emit RequiredAPIVersion or ModPriority.
+6. World cache vocabulary is still too narrow. `H8WorldPagePayloadTypes` names only `VoxelDeltaRle`, `InventoryState`, `ChunkDehydratedMetadata`, and `WfcOutpostState`. It does not name base-world cache lanes equivalent to terrain cells, object batches, visibility/physics proxy, audio biome banks, or discovery-route payloads.
+7. `ObjectBatchBase` and `VisibilityProxyBase` exist as abstract scaffolds only. No concrete derived classes or assets were found in current source/assets.
+8. H-Phi/DataVault purity is not solved. Static audit shows broad native ownership and managed surface despite zero raw Unity Update methods.
+
+### What was done
+
+- Re-read `AGENTS.md`, `Docs/Actual Domains of Project.txt`, task status/rationale, active batch search for `SUBNAUTICA_RESEARCHER`, and relevant mandates: Addressables lifecycle, native memory/jobs, and crash telemetry.
+- Deep-read `ContentAuthorityBuildValidators.cs`, `ContentAssetHashMap.cs`, `ContentRuntimeServices.cs`, `ObjectBatchBase.cs`, `VisibilityProxyBase.cs`, `H8DataMonolithCompiler.cs`, `H8StaticDataArena.cs`, `H8DataMonolithTypes.cs`, and `GameBootstrapper.cs`.
+- Deep-read `AudioImportDictator.cs`, `ModBuilderWindow.cs`, and `ModLoader.cs`.
+- Re-counted current HECTON-8 payload state:
+  - `Assets/AddressableAssetsData`: 0 files.
+  - `Assets/_SourceData`: 0 files.
+  - `Assets/StreamingAssets`: missing.
+  - `ContentAssetHashMap`: 0 assets found.
+  - `ContentVfxPrewarmManifest`: 0 assets found.
+- Re-counted current audio metas:
+  - 101 clips: `loadType=2, preload=0`.
+  - 28 clips: `loadType=0, preload=1`.
+  - 7 clips: `loadType=0, preload=0`.
+  - 2 clips: `loadType=1, preload=0`.
+  - 19 metas: no direct load/preload key pair.
+  - Remaining preloaded source bytes: about 4.67 MB, mostly short SFX/footsteps/UI/thruster/movement.
+- Re-counted local Subnautica clean-room taxonomy:
+  - `StreamingAssets/aa/StandaloneWindows64`: 5,467 bundle files, 4,675,241,727 bytes, largest 201,107,619 bytes.
+  - Addressables catalog: 12,016,061 bytes, 5,467 bundle references, provider families include AssetBundleProvider, BundledAssetProvider, SceneProvider, LegacyResourcesProvider.
+  - `SNUnmanagedData/Build18/BatchObjectsCache`: 2,975 files / 3,218,027 bytes.
+  - `SNUnmanagedData/Build18/CellsCache`: 1,606 files / 167,561,255 bytes.
+  - `SNUnmanagedData/Build18/CompiledOctreesCache`: 5,416 files / 1,203,085,204 bytes.
+  - Build18 root sidecars: `biomeMap.bin`, `biomes.csv`, `index.txt`, `meta.txt`, `signals.csv`.
+  - Local save slot `slot0000`: 25 `CellsCache` zip files / 21,836,090 bytes plus `global-objects.bin`, `scene-objects.bin`, `gameinfo.json`, screenshot, and timecapsules.
+- Ran H-Phi audit:
+  - RuntimeHPhiNarrow: 0.065373415.
+  - RuntimeHPhiRisk: 0.004501506.
+  - AllSourceHPhiNarrow: 0.058738381.
+  - DataSovereignty: 0.123322148.
+  - MemoryAlignment: 0.53010279.
+  - BinarySafeRatio: 0.021536955.
+  - NativeArrayRefs: 7315.
+  - DataVaultRefs: 1029.
+  - ManagedFormatSurface: 539.
+  - JobCompleteSurface: 73.
+  - UnityUpdateMethodsRaw / UnityUpdateMethods: 0 / 0.
+- Refreshed compile proof:
+  - Initial no-restore Editor build failed because `Temp/obj/Hecton8.Editor/project.assets.json` was missing.
+  - Normal `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1` succeeded with 48 warnings / 0 errors in 00:02:28.31.
+  - Follow-up `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal /m:1` succeeded with 0 warnings / 0 errors in 00:02:23.78.
+  - `dotnet build Hecton8.Core.csproj --no-restore -v:q /clp:ErrorsOnly` succeeded with 0 warnings / 0 errors in 00:00:03.56.
+
+### Cinematic cheats / tactical borrow list
+
+- Borrow taxonomy, not assets/code: Subnautica separates Addressables bundles, static base-world caches, and save-slot deltas. HECTON-8 should preserve that separation instead of treating save deltas as authored world payload.
+- Low/toaster lane: procedural fallback plus sparse deltas, tiny Core content map, short SFX preload only, streamed ambience, cheap discovery-route hashes, LUT/dot-product visual lies.
+- Middle lane: generated `static_data.h8bin`, ContentAssetHashMap, Core/High_Res groups, object-batch sector payloads, route validators promoted from warnings to build gates.
+- High lane: visibility/physics proxy payloads, audio biome banks, BRG object batches, read-coalesced sector pages, platform-specific compute gates.
+- Ultra lane: overkill prop density, volumetric silt, visor salt crystals, high-tier POM/raymarch/VFX, isolated in Overkill group and optional monolith sections so MX350/Quest builds are not poisoned.
+
+### Exact microseconds saved
+
+0us measured. This was a research and verification pass only. No runtime code changed. Any future savings from object batches, DataMonolith loader changes, Addressables payload generation, or mod manifest fixes require Unity profiler, Memory Profiler, Addressables build, and player-platform proof.
+
+### Proof limits
+
+- Dotnet build proves C# project compilation only.
+- No Unity import, domain reload, Play Mode, Addressables build, Android/Quest IL2CPP, Metal shader compile, Steam Deck MicroSD I/O, or runtime profiler proof was produced in this pass.
+- Subnautica inspection stayed at file/catalog taxonomy level. No proprietary binary payloads were parsed and no proprietary assets/code were copied.
+
+### P0 queue from this pass
+
+1. Generate minimal Addressables settings/groups and a `ContentAssetHashMap`/`ContentVfxPrewarmManifest` asset set, or formally disable the ContentAuthority build gate for non-production configs only.
+2. Add a DataMonolith prebuild freshness gate: required source-data existence, required `static_data.h8bin`, version/hash match, and Android/Quest-safe loader path.
+3. Fix ModBuilder manifest v2 output: emit `RequiredAPIVersion = 2` and `ModPriority = 0`, then build/load a test content-only mod.
+4. Add base-world payload constants/records: `TerrainCellBase`, `ObjectBatchBase`, `VisibilityPhysicsProxyBase`, `AudioBiomeBank`, `DiscoveryRouteBase`.
+5. Create concrete object-batch/visibility-proxy asset classes and a small generated payload sample before wiring more world content.
+6. Promote first-hour recipe scan-gate missing-route warnings to build-blocking once bootstrap-generated routes are represented as build-verifiable assets.
+7. Classify H-Phi native ownership exceptions: vault-owned shared state, singleton infrastructure, mod-facing managed bridges, and true migration targets.
+
+## TENTH PASS - BUILD-GATE / STATIC-DATA / H-PHI ARBITRATION - 2026-05-17
+
+### What was wrong
+
+1. Validator coverage is mixed. `ContentAuthorityBuildPreprocessor` is a real build gate and calls `ContentAuthorityBuildValidators.RunAllBuildValidators()` at callback order -9000. `ContentSanityValidator` and `ScanIntelValidator` are menu-only. Missing recipe scan routes currently produce `RecipeScanGateWarningCount`, not a build-blocking error.
+2. Static data is split. `Data/Balance/Baked/H8StaticData.bin` and `Babel_Dictionary.h8bin` exist, but the boot monolith `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` is still absent.
+3. `H8DataBaker` and `H8DataMonolithCompiler` are not the same contract. The existing Balance CSVs satisfy the smaller baker, but the monolith compiler treats `Data/Balance` as hash-authoritative and requires `hash32` pairs for `Id` fields. Current `Items.csv`, `Fauna.csv`, `Economy.csv`, and `Physics.csv` have no `hash32` column.
+4. Addressables is installed, not populated. `com.unity.addressables` 2.7.6 is in `Packages/manifest.json`; `AddressablesCompatibility.cs` is intentionally empty; `Assets/AddressableAssetsData` has 0 files. ContentAuthority expects `Core`, `High_Res`, and `Overkill` groups, but no complete project bootstrap creates the full settings/group/hash-map/VFX-manifest payload.
+5. H-Phi is still architecture debt, not just rhetoric. Current static audit improved slightly, but the top native-risk files still carry 0 DataVault refs and large local NativeContainer ownership.
+6. Black-box coverage is uneven. `VoxelDeltaProcessor`, `LogisticsNetworkGraph`, and `ProceduralWreckGenerator` have 300-frame dump paths. `HectonMapMagicVegetationBridge` declares `AbyssalPathTelemetryEntry` and counters, but no writer/dump usage was found. `SubmarineAtmosphereSystem` and `DestructibleOrganicManager` expose critical state and native pools without a 300-frame system black-box found in this pass.
+
+### What was done
+
+- Re-read current Status/Rationale and relevant mandates before continuing.
+- Traced build gate coverage:
+  - `ContentAuthorityBuildValidators.RunAllBuildValidators()` blocks Resources.Load usage, Addressables settings/groups, hash-map integrity, wrong tier group assignment, binary layout drift, object batch payload errors, lore I/O budget violations, runtime prefab binding issues, compute thread groups above 1024, and VFX prewarm manifest issues.
+  - `ContentSanityValidator` remains menu-only at `Hecton-8/Validate Content`.
+  - `ScanIntelValidator` remains menu-only at `Hecton/Validation/Validate Scan Intel` and validates only the active scene.
+- Audited static-data reality:
+  - `Data/Balance/Items.csv`, `Fauna.csv`, `Economy.csv`, and `Physics.csv` exist and contain small v1.2 sample data.
+  - `Data/Balance/Baked/H8StaticData.bin` = 896 bytes.
+  - `Data/Balance/Baked/Babel_Dictionary.h8bin` = 1284 bytes.
+  - `Assets/_SourceData` is still empty.
+  - `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` is absent.
+  - `H8StaticDataArena.TryReadWholeFileIntoArena()` still uses `File.ReadAllBytes` before native blit.
+- Audited Addressables:
+  - Package installed: `com.unity.addressables` 2.7.6.
+  - Settings payload absent: `Assets/AddressableAssetsData` contains 0 files.
+  - Compatibility shim is intentionally empty because the package exists.
+- Re-ran current H-Phi audit at `2026-05-17 00:36:33 +04:00`:
+  - RuntimeHPhiNarrow: 0.068171189.
+  - RuntimeHPhiRisk: 0.004701846.
+  - AllSourceHPhiNarrow: 0.061251437.
+  - AllSourceHPhiRisk: 0.003883613.
+  - DataSovereignty: 0.128544198.
+  - MemoryAlignment: 0.530332681.
+  - BinarySafeRatio: 0.021526419.
+  - AupPrecisionIntegrity: 1.
+  - RuntimeFiles: 1344.
+  - RuntimeLines: 920269.
+  - SignalBusPush: 421.
+  - GlobalRegistrySurface: 5303.
+  - EventPublish: 26.
+  - UnityUpdateMethodsRaw / UnityUpdateMethods: 0 / 0.
+  - DataVaultRefs: 1079.
+  - NativeArrayRefs: 7315.
+  - ManagedFormatSurface: 539.
+  - JobCompleteSurface: 73.
+  - PrimaryNativeOwnershipRisk: 5832.
+- Inspected top H-Phi native ownership risk seams:
+  - `World/HectonMapMagicVegetationBridge.cs`: 166 NativeArray refs in audit, 0 DataVault refs; owns vegetation/threat/flow/HLOD/megwreck/path memory via local `VegetationNativeMemory`; declares abyssal telemetry but no write/dump usage found.
+  - `Power/LogisticsNetworkGraph.cs`: 145 NativeArray refs, 0 DataVault refs; owns power graph/publish buffers; 300-frame `Dump_LOGI_POWER_ROUTING.bin` exists.
+  - `SubmarineAtmosphereSystem.cs`: 132 NativeArray refs, 0 DataVault refs; owns room gas/pressure/temperature arrays and pressure event queues; no 300-frame atmosphere black-box found.
+  - `World/DestructibleOrganicManager.cs`: 125 NativeArray refs, 0 DataVault refs; owns per-flora NativeHashMaps for health, destroyed, regrowth, maturation, acoustic cadence, runtime flags; no 300-frame organic black-box found.
+  - `VoxelDeltaProcessor.cs`: 92 NativeArray refs, 0 DataVault refs; owns carve queue/snapshot/compaction buffers; 300-frame `Dump_WORLD_VOXEL_CAVING.bin` exists.
+  - `World/ProceduralWreckGenerator.cs`: 66 NativeArray refs, 0 DataVault refs; owns WFC/debris/artifact/collision/burial buffers; 300-frame `Dump_WORLD_WRECKAGE.bin` exists.
+  - `World/VegetationFlowFieldIntegrator.cs`: 107 NativeArray refs, 0 DataVault refs; partial class writes flow/threat/thermal/native path lanes owned by `HectonMapMagicVegetationBridge`.
+
+### Cinematic cheats / tactical borrow list
+
+- Borrow Subnautica taxonomy, not proprietary payloads: distinct static world caches, bundle catalog, sidecar metadata, and save deltas.
+- Low lane: one authoritative static-data path, tiny Core Addressables group, streamed ambience, hashed scan-route proof, and procedural fallbacks.
+- Middle lane: build-fresh `static_data.h8bin`, generated `ContentAssetHashMap`, concrete object-batch and visibility-proxy payload samples, and scan-route warnings promoted after generated routes are asset-visible.
+- High lane: BRG object batches, visibility/physics proxy cache, audio biome banks, coalesced sector reads, and current H-Phi shared-state snapshots moved to vault-owned lanes.
+- Ultra lane: Overkill Addressables group and optional monolith sections for dense wreck dressing, volumetric silt, visor salt crystals, high-tier POM/raymarch/VFX, without poisoning MX350/Quest builds.
+
+### Exact microseconds saved
+
+0us measured. This pass changed documentation only. No runtime code or content assets were modified. Future savings from object batching, DataMonolith streaming, or DataVault migration require Unity profiler, Memory Profiler, Addressables build, and player-platform proof.
+
+### Proof limits
+
+- This pass did not run Unity import, Play Mode, Addressables build, Android/Quest IL2CPP, Metal shader compile, Steam Deck storage tests, or runtime profiling.
+- H-Phi audit is static-source evidence. It proves risk shape, not runtime leak or frame cost.
+- Subnautica remained clean-room file taxonomy only. No proprietary Subnautica binary payloads were parsed, copied, or decompiled.
+
+### P0 queue refined
+
+1. Decide which static-data path is authoritative. If `static_data.h8bin` is the boot contract, add hash columns or schema reconciliation so `Data/Balance` can feed `H8DataMonolithCompiler`.
+2. Add a prebuild DataMonolith freshness gate: fail if required source changed and `static_data.h8bin` is absent/stale/empty.
+3. Generate minimal Addressables settings plus `Core`, `High_Res`, and `Overkill` groups, then generate at least one `ContentAssetHashMap` and `ContentVfxPrewarmManifest` asset.
+4. Promote `ContentSanityValidator` and `ScanIntelValidator` route checks into a build/preplay gate after bootstrap-generated scan routes are represented as assets or monolith route records.
+5. Add missing black-box rings/dumps for Atmosphere, DestructibleOrganic, and the abyssal path/vegetation flow slice.
+6. Move published shared snapshots, not local scratch, from the top H-Phi files into DataVault/typed lanes: threat grid, flow field, power node state, atmosphere room state, flora lifecycle state.
+7. Keep local scratch NativeContainers where they are private job work buffers, but document them as accepted owner exceptions with sentinel lifetime and no forced `.Complete()` hot-path proof.
+
+Post-report compile proof:
+- Core: `dotnet build Hecton8.Core.csproj --no-restore -v:q /clp:ErrorsOnly` succeeded with 0 warnings / 0 errors in 00:01:17.81.
+- Editor: `dotnet build Hecton8.Editor.csproj --no-restore -v:q /clp:ErrorsOnly /m:1` succeeded with 47 warnings / 0 errors in 00:00:50.44.
+- Proof limit: C# project compilation only. No Unity import, playmode, player build, IL2CPP, Android/Quest, Metal, or Steam Deck proof claimed.
+
+---
+
+## ELEVENTH PASS - SUBNAUTICA 2 UE5 / EARLY ACCESS VISUAL REFERENCE - 2026-05-17
+
+Agent: SUBNAUTICA_RESEARCHER
+Domain: External reference research / codebase foundation comparison
+Mode: RESEARCH ONLY. Official web/source comparison plus screenshot inspection. No runtime code changed.
+
+### What was wrong
+
+1. User phrasing said Subnautica 2 "вышла". Current verified state is Early Access / Xbox Game Preview from 2026-05-14, not final 1.0.
+2. Screenshot comparison alone is dangerous. The visible rendering surface is catchable, but the real competitive bar is content density, co-op, platform presets, creature reactivity, base building, save/versioning, and Early Access cadence.
+3. UE5 is not magic in the screenshots. The official stills show strong art direction: color fog, clean silhouettes, stylized flora, modular base forms, particles, caustics, and readable co-op/vehicle composition.
+
+### What was done
+
+- Checked official Unknown Worlds Early Access/Roadmap pages.
+- Checked Steam app 1962700 store/API data: Early Access release date, features, screenshots, platforms, and system requirements.
+- Checked Xbox Wire Game Preview article for Xbox/PC/Game Pass/ROG Xbox Ally/performance preset context.
+- Checked KRAFTON press material for UE5 creature AI claims: behavior trees, stimulus systems, and simulated tentacle animation for Collector Leviathan.
+- Downloaded and visually inspected six official 1920x1080 Steam screenshots:
+  - screenshot 0: underwater base, heavy haze, coral/flora clusters, bright module lights, readable white/yellow base forms.
+  - screenshot 1: interior base room, glossy modular panels, pool/vehicle display, clean lighting, rounded sci-fi forms.
+  - screenshot 2: co-op underwater exploration, bright shallow-water biome, rock arches, dense yellow/orange flora clusters, readable multi-player scale.
+  - screenshot 3: darker biome, scan/tool composition, creature silhouettes, particulate fog, bioluminescent white/blue clusters.
+  - screenshot 4: deeper blue biome, large purple anemone forms, vehicle cockpit framing, caustic floor lighting.
+  - screenshot 5: orange hostile/thermal biome, silhouette staging, particle embers/bubbles, vehicle trail, strong monochrome mood band.
+
+### Facts gathered
+
+- Steam: Subnautica 2, developer/publisher Unknown Worlds Entertainment, Early Access Release Date 14 May 2026, Windows only on Steam, DirectX 12, 50 GB storage, optional online co-op and cross-platform multiplayer categories.
+- Unknown Worlds: Early Access starts 05.14.26; roadmap points to new biomes, creatures, craftables, story and feature expansions through Early Access.
+- Xbox Wire: Game Preview availability on Xbox Series X|S, Xbox on PC, ROG Xbox Ally/Ally X, Xbox Game Pass Ultimate, and PC Game Pass; article mentions Unreal Insights and ROG Ally graphics presets.
+- KRAFTON press: Collector Leviathan described with Unreal Engine 5 behavior trees, stimulus systems reacting to light/sound/player actions, and simulated tentacle animation.
+- Secondary market signal: 2026-05-15 reports said Unknown Worlds/KRAFTON announced 2 million Early Access copies in 12 hours and about 651,000 peak concurrent players across Steam/Epic/Xbox. Treat as market signal, not technical proof.
+
+### Screenshot verdict
+
+HECTON-8 can chase the screenshot surface. No official still required impossible rendering. The look is mostly controllable composition and cheap-perceptual tricks: fog color bands, strong silhouettes, stylized clusters, local emissive accents, particles, caustics, and mood-biome palettes. The danger is production discipline: authoring enough varied biomes/creatures/base pieces, keeping co-op state stable, and shipping platform presets without poisoning low hardware.
+
+### Cinematic cheats / tactical borrow list
+
+- Low/toaster: 1D depth/fog LUT, triangle-noise silt, billboard flora islands, baked/projected caustics, fixed bubble sheets, cheap emissive accent masks.
+- Middle: streamed biome object batches, authored color-fog volumes, base-piece silhouette library, scan-route content packs, Tadpole/vehicle readability equivalents.
+- High: reactive fauna via typed stimulus lanes, layered silt wakes, denser flora sway, better material normals/POM only near camera.
+- Ultra: visor salt crystals, volumetric silt in wake, procedural hull dents, dense abyssal noir lighting, Overkill-only VFX/particles isolated from MX350/Quest tiers.
+
+### Exact microseconds saved
+
+0us measured. Research-only pass. No runtime code/content changed. Future savings require implementation and profiler proof.
+
+### Proof limits
+
+- Screenshots were official Steam stills, not live frame captures or profiler captures.
+- No Subnautica 2 files were extracted or reverse engineered.
+- No Unreal project internals were inspected. UE5 details are limited to official/press statements.
+- No HECTON-8 compile was run in this pass because only documentation/research files were touched.
+
+### Sources
+
+- https://unknownworlds.com/en/news/subnautica-2-early-access-released
+- https://unknownworlds.com/en/news/subnautica-2-early-access-roadmap
+- https://store.steampowered.com/app/1962700/Subnautica_2/
+- https://news.xbox.com/en-us/2026/05/04/subnautica-2-game-preview/
+- https://press.krafton.com/en-GB/UNKNOWN-WORLDS-REVEALS-THE-COLLECTOR-LEVIATHAN-IN-SUBNAUTICA-2
+
+---
+
+## TWELFTH PASS - SUBNAUTICA 2 LAUNCH RECEPTION / COMPETITIVE THREAT MODEL - 2026-05-17
+
+Agent: SUBNAUTICA_RESEARCHER
+Domain: External reference research / codebase foundation comparison
+Mode: RESEARCH ONLY. Web/source comparison; no runtime code changed.
+
+### What was wrong
+
+1. Screenshot-only comparison is too shallow. The visible rendering is catchable, but the production system around it is the real threat.
+2. Subnautica 2 should not be treated as a finished 1.0 benchmark. It is a high-traction Early Access/Game Preview product, which means content cadence and feedback loop matter as much as current content.
+3. HECTON-8 cannot win by being a darker clone. It needs harsher systems, better stability discipline, and a distinct audiovisual identity.
+
+### What was done
+
+- Re-checked current post-launch press/impression coverage after the 2026-05-14 Early Access launch.
+- Preserved prior Steam screenshot inspection: six official 1920x1080 screenshots were already downloaded and inspected.
+- Compared visual surface, systemic promise, co-op/save model, platform budget, review friction, and HECTON-8 counter-position.
+
+### Additional findings
+
+- PC Gamer reports the developers described Subnautica 2 as bigger and more polished than previous Unknown Worlds Early Access launches, with open development/community feedback as a core operating model.
+- PCGamesN impressions point to a strong first-ten-hours survival/exploration loop, dread, base/equipment progression, and visible under-construction Early Access boundaries.
+- PC Gamer co-op guide confirms up to four players, singleplayer saves can become multiplayer worlds, friends can join/leave, but no character import into another player world, blunt guest base-editing permissions, and no revive system at launch.
+- GamesRadar reports secondary launch signal: 2 million Early Access copies in 12 hours and about 651,000 peak concurrent players across PC/Xbox ecosystem. Treat as market signal, not technical proof.
+- Negative-review themes in public coverage include EULA/ToS pushback, missing Early Access features, and comfort/settings requests such as FOV complaints. This is a tactical opening for HECTON-8 polish/comfort discipline.
+
+### Competitive threat model
+
+1. Visual surface: catchable with HECTON-8 fog, caustics, object batches, particles, emissives, biome palettes, and composition discipline.
+2. Loop density: dangerous. Their first-hour survival/crafting/exploration readability is the bar we must beat with pressure, sonar, wreck salvage, atmosphere, and noir dread.
+3. Co-op/save state: dangerous if we later add co-op. Even if HECTON-8 stays singleplayer initially, the save/persistence contract must not block future shared worlds.
+4. Platform presets: dangerous. They already talk Xbox/ROG Ally preset work. HECTON-8 needs low/mid/high/ultra settings as real content-budget gates, not cosmetic toggles.
+5. Feedback cadence: dangerous. Early Access community machinery can outrun better tech if our data/mod/content pipeline remains brittle.
+6. Identity: opportunity. Subnautica 2 is bright alien-ocean adventure; HECTON-8 should own deep-sea noir, industrial horror, pressure, acoustic threat, hull damage, silt, salt, and black-box systems.
+
+### Tactical response for HECTON-8
+
+- Low/toaster: readable first-hour route, hard FOV/comfort settings, cheap fog LUTs, dithered particles, billboard flora/silt, stable save schema.
+- Middle: DataMonolith route/content pipeline, Addressables/content-authority payloads, object-batch biome dressing, platform preset gates.
+- High: pressure/atmosphere/acoustic systems with black-box telemetry, reactive fauna via typed stimulus lanes, dense but controlled VFX.
+- Ultra: visor salt crystals, volumetric silt wakes, procedural hull dents, overkill abyssal light shafts, high-tier POM/raymarch only in isolated Overkill packs.
+
+### Exact microseconds saved
+
+0us measured. Research-only pass. No runtime code/content changed.
+
+### Proof limits
+
+- Press/impression coverage is not profiler evidence.
+- Launch sales/concurrency are market signals, not quality proof.
+- Screenshots are official stills, not captured runtime frame analysis.
+- No Subnautica 2 files, assets, or Unreal internals were inspected.
+
+### Sources
+
+- https://www.pcgamer.com/games/survival-crafting/subnautica-2-devs-say-its-bigger-and-more-polished-than-any-of-the-studios-previous-early-access-launches/
+- https://www.pcgamer.com/games/survival-crafting/subnautica-2-multiplayer-co-op-guide/
+- https://www.pcgamesn.com/subnautica-2/early-access-impressions
+- https://www.gamesradar.com/games/survival/subnautica-2-makes-a-splash-with-2-million-copies-sold-in-12-hours-18-000-positive-steam-reviews-and-651-000-concurrent-players-across-pc-and-xbox/
+- https://store.steampowered.com/app/1962700/Subnautica_2/
+
+Dossier output:
+- Created `Docs/Reports/SUBNAUTICA_2_UE5_REFERENCE_DOSSIER.md`.
+- Contents: verified facts, screenshot audit, visual threat analysis, real threat analysis, borrow/do-not-borrow list, HECTON-8 counterposition, tactical P0/P1/P2 tasks, proof limits, and sources.
+- Runtime impact: 0us. Documentation-only pass.
+
+---
+
+## THIRTEENTH PASS - NON-AGENT SUBNAUTICA 2 DOC PROMOTION - 2026-05-17
+
+Agent: SUBNAUTICA_RESEARCHER
+Domain: External reference research / codebase foundation comparison
+Mode: RESEARCH/DOCUMENTATION ONLY. No runtime code changed.
+
+### What was wrong
+
+1. The Subnautica 2 research existed in reports and logs, but the user asked for important findings to be documented outside `AgentLogs` and `Tasks`.
+2. The project needed a sharper dream counterposition, not another feature-parity checklist.
+3. Screenshot observations needed to become fake-first rendering tactics tied to HECTON-8 tier contracts.
+4. Tactical findings needed a stable architecture backlog so integrators can convert research into build gates and payload work.
+
+### What was done
+
+- Created `Docs/Design/HECTON8_DREAM_VS_SUBNAUTICA2_COUNTERPOSITION.md`.
+  - Captures HECTON-8 identity: NASA-punk / deep-sea noir engineering survival.
+  - Defines dream pillars: visible pressure, visibility collapse, acoustic threat, industrial wrecks, expensive player instruments.
+  - Defines first-hour route expectations and low/middle/high/ultra tier contract.
+  - Lists foundation blockers: production monolith, ContentAuthority payloads, first-hour route gate, biome authority, typed stimulus lanes, black boxes, platform budgets.
+
+- Created `Docs/Design/SUBNAUTICA2_SCREENSHOT_VISUAL_CHEATS.md`.
+  - Converts six official screenshot surfaces into HECTON-8 visual-fake tactics.
+  - Maps base haze, interior readability, shallow density, scanner darkness, vehicle framing, and thermal palette into fake-first approaches.
+  - Defines cheap Low-tier carriers and Overkill high-tier targets.
+  - Defines required biome visual authority fields and build gates.
+
+- Created `Docs/ARCHITECTURE/SUBNAUTICA2_TO_HECTON8_TACTICAL_BACKLOG.md`.
+  - Converts research into P0/P1/P2 architecture tasks.
+  - P0: `static_data.h8bin`, ContentAuthority payload generation, first-hour route gate, biome visual authority, black-box coverage, comfort settings.
+  - P1: typed creature stimulus lanes, object-batch world dressing payloads, save/schema migration harness, platform preset matrix.
+  - P2: Overkill visual pack, feedback ingestion loop, co-op-ready state boundaries.
+
+### Cinematic cheats used
+
+- 1D depth/fog LUT instead of full volumetric truth on low hardware.
+- Triangle-noise silt and fixed particle sheets instead of per-particle fluid simulation.
+- Billboard/impostor flora and object batches instead of spawned GameObject ecology.
+- Projected caustic decals and animated sheets instead of expensive caustic volume on low tiers.
+- Scalar pressure/hull stress driving decals, audio, haptics, and visor masks instead of continuous physical deformation.
+- Overkill-only raymarch/POM/silt/visor features isolated from gameplay truth.
+
+### Exact microseconds saved
+
+0us measured. Documentation-only pass. No runtime code, assets, scenes, prefabs, or project settings changed.
+
+### Proof limits
+
+- No Unity import, Play Mode, profiler, Frame Debugger, Memory Profiler, or player build was run in this pass.
+- No Subnautica 2 files, binaries, assets, or Unreal internals were inspected.
+- The new documents are architecture/design targets, not runtime readiness proof.
+
+---
+
+## FOURTEENTH PASS - SOURCE-BACKED IMPLEMENTATION HANDOFF - 2026-05-17
+
+Agent: SUBNAUTICA_RESEARCHER
+Domain: External reference research / codebase foundation comparison
+Mode: RESEARCH/DOCUMENTATION ONLY. No runtime code changed.
+
+### What was wrong
+
+1. The tactical backlog identified the right pressure points, but it was still too abstract for integration work.
+2. Some HECTON-8 systems have real code but no populated payloads, which can be misread as readiness.
+3. First-hour, ContentAuthority, visual tier, and platform work needed exact file targets and gates.
+
+### What was done
+
+- Read current file evidence for:
+  - DataMonolith compiler, arena, bootstrap, and Balance CSV compatibility.
+  - ContentAuthority build validators, runtime hash map/VFX/tier code, and empty Addressables project data.
+  - ObjectBatchBase and VisibilityProxyBase contracts.
+  - FirstHourDirector, ContentSanityValidator, ScanIntelValidator, ScanLogSystem, quest and recipe assets.
+  - Biome runtime visual profile inventory.
+  - HectonVisualOverkillContract, ContentTieredGroupPolicy, and ThermalDynamicResolutionAdapter.
+  - AcousticEchoLocationRuntime, SargassumMicroFaunaBoids, SignalBus usage, and legacy GlobalSignals/event-bus surfaces.
+  - GlobalTelemetryBus, CrashTelemetryBuffer, BlackBoxHeartbeatThread, and platform compatibility audit.
+
+- Created `Docs/ARCHITECTURE/SUBNAUTICA2_HECTON8_IMPLEMENTATION_HANDOFF.md`.
+  - Maps every tactical lesson to current source files.
+  - Separates real implementation, missing payloads, and missing build gates.
+  - Defines P0 work orders: monolith build gate, ContentAuthority payload bootstrap, first-hour route verifier, object-batch world dressing, biome visual authority gate, stimulus lane cleanup, and platform matrix proof.
+  - Defines P1 work: save/schema cadence, comfort/trust, feedback ingestion, and co-op-ready state boundaries.
+  - Records explicit non-goals: no proprietary copying, no return to standard Addressables as world architecture, no Overkill route dependency, no menu-only validator proof.
+
+### Cinematic cheats used
+
+- Low tier: 1D fog/depth LUTs, triangle-noise silt, billboard clusters, sparse silhouettes, projected caustics.
+- Middle: authored biome packs, route-proven gameplay, object-batch density.
+- High: typed creature stimuli, platform-tuned VFX, silt wakes, hull-dent presentation.
+- Ultra: optional Overkill pack for visor salt, volumetric silt, procedural hull dents, high-tier POM/raymarch/SSS.
+
+### Exact microseconds saved
+
+0us measured. Documentation-only source audit. No runtime code, assets, scenes, prefabs, project settings, or import settings changed.
+
+### Proof limits
+
+- No Unity import, Play Mode, profiler, Memory Profiler, Frame Debugger, or player build was run.
+- No Android/Quest, macOS/Metal, Linux/Steam Deck, or high-end PC Overkill device validation was run.
+- The handoff is a work map, not runtime readiness proof.

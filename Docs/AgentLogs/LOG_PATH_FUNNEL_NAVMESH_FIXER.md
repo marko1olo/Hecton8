@@ -130,7 +130,7 @@ Verification:
 - Cursor/division scan found no runtime `%` or `math.rcp`; only XML comment slashes and epsilon-guarded `math.rsqrt` remain in owned pathing files.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false /v:minimal /clp:ErrorsOnly` exits 1 with 137 non-pathfinding errors and zero pathfinding matches.
 - `dotnet restore .\Assembly-CSharp.csproj` exits 0.
-- `dotnet build .\Assembly-CSharp.csproj --no-restore -m:1 /nr:false /v:minimal /clp:ErrorsOnly` exits 1 because `Unity.RenderPipelines.Universal.Runtime.dll` is locked by another process; the current Assembly log has zero pathfinding matches.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -m:1 /nr:false /v:minimal /clp:ErrorsOnly` exits 1 because `Unity.RenderPipelines.Universal.Runtime.dll` is locked by another process; that pass's Assembly log had zero pathfinding matches.
 
 Integrator note:
 - Current compile wall is outside AI/PATHING: `FloraInteractionManager`, `SargassumMicroFaunaBoids`, `RepairTool`, `HectonUnderwaterVisuals`, and a locked URP build output. Do not attribute those failures to the funnel module.
@@ -188,7 +188,7 @@ Verification:
 - Cursor/division scan found no runtime `%` or `math.rcp`; only XML comment slashes and epsilon-guarded `math.rsqrt` remain in owned pathing files.
 - Struct/capacity scan found explicit tail `Reserved*` fields, `Min(2)` invalidation capacity, 4096 max vault capacities, and `IsSafeLongGridCoordinate`.
 - `git diff --check` reported no whitespace errors; only LF-to-CRLF warnings for touched files.
-- Current build logs still have zero pathfinding matches. Full build validation remains blocked by non-pathfinding Core/RealtimeCSG dependencies.
+- At that pass, build logs still had zero pathfinding matches. Full build validation remained blocked by non-pathfinding Core/RealtimeCSG dependencies.
 
 Integrator note:
 - No cross-domain edits. Presentation overkill remains outside this XML because VFX is N/A.
@@ -212,7 +212,7 @@ Verification:
 - Asmdef reference scan shows direct `Hecton8.Core.Contracts` reference present beside Core and Memory.
 - Hard-ban `rg` scan over `Assets/_Project/Scripts/AI/Pathfinding` found no private `NativeArray`, `H8Memory.Allocate`, `H8Memory.Release`, `new NativeArray`, `byte[]`, `File.WriteAllBytes`, `string.Format`, `Debug.Log`, Unity update loops, `Vector3`, scene `Find*`, legacy `EventBus`, delegates, `NavMesh`, or A* usage.
 - `git diff --check` reported no whitespace errors; only LF-to-CRLF warnings for touched files.
-- Current build logs still have zero pathfinding matches; full build validation remains blocked outside AI/PATHING.
+- At that pass, build logs still had zero pathfinding matches; full build validation remained blocked outside AI/PATHING.
 
 Integrator note:
 - This does not introduce a direct dependency on WFC implementation classes; it keeps the typed signal contract boundary.
@@ -267,16 +267,16 @@ Verification:
 Integrator note:
 - No new signal was invented. Pathing stays on the existing `WfcOutpostStateChangedSignal` typed lane.
 
-## Current Compile Snapshot - 2026-05-16
+## Compile Snapshot Record - 2026-05-16
 
 What was wrong:
-- Earlier compile status was stale under concurrent work. Core had since recovered, but the status file still named old Core blockers.
+- Earlier compile status was stale under concurrent work. At this snapshot, Core had recovered, but the status file still named old Core blockers.
 
 What was done:
 - Reran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false /v:minimal /clp:ErrorsOnly`.
 - Reran `dotnet restore .\Assembly-CSharp.csproj`.
 - Reran `dotnet build .\Assembly-CSharp.csproj --no-restore -m:1 /nr:false /v:minimal /clp:ErrorsOnly`.
-- Updated status and rationale to stop carrying stale Core failure evidence.
+- Updated status and rationale for that snapshot to stop carrying then-stale Core failure evidence.
 
 Cinematic cheats used:
 - None. Verification-only pass.
@@ -285,11 +285,11 @@ Exact microseconds saved:
 - 0 measured. Compile evidence has no runtime claim.
 
 Verification:
-- `Hecton8.Core.csproj` exits 0.
-- `Assembly-CSharp.csproj` exits 1 with 237 missing RealtimeCSG source-file errors and zero pathfinding matches.
+- At this snapshot, `Hecton8.Core.csproj` exited 0.
+- `Assembly-CSharp.csproj` exited 1 with 237 missing RealtimeCSG source-file errors and zero pathfinding matches.
 
 Integrator note:
-- Current remaining validation wall is RealtimeCSG package source debt outside AI/PATHING. Owned pathfinding diagnostics do not appear in the current build logs.
+- This snapshot is superseded by later records. Owned pathfinding diagnostics did not appear in those build logs.
 
 ## Homeostasis Truth Record - 2026-05-16
 
@@ -386,8 +386,302 @@ Verification:
 - `rg -n "OneOverAupSectorSizeMeters|HectonPhysicsContract\.OneOver|ref readonly" Assets/_Project/Scripts/AI/Pathfinding` returns no matches.
 - Hard-ban pathfinding scan returns no forbidden hot-path patterns.
 - `git diff --check -- Assets/_Project/Scripts/AI/Pathfinding` reports only line-ending warnings.
-- `Hecton8.Core.csproj` exits 1 with 3 missing non-pathing contract source files and zero pathfinding matches.
-- `Assembly-CSharp.csproj` exits nonzero with 216 RealtimeCSG missing source errors and zero pathfinding matches.
+- At that pass, `Hecton8.Core.csproj` exited 1 with 3 missing non-pathing contract source files and zero pathfinding matches.
+- At that pass, `Assembly-CSharp.csproj` exited nonzero with 216 RealtimeCSG missing source errors and zero pathfinding matches.
 
 Integrator note:
-- Current compile walls are outside AI/PATHING: missing Core contract source files and RealtimeCSG package source references. The owned pathfinding log scans remain clean.
+- That pass's compile walls were outside AI/PATHING: missing Core contract source files and RealtimeCSG package source references. The owned pathfinding log scans remained clean.
+
+## Blackbox Catch Narrowing Record - 2026-05-16
+
+What was wrong:
+- `TryDumpBlackBox` used a broad `catch (Exception)`.
+- That contained expected dump I/O failures, but it could also suppress unexpected runtime faults while pretending the system only had a filesystem failure.
+
+What was done:
+- Replaced the broad catch with explicit `IOException`, `UnauthorizedAccessException`, `NotSupportedException`, and `ArgumentException` catches.
+- Preserved the existing `BlackBoxDumpFailed` telemetry path for expected file/path failures.
+
+Cinematic cheats used:
+- None. This is crash-evidence hygiene, not presentation work.
+
+Exact microseconds saved:
+- 0 measured. The dump path is explicit/non-hot; no runtime speed claim.
+
+Verification:
+- `rg -n "catch \\(Exception" Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime.cs` returns no matches.
+- Hard-ban pathfinding scan still returns no forbidden hot-path patterns.
+- `git diff --check -- Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime.cs` reports only LF-to-CRLF warnings.
+
+Integrator note:
+- Expected dump file/path failures still set `PathFunnelTelemetryFlags.BlackBoxDumpFailed`. Unexpected exceptions are no longer swallowed by this domain.
+
+## WFC Contract Boundary Record - 2026-05-17
+
+What was wrong:
+- The Burst door check accepted any portal cell index inside the current `WfcGridBitmasks` buffer length.
+- That let an oversized or stale vault buffer become the semantic authority instead of the WFC contract cell count.
+- Blocked-path telemetry used the zero-based portal index for `ProcessedPortalCount`, so a block on portal 0 reported zero processed portals.
+
+What was done:
+- Added `PathFunnelResultFlags.InvalidWfcCell`.
+- `IsDoorCellBlocked` now rejects cells outside `PathFunnelConstants.WfcOutpostCellCount` before checking the vault buffer length.
+- Blocked-path telemetry now writes `ProcessedPortalCount = i + 1`.
+- `RegisterActivePath` now stores `CellCount` from successful WFC bitmask writes only; invalid corridor cells no longer inflate active-path metadata.
+- Refreshed Core and Assembly-CSharp build logs and rescanned both for owned pathfinding symbols.
+
+Cinematic cheats used:
+- The door truth remains a cheap WFC flag lookup, but malformed out-of-contract cells are now a flagged diagnostic instead of false door physics.
+
+Exact microseconds saved:
+- 0 measured. This is correctness hardening and telemetry truth; no profiler/Burst Inspector timing was collected.
+
+Verification:
+- Source scan confirms `InvalidWfcCell`, contract-count gating, and `ProcessedPortalCount = i + 1`.
+- Hard-ban pathfinding scan returns no forbidden hot-path patterns.
+- `git diff --check -- Assets/_Project/Scripts/AI/Pathfinding` reports only LF-to-CRLF warnings.
+- At that pass, `Hecton8.Core.csproj` exited 1 with 2 non-pathing `HectonPlayerMotor` interface errors and zero pathfinding matches.
+- At that pass, `Assembly-CSharp.csproj` exited nonzero with 216 RealtimeCSG missing source errors, 5 non-pathing Core caller/contract errors, and zero pathfinding matches.
+
+Integrator note:
+- That pass's compile walls were outside AI/PATHING: `HectonPlayerMotor`, EquipmentInteraction contracts, `TetherManager`, and RealtimeCSG package source references. Later records supersede the blocker counts.
+
+## Unique WFC Cell Count And Validation Refresh - 2026-05-17
+
+What was wrong:
+- `PathFunnelActivePath.CellCount` counted successful calls into the bitmask writer, but duplicate corridor cells can target an already-set bit.
+- That made metadata larger than the unique WFC bitmask truth used for door invalidation.
+- Status evidence still described stale Core build failures even after the current Core build succeeded.
+
+What was done:
+- `SetPathCell` now returns false when the target WFC mask bit is already set.
+- Active-path registration increments `validCellCount` only for a new bit write.
+- Re-read the original XML prompt and refreshed status/rationale/log evidence.
+- Confirmed the timed Assembly-CSharp build process is no longer running.
+- Updated current build truth: Core green, Assembly-CSharp blocked by RealtimeCSG missing sources only in the current log.
+
+Cinematic cheats used:
+- Duplicate WFC corridor entries are collapsed by the bitmask itself. No extra container, sort, or managed dedup pass was added.
+
+Exact microseconds saved:
+- 0 measured. No profiler or Burst Inspector timing was collected for this correctness pass.
+
+Verification:
+- `rg -n "validCellCount|SetPathCell|wordValue|CellCount =" Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime.cs` shows unique-bit counting.
+- Hard-ban pathfinding scan returns no forbidden hot-path patterns.
+- `git diff --check -- Assets/_Project/Scripts/AI/Pathfinding Docs/Tasks/Status_PATH_FUNNEL_NAVMESH_FIXER.md Docs/AgentLogs/Rationale_PATH_FUNNEL_NAVMESH_FIXER.md Docs/AgentLogs/LOG_PATH_FUNNEL_NAVMESH_FIXER.md` reports only LF-to-CRLF warnings.
+- `Hecton8.Core.csproj` exits 0 with `Build succeeded.`.
+- Current `Assembly-CSharp` build log contains 216 `RealtimeCSG.csproj` CS2001 missing source errors and 0 owned pathfinding matches.
+
+Integrator note:
+- Do not route Assembly-CSharp failures to AI/PATHING on the current evidence. The remaining validation blocker is RealtimeCSG package source debt; owned pathfinding code has no current build-log diagnostics.
+
+## Signal/Vault Phase Truth Record - 2026-05-17
+
+What was wrong:
+- WFC door-close invalidation used the vault cell as `CurrentFlags` when `BufferID.WfcOutpostGrid` was present.
+- Save persistence writes that vault from the same `WfcOutpostStateChangedSignal` lane, so the vault can be one phase behind the signal.
+- A close signal could therefore be skipped if the signal said closed but the vault still said open.
+
+What was done:
+- `WfcOutpostStateChangedSignal.CurrentFlags` now drives close-transition detection.
+- `PathFunnelConstants.WfcMutableFlagMask` aliases the shared persistence mask.
+- The vault cell is still read and compared as an audited snapshot.
+- `PathFunnelTelemetryFlags.WfcVaultSignalMismatch` is written into the 300-frame blackbox when the vault and signal disagree.
+- No new signal lane, managed delegate, or cross-domain WFC class dependency was introduced.
+
+Cinematic cheats used:
+- The cheap door truth is still one byte mask and one exact corridor bit test. No physics, raycasts, or broad path scans were added.
+
+Exact microseconds saved:
+- 0 measured. This pass prevents missed invalidations; no profiler or Burst Inspector timing was collected.
+
+Verification:
+- `rg -n "ResolveCurrentCellFlags|WfcVaultSignalMismatch|WfcMutableFlagMask|SignalBus<WfcOutpostStateChangedSignal>|ReadOnlySpan<WfcOutpostStateChangedSignal>" Assets/_Project/Scripts/AI/Pathfinding` confirms signal-authoritative close handling and mismatch telemetry.
+- Hard-ban pathfinding scan returns no forbidden hot-path patterns.
+- Struct-layout scan still shows explicit `Pack = 1` payloads and reserved tail coverage.
+- `git diff --check -- Assets/_Project/Scripts/AI/Pathfinding Docs/Tasks/Status_PATH_FUNNEL_NAVMESH_FIXER.md Docs/AgentLogs/Rationale_PATH_FUNNEL_NAVMESH_FIXER.md Docs/AgentLogs/LOG_PATH_FUNNEL_NAVMESH_FIXER.md` reports only LF-to-CRLF warnings.
+- No `dotnet build` was run on this pass per user instruction.
+
+Integrator note:
+- Current build status remains from the previous evidence: Core green, full Assembly-CSharp blocked by RealtimeCSG missing source files with zero pathfinding matches. This pass is source/static verified only.
+
+## WFC Mutable Mask Isolation Record - 2026-05-17
+
+What was wrong:
+- Runtime close detection masked signal `CurrentFlags` but still tested raw `PreviousFlags`.
+- The Burst door-block check read raw WFC vault bytes.
+- Future or reserved WFC bits could leak into pathing door truth if producers changed payload usage.
+
+What was done:
+- `ProcessWfcStateSignal` now masks `signal.PreviousFlags` through `PathFunnelConstants.WfcMutableFlagMask`.
+- Invalidation payloads now receive masked previous/current cell flags.
+- `FunnelSmoothingJob.IsDoorCellBlocked` now masks `WfcGridBitmasks[cellIndex]` through the same shared mutable mask before checking `WfcDoorOpenFlag`.
+
+Cinematic cheats used:
+- None. This is interface hygiene for the cheap WFC door-bit path.
+
+Exact microseconds saved:
+- 0 measured. No profiler or Burst Inspector timing was collected.
+
+Verification:
+- `rg -n "previousFlags|signal\\.PreviousFlags|WfcMutableFlagMask|cellFlags =|IsDoorCellBlocked|ResolveCurrentCellFlags" Assets/_Project/Scripts/AI/Pathfinding` confirms masked previous/current signal flags and masked Burst vault bytes.
+- Hard-ban pathfinding scan returns no forbidden hot-path patterns.
+- `git diff --check -- Assets/_Project/Scripts/AI/Pathfinding Docs/Tasks/Status_PATH_FUNNEL_NAVMESH_FIXER.md Docs/AgentLogs/Rationale_PATH_FUNNEL_NAVMESH_FIXER.md Docs/AgentLogs/LOG_PATH_FUNNEL_NAVMESH_FIXER.md` reports only LF-to-CRLF warnings.
+- No `dotnet build` was run on this pass per user instruction.
+
+Integrator note:
+- This is a source/static validation pass only. Current compile evidence remains unchanged from prior logs.
+
+## Blackbox Transient Flag Truth Record - 2026-05-17
+
+What was wrong:
+- `WfcVaultSignalMismatch` was written into `PathFunnelRuntimeState.TelemetryFlags` and would stay set after one vault/signal disagreement.
+- That made later blackbox frames look like they still had a phase-order mismatch even when the next frames were clean.
+
+What was done:
+- Added `PathFunnelTelemetryFlags.TransientFrameMask`.
+- `LateFrameTick` now captures `writtenTelemetryFlags`, writes the blackbox frame, then clears transient bits from runtime state.
+- Dump failure patching now uses the captured current-frame flags plus `BlackBoxDumpFailed`, so a same-frame mismatch is not lost when the explicit dump fails.
+- `BlackBoxDumpFailed` remains persistent until the next dump request clears it.
+
+Cinematic cheats used:
+- None. This is blackbox truth hygiene.
+
+Exact microseconds saved:
+- 0 measured. No profiler or Burst Inspector timing was collected.
+
+Verification:
+- `rg -n "TransientFrameMask|writtenTelemetryFlags|patchedTelemetryFlags|WfcVaultSignalMismatch|TelemetryFlags" Assets/_Project/Scripts/AI/Pathfinding` confirms frame-scoped mismatch telemetry and persistent dump-failure patching.
+- Hard-ban pathfinding scan returns no forbidden hot-path patterns.
+- No `dotnet build` was run on this pass per user instruction.
+
+Integrator note:
+- Current compile evidence remains unchanged: Core green from the prior log, full Assembly-CSharp blocked by RealtimeCSG missing source files with zero pathfinding matches.
+
+## Editor-Time Registry Guard Record - 2026-05-17
+
+What was wrong:
+- `PathFunnelNavmeshRuntime.OnEnable` touched `GlobalRegistry` and vault handles without a play-mode guard.
+- Editor/import-time enable could register runtime tick owners outside the dispatcher lifecycle.
+
+What was done:
+- Added `if (!Application.isPlaying) return;` at the start of `OnEnable`.
+- Runtime fast tick, late-frame tick, hot-swap registration, and vault handle resolution now occur only in play mode.
+
+Cinematic cheats used:
+- None. This is lifecycle hygiene.
+
+Exact microseconds saved:
+- 0 measured. This is cold-path safety, not a frame-time optimization.
+
+Verification:
+- `rg -n "Application\\.isPlaying|OnEnable\\(|TryRegisterFastTickable|TryRegisterLateFrameTickable|TryRegisterHotSwapListener" Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime.cs` confirms play-mode-gated registration.
+- Hard-ban pathfinding scan returns no forbidden hot-path patterns.
+- No `dotnet build` was run on this pass per user instruction.
+
+Integrator note:
+- Current compile evidence remains unchanged: Core green from the prior log, full Assembly-CSharp blocked by RealtimeCSG missing source files with zero pathfinding matches.
+
+## Telemetry Ring Contract Clamp Record - 2026-05-17
+
+What was wrong:
+- The blackbox writer and dump path used the resolved vault buffer length directly.
+- If a vault buffer for the same `BufferID` resolved larger than 300 entries, pathfinding would write/dump beyond the mandated 300-frame window.
+
+What was done:
+- Added `ResolveTelemetryRingLength`.
+- `TryResolveTelemetryViews`, `WriteTelemetry`, and `TryDumpBlackBox` now clamp to `PathFunnelConstants.TelemetryFrames`.
+- Dump byte count is bounded to the fixed 300-entry payload.
+
+Cinematic cheats used:
+- None. This is postmortem I/O contract hardening.
+
+Exact microseconds saved:
+- 0 measured. No profiler or Burst Inspector timing was collected.
+
+Verification:
+- `rg -n "ResolveTelemetryRingLength|TelemetryFrames|WriteTelemetry|TryDumpBlackBox|InitializeRuntimeState\\(runtimeStateBuffer, ResolveTelemetryRingLength" Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime.cs` confirms blackbox ring and dump clamping.
+- Hard-ban pathfinding scan returns no forbidden hot-path patterns.
+- No `dotnet build` was run on this pass per user instruction.
+
+Integrator note:
+- Current compile evidence remains unchanged: Core green from the prior log, full Assembly-CSharp blocked by RealtimeCSG missing source files with zero pathfinding matches.
+
+## Agent Radius Clamp Telemetry Record - 2026-05-17
+
+What was wrong:
+- `TightenPortalForRadius` made malformed `AgentRadiusMeters` safe but did not expose the sanitation in `PathFunnelResult.Flags`.
+- Negative radius input was also silently treated as zero.
+
+What was done:
+- Added `PathFunnelResultFlags.AgentRadiusClamped`.
+- Non-finite radius now sets `NonFiniteInput | AgentRadiusClamped` and clamps to zero.
+- Negative finite radius now sets `AgentRadiusClamped` and clamps to zero.
+
+Cinematic cheats used:
+- None. This is NaN-vaccination telemetry.
+
+Exact microseconds saved:
+- 0 measured. No profiler or Burst Inspector timing was collected.
+
+Verification:
+- `rg -n "AgentRadiusClamped|AgentRadiusMeters|NonFiniteInput \\| PathFunnelResultFlags.AgentRadiusClamped|radius < 0f|TightenPortalForRadius" Assets/_Project/Scripts/AI/Pathfinding` confirms radius sanitation is telemetry-visible.
+- Hard-ban pathfinding scan returns no forbidden hot-path patterns.
+- No `dotnet build` was run on this pass per user instruction.
+
+Integrator note:
+- Current compile evidence remains unchanged: Core green from the prior log, full Assembly-CSharp blocked by RealtimeCSG missing source files with zero pathfinding matches.
+
+## AUP Sidecar Clamp Truth Record - 2026-05-17
+
+What was wrong:
+- `ConvertWaypointsToAup` silently converted only the prefix when `WaypointAups.Length` was smaller than the produced waypoint count.
+- Result consumers could see a larger `WaypointCount` with no flag showing the optional deterministic AUP sidecar was incomplete.
+
+What was done:
+- Added `PathFunnelResultFlags.AupOutputClamped`.
+- `ConvertWaypointsToAup` now compares `WaypointAups.Length` against the safe waypoint count and sets the flag when the sidecar is undersized.
+- The job still writes only valid prefix entries and allocates nothing.
+
+Cinematic cheats used:
+- None. This is deterministic output truth hygiene.
+
+Exact microseconds saved:
+- 0 measured. No profiler or Burst Inspector timing was collected.
+
+Verification:
+- `rg -n "AupOutputClamped|ConvertWaypointsToAup|safeWaypointCount|WaypointAups\\.Length" Assets/_Project/Scripts/AI/Pathfinding` confirms AUP sidecar clamp telemetry.
+- Hard-ban pathfinding scan returns no forbidden hot-path patterns.
+- No `dotnet build` was run on this pass per user instruction.
+
+Integrator note:
+- Current compile evidence remains unchanged: Core green from the prior log, full Assembly-CSharp blocked by RealtimeCSG missing source files with zero pathfinding matches.
+
+## Portal Input Clamp Truth Record - 2026-05-17
+
+What was wrong:
+- `FunnelSmoothingJob` clamped `PortalCount` to `Portals.Length` and then used the clamped count for completion truth.
+- A caller requesting more portals than the native buffer held could receive `Complete` after only the available prefix was processed.
+- A negative portal count could collapse to a direct start-goal path instead of failing as malformed input.
+
+What was done:
+- Added `PathFunnelResultFlags.PortalInputClamped`.
+- Negative `PortalCount` now returns `PathFunnelStatus.InvalidInput`.
+- Positive portal counts with missing or empty `Portals` buffers return `InvalidInput`.
+- Partial-lookahead status now compares `portalLimit` against the caller-requested portal count, not the clamped native buffer length.
+- Truncated positive buffers now use the last available portal midpoint as the effective goal and mark partial/truncated telemetry.
+
+Cinematic cheats used:
+- None. This is correctness at the corridor boundary.
+
+Exact microseconds saved:
+- 0 measured. No profiler or Burst Inspector timing was collected.
+
+Verification:
+- `rg -n "PortalInputClamped|ResolveRequestedPortalCount|PortalCount < 0|requestedPortalCount|ResolvePortalCount\\(" Assets/_Project/Scripts/AI/Pathfinding` confirms malformed/truncated portal input handling.
+- Hard-ban pathfinding scan returns no forbidden hot-path patterns.
+- No `dotnet build` was run on this pass per user instruction.
+
+Integrator note:
+- Current compile evidence remains unchanged: Core green from the prior log, full Assembly-CSharp blocked by RealtimeCSG missing source files with zero pathfinding matches.

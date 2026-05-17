@@ -3,7 +3,7 @@
 Agent ID: AMBIENT_BIOTA_DIRECTOR
 Domain: AI/ENVIRONMENT
 Task Count: 18
-Status: VERIFIED MASTER GRADE - BIOTA PULSING (AMBIENT STATIC CLEAN; GLOBAL COMPILE BLOCKED OUTSIDE AI/AMBIENT; UNITY RUNTIME PENDING)
+Status: VERIFIED MASTER GRADE - BIOTA PULSING (AMBIENT STATIC CLEAN AFTER LOOP 18 AUP DELTA OVERFLOW GUARD; DOTNET BUILD NOT RERUN PER USER; LAST GLOBAL DOTNET BUILD GREEN BEFORE LOOP 16; AMBIENT BEE BLOCKED BY MISSING CORE REF; UNITY RUNTIME PENDING)
 
 ## Prompt Extraction Evidence
 
@@ -295,3 +295,126 @@ Status: VERIFIED MASTER GRADE - BIOTA PULSING (AMBIENT STATIC CLEAN; GLOBAL COMP
   - Blocking family: `Assets/_Project/Scripts/World/EcosystemDirector.cs` missing index helpers/fields (`ClearIndexEntries`, `TryUpsertIndexEntry`, `TryFindIndexEntry`, `_sectorIndexByKey`, `_biomassIndexByKey`, `ResolveVaultIndexCapacity`, and `BiomassLotkaVolterraJob.CellIndexByKey`).
   - Evidence: `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`.
   - Shader caveat: Unity shader import/compiler validation remains unavailable in this shell session; shader status is static-audited, not Unity-compiled.
+
+## Loop 13: Inspector Hygiene And Unsafe Shader Rsqrt Closure
+
+- [x] Mandatory memory re-read before loop: `Docs/Tasks/Status_AMBIENT_BIOTA_DIRECTOR.md` and `Docs/AgentLogs/Rationale_AMBIENT_BIOTA_DIRECTOR.md` were read from disk before visible continuation.
+- [x] Prompt re-read before loop: `CURRENT_BATCH.md` still contains the complete `<AGENT_PROMPT id="AMBIENT_BIOTA_DIRECTOR">` block, 18 tasks, authoritative domain `Assets/_Project/Scripts/AI/Ambient/`, and the Omega branchless-advection mandate.
+- [x] Relevant mandates re-read: `AI_Flocking_Boids_Swarm_SpatialHash_Logic.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `ARCH_Signal_Lane_Segregation.txt`, `MATH_AUP_Determinism_Sync.txt`, and `MATH_Deterministic_RNG_SlotMachine.txt`.
+- [x] Inspector hygiene: every serialized field in `AmbientBiotaDirector` has an explicit `Tooltip`, and the capacity/presentation fields are grouped with headers. This is editor metadata only and adds no hot-path runtime work.
+- [x] Stale SDF naming closure: macro hydration spawn offset code uses `verticalBias`; the stale `sdfEmergenceBias` name is gone after the SDF dependency purge.
+- [x] Shader rsqrt closure: `SafeNormalize2` and `SafeNormalize3` guard `rsqrt` with `max(lengthSq, 1e-8)`, and drift direction now routes through `SafeNormalize3` instead of a direct velocity `rsqrt`.
+- [x] Static shader cleanup: removed unused ambient shader defines for inactive active-state and two-pi constants.
+- [x] Static forbidden-pattern audit: no `SetData`, `private NativeArray`, direct `H8Memory.Allocate`, `Update`, `LateUpdate`, `FixedUpdate`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, legacy `EventBus`, managed delegate patterns, `Camera.main`, scene find, coroutine, or `Resources.Load` in `Assets/_Project/Scripts/AI/Ambient`.
+- [x] Shader static audit: no `normalize(`, stale direct `rsqrt(lengthSq)`, `velocityLenSq`, `#define HECTON_BIOTA_ACTIVE`, or `HECTON_TWO_PI` remains in the ambient shader.
+- [x] Omega advection audit: `AmbientBiotaDriftJob.Execute` still contains no `if (` branch source.
+- [x] Tick hot-path audit: `Tick(float deltaTime)` still contains no `GlobalRegistry.`, no `EnsureVaultBuffers()`, and no `GlobalSignals.SystemStress01`.
+- [x] Diff hygiene: `git diff --check` passed.
+- [x] Current global `dotnet build` status: VERIFIED GREEN
+  - Command: `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false`.
+  - Result: succeeded with 0 warnings and 0 errors.
+  - Evidence: `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`.
+- [x] Current Unity Bee asmdef status: [BLOCKED BY DEPENDENCY]
+  - Command: direct Roslyn compile of `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Ambient.rsp`.
+  - Result: blocked before source analysis because `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.ref.dll` is missing.
+  - Evidence: `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_ASMDEF_BUILD.txt`.
+  - Shader caveat: Unity shader import/compiler validation remains unavailable in this shell session; shader status is static-audited, not Unity-compiled.
+
+## Loop 14: Deterministic Spawn Signal Cadence
+
+- [x] Mandatory memory re-read before loop: `Docs/Tasks/Status_AMBIENT_BIOTA_DIRECTOR.md` and `Docs/AgentLogs/Rationale_AMBIENT_BIOTA_DIRECTOR.md` were read from disk before visible continuation and before edits.
+- [x] Prompt re-read before loop: `CURRENT_BATCH.md` still contains the complete `<AGENT_PROMPT id="AMBIENT_BIOTA_DIRECTOR">` block, 18 tasks, authoritative domain `Assets/_Project/Scripts/AI/Ambient/`, and the Omega branchless-advection mandate.
+- [x] Unity workflow note: `unity-mcp-orchestrator` instructions were read. No Unity MCP editor tools/resources are exposed in this session, so Unity import, console, Play Mode, screenshots, GCMonitor, and Frame Debugger remain unavailable.
+- [x] Relevant mandates re-read: `AI_Flocking_Boids_Swarm_SpatialHash_Logic.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `ARCH_Signal_Lane_Segregation.txt`, `MATH_AUP_Determinism_Sync.txt`, and `MATH_Deterministic_RNG_SlotMachine.txt`.
+- [x] Deterministic signal cadence: macro hydration `EntitySpawnSignal.Frame` now uses the director's `_frameIndex` instead of `Time.frameCount`, removing the last Unity frame-count dependency from the ambient signal path.
+- [x] Static forbidden-pattern audit: no `Time.frameCount`, `Time.deltaTime`, `Time.fixedDeltaTime`, `SetData`, `private NativeArray`, direct `H8Memory.Allocate`, `Update`, `LateUpdate`, `FixedUpdate`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, legacy `EventBus`, managed delegate patterns, `Camera.main`, scene find, coroutine, or `Resources.Load` in `Assets/_Project/Scripts/AI/Ambient`.
+- [x] Tick hot-path audit: `Tick(float deltaTime)` still contains no `GlobalRegistry.`, no `EnsureVaultBuffers()`, no `GlobalSignals.SystemStress01`, and no `Time.` access.
+- [x] Omega advection audit: `AmbientBiotaDriftJob.Execute` still contains no `if (` branch source.
+- [x] Shader portability audit: the ambient shader still contains no `long`, `int64_t`, `uint64_t`, `RWStructuredBuffer`, `RWByteAddressBuffer`, `Interlocked`, group barriers, `numthreads`, wave intrinsics, derivatives, texture objects, texture sampling, or raw `normalize(`.
+- [x] Diff hygiene: `git diff --check` passed; only CRLF normalization warnings were reported.
+- [x] Current global `dotnet build` status: [BLOCKED BY DEPENDENCY]
+  - Command: `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false`.
+  - Result: failed outside `AI/Ambient` with 5 errors.
+  - Blocking files: `Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs`, `Assets/_Project/Scripts/Audio/HectonMusicDirector.cs`, and `Assets/_Project/Scripts/AcousticZoneController.cs`.
+  - Blocking symbols: `IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent)`, missing `IAcousticZoneEventListener`, and missing `ISignal`.
+  - Evidence: `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`.
+- [x] Current Unity Bee asmdef status: [BLOCKED BY DEPENDENCY]
+  - Command: direct Roslyn compile of `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Ambient.rsp`.
+  - Result: blocked before source analysis because `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.ref.dll` is missing.
+  - Evidence: `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_ASMDEF_BUILD.txt`.
+  - Shader caveat: Unity shader import/compiler validation remains unavailable in this shell session; shader status is static-audited, not Unity-compiled.
+
+## Loop 15: Telemetry Clock Decoupling
+
+- [x] Mandatory memory re-read before loop: `Docs/Tasks/Status_AMBIENT_BIOTA_DIRECTOR.md` and `Docs/AgentLogs/Rationale_AMBIENT_BIOTA_DIRECTOR.md` were read from disk before visible continuation and before edits.
+- [x] Prompt re-read before loop: `CURRENT_BATCH.md` still contains the complete `<AGENT_PROMPT id="AMBIENT_BIOTA_DIRECTOR">` block, 18 tasks, authoritative domain `Assets/_Project/Scripts/AI/Ambient/`, and the Omega branchless-advection mandate.
+- [x] Relevant mandates re-read: Zero-GC, Native Memory/Jobs, AUP determinism, Deterministic RNG, Signal Lane Segregation, and AI swarm/NaN rules.
+- [x] C# Unity time purge: `RecountActiveBiota` no longer reads `Time.unscaledTime`; cull-rate telemetry now uses a director-owned `_telemetryClockSeconds` accumulated from the dispatcher `Tick(float deltaTime)` parameter.
+- [x] Job-pending cadence guard: telemetry clock accumulation happens before the `_jobPending` early return, so long-running jobs do not freeze blackbox elapsed-time accounting.
+- [x] C# static time audit: no `Time.frameCount`, `Time.unscaledTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, or `Time.` remains in `Assets/_Project/Scripts/AI/Ambient/*.cs`.
+- [x] Static forbidden-pattern audit: no `SetData`, `private NativeArray`, direct `H8Memory.Allocate`, Unity `Update`, `LateUpdate`, `FixedUpdate`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, legacy `EventBus`, managed delegate patterns, scene search, coroutine, or `Resources.Load` remains in ambient C#.
+- [x] Tick hot-path audit: `Tick(float deltaTime)` still contains no `GlobalRegistry.`, no `EnsureVaultBuffers()`, no `GlobalSignals.SystemStress01`, and no C# `Time.` access.
+- [x] Omega advection audit: `AmbientBiotaDriftJob.Execute` still contains no `if (` branch source.
+- [x] Shader portability audit: the ambient shader still contains no `long`, `int64_t`, `uint64_t`, `RWStructuredBuffer`, `RWByteAddressBuffer`, `Interlocked`, group barriers, `numthreads`, wave intrinsics, derivatives, texture objects, texture sampling, or raw `normalize(`. `_Time.y` remains only in shader presentation pulse/silt math, not C# authority or telemetry.
+- [x] Diff hygiene: `git diff --check -- Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs` passed; only CRLF normalization warnings were reported.
+- [x] Current global `dotnet build` status: VERIFIED GREEN
+  - Command: `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false`.
+  - Result: succeeded with 0 warnings and 0 errors.
+  - Evidence: `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`.
+- [x] Current Unity Bee asmdef status: [BLOCKED BY DEPENDENCY]
+  - Command: direct Roslyn compile of `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Ambient.rsp` with Unity 6000.4.1f1 Roslyn.
+  - Result: blocked before source analysis because `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.ref.dll` is missing.
+  - Evidence: `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_ASMDEF_BUILD.txt`.
+  - Runtime caveat: Unity import, Play Mode, GCMonitor, Frame Debugger, GPU profiler, Quest/Android/Metal player builds, and shader compiler proof remain unavailable from this shell session.
+
+## Loop 16: Shader Visual Time Decoupling
+
+- [x] Mandatory memory re-read before loop: `Docs/Tasks/Status_AMBIENT_BIOTA_DIRECTOR.md` and `Docs/AgentLogs/Rationale_AMBIENT_BIOTA_DIRECTOR.md` were read from disk before visible continuation and before edits.
+- [x] Prompt re-read before loop: `CURRENT_BATCH.md` still contains the complete `<AGENT_PROMPT id="AMBIENT_BIOTA_DIRECTOR">` block, 18 tasks, authoritative domain `Assets/_Project/Scripts/AI/Ambient/`, and the Omega branchless-advection mandate.
+- [x] Unity MCP workflow note: `unity-mcp-orchestrator` instructions were read; no Unity MCP editor tools/resources are exposed, so Unity import/console/playmode/shader-compiler validation remains unavailable.
+- [x] Relevant mandates re-read: Zero-GC, Native Memory/Jobs, AUP determinism, Deterministic RNG, Signal Lane Segregation, and AI swarm/NaN rules.
+- [x] Shader Unity time purge: removed ambient shader `_Time.y` usage. Pulse and silt presentation now read `_HectonBiotaVisualTime`, supplied by the director-owned dispatcher-time clock.
+- [x] C# bridge: added cached `_HectonBiotaVisualTime` shader property ID and writes it through the existing indirect material parameter path. No new MaterialPropertyBlock, no runtime material clone, no new buffer, and no public interface change.
+- [x] Static time audit: no `Time.` or `_Time` remains in `Assets/_Project/Scripts/AI/Ambient`.
+- [x] Static forbidden-pattern audit: no `SetData`, `private NativeArray`, `new NativeArray`, direct `H8Memory.Allocate`, Unity `Update`, `LateUpdate`, `FixedUpdate`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, `System.Random`, `UnityEngine.Random`, legacy `EventBus`, managed delegate patterns, scene search, coroutine, or `Resources.Load` remains in ambient C#.
+- [x] Shader portability audit: the ambient shader still contains no `long`, `int64_t`, `uint64_t`, `RWStructuredBuffer`, `RWByteAddressBuffer`, `Interlocked`, group barriers, `numthreads`, wave intrinsics, derivatives, texture objects, texture sampling, or raw `normalize(`.
+- [x] Tick hot-path audit: `Tick(float deltaTime)` still contains no `GlobalRegistry.`, no `EnsureVaultBuffers()`, no `GlobalSignals.SystemStress01`, and no C# `Time.` access.
+- [x] Omega advection audit: `AmbientBiotaDriftJob.Execute` still contains no `if (` branch source.
+- [x] Diff hygiene: `git diff --check` passed for ambient code and agent docs; only CRLF normalization warnings were reported.
+- [x] Compile status: NOT RERUN PER USER REQUEST
+  - User instruction: do not run `dotnet` rebuild every time.
+  - Last global build evidence remains `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`, from before Loop 16.
+  - Current validation for Loop 16 is static only; Unity shader import/compiler validation is still unavailable.
+
+## Loop 17: Stale Telemetry Identifier Repair
+
+- [x] Mandatory memory re-read before loop: `Docs/Tasks/Status_AMBIENT_BIOTA_DIRECTOR.md` and `Docs/AgentLogs/Rationale_AMBIENT_BIOTA_DIRECTOR.md` were read from disk before visible continuation and before edits.
+- [x] Prompt re-read before loop: `CURRENT_BATCH.md` still contains the complete `<AGENT_PROMPT id="AMBIENT_BIOTA_DIRECTOR">` block, 18 tasks, authoritative domain `Assets/_Project/Scripts/AI/Ambient/`, and the Omega branchless-advection mandate.
+- [x] Unity MCP workflow note: `unity-mcp-orchestrator` instructions were read; no Unity MCP editor tools/resources are exposed, so Unity import/console/playmode/shader-compiler validation remains unavailable.
+- [x] Relevant mandates re-read: AI swarm logic, Zero-GC, Native Memory/Jobs, AUP determinism, Signal Lane Segregation, Debug Telemetry, and GPU Sovereignty.
+- [x] Compile-hygiene repair: `ResetCapacityDependentRuntimeState()` now resets `_lastRecountClockSeconds`, the actual dispatcher-time telemetry field. The stale `_lastRecountTimeSeconds` identifier is gone.
+- [x] Static stale-identifier audit: `rg -n "_lastRecountTimeSeconds" Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs` returned no matches.
+- [x] Static time audit: no C# `Time.` or shader `_Time` remains in `Assets/_Project/Scripts/AI/Ambient`.
+- [x] Static forbidden-pattern audit: no `SetData`, `private NativeArray`, `new NativeArray`, direct `H8Memory.Allocate`, Unity `Update`, `LateUpdate`, `FixedUpdate`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, `System.Random`, `UnityEngine.Random`, legacy `EventBus`, managed delegate patterns, scene search, coroutine, or `Resources.Load` remains in ambient C#.
+- [x] Shader portability audit: the ambient shader still contains no `long`, `int64_t`, `uint64_t`, `RWStructuredBuffer`, `RWByteAddressBuffer`, `Interlocked`, group barriers, `numthreads`, wave intrinsics, derivatives, texture objects, texture sampling, or raw `normalize(`.
+- [x] Tick hot-path audit: `Tick(float deltaTime)` still contains no `GlobalRegistry.` access.
+- [x] Omega advection audit: `AmbientBiotaDriftJob.Execute` still contains no `if (` branch source.
+- [x] Diff hygiene: `git diff --check` passed for ambient code and agent docs; only CRLF normalization warnings were reported.
+- [x] Compile status: NOT RERUN PER USER REQUEST
+  - User instruction: do not run `dotnet` rebuild every time.
+  - Last global build evidence remains `Docs/AgentLogs/Dump_AMBIENT_BIOTA_DIRECTOR_BUILD.txt`, from before Loop 16.
+  - Current validation for Loop 17 is static only; Unity shader import/compiler validation is still unavailable.
+
+## Loop 18: AUP Delta Overflow Guard
+
+- [x] Mandatory memory re-read before loop: `Docs/Tasks/Status_AMBIENT_BIOTA_DIRECTOR.md` and `Docs/AgentLogs/Rationale_AMBIENT_BIOTA_DIRECTOR.md` were read from disk before visible continuation and before edits.
+- [x] AUP delta repair: `DeltaMeters()` now casts both grid coordinates to `double` before subtracting, preventing signed `long` subtraction overflow before meter conversion.
+- [x] Raw grid-subtraction audit: source scan for `a.GridX - b.GridX` / Y / Z style integer subtraction in `AmbientBiotaDirector.cs` returned no raw long-subtract pattern.
+- [x] Static time audit: no C# `Time.` or shader `_Time` remains in `Assets/_Project/Scripts/AI/Ambient`.
+- [x] Static forbidden-pattern audit: no `SetData`, `private NativeArray`, `new NativeArray`, direct `H8Memory.Allocate`, Unity `Update`, `LateUpdate`, `FixedUpdate`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, `System.Random`, `UnityEngine.Random`, legacy `EventBus`, managed delegate patterns, scene search, coroutine, or `Resources.Load` remains in ambient C#.
+- [x] Tick hot-path audit: `Tick(float deltaTime)` still contains no `GlobalRegistry.` access.
+- [x] Omega advection audit: `AmbientBiotaDriftJob.Execute` still contains no `if (` branch source.
+- [x] Diff hygiene: `git diff --check` passed for ambient code and agent docs; only CRLF normalization warnings were reported.
+- [x] Compile status: NOT RERUN PER USER REQUEST
+  - User instruction: do not run `dotnet` rebuild every time.
+  - Current validation for Loop 18 is static only; Unity shader import/compiler validation is still unavailable.

@@ -382,6 +382,93 @@ Verification:
 Blocked:
 - Full `Assembly-CSharp.csproj` Unity graph was not re-run after the core pass.
 
+## Surgical Record - 2026-05-17 Recurrent Drift Closure And Core Build Green
+
+What was wrong:
+- Local `SignalBus<T>.Configure` calls had returned in `LockstepStateValidator`, `DiegeticGyroCompassRuntime`, and `ArchitectEyeDebugSignal`.
+- This reintroduced feature-owned lane capacity/hash authority after prior closure.
+- The first build attempt in this pass failed outside CORE/SIGNALS on `SubmarineFluidDynamics.ResolveExteriorThermalAnomalyCenter`, so a current post-reclosure build was required before claiming green.
+
+What was done:
+- Re-read the live XML assignment and relevant mandates from disk.
+- Removed lockstep/glitch, compass/anomaly, and Architect Eye debug local Configure calls.
+- Removed stale local lane capacity/hash constants from the touched surfaces.
+- Left central lane capacities in `GlobalSignals.InitializeAllQueues()`.
+- Re-ran static scans and core build verification.
+
+Cinematic cheats used:
+- No new simulation was added. Low tier keeps bounded central lanes and stress shedding; High/Ultra can spend the same stable packets on richer compass glass, glitch overlays, dense Architect Eye lines, visor salt, wake/silt feedback, and hull response.
+
+Exact microseconds saved:
+- Reclosing repeated local Configure authority: estimated 2-6 us during cold bootstrap/reinitialization.
+- Managed format purge: 0 B hot-path allocation retained; no new measured frame-time delta.
+- Core build recovery: 0 us runtime; verification-only.
+
+Verification:
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- `TARGET_STRING_FORMAT_OR_FIXEDSTRING_HITS=0`.
+- `ISIGNAL_CONTRACT_LAYOUT_VIOLATIONS=0`.
+- Duplicate/old namespace scan returned 0 matches.
+- `PLAYER_INTERACTION_EVENT_HITS=0`.
+- `git diff --check` returned no whitespace errors; CRLF warnings only.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: PASS, 0 warnings, 0 errors.
+
+Blocked:
+- Unity PlayMode, player build, profiler, and platform runtime validation were not executed in this pass. Those remain unclaimed.
+
+## Surgical Record Addendum - 2026-05-17 Final Post-Churn Build Wall
+
+What was wrong:
+- After the reclosure and one green core build, concurrent churn changed the build wall again.
+- The final `Hecton8.Core.csproj` build now fails outside CORE/SIGNALS at `SubmarineFluidDynamics.cs(729,43)` with duplicate `_exteriorBuoyancySampleLocalPoints`.
+
+What was done:
+- Reclosed lockstep/glitch and compass/anomaly local Configure drift again after it reappeared.
+- Re-ran the centralization scan; `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- Corrected status and audit files to record the current final build as dependency-blocked, not green.
+
+Cinematic cheats used:
+- No new simulation cost was added. Low-tier signal shedding and high-tier visual packet propagation remain unchanged.
+
+Exact microseconds saved:
+- Same as the preceding reclosure: estimated 2-6 us during cold bootstrap/reinitialization by removing repeated local lane policy mutation.
+- Compile wall recording: 0 us runtime.
+
+Verification:
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0` after the last patch.
+- Earlier bounded scans in this pass: `TARGET_STRING_FORMAT_OR_FIXEDSTRING_HITS=0`, `ISIGNAL_CONTRACT_LAYOUT_VIOLATIONS=0`, duplicate/old namespace scan 0 matches, `PLAYER_INTERACTION_EVENT_HITS=0`.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: CURRENT BLOCKED outside CORE/SIGNALS by `SubmarineFluidDynamics` duplicate field.
+
+Blocked:
+- Submarine fluid dynamics owner must remove or merge the duplicate `_exteriorBuoyancySampleLocalPoints` field before current core build green can be re-certified.
+
+## Surgical Record - 2026-05-17 Acoustic Zone Signal Closure
+
+What was wrong:
+- `AcousticZoneChangedEvent` lived in `Hecton8.Audio`, not `Hecton8.Core.Contracts.Signals`.
+- The payload was 1 byte wide, not a 16-byte-multiple ABI contract.
+- `AcousticZoneEvents` configured its own typed lane outside `GlobalSignals`.
+
+What was done:
+- Moved the acoustic-zone payload into the contract namespace.
+- Padded the payload to Pack=1 Size=16 with explicit reserved fields.
+- Added central validation and central lane registration in `GlobalSignals.InitializeAllQueues()`.
+- Removed the local acoustic-zone lane Configure/hash authority.
+
+Cinematic cheats used:
+- Low tier keeps a tiny bounded acoustic transition lane; high tier can spend the stable packet on richer wet/dry mix transitions and acoustic presentation.
+
+Exact microseconds saved:
+- Estimated 1-2 us during cold bootstrap/reinitialization by removing local lane policy mutation.
+- Runtime hot path remains one typed Push; no measured frame-time delta.
+
+Verification:
+- Acoustic-zone contract is registered centrally in `GlobalSignals`.
+- Latest acoustic-zone follow-up build returned `-1` with an empty log and build workers were stopped; no green build is claimed after this closure.
+
+Blocked:
+- Current compile certification remains blocked by unstable external build churn and prior out-of-domain `SubmarineFluidDynamics` duplicate field failure.
+
 ## Surgical Record - 2026-05-16 Re-Inquisition SPSC And Drift Closure
 
 What was wrong:
@@ -411,10 +498,10 @@ Verification:
 - `TARGET_STRING_FORMAT_OR_FIXEDSTRING_HITS=0`.
 - `PLAYER_INTERACTION_EVENT_HITS=0`.
 - Direct native allocation scan in `GlobalSignals.cs` now shows only central `SignalBus<T>` `NativeQueue`/`NativeList` transport allocations; direct SPSC `NativeArray<T>` allocation is gone.
-- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: FAIL outside CORE/SIGNALS with 0 warnings and 2 errors in `World/EcosystemDirector.cs` for duplicate `ResolveVaultIndexCapacity` and `TryFindIndexEntry`.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: BLOCKED. Completed attempts moved through unrelated World/Ecosystem and PlayerKinematics compile errors; a later attempt timed out after 304 seconds and dotnet/VBCSCompiler workers were stopped. No current green build exists after the final signal drift reclosure.
 
 Blocked:
-- World/Ecosystem owner must repair the duplicate helper merge in `EcosystemDirector.cs`. No SignalBus registry, signal namespace, signal layout, or managed signal-format errors were emitted.
+- Owning World/Gameplay/Integrator agents must repair their compile walls before current core build green can be re-certified. Final static signal scans are clean.
 
 ## Surgical Record - 2026-05-16 Warning Truth Recheck
 
@@ -447,3 +534,72 @@ Verification:
 
 Blocked:
 - Full `Assembly-CSharp.csproj` Unity graph was not re-run after the core pass.
+
+## Surgical Record - 2026-05-17 Used SignalBus Lane Closure
+
+What was wrong:
+- Alias-aware lane audit found default-policy drift for `DataVaultUpdateSignal`, `PrefabAcousticSignatureSignal`, `PrefabLoreLinkSignal`, and `ScalabilityChangedEvent`.
+- `ScalabilityChangedEvent` lived in `Hecton8.Core` at Size=2, outside the signal contract namespace and below the 16-byte mobile ABI stride.
+- `DirectorAIMusicSignal` had typed Push/snapshot consumers but no central registry policy.
+- Concurrent churn reintroduced compass/anomaly and lockstep/glitch helper-level `SignalBus<T>.Configure` calls.
+
+What was done:
+- Added central `GlobalSignals` policies and validators for data-vault updates, prefab acoustic/lore links, scalability changes, and DirectorAI music cues.
+- Moved `ScalabilityChangedEvent` to `Hecton8.Core.Contracts.Signals`, padded it to Pack=1 Size=16, and routed `ScalabilityEvents` through central initialization.
+- Stripped compass and lockstep helpers down to `GlobalSignals.InitializeAllQueues()` plus typed `EnsureInitialized()`.
+- Re-ran centralization, used-lane, layout, duplicate-name, managed-format, managed-event/delegate, target `Update()`, and whitespace scans.
+
+Cinematic cheats used:
+- Low tier keeps bridge/scalability/music lanes bounded and cheap; high tier can use the same clean packets for richer acoustic lore presentation, music pressure, compass glass, glitch overlays, visor salt, wake/silt, and hull feedback.
+
+Exact microseconds saved:
+- Estimated 2-8 us during cold bootstrap/reinitialization by removing default `SignalBus<T>` policy fallback and recurrent local Configure mutation.
+- Struct padding and namespace eviction save 0 us runtime; they prevent mobile/Burst ABI drift.
+
+Verification:
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- `SIGNALBUS_USED_TYPES_WITHOUT_GLOBAL_CONFIG=0`.
+- `ISIGNAL_CONTRACT_LAYOUT_VIOLATIONS=0`.
+- Duplicate/old namespace scan returned 0 matches.
+- `TARGET_STRING_FORMAT_OR_FIXEDSTRING_HITS=0`.
+- Target managed event/delegate scan returned 0 matches.
+- Target `Update()` scan returned 0 matches.
+- `git diff --check` reported only LF-to-CRLF working-copy warnings, no whitespace errors.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false /m:1`: PASS, 0 warnings, 0 errors, 46.07 seconds.
+
+Blocked:
+- Unity PlayMode, player builds, Quest/Android, Metal/Mac, Steam Deck, and full `Assembly-CSharp.csproj` runtime validation were not run in this signal pass.
+
+## Surgical Record - 2026-05-17 Physical Contract And Residual Lane Policy Closure
+
+What was wrong:
+- Signal contracts were namespace-correct but still physically scattered through feature files, creating duplicate authority outside `Assets/_Project/Scripts/Core/GlobalSignals.cs`.
+- Reintroduced compass/anomaly and lockstep/glitch helpers configured lanes locally again.
+- Alias-aware `SignalBus<T>` usage scan found default-policy drift for `BrownoutSignal`, `DebrisSpawnSignal`, `HUDNotificationSignal`, `ToolAcousticSignal`, `SeismicSignal`, `SubmarineLightsChangedSignal`, `PhysiologyStateSignal`, and `PlayerStressSignal`.
+
+What was done:
+- Centralized the remaining external payload declarations in `GlobalSignals.cs` and removed duplicate definitions from physics determinism, tether, docking, voxel, movement/prologue, diagnostics, homeostasis, bridge, acoustic, scalability, and DirectorAI surfaces.
+- Replaced local compass and lockstep Configure calls with `GlobalSignals.InitializeAllQueues()` plus typed `EnsureInitialized()`.
+- Added explicit central capacities, stable hashes, and low-tier frame limits for brownout, debris, HUD notification, tool acoustic, seismic, submarine lights, physiology state, and player stress lanes.
+- Removed stale unused signal-contract usings from the docking/tether shells touched by the eviction.
+
+Cinematic cheats used:
+- Low tier clamps debris, seismic, tool acoustic, light, stress, and HUD traffic through central caps instead of per-feature policy drift.
+- High and Ultra keep full bounded propagation so the same packets can drive dense debris, camera shake, hull-light response, material decay, visor salt, wake/silt, and acoustic overkill.
+
+Exact microseconds saved:
+- Estimated 3-10 us during cold bootstrap/reinitialization by eliminating residual default-policy fallback and repeated helper-level Configure mutation.
+- Payload relocation and ABI centralization save 0 us directly; they reduce IL2CPP/Burst/mobile integration risk and prevent duplicate contract churn.
+
+Verification:
+- `ISIGNAL_STRUCT_FILES_OUTSIDE_GLOBALSIGNALS=0`.
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- `SIGNALBUS_USED_TYPES_WITHOUT_GLOBAL_CONFIG=0`.
+- `ISIGNAL_CONTRACT_LAYOUT_VIOLATIONS=0`.
+- Duplicate/old namespace scan returned 0 matches.
+- `TARGET_STRING_FORMAT_OR_FIXEDSTRING_HITS=0`.
+- `Interaction/PlayerInteraction.cs` managed event scan returned 0 matches.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false /m:1`: PASS, 0 warnings, 0 errors, 25.62 seconds.
+
+Blocked:
+- Unity PlayMode, Quest/Android, Metal/Mac, Steam Deck, and full player-build runtime validation were not run in this signal pass.

@@ -280,7 +280,6 @@ namespace Hecton8.Physics
         private const float SplashDepthThresholdMeters = 1f;
         private const float SplashVelocityThresholdMetersPerSecond = 3.5f;
         private const float SurfaceWindAdvectionForcePerKg = 0.08f;
-        private const byte WaterSplashDebrisKind = 3;
         private const string OceanSurfaceDumpPath = "Docs/AgentLogs/Dump_OCEAN_SURFACE_KINEMATICS.bin";
         private const float GiantWakeDirectionEpsilonSq = 0.0001f;
         private const uint HectonFluidEngineContextHash = 0x48464645u;
@@ -4504,7 +4503,7 @@ namespace Hecton8.Physics
                 SpeciesHash = OceanSplashSignalHash,
                 SourceEntityId = bodyId,
                 Intensity01 = intensity,
-                DebrisKind = WaterSplashDebrisKind,
+                DebrisKind = DebrisSpawnSignal.DebrisKindWaterSplash,
                 Flags = 0
             };
             GlobalSignals.Publish(in debrisSignal);

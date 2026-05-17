@@ -5,11 +5,30 @@ Generated from Core/Contracts. Edit constants in C# contracts, then regenerate t
 | Contract | Constant | Type | Value |
 | --- | --- | --- | --- |
 | AcousticAup | CellSizeMeters | int | `HectonPhysicsContract.AupSectorSizeMetersInt` |
-| CoreContractsAssemblyMarker | LowTierEmergency | byte | `1 << 0` |
-| CoreContractsAssemblyMarker | FramePressure | byte | `1 << 1` |
-| CoreContractsAssemblyMarker | ThermalPressure | byte | `1 << 2` |
-| CoreContractsAssemblyMarker | AupLocked | byte | `1 << 3` |
-| CoreContractsAssemblyMarker | InvalidStateRecovered | byte | `1 << 4` |
+| ResolutionScaleStateFlags | LowTierEmergency | byte | `1 << 0` |
+| ResolutionScaleStateFlags | FramePressure | byte | `1 << 1` |
+| ResolutionScaleStateFlags | ThermalPressure | byte | `1 << 2` |
+| ResolutionScaleStateFlags | AupLocked | byte | `1 << 3` |
+| ResolutionScaleStateFlags | InvalidStateRecovered | byte | `1 << 4` |
+| HectonContractVersion | HashLo | ulong | `<computed in static constructor>` |
+| HectonContractVersion | HashHi | ulong | `<computed in static constructor>` |
+| HectonDataSovereigntyContract | DataOwnerGlobalDataVault | byte | `1` |
+| HectonDataSovereigntyContract | DataOwnerSignalBusTypedLane | byte | `2` |
+| HectonDataSovereigntyContract | DataOwnerReadOnlySpanView | byte | `3` |
+| HectonDataSovereigntyContract | LocalNativeArrayOwnershipForbidden | byte | `1` |
+| HectonDataSovereigntyContract | SystemIdContracts | uint | `0x43545243u` |
+| HectonDataSovereigntyContract | SystemIdGlobalDataVault | uint | `0x47445654u` |
+| HectonDataSovereigntyContract | SystemIdSignalBus | uint | `0x53474C4Eu` |
+| HectonDataSovereigntyContract | SystemIdMmfPaging | uint | `0x4D4D4650u` |
+| HectonDataSovereigntyContract | SystemIdBlackBox | uint | `0x42424F58u` |
+| HectonDataSovereigntyContract | VaultOverrideFloatStrideBytes | int | `4` |
+| HectonDataSovereigntyContract | VaultOverrideDoubleStrideBytes | int | `8` |
+| HectonDataSovereigntyContract | VaultOverrideUlongStrideBytes | int | `8` |
+| HectonDataSovereigntyContract | VaultOverrideMaxContractEntries | int | `512` |
+| HectonDataSovereigntyContract | TypedSignalLaneMaxCount | int | `255` |
+| HectonDataSovereigntyContract | ReadOnlySpanMinBridgeBytes | int | `16` |
+| HectonDataSovereigntyContract | BlackBoxFrameCapacity | int | `HectonPlatformContract.ContractBlackBoxFrameCapacity` |
+| HectonDataSovereigntyContract | BlackBoxEntryBytes | int | `HectonPlatformContract.ContractHeartbeatStrideBytes` |
 | HectonEcologyContract | PopulationTelemetryCapacity | int | `300` |
 | HectonEcologyContract | PopulationCounterCapacity | int | `16` |
 | HectonEcologyContract | PopulationCoefficientCapacity | int | `1` |
@@ -167,6 +186,28 @@ Generated from Core/Contracts. Edit constants in C# contracts, then regenerate t
 | HectonPhysicsContract | DeterministicMaxWrapInput | float | `13493037000f` |
 | HectonPhysicsContract | AupMaxFloatSafeMeters | double | `1000000000000.0d` |
 | HectonPhysicsContract | AupMaxDistanceReturnMeters | double | `1000000000.0d` |
+| HectonPlatformContract | AbiStructPackBytes | int | `1` |
+| HectonPlatformContract | SimdAlignmentBytes | int | `16` |
+| HectonPlatformContract | CacheLineBytes | int | `64` |
+| HectonPlatformContract | NativePageAlignmentBytes | int | `4096` |
+| HectonPlatformContract | UniversalMaxComputeThreadsPerGroup | int | `1024` |
+| HectonPlatformContract | QuestSafeComputeThreadsPerGroup | int | `256` |
+| HectonPlatformContract | AndroidSafeComputeThreadsPerGroup | int | `256` |
+| HectonPlatformContract | SteamDeckSafeComputeThreadsPerGroup | int | `512` |
+| HectonPlatformContract | MetalSafeComputeThreadsPerGroup | int | `512` |
+| HectonPlatformContract | PcUltraComputeThreadsPerGroup | int | `1024` |
+| HectonPlatformContract | QuestMaxThreadGroupZ | int | `64` |
+| HectonPlatformContract | AndroidMaxThreadGroupZ | int | `64` |
+| HectonPlatformContract | MetalMaxThreadGroupZ | int | `64` |
+| HectonPlatformContract | SteamDeckMicroSdReadBudgetBytesPerFrameLow | int | `16 * 1024` |
+| HectonPlatformContract | SteamDeckMicroSdReadBudgetBytesPerFrameMiddle | int | `32 * 1024` |
+| HectonPlatformContract | SteamDeckMicroSdReadBudgetBytesPerFrameHigh | int | `64 * 1024` |
+| HectonPlatformContract | SteamDeckMicroSdReadBudgetBytesPerFrameUltra | int | `128 * 1024` |
+| HectonPlatformContract | SteamDeckMmfPrefetchPageBudgetLow | int | `1` |
+| HectonPlatformContract | SteamDeckMmfPrefetchPageBudgetUltra | int | `8` |
+| HectonPlatformContract | ContractBlackBoxFrameCapacity | int | `300` |
+| HectonPlatformContract | ContractHeartbeatStrideBytes | int | `32` |
+| HectonPlatformContract | ContractHeartbeatBufferBytes | int | `ContractBlackBoxFrameCapacity * ContractHeartbeatStrideBytes` |
 | HectonSignalLaneContract | AcousticPingSignal | byte | `1` |
 | HectonSignalLaneContract | AnomalyProximitySignal | byte | `2` |
 | HectonSignalLaneContract | AtmosphericReentrySignal | byte | `3` |
@@ -277,6 +318,7 @@ Generated from Core/Contracts. Edit constants in C# contracts, then regenerate t
 | HectonSignalLaneContract | WfcOutpostDoorPowerSignal | byte | `108` |
 | HectonSignalLaneContract | WfcOutpostGeneratedSignal | byte | `109` |
 | HectonSignalLaneContract | WfcOutpostStateChangedSignal | byte | `110` |
+| HectonSignalLaneContract | SignalLaneRegistryHash | uint | `0x13CABE35u` |
 | HectonSurvivalContract | KPaPerAtmosphere | float | `101.325f` |
 | HectonSurvivalContract | StandardOxygenKPa | float | `21.22f` |
 | HectonSurvivalContract | StandardCarbonDioxideKPa | float | `0.04f` |
@@ -353,45 +395,86 @@ Generated from Core/Contracts. Edit constants in C# contracts, then regenerate t
 | HectonVaultOffsetContract | SignalLaneBase | ushort | `0x0600` |
 | HectonVaultOffsetContract | LoreHashBase | ushort | `0x0700` |
 | HectonVaultOffsetContract | EditorBreadcrumbBase | ushort | `0x0800` |
-| JobAdmissionContracts | Count | int | `6` |
-| JobAdmissionContracts | Lane0Critical | int | `0` |
-| JobAdmissionContracts | Lane1World | int | `1` |
-| JobAdmissionContracts | Lane2Voxel | int | `2` |
-| JobAdmissionContracts | Lane3AI | int | `3` |
-| JobAdmissionContracts | Lane4VFX | int | `4` |
-| JobAdmissionContracts | Lane5IO | int | `5` |
+| HectonVaultOffsetContract | PlatformAbiStructPackBytes | ushort | `0x0900` |
+| HectonVaultOffsetContract | PlatformUniversalMaxComputeThreadsPerGroup | ushort | `0x0904` |
+| HectonVaultOffsetContract | PlatformSteamDeckMicroSdReadBudgetLow | ushort | `0x0908` |
+| HectonVaultOffsetContract | DataSovereigntySystemIdContracts | ushort | `0x0A00` |
+| HectonVaultOffsetContract | DataSovereigntyBlackBoxFrameCapacity | ushort | `0x0A04` |
+| HectonVaultOffsetContract | DataSovereigntyTypedSignalLaneMaxCount | ushort | `0x0A08` |
+| HectonVaultOffsetContract | VisualOverkillLowDearLieLutSamples | ushort | `0x0B00` |
+| HectonVaultOffsetContract | VisualOverkillUltraRaymarchSteps | ushort | `0x0B04` |
+| HectonVaultOffsetContract | VisualOverkillUltraPomTaps | ushort | `0x0B08` |
+| HectonVaultOffsetContract | VisualOverkillUltraWakeSiltParticles | ushort | `0x0B0C` |
+| HectonVisualOverkillContract | LowTierDearLieLutSamples | int | `64` |
+| HectonVisualOverkillContract | LowTierTriangleNoiseOctaves | int | `1` |
+| HectonVisualOverkillContract | LowTierDotProductVisionSamples | int | `1` |
+| HectonVisualOverkillContract | LowTierRaymarchSteps | int | `0` |
+| HectonVisualOverkillContract | LowTierPomTaps | int | `0` |
+| HectonVisualOverkillContract | LowTierSssSamples | int | `0` |
+| HectonVisualOverkillContract | LowTierWakeSiltParticles | int | `128` |
+| HectonVisualOverkillContract | LowTierVisorSaltCrystalBudget | int | `0` |
+| HectonVisualOverkillContract | LowTierHullDentDecalBudget | int | `16` |
+| HectonVisualOverkillContract | MiddleTierDearLieLutSamples | int | `128` |
+| HectonVisualOverkillContract | MiddleTierTriangleNoiseOctaves | int | `2` |
+| HectonVisualOverkillContract | MiddleTierRaymarchSteps | int | `8` |
+| HectonVisualOverkillContract | MiddleTierPomTaps | int | `4` |
+| HectonVisualOverkillContract | MiddleTierSssSamples | int | `2` |
+| HectonVisualOverkillContract | MiddleTierWakeSiltParticles | int | `512` |
+| HectonVisualOverkillContract | MiddleTierVisorSaltCrystalBudget | int | `128` |
+| HectonVisualOverkillContract | MiddleTierHullDentDecalBudget | int | `64` |
+| HectonVisualOverkillContract | HighTierRaymarchSteps | int | `32` |
+| HectonVisualOverkillContract | HighTierPomTaps | int | `12` |
+| HectonVisualOverkillContract | HighTierSssSamples | int | `6` |
+| HectonVisualOverkillContract | HighTierWakeSiltParticles | int | `4096` |
+| HectonVisualOverkillContract | HighTierVisorSaltCrystalBudget | int | `1024` |
+| HectonVisualOverkillContract | HighTierHullDentDecalBudget | int | `256` |
+| HectonVisualOverkillContract | UltraTierRaymarchSteps | int | `64` |
+| HectonVisualOverkillContract | UltraTierPomTaps | int | `16` |
+| HectonVisualOverkillContract | UltraTierSssSamples | int | `8` |
+| HectonVisualOverkillContract | UltraTierWakeSiltParticles | int | `8192` |
+| HectonVisualOverkillContract | UltraTierVisorSaltCrystalBudget | int | `2048` |
+| HectonVisualOverkillContract | UltraTierHullDentDecalBudget | int | `512` |
+| HectonVisualOverkillContract | LowTierWakeSiltStepMeters | float | `4.0f` |
+| HectonVisualOverkillContract | UltraTierWakeSiltStepMeters | float | `0.75f` |
+| HectonVisualOverkillContract | LowTierSaltCrystalSpawnChance01 | float | `0.0f` |
+| HectonVisualOverkillContract | UltraTierSaltCrystalSpawnChance01 | float | `0.85f` |
+| HectonVisualOverkillContract | LowTierHullDentNormalBlend01 | float | `0.25f` |
+| HectonVisualOverkillContract | UltraTierHullDentNormalBlend01 | float | `0.95f` |
+| JobAdmissionLanes | Count | int | `6` |
+| JobAdmissionLanes | Lane0Critical | int | `0` |
+| JobAdmissionLanes | Lane1World | int | `1` |
+| JobAdmissionLanes | Lane2Voxel | int | `2` |
+| JobAdmissionLanes | Lane3AI | int | `3` |
+| JobAdmissionLanes | Lane4VFX | int | `4` |
+| JobAdmissionLanes | Lane5IO | int | `5` |
 | MacroDatabaseContracts | CellSizeMeters | int | `HectonPhysicsContract.AupSectorSizeMetersInt` |
-| MacroDatabaseContracts | MemoryPressurePaused | byte | `1 << 0` |
-| MacroDatabaseContracts | PersistenceGate | byte | `1 << 1` |
-| MacroDatabaseContracts | TempReady | byte | `1 << 2` |
-| MacroDatabaseContracts | LastSwapExceededBudget | byte | `1 << 3` |
-| MacroDatabaseContracts | Dirty | byte | `1 << 0` |
-| PersistencePagingContracts | VoxelDeltaRle | uint | `0x5658524Cu` |
-| PersistencePagingContracts | InventoryState | uint | `0x494E5654u` |
-| PersistencePagingContracts | ChunkDehydratedMetadata | uint | `0x43484452u` |
-| PersistencePagingContracts | WfcOutpostState | uint | `0x5746434Fu` |
-| PersistencePagingContracts | GridSizeX | int | `10` |
-| PersistencePagingContracts | GridSizeY | int | `10` |
-| PersistencePagingContracts | GridSizeZ | int | `5` |
-| PersistencePagingContracts | CellCount | int | `GridSizeX * GridSizeY * GridSizeZ` |
-| PersistencePagingContracts | MutableBitPlaneCount | int | `4` |
-| PersistencePagingContracts | PackedBitCount | int | `CellCount * MutableBitPlaneCount` |
-| PersistencePagingContracts | PackedWordCount | int | `(PackedBitCount + 63) / 64` |
-| PersistencePagingContracts | PackedWordBytes | int | `PackedWordCount * sizeof(ulong)` |
-| PersistencePagingContracts | PayloadHeaderBytes | int | `32` |
-| PersistencePagingContracts | PayloadMaxBytes | int | `PayloadHeaderBytes + PackedWordBytes` |
-| PersistencePagingContracts | MutableFlagMask | byte | `(byte)(
-            WfcOutpostCellStateFlags.DoorOpen \|
-            WfcOutpostCellStateFlags.DoorUnlocked \|
-            WfcOutpostCellStateFlags.PowerOn \|
-            WfcOutpostCellStateFlags.DatapadLooted)` |
-| PrologueSequenceContracts | TokenCancelled | byte | `1` |
-| PrologueSequenceContracts | ExplicitCancel | byte | `2` |
-| PrologueSequenceContracts | DevSkip | byte | `3` |
-| PrologueSequenceContracts | NonFinite | byte | `4` |
-| PrologueSequenceContracts | SequenceDirector | uint | `0x50524C47u` |
-| PrologueSequenceContracts | ManualOverrideLever | uint | `0x4D4F5652u` |
-| PrologueSequenceContracts | OrbitalRelativityDirector | uint | `0x4F524249u` |
+| MacroDatabaseCompactionFlags | MemoryPressurePaused | byte | `1 << 0` |
+| MacroDatabaseCompactionFlags | PersistenceGate | byte | `1 << 1` |
+| MacroDatabaseCompactionFlags | TempReady | byte | `1 << 2` |
+| MacroDatabaseCompactionFlags | LastSwapExceededBudget | byte | `1 << 3` |
+| MacroDatabasePayloadFlags | Dirty | byte | `1 << 0` |
+| H8WorldPagePayloadTypes | VoxelDeltaRle | uint | `0x5658524Cu` |
+| H8WorldPagePayloadTypes | InventoryState | uint | `0x494E5654u` |
+| H8WorldPagePayloadTypes | ChunkDehydratedMetadata | uint | `0x43484452u` |
+| H8WorldPagePayloadTypes | WfcOutpostState | uint | `0x5746434Fu` |
+| WfcOutpostPersistenceConstants | GridSizeX | int | `10` |
+| WfcOutpostPersistenceConstants | GridSizeY | int | `10` |
+| WfcOutpostPersistenceConstants | GridSizeZ | int | `5` |
+| WfcOutpostPersistenceConstants | CellCount | int | `GridSizeX * GridSizeY * GridSizeZ` |
+| WfcOutpostPersistenceConstants | MutableBitPlaneCount | int | `4` |
+| WfcOutpostPersistenceConstants | PackedBitCount | int | `CellCount * MutableBitPlaneCount` |
+| WfcOutpostPersistenceConstants | PackedWordCount | int | `(PackedBitCount + 63) / 64` |
+| WfcOutpostPersistenceConstants | PackedWordBytes | int | `PackedWordCount * sizeof(ulong)` |
+| WfcOutpostPersistenceConstants | PayloadHeaderBytes | int | `32` |
+| WfcOutpostPersistenceConstants | PayloadMaxBytes | int | `PayloadHeaderBytes + PackedWordBytes` |
+| WfcOutpostPersistenceConstants | MutableFlagMask | byte | `(byte)( WfcOutpostCellStateFlags.DoorOpen \| WfcOutpostCellStateFlags.DoorUnlocked \| WfcOutpostCellStateFlags.PowerOn \| WfcOutpostCellStateFlags.DatapadLooted)` |
+| PrologueCancelReasons | TokenCancelled | byte | `1` |
+| PrologueCancelReasons | ExplicitCancel | byte | `2` |
+| PrologueCancelReasons | DevSkip | byte | `3` |
+| PrologueCancelReasons | NonFinite | byte | `4` |
+| PrologueSignalSourceHashes | SequenceDirector | uint | `0x50524C47u` |
+| PrologueSignalSourceHashes | ManualOverrideLever | uint | `0x4D4F5652u` |
+| PrologueSignalSourceHashes | OrbitalRelativityDirector | uint | `0x4F524249u` |
 | ScalabilityContract | MaxBoidsCount_Low | int | `256` |
 | ScalabilityContract | MaxBoidsCount_Middle | int | `1000` |
 | ScalabilityContract | MaxBoidsCount_High | int | `2000` |
@@ -423,28 +506,28 @@ Generated from Core/Contracts. Edit constants in C# contracts, then regenerate t
 | ScalabilityContract | MiddleTierVramPressureRatio01 | float | `0.78f` |
 | ScalabilityContract | HighTierVramPressureRatio01 | float | `0.84f` |
 | ScalabilityContract | UltraTierVramPressureRatio01 | float | `0.90f` |
-| SimulationBucketingContracts | FastBucketCount | int | `4` |
-| SimulationBucketingContracts | FastBucketMask | int | `FastBucketCount - 1` |
-| SimulationBucketingContracts | StandardSlowBucketCount | int | `64` |
-| SimulationBucketingContracts | StandardSlowBucketMask | int | `StandardSlowBucketCount - 1` |
-| SimulationBucketingContracts | LowSlowBucketCount | int | `128` |
-| SimulationBucketingContracts | LowSlowBucketMask | int | `LowSlowBucketCount - 1` |
-| SimulationBucketingContracts | ColdBucketCount | int | `512` |
-| SimulationBucketingContracts | ColdBucketMask | int | `ColdBucketCount - 1` |
-| SimulationBucketingContracts | DefaultEntityCapacity | int | `8192` |
-| SimulationBucketingContracts | MaxEntityCapacity | int | `1 << 20` |
-| SimulationBucketingContracts | HighTierActiveSlowBucketCount | byte | `2` |
-| SimulationBucketingContracts | MinimumActiveSlowBucketCount | byte | `1` |
-| SimulationBucketingContracts | TargetFrameMilliseconds | float | `Hecton8.Core.Contracts.ScalabilityContract.TargetFrameMilliseconds` |
-| SimulationBucketingContracts | PreSimulationBudgetMilliseconds | float | `Hecton8.Core.Contracts.ScalabilityContract.PreSimulationBudgetMilliseconds` |
-| SimulationBucketingContracts | RebalanceCadenceFrames | int | `60` |
-| SimulationBucketingContracts | Impossible60Fps | uint | `1u << 0` |
-| SimulationBucketingContracts | PreSimulationOverBudget | uint | `1u << 1` |
-| SimulationBucketingContracts | NonFiniteCost | uint | `1u << 2` |
-| SimulationBucketingContracts | RebalancePending | uint | `1u << 3` |
-| SimulationBucketingContracts | LowTierStaticDistribution | uint | `1u << 4` |
-| SimulationBucketingContracts | HomeostasisKillRequested | uint | `1u << 5` |
-| SimulationBucketingContracts | VisualOverkillBudgetAvailable | uint | `1u << 6` |
+| SimulationBucketConstants | FastBucketCount | int | `4` |
+| SimulationBucketConstants | FastBucketMask | int | `FastBucketCount - 1` |
+| SimulationBucketConstants | StandardSlowBucketCount | int | `64` |
+| SimulationBucketConstants | StandardSlowBucketMask | int | `StandardSlowBucketCount - 1` |
+| SimulationBucketConstants | LowSlowBucketCount | int | `128` |
+| SimulationBucketConstants | LowSlowBucketMask | int | `LowSlowBucketCount - 1` |
+| SimulationBucketConstants | ColdBucketCount | int | `512` |
+| SimulationBucketConstants | ColdBucketMask | int | `ColdBucketCount - 1` |
+| SimulationBucketConstants | DefaultEntityCapacity | int | `8192` |
+| SimulationBucketConstants | MaxEntityCapacity | int | `1 << 20` |
+| SimulationBucketConstants | HighTierActiveSlowBucketCount | byte | `2` |
+| SimulationBucketConstants | MinimumActiveSlowBucketCount | byte | `1` |
+| SimulationBucketConstants | TargetFrameMilliseconds | float | `Hecton8.Core.Contracts.ScalabilityContract.TargetFrameMilliseconds` |
+| SimulationBucketConstants | PreSimulationBudgetMilliseconds | float | `Hecton8.Core.Contracts.ScalabilityContract.PreSimulationBudgetMilliseconds` |
+| SimulationBucketConstants | RebalanceCadenceFrames | int | `60` |
+| SimulationBucketPacingFlags | Impossible60Fps | uint | `1u << 0` |
+| SimulationBucketPacingFlags | PreSimulationOverBudget | uint | `1u << 1` |
+| SimulationBucketPacingFlags | NonFiniteCost | uint | `1u << 2` |
+| SimulationBucketPacingFlags | RebalancePending | uint | `1u << 3` |
+| SimulationBucketPacingFlags | LowTierStaticDistribution | uint | `1u << 4` |
+| SimulationBucketPacingFlags | HomeostasisKillRequested | uint | `1u << 5` |
+| SimulationBucketPacingFlags | VisualOverkillBudgetAvailable | uint | `1u << 6` |
 
 RU: Eto karta zakonov dvizhka. Menyat fiziku, vyzhivanie, ekologiyu, LOD i ABI offsety nuzhno zdes, ne v Burst jobah.
 EN: This is the law map for the engine. Change physics, survival, ecology, LOD, and ABI offsets here, not inside Burst jobs.

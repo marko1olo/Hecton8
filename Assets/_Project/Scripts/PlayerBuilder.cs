@@ -2007,7 +2007,7 @@ namespace Hecton8.Building
             Vector3 drawPosition = HectonFloatingOrigin.ToRuntimePosition(targetAup);
             _buildGhostProjectionMatrices[0] = Matrix4x4.TRS(drawPosition, ghostTransform.rotation, proxyBoundsSize);
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 _buildGhostProjectionMesh,
                 0,
                 projectionMaterial,

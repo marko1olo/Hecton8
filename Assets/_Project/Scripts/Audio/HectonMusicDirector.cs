@@ -16,7 +16,7 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3900)] // Consumes zone/acoustic state resolved by earlier managers.
-    public sealed class HectonMusicDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IDepthZoneEventListener, IAcousticZoneEventListener, IBiomeMatrixEventListener, IDirectorAIEventListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonMusicDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private enum PlaybackState : byte
         {
@@ -319,6 +319,16 @@ namespace Hecton8.Audio
         private bool _tenseExplorationLatched;
         private bool _lastAcousticInteriorState;
         private bool _hasLastAcousticInteriorState;
+        private int _lastAcousticZoneSignalFrame = -1;
+        private HectonBiomeMatrixProfile _observedMatrixProfile;
+        private int _observedMatrixDepthTier = int.MinValue;
+        private float _observedMatrixDepthMeters;
+        private DepthZoneProfile _observedDepthZone;
+        private bool _hasObservedMatrixState;
+        private bool _hasObservedDepthZone;
+        private bool _lastDirectorPredatorPressure;
+        private bool _hasLastDirectorPredatorPressure;
+        private int _lastDirectorAISignalFrame = -1;
         private Transform _playerTransform;
         private Transform _dependencyPlayerTransform;
         private HectonPlayerMovement _playerMovement;
@@ -435,10 +445,6 @@ namespace Hecton8.Audio
 
             TryRegisterHotSwapListener();
             TryRegisterTickHandlers();
-            AcousticZoneEvents.Register(this);
-            BiomeMatrixEvents.Register(this);
-            DepthZoneEvents.Register(this);
-            DirectorAIEvents.Register(this);
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
             _pendingImmediateSelection = true;
         }
@@ -457,10 +463,6 @@ namespace Hecton8.Audio
         {
             StopMusicInternal(0f);
             SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
-            DirectorAIEvents.Unregister(this);
-            DepthZoneEvents.Unregister(this);
-            BiomeMatrixEvents.Unregister(this);
-            AcousticZoneEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             TryUnregisterTickHandlers();
             TryUnregisterFromGlobalRegistry();
@@ -470,10 +472,6 @@ namespace Hecton8.Audio
         private void OnDestroy()
         {
             StopMusicInternal(0f);
-            DirectorAIEvents.Unregister(this);
-            DepthZoneEvents.Unregister(this);
-            AcousticZoneEvents.Unregister(this);
-            BiomeMatrixEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             TryUnregisterTickHandlers();
             TryUnregisterFromGlobalRegistry();
@@ -493,6 +491,8 @@ namespace Hecton8.Audio
         /// </summary>
         public void Tick(float deltaTime)
         {
+            DrainAcousticZoneSignal();
+            DrainDirectorAISignals();
             if (!AreRuntimeVoicesReady())
             {
                 WriteDebugState();
@@ -577,8 +577,11 @@ namespace Hecton8.Audio
         /// </summary>
         public void SlowTick()
         {
+            DrainAcousticZoneSignal();
+            DrainDirectorAISignals();
             DrainBiomeGradientSignal();
             RefreshLayerThreatSnapshot();
+            RefreshPolledMusicContext();
             ReevaluateContext(false);
         }
 
@@ -1324,6 +1327,136 @@ namespace Hecton8.Audio
             _biomeGradientA = signal.BiomeA;
             _biomeGradientB = signal.BiomeB;
             _debugBiomeGradientBlend01 = _biomeGradientBlend01;
+        }
+
+        private void DrainAcousticZoneSignal()
+        {
+            int frame = Time.frameCount;
+            if (_lastAcousticZoneSignalFrame == frame)
+                return;
+
+            _lastAcousticZoneSignalFrame = frame;
+            ReadOnlySpan<AcousticZoneChangedEvent> signals = SignalBus<AcousticZoneChangedEvent>.GetFrameSnapshot();
+            if (signals.Length == 0)
+                return;
+
+            AcousticZoneChangedEvent signal = signals[signals.Length - 1];
+            HandleAcousticZoneChanged(signal.IsInterior);
+        }
+
+        private void DrainDirectorAISignals()
+        {
+            int frame = Time.frameCount;
+            if (_lastDirectorAISignalFrame == frame)
+                return;
+
+            _lastDirectorAISignalFrame = frame;
+            ReadOnlySpan<DirectorAIMusicSignal> signals = SignalBus<DirectorAIMusicSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                DirectorAIMusicSignal signal = signals[i];
+                switch (signal.EventType)
+                {
+                    case DirectorAIMusicSignal.SpawnHordeEventType:
+                        HandleSpawnHordeRequested(signal.Position);
+                        break;
+                    case DirectorAIMusicSignal.RareDiscoveryEventType:
+                        HandleRareDiscoveryRequested(signal.Position);
+                        break;
+                    case DirectorAIMusicSignal.PredatorPressureEventType:
+                        HandlePredatorPressureChanged(signal.BoolValue);
+                        break;
+                    case DirectorAIMusicSignal.ThreatSpikeEventType:
+                        HandleThreatSpike(signal.Position, signal.Value);
+                        break;
+                }
+            }
+        }
+
+        private void RefreshPolledMusicContext()
+        {
+            RefreshObservedBiomeMatrixState();
+            RefreshObservedDepthZoneState();
+            RefreshObservedDirectorPressureState();
+        }
+
+        private void RefreshObservedBiomeMatrixState()
+        {
+            if (_biomeMatrixDirector == null)
+                return;
+
+            HectonBiomeMatrixProfile currentProfile = _biomeMatrixDirector.CurrentProfile;
+            int currentDepthTier = _biomeMatrixDirector.CurrentDepthTier;
+            float currentDepthMeters = _biomeMatrixDirector.CurrentDepthMeters;
+
+            if (!_hasObservedMatrixState)
+            {
+                _hasObservedMatrixState = true;
+                _observedMatrixProfile = currentProfile;
+                _observedMatrixDepthTier = currentDepthTier;
+                _observedMatrixDepthMeters = currentDepthMeters;
+                HandleMatrixBiomeChanged(currentProfile);
+                return;
+            }
+
+            bool profileChanged = !ReferenceEquals(_observedMatrixProfile, currentProfile);
+            bool depthTierChanged = _observedMatrixDepthTier != currentDepthTier;
+            _observedMatrixProfile = currentProfile;
+            _observedMatrixDepthTier = currentDepthTier;
+            _observedMatrixDepthMeters = currentDepthMeters;
+
+            if (profileChanged)
+                HandleMatrixBiomeChanged(currentProfile);
+
+            if (depthTierChanged)
+                HandleDepthTierChanged(currentDepthTier, currentDepthMeters);
+        }
+
+        private void RefreshObservedDepthZoneState()
+        {
+            if (_depthZoneDirector == null)
+                return;
+
+            DepthZoneProfile currentZone = _depthZoneDirector.CurrentZone;
+            if (!_hasObservedDepthZone)
+            {
+                _hasObservedDepthZone = true;
+                _observedDepthZone = currentZone;
+                return;
+            }
+
+            if (ReferenceEquals(_observedDepthZone, currentZone))
+                return;
+
+            DepthZoneProfile previousZone = _observedDepthZone;
+            _observedDepthZone = currentZone;
+            if (previousZone != null)
+                HandleDepthZoneExited(previousZone);
+
+            if (currentZone != null)
+                HandleDepthZoneEntered(currentZone);
+        }
+
+        private void RefreshObservedDirectorPressureState()
+        {
+            if (_directorAI == null)
+                return;
+
+            bool pressureEnabled = _directorAI.IsPredatorPressureEnabled;
+            if (!_hasLastDirectorPredatorPressure)
+            {
+                _hasLastDirectorPredatorPressure = true;
+                _lastDirectorPredatorPressure = pressureEnabled;
+                if (pressureEnabled)
+                    HandlePredatorPressureChanged(true);
+                return;
+            }
+
+            if (_lastDirectorPredatorPressure == pressureEnabled)
+                return;
+
+            _lastDirectorPredatorPressure = pressureEnabled;
+            HandlePredatorPressureChanged(pressureEnabled);
         }
 
         private float ResolveLayerDepthMeters()
@@ -2583,21 +2716,6 @@ namespace Hecton8.Audio
             ReevaluateContext(true);
         }
 
-        void IAcousticZoneEventListener.OnAcousticZoneChanged(in AcousticZoneChangedEvent payload)
-        {
-            HandleAcousticZoneChanged(payload.IsInterior);
-        }
-
-        void IBiomeMatrixEventListener.OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
-        {
-            HandleMatrixBiomeChanged(profile);
-        }
-
-        void IBiomeMatrixEventListener.OnDepthTierChanged(int depthTier, float depthMeters)
-        {
-            HandleDepthTierChanged(depthTier, depthMeters);
-        }
-
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
         {
             SetMatrixBiomeProfile(profile);
@@ -2639,16 +2757,6 @@ namespace Hecton8.Audio
             PlayRecoveryStinger();
         }
 
-        void IDepthZoneEventListener.OnDepthZoneEntered(DepthZoneProfile zone)
-        {
-            HandleDepthZoneEntered(zone);
-        }
-
-        void IDepthZoneEventListener.OnDepthZoneExited(DepthZoneProfile zone)
-        {
-            HandleDepthZoneExited(zone);
-        }
-
         private void HandleRareDiscoveryRequested(Vector3 position)
         {
             FirstHourDirector firstHourDirector = ResolveFirstHourDirector();
@@ -2676,34 +2784,7 @@ namespace Hecton8.Audio
             ReevaluateContext(true);
         }
 
-        void IDirectorAIEventListener.OnDirectorSpawnHordeRequested(Vector3 position)
-        {
-            HandleSpawnHordeRequested(position);
-        }
-
-        void IDirectorAIEventListener.OnDirectorEquipmentGlitchRequested(float intensity)
-        {
-        }
-
-        void IDirectorAIEventListener.OnDirectorRareDiscoveryRequested(Vector3 position)
-        {
-            HandleRareDiscoveryRequested(position);
-        }
-
-        void IDirectorAIEventListener.OnDirectorWeatherShiftRequested(float intensity)
-        {
-        }
-
-        void IDirectorAIEventListener.OnDirectorMissionTriggerRequested(Vector3 position)
-        {
-        }
-
-        void IDirectorAIEventListener.OnDirectorPredatorPressureChanged(bool pressureEnabled)
-        {
-            HandlePredatorPressureChanged(pressureEnabled);
-        }
-
-        void IDirectorAIEventListener.OnDirectorThreatSpike(Vector3 position, float intensity)
+        private void HandleThreatSpike(Vector3 position, float intensity)
         {
             _combatLatched = true;
             PlayDangerStinger();

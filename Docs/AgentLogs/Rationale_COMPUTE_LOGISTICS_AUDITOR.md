@@ -65,3 +65,81 @@ Rejected Alternatives: Inventing a new H-Phi formula; treating UTF-16 H-Phi JSON
 Scalability potential: The H-Phi current scan is one static pass; the timeseries extractor can be rerun without Unity import or build.
 Hardware Impact: H-Phi scan took about 57 seconds; token timeseries scan read JSONL only and did not touch Unity runtime.
 
+Problem: The improved H-Phi score could be misreported as strict baseline gate success.
+Solution: Attempt the old-budget H-Phi gate explicitly, then document the timeout and use current scan counters for an inferred budget verdict.
+Rejected Alternatives: Pretending a timed-out command produced a valid `EXIT=0`; ignoring raw counter regressions because composite H-Phi improved.
+Scalability potential: Future gate runs should write intermediate JSON before budget checks or use cached scan data.
+Hardware Impact: Strict gate attempt ran for 244 seconds and timed out; no Unity runtime impact.
+
+Problem: A full all-history JSONL usage scan was interrupted and therefore could not be used as evidence.
+Solution: Run a bounded recent-file JSONL pass over files modified in the last 30 hours, then compute timestamp-windowed 1h/6h/24h usage, cache-aware cost, no-cache equivalent, prompt cadence, and long-context event count.
+Rejected Alternatives: Claiming partial output from the interrupted all-history scan; rerunning another full 8+ GB pass interactively while other agents were active.
+Scalability potential: Cheap pass reads about 991MB and gives current rate truth; high-end/offline pass can still run full-history reconciliation later.
+Hardware Impact: Read-only JSONL scan took about 35 seconds and did not touch Unity runtime.
+
+Problem: SQLite totals were current but did not include line/byte denominator drift from concurrent source edits.
+Solution: Pair the 00:52 SQLite live pulse with a fresh static first-party script LOC/byte scan and report tokens per meaningful LOC, physical LOC, and script byte.
+Rejected Alternatives: Reusing the 23:59 LOC denominator after source changed; treating SQLite token total as invoice-grade despite missing cache/output split.
+Scalability potential: Repeated static LOC scans are cheap enough for ongoing accounting without forcing Unity import.
+Hardware Impact: Read-only source scan took seconds; no runtime frame impact.
+
+Problem: Aggregate live burn hides which concurrent threads are consuming the current token rate.
+Solution: Run a short per-thread SQLite delta and list live burners by positive token increase.
+Rejected Alternatives: Calling a thread a compute thief without joining LOC/H-Phi/value deltas; using end-token totals as if they were current-rate deltas.
+Scalability potential: This method is cheap enough to repeat and can later be joined against changed files and H-Phi artifacts.
+Hardware Impact: 20-second wait plus two read-only SQLite scans; no Unity runtime impact.
+
+Problem: The latest H-Phi truth had moved after the 17:18 artifact, while token totals continued to burn.
+Solution: Run a fresh `HectonPhiAudit.ps1 -Summary -Json` scan without strict budget args, validate the artifact shape, compare scores/counters against 17:18, and compute a timestamp-windowed JSONL token/cost slice between the two H-Phi artifacts.
+Rejected Alternatives: Reusing stale H-Phi numbers; rerunning strict budget gate after the prior 244-second timeout; treating score improvement as budget compliance.
+Scalability potential: Summary-only H-Phi scans are enough for trend measurement; strict gates should be reserved for offline or cached-scan runs.
+Hardware Impact: H-Phi scan took 157,042 ms. JSONL window pass read 543,939,025 bytes. No Unity runtime/import/build was touched.
+
+Problem: Marginal H-Phi efficiency can look good if only the old baseline jump is shown.
+Solution: Calculate marginal tokens and USD per H-Phi delta for the 17:18 to 02:17 interval.
+Rejected Alternatives: Reporting only cumulative correlation; hiding that +0.001 Runtime H-Phi risk now costs about 3.20B tokens in this interval.
+Scalability potential: Future rebase sections can show whether architecture hygiene gains are becoming more or less token-efficient.
+Hardware Impact: Arithmetic only after scans.
+
+Problem: Cumulative H-Phi ROI and marginal H-Phi ROI tell different stories.
+Solution: Add a cumulative baseline-to-current ROI table and explicitly state that cumulative ROI is better because the first DataVault migration jump was cheaper.
+Rejected Alternatives: Presenting only the latest expensive interval; presenting only the cumulative average and hiding worsening marginal cost.
+Scalability potential: Future audit can plot marginal H-Phi cost over time and detect diminishing returns.
+Hardware Impact: Arithmetic only.
+
+Problem: Token burn spiked again after the H-Phi scan and could not be represented by the 02:14 live pulse.
+Solution: Run another short per-thread SQLite delta at 03:04 and record the top live burners plus current total at 03:15.
+Rejected Alternatives: Treating the cooler 02:14 pulse as current; declaring burner threads waste without value/LOC/H-Phi joins.
+Scalability potential: Short SQLite pulses provide cheap burn telemetry while full JSONL scans remain reserved for billing-split windows.
+Hardware Impact: 20-second wait plus read-only SQLite queries; no Unity runtime impact.
+
+Problem: H-Phi moved again after 02:17, but the score movement looked tiny relative to the ongoing token burn.
+Solution: Run another summary-only H-Phi scan at 04:12, compute the JSONL token/cost window from 02:17 to 04:12, and report marginal efficiency separately from cumulative ROI.
+Rejected Alternatives: Assuming 02:17 H-Phi was still current; hiding the plateau by only reporting cumulative baseline efficiency.
+Scalability potential: Repeated H-Phi rebases expose diminishing returns and keep future architecture work honest.
+Hardware Impact: H-Phi scan took 170,338 ms. JSONL window pass read 561,363,073 bytes. No Unity runtime/import/build was touched.
+
+Problem: The latest H-Phi delta includes both useful ownership movement and fresh managed debt.
+Solution: Record both sides: +4 DataVault refs and -20 owner-blocked NativeArray refs, but also +2 managed format surface and +2 PrimaryManagedRuntimeRisk.
+Rejected Alternatives: Selling the tiny score increase as clean improvement.
+Scalability potential: Shows that future score gates must include raw counter regressions, not only the aggregate H-Phi score.
+Hardware Impact: Static accounting only.
+
+Problem: The user asked to keep counting after 04:12, but a fresh H-Phi scan 25 minutes later would mostly re-spend the same 170-second static pass.
+Solution: Treat 04:12 as the current H-Phi boundary, then run a bounded post-04:12 JSONL token window, current SQLite total, first-party LOC/byte scan, and 04:46 per-thread live burner sample.
+Rejected Alternatives: Re-running `HectonPhiAudit.ps1` on every short continuation; inferring H-Phi movement from token movement; using the quiet 04:38 30-second SQLite pulse as if it represented the full post-04:12 interval.
+Scalability potential: Cheap machines can repeat short SQLite and bounded JSONL windows; high-end/offline passes can run full JSONL and H-Phi scans less frequently.
+Hardware Impact: Read-only JSONL/SQLite/source scans only. No Unity runtime, import, build, or gameplay frame impact.
+
+Problem: The 04:38 SQLite pulse showed zero token delta while JSONL later showed a large 04:41 burst.
+Solution: Record both facts with timestamps and explain the boundary: the zero 30-second pulse was quiet only for its exact window, not the whole post-H-Phi interval.
+Rejected Alternatives: Calling the zero pulse proof of no burn; discarding it because a later burst existed.
+Scalability potential: Future reports should always state exact windows when mixing SQLite instantaneous pulses and JSONL timestamp windows.
+Hardware Impact: Arithmetic and timestamp reconciliation only.
+
+Problem: The user asked to continue after the 04:46 rebase, but another full JSONL/H-Phi pass would be disproportionate for a short continuation.
+Solution: Run a 30-second SQLite live pulse at 05:34, join it with the latest 04:46 code denominator, and price it as a range because SQLite lacks input/cache/output split.
+Rejected Alternatives: Pretending SQLite can produce exact invoice split; rerunning H-Phi without evidence of a large source movement; publishing the full raw CONTENT_AUTHORITY XML prompt title into summary tables.
+Scalability potential: Short pulse gives repeatable burn telemetry; full JSONL and H-Phi remain scheduled heavier passes.
+Hardware Impact: 30-second wait plus read-only SQLite query. No Unity runtime, import, build, or scene impact.
+

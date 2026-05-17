@@ -353,3 +353,253 @@ Status: VERIFIED MASTER GRADE - POLISH PASS 16 BUILD GREEN
 - Runtime savings remain unmeasured; no Unity Profiler/Burst capture exists in this CLI session.
 - Added work is fault-only after invalid Lotka-Volterra math detection.
 - Latest `dotnet build`: `164,498,586 us` wrapper wall-clock, `146,390,000 us` `dotnet` elapsed, 0 warnings, 0 errors.
+
+---
+
+# ECOSYSTEM_POPULATION_BALANCER Polish Addendum
+
+Timestamp: 2026-05-16
+Status: VERIFIED MASTER GRADE - POLISH PASS 17 BUILD GREEN ON RETRY
+
+## What Was Wrong
+
+- Telemetry slot selection incremented `_telemetryCursor` directly.
+- After `int.MaxValue`, the cursor could become negative.
+- A negative cursor could corrupt chronological blackbox metadata even though the ring storage remained fixed-size.
+
+## What Was Done
+
+- Added `ReserveTelemetryIndex`.
+- Routed scheduled-job telemetry and empty-heartbeat telemetry through the same bounded slot reservation path.
+- Used positive modulo for slot selection.
+- Folded the cursor at `int.MaxValue` back to `telemetryLength + nextIndex` so the ring stays full and ordered.
+- Re-ran `dotnet build`; first attempt hit transient missing Unity editor metadata, retry succeeded.
+
+## Cinematic Cheats Used
+
+- No new simulation or visual ownership was added. This preserves the cheap 1 Hz ecology kernel and keeps high-end visual spend delegated to existing data flags.
+
+## Exact Microseconds Saved
+
+- Runtime savings remain unmeasured; no Unity Profiler/Burst capture exists in this CLI session.
+- Added work is scalar telemetry bookkeeping at 1 Hz with a practically unreachable overflow branch.
+- Latest successful `dotnet build`: `18,547,608 us` wrapper wall-clock, `16,160,000 us` `dotnet` elapsed, 0 warnings, 0 errors.
+
+---
+
+# ECOSYSTEM_POPULATION_BALANCER Polish Addendum
+
+Timestamp: 2026-05-16
+Status: VERIFIED MASTER GRADE - POLISH PASS 18 OWNED CODE; GLOBAL BUILD BLOCKED EXTERNALLY
+
+## What Was Wrong
+
+- Prey respawn reused a valid free-ring slot after checking only slot metadata and inactive state.
+- A corrupted or externally stale slot could point at an entity without `Flag_FreeList`, a non-prey entity, or an AUP that no longer matched the slot sector.
+- That would weaken memory-reuse evidence and could reactivate the wrong ecology index.
+
+## What Was Done
+
+- Added `TelemetryStaleFreeSlotFlag`.
+- Added full prey reactivation validation: slot bounds, inactive state, `Flag_IsPrey | Flag_FreeList`, finite AUP, and matching sector hash.
+- Added `ClearStaleFreeSlot` to purge invalid valid-slots, decrement free-count, and mark telemetry.
+- Kept all storage in DataVault and kept the job path data-only.
+- Ran three build attempts.
+
+## Cinematic Cheats Used
+
+- No presentation work was added. The low-tier path remains invisible data reuse; high/ultra visual overkill stays delegated to existing ecology flags and downstream presentation systems.
+
+## Exact Microseconds Saved
+
+- Runtime savings remain unmeasured; no Unity Profiler/Burst capture exists in this CLI session.
+- Added work is spawn-path-only validation, not a render-frame loop.
+- Build attempt 1: `[BLOCKED BY DEPENDENCY]` in unrelated `Assets/_Project/Scripts/SubmarineFluidDynamics.cs`, 40 missing-field errors, wrapper wall-clock `331,933,296 us`, dotnet elapsed `324,570,000 us`, no owned AI/Ecosystem error emitted.
+- Build retry 1: dotnet exited `-1` before compiler diagnostics, wrapper wall-clock `49,606,445 us`.
+- Build retry 2: dotnet exited `-1` before compiler diagnostics, wrapper wall-clock `10,125,233 us`.
+
+---
+
+# ECOSYSTEM_POPULATION_BALANCER Polish Addendum
+
+Timestamp: 2026-05-17
+Status: VERIFIED MASTER GRADE - POLISH PASS 19 BUILD GREEN ON RETRY
+
+## What Was Wrong
+
+- Stress culling could write non-prey/predator entries into `EcosystemPopulationFreeRing`.
+- The ring is consumed only by prey reactivation.
+- Under pressure, non-prey entries could evict prey indices and reduce spawn reuse capacity until the next rebuild.
+
+## What Was Done
+
+- Removed non-prey free-ring admission from `CullTier2EntitiesInSector`.
+- `Flag_FreeList` is now set only when the culled entity is prey and can actually enter the prey reuse ring.
+- Non-prey stress culls still clear active state and emit the existing ecology death signal.
+- Re-ran `dotnet build`; first attempt was externally blocked, retry succeeded.
+
+## Cinematic Cheats Used
+
+- No new simulation or presentation owner was added. This preserves the cheap invisible prey reuse path and keeps high-tier visual work delegated to existing `Flag_EcologyFleeDown` consumers.
+
+## Exact Microseconds Saved
+
+- Runtime savings remain unmeasured; no Unity Profiler/Burst capture exists in this CLI session.
+- Expected effect is fewer ring writes during non-prey stress culls and preserved prey reuse capacity; exact runtime delta requires profiler capture.
+- Build attempt 1: `[BLOCKED BY DEPENDENCY]` in unrelated `SubmarineFluidDynamics.cs(5095)`, wrapper wall-clock `65,675,626 us`, dotnet elapsed `63,170,000 us`.
+- Latest successful `dotnet build`: `106,841,284 us` wrapper wall-clock, `105,410,000 us` dotnet elapsed, 0 warnings, 0 errors.
+
+---
+
+# ECOSYSTEM_POPULATION_BALANCER Polish Addendum
+
+Timestamp: 2026-05-17
+Status: VERIFIED MASTER GRADE - POLISH PASS 20 OWNED CODE; GLOBAL BUILD BLOCKED EXTERNALLY
+
+## What Was Wrong
+
+- Baked coefficient JSON loading was editor-only.
+- Player builds would skip OSHINO's shipped LV coefficients and use defaults.
+- That weakens PC, Steam Deck, Mac, Quest, and Android behavior even when data is present.
+
+## What Was Done
+
+- Removed the `UNITY_EDITOR` guard from `TryReadCoefficientJson`.
+- Kept the 16 KiB cap, sequential file read, JSON validation, and exception-safe fallback.
+- Left packaging/build-path ownership untouched.
+- Ran three build attempts.
+
+## Cinematic Cheats Used
+
+- No new simulation or visuals were added. This makes shipped builds use the same baked low-cost LV tuning when available; visual overkill remains downstream of existing ecology flags.
+
+## Exact Microseconds Saved
+
+- Runtime savings remain unmeasured; no Unity Profiler/Burst capture exists in this CLI session.
+- Steady-state cost is unchanged; the change is cold boot I/O only.
+- Build attempt 1: `[BLOCKED BY DEPENDENCY]` in unrelated `HectonPlayerMovement.cs`, `EquipmentInteractionContracts.cs`, and `TetherManager.cs`, wrapper wall-clock `67,908,428 us`, dotnet elapsed `61,490,000 us`.
+- Build retry 1: `[BLOCKED BY DEPENDENCY]` in unrelated `HectonPlayerMovement.cs`, wrapper wall-clock `35,300,501 us`, dotnet elapsed `33,040,000 us`.
+- Build retry 2: `[BLOCKED BY DEPENDENCY]` in unrelated `AcousticZoneController.cs` and `TetherManager.cs`, wrapper wall-clock `65,473,487 us`, dotnet elapsed `58,740,000 us`.
+
+---
+
+# ECOSYSTEM_POPULATION_BALANCER Polish Addendum
+
+Timestamp: 2026-05-17
+Status: VERIFIED MASTER GRADE - POLISH PASS 21 BUILD GREEN
+
+## What Was Wrong
+
+- `BinaryLayoutManifest` still asserted old ecology layout sizes after the Pack=1 structs grew explicit tail fields.
+- `TryReadCoefficientJson` still had an editor-only preprocessor guard on disk.
+- Invalid-math blackbox dumps targeted `Dump_ECOSYSTEM_MIGRATION_LINK.bin`, not this agent's mandated dump file.
+- Partially filled telemetry rings could dump unwritten default entries.
+
+## What Was Done
+
+- Updated the binary layout sentinel for `EcosystemPopulationCoefficient` = 64 bytes, `EcosystemPopulationCullEvent` = 96 bytes, and `EcosystemPopulationFreeSlot` = 32 bytes, including all reserved tail offsets.
+- Removed the `UNITY_EDITOR` guard while preserving bounded cold JSON read and fallback behavior.
+- Retargeted blackbox output to `Docs/AgentLogs/Dump_ECOSYSTEM_POPULATION_BALANCER.bin`.
+- Restored chronological dump count to written entries only and treats zero-length telemetry as missing blackbox storage.
+
+## Cinematic Cheats Used
+
+- No new simulation, VFX, or per-frame presentation work was added. This pass protects boot/fault-path contracts so saved frame budget remains available to downstream flee-down and visual-overkill consumers.
+
+## Exact Microseconds Saved
+
+- Runtime savings remain unmeasured; no Unity Profiler/Burst capture exists in this CLI session.
+- Steady-state LV job cost is unchanged; fixes are boot/fault-path only.
+- Build attempt 1: dotnet exited `-1` before compiler diagnostics, wrapper wall-clock `191,013,723 us`.
+- Build retry 1: command timed out under concurrent workspace builds after `611,209,000 us`.
+- Latest successful `dotnet build`: `37,701,855 us` wrapper wall-clock, `18,630,000 us` dotnet elapsed, 0 warnings, 0 errors.
+
+---
+
+# ECOSYSTEM_POPULATION_BALANCER Polish Addendum
+
+Timestamp: 2026-05-17
+Status: VERIFIED MASTER GRADE - POLISH PASS 22 STATIC VERIFIED
+
+## What Was Wrong
+
+- The balancer could create `BufferID.EntityAUPs` and `BufferID.EntityFlags` if they were missing.
+- That silently made `SystemID.AIEcology` the owner of the shared entity universe.
+- Missing migration/entity bootstrap ownership could be hidden behind an empty ecology-created buffer.
+
+## What Was Done
+
+- Replaced shared entity buffer allocation with handle-only resolution.
+- Added `TelemetryEntityBuffersMissingFlag`.
+- Missing shared entity buffers now clear cached handles and still flow into empty blackbox telemetry through the balancer-owned telemetry ring.
+- Verified with `rg` that the balancer no longer calls `GetBuffer` for `EntityAUPs` or `EntityFlags`.
+- Ran `git diff --check` on the touched ecology file.
+
+## Cinematic Cheats Used
+
+- No simulation or visual work was added. The change keeps the cheap data-only limiter honest and leaves high-tier flee-down presentation hooks untouched.
+
+## Exact Microseconds Saved
+
+- Runtime savings remain unmeasured; no Unity Profiler/Burst capture exists in this CLI session.
+- No dotnet rebuild was run for this pass per user instruction.
+- Expected effect is removal of possible cold shared-buffer allocation from the population balancer; exact runtime delta requires profiler evidence.
+
+---
+
+# ECOSYSTEM_POPULATION_BALANCER Polish Addendum
+
+Timestamp: 2026-05-17
+Status: VERIFIED MASTER GRADE - POLISH PASS 23 STATIC VERIFIED
+
+## What Was Wrong
+
+- Missing shared entity buffers set `TelemetryEntityBuffersMissingFlag`, but `ColdTick` returned before writing a heartbeat.
+- The 300-frame blackbox could miss the exact setup fault that prevented the population pass from running.
+
+## What Was Done
+
+- Routed the `TryBuildSectorState` failure path through `RecordEmptyTelemetry`.
+- Kept shared `EntityAUPs` and `EntityFlags` handle-only; no ownership rollback.
+- Verified the branch with source read, `rg`, and `git diff --check`.
+
+## Cinematic Cheats Used
+
+- No simulation or VFX work was added. This preserves the cheap failure path and keeps visual-overkill hooks outside the population kernel.
+
+## Exact Microseconds Saved
+
+- Runtime savings remain unmeasured; no Unity Profiler/Burst capture exists in this CLI session.
+- No dotnet rebuild was run for this pass per user instruction.
+- Added work occurs only on setup-failure/no-entity paths and writes one fixed telemetry entry.
+
+---
+
+# ECOSYSTEM_POPULATION_BALANCER Polish Addendum
+
+Timestamp: 2026-05-17
+Status: VERIFIED MASTER GRADE - POLISH PASS 24 STATIC VERIFIED
+
+## What Was Wrong
+
+- The scheduled ecology Burst job resolved DataVault views without locking the buffers for the job lifetime.
+- `H8Memory` had no active-job fence for the ecology owner, weakening teardown/leak-sentinel evidence.
+- A draft `_jobLocksHeld` assignment in `TryBuildSectorState` would have blocked job scheduling before any lock existed.
+
+## What Was Done
+
+- Added lock acquisition for coefficients, sector state, cull events, telemetry, free ring, counters, `EntityAUPs`, and `EntityFlags`.
+- Registered the scheduled job with `H8Memory.RegisterActiveJob(SystemID.AIEcology, _balancerHandle)`.
+- Added unlock paths for resolve failure, schedule rejection, late-frame completion, forced completion, and disable cleanup.
+- Removed the false-positive lock state from the sector-build path.
+- Verified with targeted source read, lock/fence `rg`, forbidden-pattern `rg`, and `git diff --check`.
+
+## Cinematic Cheats Used
+
+- No visual simulation was added. This pass preserves the cheap 1 Hz data limiter and protects the buffer lifetime needed by low-tier fakes and high-tier flee-down presentation hooks.
+
+## Exact Microseconds Saved
+
+- Runtime savings remain unmeasured; no Unity Profiler/Burst capture exists in this CLI session.
+- No dotnet rebuild was run for this pass per user instruction.
+- Added work is fixed lock/unlock bookkeeping around a 1 Hz scheduled job; exact cost requires profiler evidence.

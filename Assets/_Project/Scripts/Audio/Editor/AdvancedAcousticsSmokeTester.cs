@@ -38,6 +38,7 @@ namespace Hecton8.Audio.Editor
         private const string PlayerStressVfxPath = "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs";
         private const string DeepPsychosisPath = "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs";
         private const string HectonMusicDirectorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs";
+        private const string DirectorAIPath = "Assets/_Project/Scripts/HectonDirectorAI.cs";
         private const string PrologueAcousticOrchestratorPath = "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs";
         private const string VocalWarningSystemPath = "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs";
         private const string PlayerThrusterAudioPath = "Assets/_Project/Scripts/PlayerThrusterAudio.cs";
@@ -84,6 +85,7 @@ namespace Hecton8.Audio.Editor
             string playerStressVfx = ReadAssetText(PlayerStressVfxPath, builder, ref failureCount);
             string deepPsychosis = ReadAssetText(DeepPsychosisPath, builder, ref failureCount);
             string musicDirector = ReadAssetText(HectonMusicDirectorPath, builder, ref failureCount);
+            string directorAI = ReadAssetText(DirectorAIPath, builder, ref failureCount);
             string prologueAcoustic = ReadAssetText(PrologueAcousticOrchestratorPath, builder, ref failureCount);
             string vocalWarning = ReadAssetText(VocalWarningSystemPath, builder, ref failureCount);
             string playerThrusterAudio = ReadAssetText(PlayerThrusterAudioPath, builder, ref failureCount);
@@ -237,8 +239,13 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "SignalBus<HighSpeedImpactSignal>.GetFrameSnapshot()", "High-speed CCD impacts are consumed without dequeuing another domain's signal lane", builder, ref failureCount);
                 AssertContains(renderer, "SignalBus<PhysicsEventPayload>.GetFrameSnapshot()", "Critical renderer consumes acoustic impulses through the typed physics payload snapshot", builder, ref failureCount);
                 AssertContains(renderer, "SignalBus<PhysicsEventPayload>.Push(in payload)", "Critical renderer publishes predator acoustic impulses through the typed physics payload lane", builder, ref failureCount);
+                AssertContains(renderer, "ConsumeLaserCutterEventSignals();", "Critical renderer drains laser cutter state from typed signal snapshots", builder, ref failureCount);
+                AssertContains(renderer, "SignalBus<global::Hecton8.Core.Contracts.Signals.LaserCutterEventPayload>.GetFrameSnapshot()", "Critical renderer consumes laser cutter payloads through the typed SignalBus lane", builder, ref failureCount);
                 AssertNotContains(renderer, "IPhysics" + "AcousticImpulseEventListener", "Critical renderer has no legacy acoustic-impulse listener interface", builder, ref failureCount);
                 AssertNotContains(renderer, "Physics" + "Event" + "Bus.Register(this)", "Critical renderer does not subscribe to the legacy physics event bus", builder, ref failureCount);
+                AssertNotContains(renderer, "ILaser" + "CutterEventListener", "Critical renderer has no legacy laser cutter listener interface", builder, ref failureCount);
+                AssertNotContains(renderer, "LaserCutterEvents." + "Register(this)", "Critical renderer does not subscribe to laser cutter listener queues", builder, ref failureCount);
+                AssertNotContains(renderer, "LaserCutterEvents." + "Unregister(this)", "Critical renderer does not unsubscribe from laser cutter listener queues", builder, ref failureCount);
                 AssertContains(renderer, "KineticImpactThudStartHertz = 150f", "Kinetic thud starts at 150 Hz", builder, ref failureCount);
                 AssertContains(renderer, "KineticImpactThudEndHertz = 40f", "Kinetic thud descends to 40 Hz", builder, ref failureCount);
                 AssertContains(renderer, "KineticImpactWaterLowPassHertz = 800f", "Underwater kinetic impacts use 800 Hz low-pass", builder, ref failureCount);
@@ -251,16 +258,18 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "KineticImpactDuplicateHistoryCapacity = 8", "Kinetic impact duplicate admission keeps a fixed recent-packet ring", builder, ref failureCount);
                 AssertContains(renderer, "RecordHighSpeedImpactSignal(signal.Frame, signalSignature)", "Kinetic impact duplicate admission records the precomputed signature", builder, ref failureCount);
                 AssertContains(renderer, "entry.Valid != 0", "Kinetic impact duplicate admission ignores cold zeroed ring entries", builder, ref failureCount);
-                AssertContains(renderer, "IScalabilityChangedEventListener", "Critical renderer receives scalability changes through the typed event lane", builder, ref failureCount);
+                AssertContains(renderer, "ConsumeScalabilitySignals();", "Critical renderer drains scalability changes from typed signal snapshots", builder, ref failureCount);
+                AssertContains(renderer, "ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();", "Critical renderer consumes scalability through a ReadOnlySpan typed-lane snapshot", builder, ref failureCount);
                 AssertContains(renderer, "IGlobalRegistryHotSwapRefListener", "Critical renderer receives audio service hot-swap rebinds", builder, ref failureCount);
                 AssertContains(renderer, "private static int s_runtimeInstalled", "Critical renderer publishes runtime-installed state without registry polling", builder, ref failureCount);
                 AssertContains(renderer, "public static bool IsRuntimeInstalled => Volatile.Read(ref s_runtimeInstalled) != 0", "Critical renderer runtime-installed property reads the volatile lifecycle flag", builder, ref failureCount);
                 AssertNotContains(renderer, "public static bool IsRuntimeInstalled => GlobalRegistry.PlayerCriticalAudio", "Critical renderer runtime-installed property does not poll the registry", builder, ref failureCount);
                 AssertContains(rendererRuntimeRegister, "Volatile.Write(ref s_runtimeInstalled, 1)", "Critical renderer registration marks runtime installed", builder, ref failureCount);
                 AssertContains(rendererRuntimeUnregister, "Volatile.Write(ref s_runtimeInstalled, GlobalRegistry.PlayerCriticalAudio != null ? 1 : 0)", "Critical renderer unregister refreshes runtime-installed flag from cold registry state", builder, ref failureCount);
-                AssertContains(renderer, "ScalabilityEvents.Register(this)", "Critical renderer registers for scalability events", builder, ref failureCount);
-                AssertContains(renderer, "ScalabilityEvents.Unregister(this)", "Critical renderer unregisters scalability events", builder, ref failureCount);
-                AssertContains(renderer, "public void OnScalabilityChanged(in ScalabilityChangedEvent payload)", "Critical renderer updates quality policy from scalability payloads", builder, ref failureCount);
+                AssertNotContains(renderer, "IScalability" + "ChangedEventListener", "Critical renderer has no legacy scalability listener interface", builder, ref failureCount);
+                AssertNotContains(renderer, "ScalabilityEvents." + "Register(this)", "Critical renderer does not subscribe to scalability listener queues", builder, ref failureCount);
+                AssertNotContains(renderer, "ScalabilityEvents." + "Unregister(this)", "Critical renderer does not unsubscribe from scalability listener queues", builder, ref failureCount);
+                AssertContains(renderer, "private void HandleScalabilityChanged(in ScalabilityChangedEvent payload)", "Critical renderer updates quality policy from typed scalability payloads", builder, ref failureCount);
                 AssertContains(renderer, "CacheAudioQualityPolicy(", "Critical renderer funnels quality policy through one cache writer", builder, ref failureCount);
                 AssertContains(renderer, "payload.CurrentQualityTier", "Critical renderer event path consumes scalability payload quality", builder, ref failureCount);
                 AssertContains(renderer, "EnsureKineticImpactQualityPolicyCached()", "Kinetic impact tier policy uses the renderer quality cache", builder, ref failureCount);
@@ -337,10 +346,10 @@ namespace Hecton8.Audio.Editor
                 AssertContains(psychosisStrainRefresh, "GlobalRegistry.EnvironmentalStrain", "Deep psychosis stale strain refresh owns the bounded registry read", builder, ref failureCount);
                 AssertContains(psychosisAudioRefresh, "GlobalRegistry.Audio", "Deep psychosis stale audio refresh owns the bounded registry read", builder, ref failureCount);
                 AssertContains(psychosisAcousticRefresh, "GlobalRegistry.AcousticZone", "Deep psychosis stale acoustic refresh owns the bounded registry read", builder, ref failureCount);
-                AssertNotContains(psychosisPlayerResolver, "GlobalRegistry.Player", "Deep psychosis player resolver delegates registry reads to the stale refresh helper", builder, ref failureCount);
-                AssertNotContains(psychosisStrainResolver, "GlobalRegistry.EnvironmentalStrain", "Deep psychosis strain resolver delegates registry reads to the stale refresh helper", builder, ref failureCount);
-                AssertNotContains(psychosisAudioResolver, "GlobalRegistry.Audio", "Deep psychosis audio resolver delegates registry reads to the stale refresh helper", builder, ref failureCount);
-                AssertNotContains(psychosisAcousticResolver, "GlobalRegistry.AcousticZone", "Deep psychosis acoustic-zone resolver delegates registry reads to the stale refresh helper", builder, ref failureCount);
+                AssertNotContains(psychosisPlayerResolver, "GlobalRegistry.Player", "Deep psychosis player resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
+                AssertNotContains(psychosisStrainResolver, "GlobalRegistry.EnvironmentalStrain", "Deep psychosis strain resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
+                AssertNotContains(psychosisAudioResolver, "GlobalRegistry.Audio", "Deep psychosis audio resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
+                AssertNotContains(psychosisAcousticResolver, "GlobalRegistry.AcousticZone", "Deep psychosis acoustic-zone resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
                 AssertNotContains(psychosisSlowTick, "GlobalRegistry.EnvironmentalStrain", "Deep psychosis SlowTick does not poll environmental strain registry directly", builder, ref failureCount);
                 AssertNotContains(psychosisDependencyResolve, "GlobalRegistry.Player", "Deep psychosis dependency resolver does not poll player registry directly", builder, ref failureCount);
                 AssertNotContains(psychosisCue, "GlobalRegistry.Audio", "Deep psychosis cue playback does not poll audio registry directly", builder, ref failureCount);
@@ -364,6 +373,7 @@ namespace Hecton8.Audio.Editor
                 string musicSurfaceResolver = ExtractMethodBody(musicDirector, "private HectonSurfaceWeatherDirector ResolveSurfaceWeatherDirector()");
                 string musicFirstHourResolver = ExtractMethodBody(musicDirector, "private FirstHourDirector ResolveFirstHourDirector()");
                 string musicReboundRuntime = ExtractMethodBody(musicDirector, "private void CacheReboundRuntimeService(");
+                string musicAcousticDrain = ExtractMethodBody(musicDirector, "private void DrainAcousticZoneSignal()");
                 AssertContains(musicDirector, "ResolvePlayerRuntimeContext()", "Music director player context uses a bounded cached resolver", builder, ref failureCount);
                 AssertContains(musicDirector, "ResolveAudioService()", "Music director mixer routing uses cached audio-service resolution", builder, ref failureCount);
                 AssertContains(musicDirector, "ResolveAcousticZone()", "Music director base context uses cached acoustic-zone resolution", builder, ref failureCount);
@@ -381,12 +391,33 @@ namespace Hecton8.Audio.Editor
                 AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.DepthZoneRuntime", "Music director handles depth-zone service hot swaps", builder, ref failureCount);
                 AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.SurfaceWeatherRuntime", "Music director handles surface-weather service hot swaps", builder, ref failureCount);
                 AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.FirstHourRuntime", "Music director handles first-hour service hot swaps", builder, ref failureCount);
-                AssertNotContains(musicPlayerResolver, "GlobalRegistry.Player", "Music director player resolver delegates registry reads to the stale refresh helper", builder, ref failureCount);
-                AssertNotContains(musicAudioResolver, "GlobalRegistry.Audio", "Music director audio resolver delegates registry reads to the stale refresh helper", builder, ref failureCount);
-                AssertNotContains(musicAcousticResolver, "GlobalRegistry.AcousticZone", "Music director acoustic resolver delegates registry reads to the stale refresh helper", builder, ref failureCount);
-                AssertNotContains(musicDepthResolver, "GlobalRegistry.DepthZone", "Music director depth resolver delegates registry reads to the stale refresh helper", builder, ref failureCount);
-                AssertNotContains(musicSurfaceResolver, "GlobalRegistry.SurfaceWeather", "Music director surface-weather resolver delegates registry reads to the stale refresh helper", builder, ref failureCount);
-                AssertNotContains(musicFirstHourResolver, "GlobalRegistry.FirstHour", "Music director first-hour resolver delegates registry reads to the stale refresh helper", builder, ref failureCount);
+                AssertContains(musicDirector, "DrainAcousticZoneSignal();", "Music director drains acoustic-zone typed signals from tick lanes", builder, ref failureCount);
+                AssertContains(musicAcousticDrain, "ReadOnlySpan<AcousticZoneChangedEvent> signals = SignalBus<AcousticZoneChangedEvent>.GetFrameSnapshot();", "Music director consumes acoustic-zone changes through a ReadOnlySpan typed-lane snapshot", builder, ref failureCount);
+                AssertContains(musicAcousticDrain, "_lastAcousticZoneSignalFrame == frame", "Music director drains acoustic-zone signals at most once per frame", builder, ref failureCount);
+                AssertContains(musicAcousticDrain, "HandleAcousticZoneChanged(signal.IsInterior)", "Music director routes the latest acoustic-zone signal into existing music context logic", builder, ref failureCount);
+                AssertContains(musicDirector, "DrainDirectorAISignals();", "Music director drains DirectorAI music signals from typed lanes", builder, ref failureCount);
+                AssertContains(musicDirector, "ReadOnlySpan<DirectorAIMusicSignal> signals = SignalBus<DirectorAIMusicSignal>.GetFrameSnapshot();", "Music director consumes DirectorAI cues through a ReadOnlySpan typed-lane snapshot", builder, ref failureCount);
+                AssertContains(musicDirector, "RefreshPolledMusicContext();", "Music director polls biome/depth runtime state instead of listener queues", builder, ref failureCount);
+                AssertContains(musicDirector, "RefreshObservedBiomeMatrixState()", "Music director observes biome-matrix profile/depth state without registration", builder, ref failureCount);
+                AssertContains(musicDirector, "RefreshObservedDepthZoneState()", "Music director observes depth-zone transitions without registration", builder, ref failureCount);
+                AssertNotContains(musicDirector, "IAcoustic" + "ZoneEventListener", "Music director has no legacy acoustic-zone listener interface", builder, ref failureCount);
+                AssertNotContains(musicDirector, "IBiome" + "MatrixEventListener", "Music director has no legacy biome-matrix listener interface", builder, ref failureCount);
+                AssertNotContains(musicDirector, "IDepth" + "ZoneEventListener", "Music director has no legacy depth-zone listener interface", builder, ref failureCount);
+                AssertNotContains(musicDirector, "IDirector" + "AIEventListener", "Music director has no legacy DirectorAI listener interface", builder, ref failureCount);
+                AssertNotContains(musicDirector, "AcousticZoneEvents." + "Register(this)", "Music director does not subscribe to the old acoustic-zone event facade", builder, ref failureCount);
+                AssertNotContains(musicDirector, "AcousticZoneEvents." + "Unregister(this)", "Music director does not unsubscribe from the old acoustic-zone event facade", builder, ref failureCount);
+                AssertNotContains(musicDirector, "BiomeMatrixEvents." + "Register(this)", "Music director does not subscribe to biome-matrix listener queues", builder, ref failureCount);
+                AssertNotContains(musicDirector, "DepthZoneEvents." + "Register(this)", "Music director does not subscribe to depth-zone listener queues", builder, ref failureCount);
+                AssertNotContains(musicDirector, "DirectorAIEvents." + "Register(this)", "Music director does not subscribe to DirectorAI listener queues", builder, ref failureCount);
+                AssertNotContains(musicDirector, "BiomeMatrixEvents." + "Unregister(this)", "Music director does not unsubscribe from biome-matrix listener queues", builder, ref failureCount);
+                AssertNotContains(musicDirector, "DepthZoneEvents." + "Unregister(this)", "Music director does not unsubscribe from depth-zone listener queues", builder, ref failureCount);
+                AssertNotContains(musicDirector, "DirectorAIEvents." + "Unregister(this)", "Music director does not unsubscribe from DirectorAI listener queues", builder, ref failureCount);
+                AssertNotContains(musicPlayerResolver, "GlobalRegistry.Player", "Music director player resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
+                AssertNotContains(musicAudioResolver, "GlobalRegistry.Audio", "Music director audio resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
+                AssertNotContains(musicAcousticResolver, "GlobalRegistry.AcousticZone", "Music director acoustic resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
+                AssertNotContains(musicDepthResolver, "GlobalRegistry.DepthZone", "Music director depth resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
+                AssertNotContains(musicSurfaceResolver, "GlobalRegistry.SurfaceWeather", "Music director surface-weather resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
+                AssertNotContains(musicFirstHourResolver, "GlobalRegistry.FirstHour", "Music director first-hour resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
                 AssertNotContains(musicResolveDependencies, "GlobalRegistry.Player", "Music director dependency resolver does not poll player registry directly", builder, ref failureCount);
                 AssertNotContains(musicResolveDependencies, "GlobalRegistry.DepthZone", "Music director dependency resolver does not poll depth-zone registry directly", builder, ref failureCount);
                 AssertNotContains(musicResolveBaseContext, "GlobalRegistry.AcousticZone", "Music director base-context resolver does not poll acoustic-zone registry directly", builder, ref failureCount);
@@ -415,6 +446,15 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.ScalabilityTierProfileByte", "Prologue acoustic LateFrameTick does not poll scalability profile byte directly", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic LateFrameTick does not poll low-memory registry directly", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "RefreshQualityTier", "Prologue acoustic LateFrameTick has no periodic registry quality refresh", builder, ref failureCount);
+            }
+
+            if (directorAI.Length > 0)
+            {
+                AssertContains(directorAI, "[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]", "DirectorAI music signal has explicit ARM64 layout", builder, ref failureCount);
+                AssertContains(directorAI, "public readonly struct DirectorAIMusicSignal : ISignal", "DirectorAI music cue is an immutable typed signal", builder, ref failureCount);
+                AssertContains(directorAI, "SignalBus<DirectorAIMusicSignal>.Push(in signal)", "DirectorAI publishes music cues through the typed SignalBus lane", builder, ref failureCount);
+                AssertContains(directorAI, "PublishMusicSignal(ThreatSpikeEventType", "DirectorAI threat spikes publish typed music cues even without legacy listeners", builder, ref failureCount);
+                AssertContains(directorAI, "PublishMusicSignal(PredatorPressureEventType", "DirectorAI predator pressure publishes typed music cues even without legacy listeners", builder, ref failureCount);
             }
 
             if (vocalWarning.Length > 0)
@@ -580,12 +620,18 @@ namespace Hecton8.Audio.Editor
             {
                 string acousticPlayMadness = ExtractMethodBody(acousticZone, "internal void PlayMadnessWhisperCue()");
                 string acousticEmitterOcclusion = ExtractMethodBody(acousticZone, "private void UpdateEmitterOcclusionState(AudioListener listener)");
-                AssertContains(acousticZone, "[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 1)]", "Acoustic-zone NativeQueue payload is a one-byte blittable event token with explicit ARM64 layout", builder, ref failureCount);
-                AssertContains(acousticZone, "private readonly byte _isInterior", "Acoustic-zone payload avoids bool field layout ambiguity in native queues", builder, ref failureCount);
-                AssertContains(acousticZone, "NativeMemorySentinel.RegisterNativeQueue", "Acoustic-zone event lanes are registered with NativeMemorySentinel", builder, ref failureCount);
-                AssertContains(acousticZone, "PrewarmQueue(ref _pendingZoneChanges, PendingZoneChangeCapacity)", "Acoustic-zone front queue is cold-prewarmed before gameplay enqueue", builder, ref failureCount);
-                AssertContains(acousticZone, "PrewarmQueue(ref _nextFrameZoneChanges, PendingZoneChangeCapacity)", "Acoustic-zone reentrant queue is cold-prewarmed before gameplay enqueue", builder, ref failureCount);
-                AssertContains(acousticZone, "GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _zoneChangeQueueHash, PendingZoneChangeCapacity)", "Acoustic-zone overflow drop emits hash-only telemetry", builder, ref failureCount);
+                AssertContains(acousticZone, "[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]", "Acoustic-zone typed signal has explicit ARM64 layout", builder, ref failureCount);
+                AssertContains(acousticZone, "public readonly struct AcousticZoneChangedEvent : ISignal", "Acoustic-zone transition payload is an immutable typed signal", builder, ref failureCount);
+                AssertContains(acousticZone, "private readonly byte _isInterior", "Acoustic-zone payload avoids bool field layout ambiguity", builder, ref failureCount);
+                AssertContains(acousticZone, "SignalBus<AcousticZoneChangedEvent>.Push(in payload)", "Acoustic-zone transitions publish through the typed SignalBus lane", builder, ref failureCount);
+                AssertContains(acousticZone, "SignalBus<AcousticZoneChangedEvent>.SnapshotCount", "Acoustic-zone pending telemetry reads typed-lane snapshot state", builder, ref failureCount);
+                AssertContains(acousticZone, "SignalBus<AcousticZoneChangedEvent>.DroppedLastFlush", "Acoustic-zone drop telemetry reads typed-lane drop state", builder, ref failureCount);
+                AssertContains(acousticZone, "SignalBus<AcousticZoneChangedEvent>.EnsureInitialized()", "Acoustic-zone facade initializes the typed SignalBus lane", builder, ref failureCount);
+                AssertNotContains(acousticZone, "IAcoustic" + "ZoneEventListener", "Acoustic-zone facade exposes no legacy listener interface", builder, ref failureCount);
+                AssertNotContains(acousticZone, "RegistryBucket<IAcoustic" + "ZoneEventListener>", "Acoustic-zone facade has no managed listener registry", builder, ref failureCount);
+                AssertNotContains(acousticZone, "Native" + "Queue<AcousticZoneChangedEvent>", "Acoustic-zone facade owns no private native queue", builder, ref failureCount);
+                AssertNotContains(acousticZone, "_pending" + "ZoneChanges", "Acoustic-zone facade has no local pending queue", builder, ref failureCount);
+                AssertNotContains(acousticZone, "_nextFrame" + "ZoneChanges", "Acoustic-zone facade has no reentrant local queue", builder, ref failureCount);
                 AssertContains(acousticZone, "AudioServiceResolveRetryFrames = 30", "Acoustic-zone audio service lookup is cadence-gated", builder, ref failureCount);
                 AssertContains(acousticZone, "ResolveAudioService()", "Acoustic-zone cue playback uses cached audio-service resolution", builder, ref failureCount);
                 AssertContains(acousticZone, "ResolveSpatialAudioManager()", "Acoustic-zone emitter occlusion uses cached spatial-audio resolution", builder, ref failureCount);

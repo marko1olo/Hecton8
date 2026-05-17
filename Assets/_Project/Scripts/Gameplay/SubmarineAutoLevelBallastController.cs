@@ -569,18 +569,10 @@ namespace Hecton8.Gameplay
 
         public void SlowTick()
         {
-            if (_fluid == null)
-                _fluid = GlobalRegistry.Fluid;
-
-            if (_audio == null)
-                _audio = GlobalRegistry.Audio;
-
-            RefreshDynamicFloodServicesFromRegistry();
             EnsureNativeState();
             RefreshTankPositions();
             RefreshRoomBufferAliases();
             _floodMassSolveRequested = true;
-            RefreshMathLodPolicyFromRegistrySlow();
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -648,6 +640,12 @@ namespace Hecton8.Gameplay
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
             {
                 _audio = currentService as IAudioService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
+            {
+                _fluid = currentService as HectonFluidEngine;
                 return;
             }
 
@@ -811,6 +809,7 @@ namespace Hecton8.Gameplay
             SetFluidDynamicsCenterAuthority(false);
             _powerGrid = null;
             _audio = null;
+            _fluid = null;
             _dataVault = null;
             _roomWaterLevelsHandle = default;
             _roomVolumesHandle = default;
@@ -1444,7 +1443,7 @@ namespace Hecton8.Gameplay
                 stress.Intensity01 = math.saturate(offsetMagnitude * 1.8f);
                 stress.SourceId = unchecked((uint)_targetInstanceId);
                 stress.Channel = AcousticPingSignal.ChannelMetalStress;
-                GlobalSignals.Publish(in stress);
+                SignalBus<AcousticPingSignal>.Push(in stress);
             }
 
             if (_criticalFloodActive == 0)
@@ -1460,7 +1459,7 @@ namespace Hecton8.Gameplay
                 haptic.SourceHash = FloodFeedbackSourceHash;
                 haptic.Frame = unchecked((uint)_tickCount);
                 haptic.Channel = HapticRequest.ChannelVehicleCritical;
-                GlobalSignals.Publish(in haptic);
+                SignalBus<HapticRequest>.Push(in haptic);
             }
 
             if (_criticalListCooldown > 0f || !IsCriticalFloodPitchExceeded())
@@ -1517,7 +1516,7 @@ namespace Hecton8.Gameplay
             signal.Frame = unchecked((uint)_tickCount);
             signal.SourceHash = EngineVentBubbleSourceHash;
             signal.Flags = BubbleSpawnSignal.FlagEngineVent | BubbleSpawnSignal.FlagTailHeavy;
-            GlobalSignals.Publish(in signal);
+            SignalBus<BubbleSpawnSignal>.Push(in signal);
             _pendingTelemetryFlags |= PidTelemetryFlagBubbleSignal;
             EmitTailHeavyFluidImpulse(in signal.PositionAup, ventDirection, intensity01);
         }
@@ -1541,7 +1540,7 @@ namespace Hecton8.Gameplay
             impulse.Frame = unchecked((uint)_tickCount);
             impulse.SourceHash = EngineVentBubbleSourceHash;
             impulse.Flags = EngineVentFluidImpulseFlag | TailHeavyFluidImpulseFlag;
-            GlobalSignals.Publish(in impulse);
+            SignalBus<FluidImpulseSignal>.Push(in impulse);
             _pendingTelemetryFlags |= PidTelemetryFlagFluidImpulseSignal;
         }
 
@@ -1701,12 +1700,6 @@ namespace Hecton8.Gameplay
                 pitchScale);
 
             IAudioService audioService = _audio;
-            if (audioService == null)
-            {
-                audioService = GlobalRegistry.Audio;
-                _audio = audioService;
-            }
-
             if (audioService != null && audioService.QueueHullStressSignal(in signal))
                 return;
 
@@ -1776,18 +1769,6 @@ namespace Hecton8.Gameplay
 
             _lowMathLodActive = desiredLow;
             _mathLodSwitchTimer = 0f;
-        }
-
-        private void RefreshMathLodPolicyFromRegistrySlow()
-        {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            MathPrecisionLevel precision = GlobalRegistry.MathPrecision;
-            if (tier == _cachedScalabilityTier && precision == _cachedMathPrecision)
-                return;
-
-            _cachedScalabilityTier = tier;
-            _cachedMathPrecision = precision;
-            _desiredLowMathLod = ResolveLowMathLod(tier, precision);
         }
 
         private void AdvanceDynamicFloodSolver(float fixedDeltaTime, bool lowMathLod)
@@ -2167,13 +2148,7 @@ namespace Hecton8.Gameplay
 
         private IDataVault ResolveDataVault()
         {
-            IDataVault vault = _dataVault;
-            if (vault != null)
-                return vault;
-
-            vault = GlobalRegistry.DataVault;
-            _dataVault = vault;
-            return vault;
+            return _dataVault;
         }
 
         private static uint BuildTelemetryHash(

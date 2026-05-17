@@ -66,7 +66,9 @@ Shader "Hidden/Hecton8/Diagnostics/ArchitectEyeSdfVolume"
 
                 march *= rcp((half)steps);
                 half pulse = saturate(edge * 2.5 + (half)_Density * 0.5 + march * saturate((half)_VisualTier * 0.35));
-                half3 glow = (half3)_Color.rgb + march * half3(0.05, 0.22, 0.35);
+                half3 baseGlow = (half3)_Color.rgb;
+                half3 tierGlow = saturate(baseGlow + baseGlow.bgr * 0.18 + baseGlow * (half)_Density * 0.10);
+                half3 glow = baseGlow + march * tierGlow * 0.35;
                 return half4(glow, (half)_Color.a * pulse);
             }
             ENDHLSL

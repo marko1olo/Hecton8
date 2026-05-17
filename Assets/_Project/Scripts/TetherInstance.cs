@@ -89,11 +89,9 @@ namespace Hecton8.Physics
         private const int DataVaultFlagVerletSolverStats = 1 << 19;
         private const int DataVaultFlagVerletSolverFlags = 1 << 20;
         private const int DataVaultFlagVerletNodeFaultFlags = 1 << 21;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string TetherTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_VERLET_TOW_WINCH.bin";
         private const ulong TetherTelemetryDumpMagic = 0x00384E4F54434548ul;
         private const int TetherTelemetryDumpEntrySize = 64;
-#endif
 
         // COLD ALLOC: bool[8] — DataVault slot reservations for concurrent tether instances — owner: TetherInstance
         private static readonly bool[] _dataVaultSlotReservations = new bool[DataVaultMaxTetherSlots];
@@ -249,9 +247,8 @@ namespace Hecton8.Physics
         private int _lastTensionCreakFrame = -TensionCreakCooldownFrames;
         private int _lastTowLoadLimitCommandFrame = -TowLoadLimitCommandCooldownFrames;
         private int _currentSimulationFrameIndex;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private bool _verletFaultDumpedThisActivation;
-#endif
+        private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticTetherSlotState()
@@ -306,6 +303,22 @@ namespace Hecton8.Physics
             Collider payloadCollider,
             float initialDistance)
         {
+            HectonQualityTier qualityTier = _manager != null
+                ? _manager.CachedQualityTier
+                : HectonQualityTier.Unknown;
+            Configure(owner, playerMotor, playerRigidbody, payloadBody, payloadCollider, initialDistance, qualityTier);
+        }
+
+        internal void Configure(
+            HeavyTowWinch owner,
+            HectonPlayerMotor playerMotor,
+            Rigidbody playerRigidbody,
+            Rigidbody payloadBody,
+            Collider payloadCollider,
+            float initialDistance,
+            HectonQualityTier qualityTier)
+        {
+            _qualityTier = TetherManager.SanitizeQualityTier(qualityTier);
             _owner = owner;
             _playerMotor = playerMotor;
             _playerRigidbody = playerRigidbody;
@@ -337,7 +350,7 @@ namespace Hecton8.Physics
             _bioCableHoldTime = owner != null ? owner.ResolveBioCableHoldTime() : 0f;
             _bioCableBlendSharpness = owner != null ? owner.ResolveBioCableBlendSharpness() : 1f;
             _restLength = owner != null ? owner.ResolveTowRestLength(initialDistance) : math.max(1f, initialDistance);
-            _visualSegmentCount = ResolveVerletPointCount();
+            _visualSegmentCount = ResolveVerletPointCount(_qualityTier);
             _visualSegmentSmoothSpeed = math.max(1f, _visualSegmentSmoothSpeed);
             _payloadMass = _payloadBody != null ? _payloadBody.mass : 0f;
             _payloadMass01 = owner != null ? owner.ResolvePayloadMass01(_payloadMass) : 0f;
@@ -369,9 +382,7 @@ namespace Hecton8.Physics
             _solverLocalToWorldMatrix = Matrix4x4.identity;
             _solveInPlatformLocalSpace = false;
             _kinematicAnchorCompensationEnabled = false;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _verletFaultDumpedThisActivation = false;
-#endif
             ClearBendMetadata(0);
             EnsureVisualBuffers(_visualSegmentCount);
             EnsureDataVaultCableState();
@@ -396,9 +407,9 @@ namespace Hecton8.Physics
         public void QueueExternalCableSnare(Vector3 anchorWS, float tension01, float cutProgress01)
         {
             _bioCableRequestedThisStep = true;
-            _bioCableRequestedAnchorWS = anchorWS;
-            _bioCableRequestedTension01 = math.saturate(tension01);
-            _bioCableRequestedCutProgress01 = math.saturate(cutProgress01);
+            _bioCableRequestedAnchorWS = IsFinite(anchorWS) ? anchorWS : _bioCableCurrentAnchorWS;
+            _bioCableRequestedTension01 = math.isfinite(tension01) ? math.saturate(tension01) : 0f;
+            _bioCableRequestedCutProgress01 = math.isfinite(cutProgress01) ? math.saturate(cutProgress01) : 1f;
             if (_bioCableRequestedTension01 > 0f)
                 _bioCableHoldTimer = _bioCableHoldTime;
         }
@@ -414,10 +425,20 @@ namespace Hecton8.Physics
                 return false;
 
             payloadPositionWS = _payloadBody.worldCenterOfMass;
+            if (!IsFinite(payloadPositionWS))
+            {
+                payloadPositionWS = Vector3.zero;
+                return false;
+            }
+
             if (_payloadCollider != null)
             {
                 Bounds bounds = _payloadCollider.bounds;
-                payloadRadiusWS = Mathf.Max(0.35f, Mathf.Max(bounds.extents.x, Mathf.Max(bounds.extents.y, bounds.extents.z)));
+                Vector3 extents = bounds.extents;
+                if (!IsFinite(extents))
+                    payloadRadiusWS = 0.75f;
+                else
+                    payloadRadiusWS = Mathf.Max(0.35f, Mathf.Max(extents.x, Mathf.Max(extents.y, extents.z)));
             }
             else
             {
@@ -435,7 +456,8 @@ namespace Hecton8.Physics
             float fixedStepClockSeconds,
             int fixedFrameIndex,
             int activeTetherCount,
-            int maxVisualizedTethers)
+            int maxVisualizedTethers,
+            HectonQualityTier qualityTier)
         {
             if (!_isActive || _owner == null || _payloadBody == null || _playerRigidbody == null)
                 return TetherLifecycleState.Released;
@@ -443,6 +465,7 @@ namespace Hecton8.Physics
             if (_owner.ShouldSuppressTow || !_owner.IsTowPayloadValid(_payloadBody, _payloadCollider))
                 return TetherLifecycleState.Released;
 
+            _qualityTier = TetherManager.SanitizeQualityTier(qualityTier);
             _currentSimulationFrameIndex = fixedFrameIndex >= 0 ? fixedFrameIndex : 0;
 
             if (fixedDeltaTime <= 0f || !math.isfinite(fixedDeltaTime))
@@ -452,9 +475,7 @@ namespace Hecton8.Physics
             Vector3 payloadPosition = _payloadBody.worldCenterOfMass;
             if (!IsFinite(anchorPosition) || !IsFinite(payloadPosition))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 DumpVerletTelemetryOnce((uint)TetherVerletFaultFlags.NonFiniteNode);
-#endif
                 return TetherLifecycleState.Released;
             }
 
@@ -505,12 +526,18 @@ namespace Hecton8.Physics
         /// </summary>
         public void UpdateVisuals(float deltaTime)
         {
+            UpdateVisuals(deltaTime, _qualityTier);
+        }
+
+        internal void UpdateVisuals(float deltaTime, HectonQualityTier qualityTier)
+        {
             if (!_isActive || VisualSegmentBuffer == null)
                 return;
 
+            _qualityTier = TetherManager.SanitizeQualityTier(qualityTier);
             if (_verletPositions.IsCreated && _verletPositions.Length > 1)
             {
-                UpdateVerletVisualUpload();
+                UpdateVerletVisualUpload(_qualityTier);
                 return;
             }
 
@@ -699,9 +726,8 @@ namespace Hecton8.Physics
             _lastVerletPeakDelta = 0f;
             _lastTensionCreakFrame = -TensionCreakCooldownFrames;
             _lastTowLoadLimitCommandFrame = -TowLoadLimitCommandCooldownFrames;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _verletFaultDumpedThisActivation = false;
-#endif
+            _qualityTier = HectonQualityTier.Unknown;
             ClearBendMetadata(0);
             gameObject.SetActive(false);
         }
@@ -924,7 +950,10 @@ namespace Hecton8.Physics
             if (_dataVaultSlot < 0 && !TryAcquireDataVaultSlot())
                 return;
 
-            _dataVault = GlobalRegistry.DataVault;
+            _dataVault = _manager != null ? _manager.CachedDataVault : _dataVault;
+            if (_dataVault == null)
+                return;
+
             int segmentCount = math.max(1, nodeCount - 1);
             int nodeOffset = _dataVaultSlot * DataVaultCablePointCount;
             int segmentOffset = _dataVaultSlot * DataVaultCableSegmentCount;
@@ -1107,7 +1136,7 @@ namespace Hecton8.Physics
         {
             int nodeCount = requestedNodeCount > 0
                 ? requestedNodeCount
-                : (_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount());
+                : (_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityTier));
             return math.clamp(nodeCount, 2, DataVaultCablePointCount);
         }
 
@@ -1445,12 +1474,12 @@ namespace Hecton8.Physics
             for (int i = 0; i < _verletSegmentRestLengths.Length; i++)
                 _verletSegmentRestLengths[i] = segmentRestLength;
 
-            int iterationCount = ResolveVerletIterationCount();
+            int iterationCount = ResolveVerletIterationCount(_qualityTier);
             _lastVerletIterationCount = iterationCount;
             float dtSq = fixedDeltaTime * fixedDeltaTime;
             float3 gravity = new float3(0f, -HectonPhysicsContract.GravityMetersPerSecondSquaredConst, 0f);
             float3 flowAcceleration = ToFloat3(ResolveVerletFlowAcceleration(payloadCurrentAcceleration));
-            float velocityDamping = ResolveVerletVelocityDamping();
+            float velocityDamping = ResolveVerletVelocityDamping(_qualityTier);
             var integrationJob = new TetherVerletIntegrationJob
             {
                 Positions = _verletPositions,
@@ -1509,10 +1538,8 @@ namespace Hecton8.Physics
             telemetryJob.Run();
 
             _lastVerletPeakDelta = _verletSolverStats.IsCreated && _verletSolverStats.Length > 0 ? _verletSolverStats[0] : 0f;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_verletSolverFlags.IsCreated && _verletSolverFlags.Length > 0 && _verletSolverFlags[0] != TetherVerletFaultFlags.None)
                 DumpVerletTelemetryOnce((uint)_verletSolverFlags[0]);
-#endif
             _primaryConstraintForceMagnitude = peakTension;
             PublishTetherTensionSignal(anchorPosition, payloadPosition, peakTension);
             PublishDataVaultCableState(fixedDeltaTime, peakTension);
@@ -1521,7 +1548,6 @@ namespace Hecton8.Physics
             return peakTension;
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void DumpVerletTelemetryOnce(uint reasonFlags)
         {
             if (_verletFaultDumpedThisActivation || !_verletTelemetryRing.IsCreated || !_verletTelemetryHead.IsCreated)
@@ -1551,7 +1577,7 @@ namespace Hecton8.Physics
                 if (!string.IsNullOrEmpty(dumpDirectory))
                     Directory.CreateDirectory(dumpDirectory);
 
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Append, FileAccess.Write, FileShare.Read))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     int head = _verletTelemetryHead[telemetryHeadIndex];
@@ -1600,12 +1626,10 @@ namespace Hecton8.Physics
             writer.Write(value.y);
             writer.Write(value.z);
         }
-#endif
-
         private Vector3 ResolveVerletFlowAcceleration(Vector3 payloadCurrentAcceleration)
         {
             Vector3 resolved = payloadCurrentAcceleration * 0.18f;
-            HectonMapMagicVegetationBridge vegetationBridge = GlobalRegistry.MapMagicVegetation;
+            HectonMapMagicVegetationBridge vegetationBridge = _manager != null ? _manager.CachedVegetationBridge : null;
             if (vegetationBridge != null && _payloadBody != null &&
                 vegetationBridge.TrySampleAbyssalFlow(_payloadBody.worldCenterOfMass, out Vector3 vegetationFlow))
             {
@@ -1613,7 +1637,7 @@ namespace Hecton8.Physics
             }
             else
             {
-                HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+                HectonFluidEngine fluidEngine = _manager != null ? _manager.CachedFluidEngine : null;
                 if (fluidEngine != null && _payloadBody != null &&
                 fluidEngine.TrySampleModAbyssalFlow(_payloadBody.worldCenterOfMass, out float3 flowVector))
                 {
@@ -1621,7 +1645,7 @@ namespace Hecton8.Physics
                 }
                 else
                 {
-                    IWeatherService weather = GlobalRegistry.Weather;
+                    IWeatherService weather = _manager != null ? _manager.CachedWeatherService : null;
                     if (weather != null && weather.IsInitialized)
                     {
                         WeatherRuntimeSnapshot snapshot = weather.GetRuntimeSnapshot();
@@ -1718,19 +1742,22 @@ namespace Hecton8.Physics
 
         private void ApplyVerletEndpointForces(Vector3 anchorPosition, Vector3 payloadPosition, float peakTension)
         {
-            if (_payloadBody == null || _playerRigidbody == null || peakTension <= 0f)
+            if (_payloadBody == null || _playerRigidbody == null || peakTension <= 0f || !math.isfinite(peakTension))
                 return;
 
             Vector3 separation = payloadPosition - anchorPosition;
             float distanceSq = separation.sqrMagnitude;
-            if (distanceSq <= MinVectorMagnitudeSq)
+            if (!math.isfinite(distanceSq) || distanceSq <= MinVectorMagnitudeSq)
                 return;
 
             Vector3 direction = separation * math.rsqrt(distanceSq);
-            float playerMass = _playerRigidbody != null ? math.max(_playerRigidbody.mass, 0.0001f) : 1f;
-            float payloadMass = _payloadBody != null ? math.max(_payloadBody.mass, 0.0001f) : 1f;
+            float rawPlayerMass = _playerRigidbody != null ? _playerRigidbody.mass : 1f;
+            float rawPayloadMass = _payloadBody != null ? _payloadBody.mass : 1f;
+            float playerMass = math.isfinite(rawPlayerMass) ? math.max(rawPlayerMass, 0.0001f) : 1f;
+            float payloadMass = math.isfinite(rawPayloadMass) ? math.max(rawPayloadMass, 0.0001f) : 1f;
             float massRatioScale = playerMass * math.rcp(math.max(playerMass + payloadMass, 0.0001f));
-            float maxPayloadForce = math.max(0f, _maxCableAcceleration) * payloadMass;
+            float maxCableAcceleration = math.isfinite(_maxCableAcceleration) ? math.max(0f, _maxCableAcceleration) : 0f;
+            float maxPayloadForce = maxCableAcceleration * payloadMass;
             float scaledForce = math.min(peakTension * massRatioScale, maxPayloadForce);
             if (scaledForce <= MinDistance || !math.isfinite(scaledForce))
                 return;
@@ -1753,12 +1780,12 @@ namespace Hecton8.Physics
             }
         }
 
-        private void UpdateVerletVisualUpload()
+        private void UpdateVerletVisualUpload(HectonQualityTier qualityTier)
         {
             if (!_visualSegmentPositions.IsCreated || _visualSegmentPositions.Length != _verletPositions.Length)
                 return;
 
-            bool useStraightLineFake = ShouldUseLowTierTautLineVisualFake();
+            bool useStraightLineFake = ShouldUseLowTierTautLineVisualFake(qualityTier);
             float3 start = _verletPositions[0];
             float3 end = _verletPositions[_verletPositions.Length - 1];
             float invLast = math.rcp(math.max(1, _visualSegmentPositions.Length - 1));
@@ -1784,18 +1811,18 @@ namespace Hecton8.Physics
             UploadVisualGpuBuffers(includeTension: true);
         }
 
-        private bool ShouldUseLowTierTautLineVisualFake()
+        private bool ShouldUseLowTierTautLineVisualFake(HectonQualityTier qualityTier)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier tier = TetherManager.SanitizeQualityTier(qualityTier);
             bool lowTier = tier == HectonQualityTier.Unknown ||
                            tier == HectonQualityTier.Low ||
                            tier == HectonQualityTier.Mx350;
             return lowTier && math.max(_tension01, _stress01) >= LowTierTautLineVisualThreshold01;
         }
 
-        private static int ResolveVerletIterationCount()
+        private static int ResolveVerletIterationCount(HectonQualityTier qualityTier)
         {
-            switch (GlobalRegistry.ScalabilityTier)
+            switch (TetherManager.SanitizeQualityTier(qualityTier))
             {
                 case HectonQualityTier.Low:
                 case HectonQualityTier.Mx350:
@@ -1811,14 +1838,14 @@ namespace Hecton8.Physics
             }
         }
 
-        private static int ResolveVerletPointCount()
+        private static int ResolveVerletPointCount(HectonQualityTier qualityTier)
         {
-            return ResolveVerletSegmentCount() + 1;
+            return ResolveVerletSegmentCount(qualityTier) + 1;
         }
 
-        private static int ResolveVerletSegmentCount()
+        private static int ResolveVerletSegmentCount(HectonQualityTier qualityTier)
         {
-            switch (GlobalRegistry.ScalabilityTier)
+            switch (TetherManager.SanitizeQualityTier(qualityTier))
             {
                 case HectonQualityTier.Low:
                 case HectonQualityTier.Mx350:
@@ -1833,9 +1860,9 @@ namespace Hecton8.Physics
             }
         }
 
-        private static float ResolveVerletVelocityDamping()
+        private static float ResolveVerletVelocityDamping(HectonQualityTier qualityTier)
         {
-            switch (GlobalRegistry.ScalabilityTier)
+            switch (TetherManager.SanitizeQualityTier(qualityTier))
             {
                 case HectonQualityTier.Low:
                 case HectonQualityTier.Mx350:
@@ -1932,13 +1959,16 @@ namespace Hecton8.Physics
             float currentScale = math.lerp(0.55f, 1f, _payloadMass01);
             currentScale *= math.lerp(1f, _payloadSideCurrentBoost, sideExposure);
             Vector3 currentForce = currentDelta * (_payloadCurrentDamping * currentScale);
-            float maxPayloadCurrentForce = math.max(0f, _maxPayloadCurrentForce);
+            float maxPayloadCurrentForce = math.isfinite(_maxPayloadCurrentForce) ? math.max(0f, _maxPayloadCurrentForce) : 0f;
             float maxPayloadCurrentForceSq = maxPayloadCurrentForce * maxPayloadCurrentForce;
             float currentForceSq = currentForce.sqrMagnitude;
-            if (currentForceSq > maxPayloadCurrentForceSq)
+            if (!math.isfinite(currentForceSq))
+                currentForce = Vector3.zero;
+            else if (currentForceSq > maxPayloadCurrentForceSq)
                 currentForce *= maxPayloadCurrentForce * math.rsqrt(currentForceSq);
 
-            _payloadDrift01 = math.saturate(ResolveMagnitude(currentDeltaSq) * math.rcp(math.max(1f, _maxCableAcceleration)));
+            float maxCableAcceleration = math.isfinite(_maxCableAcceleration) ? math.max(1f, _maxCableAcceleration) : 1f;
+            _payloadDrift01 = math.saturate(ResolveMagnitude(currentDeltaSq) * math.rcp(maxCableAcceleration));
             return currentForce;
         }
 
@@ -1950,18 +1980,25 @@ namespace Hecton8.Physics
             if (payloadCurrentForce.sqrMagnitude > MinVectorMagnitudeSq)
                 ApplyClampedAcceleration(_payloadBody, payloadCurrentForce, _maxPayloadCurrentForce);
 
-            if (_payloadAngularDamping > 0f)
+            float payloadAngularDamping = math.isfinite(_payloadAngularDamping) ? math.max(0f, _payloadAngularDamping) : 0f;
+            if (payloadAngularDamping > 0f)
             {
                 Vector3 angularVelocity = _payloadBody.angularVelocity;
-                float angularBlend = math.rcp(1f + _payloadAngularDamping * fixedDeltaTime);
+                if (!IsFinite(angularVelocity))
+                    angularVelocity = Vector3.zero;
+
+                float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
+                float angularBlend = math.rcp(1f + payloadAngularDamping * safeFixedDeltaTime);
                 angularVelocity *= angularBlend;
-                float maxPayloadAngularSpeed = math.max(0f, _maxPayloadAngularSpeed);
+                float maxPayloadAngularSpeed = math.isfinite(_maxPayloadAngularSpeed) ? math.max(0f, _maxPayloadAngularSpeed) : 0f;
                 float maxPayloadAngularSpeedSq = maxPayloadAngularSpeed * maxPayloadAngularSpeed;
                 float angularSpeedSq = angularVelocity.sqrMagnitude;
-                if (angularSpeedSq > maxPayloadAngularSpeedSq)
+                if (!math.isfinite(angularSpeedSq))
+                    angularVelocity = Vector3.zero;
+                else if (angularSpeedSq > maxPayloadAngularSpeedSq)
                     angularVelocity *= maxPayloadAngularSpeed * math.rsqrt(angularSpeedSq);
 
-                _payloadBody.angularVelocity = angularVelocity;
+                _payloadBody.angularVelocity = IsFinite(angularVelocity) ? angularVelocity : Vector3.zero;
             }
         }
 
@@ -2525,7 +2562,7 @@ namespace Hecton8.Physics
 
         internal void RebaseManagedRuntimeState(Vector3 shiftOffset)
         {
-            if (!_isActive || shiftOffset.sqrMagnitude <= MinVectorMagnitudeSq)
+            if (!_isActive || !IsFinite(shiftOffset) || shiftOffset.sqrMagnitude <= MinVectorMagnitudeSq)
                 return;
 
             for (int i = 0; i < _bendPointCount; i++)
@@ -2550,17 +2587,18 @@ namespace Hecton8.Physics
             if (!_isActive ||
                 !_verletPositions.IsCreated ||
                 !_verletPreviousPositions.IsCreated ||
+                !math.all(math.isfinite(shiftOffset)) ||
                 math.lengthsq(shiftOffset) <= MinVectorMagnitudeSq)
             {
                 return false;
             }
 
-            _verletSolverOrigin -= shiftOffset;
+            _verletSolverOrigin = SanitizeFinite(_verletSolverOrigin - shiftOffset);
 
             if (_visualSegmentPositions.IsCreated)
             {
                 for (int pointIndex = 0; pointIndex < _visualSegmentPositions.Length; pointIndex++)
-                    _visualSegmentPositions[pointIndex] = _visualSegmentPositions[pointIndex] - shiftOffset;
+                    _visualSegmentPositions[pointIndex] = SanitizeFinite(_visualSegmentPositions[pointIndex] - shiftOffset);
             }
 
             return true;
@@ -2862,36 +2900,62 @@ namespace Hecton8.Physics
             if (!IsFinite(value))
                 return Vector3.zero;
 
+            float safeMaxMagnitude = math.isfinite(maxMagnitude) ? math.max(0f, maxMagnitude) : 0f;
             float sqrMagnitude = value.sqrMagnitude;
-            if (sqrMagnitude <= MinVectorMagnitudeSq || maxMagnitude <= 0f)
+            if (!math.isfinite(sqrMagnitude))
+                return Vector3.zero;
+
+            if (sqrMagnitude <= MinVectorMagnitudeSq || safeMaxMagnitude <= 0f)
                 return sqrMagnitude <= MinVectorMagnitudeSq ? Vector3.zero : value;
 
-            float maxMagnitudeSq = maxMagnitude * maxMagnitude;
+            float maxMagnitudeSq = safeMaxMagnitude * safeMaxMagnitude;
             if (sqrMagnitude <= maxMagnitudeSq)
                 return value;
 
-            return value * (maxMagnitude * math.rsqrt(sqrMagnitude));
+            return value * (safeMaxMagnitude * math.rsqrt(sqrMagnitude));
         }
 
         private static Vector3 ResolveSafeDirection(Vector3 value, Vector3 fallback)
         {
+            if (!IsFinite(value))
+                value = fallback;
+
             float sqrMagnitude = value.sqrMagnitude;
-            return sqrMagnitude > MinVectorMagnitudeSq
-                ? value * math.rsqrt(sqrMagnitude)
-                : fallback;
+            if (math.isfinite(sqrMagnitude) && sqrMagnitude > MinVectorMagnitudeSq)
+                return value * math.rsqrt(sqrMagnitude);
+
+            if (!IsFinite(fallback))
+                return Vector3.zero;
+
+            float fallbackSqrMagnitude = fallback.sqrMagnitude;
+            return math.isfinite(fallbackSqrMagnitude) && fallbackSqrMagnitude > MinVectorMagnitudeSq
+                ? fallback * math.rsqrt(fallbackSqrMagnitude)
+                : Vector3.zero;
         }
 
         private static float ResolveMagnitude(float sqrMagnitude)
         {
-            return sqrMagnitude > MinVectorMagnitudeSq
+            return math.isfinite(sqrMagnitude) && sqrMagnitude > MinVectorMagnitudeSq
                 ? sqrMagnitude * math.rsqrt(sqrMagnitude)
                 : 0f;
         }
 
         private static void ResolveLengthAndInvLength(float sqrMagnitude, out float length, out float invLength)
         {
+            if (!math.isfinite(sqrMagnitude) || sqrMagnitude <= MinVectorMagnitudeSq)
+            {
+                length = 0f;
+                invLength = 0f;
+                return;
+            }
+
             invLength = math.rsqrt(sqrMagnitude);
             length = sqrMagnitude * invLength;
+            if (math.isfinite(length) && math.isfinite(invLength))
+                return;
+
+            length = 0f;
+            invLength = 0f;
         }
 
         private static Vector3 ClampPdDerivativeVelocity(
@@ -2900,19 +2964,25 @@ namespace Hecton8.Physics
             float dampingCoefficient,
             float maxDerivativeForceMagnitude)
         {
-            if (!IsFinite(targetVelocity) || !IsFinite(currentVelocity))
+            if (!IsFinite(targetVelocity))
+                return IsFinite(currentVelocity) ? currentVelocity : Vector3.zero;
+
+            if (!IsFinite(currentVelocity))
                 return targetVelocity;
 
-            float safeDamping = math.max(0f, dampingCoefficient);
-            float safeMaxForce = math.max(0f, maxDerivativeForceMagnitude);
+            float safeDamping = math.isfinite(dampingCoefficient) ? math.max(0f, dampingCoefficient) : 0f;
+            float safeMaxForce = math.isfinite(maxDerivativeForceMagnitude) ? math.max(0f, maxDerivativeForceMagnitude) : 0f;
             if (safeDamping <= MinDistance || safeMaxForce <= 0f)
                 return currentVelocity;
 
             Vector3 velocityError = currentVelocity - targetVelocity;
             float errorMagnitudeSq = velocityError.sqrMagnitude;
+            if (!math.isfinite(errorMagnitudeSq))
+                return targetVelocity;
+
             float maxVelocityError = safeMaxForce * math.rcp(safeDamping);
             float maxVelocityErrorSq = maxVelocityError * maxVelocityError;
-            if (errorMagnitudeSq <= maxVelocityErrorSq)
+            if (!math.isfinite(maxVelocityError) || !math.isfinite(maxVelocityErrorSq) || errorMagnitudeSq <= maxVelocityErrorSq)
                 return currentVelocity;
 
             return targetVelocity + velocityError * (maxVelocityError * math.rsqrt(errorMagnitudeSq));
@@ -2945,8 +3015,11 @@ namespace Hecton8.Physics
             if (!math.all(math.isfinite(value)))
                 return float3.zero;
 
-            float safeMaxVelocity = math.max(0f, maxVelocity);
+            float safeMaxVelocity = math.isfinite(maxVelocity) ? math.max(0f, maxVelocity) : 0f;
             float lengthSq = math.lengthsq(value);
+            if (!math.isfinite(lengthSq))
+                return float3.zero;
+
             float maxSq = safeMaxVelocity * safeMaxVelocity;
             if (safeMaxVelocity > 0f && lengthSq > maxSq)
                 return value * (safeMaxVelocity * math.rsqrt(math.max(lengthSq, 0.000001f)));

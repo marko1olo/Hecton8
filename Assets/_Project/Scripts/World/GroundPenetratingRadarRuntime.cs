@@ -232,7 +232,7 @@ namespace Hecton8.World
                 receiveShadows = false,
                 motionVectorMode = MotionVectorGenerationMode.ForceNoMotion
             };
-            Graphics.RenderMeshIndirect(renderParams, mesh, _gprArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _gprArgsBuffer, 1, 0);
         }
 
         public bool TryGetGprPingBuffer(out GraphicsBuffer buffer, out int activeCount, out int sequence)

@@ -213,3 +213,109 @@ Cinematic Cheats used: None added. Existing visual fake stack remains: one-state
 Exact Microseconds saved: 0 us claimed. This is portability hardening, not an optimization.
 
 Validation: BIOLUM C# debt scan found no local native allocation, allocator use, legacy EventBus, managed delegate, MaterialPropertyBlock, finder call, `string.Format`, or forbidden lifecycle update method. Shader portability scan found no `groupshared`, `SV_Group`, DirectX token, append/consume buffer, or interlocked path in the touched BIOLUM shader set; compute kernels remain 64 threads per group. Path-limited `git diff --check` reports only CRLF normalization warnings on the touched shader/doc files. `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors.
+## Flora Shader Consumer Sweep
+
+What was wrong:
+- `Hecton_KelpMaster.shader`, `Hecton_CoralMaster.shader`, `Hecton_CoralMaster_GPUI.shader`, and `Hecton_IndirectVegetation.shader` were still visible flora forward paths without `_GlobalBiolumStates`.
+- The global state intensity was clamped upstream, but several shader consumers multiplied it by authored strength/cascade/bloom/touch terms without clamping final biolum energy.
+
+What was done:
+- Added global biolum resolvers to non-GPUI kelp, coral GPUI/non-GPUI, and indirect vegetation.
+- Indirect vegetation now synchronizes authored biolum instances only; non-emissive grass remains gated off.
+- Added `[0,10]` emission-energy clamps to procedural bio, sargassum, kelp GPUI/non-GPUI, coral GPUI/non-GPUI, and indirect vegetation.
+- Spore sparkle in indirect vegetation now inherits the synchronized global tint.
+
+Cinematic cheats used:
+- One-state low-tier Dear Lie remains the cheap path.
+- High/Ultra uses ALU-only spatial selectors, triangle-wave filament sparkle, secondary-lane blending, and haze. No particles, no extra textures, no MPBs.
+
+Exact Microseconds saved:
+- No new measured microseconds claimed.
+- Existing avoided CPU pattern remains estimated at 12 us/frame per 100 flora versus per-material/prefab emission updates.
+
+Validation:
+- BIOLUM C# debt scan: no `MaterialPropertyBlock`, legacy `EventBus`, `string.Format`, forbidden lifecycle `Update`/`Awake`, local native allocation, or finder APIs.
+- Shader portability scan: only existing 64-thread compute `numthreads`; no groupshared/SV_Group/DirectX-only/Interlocked/append-consume constructs.
+- Shader inventory: remaining files without `_GlobalBiolumStates` are non-forward depth/shadow/motion/culling/flow files, not visible emission consumers.
+- `git diff --check` on touched shaders reports only CRLF normalization warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly` attempt 18 failed outside BIOLUM: `HectonPlayerMovement.ToFloat3`, `TetherManager.Simulate` missing `qualityTier`, and `EquipmentInteractionContracts` uint-to-ushort conversion.
+
+## Legacy Culling Scalar Bridge
+
+What was wrong:
+- Legacy culling and older shader paths still consume `_BiolumIntensity`, while the new BIOLUM heartbeat owns `_GlobalBiolumStates`.
+- `BiolumPulseSyncRuntime` mirrored only lane 0 into `_BiolumIntensity`, so High/Ultra lanes could be bright while the legacy culling scalar stayed dark.
+- `HectonBiolumManager` also wrote `_BiolumIntensity`, creating a duplicate shader-global publisher that could overwrite the synchronized VFX scalar.
+
+What was done:
+- `BiolumPulseSyncRuntime` now publishes `_BiolumIntensity.x` as the max active synchronized lane plus acoustic strobe, clamped to `[0,10]`, and clears it on teardown.
+- `HectonBiolumManager` now suppresses only `_BiolumIntensity` writes while `_GlobalBiolumParams.x > 0.5`, then republishes its own scalar when the VFX heartbeat clears ownership.
+- Existing world biolum phase/color/touch-ripple globals remain untouched.
+
+Cinematic Cheats used:
+- The legacy scalar is now a cheap culling proxy for the whole synchronized neon forest instead of a physical light readback.
+- Low tier keeps one global Dear Lie; High/Ultra keeps sixteen synchronized lanes, strobe, ALU sparkle, and haze without per-renderer data.
+
+Exact Microseconds saved:
+- 0 us newly measured.
+- Bounded work: at most 16 lane checks once per BIOLUM publish, not per renderer.
+- Avoided failure mode: culling pop/desync from lane-0-only scalar and duplicate `_BiolumIntensity` ownership.
+
+Validation:
+- BIOLUM runtime debt scan found no local native allocation, allocator use, `MaterialPropertyBlock`, legacy `EventBus`, `string.Format`, finder API, coroutine, or forbidden lifecycle update method.
+- Duplicate publisher scan now shows the legacy manager gates its `_BiolumIntensity` writes behind `_GlobalBiolumParams`.
+- Path-limited `git diff --check` reports only CRLF normalization warnings.
+- Build attempt 20 timed out after 185 s without compiler output.
+- Build attempt 21: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors.
+
+## Legacy Biolum DataVault Eviction
+
+What was wrong:
+- `HectonBiolumManager`, the legacy system still touching the same global BIOLUM interface, owned private persistent native scratch buffers for predator blackout, ripple distance sorting, and telemetry.
+- Its telemetry record used sequential layout and implicit padding risk instead of an explicit Pack=1 ABI.
+
+What was done:
+- Added DataVault buffer IDs: `BiolumLegacyPredatorPositions`, `BiolumLegacyPredatorScores`, `BiolumLegacyRipplePositions`, `BiolumLegacyRippleDistances`, and `BiolumLegacyTelemetryRing`.
+- Replaced the legacy manager's private persistent native buffer fields with `VaultBufferHandle<T>` fields owned by `SystemID.Vfx`.
+- Job scheduling now resolves DataVault views only when the vault is available and not fenced; generation drift waits until scheduled jobs are no longer active.
+- Converted the legacy telemetry record to explicit Pack=1 Size=32 and kept frame, camera XYZ, intensity, phase, predator dim, predator hits, ripple count, and flags.
+
+Cinematic Cheats used:
+- No new visual cheat added. This preserves the existing Dear Lie stack: one-state low-tier heartbeat, 15 Hz overload cadence, shader fake strobe, High/Ultra lane overdrive, sparkle, and haze.
+
+Exact Microseconds saved:
+- 0 us measured and 0 us claimed.
+- Removed hidden private native ownership from the legacy bridge path.
+- Crash-ring payload is fixed at 9600 bytes for 300 legacy telemetry records.
+
+Validation:
+- No full `dotnet build` was run in this pass per operator instruction.
+- Static debt scan found no `new NativeArray`, `Allocator.*`, private `NativeArray`, sequential StructLayout, MPB, EventBus, `string.Format`, finder API, or coroutine in `BiolumPulseSyncRuntime` plus the legacy bridge files.
+- BIOLUM shader scan shows only 64-thread compute kernels: `BiolumDiffusion` 4x4x4 and `Hecton_BiolumSSGI` 8x8x1. No new DirectX-only group/shared/interlocked constructs were introduced in the touched BIOLUM shader set.
+- Path-limited `git diff --check` reports only CRLF normalization warnings.
+
+## Legacy Vault Lock Hardening
+
+What was wrong:
+- The legacy BIOLUM predator/ripple scratch buffers had been evicted to DataVault handles, but scheduled Burst jobs needed explicit DataVault buffer locks for the full job lifetime.
+- The ripple invalid-observer path would leak the freshly locked buffers if locking was added without an early unlock.
+- The legacy telemetry record/dump methods still referenced the removed `TryResolveTelemetryRing` helper, which was a compile break and an ownership gap.
+
+What was done:
+- Predator and ripple job buffers now lock before scheduling, register their job handle through `H8Memory.RegisterActiveJob(SystemID.Vfx, handle)`, and unlock on no-work, invalid-observer, finalize, or release paths.
+- Predator and ripple observer positions are finite-checked before scheduling so NaN camera input cannot enter Burst jobs.
+- The telemetry ring now locks for record writes and dump reads, unlocks through `finally`, and triggers dumps only after the record lock is released.
+
+Cinematic Cheats used:
+- No new visual layer added. This preserves the existing one-state low-tier Dear Lie and High/Ultra 16-lane overdrive while removing memory relocation risk from the legacy bridge.
+
+Exact Microseconds saved:
+- 0 us measured and 0 us claimed.
+- Work remains bounded to 16 predator contacts, 16 touch ripples, and one 300-frame fixed telemetry ring.
+
+Validation:
+- No full `dotnet build` was run in this pass per operator instruction.
+- Static scan found no stale `TryResolveTelemetryRing`, no `new NativeArray`, no `Allocator.*`, no private `NativeArray`, no sequential StructLayout, no MPB, no EventBus, no `string.Format`, no finder API, and no coroutine in `BiolumPulseSyncRuntime` plus the legacy bridge.
+- BIOLUM shader scan still reports only 64-thread compute kernels: `BiolumDiffusion` 4x4x4 and `Hecton_BiolumSSGI` 8x8x1.
+- Path-limited `git diff --check` reports only CRLF normalization warnings.
+- Latest full compile proof remains build attempt 21 from the legacy scalar bridge pass: 0 warnings, 0 errors.

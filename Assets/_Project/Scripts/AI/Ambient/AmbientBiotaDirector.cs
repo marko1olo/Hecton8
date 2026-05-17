@@ -30,7 +30,7 @@ namespace Hecton8.AI.Ambient
         private const int MacroHydrationCounterCount = 4;
         private const int MacroVisualBoidsPerBiomassUnit = 64;
         private const int MaxDebrisSignalsPerLateFrame = 16;
-        private const byte DebrisKindOrganicScrap = 2;
+        private const float TelemetryDeltaTimeClampSeconds = 0.25f;
         private const float MacroHydrationStressCullThreshold01 = 0.7f;
         private const float DefaultFlowX = 0.08f;
         private const float DefaultFlowY = -0.01f;
@@ -50,6 +50,7 @@ namespace Hecton8.AI.Ambient
         private static readonly int BiotaSystemStressShaderId = Shader.PropertyToID("_HectonBiotaSystemStress01");
         private static readonly int BiotaFlowVectorShaderId = Shader.PropertyToID("_HectonBiotaFlowVector");
         private static readonly int BiotaOverkillShaderId = Shader.PropertyToID("_HectonBiotaOverkill01");
+        private static readonly int BiotaVisualTimeShaderId = Shader.PropertyToID("_HectonBiotaVisualTime");
         private static readonly int BiotaOriginWsShaderId = Shader.PropertyToID("_HectonBiotaOriginWS");
 
         [Header("Biota Capacity")]
@@ -99,7 +100,8 @@ namespace Hecton8.AI.Ambient
         private int _lastCulledCount;
         private int _tickCount;
         private float _cullRatePerSecond;
-        private float _lastRecountTimeSeconds;
+        private float _telemetryClockSeconds;
+        private float _lastRecountClockSeconds;
         private uint _frameIndex;
         private uint _heartbeatFrameIndex;
         private uint _lastStateHash = 2166136261u;
@@ -168,7 +170,8 @@ namespace Hecton8.AI.Ambient
             _previousActiveBiotaCount = 0;
             _lastCulledCount = 0;
             _cullRatePerSecond = 0f;
-            _lastRecountTimeSeconds = 0f;
+            _telemetryClockSeconds = 0f;
+            _lastRecountClockSeconds = 0f;
             _heartbeatFrameIndex = 0u;
             _cachedSystemStress01 = 0f;
             _pendingDebrisDrainActive = false;
@@ -178,12 +181,19 @@ namespace Hecton8.AI.Ambient
         {
             _tickCount++;
 
-            if (_jobPending || !TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states))
-                return;
-
             float safeDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
                 ? math.min(deltaTime, 0.05f)
                 : 0f;
+            float telemetryDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
+                ? math.min(deltaTime, TelemetryDeltaTimeClampSeconds)
+                : 0f;
+            if (!math.isfinite(_telemetryClockSeconds))
+                _telemetryClockSeconds = 0f;
+            _telemetryClockSeconds += telemetryDeltaTime;
+
+            if (_jobPending || !TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states))
+                return;
+
             if (safeDeltaTime <= 0f)
                 return;
 
@@ -360,7 +370,7 @@ namespace Hecton8.AI.Ambient
                 Flags = (byte)(EntitySpawnSignal.FlagEcology |
                                (spawnQualityTier == 0 ? EntitySpawnSignal.FlagLowTierVisual : 0) |
                                (spawnQualityTier >= 3 ? EntitySpawnSignal.FlagHighTierOverkill : 0)),
-                Frame = unchecked((uint)Time.frameCount)
+                Frame = _frameIndex
             };
             GlobalSignals.Publish(in spawnSignal);
             return true;
@@ -563,7 +573,7 @@ namespace Hecton8.AI.Ambient
             _previousActiveBiotaCount = 0;
             _lastCulledCount = 0;
             _cullRatePerSecond = 0f;
-            _lastRecountTimeSeconds = 0f;
+            _lastRecountClockSeconds = 0f;
             _lastStateHash = 2166136261u;
             _pendingDebrisDrainActive = false;
             _gpuPayloadDirty = true;
@@ -788,6 +798,7 @@ namespace Hecton8.AI.Ambient
             material.SetFloat(BiotaSystemStressShaderId, _cachedSystemStress01);
             material.SetVector(BiotaFlowVectorShaderId, new Vector4(_flowVector.x, _flowVector.y, _flowVector.z, 0f));
             material.SetFloat(BiotaOverkillShaderId, _highTierOverkillEnabled);
+            material.SetFloat(BiotaVisualTimeShaderId, _telemetryClockSeconds);
             material.SetVector(BiotaOriginWsShaderId, new Vector4(_lastPlayerRuntimePosition.x, _lastPlayerRuntimePosition.y, _lastPlayerRuntimePosition.z, 1f));
 
             float radius = ResolveSimulationRadiusMeters();
@@ -802,7 +813,7 @@ namespace Hecton8.AI.Ambient
                 receiveShadows = false,
                 motionVectorMode = MotionVectorGenerationMode.Object
             };
-            Graphics.RenderMeshIndirect(renderParams, mesh, indirectArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, indirectArgsBuffer, 1, 0);
         }
 
         private bool EnsureGraphicsResources(int capacity)
@@ -1128,7 +1139,7 @@ namespace Hecton8.AI.Ambient
                     SpeciesHash = state.StableHash != 0u ? state.StableHash : state.SpeciesId,
                     SourceEntityId = DirectorSourceHash,
                     Intensity01 = math.saturate(state.Emission01 + (_highTierOverkillEnabled != 0 ? 0.35f : 0.05f)),
-                    DebrisKind = DebrisKindOrganicScrap,
+                    DebrisKind = DebrisSpawnSignal.DebrisKindOrganicScrap,
                     Flags = DebrisSpawnSignal.FlagComputeShard,
                     Quantity = (ushort)(_highTierOverkillEnabled != 0 ? 6 : 2)
                 };
@@ -1168,13 +1179,13 @@ namespace Hecton8.AI.Ambient
             }
 
             int culled = math.max(0, _previousActiveBiotaCount - active);
-            float now = Time.unscaledTime;
+            float now = _telemetryClockSeconds;
             float elapsed = math.select(
                 1f,
-                now - _lastRecountTimeSeconds,
-                math.isfinite(now) & math.isfinite(_lastRecountTimeSeconds) & _lastRecountTimeSeconds > 0f);
+                now - _lastRecountClockSeconds,
+                math.isfinite(now) & math.isfinite(_lastRecountClockSeconds) & _lastRecountClockSeconds > 0f);
             elapsed = math.max(0.0001f, elapsed);
-            _lastRecountTimeSeconds = math.select(_lastRecountTimeSeconds, now, math.isfinite(now));
+            _lastRecountClockSeconds = math.select(_lastRecountClockSeconds, now, math.isfinite(now));
             _cullRatePerSecond = culled * math.rcp(elapsed);
             _previousActiveBiotaCount = active;
             _activeBiotaCount = active;
@@ -1822,9 +1833,9 @@ namespace Hecton8.AI.Ambient
         private static double3 DeltaMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
             return new double3(
-                ((a.GridX - b.GridX) * AupCellSizeMetersDouble) + (a.LocalX - b.LocalX),
-                ((a.GridY - b.GridY) * AupCellSizeMetersDouble) + (a.LocalY - b.LocalY),
-                ((a.GridZ - b.GridZ) * AupCellSizeMetersDouble) + (a.LocalZ - b.LocalZ));
+                (((double)a.GridX - (double)b.GridX) * AupCellSizeMetersDouble) + (a.LocalX - b.LocalX),
+                (((double)a.GridY - (double)b.GridY) * AupCellSizeMetersDouble) + (a.LocalY - b.LocalY),
+                (((double)a.GridZ - (double)b.GridZ) * AupCellSizeMetersDouble) + (a.LocalZ - b.LocalZ));
         }
 
         private static bool IsFinite(double3 value)

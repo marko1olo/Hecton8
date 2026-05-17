@@ -1,6 +1,6 @@
 # Rationale_ACOUSTIC_ECHO_LOCATION_AI
 
-Status: VERIFIED MASTER GRADE / ACOUSTIC DOMAIN STATIC CLEAN / DOTNET BUILD GREEN / UNITY BATCHMODE GREEN / PLAYMODE PROFILER PENDING
+Status: VERIFIED MASTER GRADE / ACOUSTIC DOMAIN STATIC CLEAN / DOTNET BUILD GREEN / UNITY BATCHMODE BLOCKED BY EXTERNAL ASMDEF WALL / PLAYMODE PROFILER BLOCKED
 
 ## Decision 0 - Batch Memory Initialization
 Problem: Agent-local status and rationale files were missing at session start.
@@ -127,3 +127,17 @@ Solution: Added `ResolveDumpPath()` using `Application.dataPath/..` as the proje
 Rejected Alternatives: Writing to `Application.persistentDataPath` was rejected because the batch black-box contract requires `Docs/AgentLogs`; keeping current-working-directory behavior was rejected as Steam Deck/MicroSD hostile; adding a hot-path path cache was rejected because dumps are one-shot fault-path only.
 Scalability potential: Low/Middle/High/Ultra acoustic behavior unchanged; fault dumps now land in the repo log path consistently across launch contexts.
 Hardware Impact: 0 microseconds hot-path impact; cold fault dump path resolution happens only after a NaN/invalid AUP fault and is one-shot gated.
+
+## Decision 17 - Same-Frame Stalled Job Gate
+Problem: When `EchoTrackingJob` was still running, every predator resolver in the same frame could re-enter the stalled-job branch, recheck `JobHandle.IsCompleted`, and rewrite the same heartbeat.
+Solution: Set `_lastRefreshFrame = frame` before writing the heartbeat and returning from the still-running job branch. This preserves the one-frame acoustic latency contract and collapses same-frame stalled-job polling to one check.
+Rejected Alternatives: Forcing `Complete()` in every predator tick was rejected because it creates frame spikes; leaving repeated same-frame polling was rejected because swarm density should not multiply a known stalled state.
+Scalability potential: Low/Toaster gets predictable one-check behavior under load; Middle/High/Ultra retain the same acoustic result API and can spend saved CPU on presentation-side overkill instead of duplicate scheduler polling.
+Hardware Impact: Estimated 0 microseconds when the job is complete; during a stalled acoustic job, avoids roughly 1-3 microseconds per 32 predator resolver calls on i3/MX350 by skipping repeated handle checks and duplicate heartbeat writes.
+
+## Decision 18 - Unity Assembly Contract Repair And Current Wall
+Problem: Current Unity 6000.4.1f1 batchmode did not match the prior green claim. `Unity_ACOUSTIC_ECHO_LOCATION_AI_CURRENT.log` failed in root `_Project/Editor` scripts and `Hecton8.Audio.Virtualization` because Unity asmdefs did not expose the assemblies those files directly use.
+Solution: Added `Assets/_Project/Editor/Hecton8.Project.Editor.asmdef` with the same project/editor references already used by the existing editor assembly, and added a direct `Hecton8.Core.Contracts` reference to `Hecton8.Audio.Virtualization.asmdef`. Re-ran `dotnet build`, which stayed green. Re-ran Unity batchmode; the wall moved to separate runtime asmdef ownership in player kinematics, GPR, crab IK, foveated rendering, and visual flare signal routing.
+Rejected Alternatives: Claiming Unity green from stale logs was rejected; removing the new asmdef repair was rejected because it fixed a real editor/audio compile-contract gap; continuing into broad graphics/world/fauna/global-signal rewrites was rejected after the wall moved outside acoustic ownership.
+Scalability potential: Acoustic Low/Middle/High/Ultra behavior is unchanged. The repair is compile topology only; it does not alter tap caps, portal breadcrumb authority, noisemaker priority, silence loss, or head-sweep presentation.
+Hardware Impact: 0 microseconds acoustic runtime impact. Latest `dotnet build` wall-clock was 331,190,000 microseconds; Unity Tundra reports the moved compiler wall at 9,610,000 microseconds inside `Unity_ACOUSTIC_ECHO_LOCATION_AI_ASMDEF2.log`.

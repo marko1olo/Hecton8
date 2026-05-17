@@ -15,23 +15,45 @@ $rows.Add("| --- | --- | --- | --- |")
 
 foreach ($file in $contractFiles) {
     $currentContract = $file.BaseName
-    foreach ($line in Get-Content -Path $file.FullName) {
+    $lines = Get-Content -Path $file.FullName
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $line = $lines[$i]
         $classMatch = [regex]::Match($line, "public\s+(?:static\s+)?class\s+(?<name>[A-Za-z0-9_]+)")
         if ($classMatch.Success) {
             $currentContract = $classMatch.Groups["name"].Value.Trim()
             continue
         }
 
-        $match = [regex]::Match(
-            $line,
-            "public\s+const\s+(?<type>[A-Za-z0-9_<>]+)\s+(?<name>[A-Za-z0-9_]+)\s*=\s*(?<value>[^;]+);")
-        if (!$match.Success) {
+        $declaration = $line.Trim()
+        if ($declaration -notmatch "public\s+(?:const|static\s+readonly)\s+") {
             continue
+        }
+
+        while ($declaration -notmatch ";" -and ($i + 1) -lt $lines.Count) {
+            $i++
+            $declaration += " " + $lines[$i].Trim()
+        }
+
+        $match = [regex]::Match(
+            $declaration,
+            "public\s+const\s+(?<type>[A-Za-z0-9_<>\.\[\]]+)\s+(?<name>[A-Za-z0-9_]+)\s*=\s*(?<value>[^;]+);")
+        if (!$match.Success) {
+            $match = [regex]::Match(
+                $declaration,
+                "public\s+static\s+readonly\s+(?<type>[A-Za-z0-9_<>\.\[\]]+)\s+(?<name>[A-Za-z0-9_]+)\s*(?:=\s*(?<value>[^;]+))?;")
+            if (!$match.Success) {
+                continue
+            }
         }
 
         $type = $match.Groups["type"].Value.Trim()
         $name = $match.Groups["name"].Value.Trim()
-        $value = $match.Groups["value"].Value.Trim().Replace("|", "\|")
+        $value = $match.Groups["value"].Value.Trim()
+        if ([string]::IsNullOrWhiteSpace($value)) {
+            $value = "<computed in static constructor>"
+        }
+
+        $value = $value.Replace("|", "\|")
         $rows.Add(('| {0} | {1} | {2} | `{3}` |' -f $currentContract, $name, $type, $value))
     }
 }

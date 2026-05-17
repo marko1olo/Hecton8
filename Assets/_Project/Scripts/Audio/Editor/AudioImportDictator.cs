@@ -100,12 +100,6 @@ namespace Hecton8.Audio.Editor
                 changed = true;
             }
 
-            if (importer.preloadAudioData != policy.Preload)
-            {
-                importer.preloadAudioData = policy.Preload;
-                changed = true;
-            }
-
             if (importer.loadInBackground != policy.BackgroundLoad)
             {
                 importer.loadInBackground = policy.BackgroundLoad;
@@ -113,6 +107,12 @@ namespace Hecton8.Audio.Editor
             }
 
             AudioImporterSampleSettings settings = importer.defaultSampleSettings;
+            if (settings.preloadAudioData != policy.Preload)
+            {
+                settings.preloadAudioData = policy.Preload;
+                changed = true;
+            }
+
             if (settings.loadType != policy.LoadType)
             {
                 settings.loadType = policy.LoadType;
@@ -131,9 +131,10 @@ namespace Hecton8.Audio.Editor
                 changed = true;
             }
 
-            if (settings.sampleRateOverride != policy.SampleRate)
+            uint policySampleRate = (uint)policy.SampleRate;
+            if (settings.sampleRateOverride != policySampleRate)
             {
-                settings.sampleRateOverride = policy.SampleRate;
+                settings.sampleRateOverride = policySampleRate;
                 changed = true;
             }
 
@@ -190,9 +191,9 @@ namespace Hecton8.Audio.Editor
                 compliant = false;
             }
 
-            if (importer.preloadAudioData != policy.Preload)
+            if (settings.preloadAudioData != policy.Preload)
             {
-                AppendPolicyIssue(builder, assetPath, "preloadAudioData", policy.Preload, importer.preloadAudioData);
+                AppendPolicyIssue(builder, assetPath, "preloadAudioData", policy.Preload, settings.preloadAudioData);
                 compliant = false;
             }
 
@@ -387,10 +388,13 @@ namespace Hecton8.Audio.Editor
 
         internal static long EstimatePreloadBytes(string assetPath, AudioImporter importer, AudioClip clip)
         {
-            if (importer == null || clip == null || !importer.preloadAudioData)
+            if (importer == null || clip == null)
                 return 0L;
 
             AudioImporterSampleSettings settings = importer.defaultSampleSettings;
+            if (!settings.preloadAudioData)
+                return 0L;
+
             if (settings.loadType == AudioClipLoadType.Streaming)
                 return 0L;
 
@@ -546,6 +550,7 @@ namespace Hecton8.Audio.Editor
         public void OnPreprocessBuild(BuildReport report)
         {
             ValidateImportPolicyDrift(true);
+            AudioSourceResidencyBuildGate.ValidatePrefabAudioSourceResidency(true);
             ValidatePreloadedAudioBudget(true);
             EnvironmentAudioSourcePurgeGate.ValidateEnvironmentPrefabsNoAudioSources(true);
         }
@@ -663,6 +668,138 @@ namespace Hecton8.Audio.Editor
             builder.Append(offenderCount);
             builder.AppendLine();
             builder.Append(issues);
+            return builder.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Rejects prefab AudioSources that can pull clip data during boot before the audio residency system consents.
+    /// </summary>
+    internal static class AudioSourceResidencyBuildGate
+    {
+        private const string ProjectPrefabRoot = "Assets/_Project/Prefabs";
+
+        private struct PrefabAudioSourceIssue
+        {
+            public string Path;
+            public string SourcePath;
+            public string ClipPath;
+            public bool PlayOnAwake;
+            public bool PreloadedNonStreamingClip;
+            public AudioClipLoadType LoadType;
+        }
+
+        [MenuItem("Hecton/Validation/Audio/Validate Prefab AudioSource Residency", priority = 413)]
+        internal static void ValidatePrefabAudioSourceResidencyMenu()
+        {
+            ValidatePrefabAudioSourceResidency(false);
+        }
+
+        internal static void ValidatePrefabAudioSourceResidency(bool failBuild)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { ProjectPrefabRoot });
+            List<PrefabAudioSourceIssue> issues = new List<PrefabAudioSourceIssue>(16);
+
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab == null)
+                    continue;
+
+                AudioSource[] sources = prefab.GetComponentsInChildren<AudioSource>(true);
+                if (sources == null || sources.Length <= 0)
+                    continue;
+
+                for (int sourceIndex = 0; sourceIndex < sources.Length; sourceIndex++)
+                {
+                    AudioSource source = sources[sourceIndex];
+                    if (source == null)
+                        continue;
+
+                    AudioClip clip = source.clip;
+                    string clipPath = clip != null ? AssetDatabase.GetAssetPath(clip) : string.Empty;
+                    AudioClipLoadType loadType = AudioClipLoadType.DecompressOnLoad;
+                    bool preloadedNonStreamingClip = false;
+
+                    if (!string.IsNullOrEmpty(clipPath))
+                    {
+                        AudioImporter importer = AssetImporter.GetAtPath(clipPath) as AudioImporter;
+                        if (importer != null)
+                        {
+                            AudioImporterSampleSettings settings = importer.defaultSampleSettings;
+                            loadType = settings.loadType;
+                            preloadedNonStreamingClip = settings.preloadAudioData &&
+                                                        settings.loadType != AudioClipLoadType.Streaming;
+                        }
+                    }
+
+                    if (!source.playOnAwake && !preloadedNonStreamingClip)
+                        continue;
+
+                    issues.Add(new PrefabAudioSourceIssue
+                    {
+                        Path = path,
+                        SourcePath = BuildTransformPath(source.transform),
+                        ClipPath = string.IsNullOrEmpty(clipPath) ? "<none>" : clipPath,
+                        PlayOnAwake = source.playOnAwake,
+                        PreloadedNonStreamingClip = preloadedNonStreamingClip,
+                        LoadType = loadType
+                    });
+                }
+            }
+
+            if (issues.Count <= 0)
+                return;
+
+            string report = BuildFailureReport(issues);
+            Debug.LogError(report);
+            if (failBuild)
+                throw new BuildFailedException(report);
+        }
+
+        private static string BuildTransformPath(Transform transform)
+        {
+            if (transform == null)
+                return "<unknown>";
+
+            StringBuilder builder = new StringBuilder(128);
+            AppendTransformPath(builder, transform);
+            return builder.ToString();
+        }
+
+        private static void AppendTransformPath(StringBuilder builder, Transform transform)
+        {
+            if (transform.parent != null)
+            {
+                AppendTransformPath(builder, transform.parent);
+                builder.Append('/');
+            }
+
+            builder.Append(transform.name);
+        }
+
+        private static string BuildFailureReport(List<PrefabAudioSourceIssue> issues)
+        {
+            StringBuilder builder = new StringBuilder(2048);
+            builder.AppendLine("[AudioSourceResidencyBuildGate:0xA1D10007] Prefab AudioSource boot residency is banned. Build aborted.");
+            for (int i = 0; i < issues.Count; i++)
+            {
+                PrefabAudioSourceIssue issue = issues[i];
+                builder.Append(" - ");
+                builder.Append(issue.Path);
+                builder.Append(" | ");
+                builder.Append(issue.SourcePath);
+                builder.Append(" | clip=");
+                builder.Append(issue.ClipPath);
+                builder.Append(" | playOnAwake=");
+                builder.Append(issue.PlayOnAwake);
+                builder.Append(" | preloadedNonStreaming=");
+                builder.Append(issue.PreloadedNonStreamingClip);
+                builder.Append(" | loadType=");
+                builder.AppendLine(issue.LoadType.ToString());
+            }
+
             return builder.ToString();
         }
     }

@@ -287,3 +287,232 @@ Validation:
 Exact microseconds saved:
 - 0 measured runtime microseconds claimed.
 - The change removes a private managed authority and stale-handle risk; runtime profiler evidence remains unavailable in this CLI session.
+
+## 2026-05-16 - HYDRO_MECHANIC - Hydro Dump Single-File Contract / Build Green
+
+What was wrong:
+- `SubmarineFluidDynamics` still wrote hydro black-box dumps to two legacy agent files: `Dump_KINEMATICS_HYDRO_DRAG.bin` and `Dump_OCEAN_CHEMISTRY_ENGINEER.bin`.
+- The hydro dump catch path allocated a concatenated `Debug.LogError` string.
+- A dead duplicate `RemovedSplashEventPayload` stub remained after the system moved to the canonical `SplashEvent` signal.
+
+What was done:
+- Routed hydro black-box output to `Docs/AgentLogs/Dump_SUBMARINE_BALLAST_PID_V2.bin`.
+- Removed the second fault-time dump write.
+- Replaced the fault-path log allocation with `GlobalTelemetryBus.PublishPerformanceWarning`.
+- Removed the dead duplicate splash payload stub.
+
+Cinematic cheats used:
+- No new physics simulation was added.
+- Low tier keeps the Dear Lie: 1 Hz flood mass truth with interpolation and bounded typed VFX intent.
+- High/Ultra keep 6DOF drag tensor response, bubble signals, and high-tier `FluidImpulseSignal` hooks.
+
+Validation:
+- Domain static scans returned no hits for missing `Pack = 1`, private `NativeArray`, `NativeQueue`, `H8Memory.Allocate/Release`, `Update()`, `FixedUpdate()`, `string.Format`, singleton pitch, legacy EventBus, `Debug.LogError`, old hydro dump file names, or duplicate `RemovedSplashEventPayload`.
+- `git diff --check -- Assets/_Project/Scripts/SubmarineFluidDynamics.cs Assets/_Project/Scripts/Core/Memory/H8Memory.cs` passed clean.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` passed: `Hecton8.Core.dll`, 0 warnings, 0 errors.
+
+Exact microseconds saved:
+- 0 measured runtime microseconds claimed.
+- One fault-time file write removed.
+
+## 2026-05-16 - HYDRO_MECHANIC - Exterior Thermal Vault Eviction / Core Defrag Compile Wall
+
+What was wrong:
+- Exterior thermal anomaly centers, temperatures, lifetimes, and hazard ids were private managed arrays inside `SubmarineFluidDynamics`.
+- Those arrays drive boil-cell hazard registration and updraft impulses, so they are runtime state, not authoring configuration or harmless scratch.
+
+What was done:
+- Added Vault IDs:
+  - `SubmarineFluidExteriorThermalCenters`
+  - `SubmarineFluidExteriorThermalTemperatures`
+  - `SubmarineFluidExteriorThermalLifetimes`
+  - `SubmarineFluidExteriorThermalHazardIds`
+- Converted the four thermal anomaly arrays to `VaultNativeBuffer<float3>`, `VaultNativeBuffer<float>`, `VaultNativeBuffer<float>`, and `VaultNativeBuffer<int>`.
+- Wired the buffers through VehiclesPhysics Vault allocation, DataVault relocation recognition, refresh, dispose, and clear paths.
+- Kept the existing 8 m quantized cell fake instead of adding any heavier physical simulation.
+
+Cinematic cheats used:
+- Low tier keeps an 8-cell bounded thermal/boil approximation.
+- High/Ultra retain boiling updrafts, heat hazard registration, and VFX signal hooks without per-particle thermal simulation.
+
+Validation:
+- Domain static scans returned no hits for missing `Pack = 1`, private `NativeArray`, `NativeQueue`, `H8Memory.Allocate/Release`, `Update()`, `FixedUpdate()`, `string.Format`, singleton pitch, legacy EventBus, or `Debug.Log`.
+- `git diff --check -- Assets/_Project/Scripts/SubmarineFluidDynamics.cs Assets/_Project/Scripts/Core/Memory/H8Memory.cs` reports only line-ending normalization warnings.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` fails outside PHYSICS/VEHICLES with 4 Core errors:
+  - `Assets/_Project/Scripts/Core/SystemDispatcher.cs(22,27)`: missing `Hecton8.Core.Memory.Defrag`.
+  - `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs(7,27)`: missing `Hecton8.Core.Memory.Defrag`.
+  - `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs(143,74)`: missing `MemoryDefragPhase`.
+  - `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs(1174,81)`: missing `MemoryDefragPhase`.
+- No submarine PID/fluid/docking file appears in the error set.
+
+Exact microseconds saved:
+- 0 measured runtime microseconds claimed.
+- This pass removes private state ownership only; Unity runtime profiling remains pending.
+
+## 2026-05-16 - HYDRO_MECHANIC - Current-Disk Build Revalidation
+
+What was wrong:
+- The task status still carried a stale Core/Memory Defrag compile wall after current source drift removed that error condition.
+
+What was done:
+- Re-read `Docs/Tasks/Status_SUBMARINE_BALLAST_PID_V2.md`, `Docs/AgentLogs/Rationale_SUBMARINE_BALLAST_PID_V2.md`, and the full XML assignment from `Docs/Tasks/CURRENT_BATCH.md`.
+- Rechecked the Defrag declarations against current source before touching code.
+- Reran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` with a longer timeout.
+
+Cinematic cheats used:
+- No new runtime cheat added in this pass. Existing submarine path remains the bounded 1 Hz low-tier flood-mass solve, quantized exterior thermal fake, and high-tier VFX intent via typed signals instead of heavier simulation.
+
+Exact microseconds saved:
+- 0 measured runtime microseconds claimed.
+- Build result: `Hecton8.Core.dll`, 0 warnings, 0 errors. Unity profiler and GCMonitor proof remain pending.
+
+## 2026-05-17 - HYDRO_MECHANIC - Direct Typed-Lane Publish / External Survival Compile Wall
+
+What was wrong:
+- `SubmarineFloodStateSignal`, `BubbleSpawnSignal`, and `FluidImpulseSignal` were published through `GlobalSignals.Publish` even though those overloads only forward into typed `SignalBus<T>` lanes.
+
+What was done:
+- Replaced the thin facade calls with direct `SignalBus<SubmarineFloodStateSignal>.Push`, `SignalBus<BubbleSpawnSignal>.Push`, and `SignalBus<FluidImpulseSignal>.Push`.
+- Kept `GlobalSignals.Publish` for impact, acoustic, haptic, and vocal warning paths because those overloads preserve existing latest-state or queue compatibility.
+
+Cinematic cheats used:
+- No new simulation added. The typed lanes continue to carry bounded VFX intent for bubble, silt, and wake consumers.
+
+Exact microseconds saved:
+- 0 measured runtime microseconds claimed.
+- Latest build is blocked outside PHYSICS/VEHICLES by `HectonSurvivalSystem.cs(553,13)` missing `EnsurePhysiologyScalarBuffer`; no submarine files are in the compiler error set.
+
+## 2026-05-16 - HYDRO_MECHANIC - Exterior Buoyancy Sample Vault Eviction
+
+What was wrong:
+- `_exteriorBuoyancySampleLocalPoints` was a component-owned `Vector3[8]` cache feeding exterior buoyancy force sampling every fixed step.
+
+What was done:
+- Added `BufferID.SubmarineFluidExteriorBuoyancySampleLocalPoints`.
+- Converted the sample cache to `VaultNativeBuffer<float3>`.
+- Reordered enable-time initialization so the Vault buffer exists before sample rebuild.
+- Wired the buffer through DataVault relocation recognition, refresh, dispose, and clear paths.
+- Added fail-closed hydrodynamics guards when the Vault sample buffer is unavailable.
+
+Cinematic cheats used:
+- Kept the existing 8-point exterior displacement Dear Lie for toaster hardware.
+- High/Ultra keep the same sample authority for 6DOF drag tensor response and VFX signaling without full hull-fluid simulation.
+
+Exact microseconds saved:
+- 0 measured runtime microseconds claimed.
+- Latest build is blocked outside PHYSICS/VEHICLES by `Gameplay/HectonPlayerMotor.cs` missing updated DataVault arguments, `TetherInstance.cs` / `TetherManager.cs` signature drift, and `Interaction/EquipmentInteractionContracts.cs` uint-to-ushort drift; no submarine files are in the compiler error set.
+
+## 2026-05-17 - HYDRO_MECHANIC - Unity API Scratch Classification / Build Green
+
+What was wrong:
+- The H-Phi scan still found managed arrays/lists in `SubmarineFluidDynamics`, but the remaining containers were mixed: inspector DTOs and Unity API scratch, not runtime hydro authority.
+
+What was done:
+- Marked `compartments` and `bulkheads` as inspector-authored DTOs mirrored into `GlobalDataVault`.
+- Marked component query lists, spatial hash hit buffer, Rigidbody de-duplication buffer, and PhysX collider buffer as non-authoritative Unity API scratch.
+- Re-ran domain static scans and full `dotnet build`.
+
+Cinematic cheats used:
+- No new runtime cheat added. The submarine remains on bounded flood/thermal/buoyancy Dear Lies with high-tier 6DOF drag and VFX signal hooks.
+
+Exact microseconds saved:
+- 0 measured runtime microseconds claimed.
+- Build result: `Hecton8.Core.dll`, 0 warnings, 0 errors. Unity profiler and GCMonitor proof remain pending.
+## 2026-05-17 - HYDRO_MECHANIC - Inventory Mass Typed-Lane Pass / No Rebuild
+
+What was wrong:
+- `SubmarineFluidDynamics` still depended on the legacy `InventoryEvents` listener path for cargo mass and retained a throttled fallback read of `GlobalRegistry.PlayerInventoryMassKg`.
+- Flood-state math LOD was cached per frame from `GlobalRegistry.ScalabilityTier` when publishing submarine flood state.
+
+What was done:
+- Expanded existing `InventoryChangedSignal` inside its explicit 32-byte layout with `TotalMassKg`, `CarryCapacityKg`, and `Load01`.
+- Populated those fields from `PlayerInventory` during the existing inventory-change publish.
+- Added explicit `Pack = 1` to touched `PlayerInventory` telemetry/reservation structs without changing their sizes or field offsets.
+- Removed `IInventoryEventListener` and `InventoryEvents` coupling from `SubmarineFluidDynamics`.
+- Submarine cargo mass now consumes `SignalBus<InventoryChangedSignal>.GetFrameSnapshot()` with an indexed `ReadOnlySpan<T>` loop.
+- Flood-state math LOD now seeds through `ScalabilityEvents`; the publish path returns cached state.
+
+Cinematic Cheats used:
+- Kept the low-tier cargo/flood coupling as scalar mass truth feeding the existing 1 Hz/low-cadence flood mass Dear Lie.
+- Preserved high-tier flood drag tensor and VFX lanes for heavier vehicle feel instead of adding new room-fluid simulation.
+
+Exact Microseconds saved:
+- No runtime profiler was run. No measured microsecond claim.
+- Theoretical work removed: one legacy inventory listener path and one throttled registry cargo-mass poll from submarine fixed simulation.
+
+Validation:
+- Static scan found no stale `IInventoryEventListener`, `InventoryEvents`, `InventoryEventPayload`, or `InventoryEventType` use in `SubmarineFluidDynamics`.
+- Full `dotnet build`/rebuild intentionally not rerun per user instruction. Prior external build wall remains `HectonSurvivalSystem.cs(553,13)` missing `EnsurePhysiologyScalarBuffer`.
+
+## 2026-05-17 - HYDRO_MECHANIC - Service Snapshot Hot-Path Purge / No Rebuild
+
+What was wrong:
+- `SubmarineFluidDynamics` still had cached-service `Resolve*` helpers that could lazy-read `GlobalRegistry` from fixed-step call chains if a service cache was null.
+- `SubmarineAutoLevelBallastController` still used SlowTick as a soft polling loop for Audio/Fluid/DataVault/scalability and retried `GlobalRegistry.Audio` from the PID hull-stress publish path.
+
+What was done:
+- Added GlobalRegistry hot-swap rebinding for Player, Submarine, and FluidRuntime dependencies in submarine fluid.
+- Changed fluid `ResolvePlayerRuntimeContext`, `ResolveSubmarineRuntimeContext`, `ResolveFluidRuntime`, and `ResolvePowerGridService` to cached-only fail-closed reads.
+- Kept service discovery in cold seed paths: `CacheReferences`, `RegisterRuntime`, and hot-swap callbacks.
+- Removed ballast SlowTick registry polling for Audio/Fluid/DataVault/scalability and removed the PID audio hot fallback registry read.
+- Renamed the cargo-mass toggle to typed inventory signals so no stale `InventoryEvents` symbol remains in the submarine domain.
+
+Cinematic Cheats used:
+- No new simulation added. Low tier keeps scalar cargo/flood mass and 1 Hz flood truth; high tier keeps existing 6DOF drag tensor and VFX signal overkill.
+
+Exact Microseconds saved:
+- No runtime profiler was run. No measured microsecond claim.
+- Theoretical work removed: lazy service-locator reads from fixed-step helper bodies and one SlowTick registry polling cluster.
+
+Validation:
+- Static scans found no stale `IInventoryEventListener`, `InventoryEvents`, `InventoryEventPayload`, `InventoryEventType`, `RefreshMathLodPolicyFromRegistrySlow`, `Update()`, `FixedUpdate()`, `string.Format`, `EventBus`, or local persistent `NativeArray` hits in the submarine domain.
+- `git diff --check` passed for touched submarine source files with line-ending warnings only.
+- Full `dotnet build`/rebuild intentionally not rerun per user instruction. Prior external build wall remains `HectonSurvivalSystem.cs(553,13)` missing `EnsurePhysiologyScalarBuffer`.
+
+## 2026-05-17 - HYDRO_MECHANIC - Direct Signal-Lane Purge / No Rebuild
+
+What was wrong:
+- Six submarine-domain paths still called `GlobalSignals.Publish`, hiding typed lane ownership behind a legacy facade.
+- Impact publishes relied on facade-side finite sanitization instead of local NaN vaccination.
+
+What was done:
+- Replaced submarine acoustic pings, haptic requests, and impact packets with direct `SignalBus<T>.Push`.
+- Added a local finite guard before the surfacing-breach impact signal.
+- Replaced the crush-depth vocal warning facade call with cached `IVocalWarningSystem.TryQueueWarning`.
+- Added `VocalWarningRuntime` hot-swap rebinding for the submarine fluid runtime cache.
+
+Cinematic Cheats used:
+- No new physical simulation. The same bounded acoustic, haptic, impact, and fluid impulse packets feed presentation systems while low tier keeps scalar flood truth.
+
+Exact Microseconds saved:
+- No runtime profiler was run. No measured microsecond claim.
+- Theoretical work removed: legacy facade queue fanout from submarine publishes where typed lanes already exist.
+
+Validation:
+- Static scan found no `GlobalSignals.Publish`, `EventBus`, `delegate`, `InventoryEvents`, `IInventoryEventListener`, `InventoryEventPayload`, or `InventoryEventType` hits in submarine-domain files.
+- Static scan found no local persistent `NativeArray`, `NativeQueue`, `H8Memory.Allocate`, `Update()`, `FixedUpdate()`, `string.Format`, `SubmarineManager.Instance`, `Transform.Rotate`, or `Debug.Log` hits in submarine-domain files.
+- `git diff --check` passed for touched submarine source files with line-ending warnings only.
+- Full `dotnet build`/rebuild intentionally not rerun per user instruction. Prior external build wall remains `HectonSurvivalSystem.cs(553,13)` missing `EnsurePhysiologyScalarBuffer`.
+
+## 2026-05-17 - HYDRO_MECHANIC - Docking Vault Snapshot Pass / No Rebuild
+
+What was wrong:
+- `DockingAutopilotService.EnsureSplineBufferAvailable` still lazily pulled `GlobalRegistry.DataVault`.
+- That helper is reachable from active spline reserve/write/read/evaluate/release calls.
+
+What was done:
+- Added a cold `RefreshDataVaultReferenceCold` seed during `InitializeService`.
+- Removed the live DataVault service-locator fallback from `EnsureSplineBufferAvailable`.
+- Kept existing DataVault hot-swap rebinding as the runtime replacement path.
+
+Cinematic Cheats used:
+- No simulation expansion. Docking remains a cached cubic Bezier math fake with vault-owned active spline slots.
+
+Exact Microseconds saved:
+- No runtime profiler was run. No measured microsecond claim.
+- Theoretical work removed: one possible service-locator fallback from docking spline operations.
+
+Validation:
+- Static scan of `Assets/_Project/Scripts/Physics/Vehicles` and `Assets/_Project/Scripts/Vehicles/Physics` shows only cold service registration/unregistration/hot-swap registry use.
+- `git diff --check` passed for touched vehicle source files with line-ending warnings only.
+- Full `dotnet build`/rebuild intentionally not rerun per user instruction. Prior external build wall remains `HectonSurvivalSystem.cs(553,13)` missing `EnsurePhysiologyScalarBuffer`.

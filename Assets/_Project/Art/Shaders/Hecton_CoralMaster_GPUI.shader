@@ -141,6 +141,10 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
             float _GlobalBiolumPhase;
             float4 _BiolumMasterPhase; // x phase, y sine01, z flow frequency scale, w eclipse mask
             float4 _BiolumIntensity; // x master intensity, y predator dim, z daylight mask, w active ripple count
+            float4 _GlobalBiolumStates[16];
+            float4 _GlobalBiolumParams;
+            float4 _GlobalBiolumClock;
+            float4 _GlobalBiolumAupOffset;
             StructuredBuffer<float4> _BiolumTouchRipples; // xyz runtime position, w effective radius
             float4 _BiolumTouchRippleParams; // x active count, yzw reserved
             float _HectonCelestialBiolumMultiplier;
@@ -237,6 +241,40 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
             half CoralTrianglePulse01(float phase01)
             {
                 return (half)(1.0 - abs(frac(phase01) * 2.0 - 1.0));
+            }
+
+            half4 ResolveCoralGlobalBiolum(float3 positionWS)
+            {
+                int activeCount = min(max((int)_GlobalBiolumParams.x, 0), 16);
+                if (activeCount <= 0)
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+                float selector = frac(abs(positionWS.x * 0.021 + positionWS.z * 0.059 + _GlobalBiolumAupOffset.x * 0.0014 + _GlobalBiolumAupOffset.z * 0.0016));
+                int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
+                float4 state = _GlobalBiolumStates[stateIndex];
+                half strobe = saturate((half)_GlobalBiolumParams.z);
+                half highTier = step(4.0h, (half)_GlobalBiolumParams.y);
+                int secondaryIndex = stateIndex + 1;
+                if (secondaryIndex >= activeCount)
+                    secondaryIndex = 0;
+                float4 secondaryState = _GlobalBiolumStates[secondaryIndex];
+                half overdrive = 0.0h;
+                half godSpark = 0.0h;
+                half godHaze = 0.0h;
+                if (highTier > 0.5h)
+                {
+                    half overPulse = (half)(1.0 - abs(frac(_GlobalBiolumClock.x * 0.065 + selector * 3.7) * 2.0 - 1.0));
+                    half filament = (half)(1.0 - abs(frac(positionWS.x * 0.137 + positionWS.y * 0.113 + positionWS.z * 0.157 + _GlobalBiolumClock.x * 0.205) * 2.0 - 1.0));
+                    godHaze = smoothstep(0.43h, 0.91h, overPulse) * (0.54h + filament * 0.46h);
+                    godSpark = smoothstep(0.82h, 0.98h, filament) * overPulse;
+                    overdrive = saturate(overPulse * 0.33h + godSpark * 0.20h);
+                }
+                half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
+                half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
+                color = lerp(color, (half3)secondaryState.rgb, overdrive);
+                color = saturate(color + godHaze * half3(0.06h, 0.19h, 0.18h));
+                intensity = clamp(intensity + (half)secondaryState.w * overdrive + godSpark * 0.58h + godHaze * 0.30h, 0.0h, 10.0h);
+                return half4(color, intensity);
             }
 
             float ResolveCoralFlashlightReaction(float3 positionWS)
@@ -428,19 +466,23 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 [branch]
                 if (_BiolumStrength > 0.0001h)
                 {
+                    half4 globalBiolumState = ResolveCoralGlobalBiolum(samplePositionWS);
+                    half globalBiolumMask = step(0.001h, globalBiolumState.w);
                     half pulse = 1.0h + (((half)saturate(_BiolumMasterPhase.y) * 2.0h - 1.0h) * 0.28h);
                     half proceduralBiolumMask = (half)CoralTrianglePulse01(frac(samplePositionWS.x * 0.019 + samplePositionWS.z * 0.031 + input.uv.x * 0.47));
                     half biolumMask = saturate((cavity * 0.46h + thickness * 0.32h + proceduralBiolumMask * 0.22h) * _BiolumMaskStrength);
                     half celestialBiolum = max((half)_HectonCelestialBiolumMultiplier, 1.0h);
-                    half masterBiolum = max((half)_BiolumIntensity.x, 0.0h);
+                    half masterBiolum = max(max((half)_BiolumIntensity.x, 0.0h), globalBiolumState.w);
                     half touchFlash = ResolveBiolumTouchRipple(samplePositionWS);
                     half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * masterBiolum * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse;
                     authoredBiolumEnergy *= (1.0h + touchFlash * 2.0h);
+                    authoredBiolumEnergy = clamp(authoredBiolumEnergy, 0.0h, 10.0h);
                     [branch]
                     if (authoredBiolumEnergy > 0.0001h)
                     {
                         half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
                         zoneBiolumColor = lerp(zoneBiolumColor, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
+                        zoneBiolumColor = lerp(zoneBiolumColor, globalBiolumState.rgb, globalBiolumMask);
                         half3 authoredBiolum = zoneBiolumColor * authoredBiolumEnergy;
                         authoredBiolum *= HectonCoreLitResolveFlashlightPhotophobia(samplePositionWS);
                         biolum += authoredBiolum;

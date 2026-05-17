@@ -377,8 +377,12 @@ namespace Hecton8.Interaction
 
             if (_spatialHandle != 0)
             {
-                WorldSpatialHashGrid.Refresh(_spatialHandle);
-                _lastSpatialPosition = transform.position;
+                Vector3 currentPosition = transform.position;
+                if (IsFiniteVector(currentPosition))
+                {
+                    WorldSpatialHashGrid.Refresh(_spatialHandle);
+                    _lastSpatialPosition = currentPosition;
+                }
             }
 
             if (_faunaSpatialHandle != 0)
@@ -395,12 +399,16 @@ namespace Hecton8.Interaction
 
         private void RegisterSpatialHandle()
         {
+            Vector3 currentPosition = transform.position;
+            if (!IsFiniteVector(currentPosition))
+                return;
+
             if (_spatialHandle == 0)
                 _spatialHandle = WorldSpatialHashGrid.RegisterPickup(this);
 
             if (_faunaSpatialHandle == 0)
                 _faunaSpatialHandle = FaunaSpatialHashRegistry.RegisterPickup(this);
-            _lastSpatialPosition = transform.position;
+            _lastSpatialPosition = currentPosition;
         }
 
         private void UnregisterSpatialHandle()
@@ -423,8 +431,7 @@ namespace Hecton8.Interaction
             if (_registeredToSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryRegisterFixedTick()
@@ -435,8 +442,7 @@ namespace Hecton8.Interaction
             if (_rigidbody == null || _rigidbody.isKinematic)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredToFixedTick = GlobalRegistry.FixedTickables.Contains(this);
+            _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterSlowTick()
@@ -539,21 +545,31 @@ namespace Hecton8.Interaction
 
         private bool TryResolveSignalAup(Transform interactor, out AbsoluteUniversePosition positionAup)
         {
-            if (interactor != null && IsFiniteVector(interactor.position))
+            if (interactor != null)
             {
-                positionAup = AbsoluteUniversePosition.FromRuntimePosition(interactor.position);
-                return true;
+                Vector3 interactorPosition = interactor.position;
+                if (IsFiniteVector(interactorPosition) &&
+                    TryBuildFiniteSignalAup(interactorPosition, out positionAup))
+                {
+                    return true;
+                }
             }
 
             Vector3 signalPosition = transform.position;
-            if (IsFiniteVector(signalPosition))
+            if (IsFiniteVector(signalPosition) &&
+                TryBuildFiniteSignalAup(signalPosition, out positionAup))
             {
-                positionAup = AbsoluteUniversePosition.FromRuntimePosition(signalPosition);
                 return true;
             }
 
             positionAup = default;
             return false;
+        }
+
+        private static bool TryBuildFiniteSignalAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            return IsFiniteAup(in positionAup);
         }
 
         private static ushort NormalizeQualityMilli(ushort qualityMilli)
@@ -651,17 +667,25 @@ namespace Hecton8.Interaction
         {
             if (interactor != null)
             {
-                Vector3 scatterDirection = transform.position - interactor.position;
-                scatterDirection.y = 0f;
-                float scatterLength = EstimateLength3D(scatterDirection);
-                if (scatterLength > 0.0001f)
-                    return scatterDirection * (1f / scatterLength);
+                Vector3 currentPosition = transform.position;
+                Vector3 interactorPosition = interactor.position;
+                if (IsFiniteVector(currentPosition) && IsFiniteVector(interactorPosition))
+                {
+                    Vector3 scatterDirection = currentPosition - interactorPosition;
+                    scatterDirection.y = 0f;
+                    float scatterLength = EstimateLength3D(scatterDirection);
+                    if (scatterLength > 0.0001f)
+                        return scatterDirection * (1f / scatterLength);
+                }
 
                 Vector3 fallbackForward = -interactor.forward;
                 fallbackForward.y = 0f;
-                float fallbackLength = EstimateLength3D(fallbackForward);
-                if (fallbackLength > 0.0001f)
-                    return fallbackForward * (1f / fallbackLength);
+                if (IsFiniteVector(fallbackForward))
+                {
+                    float fallbackLength = EstimateLength3D(fallbackForward);
+                    if (fallbackLength > 0.0001f)
+                        return fallbackForward * (1f / fallbackLength);
+                }
             }
 
             return Vector3.forward;
@@ -672,6 +696,13 @@ namespace Hecton8.Interaction
             return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
                    !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
                    !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition value)
+        {
+            return !float.IsNaN(value.LocalX) && !float.IsInfinity(value.LocalX) &&
+                   !float.IsNaN(value.LocalY) && !float.IsInfinity(value.LocalY) &&
+                   !float.IsNaN(value.LocalZ) && !float.IsInfinity(value.LocalZ);
         }
 
         private void ConfigureWaterDynamicsFromData()
@@ -736,8 +767,18 @@ namespace Hecton8.Interaction
             if (_worldStateIdentityResolved)
                 return;
 
-            _worldStateAnchorPosition = transform.position;
+            Vector3 anchorPosition = transform.position;
             _worldStateIdentityResolved = true;
+            if (!IsFiniteVector(anchorPosition))
+            {
+                _worldStateAnchorPosition = default;
+                _worldStateIdentityAvailable = false;
+                _worldStatePersistenceKey = 0L;
+                _worldStateChunkKey = 0L;
+                return;
+            }
+
+            _worldStateAnchorPosition = anchorPosition;
             bool isPooledRuntimeInstance = TryGetComponent(out ObjectPoolManager.PoolItemMarker _);
             _worldStateIdentityAvailable = persistWorldState &&
                                            !isPooledRuntimeInstance &&
@@ -777,7 +818,11 @@ namespace Hecton8.Interaction
             if (_playerMovement == null)
                 return true;
 
-            float depth = Mathf.Max(0f, _playerMovement.CurrentWaterSurfaceY - transform.position.y);
+            Vector3 currentPosition = transform.position;
+            if (!IsFiniteVector(currentPosition))
+                return false;
+
+            float depth = Mathf.Max(0f, _playerMovement.CurrentWaterSurfaceY - currentPosition.y);
             return SurfaceStateUtility.ResolveUnderwaterFromDepth(depth, true);
         }
 

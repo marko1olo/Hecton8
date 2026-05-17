@@ -3,6 +3,7 @@ using System.IO;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Gameplay.Mining.Contracts;
 using Hecton8.World;
@@ -152,7 +153,7 @@ namespace Hecton8.Gameplay.Mining
         private NativeArray<ushort> _inventoryCapacities;
         private NativeArray<uint> _inventoryItemHashes;
         private NativeArray<uint> _inventoryOreHashes;
-        private NativeArray<DeployableSdfDrillExtractionResult> _extractionResult;
+        private VaultBufferHandle<DeployableSdfDrillExtractionResult> _extractionResultHandle;
         private NativeArray<DeployableSdfDrillTelemetryEntry> _blackBox;
         private NativeArray<RaycastCommand> _snapCommands;
         private NativeArray<RaycastHit> _snapHits;
@@ -570,16 +571,15 @@ namespace Hecton8.Gameplay.Mining
             _inventoryCapacities = new NativeArray<ushort>(InventorySlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ushort>[4] - drill inventory SOA capacities - owner: DeployableSdfDrillRuntime
             _inventoryItemHashes = new NativeArray<uint>(InventorySlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[4] - drill inventory SOA item hashes - owner: DeployableSdfDrillRuntime
             _inventoryOreHashes = new NativeArray<uint>(InventorySlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[4] - drill inventory SOA ore hashes - owner: DeployableSdfDrillRuntime
-            _extractionResult = new NativeArray<DeployableSdfDrillExtractionResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DeployableSdfDrillExtractionResult>[1] - Burst extraction result lane - owner: DeployableSdfDrillRuntime
             _blackBox = new NativeArray<DeployableSdfDrillTelemetryEntry>(BlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DeployableSdfDrillTelemetryEntry>[300] - fixed mining blackbox ring - owner: DeployableSdfDrillRuntime
             _snapCommands = new NativeArray<RaycastCommand>(SnapCommandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] - deploy snap job command - owner: DeployableSdfDrillRuntime
             _snapHits = new NativeArray<RaycastHit>(SnapCommandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1] - deploy snap job hit - owner: DeployableSdfDrillRuntime
+            _ = TryResolveExtractionResultBuffer(out _);
 
             RegisterNativeArray(_inventoryQuantities, nameof(_inventoryQuantities));
             RegisterNativeArray(_inventoryCapacities, nameof(_inventoryCapacities));
             RegisterNativeArray(_inventoryItemHashes, nameof(_inventoryItemHashes));
             RegisterNativeArray(_inventoryOreHashes, nameof(_inventoryOreHashes));
-            RegisterNativeArray(_extractionResult, nameof(_extractionResult));
             RegisterNativeArray(_blackBox, nameof(_blackBox));
             RegisterNativeArray(_snapCommands, nameof(_snapCommands));
             RegisterNativeArray(_snapHits, nameof(_snapHits));
@@ -856,6 +856,9 @@ namespace Hecton8.Gameplay.Mining
             if (elapsed < math.max(1f, extractionCycleSeconds))
                 return;
 
+            if (!TryResolveExtractionResultBuffer(out NativeArray<DeployableSdfDrillExtractionResult> extractionResult))
+                return;
+
             int biomeId = ResolveBiomeId();
             DeployableSdfDrillExtractionInput input = new DeployableSdfDrillExtractionInput
             {
@@ -884,7 +887,7 @@ namespace Hecton8.Gameplay.Mining
                 Capacities = _inventoryCapacities,
                 ItemHashes = _inventoryItemHashes,
                 OreHashes = _inventoryOreHashes,
-                Result = _extractionResult
+                Result = new NativeSlice<DeployableSdfDrillExtractionResult>(extractionResult)
             };
             _extractionHandle = job.Schedule();
             _extractionPending = true;
@@ -905,10 +908,10 @@ namespace Hecton8.Gameplay.Mining
 
         private void CommitExtractionResult(double now)
         {
-            if (!_extractionResult.IsCreated)
+            if (!TryResolveExtractionResultBuffer(out NativeArray<DeployableSdfDrillExtractionResult> extractionResult))
                 return;
 
-            DeployableSdfDrillExtractionResult result = _extractionResult[0];
+            DeployableSdfDrillExtractionResult result = extractionResult[0];
             _lcgState = result.NewSeed != 0u ? result.NewSeed : _lcgState;
             bool inventoryFull = (result.Flags & (ushort)DeployableSdfDrillFlags.InventoryFull) != 0;
             SetFlag(DeployableSdfDrillFlags.InventoryFull, inventoryFull);
@@ -943,6 +946,9 @@ namespace Hecton8.Gameplay.Mining
             if (elapsed < math.max(1f, extractionCycleSeconds))
                 return;
 
+            if (!TryResolveExtractionResultBuffer(out NativeArray<DeployableSdfDrillExtractionResult> extractionResult))
+                return;
+
             DeployableSdfDrillExtractionInput input = new DeployableSdfDrillExtractionInput
             {
                 GridX = _anchorAup.GridX,
@@ -970,7 +976,7 @@ namespace Hecton8.Gameplay.Mining
                 Capacities = _inventoryCapacities,
                 ItemHashes = _inventoryItemHashes,
                 OreHashes = _inventoryOreHashes,
-                Result = _extractionResult
+                Result = new NativeSlice<DeployableSdfDrillExtractionResult>(extractionResult)
             };
             // COLD SYNC JOB: Macro hydration is an unload/load boundary, not a frame tick; completes once to cap offline inventory.
             JobHandle handle = job.Schedule();
@@ -1117,7 +1123,7 @@ namespace Hecton8.Gameplay.Mining
                 SourceEntityId = _sourceId,
                 Intensity01 = 1f,
                 DebrisKind = 9,
-                Flags = DebrisSpawnSignal.FlagComputeShard | 1,
+                Flags = DebrisSpawnSignal.FlagComputeShard | DebrisSpawnSignal.FlagToolSparks,
                 Quantity = 7
             };
             GlobalSignals.Publish(in signal);
@@ -1449,10 +1455,33 @@ namespace Hecton8.Gameplay.Mining
             DisposeArray(ref _inventoryCapacities);
             DisposeArray(ref _inventoryItemHashes);
             DisposeArray(ref _inventoryOreHashes);
-            DisposeArray(ref _extractionResult);
+            _extractionResultHandle = default;
             DisposeArray(ref _blackBox);
             DisposeArray(ref _snapCommands);
             DisposeArray(ref _snapHits);
+        }
+
+        private bool TryResolveExtractionResultBuffer(out NativeArray<DeployableSdfDrillExtractionResult> extractionResult)
+        {
+            extractionResult = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            if (!_extractionResultHandle.IsCreated)
+            {
+                _extractionResultHandle = vault.GetBufferHandle<DeployableSdfDrillExtractionResult>(
+                    BufferID.DeployableSdfDrillExtractionResult,
+                    1,
+                    SystemID.GameplayTools,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_extractionResultHandle.IsCreated)
+                return false;
+
+            extractionResult = _extractionResultHandle.Resolve(vault);
+            return extractionResult.IsCreated && extractionResult.Length >= 1;
         }
 
         private static void DisposeArray<T>(ref NativeArray<T> array) where T : struct

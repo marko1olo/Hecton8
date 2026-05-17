@@ -78,6 +78,71 @@ Residual risk:
 Current Status:
 - VERIFIED MASTER GRADE - BUILD GREEN.
 
+## 2026-05-17 - GitGate LightShaft Vault Repair
+
+What was wrong:
+- The current GitHub handoff pass found a new red `Hecton8.Core.csproj` build after the earlier green proof.
+- `ScreenSpaceLightShaftRuntime` had DataVault handles and locked frame slices, but helper methods still called old signatures and old removed `_topContributions`, `_historyContributions`, and `_telemetry` fields.
+- `HectonOSBootManager` had bare `Object.Destroy` calls after adding `using System`, producing `UnityEngine.Object` vs `object` ambiguity.
+
+What was done:
+- Threaded locked DataVault slices through LightShaft contribution selection, history validation, shader push, visual flare signal emission, telemetry recording, and blackbox dump.
+- Qualified UI teardown calls with `UnityEngine.Object`.
+- Wrote `Dump_COMPILE_ERROR.txt` from the red build and reran Core build plus Git gate scans.
+
+Cinematic Cheats used:
+- No new gameplay or visual feature was added by the Integrator.
+- Existing fake screen-space shaft path remains intact: Low tier keeps bounded 8-tap-style budget, High/Ultra retain richer flare/shaft presentation.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Failed compile probe: 42,332,763 us.
+- Final compile proof: 34,594,705.5 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260517_051854_inquisition63_lightshaft_vault_current.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260517_052040_inquisition64_git_gate_current.txt`: `GIT_DIFF_CHECK_EXIT=0`, `CONFLICT_START_END_MARKER_HITS=0`, `LIGHTSHAFT_STALE_LOCAL_FIELD_HITS=0`, `HECTON_OS_AMBIGUOUS_OBJECT_DESTROY_HITS=0`.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+- Project-wide `GlobalSignals.InitializeAllQueues()` hits remain 15; lockstep and compass remain 0, and broader lane-registry cleanup is outside this Git handoff repair.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-17 - Inquisition67-70 Current Compile Wall Rebreak
+
+What was wrong:
+- Current disk reintroduced broad signal startup in lockstep/compass and the Core build moved through several source walls after parallel edits.
+- `inquisition67` failed on missing Sargassum origin-shift helpers and missing `DebrisSpawnSignal`/`SignalBus` namespace in `DestructibleOrganicManager`.
+- `inquisition68` failed on missing Biolum vault job helpers and telemetry ring access.
+
+What was done:
+- Restored typed-lane-only signal initialization; `GlobalSignals.InitializeAllQueues()` hits are 0 in lockstep and compass.
+- Added Sargassum offset helper methods used by origin-shift repair.
+- Added the typed signal namespace to `DestructibleOrganicManager`.
+- Restored Biolum vault-backed job scratch and telemetry ring resolution through existing `BufferID.BiolumLegacy*` handles with `SystemID.Vfx`.
+
+Cinematic Cheats used:
+- No new gameplay feature was added. The patch keeps compile/runtime plumbing bounded so VFX systems can stay heavy on High/Ultra without widening Core assembly dependencies.
+- Low-tier/Quest paths keep typed lanes, guarded MMF usage, and vault-owned scratch instead of per-system private NativeArray ownership.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Failed probe `inquisition67`: 49,948,793 us.
+- Failed probe `inquisition68`: 63,415,047.6 us.
+- Final compile proof `inquisition69`: 77,870,743.7 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260517_050000_inquisition69_core_current_final.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`, `MEASURED_TOOL_US=77870743.7`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260517_inquisition70_static_final.txt`: first-party asmdefs strict, cycles 0, missing named Hecton8 refs 0, Core GPR refs 0, Core layout Pack=1 debt 0, GlobalSignals explicit Pack=1 debt 0, duplicate signal names 0, lockstep/compass global init 0, Core `Find`/`string.Format` 0, runtime unguarded MMF files 0, DirectX-only shader hits 0, max compute group 512, touched/project diff-check exit 0.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, Quest/Android player build, Metal player build, Steam Deck hardware run, and IL2CPP strip build were not run in this shell.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
 ## 2026-05-16 - Inquisition42-44 Current-Disk Repass
 
 What was wrong:
@@ -654,3 +719,97 @@ Residual risk:
 
 Current Status:
 - VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-17 - GitHub Fast-Forward Signal-Lane Repair
+
+What was wrong:
+- `origin/main` was three commits ahead of local `main`; pushing before integrating GitHub state would have been invalid.
+- `git pull --ff-only origin main` applied cleanly, but the post-pull static gate found `GlobalSignals.InitializeAllQueues()` had reappeared in lockstep and compass setup.
+
+What was done:
+- Fast-forwarded local `main` to `c3e0bc29a`.
+- Replaced broad queue init with explicit `SignalBus<T>.Configure(...)` for lockstep snapshot/system glitch and compass anomaly/calibration lanes.
+- Rebuilt Core after the repair: `Build_INTEGRATION_ASSEMBLY_SURGEON_20260517_055500_post_pull_signal_lane_repair.log` reports `Build succeeded. 0 Warning(s). 0 Error(s). EXIT=0`.
+- Static gate: `Scan_INTEGRATION_ASSEMBLY_SURGEON_20260517_055700_post_pull_signal_lane_git_gate.txt` reports `HEAD_TO_ORIGIN=0 0`, `GIT_DIFF_CHECK_EXIT=0`, conflict start/end markers 0, lockstep/compass global init hits 0.
+
+Cinematic Cheats used:
+- No visual cheat added in this pass; this was GitHub integration and compile-lane hardening.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured.
+- Pull tooling: approximately 3,900,000 us.
+- Final compile proof cost: 39,407,886.7 us.
+
+## 2026-05-17 - Duplicate Signal Repair Before Commit
+
+What was wrong:
+- The final staged-tree build failed after staging because duplicate signal DTO declarations existed outside `GlobalSignals.cs`.
+- `HectonDirectorAI` and `AcousticZoneController` used `[StructLayout]` without `System.Runtime.InteropServices`.
+
+What was done:
+- Removed duplicate local signal contract blocks for physics input, tether, docking, and voxel carve events.
+- Kept `GlobalSignals.cs` as the single signal DTO authority.
+- Added the missing interop usings.
+- Rebuilt Core and ran the duplicate-signal/static Git gate.
+
+Cinematic Cheats used:
+- No gameplay/visual cheat was added in this pass; this was compile authority cleanup.
+- Low tier benefits from a single packed signal ABI path.
+- High/Ultra consumers keep typed-lane contracts without extra assembly coupling.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured.
+- Failed final staged probe: 7,039,640.8 us.
+- Final repair build proof: 27,073,659.7 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260517_061800_duplicate_signal_repair.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260517_061900_duplicate_signal_repair_gate.txt`: `HEAD_TO_ORIGIN=0 0`, `GIT_DIFF_CHECK_EXIT=0`, conflict start/end markers 0, duplicate signal declarations outside `GlobalSignals.cs` 0.
+
+## 2026-05-17 - Post-Commit Survival Churn Gate
+
+What was wrong:
+- After the integration commit, new unstaged source edits appeared in `H8Memory.cs` and `HectonSurvivalSystem.cs`.
+- These edits moved survival database buffers into DataVault handles, so pushing the earlier commit would have left verified source work behind.
+
+What was done:
+- Rebuilt current disk after the new source churn.
+- Ran a focused static Git gate for diff hygiene, conflict markers, and survival vault IDs.
+- Prepared the amended integration commit path instead of pushing a stale tree.
+
+Cinematic Cheats used:
+- No visual feature was added in this pass.
+- Low tier benefits from vault-owned survival database buffers instead of local persistent NativeArrays.
+- High/Ultra keep richer survival database data behind the same lookup surface.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured.
+- Final post-commit churn build proof: 24,595,005.4 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260517_062600_post_commit_survival_churn.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260517_062800_post_commit_survival_churn_gate.txt`: `HEAD_TO_ORIGIN=1 0`, `GIT_DIFF_CHECK_EXIT=0`, conflict start/end markers 0, survival database vault id hits 10.
+
+## 2026-05-17 - Post-Fetch Survival Helper Cleanup
+
+What was wrong:
+- The final fetch/check left one dirty source file: `HectonSurvivalSystem.cs`.
+- The remaining delta removed stale NativeArray tracking helpers after the survival database DataVault migration.
+
+What was done:
+- Rebuilt current disk.
+- Ran focused static gate for diff hygiene, conflict markers, and absence of the stale survival helpers.
+- Prepared the amended integration commit for push.
+
+Cinematic Cheats used:
+- No visual feature was added in this pass.
+- Low tier benefits from DataVault-owned survival database buffers without dead local tracking paths.
+- High/Ultra keep survival parameter richness without extra local allocator ownership.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured.
+- Final helper-cleanup build proof: 25,936,890.4 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260517_063300_post_fetch_survival_helper_cleanup.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/Scan_INTEGRATION_ASSEMBLY_SURGEON_20260517_063500_post_fetch_survival_helper_gate.txt`: `HEAD_TO_ORIGIN=1 0`, `GIT_DIFF_CHECK_EXIT=0`, conflict start/end markers 0, survival tracked native helper hits 0.

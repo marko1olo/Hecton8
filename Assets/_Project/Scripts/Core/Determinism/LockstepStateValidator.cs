@@ -282,6 +282,7 @@ namespace Hecton8.Core.Determinism
             if (_binaryLayoutInvalid != 0)
                 GlobalTelemetryBus.PublishModTelemetry(ReasonDesyncHash, 0x4C41594Fu, 0u);
             EnsureNativeState();
+            RestoreTelemetryCursorFromVault();
             ScalabilityEvents.Register(this);
             if (GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Core))
                 _registeredPostFixed = 1;
@@ -330,9 +331,20 @@ namespace Hecton8.Core.Determinism
             InputStateSignal inputSignal = default;
             bool hasInputSignal = false;
             if (ghostReplayActive)
-                ApplyGhostReplayInput(frame);
+            {
+                bool replayInputFaulted = ApplyGhostReplayInput(frame);
+                if (replayInputFaulted)
+                {
+                    flags |= TelemetryFlagDesync;
+                    WriteTelemetry(frame, flags);
+                    DumpBlackBox();
+                    return;
+                }
+            }
             else
+            {
                 hasInputSignal = CaptureInputFrame(frame, out inputSignal);
+            }
 
             int hashCadenceFrames = ResolveHashCadenceFrames();
             if ((frame % (uint)hashCadenceFrames) != 0u)
@@ -345,7 +357,16 @@ namespace Hecton8.Core.Determinism
             MirrorPlayerStateToVault(frame, hasInputSignal, in inputSignal);
             bool roomWaterHadNonFinite = MirrorRoomWaterLevelsToVault();
             ExecuteHashJobs(frame, hashCadenceFrames, roomWaterHadNonFinite, ref flags);
-            ValidateReplayHash(frame, ref flags);
+            bool replayFaulted = ValidateReplayHash(frame, ref flags);
+            if (replayFaulted)
+            {
+                WriteTelemetry(frame, flags);
+                DumpBlackBox();
+                if ((flags & TelemetryFlagNonFinite) != 0u)
+                    ThrowFatalDesync(frame, flags);
+                return;
+            }
+
             StageReplayWrite(frame, hashCadenceFrames, ref flags);
             WriteTelemetry(frame, flags);
 
@@ -481,30 +502,30 @@ namespace Hecton8.Core.Determinism
             return hasInputSignal;
         }
 
-        private void ApplyGhostReplayInput(uint frame)
+        private bool ApplyGhostReplayInput(uint frame)
         {
             if (Volatile.Read(ref _ghostReplayActive) == 0)
-                return;
+                return false;
 
             int ghostInputCursor = _ghostInputCursor;
             if (ghostInputCursor < 0 || ghostInputCursor >= _ghostInputCount)
             {
-                EndGhostReplay();
-                return;
+                ReportGhostInputFrameMismatch(frame);
+                return true;
             }
 
             if (!TryGetVaultBuffer(BufferID.LockstepGhostReplayInputs, ghostInputCursor + 1, out NativeArray<LockstepReplayInputFrame> ghostInputs) ||
                 ghostInputCursor >= ghostInputs.Length)
             {
-                EndGhostReplay();
-                return;
+                ReportGhostInputFrameMismatch(frame);
+                return true;
             }
 
             LockstepReplayInputFrame ghost = ghostInputs[ghostInputCursor];
             if (ghost.Frame != frame)
             {
                 ReportGhostInputFrameMismatch(frame);
-                return;
+                return true;
             }
 
             _ghostInputCursor = ghostInputCursor + 1;
@@ -519,6 +540,7 @@ namespace Hecton8.Core.Determinism
             state.CurrentInputSchemeHash = ghost.CurrentInputSchemeHash;
             _lastAppliedInputActions = ghost.ActionsBitmask;
             PhysicsDeterminismSignals.PublishInputOverride(in state, (uint)Time.frameCount);
+            return false;
         }
 
         private void MirrorPlayerStateToVault(uint frame, bool hasInputSignal, in InputStateSignal inputSignal)
@@ -677,10 +699,10 @@ namespace Hecton8.Core.Determinism
 
             if (vault != null)
             {
-                vault.TryGetBuffer(BufferID.RigidbodyAUPs, out rigidbodyAups);
-                vault.TryGetBuffer(BufferID.PlayerKinematicState, out playerStates);
-                vault.TryGetBuffer(BufferID.RoomWaterLevels, out roomWaterLevels);
-                vault.TryGetBuffer(BufferID.EntityAUPs, out entityAups);
+                TryGetHashSourceBuffer(BufferID.RigidbodyAUPs, out rigidbodyAups);
+                TryGetHashSourceBuffer(BufferID.PlayerKinematicState, out playerStates);
+                TryGetHashSourceBuffer(BufferID.RoomWaterLevels, out roomWaterLevels);
+                TryGetHashSourceBuffer(BufferID.EntityAUPs, out entityAups);
             }
 
             int rigidbodyCount = ResolveHashCount(rigidbodyAups, ref telemetryFlags, out bool rigidbodyTruncated);
@@ -991,38 +1013,39 @@ namespace Hecton8.Core.Determinism
             cursor[0] = (index + 1) % MasterHashHistoryCapacity;
         }
 
-        private void ValidateReplayHash(uint frame, ref uint telemetryFlags)
+        private bool ValidateReplayHash(uint frame, ref uint telemetryFlags)
         {
             if (Volatile.Read(ref _ghostReplayActive) == 0 ||
                 !TryGetVaultBuffer(BufferID.LockstepGhostReplayHeaders, out NativeArray<LockstepReplayBlockHeader> ghostHeaders) ||
                 !TryGetVaultBuffer(BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong> masterHash))
-                return;
+                return false;
 
             int blockIndex = _ghostExpectedBlockIndex;
             if (blockIndex < 0 || blockIndex >= ghostHeaders.Length)
-                return;
+                return false;
 
             LockstepReplayBlockHeader expected = ghostHeaders[blockIndex];
             if (expected.Magic != ReplayMagic)
-                return;
+                return false;
 
             if (expected.HashFrame != frame)
             {
                 telemetryFlags |= TelemetryFlagDesync;
                 ReportDesync(frame, in expected, 2u);
                 _ghostExpectedBlockIndex = blockIndex + 1;
-                return;
+                return true;
             }
 
             if (expected.MasterHash == masterHash[0])
             {
                 _ghostExpectedBlockIndex = blockIndex + 1;
-                return;
+                return false;
             }
 
             telemetryFlags |= TelemetryFlagDesync;
             ReportDesync(frame, in expected, 1u);
             _ghostExpectedBlockIndex = blockIndex + 1;
+            return true;
         }
 
         private void ReportDesync(uint frame, in LockstepReplayBlockHeader expected, uint flags)
@@ -1038,7 +1061,6 @@ namespace Hecton8.Core.Determinism
             PublishSystemGlitchSignal(frame, in expected, (byte)flags);
             _dispatcher?.RequestSimulationPause(true, ReasonDesyncHash);
             StopGhostReplayAfterFault();
-            DumpBlackBox();
         }
 
         private void PublishSystemGlitchSignal(uint frame, in LockstepReplayBlockHeader expected, byte reason)
@@ -1239,6 +1261,44 @@ namespace Hecton8.Core.Determinism
         {
             int index = (int)category;
             return HasRequiredLength(arrayHashes, index + 1) ? arrayHashes[index] : default;
+        }
+
+        private void RestoreTelemetryCursorFromVault()
+        {
+            _telemetryWriteIndex = 0;
+            if (!TryGetVaultBuffer(BufferID.LockstepTelemetryRing, out NativeArray<LockstepTelemetryEntry> telemetryRing))
+                return;
+
+            int count = math.min(TelemetryFrameCapacity, telemetryRing.Length);
+            if (count <= 0)
+                return;
+
+            uint newestFrame = 0u;
+            int newestIndex = -1;
+            for (int i = 0; i < count; i++)
+            {
+                uint frame = telemetryRing[i].Frame;
+                if (frame == 0u)
+                    continue;
+
+                if (newestIndex < 0 || IsFrameNewer(frame, newestFrame))
+                {
+                    newestFrame = frame;
+                    newestIndex = i;
+                }
+            }
+
+            if (newestIndex < 0)
+                return;
+
+            _postSimulationFrame = newestFrame;
+            _telemetryWriteIndex = (newestIndex + 1) % count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFrameNewer(uint candidate, uint current)
+        {
+            return candidate != current && unchecked(candidate - current) < 0x80000000u;
         }
 
         private void DumpBlackBox()
@@ -1493,6 +1553,37 @@ namespace Hecton8.Core.Determinism
             return false;
         }
 
+        private bool TryGetHashSourceBuffer<T>(BufferID bufferId, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = ResolveDataVault();
+            if (vault == null ||
+                !vault.TryGetBufferHandle(bufferId, out VaultBufferHandle<T> handle) ||
+                !handle.IsCreated ||
+                !IsAlignedForNativeView<T>(handle.ptr))
+            {
+                return false;
+            }
+
+            buffer = H8Memory.CreateNativeArrayView<T>(handle.ptr, handle.Length);
+            return buffer.IsCreated;
+        }
+
+        private static bool IsAlignedForNativeView<T>(void* pointer)
+            where T : struct
+        {
+            if (pointer == null)
+                return false;
+
+            int alignment = UnsafeUtility.AlignOf<T>();
+            if (alignment <= 1)
+                return true;
+
+            ulong address = unchecked((ulong)new IntPtr(pointer).ToInt64());
+            return (address & (ulong)(alignment - 1)) == 0UL;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool HasRequiredLength<T>(NativeArray<T> buffer, int requiredLength)
             where T : struct
@@ -1632,15 +1723,24 @@ namespace Hecton8.Core.Determinism
 
         private void StopReplayWriter()
         {
+            Thread writerThread = _writerThread;
             Volatile.Write(ref _writerShouldStop, 1);
             _writerSignal?.Set();
-            if (_writerThread != null && _writerThread.IsAlive)
-                _writerThread.Join(250);
-            _writerThread = null;
-            _writerSignal?.Dispose();
-            _writerSignal = null;
-            _replayStream?.Dispose();
-            _replayStream = null;
+            if (writerThread != null && writerThread.IsAlive && !writerThread.Join(250))
+            {
+                Volatile.Write(ref _writerFaulted, 1);
+                return;
+            }
+
+            lock (_writerGate)
+            {
+                _writerThread = null;
+                _writerSignal?.Dispose();
+                _writerSignal = null;
+                _replayStream?.Dispose();
+                _replayStream = null;
+            }
+
             Volatile.Write(ref _writerShouldStop, 0);
             Volatile.Write(ref _writeInProgress, 0);
             Volatile.Write(ref _pendingWriteBytes, 0);

@@ -876,7 +876,7 @@ namespace Hecton8.UI
 
             RenderSelectedRecipeHologram(recipe, deltaTime);
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 _runtimeHologramMesh,
                 0,
                 _runtimeHologramMaterial,
@@ -915,7 +915,7 @@ namespace Hecton8.UI
             WriteMatrix(_selectedRecipeHologramBuffer, 0, in previewMatrix);
             UpdateHologramMaterialState(recipe);
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 _runtimeHologramMesh,
                 0,
                 _runtimeHologramMaterial,

@@ -687,8 +687,106 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(HectonPlayerMovement))]
     [RequireComponent(typeof(HectonPlayerMotor))]
     [AddComponentMenu("Hecton8/Gameplay/Player/Player Kinematics Runtime")]
-    public sealed class PlayerKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, IFastTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class PlayerKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, IFastTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
+        private struct VaultBufferBinding<T>
+            where T : struct
+        {
+            public VaultBufferHandle<T> Handle;
+            public BufferID BufferId;
+            public int RequiredLength;
+            public SystemID OwnerSystemId;
+            private IDataVault _vault;
+
+            public VaultBufferBinding(BufferID bufferId, int requiredLength, SystemID ownerSystemId)
+            {
+                Handle = default;
+                BufferId = bufferId;
+                RequiredLength = requiredLength;
+                OwnerSystemId = ownerSystemId;
+                _vault = null;
+            }
+
+            public bool IsCreated
+            {
+                get
+                {
+                    NativeArray<T> buffer = ResolveExisting();
+                    return buffer.IsCreated;
+                }
+            }
+
+            public int Length
+            {
+                get
+                {
+                    NativeArray<T> buffer = ResolveExisting();
+                    return buffer.IsCreated ? buffer.Length : 0;
+                }
+            }
+
+            public bool Ensure(IDataVault dataVault, NativeArrayOptions options = NativeArrayOptions.ClearMemory)
+            {
+                if (dataVault == null || RequiredLength <= 0)
+                {
+                    Handle = default;
+                    _vault = null;
+                    return false;
+                }
+
+                _vault = dataVault;
+                if (!Handle.IsCreated || Handle.Length < RequiredLength)
+                    Handle = dataVault.GetBufferHandle<T>(BufferId, RequiredLength, OwnerSystemId, options);
+
+                NativeArray<T> buffer = ResolveExisting(dataVault);
+                return buffer.IsCreated && buffer.Length >= RequiredLength;
+            }
+
+            public void ReleaseView()
+            {
+                Handle = default;
+                _vault = null;
+            }
+
+            public NativeArray<T> GetSubArray(int start, int length)
+            {
+                NativeArray<T> buffer = ResolveExisting();
+                return buffer.IsCreated ? buffer.GetSubArray(start, length) : default;
+            }
+
+            public T this[int index]
+            {
+                get
+                {
+                    NativeArray<T> buffer = ResolveExisting();
+                    return buffer[index];
+                }
+                set
+                {
+                    NativeArray<T> buffer = ResolveExisting();
+                    buffer[index] = value;
+                }
+            }
+
+            public static implicit operator NativeArray<T>(VaultBufferBinding<T> binding)
+            {
+                return binding.ResolveExisting();
+            }
+
+            NativeArray<T> ResolveExisting()
+            {
+                return ResolveExisting(_vault);
+            }
+
+            NativeArray<T> ResolveExisting(IDataVault dataVault)
+            {
+                if (dataVault == null || !Handle.IsCreated)
+                    return default;
+
+                return Handle.Resolve(dataVault);
+            }
+        }
+
         internal const int FaultNaN = 1 << 0;
         internal const int FaultSolidTeleport = 1 << 1;
         internal const int FaultSyncFence = 1 << 2;
@@ -706,6 +804,7 @@ namespace Hecton8.Gameplay
         private const uint SyncStateFlagCorrection = 1u << 24;
         private const uint SyncStateFlagApplyRotation = 1u << 25;
         private const int EntityCount = 1;
+        private const SystemID OwnerSystemId = SystemID.GameplayPlayer;
         private const int HandTargetCount = 2;
         private const int EnvironmentProbeCount = 4;
         private const int TelemetryFrameCount = 300;
@@ -774,21 +873,6 @@ namespace Hecton8.Gameplay
         private const uint SdfSqueezeDumpMagic = 0x5344464Bu;
         private const string AupWatchdogDumpFileName = "Dump_AUP_DETERMINISM_WATCHDOG.bin";
         private const string SdfSqueezeDumpFileName = "Dump_KCC_SDF_SQUEEZE_RESOLVER.bin";
-        private const int VaultPositionsFlag = 1 << 0;
-        private const int VaultVelocitiesFlag = 1 << 1;
-        private const int VaultIntendedMovementFlag = 1 << 2;
-        private const int VaultFlowVelocityFlag = 1 << 3;
-        private const int VaultLastValidPositionsFlag = 1 << 4;
-        private const int VaultStateReadFlag = 1 << 5;
-        private const int VaultStateWriteFlag = 1 << 6;
-        private const int VaultHandTargetsFlag = 1 << 7;
-        private const int VaultSmoothedHandTargetsFlag = 1 << 8;
-        private const int VaultTelemetryFlag = 1 << 9;
-        private const int VaultTelemetryWriteIndexFlag = 1 << 10;
-        private const int VaultFaultFlagsFlag = 1 << 11;
-        private const int VaultHandProbeCommandsFlag = 1 << 12;
-        private const int VaultHandProbeHitsFlag = 1 << 13;
-        private const int VaultSdfSqueezeResultsFlag = 1 << 14;
         private static readonly int _PlayerSwimVatSpeedId = Shader.PropertyToID("_HectonSwimVatSpeedScalar");
         private static readonly int _PlayerKinematicRollId = Shader.PropertyToID("_H8PlayerKinematicRoll");
 
@@ -797,21 +881,21 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(0.0f)] private float waterDensity = ReferenceWaterDensity;
         [SerializeField, Min(0.0f)] private float noClipSolidDensityThreshold = SolidDensityThreshold;
 
-        private NativeArray<float3> _positions;
-        private NativeArray<float3> _velocities;
-        private NativeArray<float3> _intendedMovement;
-        private NativeArray<float3> _flowVelocity;
-        private NativeArray<float3> _lastValidPositions;
-        private NativeArray<PlayerKinematicsSyncState> _stateRead;
-        private NativeArray<PlayerKinematicsSyncState> _stateWrite;
-        private NativeArray<PlayerKinematicsHandTarget> _handTargets;
-        private NativeArray<PlayerKinematicsHandTarget> _smoothedHandTargets;
-        private NativeArray<PlayerKinematicsRuntimeTelemetryEntry> _telemetry;
-        private NativeArray<int> _telemetryWriteIndex;
-        private NativeArray<int> _faultFlags;
-        private NativeArray<RaycastCommand> _handProbeCommands;
-        private NativeArray<RaycastHit> _handProbeHits;
-        private NativeArray<SdfSqueezeResult> _sdfSqueezeResults;
+        private VaultBufferBinding<float3> _positions = new VaultBufferBinding<float3>(BufferID.PlayerKinematicPositions, EntityCount, OwnerSystemId);
+        private VaultBufferBinding<float3> _velocities = new VaultBufferBinding<float3>(BufferID.PlayerKinematicVelocities, EntityCount, OwnerSystemId);
+        private VaultBufferBinding<float3> _intendedMovement = new VaultBufferBinding<float3>(BufferID.PlayerKinematicIntendedMovements, EntityCount, OwnerSystemId);
+        private VaultBufferBinding<float3> _flowVelocity = new VaultBufferBinding<float3>(BufferID.PlayerKinematicFlowVelocity, EntityCount, OwnerSystemId);
+        private VaultBufferBinding<float3> _lastValidPositions = new VaultBufferBinding<float3>(BufferID.PlayerKinematicLastValidPositions, EntityCount, OwnerSystemId);
+        private VaultBufferBinding<PlayerKinematicsSyncState> _stateRead = new VaultBufferBinding<PlayerKinematicsSyncState>(BufferID.PlayerKinematicSyncReadState, EntityCount, OwnerSystemId);
+        private VaultBufferBinding<PlayerKinematicsSyncState> _stateWrite = new VaultBufferBinding<PlayerKinematicsSyncState>(BufferID.PlayerKinematicSyncWriteState, EntityCount, OwnerSystemId);
+        private VaultBufferBinding<PlayerKinematicsHandTarget> _handTargets = new VaultBufferBinding<PlayerKinematicsHandTarget>(BufferID.PlayerKinematicHandTargets, HandTargetCount, OwnerSystemId);
+        private VaultBufferBinding<PlayerKinematicsHandTarget> _smoothedHandTargets = new VaultBufferBinding<PlayerKinematicsHandTarget>(BufferID.PlayerKinematicSmoothedHandTargets, HandTargetCount, OwnerSystemId);
+        private VaultBufferBinding<PlayerKinematicsRuntimeTelemetryEntry> _telemetry = new VaultBufferBinding<PlayerKinematicsRuntimeTelemetryEntry>(BufferID.PlayerKinematicRuntimeTelemetryRing, TelemetryFrameCount, OwnerSystemId);
+        private VaultBufferBinding<int> _telemetryWriteIndex = new VaultBufferBinding<int>(BufferID.PlayerKinematicRuntimeTelemetryCursor, 1, OwnerSystemId);
+        private VaultBufferBinding<int> _faultFlags = new VaultBufferBinding<int>(BufferID.PlayerKinematicFaultFlags, 1, OwnerSystemId);
+        private VaultBufferBinding<RaycastCommand> _handProbeCommands = new VaultBufferBinding<RaycastCommand>(BufferID.PlayerKinematicHandProbeCommands, EnvironmentProbeCount, OwnerSystemId);
+        private VaultBufferBinding<RaycastHit> _handProbeHits = new VaultBufferBinding<RaycastHit>(BufferID.PlayerKinematicHandProbeHits, EnvironmentProbeCount, OwnerSystemId);
+        private VaultBufferBinding<SdfSqueezeResult> _sdfSqueezeResults = new VaultBufferBinding<SdfSqueezeResult>(BufferID.PlayerKinematicSdfSqueezeResults, EntityCount, OwnerSystemId);
         private JobHandle _handProbeHandle;
         private JobHandle _handPlacementHandle;
         private bool _handProbePending;
@@ -822,6 +906,7 @@ namespace Hecton8.Gameplay
         private bool _registeredLate;
         private bool _registeredOriginShift;
         private bool _registeredHotSwap;
+        private bool _registeredScalability;
         private bool _dumpWrittenForFault;
         private bool _desyncDumpWritten;
         private bool _stateWriteReady;
@@ -831,6 +916,8 @@ namespace Hecton8.Gameplay
         private PlayerInventory _inventory;
         private HectonSurvivalSystem _survival;
         private ContextualPhysicalIkRig _ikRig;
+        private IDataVault _dataVault;
+        private IGasDynamicsSolver _gasDynamics;
         private HectonFluidEngine _fluid;
         private HectonVoxelEngine _voxelEngine;
         private Transform _cachedTransform;
@@ -841,9 +928,9 @@ namespace Hecton8.Gameplay
         private float _lastVatSpeedScalar = -1.0f;
         private float _lastPushedRollDegrees = 99999.0f;
         private int _nextColdRebindFrame;
-        private int _cachedScalabilityTierFrame = int.MinValue;
         private int _cadenceSalt;
-        private int _lastPlayerStateSequence;
+        private uint _lastConsumedSqueezeSignalFrame;
+        private uint _lastConsumedSqueezeSignalSourceHash;
         private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
         private uint _sourceId;
         private PlayerKinematicsAccumulatorState _accumulatorState;
@@ -873,8 +960,9 @@ namespace Hecton8.Gameplay
         private float3 _lastSdfSqueezeNormal;
         private SdfSqueezeResult _lastSdfSqueezeResult;
         private int _sdfSqueezeSlowHoldFrames;
-        private int _vaultNativeStateMask;
-        private int _lastPlayerStressSequence;
+        private uint _lastConsumedPlayerStressFrame;
+        private uint _lastConsumedSystemStressFrame;
+        private float _cachedSystemStress01;
         private bool _hasImpactBracePoint;
         private bool _lastProbeLowTier;
         private bool _wasBraceActive;
@@ -889,8 +977,8 @@ namespace Hecton8.Gameplay
             _cadenceSalt = unchecked((int)_sourceId);
             TryGetComponent(out _inventory);
             TryGetComponent(out _survival);
-            AllocateNativeState();
             RebindServices(allowHierarchyLookup: true);
+            AllocateNativeState();
         }
 
         private void OnEnable()
@@ -1218,6 +1306,7 @@ namespace Hecton8.Gameplay
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                _dataVault = currentService as IDataVault;
                 PumpHandEnvironmentJobs(forceComplete: true, allowFinalizeOutsideSwap: false);
                 DisposeNativeState();
                 if (currentService != null)
@@ -1230,10 +1319,21 @@ namespace Hecton8.Gameplay
             if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime ||
                 serviceSlot == GlobalRegistryServiceSlot.VoxelEngineRuntime ||
                 serviceSlot == GlobalRegistryServiceSlot.Player ||
-                serviceSlot == GlobalRegistryServiceSlot.PlayerMotor)
+                serviceSlot == GlobalRegistryServiceSlot.PlayerMotor ||
+                serviceSlot == GlobalRegistryServiceSlot.GasDynamicsRuntime)
             {
                 RebindServices(allowHierarchyLookup: false);
             }
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _cachedScalabilityTier = payload.CurrentQualityTier;
+        }
+
+        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            OnScalabilityChanged(in payload);
         }
 
         internal static void EnsureOnPlayerRoot(GameObject playerRoot)
@@ -1250,97 +1350,24 @@ namespace Hecton8.Gameplay
             if (_positions.IsCreated)
                 return;
 
-            IDataVault dataVault = GlobalRegistry.DataVault;
-            _positions = AllocateRuntimeArray<float3>(
-                BufferID.PlayerKinematicPositions,
-                EntityCount,
-                nameof(_positions),
-                VaultPositionsFlag,
-                dataVault);
-            _velocities = AllocateRuntimeArray<float3>(
-                BufferID.PlayerKinematicVelocities,
-                EntityCount,
-                nameof(_velocities),
-                VaultVelocitiesFlag,
-                dataVault);
-            _intendedMovement = AllocateRuntimeArray<float3>(
-                BufferID.PlayerKinematicIntendedMovements,
-                EntityCount,
-                nameof(_intendedMovement),
-                VaultIntendedMovementFlag,
-                dataVault);
-            _flowVelocity = AllocateRuntimeArray<float3>(
-                BufferID.PlayerKinematicFlowVelocity,
-                EntityCount,
-                nameof(_flowVelocity),
-                VaultFlowVelocityFlag,
-                dataVault);
-            _lastValidPositions = AllocateRuntimeArray<float3>(
-                BufferID.PlayerKinematicLastValidPositions,
-                EntityCount,
-                nameof(_lastValidPositions),
-                VaultLastValidPositionsFlag,
-                dataVault);
-            _stateRead = AllocateRuntimeArray<PlayerKinematicsSyncState>(
-                BufferID.PlayerKinematicSyncReadState,
-                EntityCount,
-                nameof(_stateRead),
-                VaultStateReadFlag,
-                dataVault);
-            _stateWrite = AllocateRuntimeArray<PlayerKinematicsSyncState>(
-                BufferID.PlayerKinematicSyncWriteState,
-                EntityCount,
-                nameof(_stateWrite),
-                VaultStateWriteFlag,
-                dataVault);
-            _handTargets = AllocateRuntimeArray<PlayerKinematicsHandTarget>(
-                BufferID.PlayerKinematicHandTargets,
-                HandTargetCount,
-                nameof(_handTargets),
-                VaultHandTargetsFlag,
-                dataVault);
-            _smoothedHandTargets = AllocateRuntimeArray<PlayerKinematicsHandTarget>(
-                BufferID.PlayerKinematicSmoothedHandTargets,
-                HandTargetCount,
-                nameof(_smoothedHandTargets),
-                VaultSmoothedHandTargetsFlag,
-                dataVault);
-            _telemetry = AllocateRuntimeArray<PlayerKinematicsRuntimeTelemetryEntry>(
-                BufferID.PlayerKinematicRuntimeTelemetryRing,
-                TelemetryFrameCount,
-                nameof(_telemetry),
-                VaultTelemetryFlag,
-                dataVault);
-            _telemetryWriteIndex = AllocateRuntimeArray<int>(
-                BufferID.PlayerKinematicRuntimeTelemetryCursor,
-                1,
-                nameof(_telemetryWriteIndex),
-                VaultTelemetryWriteIndexFlag,
-                dataVault);
-            _faultFlags = AllocateRuntimeArray<int>(
-                BufferID.PlayerKinematicFaultFlags,
-                1,
-                nameof(_faultFlags),
-                VaultFaultFlagsFlag,
-                dataVault);
-            _handProbeCommands = AllocateRuntimeArray<RaycastCommand>(
-                BufferID.PlayerKinematicHandProbeCommands,
-                EnvironmentProbeCount,
-                nameof(_handProbeCommands),
-                VaultHandProbeCommandsFlag,
-                dataVault);
-            _handProbeHits = AllocateRuntimeArray<RaycastHit>(
-                BufferID.PlayerKinematicHandProbeHits,
-                EnvironmentProbeCount,
-                nameof(_handProbeHits),
-                VaultHandProbeHitsFlag,
-                dataVault);
-            _sdfSqueezeResults = AllocateRuntimeArray<SdfSqueezeResult>(
-                BufferID.PlayerKinematicSdfSqueezeResults,
-                EntityCount,
-                nameof(_sdfSqueezeResults),
-                VaultSdfSqueezeResultsFlag,
-                dataVault);
+            IDataVault dataVault = _dataVault;
+            _ = _positions.Ensure(dataVault);
+            _ = _velocities.Ensure(dataVault);
+            _ = _intendedMovement.Ensure(dataVault);
+            _ = _flowVelocity.Ensure(dataVault);
+            _ = _lastValidPositions.Ensure(dataVault);
+            _ = _stateRead.Ensure(dataVault);
+            _ = _stateWrite.Ensure(dataVault);
+            _ = _handTargets.Ensure(dataVault);
+            _ = _smoothedHandTargets.Ensure(dataVault);
+            _ = _telemetry.Ensure(dataVault);
+            _ = _telemetryWriteIndex.Ensure(dataVault);
+            _ = _faultFlags.Ensure(dataVault);
+            _ = _handProbeCommands.Ensure(dataVault);
+            _ = _handProbeHits.Ensure(dataVault);
+            _ = _sdfSqueezeResults.Ensure(dataVault);
+            if (!HasKinematicsStorage() || !HasSyncStateWriteStorage())
+                return;
 
             float3 start = _body != null ? ToFloat3(_body.position) : ToFloat3(transform.position);
             start = SnapMillimeter(SanitizeFloat3(start, float3.zero));
@@ -1355,22 +1382,21 @@ namespace Hecton8.Gameplay
 
         private void DisposeNativeState()
         {
-            DisposeArray(ref _positions, VaultPositionsFlag);
-            DisposeArray(ref _velocities, VaultVelocitiesFlag);
-            DisposeArray(ref _intendedMovement, VaultIntendedMovementFlag);
-            DisposeArray(ref _flowVelocity, VaultFlowVelocityFlag);
-            DisposeArray(ref _lastValidPositions, VaultLastValidPositionsFlag);
-            DisposeArray(ref _stateRead, VaultStateReadFlag);
-            DisposeArray(ref _stateWrite, VaultStateWriteFlag);
-            DisposeArray(ref _handTargets, VaultHandTargetsFlag);
-            DisposeArray(ref _smoothedHandTargets, VaultSmoothedHandTargetsFlag);
-            DisposeArray(ref _telemetry, VaultTelemetryFlag);
-            DisposeArray(ref _telemetryWriteIndex, VaultTelemetryWriteIndexFlag);
-            DisposeArray(ref _faultFlags, VaultFaultFlagsFlag);
-            DisposeArray(ref _handProbeCommands, VaultHandProbeCommandsFlag);
-            DisposeArray(ref _handProbeHits, VaultHandProbeHitsFlag);
-            DisposeArray(ref _sdfSqueezeResults, VaultSdfSqueezeResultsFlag);
-            _vaultNativeStateMask = 0;
+            _positions.ReleaseView();
+            _velocities.ReleaseView();
+            _intendedMovement.ReleaseView();
+            _flowVelocity.ReleaseView();
+            _lastValidPositions.ReleaseView();
+            _stateRead.ReleaseView();
+            _stateWrite.ReleaseView();
+            _handTargets.ReleaseView();
+            _smoothedHandTargets.ReleaseView();
+            _telemetry.ReleaseView();
+            _telemetryWriteIndex.ReleaseView();
+            _faultFlags.ReleaseView();
+            _handProbeCommands.ReleaseView();
+            _handProbeHits.ReleaseView();
+            _sdfSqueezeResults.ReleaseView();
             ResetDeterminismSessionState();
         }
 
@@ -1411,6 +1437,12 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.RegisterHotSwapListener(this);
                 _registeredHotSwap = true;
             }
+
+            if (!_registeredScalability)
+            {
+                ScalabilityEvents.Register(this);
+                _registeredScalability = true;
+            }
         }
 
         private void UnregisterRuntime()
@@ -1449,6 +1481,12 @@ namespace Hecton8.Gameplay
             {
                 GlobalRegistry.UnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
+            }
+
+            if (_registeredScalability)
+            {
+                ScalabilityEvents.Unregister(this);
+                _registeredScalability = false;
             }
         }
 
@@ -1496,7 +1534,8 @@ namespace Hecton8.Gameplay
         {
             _stateWriteReady = false;
             _accumulatorState = default;
-            _lastPlayerStateSequence = 0;
+            _lastConsumedSqueezeSignalFrame = 0u;
+            _lastConsumedSqueezeSignalSourceHash = 0u;
             _lastInputStateSignal = default;
             _dumpWrittenForFault = false;
             _desyncDumpWritten = false;
@@ -1525,7 +1564,9 @@ namespace Hecton8.Gameplay
             _lastSdfSqueezeNormal = float3.zero;
             _lastSdfSqueezeResult = default;
             _sdfSqueezeSlowHoldFrames = 0;
-            _lastPlayerStressSequence = 0;
+            _lastConsumedPlayerStressFrame = 0u;
+            _lastConsumedSystemStressFrame = 0u;
+            _cachedSystemStress01 = 0.0f;
             _hasImpactBracePoint = false;
             _lastProbeLowTier = false;
             _wasBraceActive = false;
@@ -1545,6 +1586,8 @@ namespace Hecton8.Gameplay
 
         private void RebindRegistryServices()
         {
+            _dataVault = GlobalRegistry.DataVault;
+            _gasDynamics = GlobalRegistry.GasDynamics;
             _fluid = GlobalRegistry.Fluid;
             _voxelEngine = GlobalRegistry.VoxelEngine;
             if (_motor == null && GlobalRegistry.PlayerMotor != null)
@@ -1554,6 +1597,7 @@ namespace Hecton8.Gameplay
             _cameraTransform = playerContext != null && playerContext.PlayerCamera != null
                 ? playerContext.PlayerCamera.transform
                 : null;
+            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
         }
 
         private void RebindColdIfMissing()
@@ -1709,7 +1753,7 @@ namespace Hecton8.Gameplay
             }
 
             NativeArray<byte> resolvedSdf = publishedSdf;
-            var dataVault = GlobalRegistry.DataVault;
+            var dataVault = _dataVault;
             if (dataVault != null &&
                 dataVault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> vaultSdf) &&
                 vaultSdf.IsCreated &&
@@ -1764,7 +1808,8 @@ namespace Hecton8.Gameplay
             }
 
             float safeDeltaTime = math.max(0.0001f, SanitizeNonNegative(fixedDeltaTime));
-            float systemStress01 = SignalBusRegistry.SystemStress01;
+            ConsumeSystemStressSignals();
+            float systemStress01 = SanitizeUnit(_cachedSystemStress01);
             bool slowCadence = systemStress01 > SdfSqueezeSystemStressSlowThreshold01;
             if (!IsValidSdfPayload(sdfTexture3D, sdfDimensions, sdfOrigin, sdfCellSize, sdfRange))
             {
@@ -1904,7 +1949,7 @@ namespace Hecton8.Gameplay
         {
             return sdfTexture3D.IsCreated &&
                    PlayerKinematicsBodyJob.TryResolveSdfVoxelCount(sdfDimensions, out int expectedLength) &&
-                   sdfTexture3D.Length == expectedLength &&
+                   sdfTexture3D.Length >= expectedLength &&
                    math.all(math.isfinite(sdfOrigin)) &&
                    math.all(math.isfinite(sdfCellSize)) &&
                    math.all(math.abs(sdfCellSize) > new float3(0.0001f)) &&
@@ -1914,7 +1959,7 @@ namespace Hecton8.Gameplay
         private bool TryReadPlayerKinematicStateFromVault(out AbsoluteUniversePosition aup)
         {
             aup = default;
-            IDataVault dataVault = GlobalRegistry.DataVault;
+            IDataVault dataVault = _dataVault;
             if (dataVault == null)
                 return false;
 
@@ -1950,7 +1995,7 @@ namespace Hecton8.Gameplay
 
         private void WritePlayerKinematicStateToVault(in AbsoluteUniversePosition aup, float3 velocity)
         {
-            IDataVault dataVault = GlobalRegistry.DataVault;
+            IDataVault dataVault = _dataVault;
             if (dataVault == null)
                 return;
 
@@ -1980,16 +2025,23 @@ namespace Hecton8.Gameplay
 
         private static byte ResolveSdfGradientProbeRequest()
         {
-            if (!GlobalSignals.TryGetLatestPlayerStateSignal(out PlayerStateSignal signal, out int sequence) ||
-                sequence == 0 ||
-                signal.State != PlayerStateSignal.StateSqueezing ||
-                (signal.Flags & PlayerStateSignal.FlagSqueezing) == 0)
+            uint frame = unchecked((uint)Time.frameCount);
+            ReadOnlySpan<PlayerStateSignal> playerStates = SignalBus<PlayerStateSignal>.GetFrameSnapshot();
+            int signalCount = math.min(playerStates.Length, IkSignalScanLimit);
+            for (int i = 0; i < signalCount; i++)
             {
-                return 0;
+                PlayerStateSignal signal = playerStates[i];
+                if (signal.State != PlayerStateSignal.StateSqueezing ||
+                    (signal.Flags & PlayerStateSignal.FlagSqueezing) == 0)
+                {
+                    continue;
+                }
+
+                if (IsFreshSignalFrame(frame, signal.Frame, MaxSdfGradientProbeSignalAgeFrames))
+                    return 1;
             }
 
-            uint frame = unchecked((uint)Time.frameCount);
-            return IsFreshSignalFrame(frame, signal.Frame, MaxSdfGradientProbeSignalAgeFrames) ? (byte)1 : (byte)0;
+            return 0;
         }
 
         private static bool IsInsidePublishedVoxelSdfBounds(HectonVoxelVolume volume, Vector3 runtimePosition)
@@ -2204,8 +2256,8 @@ namespace Hecton8.Gameplay
             playerState.State = PlayerStateSignal.StateSqueezing;
             playerState.Flags = stateFlags;
             GlobalSignals.Publish(in playerState);
-            if (GlobalSignals.TryGetLatestPlayerStateSignal(out _, out int sequence))
-                _lastPlayerStateSequence = sequence;
+            _lastConsumedSqueezeSignalFrame = playerState.Frame;
+            _lastConsumedSqueezeSignalSourceHash = playerState.SourceHash;
 
             unchecked
             {
@@ -2232,9 +2284,9 @@ namespace Hecton8.Gameplay
             GlobalSignals.Publish(in physiology);
         }
 
-        private static void PublishSdfSqueezeGasLoad(float stress01)
+        private void PublishSdfSqueezeGasLoad(float stress01)
         {
-            IGasDynamicsSolver gasDynamics = GlobalRegistry.GasDynamics;
+            IGasDynamicsSolver gasDynamics = _gasDynamics;
             if (gasDynamics == null || !gasDynamics.IsInitialized)
                 return;
 
@@ -2445,12 +2497,30 @@ namespace Hecton8.Gameplay
                 _squeezeHoldTimer = math.max(_squeezeHoldTimer, SqueezeHoldSeconds);
             }
 
-            if (GlobalSignals.TryGetLatestPlayerStressSignal(out PlayerStressSignal stressSignal, out int stressSequence) &&
-                stressSequence != _lastPlayerStressSequence &&
-                stressSignal.Frame <= frame)
+            ReadOnlySpan<PlayerStressSignal> stressSignals = SignalBus<PlayerStressSignal>.GetFrameSnapshot();
+            int stressCount = math.min(stressSignals.Length, IkSignalScanLimit);
+            bool hasStressSignal = false;
+            PlayerStressSignal latestStressSignal = default;
+            for (int i = 0; i < stressCount; i++)
             {
-                _lastPlayerStressSequence = stressSequence;
-                _cachedStress01 = SanitizeUnit(stressSignal.Stress01);
+                PlayerStressSignal stressSignal = stressSignals[i];
+                if (stressSignal.Frame == _lastConsumedPlayerStressFrame ||
+                    stressSignal.Frame > frame)
+                {
+                    continue;
+                }
+
+                if (!hasStressSignal || stressSignal.Frame >= latestStressSignal.Frame)
+                {
+                    latestStressSignal = stressSignal;
+                    hasStressSignal = true;
+                }
+            }
+
+            if (hasStressSignal)
+            {
+                _lastConsumedPlayerStressFrame = latestStressSignal.Frame;
+                _cachedStress01 = SanitizeUnit(latestStressSignal.Stress01);
             }
         }
 
@@ -2477,30 +2547,73 @@ namespace Hecton8.Gameplay
                 BracePhaseWrap);
         }
 
+        private void ConsumeSystemStressSignals()
+        {
+            uint frame = unchecked((uint)Time.frameCount);
+            ReadOnlySpan<SystemHealthIndexSignal> signals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
+            int signalCount = math.min(signals.Length, IkSignalScanLimit);
+            bool hasStressSignal = false;
+            SystemHealthIndexSignal latestStressSignal = default;
+            for (int i = 0; i < signalCount; i++)
+            {
+                SystemHealthIndexSignal signal = signals[i];
+                if (signal.Frame == _lastConsumedSystemStressFrame ||
+                    signal.Frame > frame)
+                {
+                    continue;
+                }
+
+                if (!hasStressSignal || signal.Frame >= latestStressSignal.Frame)
+                {
+                    latestStressSignal = signal;
+                    hasStressSignal = true;
+                }
+            }
+
+            if (hasStressSignal)
+            {
+                _lastConsumedSystemStressFrame = latestStressSignal.Frame;
+                _cachedSystemStress01 = SanitizeUnit(latestStressSignal.Pressure01);
+            }
+        }
+
         private void ConsumeSqueezeTelemetrySignal()
         {
-            if (!GlobalSignals.TryGetLatestPlayerStateSignal(out PlayerStateSignal signal, out int sequence) ||
-                sequence == _lastPlayerStateSequence)
+            uint frame = unchecked((uint)Time.frameCount);
+            ReadOnlySpan<PlayerStateSignal> playerStates = SignalBus<PlayerStateSignal>.GetFrameSnapshot();
+            int signalCount = math.min(playerStates.Length, IkSignalScanLimit);
+            bool hasSqueezeSignal = false;
+            PlayerStateSignal signal = default;
+            for (int i = 0; i < signalCount; i++)
             {
-                return;
+                PlayerStateSignal candidate = playerStates[i];
+                if (candidate.State != PlayerStateSignal.StateSqueezing ||
+                    (candidate.Flags & PlayerStateSignal.FlagSqueezing) == 0)
+                {
+                    continue;
+                }
+
+                if (candidate.Frame == _lastConsumedSqueezeSignalFrame &&
+                    candidate.SourceHash == _lastConsumedSqueezeSignalSourceHash)
+                {
+                    continue;
+                }
+
+                if (!IsFreshSignalFrame(frame, candidate.Frame, MaxSdfGradientProbeSignalAgeFrames))
+                    continue;
+
+                if (!hasSqueezeSignal || candidate.Frame >= signal.Frame)
+                {
+                    signal = candidate;
+                    hasSqueezeSignal = true;
+                }
             }
 
-            bool isSqueezeSignal =
-                signal.State == PlayerStateSignal.StateSqueezing &&
-                (signal.Flags & PlayerStateSignal.FlagSqueezing) != 0;
-            if (!isSqueezeSignal)
-            {
-                _lastPlayerStateSequence = sequence;
-                return;
-            }
-
-            if (!IsFreshSignalFrame(
-                    unchecked((uint)Time.frameCount),
-                    signal.Frame,
-                    MaxSdfGradientProbeSignalAgeFrames))
+            if (!hasSqueezeSignal)
                 return;
 
-            _lastPlayerStateSequence = sequence;
+            _lastConsumedSqueezeSignalFrame = signal.Frame;
+            _lastConsumedSqueezeSignalSourceHash = signal.SourceHash;
 
             unchecked
             {
@@ -3027,6 +3140,12 @@ namespace Hecton8.Gameplay
                    _positions.Length >= EntityCount &&
                    _velocities.Length >= EntityCount &&
                    _lastValidPositions.Length >= EntityCount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasKinematicsStorage()
+        {
+            return HasMotionSoaStorage();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3709,13 +3828,6 @@ namespace Hecton8.Gameplay
 
         private HectonQualityTier ResolveScalabilityTier()
         {
-            int frame = Time.frameCount;
-            if (_cachedScalabilityTierFrame != frame)
-            {
-                _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
-                _cachedScalabilityTierFrame = frame;
-            }
-
             return _cachedScalabilityTier;
         }
 
@@ -3735,46 +3847,5 @@ namespace Hecton8.Gameplay
             return 1.0f - math.abs((unit * 4.0f) - 2.0f);
         }
 
-        private NativeArray<T> AllocateRuntimeArray<T>(
-            BufferID bufferId,
-            int count,
-            string label,
-            int vaultFlag,
-            IDataVault dataVault) where T : struct
-        {
-            int safeCount = math.max(1, count);
-            if (dataVault != null)
-            {
-                NativeArray<T> vaultArray = dataVault.GetBuffer<T>(
-                    bufferId,
-                    safeCount,
-                    SystemID.GameplayPlayer,
-                    NativeArrayOptions.ClearMemory);
-                if (vaultArray.IsCreated)
-                {
-                    _vaultNativeStateMask |= vaultFlag;
-                    return vaultArray;
-                }
-            }
-
-            _vaultNativeStateMask &= ~vaultFlag;
-            return default;
-        }
-
-        private void DisposeArray<T>(ref NativeArray<T> array, int vaultFlag = 0) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            if (vaultFlag != 0 && (_vaultNativeStateMask & vaultFlag) != 0)
-            {
-                array = default;
-                _vaultNativeStateMask &= ~vaultFlag;
-                return;
-            }
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array, SystemID.GameplayPlayer);
-        }
     }
 }

@@ -117,3 +117,83 @@ PROMPT IDENTIFIED: ARCHITECT_BRIDGE_FACADE | DOMAIN: CORE/INTERFACES | TASK COUN
 - Status: BRIDGE VERIFIED; FULL WORKSPACE COMPILE BLOCKED BY NON-BRIDGE DEPENDENCIES.
 - Compile state: Bridge patch passed `dotnet build Hecton8.Core.csproj -m:1 -v:minimal -nr:false -p:UseSharedCompilation=false` once after the stale-row purge. Latest full workspace verification is blocked by non-Bridge contract assembly/project generation drift: unresolved `HectonPhysicsContract`, `HectonEcologyContract`, and `ScalabilityContract` in Core/AI/Physics/Audio/World consumers, plus missing `Temp/bin/Debug/Hecton8.Core.dll` for the Editor project after Core fails.
 - Known integration notes: `CURRENT_BATCH.md` still lacks this agent prompt; CLI verification required manual csproj compile includes until Unity regenerates project files; Unity Play Mode/Profiler proof is not available in this CLI-only session; two Bridge `.meta` files are untracked and should be included with their scripts in integration.
+
+## Iteration 13: GO AGAIN Boot Binder Naming And Compile Contention Pass
+- [x] Mandatory disk recovery, Unity skill, domain, mandate, and XML reread | DOD: status/rationale were read first; then `AGENTS.md`, the domain map, selected mandates, the Unity MCP skill, and `Docs/Tasks/Prompt_ARCHITECT_BRIDGE_FACADE.xml` were re-read from disk. Rejected: trusting compressed chat memory. Static estimate: 0 us runtime.
+- [x] Boot binder serialized-name cleanup | DOD: `H8PrefabRegistryBootBinder` now exposes `bindOnStart` instead of the stale `bindOnAwake` field name, with `[FormerlySerializedAs("bindOnAwake")]` preserving existing asset values. Rejected: leaving an Awake-named authoring switch after the binder moved to `Start()`. Static estimate: 0 us steady-state.
+- [x] Typed lane and lifecycle re-audit | DOD: refined method-declaration scan found no Bridge `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`; SignalBus scan found all Bridge `Push` calls use `in`; struct-layout scan confirmed Bridge payload structs remain `Pack = 1`. Rejected: relying on a broad grep that matches `serializedObject.Update()` and `RegisterOrUpdate()`. Static estimate: 0 us runtime.
+- [x] Diff hygiene after boot-binder cleanup | DOD: `git diff --check -- Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistryRuntimeBinder.cs` exits 0 with line-ending normalization warning only. Rejected: leaving whitespace churn for integration.
+- [x] Compile status after boot-binder cleanup | `[BLOCKED BY DEPENDENCY / BUILD CONTENTION]` A stable isolated Core build reached only non-Bridge errors in `Assets/_Project/Scripts/SubmarineFluidDynamics.cs` (missing exterior thermal-anomaly arrays/IDs). Later reruns were not diagnostic because multiple concurrent Core builds were active and the file-logged build terminated before compiler diagnostics. No Bridge error was observed in the available outputs.
+
+## Current State
+- Status: BRIDGE VERIFIED BY STATIC DOMAIN AUDIT; FULL CORE COMPILE IS NOT VERIFIED IN THIS TURN.
+- Compile state: latest stable diagnostic wall is outside Bridge in `SubmarineFluidDynamics.cs`; later verification is blocked by concurrent workspace build contention. No Unity Play Mode, Profiler, or Console verification was available through MCP in this session.
+
+## Iteration 14: GO AGAIN Stress Gate And Compile Recovery Pass
+- [x] Mandatory disk recovery and XML reread | DOD: status/rationale were read before responding; `Docs/Tasks/Prompt_ARCHITECT_BRIDGE_FACADE.xml` was re-read from disk before further Bridge inspection. Rejected: relying on compressed chat memory. Static estimate: 0 us runtime.
+- [x] Bridge file-by-file inquisition | DOD: runtime, registry, input, facade, layout verifier, generated contracts, and editor tools were re-read. Refined scans found no Bridge method declarations for `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`; no Bridge hot-path `string.Format`, legacy `EventBus`, managed event/delegate lane, direct `GetBuffer<`, private `NativeArray<`, `new NativeArray`, or `Allocator.` ownership. SignalBus scan shows all Bridge pushes use `in`. Static estimate: 0 us runtime.
+- [x] Homeostasis stress gate repair | DOD: `H8BridgeFacadeRuntime.LiveTuningBlockedByStress()` now gates live tuning on `SignalBusRegistry.SystemStress01` plus normalized `HomeostasisBrain.PressureLevel`, not the raw `SystemHealthIndex01` name. Rejected: treating a health/pressure diagnostic scalar as a second unqualified stress lane when the mandate says `SystemStress01 > 0.9`. Static estimate: explicit edit only; 0 us steady-state.
+- [x] Compile recovery after non-Bridge wall | DOD: current `SubmarineFluidDynamics.cs` no longer contains the stale missing inventory-event call captured by a previous Editor logger, and isolated Core verification now succeeds. Rejected: editing more non-Bridge code from a stale diagnostic. Static estimate: build hygiene only.
+- [x] Core compile after stress-gate repair | `dotnet build Hecton8.Core.csproj -m:1 -nr:false /p:UseSharedCompilation=false /p:RunAnalyzers=false /p:BaseIntermediateOutputPath=Temp\obj_ARCHITECT_BRIDGE_FACADE_21\ /p:OutputPath=Temp\bin_ARCHITECT_BRIDGE_FACADE_21\Debug\ -v:minimal` exits 0 with 0 warnings and 0 errors.
+- [x] Diff hygiene after stress-gate repair | `git diff --check` on touched Bridge/runtime/docs exits 0 with line-ending normalization warnings only.
+- [x] Editor compile status | `[BLOCKED BY GENERATED UNITY PROJECT GRAPH / WORKSPACE CONTENTION]` Custom isolated output for `Hecton8.Editor.csproj` is invalid for the generated Unity package graph: package DLLs are expected in the same output and project references report circular `ResolveProjectReferences`. Default-output Editor verification was deferred while other Core builds were active. No Bridge compiler error was produced.
+
+## Current State
+- Status: BRIDGE CORE VERIFIED; EDITOR CLI VERIFICATION BLOCKED BY UNITY PROJECT GRAPH/CONCURRENT BUILDS.
+- Compile state: `Hecton8.Core.csproj` is green after the Bridge stress-gate repair. Isolated `Hecton8.Editor.csproj` with custom output is not a valid verification path for this generated Unity graph; a default-output Editor build still needs a quiet workspace.
+- Known integration notes: no Unity Play Mode, Profiler, or Console access was available through callable MCP tools in this session; runtime microseconds are static estimates only, not profiler measurements.
+
+## Iteration 15: GO AGAIN Current World Compile Wall Refresh
+- [x] Default-output Editor compile attempted | DOD: default Unity project output layout was used after isolated Editor output proved invalid. Result: build reaches project code and fails outside Bridge in `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs`. Rejected: treating generated-package isolated-output failure as a Bridge code failure.
+- [x] Fresh isolated Core compile attempted | DOD: reran `Hecton8.Core.csproj` with isolated Bridge verification output after the Editor wall. Result: current workspace now fails in the same non-Bridge world file. Rejected: claiming the earlier green Core result as current after workspace drift.
+- [x] Active wall recorded | DOD: missing `_grazingAnchors`, `_formationBeacons`, `_formationObstacles`, and `_massiveThreats` fields in `SargassumMicroFaunaBoids.cs` are outside `Assets/_Project/Scripts/Core/Bridge/`. No Bridge compiler error appears before this wall.
+
+## Current State
+- Status: BRIDGE STATIC AUDIT CLEAN; FULL CORE/EDITOR COMPILE BLOCKED BY NON-BRIDGE WORLD DEPENDENCY.
+- Compile state: Earlier isolated Core compile after the stress-gate patch exited 0, but the current workspace now fails outside Bridge in `World/SargassumMicroFaunaBoids.cs`. Editor default-output verification fails on the same Core dependency wall.
+- Known integration notes: no Unity Play Mode, Profiler, or Console access was available through callable MCP tools in this session; runtime microseconds are static estimates only, not profiler measurements.
+
+## Iteration 16: GO AGAIN Empty Facade Tombstone Pass
+- [x] Mandatory disk recovery, Unity skill, and XML reread | DOD: status/rationale were read before response; Unity MCP workflow constraints and `Docs/Tasks/Prompt_ARCHITECT_BRIDGE_FACADE.xml` were re-read from disk. Rejected: trusting compressed chat memory. Static estimate: 0 us runtime.
+- [x] Empty input authoring is preserved | DOD: input facade validation now ensures the list exists without reseeding defaults; defaults are only restored by `Reset()` or the explicit context menu. Rejected: resurrecting deleted button bindings during `OnValidate()`. Static estimate: editor/explicit sync only.
+- [x] Empty design facade live-syncs | DOD: design facade validation tracks last-applied binding count so deleting the final binding marks the facade dirty and triggers the setter path while playing. Rejected: requiring at least one changed binding to clear stale balance data. Static estimate: editor validation only.
+- [x] Empty design Vault tombstone | DOD: `H8BridgeFacadeRuntime.SyncDesignData` clears the existing `BridgeDesignFacadeValues` buffer, publishes a heartbeat `DataVaultUpdateSignal`, and persists the MacroDB header when `BindingCount == 0`. Rejected: returning success while stale floats remain readable by raw consumers or silent to typed-lane listeners. Static estimate: explicit empty sync only; 0 us steady-state.
+- [x] Static verification without rebuild | DOD: per operator instruction, `dotnet build` was not rerun in this pass. Refined scans found no Bridge lifecycle `Awake`/`Update`/`LateUpdate`/`FixedUpdate`/`OnGUI`, no Bridge `NativeArray<`, `new NativeArray`, `Allocator.`, direct `GetBuffer<`, legacy `EventBus`, managed event/delegate lane, `UnityEvent`, or `string.Format`. SignalBus scan shows Bridge pushes use `in`. `git diff --check` on touched Bridge files exits 0 with line-ending warnings only.
+
+## Current State
+- Status: BRIDGE STATIC AUDIT CLEAN AFTER EMPTY-FACADE TOMBSTONES; FULL CORE/EDITOR COMPILE NOT RERUN IN THIS PASS BY USER INSTRUCTION.
+- Compile state: not refreshed in Iteration 16. Last recorded active wall remains outside Bridge in `World/SargassumMicroFaunaBoids.cs`.
+- Known integration notes: no Unity Play Mode, Profiler, or Console access was available through callable MCP tools in this session; runtime microseconds are static estimates only, not profiler measurements.
+
+## Iteration 17: GO AGAIN Typed Dirty-Lane And MemClear Width Pass
+- [x] Mandatory disk recovery, Unity skill, mandates, and XML reread | DOD: status/rationale were read before response; Unity MCP workflow notes, required Bridge mandates, and `Docs/Tasks/Prompt_ARCHITECT_BRIDGE_FACADE.xml` were re-read from disk. Rejected: relying on chat memory. Static estimate: 0 us runtime.
+- [x] Prefab binder dirty-lane notification | DOD: prefab registry binding and empty tombstone clears now publish existing `DataVaultUpdateSignal` notifications for `BridgePrefabMapping` and `BridgePrefabLoreLinks`. Rejected: silent raw Vault writes that force consumers to poll. Static estimate: cold bind only; 0 us steady-state.
+- [x] Input facade dirty-lane notification | DOD: input facade sync and empty tombstone clears now publish `DataVaultUpdateSignal` for `BridgeInputFacadeBindings`. Rejected: hidden input map mutation with only telemetry side effects. Static estimate: explicit sync only; 0 us steady-state.
+- [x] MemClear byte-width hardening | DOD: Bridge input and prefab/lore clear paths now compute `UnsafeUtility.MemClear` byte counts with `long` multiplication and explicit pointer fences. Rejected: int multiplication before widening, which is the wrong pattern for scalable Vault buffers. Static estimate: cold clear only.
+- [x] Static verification without rebuild | DOD: per operator instruction, `dotnet build` was not rerun. Scans found no Bridge lifecycle `Awake`/`Update`/`LateUpdate`/`FixedUpdate`/`OnGUI`, no Bridge local native allocation/ownership, no direct `GetBuffer<`, no legacy `EventBus`, no managed delegate lane, no `UnityEvent`, and no `string.Format`. SignalBus scan shows all Bridge pushes use `in`; `MemClear` scan found no remaining int-sized `Length * SizeOf` clear expression in Bridge; `git diff --check` on touched Bridge files exits 0 with line-ending warnings only.
+
+## Current State
+- Status: BRIDGE STATIC AUDIT CLEAN AFTER TYPED DIRTY-LANE PASS; FULL CORE/EDITOR COMPILE NOT RERUN BY USER INSTRUCTION.
+- Compile state: not refreshed in Iteration 17. Last recorded active wall remains outside Bridge in `World/SargassumMicroFaunaBoids.cs`.
+- Known integration notes: no Unity Play Mode, Profiler, or Console access was available through callable MCP tools in this session; runtime microseconds are static estimates only, not profiler measurements.
+
+## Iteration 18: GO AGAIN Visual Overkill Control Coverage
+- [x] XML reread after three-task interval | DOD: `Docs/Tasks/Prompt_ARCHITECT_BRIDGE_FACADE.xml` was re-read before this additional visual-control patch. Rejected: drifting from the original Bridge facade assignment. Static estimate: 0 us runtime.
+- [x] Salt-crystal facade control | DOD: default `H8DesignDataFacade` seeds `VisorSaltCrystalGrowth01` as a packed visual binding at aligned offset 44 with LUT/high-tier visual hashes and VRAM estimate metadata. Rejected: forcing visor salt growth to be hard-coded in a renderer or shader keyword path. Static estimate: explicit setter/editor seed only; 0 us steady-state.
+- [x] Visual-control scan | DOD: default design controls now cover volumetric silt, hull dent overkill, raymarch steps, POM taps, SSS weight, particle overkill, and visor salt crystal growth. Rejected: only exposing generic particle/raymarch knobs while leaving the requested $50M surface detail unowned by the facade.
+- [x] Static verification without rebuild | DOD: per operator instruction, `dotnet build` was not rerun. Focused scans found the new salt control and no Bridge lifecycle/ownership/string-format regression; `git diff --check` on the touched facade file exits 0 with line-ending warning only.
+
+## Current State
+- Status: BRIDGE STATIC AUDIT CLEAN AFTER VISUAL-OVERKILL CONTROL PATCH; FULL CORE/EDITOR COMPILE NOT RERUN BY USER INSTRUCTION.
+- Compile state: not refreshed in Iteration 18. Last recorded active wall remains outside Bridge in `World/SargassumMicroFaunaBoids.cs`.
+- Known integration notes: existing facade assets with non-empty binding lists will not auto-mutate; designers can reset or explicitly seed defaults when they want the new salt-crystal control added to an asset.
+
+## Iteration 19: GO AGAIN Runtime-Only SignalBus Gate
+- [x] Runtime-only Bridge signals | DOD: design clear, design value, input dirty, prefab mapping dirty, prefab lore dirty, and prefab acoustic/lore boot signals are gated so edit-mode manual sync can write cold Vault data without pushing runtime SignalBus lanes. Rejected: editor-time SignalBus traffic from manual inspector/window buttons. Static estimate: 0 us steady-state.
+- [x] Signal gate audit | DOD: SignalBus scan shows every Bridge push remains `in`, and surrounding guards now use `Application.isPlaying` or a cached `publishRuntimeSignals` value. Rejected: managed delegates, legacy EventBus, or hidden edit-mode runtime queues.
+- [x] Static verification without rebuild | DOD: per operator instruction, `dotnet build` was not rerun. Lifecycle scan remains clean; diff hygiene on the signal-gated files exits 0 with line-ending warnings only.
+
+## Current State
+- Status: BRIDGE STATIC AUDIT CLEAN AFTER RUNTIME-ONLY SIGNALBUS GATE; FULL CORE/EDITOR COMPILE NOT RERUN BY USER INSTRUCTION.
+- Compile state: not refreshed in Iteration 19. Last recorded active wall remains outside Bridge in `World/SargassumMicroFaunaBoids.cs`.
+- Known integration notes: manual edit-mode sync can still mutate DataVault when a valid vault is provided, but typed runtime signals are now play-mode only.

@@ -174,3 +174,31 @@ Solution: Preserve the hardware patch, record `Docs/AgentLogs/Build_HARDWARE_THR
 Rejected Alternatives: Editing world/ecosystem index state from the hardware prompt; reverting Android ownership centralization; claiming the last green Pass 7 build validates the post-Pass9 workspace.
 Scalability potential: Hardware behavior is cleaner across Low/Middle/High/Ultra; Android predictive throttling is centralized while high-tier visual-overkill policy remains unchanged.
 Hardware Impact: Current build measurement failed after 00:02:40.10 with 23 external errors and 4 warnings. No compiler error names the hardware/homeostasis/DRS files.
+
+## Decision 26 - Android Headroom Polarity Fix
+Problem: `MapThermalHeadroomToStatus` inverted Android predictive headroom by computing `1 - headroom`. Android's `PowerManager.getThermalHeadroom` reports increasing proximity to severe throttling, with `1.0` representing the severe threshold, so the inversion could turn cool headroom into false high pressure on Quest/Android.
+Solution: Treat headroom as non-negative pressure-envelope usage, map values near `0.85` to warm/moderate pressure, and map `>= 1.0` to severe throttling. Keep emergency classification owned by `getCurrentThermalStatus`, because the predictive headroom API defines the severe threshold but not a separate emergency threshold.
+Rejected Alternatives: Leaving the inversion because it was conservative; mapping headroom `>= 0.95` directly to emergency; polling a second Android thermal API every frame to compensate.
+Scalability potential: Low/Quest devices now shed load only when the forecast actually approaches severe thermal pressure. High/Ultra Android devices keep visual-overkill budget while cool instead of being falsely demoted by a small headroom value.
+Hardware Impact: Static estimate: 0 us steady-state frame impact; the same 5-second FrostTick call is used. It preserves the previous 40 us/frame avoided estimate versus illegal per-frame JNI and removes false-positive sacrifice churn. No profiler capture was run.
+
+## Decision 27 - Omega Pass 10 Green Validation
+Problem: Pass 9 was blocked by external ecosystem compile errors, and the Android polarity patch needed a current build result rather than inherited Pass 7 evidence.
+Solution: Re-ran the hardware profile guard, owned static scans, diff check, and clean-output `dotnet build` after the polarity fix. Record Pass 10 as the current green validation.
+Rejected Alternatives: Reporting the Pass 9 external wall after it cleared; claiming profiler microseconds; editing unrelated ecosystem files from the hardware prompt.
+Scalability potential: Low/Middle/High/Ultra policy is now validated in the current workspace: cold hardware sampling, DataVault-owned state, targeted sacrifice masks, deterministic blackboxes, and high-tier visual preservation are all active.
+Hardware Impact: Build validation measured green at 00:01:54.86 with 0 warnings and 0 errors. Runtime deltas remain static estimates only.
+
+## Decision 28 - Transient Low-Tier Scalability Leases
+Problem: Thermal, platform pressure, and critical battery paths used `RegisterScalabilityTierOverride(0)`, which is a persistent profile override. Once transient pressure cleared, high-end hardware could remain stranded in low-tier math and profile routing, violating the high/ultra visual-overkill requirement.
+Solution: Add `GlobalRegistry.SetTransientLowScalabilityOverride(reasonMask, enabled)` with independent thermal, platform, and battery masks. `ScalabilityTier` and math precision now resolve transient pressure as low tier while any lease is active, then restore the persisted override or boot hardware profile when the last lease clears. Move `HardwareThermalService`, `PlatformAdaptiveBudgetGovernor`, and `PlatformBatteryWatchdog` to transient leases.
+Rejected Alternatives: Clearing `RegisterScalabilityTierOverride` blindly from thermal code and potentially deleting a user/boot profile; leaving one-way demotions because they are conservative; adding per-system private override state outside the registry.
+Scalability potential: Low/Deck/Quest still shed load under pressure. High/Ultra PCs recover their high-tier math and visual budget after thermal/frame/battery pressure clears instead of being permanently demoted.
+Hardware Impact: Static estimate: 0 us hot-path frame impact. Lease changes occur on FrostTick or 120-frame platform sampling cadence and use one atomic mask update only when pressure state changes. No profiler capture was run.
+
+## Decision 29 - Omega Pass 11 Compile Wall
+Problem: After the transient lease patch, clean-output validation is blocked by external fauna compatibility errors before hardware code.
+Solution: Preserve the hardware/scalability patch, record `Docs/AgentLogs/Build_HARDWARE_THROTTLING_DIRECTOR_OmegaPass11_CleanOutDir.txt`, and mark current validation blocked by dependency. Static hardware guard passed and the compile log contains no errors naming the files changed in Pass 11.
+Rejected Alternatives: Editing `FaunaBrain.Compatibility.cs` from the hardware prompt; reverting the transient lease fix to hide unrelated errors; claiming the Pass 10 green build validates the post-Pass11 workspace.
+Scalability potential: Hardware homeostasis remains improved once the external fauna wall clears; transient pressure no longer permanently suppresses high-tier visual-overkill routing.
+Hardware Impact: Current build measurement failed after 00:00:26.20 with 2 external errors and 1 external warning. Runtime impact of the transient lease patch remains 0 us steady-state.

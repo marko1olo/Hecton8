@@ -1,9 +1,11 @@
 using Hecton8.World;
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Lighting.Shafts
 {
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     internal struct LightShaftContribution
     {
         public uint SourceId;

@@ -83,3 +83,80 @@ Solution: Ran a targeted `rg` audit over `Assets/_Project/Scripts/Core/Diagnosti
 Rejected Alternatives: Relying on visual inspection or compile success alone. Compile success does not prove allocation/rendering discipline.
 Scalability potential: Low clamps entity/quad counts; Middle opens more overlays; High increases densities; Ultra spends saved draw-call budget on denser diagnostic overkill through the same indirect path.
 Hardware Impact: Current estimate remains 35-120 microseconds CPU at 5Hz by tier when active, 0 microseconds when disabled except registration overhead.
+
+## Decision 12 - GPU Upload Bandwidth Repair
+Problem: The visualizer still had a `GraphicsBuffer.SetData` upload path, which is acceptable for cold tooling but not for a live HUD on Steam Deck/MicroSD-pressure debug sessions or mobile GPUs.
+Solution: Replaced the hot upload path with double-buffered `GraphicsBuffer.LockBufferForWrite` for both instances and indirect args, then publish the completed buffer alias to the material. This keeps the indirect-quad rule intact and avoids a driver-side SetData staging copy in the diagnostics loop.
+Rejected Alternatives: Keeping `SetData`, switching to compute-generated quads, or adding a command-buffer-specific render feature. `SetData` is the bandwidth debt; compute adds Metal/Quest risk; render-feature ownership belongs outside diagnostics.
+Scalability potential: Low/MX350 keeps low quad caps and sparse 5Hz updates; Middle/High/Ultra increase the same locked-buffer instance count. Ultra can spend saved submission pressure on salt/silt/dent diagnostic overdraw without changing the primitive.
+Hardware Impact: No profiler microseconds were measured in this pass. Expected CPU/driver saving is bounded to upload overhead only; runtime estimates remain 35-120 us CPU at 5Hz by tier until Unity profiler capture proves a narrower number.
+
+## Decision 13 - Multiplatform NaN and Packing Inquisition
+Problem: ARM64/Quest and Metal builds punish implicit padding, unguarded reciprocal math, and DX-only shader assumptions. One NaN in the diagnostic draw data can poison the mobile GPU pipeline.
+Solution: Kept all Architect Eye records `[StructLayout(Pack = 1)]`, added editor/development `UnsafeUtility.SizeOf` assertions, routed divisions through `SafeRcp`, line normalization through `SafeRsqrt`, and kept shaders as vertex/fragment code with no compute thread groups, geometry stage, or RW buffers.
+Rejected Alternatives: Trusting C# layout defaults, using `normalize`/unchecked `rsqrt` everywhere, or relying on PC-only shader behavior. Those are cheap until Quest or Metal fails.
+Scalability potential: Low uses triangle/hash fakes and coarse cells; Middle adds readable strips; High/Ultra add denser visual-overkill quads through the same safe pipeline.
+Hardware Impact: 0 us when disabled. Active-pass overhead is still estimate-only, not measured: 35-120 us CPU at 5Hz by tier, with GPU cost proportional to indirect quad count.
+
+## Decision 14 - Concurrent Compile-Wall Cleanup
+Problem: After diagnostics was green, concurrent edits reintroduced compile failures in `TetherInstance` and `EcosystemDirector`, outside the assigned domain but blocking `PLATINUM_COMPILE`.
+Solution: Applied surgical compatibility cleanup only. `TetherInstance` keeps the existing wrap-safe frame cooldown helper. `EcosystemDirector` now consistently uses vault-backed `EcosystemIndexEntry` arrays instead of stale private hash-map names.
+Rejected Alternatives: Reverting other agents' staged work or marking the visualizer blocked while a narrow compile fix was available. Reverts would violate parallel-agent ownership; blocking would leave stale false status.
+Scalability potential: The ecosystem index conversion supports the same H-Phi data-sovereignty direction as Architect Eye: state lives in the vault and systems stay inspectable.
+Hardware Impact: Architect Eye runtime cost unchanged. Compile evidence: Core build 0 warnings/0 errors in 00:00:04.14; Editor build 0 warnings/0 errors in 00:02:57.67.
+
+## Decision 15 - Input Poll Eviction and Dump Identity
+Problem: Architect Eye still had an `IUpdatable` registration for F12 polling and a stale `Dump_ARCHITECT_SPATIAL_PROBE.bin` filename, which violated the diegetic command surface and made blackbox evidence ambiguous.
+Solution: Removed the per-frame input poll and routed HUD enable control through fixed-span PDA commands: `eye on`, `eye off`, `eye toggle`, and boolean tokens. Corrected runtime dump and editor replay default path to `Dump_ARCHITECT_EYE_VISUALIZER.bin`.
+Rejected Alternatives: Keeping a hidden keyboard shortcut or aliasing two dump names. Polling costs frame attention when the PDA command path already exists; stale dump names break postmortem ownership.
+Scalability potential: Low tier pays 0 us idle because no frame input polling remains; Middle/High/Ultra get the same command path and can raise visual density only after explicit enable.
+Hardware Impact: Removes a tiny per-frame branch and input query from diagnostics. No measured profiler number is claimed; command processing remains O(command length) only on deliberate panel input.
+
+## Decision 16 - External NativeSlice Compile Wall
+Problem: A concurrent UI navigation edit moved compass blackbox writes into a scheduled job with `NativeSlice<CompassBlackBoxEntry>` but left a `NativeSlice.IsCreated` check, which does not exist in Unity Collections and blocked core compile.
+Solution: Applied the narrow compatibility repair: the write guard now checks slice length only. The caller already creates the slice from a vault-owned `NativeArray` after `TryGetCompassBuffers` verifies creation and capacity.
+Rejected Alternatives: Reverting the UI navigation job conversion or adding a fake extension method. Revert would overwrite another agent's work; an extension would hide an API mismatch and broaden the patch.
+Scalability potential: No Architect Eye behavior changes. The external compass keeps its job path and fixed blackbox capacity without managed allocations.
+Hardware Impact: Architect Eye runtime cost unchanged. Latest verification: Core build 0 warnings/0 errors in 00:01:03.25; Editor build 0 warnings/0 errors in 00:01:43.09.
+
+## Decision 17 - Vault Probe Span Hardening
+Problem: The probe API exposed raw vault buffers as byte spans but did not guard byte-length overflow before constructing `Span<byte>`, and its read-only helper reused the mutable span path.
+Solution: Added a shared `TryResolveBuffer<T>` guard that rejects null vaults, unknown buffer IDs, uncreated buffers, empty buffers, and buffers whose byte length exceeds `int.MaxValue`. Mutable `Span<byte>` now uses `GetUnsafePtr`; read-only visualization spans use `GetUnsafeReadOnlyPtr` directly.
+Rejected Alternatives: Reflection over vault internals, unchecked `buffer.Length * sizeof(T)`, or forcing every caller through the mutable span path. Those are either slow, unsafe on large buffers, or too permissive for diagnostic reads.
+Scalability potential: Low-tier probes can sample tiny spans without heap cost; High/Ultra can inspect larger vault pages while remaining bounded by `Span<T>` limits and caller-selected buffer type.
+Hardware Impact: Runtime hot path unchanged unless a probe is explicitly requested. Added work is a few scalar checks per probe; estimated under 1 us per call on i3/MX350, not measured in Unity Profiler.
+
+## Decision 18 - Loop 8 Compile Hygiene
+Problem: Rebuilds during parallel-agent churn exposed external compile walls unrelated to diagnostics: generated `sourcelink`/assets races and an existing `[MethodImpl]` use in `HectonPlayerMovement.cs` without the required namespace import.
+Solution: Retried after generated-file contention, then applied the one surgical source repair: `using System.Runtime.CompilerServices;` in `HectonPlayerMovement.cs`. No behavior was changed in player movement.
+Rejected Alternatives: Cleaning `Temp` globally, killing other agents' dotnet processes, or reverting external work. Those would be disruptive in the parallel workspace.
+Scalability potential: No Architect Eye behavior changes. The compile repair keeps the external movement helper eligible for inlining across tiers.
+Hardware Impact: Architect Eye runtime cost unchanged. Latest verification: Core build 0 warnings/0 errors in 00:00:05.34; Editor build 5 external package/generated-project warnings and 0 errors in 00:02:45.13.
+
+## Decision 19 - Loop 9 Recurrent Drift Containment
+Problem: Parallel agents again reintroduced the same diagnostics debt after a previously clean audit: runtime F12 polling inside the render path and stale `Dump_ARCHITECT_SPATIAL_PROBE.bin` identity in runtime/editor blackbox paths.
+Solution: Reapplied the narrow diagnostics-domain correction: enable state is PDA-command-only, and both runtime dump writing and editor replay default load `Dump_ARCHITECT_EYE_VISUALIZER.bin`. Verification used targeted static scans instead of another full build.
+Rejected Alternatives: Running `dotnet build` again after a non-signature string/removal patch, keeping the hidden F12 shortcut, or aliasing two dump filenames. The user explicitly rejected rebuild spam, the shortcut violates diegetic command ownership, and aliasing weakens forensic ownership.
+Scalability potential: Low tier keeps 0 us idle keyboard polling and only spends diagnostics budget after explicit panel command. Middle/High/Ultra keep the same indirect-quad density controls and can increase visual detail without adding a second input path.
+Hardware Impact: Removes a per-render input query branch again; no profiler measurement is claimed. Static verification only: no F12 token, no stale dump token, shader debt scan clean. Latest compile evidence remains Loop 8 because Loop 9 intentionally skipped rebuild.
+
+## Decision 20 - Loop 10 High-Tier Capacity And Command Mask Hardening
+Problem: The visualizer calculated High/Ultra quad capacity independently from GPU buffer allocation. If `_maxQuads` was serialized below the High/Ultra floor or the quality tier changed upward, the vault could build more quads than the GPU buffers could upload, silently reducing God-mode density. The diegetic kill-switch parser also allowed `uint` overflow, which could flip the wrong mask after a long command.
+Solution: Track actual GPU quad capacity in `_bufferQuadCapacity`, allocate buffers with `ResolveQuadCapacity()`, grow them with `EnsureBufferCapacity()` when tier demand increases, and clamp uploads against the real buffer capacity. Command parsing now rejects decimal/hex overflow; `AppendInt()` handles `int.MinValue` safely.
+Rejected Alternatives: Leaving `_maxQuads` as both designer cap and GPU truth, rebuilding buffers every tick, or accepting overflow wrap as "user error." The first hides visual truncation, the second burns driver time, and the third makes a survival console unsafe.
+Scalability potential: Low/MX350 keeps 512-2048 quads and no extra allocation churn. Middle stays capped at 4096. High/Ultra now guarantee at least the default 8192 indirect quads unless configured higher, preserving salt/silt/dent diagnostic overkill on top-tier machines.
+Hardware Impact: No Unity profiler measurement was run. Runtime steady-state cost is one integer capacity comparison per SlowTick; buffer growth is one rare quality-tier transition allocation. Command parser hardening is 0 us idle and O(command length) on deliberate PDA input.
+
+## Decision 21 - Loop 11 Source-Risk And Shader Guard Polish
+Problem: Follow-up static review found a compiler-risky `char + uint` digit conversion in the fixed integer formatter, anonymous cold arrays in quad mesh setup, and a shader `rsqrt` guard that rejected zero/NaN axes but not absurdly large axes.
+Solution: Cast digit arithmetic through `int`, move quad mesh vertices/UVs/indices into explicitly documented static cold arrays, and bound shader axis length before `rsqrt`.
+Rejected Alternatives: Relying on compiler numeric promotion, leaving cold array allocation undocumented because it is not per-frame, or using shader `isfinite`. Numeric promotion ambiguity is avoidable; cold allocation still needs ownership evidence; shader `isfinite` is less portable across the target shader backends.
+Scalability potential: Low/MX350 keeps identical draw count and no added hot-path work. High/Ultra keep the same dense visual-overkill path, but with safer vertex-axis fallback under corrupt camera/instance data.
+Hardware Impact: No profiler measurement was run. Source-risk fix is compile hygiene only. Static cold arrays remove per-instance setup arrays. Shader guard adds one scalar compare in the vertex helper only when billboarding/oriented quads normalize axes.
+
+## Decision 22 - Loop 12 Parallel Drift Reapplication
+Problem: A final post-doc static scan found the same parallel overwrite drift again: F12 input polling was restored in `Render`, and runtime/editor dump paths reverted to `Dump_ARCHITECT_SPATIAL_PROBE.bin`.
+Solution: Reapplied the same narrow diagnostics-domain patch: no keyboard polling in the render path, and both runtime dump and editor viewer point at `Dump_ARCHITECT_EYE_VISUALIZER.bin`.
+Rejected Alternatives: Ignoring the drift because docs were already updated, or running a rebuild to hide a source-level regression. The source scan is the relevant evidence for this regression; the user explicitly rejected rebuild spam.
+Scalability potential: Low/MX350 keeps 0 us idle keyboard polling. High/Ultra retain explicit diegetic control and correct blackbox identity for dense visual diagnostics.
+Hardware Impact: Removes a per-render input query branch again; no profiler measurement is claimed. Verification is source/static only.

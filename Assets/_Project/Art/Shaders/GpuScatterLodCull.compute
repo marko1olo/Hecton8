@@ -3,6 +3,9 @@
 
 #define HECTON_SCATTER_THREADS_PER_GROUP 64
 #define HECTON_SCATTER_FRUSTUM_PLANES 6
+#define HECTON_SCATTER_MAX_SAFE_UINT_FLOAT 16777215.0
+#define HECTON_SCATTER_MAX_CULL_DISTANCE_SQ 250000.0
+#define HECTON_SCATTER_MAX_MOTION_STRENGTH 2.0
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 
@@ -39,6 +42,14 @@ float SanitizeNonNegative(float value, float fallbackValue)
     return isfinite(value) ? max(value, fallbackValue) : fallbackValue;
 }
 
+float SanitizeFiniteRange(float value, float fallbackValue, float maxValue)
+{
+    float safeMax = isfinite(maxValue) ? max(maxValue, 0.0) : HECTON_SCATTER_MAX_SAFE_UINT_FLOAT;
+    float safeFallback = isfinite(fallbackValue) ? fallbackValue : 0.0;
+    float safeValue = isfinite(value) ? value : safeFallback;
+    return clamp(safeValue, 0.0, safeMax);
+}
+
 bool IsFiniteFloat3(float3 value)
 {
     return all(isfinite(value));
@@ -51,24 +62,24 @@ bool IsFiniteFloat4(float4 value)
 
 uint ResolveInstanceCount()
 {
-    uint instanceCount = (uint)SanitizeNonNegative(_HectonScatterParams0.x, 0.0);
-    uint instanceCapacity = (uint)SanitizeNonNegative(_HectonScatterParams4.w, 0.0);
-    return min(instanceCount, instanceCapacity);
+    float instanceCapacity = SanitizeFiniteRange(_HectonScatterParams4.w, 0.0, HECTON_SCATTER_MAX_SAFE_UINT_FLOAT);
+    float instanceCount = SanitizeFiniteRange(_HectonScatterParams0.x, 0.0, instanceCapacity);
+    return (uint)floor(instanceCount);
 }
 
 uint ResolveFrameIndex()
 {
-    return (uint)SanitizeNonNegative(_HectonScatterParams0.w, 0.0);
+    return (uint)floor(SanitizeFiniteRange(_HectonScatterParams0.w, 0.0, HECTON_SCATTER_MAX_SAFE_UINT_FLOAT));
 }
 
 float ResolveMaxDistanceSq()
 {
-    return SanitizeNonNegative(_HectonScatterParams0.y, 1.0);
+    return min(SanitizeNonNegative(_HectonScatterParams0.y, 1.0), HECTON_SCATTER_MAX_CULL_DISTANCE_SQ);
 }
 
 float ResolveMotionStrength()
 {
-    return SanitizeNonNegative(_HectonScatterParams0.z, 0.0);
+    return min(SanitizeNonNegative(_HectonScatterParams0.z, 0.0), HECTON_SCATTER_MAX_MOTION_STRENGTH);
 }
 
 float ResolveCrossfadeEnabled()

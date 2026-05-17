@@ -219,3 +219,178 @@ Verification:
 - `git diff --check` on touched Bridge/docs exits 0 with line-ending warnings only.
 - `dotnet build Hecton8.Core.csproj -m:1 -v:minimal -nr:false -p:UseSharedCompilation=false` is blocked outside Bridge by unresolved `HectonPhysicsContract`, `HectonEcologyContract`, and `ScalabilityContract` in non-Bridge consumers.
 - `dotnet build Hecton8.Editor.csproj -m:1 -v:minimal -nr:false -p:UseSharedCompilation=false -p:BuildProjectReferences=false` is blocked because `Temp/bin/Debug/Hecton8.Core.dll` is missing after Core fails.
+
+## 2026-05-17 GO AGAIN Boot Binder Naming And Compile Contention Pass
+What was wrong:
+- The runtime binder had already moved to `Start()`, but the serialized authoring switch still said `bindOnAwake`.
+- A stable isolated Core compile now fails outside Bridge in `SubmarineFluidDynamics.cs`; subsequent verification attempts were disrupted by many concurrent Core builds in the same workspace.
+
+What was done:
+- Renamed the field to `bindOnStart`.
+- Added `[FormerlySerializedAs("bindOnAwake")]` to preserve existing prefab/scene serialized values without raw YAML edits.
+- Re-ran Bridge lifecycle, typed-lane, struct-layout, and diff hygiene audits.
+- Logged the active compile wall without claiming a green build.
+
+Cinematic Cheats used:
+- No new runtime visual cheat was required in this pass. Existing Bridge controls still expose low-tier LUT/dot-product/triangle-noise IDs and high-tier visual-overkill hashes without hot-path string lookup.
+
+Exact Microseconds saved:
+- 0 us runtime steady-state.
+- The change is serialization metadata plus a cold `Start()` bind flag name. No Unity profiler microseconds were claimed.
+
+Verification:
+- Refined method-declaration scan found no Bridge `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`.
+- SignalBus scan shows all Bridge `Push` calls use `in`.
+- Struct layout scan shows Bridge payload structs remain `Pack = 1`.
+- `git diff --check -- Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistryRuntimeBinder.cs` exits 0 with line-ending normalization warning only.
+- `dotnet build Hecton8.Core.csproj --no-restore ...` is blocked outside Bridge: a stable isolated run reported missing exterior thermal-anomaly fields in `Assets/_Project/Scripts/SubmarineFluidDynamics.cs`; later reruns were not diagnostic due concurrent build contention.
+
+## 2026-05-17 GO AGAIN Stress Gate And Compile Recovery Pass
+What was wrong:
+- The Bridge live-tuning stress gate read `HomeostasisBrain.SystemHealthIndex01` directly as a second stress lane, while the assignment requires live tuning to stop when `SystemStress01 > 0.9`.
+- A file-logged Editor attempt captured a stale non-Bridge `SubmarineFluidDynamics.cs` diagnostic that was no longer present on disk.
+- Isolated Editor builds with custom output paths fail before Bridge editor code because Unity package projects expect the generated default output graph.
+
+What was done:
+- Re-read the archived XML prompt and every Bridge runtime/editor file touched by this domain.
+- Changed `H8BridgeFacadeRuntime.LiveTuningBlockedByStress()` to use `SignalBusRegistry.SystemStress01` plus normalized `HomeostasisBrain.PressureLevel`.
+- Re-ran refined Bridge scans for lifecycle methods, local native ownership, direct Vault buffers, managed events/delegates, legacy `EventBus`, `string.Format`, typed SignalBus pushes, and packed structs.
+- Re-ran isolated Core compile after the patch.
+- Recorded the invalid Editor verification path instead of claiming it as a code failure.
+
+Cinematic Cheats used:
+- Low tier keeps live tuning suppressed only under actual stress/pressure, preserving the cheap 1D LUT, triangle-noise, and dot-product controls when the system is healthy.
+- High/Ultra retain packed visual-overkill hashes for raymarch, 16-tap POM, SSS, salt-crystal, silt, hull-dent, and particle consumers without runtime string lookup.
+
+Exact Microseconds saved:
+- 0 us runtime steady-state.
+- Explicit live-edit sync pays two scalar reads and one max operation only when the designer changes a facade value. No Unity profiler microseconds were claimed.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj -m:1 -nr:false /p:UseSharedCompilation=false /p:RunAnalyzers=false /p:BaseIntermediateOutputPath=Temp\obj_ARCHITECT_BRIDGE_FACADE_21\ /p:OutputPath=Temp\bin_ARCHITECT_BRIDGE_FACADE_21\Debug\ -v:minimal` exits 0 with 0 warnings and 0 errors.
+- Refined Bridge method-declaration scan found no `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`.
+- Bridge ownership scan found no direct `GetBuffer<`, `NativeArray<`, `new NativeArray`, or `Allocator.` usage.
+- Bridge lane scan found no legacy `EventBus`, managed event/delegate lane, `UnityEvent`, `string.Format`, or non-`in` SignalBus push.
+- Struct layout scan shows Bridge DTO/signal payloads remain `Pack = 1`.
+- `git diff --check` on touched Bridge/runtime/docs exits 0 with line-ending normalization warnings only.
+- `Hecton8.Editor.csproj` isolated-output verification is invalid for this generated Unity graph; it reports missing package DLLs and circular `ResolveProjectReferences` before Bridge code is tested.
+
+## 2026-05-17 GO AGAIN Current World Compile Wall Refresh
+What was wrong:
+- The valid default-output Editor build now reaches project code and fails in `World/SargassumMicroFaunaBoids.cs`.
+- A fresh isolated Core build now fails on the same world-domain missing fields, so the earlier green Core compile is no longer the current workspace state.
+
+What was done:
+- Ran default-output `Hecton8.Editor.csproj` verification with node reuse/shared compilation disabled.
+- Ran a fresh isolated `Hecton8.Core.csproj` verification after the Editor wall.
+- Recorded the active wall instead of editing World code from the Bridge domain.
+
+Cinematic Cheats used:
+- No new runtime cheat was required in this pass. Bridge still exposes the existing low-tier LUT/triangle-noise/dot-product controls and High/Ultra visual-overkill hashes with no hot-path string lookup.
+
+Exact Microseconds saved:
+- 0 us runtime steady-state.
+- This pass was verification and compile-wall documentation only. No Unity profiler microseconds were claimed.
+
+Verification:
+- Default-output `dotnet build Hecton8.Editor.csproj -m:1 -nr:false /p:UseSharedCompilation=false /p:RunAnalyzers=false -v:minimal` fails outside Bridge in `World/SargassumMicroFaunaBoids.cs`.
+- Fresh isolated `dotnet build Hecton8.Core.csproj -m:1 -nr:false /p:UseSharedCompilation=false /p:RunAnalyzers=false /p:BaseIntermediateOutputPath=Temp\obj_ARCHITECT_BRIDGE_FACADE_22\ /p:OutputPath=Temp\bin_ARCHITECT_BRIDGE_FACADE_22\Debug\ -v:minimal` fails on the same non-Bridge world file.
+- Active missing fields: `_grazingAnchors`, `_formationBeacons`, `_formationObstacles`, `_massiveThreats`.
+- No Bridge compiler error appears before this dependency wall.
+
+## 2026-05-17 GO AGAIN Empty Facade Tombstone Pass
+What was wrong:
+- Emptying a facade in the inspector was not a first-class state. Input/design validation could reseed defaults, and an empty design facade returned success without clearing stale raw values from `BridgeDesignFacadeValues`.
+- Deleting the last design binding produced no changed binding, so live tuning could skip the clear path while the old balance floats stayed in the Vault.
+
+What was done:
+- Split list initialization from default seeding in `H8InputMappingFacade` and `H8DesignDataFacade`; defaults now come from `Reset()` or explicit context-menu seed commands.
+- Added design binding-count tracking so deleting the last binding marks the facade dirty and calls the setter during play.
+- Added an empty design tombstone path in `H8BridgeFacadeRuntime.SyncDesignData`: it records heartbeat telemetry, clears the existing `BridgeDesignFacadeValues` span with memory fences, publishes a heartbeat `DataVaultUpdateSignal`, and persists the `H8FacadeMacroHeader`.
+
+Cinematic Cheats used:
+- Low tier gets zero-hash/zero-value tombstones instead of stale control values.
+- High/Ultra retain the packed LUT and visual-overkill control lanes, but removed controls no longer leave hidden raymarch/POM/SSS/particle knobs alive.
+
+Exact Microseconds saved:
+- 0 us runtime steady-state.
+- Empty-facade clearing is an explicit designer sync path only. No Unity profiler microseconds were claimed.
+
+Verification:
+- No rebuild was run in this pass per operator instruction.
+- Refined Bridge method-declaration scan found no `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`.
+- Bridge ownership scan found no `NativeArray<`, `new NativeArray`, `Allocator.`, or direct `GetBuffer<`.
+- Bridge lane scan found no legacy `EventBus`, managed event/delegate lane, `UnityEvent`, or `string.Format`.
+- SignalBus scan shows all Bridge `Push` calls use `in`.
+- `git diff --check` on touched Bridge files exits 0 with line-ending normalization warnings only.
+
+## 2026-05-17 GO AGAIN Typed Dirty-Lane And MemClear Width Pass
+What was wrong:
+- Prefab and input Bridge buffers changed raw DataVault lanes without an explicit typed dirty signal, leaving listeners to poll or infer changes from unrelated telemetry.
+- Input and prefab/lore buffer clears used int-sized byte-count expressions before calling `UnsafeUtility.MemClear`.
+
+What was done:
+- `H8PrefabRegistryRuntimeBinder` now publishes `DataVaultUpdateSignal` after writing or clearing `BridgePrefabMapping` and `BridgePrefabLoreLinks`.
+- `H8InputMappingFacade` now publishes `DataVaultUpdateSignal` after writing or clearing `BridgeInputFacadeBindings`.
+- Prefab/lore and input clear paths now use `long` byte-count multiplication and fenced `MemClear` paths.
+
+Cinematic Cheats used:
+- Low tier avoids polling Bridge buffers to detect changed controls.
+- High/Ultra keep packed prefab, lore, acoustic, LUT, and visual-overkill metadata with no hot-path string lookup or per-frame facade sync.
+
+Exact Microseconds saved:
+- 0 us runtime steady-state.
+- Sync/bind dirty pulses and fenced clears are explicit setter/boot actions only. No Unity profiler microseconds were claimed.
+
+Verification:
+- No rebuild was run in this pass per operator instruction.
+- Refined Bridge method-declaration scan found no `Awake`, `Update`, `LateUpdate`, `FixedUpdate`, or `OnGUI`.
+- Bridge ownership scan found no `NativeArray<`, `new NativeArray`, `Allocator.`, or direct `GetBuffer<`.
+- Bridge lane scan found no legacy `EventBus`, managed event/delegate lane, `UnityEvent`, or `string.Format`.
+- SignalBus scan shows all Bridge `Push` calls use `in`.
+- `MemClear` scan found no remaining int-sized `Length * SizeOf` clear expression in Bridge.
+- `git diff --check` on touched Bridge files exits 0 with line-ending normalization warnings only.
+
+## 2026-05-17 GO AGAIN Visual Overkill Control Coverage
+What was wrong:
+- The default design facade had controls for silt, hull dents, raymarch, POM, SSS, and particles, but no explicit visor salt-crystal growth knob.
+
+What was done:
+- Added `VisorSaltCrystalGrowth01` to the default `H8DesignDataFacade` visual bindings at aligned offset 44.
+- The binding carries the same 1D LUT and high-tier visual hash path as the other visual-overkill controls.
+
+Cinematic Cheats used:
+- Low tier can render salt with a 1D LUT or dot-product mask.
+- High/Ultra can use the same packed value to drive crystalline visor buildup, wet-edge raymarching, sparkle particles, or material detail without a hot-path string lookup.
+
+Exact Microseconds saved:
+- 0 us runtime steady-state.
+- This is authoring/default data only; sync cost occurs only when the facade is explicitly pushed. No Unity profiler microseconds were claimed.
+
+Verification:
+- No rebuild was run in this pass per operator instruction.
+- Focused scan confirms `VisorSaltCrystalGrowth01` is present.
+- Lifecycle/ownership scans remain clean for Bridge.
+- `git diff --check -- Assets/_Project/Scripts/Core/Bridge/H8DesignDataFacade.cs` exits 0 with line-ending normalization warning only.
+
+## 2026-05-17 GO AGAIN Runtime-Only SignalBus Gate
+What was wrong:
+- Manual editor/window sync paths use the same setters as play mode, so a valid edit-mode Vault could still push runtime SignalBus lanes.
+
+What was done:
+- Gated design clear and design value `DataVaultUpdateSignal` pushes behind `Application.isPlaying`.
+- Gated input dirty `DataVaultUpdateSignal` behind `Application.isPlaying`.
+- Cached play-mode state inside prefab binding and skipped acoustic/lore and DataVault dirty signals outside runtime.
+
+Cinematic Cheats used:
+- No new visual cheat was needed in this pass. The existing LUT/hash facade controls remain available to runtime consumers only when the game is actually running.
+
+Exact Microseconds saved:
+- 0 us runtime steady-state.
+- The play-mode guard is paid only during explicit sync/bind. No Unity profiler microseconds were claimed.
+
+Verification:
+- No rebuild was run in this pass per operator instruction.
+- SignalBus scan shows every Bridge `Push` still uses `in`.
+- Guard scan shows Bridge runtime signal paths are gated by `Application.isPlaying` or `publishRuntimeSignals`.
+- `git diff --check` on signal-gated Bridge files exits 0 with line-ending normalization warnings only.

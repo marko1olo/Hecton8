@@ -3,7 +3,7 @@
 Identification: CONTENT_AUTHORITY_DICTATOR
 Domain: CORE/ASSETS
 Task count: 20
-Status: VERIFIED MASTER GRADE - TASK 20 BLOCKED BY EXTERNAL VFX/VENDOR RESTORE
+Status: VERIFIED MASTER GRADE - CONTENT STATIC CLEAN THROUGH PHASE 37; LATEST EDITOR CLI GREEN WITH EXTERNAL WARNINGS; UNITY IMPORT/PLAYMODE/PROFILER PENDING
 
 ## Relevant Mandates Read Before Coding
 - STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt
@@ -33,7 +33,7 @@ Status: VERIFIED MASTER GRADE - TASK 20 BLOCKED BY EXTERNAL VFX/VENDOR RESTORE
 - [x] 11. LOD_AUTOMATOR - DOD: postprocessor assigns LODGroup thresholds for environment/wreck/debris imports. Rejected alternative: hand-authored inconsistent LODs only. Estimate: draw/triangle savings content-dependent.
 - [x] 12. REFERENCE_COUNTER - DOD: fixed-capacity `ContentBundleReferenceCounter` blocks duplicate bundle residency by hash and stores ref states/count in `GlobalDataVault` buffers. Rejected alternative: private managed residency table or independent script-level loads. Estimate: MB-scale texture duplication prevention.
 - [x] 13. AUP_SHIFT_GC_HOOK - DOD: AupShiftSignal + SystemStress01 > 0.8 gates asset lifecycle drain/eviction during spatial jump only; `Resources.UnloadUnusedAssets()` was removed because AGENTS forbids runtime sweeps. Rejected alternative: normal-frame cleanup or Unity unused-asset sweep. Estimate: 0 normal-frame us except signal scan.
-- [x] 14. ASYNC_VFX_LOADER - DOD: `ContentVfxPrewarmManifest` and runtime Addressables handles prewarm particle/compute assets. Rejected alternative: instantiate mid-combat. Estimate: hitch prevention, not steady-frame gain.
+- [x] 14. ASYNC_VFX_LOADER - DOD: `ContentVfxPrewarmManifest` and runtime Addressables handles prewarm particle systems, prefab-backed particle VFX, and compute shaders. Rejected alternative: instantiate mid-combat. Estimate: hitch prevention, not steady-frame gain.
 - [x] 15. TIERED_CONTENT_GROUPS - DOD: Core/High_Res/Overkill validation and runtime denial policy for XR/low VRAM. Rejected alternative: download all bundles then unload. Estimate: prevents Overkill download/VRAM on Quest/MX350.
 
 ## Loop 4: Tasks 16-20
@@ -41,7 +41,7 @@ Status: VERIFIED MASTER GRADE - TASK 20 BLOCKED BY EXTERNAL VFX/VENDOR RESTORE
 - [x] 17. MEMORY_MAPPED_LORE_LINK - DOD: `ContentLoreBinaryProvider` reads `Babel_Dictionary.h8bin` blocks by uint hash through memory-mapped access when supported. Rejected alternative: TextAsset lore loading. Estimate: avoids managed string/table allocations.
 - [x] 18. PHYSICS_PROXY_BAKER - DOD: editor baker merges selected BoxCollider fields into one convex proxy hull asset. Rejected alternative: 50 independent box colliders. Estimate: hundreds of us saved in dense PhysX scenes.
 - [x] 19. SHADOW_CASTER_PURGE - DOD: postprocessor disables shadow casting on renderers with scale < 0.2m. Rejected alternative: runtime shadow toggles. Estimate: shadow caster/render setup savings content-dependent.
-- [BLOCKED BY DEPENDENCY] 20. PLATINUM_COMPILE - DOD: phase 15 achieved fresh green core/editor checkpoints, but latest builds now fail in external VFX and vendor restore files; no CORE/ASSETS errors appear. Rejected alternative: editing non-content ownership from the content pass or claiming stale green as current. Estimate: blocked.
+- [BLOCKED BY DEPENDENCY] 20. PLATINUM_COMPILE - DOD: phase 23 core and editor builds exited 0 before external drift; latest phase 24 core recheck fails outside CORE/ASSETS in World/Biolum and VFX. Rejected alternative: reporting stale green compile as current or editing external ownership. Estimate: blocked.
 
 ## Loop 5: Self-Audit
 - [x] Runtime hot-path audit - DOD: `rg` scan of `Assets/_Project/Scripts/Core/Content` found no `foreach`, `Resources.Load`, LINQ list chains, scene searches, coroutine hooks, or renderer material allocation paths. Rejected alternative: manual visual inspection only. Estimate: keeps runtime service tick under the 0.1 ms suspicion line.
@@ -157,6 +157,137 @@ Status: VERIFIED MASTER GRADE - TASK 20 BLOCKED BY EXTERNAL VFX/VENDOR RESTORE
 - [x] Phase 15 green compile checkpoint - DOD: after stopping orphaned timed-out MSBuild workers, `dotnet build Hecton8.Editor.csproj -v:minimal /m:1 /nr:false` exited 0 with 0 warnings and 0 errors, and `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 0 warnings and 0 errors. Rejected alternative: treating the timed-out parallel builds as compile verdicts. Estimate: verification only.
 - [BLOCKED BY DEPENDENCY] Phase 15 latest core/editor recheck - DOD: latest core/editor builds now fail outside CORE/ASSETS in `VFX/Bioluminescence/BiolumPulseSyncRuntime.cs` missing `ResolveDataVault` and vendor restore assets missing under `Temp/obj`; no content errors appear. Rejected alternative: editing VFX or vendor project restore ownership from the content pass. Estimate: blocked.
 
+## Loop 20: Phase 16 Save Topology and Lore Root Hardening
+- [x] Zero-GC save topology writers - DOD: `ContentSaveSlotTopology` now exposes caller-owned `Span<char>` writers for `Saves/slot_N`, `.sav`, `.bak`, `.tmp`, and `sector_XXXXXXXXXXXXXXXX.h8page` paths. Rejected alternative: forcing consumers toward `string.Format` on topology templates. Estimate: no runtime heap formatting on callers using the span path.
+- [x] Explicit slot bound gate - DOD: save-slot path writers accept only `slot_0..slot_2` through `IsValidSlotIndex()`. Rejected alternative: implicitly authoring unbounded save directories from integer input. Estimate: scalar guard only.
+- [x] Lore root exception containment - DOD: `ContentLoreBinaryProvider.TryResolveFileUnder()` catches recoverable full-path/combine failures and returns false so `Open()` can report a controlled missing dictionary instead of throwing from path resolution. Rejected alternative: trusting platform path APIs on Android/Mac/Steam Deck roots. Estimate: cold open only.
+- [x] Phase 16 static audit - DOD: post-patch scans found no banned content-domain patterns and no first-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` calls. Rejected alternative: relying on code review for path-formatting changes. Estimate: audit-only.
+- [x] Phase 16 PLATINUM compile - DOD: after waiting for a separate workspace build/restore to clear, `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` and `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` both exited 0 with 0 warnings and 0 errors. Rejected alternative: compiling during active build contention or preserving stale blocked status. Estimate: verification only.
+
+## Loop 21: Phase 17 Save Topology Build Gate Proof
+- [x] Save topology writer build gate - DOD: `ContentAuthorityBuildValidators` now executes the `Span<char>` save topology writers and fails if `Saves/slot_0`, `.sav`, `.bak`, `.tmp`, or `sector_0123456789ABCDEF.h8page` output drifts. Rejected alternative: trusting public constants or code review while future callers could slide back to `string.Format`. Estimate: build-time only, 0 runtime us.
+- [x] Slot rejection proof - DOD: validator rejects writer acceptance of slots outside `slot_0..slot_2`. Rejected alternative: relying only on `IsValidSlotIndex()` without an enforced build proof. Estimate: build-time only, 0 runtime us.
+- [x] Phase 17 static audit - DOD: post-patch scans found no banned content-domain patterns and no first-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` calls. Rejected alternative: assuming an editor-only patch could not introduce forbidden patterns. Estimate: audit-only.
+- [x] Phase 17 PLATINUM compile - DOD: `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` and `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` both exited 0 with 0 warnings and 0 errors after the save-topology validator gate. Rejected alternative: compiling only editor because the code change is editor-only. Estimate: verification only.
+
+## Loop 22: Phase 18 Binary Export Strictness
+- [x] Managed authoring row demotion - DOD: `ContentAssetEntry` no longer carries `[StructLayout(Pack = 1)]` because it contains managed Unity references and is not a native/binary payload. `ContentAssetBinaryRecord` remains the packed 32-byte bridge. Rejected alternative: pretending a managed authoring row is ARM64-safe binary data. Estimate: correctness only, 0 runtime us.
+- [x] Binary export fail-loud path - DOD: `ToBinaryRecord()` now rejects zero hashes, invalid kind/tier/LOD, negative VRAM estimates, dependency overflow, zero dependencies, self-dependencies, and duplicate dependencies instead of clamping or silently dropping data. Rejected alternative: relying only on editor validators while leaving the export API able to lie. Estimate: cold export path only.
+- [x] Phase 18 static audit - DOD: post-patch scans found no banned content-domain patterns and no first-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` calls. Rejected alternative: assuming a core hash-map patch could not introduce forbidden patterns. Estimate: audit-only.
+- [BLOCKED BY DEPENDENCY] Phase 18 latest compile - DOD: attempt 58 core recheck exited 0 after the content patch, but latest attempts 59-62 fail outside CORE/ASSETS in Gameplay, Audio, AcousticZone, Tether, Player motor, and player movement interface/math drift. No content errors appeared. Rejected alternative: editing non-content Gameplay/Audio/Tether ownership to force a green build. Estimate: blocked.
+
+## Loop 23: Phase 19 Binary Export Validator Proof
+- [x] Binary export validator proof - DOD: `ContentAuthorityBuildValidators` now executes `ContentAssetEntry.ToBinaryRecord()` for every hash-map row and fails if exported hash, VRAM, dependency offset/count, kind, tier, biome, LOD, flags, or reserved fields drift from authoring data. Rejected alternative: validating entry shape without exercising the real exporter. Estimate: build-time only, 0 runtime us.
+- [x] Phase 19 static audit - DOD: post-patch scans found no banned content-domain patterns and no first-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` calls. Rejected alternative: assuming validator edits are harmless without source gates. Estimate: audit-only.
+- [x] Phase 19 core compile - DOD: attempt 63 `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 0 warnings and 0 errors after binary export validator proof. Rejected alternative: relying on phase 18 core checkpoint. Estimate: verification only.
+- [BLOCKED BY DEPENDENCY] Phase 19 editor compile - DOD: attempt 64 `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` failed outside CORE/ASSETS because `Temp/obj/MapMagic/MapMagic.dll` was locked by another process. Rejected alternative: killing unknown dotnet workers in a multi-agent workspace. Estimate: blocked.
+
+## Loop 24: Phase 20 Fixed VFX Handle Ledger
+- [x] VFX prewarm managed-list purge - DOD: runtime VFX prewarm and resident Addressables handles now use fixed `AsyncOperationHandle[64]` arrays with explicit counts and deterministic release cleanup. Rejected alternative: keeping pre-sized managed `List<T>` ledgers in the runtime authority. Estimate: no new runtime heap growth; exact frame cost not claimed without profiler.
+- [x] Failed VFX resident ledger containment - DOD: completed VFX handles are released if the fixed resident ledger cannot accept them. Rejected alternative: retaining an untracked prewarm handle after completion. Estimate: leak prevention, not a measured frame-time claim.
+- [x] Phase 20 static audit - DOD: post-patch scans found no banned content-domain patterns; `ContentRuntimeServices.cs` has no managed `List<T>` usage. Rejected alternative: trusting the manual list purge without `rg`. Estimate: audit-only.
+- [x] Phase 20 PLATINUM compile - DOD: attempt 65 core build exited 0 with 0 warnings and 0 errors; attempt 67 editor restore exited 0; attempt 68 editor `dotnet build Hecton8.Editor.csproj --no-restore -v:normal /m:1 /nr:false` exited 0 with 0 warnings and 0 errors. Rejected alternative: reporting the previous MapMagic lock as current after a successful editor build proof. Estimate: verification only.
+
+## Loop 25: Phase 21 Prefab-Aware VFX Prewarm Gate
+- [x] Prefab-backed particle prewarm - DOD: particle prewarm references now load as `UnityEngine.Object` and warm either direct `ParticleSystem` assets or prefab `GameObject` assets containing a `ParticleSystem`. Rejected alternative: requiring every particle VFX Addressable to be a bare `ParticleSystem` asset. Estimate: loading-screen only, no combat instantiation.
+- [x] VFX type build gate - DOD: editor validation now fails particle prewarm references that are not a `ParticleSystem` or prefab containing one, and fails compute prewarm references that are not `ComputeShader`. Rejected alternative: runtime type mismatch after Addressables load. Estimate: build-time only, 0 runtime us.
+- [x] Phase 21 static audit - DOD: post-patch scans found no banned content-domain patterns, no first-party `Resources.Load*`, and no managed `List<T>` usage in `ContentRuntimeServices.cs`. Rejected alternative: assuming the VFX type widening was harmless without `rg`. Estimate: audit-only.
+- [x] Phase 21 PLATINUM compile - DOD: attempt 69 core build exited 0 with 0 warnings and 0 errors; attempt 70 editor restore exited 0; attempt 73 editor build exited 0 with 0 warnings and 0 errors. Rejected alternative: reporting transient attempt 71 warning summary as final after a later clean rebuild. Estimate: verification only.
+
+## Loop 26: Phase 22 VFX Hierarchy Traversal Budget
+- [x] Full prefab particle traversal - DOD: prefab-backed VFX prewarm now traverses the transform hierarchy and simulates every child `ParticleSystem` instead of only the first match. Rejected alternative: first-match warmup that leaves multi-emitter prefabs partially cold. Estimate: loading-screen only; no combat Tick work.
+- [x] Traversal budget gate - DOD: runtime traversal is bounded by `MaxParticlePrefabDepth=32` and `MaxParticlePrefabNodes=256`, and editor validation fails particle prefabs that exceed those budgets. Rejected alternative: unbounded recursion over malformed/deep prefabs. Estimate: bounds worst-case loading-screen work.
+- [x] Phase 22 static audit - DOD: post-patch scans found no banned content-domain patterns, no first-party `Resources.Load*`, and no managed `List<T>` usage in `ContentRuntimeServices.cs`. Rejected alternative: trusting recursive traversal without source gates. Estimate: audit-only.
+- [BLOCKED BY DEPENDENCY] Phase 22 latest compile - DOD: attempts 74 and 75 core builds fail outside CORE/ASSETS in `World/SargassumMicroFaunaBoids.cs` missing `_grazingAnchors`, `_massiveThreats`, `_formationBeacons`, and `_formationObstacles`; no content errors appeared. Rejected alternative: editing World ownership from content authority. Estimate: blocked.
+
+## Loop 27: Phase 23 LOD Contract Correction
+- [x] LOD0 threshold correction - DOD: environment LOD automation now emits LOD0 at `1.00f` to match the explicit 100% contract. Rejected alternative: leaving the prior `0.60f` threshold while claiming task 11 compliance. Estimate: import-time only.
+- [x] LOD1/LOD2 named thresholds - DOD: LOD1 uses `0.30f`; LOD2 impostor/cull placeholder uses `0.05f`, with named constants instead of magic numbers. Rejected alternative: hidden literal ratios in importer code. Estimate: import-time only.
+- [x] Phase 23 static audit - DOD: post-patch scans found no banned content-domain patterns and `git diff --check` reported only line-ending warnings. Rejected alternative: trusting a small importer patch without source gates. Estimate: audit-only.
+- [x] Phase 23 compile - DOD: attempt 76 core build exited 0 with 0 warnings and 0 errors; attempt 77 editor build exited 0 with 48 external package warnings and 0 errors. Rejected alternative: treating Unity/third-party package warnings as content failures. Estimate: verification only.
+
+## Loop 28: Phase 24 Hologram Pool Runtime Clamp
+- [x] Runtime hologram pool clamp - DOD: `ContentAuthorityRuntime.Awake()` clamps serialized hologram pool capacity to `1..MaxPendingLoadCount` before allocating proxy arrays. Rejected alternative: relying only on prefab validator while scene objects or bypassed assets could carry oversized serialized values. Estimate: cold `Awake` only.
+- [x] Phase 24 static audit - DOD: post-patch scans found no banned content-domain patterns, no first-party `Resources.Load*`, and `git diff --check` reported only line-ending warnings. Rejected alternative: trusting a one-line runtime clamp without source gates. Estimate: audit-only.
+- [BLOCKED BY DEPENDENCY] Phase 24 latest compile - DOD: attempt 78 core build fails outside CORE/ASSETS in `World/Biolum/HectonBiolumManager.cs` and `VFX/HectonMarineSnowRenderer.cs`; no content errors appeared. Rejected alternative: editing World/VFX ownership from content authority. Estimate: blocked.
+
+## Loop 29: Phase 25 Runtime Fail-Loud Diagnostics
+- [x] Missing registry diagnostics - DOD: runtime bundle acquire/content resolve now logs editor/development errors when the asset hash map is missing or a requested hash has no registry row. Rejected alternative: silent `false` return on missing authority data. Estimate: diagnostic-only; release calls are compiled out.
+- [x] Async-load diagnostics - DOD: async load tracking now logs invalid hash/target, unavailable pending-load vault, full pending-load ledger, and completion misses. Rejected alternative: invisible hologram/proxy failures with no local fault evidence. Estimate: diagnostic-only; release calls are compiled out.
+- [x] VFX/hologram diagnostics - DOD: VFX prewarm logs invalid references, prewarm/resident ledger exhaustion, failed handles, unavailable hologram proxy state, and one-shot pool exhaustion. Rejected alternative: silent VFX warmup and proxy failure. Estimate: diagnostic-only; release calls are compiled out.
+- [x] Phase 25 static audit - DOD: post-patch scans found no banned content-domain patterns, no first-party `Resources.Load*`, and no stray `targetRenderer` references outside valid methods. Rejected alternative: rebuilding immediately after one diagnostics pass despite instruction not to run dotnet every time. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 25 compile - DOD: compile not run for this single diagnostics pass because user explicitly instructed not to run dotnet rebuild every time. Rejected alternative: burning another full project build for a conditional-log-only pass. Estimate: deferred.
+
+## Loop 30: Phase 26 Bundle Refcount Ownership Guard
+- [x] Acquire metadata guard - DOD: bundle acquire now rejects zero hashes, negative byte estimates, and invalid content tiers before touching the vault ledger. Rejected alternative: coercing malformed metadata into zero-byte residency rows. Estimate: scalar guard only.
+- [x] Active removal guard - DOD: public bundle `Remove()` now refuses to remove rows with positive ref counts and logs the hash/ref count in editor/development. Rejected alternative: letting misuse desynchronize Addressables handles and VRAM residency. Estimate: scalar guard only.
+- [x] Phase 26 static audit - DOD: post-patch scans found no banned content-domain patterns and `git diff --check` on the touched runtime file reported only line-ending warnings. Rejected alternative: running another full dotnet build for the second small diagnostics/guard edit. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 26 compile - DOD: compile not run for this incremental guard because user instructed not to run dotnet rebuild every time. Rejected alternative: treating every scalar guard as a build checkpoint. Estimate: deferred.
+
+## Loop 31: Phase 27 Addressables Handle Acquire Rollback
+- [x] Invalid handle rollback - DOD: content-owned Addressables handle acquire now rolls back the refcount increment and updates VRAM accounting if the handle is invalid. Rejected alternative: marking a bundle resident without a releasable handle. Estimate: failure path only.
+- [x] Track failure rollback reuse - DOD: failed handle table tracking now uses the same rollback helper instead of duplicate release/remove code. Rejected alternative: duplicated ownership rollback with future drift risk. Estimate: failure path only.
+- [x] Phase 27 static audit - DOD: post-patch scans found no banned content-domain patterns and `git diff --check` on the touched runtime file reported only line-ending warnings. Rejected alternative: dotnet rebuild after every small ownership guard despite user instruction. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 27 compile - DOD: compile not run for this incremental handle-rollback guard. Rejected alternative: treating each scalar failure-path fix as a full build checkpoint. Estimate: deferred.
+
+## Loop 32: Phase 28 Lore Path Case-Sovereignty
+- [x] Strict root containment - DOD: lore dictionary path containment now uses `StringComparison.Ordinal` instead of global case-insensitive matching. Rejected alternative: allowing Linux/Android/Steam Deck case folding to pass a path under the wrong root casing. Estimate: cold open only.
+- [x] Phase 28 static audit - DOD: focused scan confirms root containment is ordinal while compressed package protocol detection remains intentional; content banned-pattern scan remains clean. Rejected alternative: assuming path comparison was platform-neutral. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 28 compile - DOD: compile not run for this cold path-containment change. Rejected alternative: full dotnet build for a one-line cold-open hardening patch. Estimate: deferred.
+
+## Loop 33: Phase 29 Lore Read Fail-Loud Diagnostics
+- [x] Zero-hash and missing block rejection - DOD: `TryReadBlock` now rejects zero hash and unknown lore block hashes with editor/development diagnostics. Rejected alternative: silent `false` that leaves UI text missing with no content authority evidence. Estimate: failure path only.
+- [x] Unreadable/destination/stream diagnostics - DOD: unreadable ranges, too-small caller spans, missing fallback streams, and partial reads now fail loud and never report partial bytes as success. Rejected alternative: letting UI callers infer why lore bytes were absent. Estimate: failure path only.
+- [x] Phase 29 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused symbol scan verified the new lore diagnostics. Rejected alternative: relying on visual inspection after touching IO code. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 29 compile - DOD: compile not run for this incremental diagnostics patch. Rejected alternative: full dotnet build after every fail-loud guard despite user instruction. Estimate: deferred.
+
+## Loop 34: Phase 30 Object Batch Registry Coverage Gate
+- [x] Batch hash bridge gate - DOD: object-batch instances now fail editor/build validation if their `AssetHash` has no registered 3D content binding in `ContentAssetHashMap`. Rejected alternative: trusting baked BRG payload hashes without proving registry linkage. Estimate: build-time only.
+- [x] Chunk exact-coverage gate - DOD: object-batch chunks now fail validation if an instance is covered by multiple chunks or by no chunk. Rejected alternative: allowing overlapping/unaddressed BRG ranges to surface as missing debris at runtime. Estimate: build-time only.
+- [x] Phase 30 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused validator symbol scan verified coverage/hash gates. Rejected alternative: relying on code review only for chunk math. Estimate: audit-only.
+- [x] Phase 30 compile checkpoint - DOD: one batched `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 after the lore and object-batch validator changes. Rejected alternative: rebuilding after each small guard. Estimate: verification only.
+
+## Loop 35: Phase 31 Tier Policy Invalid-Value Guard
+- [x] Invalid tier download denial - DOD: `ContentTieredGroupPolicy.CanDownload` now rejects enum values above `Overkill` with editor/development diagnostics. Rejected alternative: treating malformed tier bytes as downloadable content. Estimate: scalar guard only.
+- [x] Invalid tier visual-budget clamp - DOD: malformed tier values now resolve to the low/XR Dear Lie budget after logging instead of falling into the mid/high visual path. Rejected alternative: letting bad registry metadata buy premium particles/raymarch settings. Estimate: scalar guard only.
+- [x] Phase 31 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused symbol scan verified the tier guard. Rejected alternative: full rebuild immediately after one scalar guard. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 31 compile - DOD: compile not run for this incremental tier-policy guard because phase 30 already performed a batched build. Rejected alternative: dotnet build after every small patch. Estimate: deferred.
+
+## Loop 36: Phase 32 Save Topology Format-String Purge
+- [x] Format-pattern constant purge - DOD: save topology no longer exposes `{0}` format-string constants; it exposes literal prefixes/suffixes and span writers only. Rejected alternative: leaving public format patterns that invite `string.Format` back into save paths. Estimate: cold/static contract only.
+- [x] Span writer contract retained - DOD: `TryWriteSaveSlotDirectory`, player delta writers, and macro-sector writer still produce explicit slot paths through caller-owned spans. Rejected alternative: replacing writers with formatted strings. Estimate: 0 hot-path allocation.
+- [x] Phase 32 static audit - DOD: focused scan found no `{0}` topology constants and content banned-pattern/first-party `Resources.Load*` scans remained clean. Rejected alternative: relying on the previous save-topology audit after changing public constants. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 32 compile - DOD: compile not run for this small static-contract cleanup. Rejected alternative: dotnet build after every anti-bloat cleanup. Estimate: deferred.
+
+## Loop 37: Phase 33 Hologram Capacity Truthfulness
+- [x] Runtime capacity field clamp - DOD: `Awake()` now writes the clamped hologram pool capacity back to `hologramPoolCapacity`, so `HologramPoolCapacity` reports actual allocated capacity. Rejected alternative: allocating a bounded pool while public diagnostics still report the bad serialized value. Estimate: cold Awake only.
+- [x] Phase 33 static audit - DOD: focused scan verified the clamp/property path and content banned-pattern/first-party `Resources.Load*` scans remained clean. Rejected alternative: trusting prior phase 24 clamp after finding a reporting mismatch. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 33 compile - DOD: compile not run for this one-line cold-path truthfulness fix. Rejected alternative: dotnet build after every small runtime invariant patch. Estimate: deferred.
+
+## Loop 38: Phase 34 Registry Visual Kind Authority
+- [x] Kind-aware visual binding - DOD: `ContentAssetEntry.HasVisual3D()` now only returns true for Prefab, Mesh, or VFX rows with a prefab/mesh binding. Rejected alternative: allowing Material/Texture/Audio/Lore rows to satisfy economy or object-batch 3D gates by carrying a stray mesh reference. Estimate: scalar lookup predicate only.
+- [x] Editor registry shape gate - DOD: `ValidateEntryShape` now fails 3D bindings on non-visual kinds, Mesh rows without Mesh bindings, and Prefab rows without a prefab/mesh binding. Rejected alternative: letting mismatched registry metadata pass until runtime content load. Estimate: build-time only.
+- [x] Phase 34 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused scan verified the kind-aware visual gates; `git diff --check` reported only line-ending warnings on touched files. Rejected alternative: running dotnet rebuild for this focused registry guard. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 34 compile - DOD: compile not run for this incremental registry validation patch because the user explicitly said not to run dotnet rebuild every time. Rejected alternative: treating every editor/build-gate refinement as a full build checkpoint. Estimate: deferred.
+
+## Loop 39: Phase 35 Async Hologram Registry Proof
+- [x] Pending-load hash proof - DOD: `TrackAsyncLoad` now requires a bound `ContentAssetHashMap` and rejects unknown hashes before writing to the pending-load vault. Rejected alternative: allowing ghost-proxy tracking for hashes that the registry cannot resolve. Estimate: one hash lookup on load-start only.
+- [x] Fail-loud async tracker diagnostics - DOD: missing map and missing hash paths reuse existing editor/development diagnostics before returning false. Rejected alternative: silent pending-load refusal or delayed failure when the async completion misses. Estimate: failure path only.
+- [x] Phase 35 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused tracker scan verified the new map/hash checks; `git diff --check` reported only line-ending warnings on the touched runtime file. Rejected alternative: rebuilding after another focused runtime guard. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 35 compile - DOD: compile not run for this incremental load-start guard because the user explicitly said not to run dotnet rebuild every time. Rejected alternative: treating every scalar guard as a build checkpoint. Estimate: deferred.
+
+## Loop 40: Phase 36 Required Hash Copy Exactness
+- [x] Required-hash copy contract - DOD: `CopyRequiredHashes` now returns `-1` and logs in editor/development when the destination array cannot hold every required build hash. Rejected alternative: returning a partial list that silently drops required content. Estimate: cold registry export/copy path only.
+- [x] Required-hash count API - DOD: added `CountRequiredBuildHashes()` so callers can size buffers before copy without guessing. Rejected alternative: forcing callers to allocate arbitrary oversized arrays. Estimate: linear registry scan, non-Tick path.
+- [x] Phase 36 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused scan verified exact-copy symbols; `git diff --check` reported only line-ending warnings on the touched hash map file. Rejected alternative: dotnet rebuild after a small registry API hardening. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 36 compile - DOD: compile not run for this incremental registry-copy guard because the user explicitly said not to run dotnet rebuild every time. Rejected alternative: full build for a non-Tick API contract patch. Estimate: deferred.
+
+## Loop 41: Phase 37 Telemetry Bundle Count Coalescing
+- [x] Bundle byte/count coalescing - DOD: `ContentBundleReferenceCounter.EstimateResidentBytes(out int)` returns resident bytes and resident count from one vault-resolved scan. Rejected alternative: resolving/walking the bundle ledger separately for bytes and count. Estimate: removes redundant per-Tick vault resolve/count read.
+- [x] Blackbox count reuse - DOD: `WriteTelemetry` now reuses the coalesced bundle count for both `StateHash` and `BundleRefCount`. Rejected alternative: calling `_bundleRefs.Count` twice inside the heartbeat. Estimate: removes two count lookups from the content heartbeat.
+- [x] Phase 37 static audit - DOD: content banned-pattern scan and first-party `Resources.Load*` scan remained clean; focused scan verified coalesced count usage; `git diff --check` reported only line-ending warnings on the touched runtime file. Rejected alternative: dotnet rebuild for a localized hot-path cleanup. Estimate: audit-only.
+- [DEFERRED BY USER INSTRUCTION] Phase 37 compile - DOD: compile not run for this incremental runtime cleanup because the user explicitly said not to run dotnet rebuild every time. Rejected alternative: rebuilding for every heartbeat micro-optimization. Estimate: deferred.
+
 ## Compile Attempts
 - Attempt 0: not run.
 - Attempt 1: `dotnet build Hecton8.Core.csproj` exit 1. Errors are in DiegeticGyroCompassRuntime, HomeostasisBrain, BiolumPulseSyncRuntime, SargassumMicroFaunaBoids, and TetherSignals; none reference `Assets/_Project/Scripts/Core/Content`.
@@ -210,3 +341,31 @@ Status: VERIFIED MASTER GRADE - TASK 20 BLOCKED BY EXTERNAL VFX/VENDOR RESTORE
 - Attempt 49: phase15 core recheck `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 0 warnings and 0 errors after the editor graph generated a clean core state.
 - Attempt 50: phase15 editor recheck `/m:1 /nr:false` exit 1. Errors are external `VFX/Bioluminescence/BiolumPulseSyncRuntime.cs` missing `ResolveDataVault` and vendor restore assets missing under `Temp/obj`; no CORE/ASSETS errors reported.
 - Attempt 51: phase15 latest core recheck `/m:1 /nr:false` exit 1. Error is external `VFX/Bioluminescence/BiolumPulseSyncRuntime.cs(189,13): CS0103 ResolveDataVault`; no CORE/ASSETS errors reported.
+- Attempt 52: phase16 core build `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 0 warnings and 0 errors after save-topology/lore-root hardening.
+- Attempt 53: phase16 editor build `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 0 warnings and 0 errors after save-topology/lore-root hardening.
+- Attempt 54: phase17 core build `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 0 warnings and 0 errors after save-topology build-gate proof.
+- Attempt 55: phase17 editor build `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 0 warnings and 0 errors after save-topology build-gate proof.
+- Attempt 56: phase18 core build `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 in external `SubmarineFluidDynamics.cs` missing `_exteriorBuoyancySampleLocalPoints`; no CORE/ASSETS errors reported.
+- Attempt 57: phase18 editor build `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 through external `SubmarineFluidDynamics.cs` ambiguous `Vector3`/`float3` operator; no CORE/ASSETS errors reported.
+- Attempt 58: phase18 core retry `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 0 warnings and 0 errors after external Submarine churn cleared.
+- Attempt 59: phase18 editor retry `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 in external Gameplay/Audio/AcousticZone interface errors; no CORE/ASSETS errors reported.
+- Attempt 60: phase18 editor second retry `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 in external Tether/Gameplay/Audio/AcousticZone interface errors; no CORE/ASSETS errors reported.
+- Attempt 61: phase18 latest core recheck `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 in external `Gameplay/HectonPlayerMotor.cs` interface errors; no CORE/ASSETS errors reported.
+- Attempt 62: phase18 final core retry `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 in external `HectonPlayerMovement.cs` missing `ToFloat3` and `TetherManager.cs` signature drift; no CORE/ASSETS errors reported.
+- Attempt 63: phase19 core build `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 0 warnings and 0 errors after binary export validator proof.
+- Attempt 64: phase19 editor build `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 in third-party `MapMagic.csproj` because `Temp/obj/MapMagic/MapMagic.dll` is locked by another process; no CORE/ASSETS errors reported.
+- Attempt 65: phase20 core build `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 0 warnings and 0 errors after fixed VFX handle-ledger purge.
+- Attempt 66: phase20 editor build `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 with no compiler lines under `ErrorsOnly`; treated as non-actionable restore/build tooling noise and immediately diagnosed with explicit restore/build commands.
+- Attempt 67: phase20 editor restore `dotnet restore Hecton8.Editor.csproj -v:normal` exit 0 with 0 warnings and 0 errors.
+- Attempt 68: phase20 editor build `dotnet build Hecton8.Editor.csproj --no-restore -v:normal /m:1 /nr:false` exit 0 with 0 warnings and 0 errors after restore.
+- Attempt 69: phase21 core build `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 0 warnings and 0 errors after prefab-aware VFX prewarm changes.
+- Attempt 70: phase21 editor restore `dotnet restore Hecton8.Editor.csproj -v:q` exit 0.
+- Attempt 71: phase21 editor build `dotnet build Hecton8.Editor.csproj --no-restore -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 14 warnings and 0 errors; treated as transient/stale warning state and rechecked with warning output.
+- Attempt 72: phase21 editor warning diagnostic `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal /m:1 /nr:false` filtered for warning lines and reported `0 Warning(s)`.
+- Attempt 73: phase21 editor final build `dotnet build Hecton8.Editor.csproj --no-restore -v:q /m:1 /nr:false` exit 0 with 0 warnings and 0 errors.
+- Attempt 74: phase22 core build after full prefab particle traversal `dotnet build Hecton8.Core.csproj -v:q /m:1 /nr:false` exit 1 with 0 warnings and 60 errors in external `World/SargassumMicroFaunaBoids.cs`; no CORE/ASSETS errors reported.
+- Attempt 75: phase22 core build after traversal budget gate `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 with 0 warnings and 60 errors in external `World/SargassumMicroFaunaBoids.cs`; no CORE/ASSETS errors reported.
+- Attempt 76: phase23 core build after LOD contract correction `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 0 warnings and 0 errors.
+- Attempt 77: phase23 editor build after LOD contract correction `dotnet build Hecton8.Editor.csproj -v:q /m:1 /nr:false` exit 0 with 48 warnings and 0 errors; warnings are in Unity package cache and third-party GPUInstancer/MapMagic/Crest/ShaderGraph/WaveHarmonic projects, not CORE/ASSETS.
+- Attempt 78: phase24 core build after hologram pool clamp `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 1 with 0 warnings and 8 errors in external `World/Biolum/HectonBiolumManager.cs` and `VFX/HectonMarineSnowRenderer.cs`; no CORE/ASSETS errors reported.
+- Attempt 79: phase30 batched editor build after lore diagnostics and object-batch coverage gate `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exit 0 with 48 warnings and 0 errors; warnings are external Unity package/third-party warnings, not CORE/ASSETS errors.

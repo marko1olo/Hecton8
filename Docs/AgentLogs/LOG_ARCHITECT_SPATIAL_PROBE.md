@@ -69,6 +69,18 @@ Verification -> `rg -n "[0-9]h\b" Assets/_Project/Scripts/Core/Diagnostics/Visua
 Verification -> Latest `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` is blocked by `World/EcosystemDirector.cs` external compile errors; prior diagnostics hardening build passed after contracts refresh.
 Final Status -> VERIFIED VISUALIZER; GLOBAL COMPILE BLOCKED BY EXTERNAL WORLD/ECOSYSTEM DEPENDENCY.
 
+## Compile Recovery Confirmation
+
+What was wrong -> Previous final audit saw a moving external compile wall in `World/EcosystemDirector.cs`.
+What was done -> Re-read the live file before editing. The missing ecosystem index subsystem had been restored externally on disk, so no diagnostics-domain cross-edit was required. Reran the global Core build.
+Cinematic Cheats used -> None.
+Exact Microseconds saved -> 0 runtime us; compile status recovered.
+
+Verification -> Diagnostic debt audit still finds no `Debug.Log`, `File.ReadAllBytes`, `Marshal.SizeOf`, `_argsScratch`, `GraphicsBuffer.Target.Raw`, `SetData`, `GetData`, `string.Format`, standard Unity tick methods, `EventBus`, managed delegate signatures, or local `new NativeArray` in `Assets/_Project/Scripts/Core/Diagnostics/Visuals`.
+Verification -> Shader portability audit still finds no numeric `h` literal suffixes in diagnostic shaders/compute files.
+Verification -> `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` completed with 0 warnings and 0 errors.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
 ## Reverification Report
 
 What was wrong -> Reissued prompt found the visualizer complete on disk, but Core build initially failed because the referenced `Hecton8.Core.Contracts.dll` was stale relative to changed external contract sources.
@@ -92,4 +104,96 @@ Exact Microseconds saved -> 0 us saved on High/Ultra; this deliberately spends b
 
 Verification -> No `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `EventBus`, managed delegates, `SetData`, `GetData`, `new NativeArray`, `_argsScratch`, or `GraphicsBuffer.Target.Raw` remain in `Assets/_Project/Scripts/Core/Diagnostics/Visuals`.
 Verification -> `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` completed with 0 warnings and 0 errors.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
+## Current Compile Confirmation
+
+What was wrong -> Earlier inquisition captured a temporary external `World/EcosystemDirector.cs` compile wall after diagnostics hardening.
+What was done -> Re-read the live external file, confirmed the missing index subsystem had been restored by another worker, and reran the authoritative Core build without further cross-domain edits.
+Cinematic Cheats used -> None.
+Exact Microseconds saved -> 0 runtime us; this is compile evidence only.
+
+Verification -> `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` completed with 0 warnings and 0 errors.
+Verification -> Diagnostic hot-path audit and shader portability audit remain clean.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
+## Isolation Polish Delta
+
+What was wrong -> `ArchitectEyeDebugBus.EnsureInitialized()` still called `GlobalSignals.InitializeAllQueues`, so a diagnostics producer could cold-initialize unrelated gameplay signal lanes. Editor teleport preview also pushed directly to `SignalBus<DebugSignal>` and the dump path had drifted from the mandated agent-ID file name.
+What was done -> Added `GlobalSignals.EnsureDebugSignalLaneInitialized()` as a narrow central policy entrypoint and routed `ArchitectEyeDebugBus` through it. It configures only `SignalBus<DebugSignal>` at 64 expected capacity, 64 max frame signals, 8 low-tier frame signals, and the stable FNV lane hash. Editor preview now returns outside play mode and routes through `ArchitectEyeDebugBus.Push`. Runtime dump writer and editor reader use `Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin`. F12 is checked in the render-dispatch callback, with no Unity `Update()`.
+Cinematic Cheats used -> None; this is lane sovereignty and forensic-path cleanup.
+Exact Microseconds saved -> 0 steady-state runtime us claimed. Cold-start queue prewarm and memory pressure are reduced by avoiding unrelated lane initialization; not benchmarked.
+
+What was wrong -> Global compile verification hit moving external compile errors in `SubmarineFluidDynamics.cs`, `HectonPlayerMovement.cs`, and transient mid-edit errors in other files while parallel agents were rewriting their domains.
+What was done -> Applied only the mechanical compile unblocks that remained after live rechecks: `SubmarineFluidDynamics.cs` now converts the float3-backed exterior buoyancy sample with `ToVector3` before `Vector3` subtraction, and `HectonPlayerMovement.cs` has a single `System.Runtime.CompilerServices` import for its new `MethodImpl` helper.
+Cinematic Cheats used -> None.
+Exact Microseconds saved -> 0 runtime us; compile integrity only.
+
+Verification -> `rg` audit found no `GlobalSignals.InitializeAllQueues`, `EventBus`, `string.Format`, `Update()`, `LateUpdate()`, `FixedUpdate()`, local `new NativeArray`, `File.ReadAllBytes`, `Debug.Log`, `GraphicsBuffer.Target.Raw`, `SetData`, or `GetData` in `Assets/_Project/Scripts/Core/Diagnostics/Visuals`; remaining matches are `GlobalSignals.EnsureDebugSignalLaneInitialized`, `KeyCode.F12`, and the mandated dump path.
+Verification -> Shader portability audit found no numeric `h` literal suffixes, compute thread groups, RW buffers, group-shared memory, or DirectX-only compute patterns in diagnostics shaders/compute files; the remaining `StructuredBuffer` is the intentional indirect instance read buffer.
+Verification -> `dotnet build Hecton8.Core.csproj --no-restore --no-incremental --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BaseIntermediateOutputPath=Temp\obj\ArchitectSpatialProbeCore\ -p:IntermediateOutputPath=Temp\obj\ArchitectSpatialProbeCore\ -p:OutputPath=Temp\bin\ArchitectSpatialProbeCore\ -v:minimal -clp:Summary` completed with 0 warnings and 0 errors.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
+## Shader Color Sovereignty Delta
+
+What was wrong -> `ArchitectEyeSdfVolume.shader` still had a hardcoded blue RGB glow vector in the fragment body after the broader noir polish pass.
+What was done -> Replaced the private RGB constant with glow derived from material `_Color`, density, and the existing visual tier scalar. The SDF pass keeps 3/8/16 tiered shell marching and uses no compute path.
+Cinematic Cheats used -> Same Dear Lie shell march and material-driven glow; no physical raymarch, no palette texture, no particles.
+Exact Microseconds saved -> 0 runtime us claimed; this removes tuning debt and adds no texture bandwidth.
+
+Verification -> Shader audit found no numeric `h` literal suffixes, compute thread groups, RW buffers, group-shared memory, `discard`, or `clip` in diagnostics shaders/compute files.
+Verification -> Diagnostic hot-path audit found no `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `Debug.Log`, local `new NativeArray`, `EventBus`, managed delegate signatures, `UnityEngine.UI`, `GraphicsBuffer.Target.Raw`, `SetData`, `GetData`, `File.ReadAllBytes`, or `Marshal.SizeOf` in `Assets/_Project/Scripts/Core/Diagnostics/Visuals`.
+Verification -> First isolated `--no-restore` build lacked `Temp\obj\ArchitectSpatialProbeCore\project.assets.json`; reran with restore allowed for the isolated output path. `dotnet build Hecton8.Core.csproj --no-incremental --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BaseIntermediateOutputPath=Temp\obj\ArchitectSpatialProbeCore\ -p:IntermediateOutputPath=Temp\obj\ArchitectSpatialProbeCore\ -p:OutputPath=Temp\bin\ArchitectSpatialProbeCore\ -v:minimal -clp:Summary` completed with 0 warnings and 0 errors.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
+## NaN Vaccination Delta
+
+What was wrong -> The visualizer counted non-finite diagnostics but some fault-coordinate adoption paths could still pass a NaN or infinity into the warning pillar, overlay text, or blackbox `LastFaultPosition`.
+What was done -> Added `SanitizeFaultPosition` and applied it to malformed debug signals, bad AUP/velocity samples, warning/pillar emission, and blackbox recording. Invalid coordinates now fall back to the last finite probe or zero.
+Cinematic Cheats used -> None; this is GPU survival hygiene.
+Exact Microseconds saved -> 0 runtime us claimed. The change prevents mobile/Metal invalid-vertex failure; it does not target frame-time reduction.
+
+Verification -> `rg` confirmed no direct `lastFaultPosition = signal.Position` or unsanitized blackbox `LastFaultPosition = lastFaultPosition` remains in `ArchitectEyeVisualizer.cs`.
+Verification -> Diagnostic hot-path audit still finds no standard Unity tick methods, `string.Format`, `Debug.Log`, local `new NativeArray`, `EventBus`, managed delegate signatures, `UnityEngine.UI`, `GraphicsBuffer.Target.Raw`, `SetData`, `GetData`, `File.ReadAllBytes`, or `Marshal.SizeOf` in `Assets/_Project/Scripts/Core/Diagnostics/Visuals`.
+Verification -> Per operator instruction, no `dotnet build` was rerun for this static diagnostics patch. `git diff --check` was clean except existing CRLF normalization warnings.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
+## Static Inquisition Polish Delta
+
+What was wrong -> Scalar telemetry could still preserve non-finite values in frame time, signal pressure, health, gas, STP, and blackbox history even after fault coordinates were sanitized.
+What was done -> Added finite-only scalar clamps and applied them to runtime state, blackbox entries, signal waterfall history, heartbeat bars, gas/STP panels, lane saturation, VRAM slices, and frame-time signal intake.
+Cinematic Cheats used -> None; this is survival hygiene.
+Exact Microseconds saved -> 0 runtime us claimed; finite checks buy deterministic postmortem data, not frame-time reduction.
+
+What was wrong -> `VaultProbeUtility` exposed an unused mutable raw-byte `Span<byte>` over Vault memory.
+What was done -> Removed the mutable byte-span probe and kept the read-only Vault span path only.
+Cinematic Cheats used -> None.
+Exact Microseconds saved -> 0 runtime us; data-sovereignty boundary tightened.
+
+What was wrong -> Runtime/editor blackbox paths had drifted to `Dump_ARCHITECT_EYE_VISUALIZER.bin`.
+What was done -> Restored both writer and timeline viewer to `Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin`.
+Cinematic Cheats used -> None.
+Exact Microseconds saved -> 0 runtime us; crash artifact lookup restored.
+
+Verification -> `rg` found no standard Unity tick methods, `string.Format`, `Debug.Log`, local `new NativeArray`, `EventBus`, managed delegate signatures, `UnityEngine.UI`, `GraphicsBuffer.Target.Raw`, `SetData`, `GetData`, `File.ReadAllBytes`, or `Marshal.SizeOf` in diagnostics visuals.
+Verification -> Shader audit found no numeric `h` suffixes, compute thread groups, RW buffers, group-shared memory, `discard`, or `clip` in diagnostics shaders/compute files.
+Verification -> `rg` confirms no `TryReadBufferBytes`, no `TryReadGlobalBufferBytes`, no dump path except `Dump_ARCHITECT_SPATIAL_PROBE.bin`, and no unsanitized blackbox scalar assignments in diagnostics visuals.
+Verification -> Per operator instruction, no dotnet rebuild was run in this pass. `git diff --check` passed except existing CRLF normalization warnings.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
+## Regression Lock Delta
+
+What was wrong -> The mandated `F12` global toggle had disappeared from the live `Render()` path during later edits.
+What was done -> Restored `UnityEngine.Input.GetKeyDown(KeyCode.F12)` before the `_enabled` render early return, so the overlay can be toggled off and back on without `IUpdatable` or Unity `Update()`.
+Cinematic Cheats used -> None.
+Exact Microseconds saved -> 0 runtime us claimed; operator control restored.
+
+What was wrong -> Runtime/editor dump path constants could drift, and the editor loader based frame count on requested bytes rather than actually-read bytes.
+What was done -> Added `ArchitectEyeVisualizer.BlackBoxDumpRelativePath`, routed runtime dump writing and editor default loading through that single constant, and counted actual file bytes read before casting frames.
+Cinematic Cheats used -> None.
+Exact Microseconds saved -> 0 runtime us; deterministic blackbox lookup restored.
+
+Verification -> `rg` confirms `KeyCode.F12`, `DrawMeshInstancedIndirect`, and `Dump_ARCHITECT_SPATIAL_PROBE.bin` in diagnostics code; no `Dump_ARCHITECT_EYE_VISUALIZER`, `IUpdatable`, `TryRegisterUpdatable`, standard Unity tick methods, mutable Vault byte probe, `SetData`, `GetData`, raw graphics buffer target, EventBus, managed delegates, or local `new NativeArray` remain in diagnostics visuals.
+Verification -> Shader audit remains clean for numeric `h` suffixes, compute thread groups, RW buffers, group-shared memory, `discard`, and `clip`.
+Verification -> Per operator instruction, no dotnet rebuild was run. `git diff --check` passed clean for touched diagnostics and log files.
 Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.

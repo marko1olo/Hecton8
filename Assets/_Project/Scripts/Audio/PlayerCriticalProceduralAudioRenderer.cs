@@ -59,7 +59,7 @@ namespace Hecton8.Audio
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AudioListener))]
     [RequireComponent(typeof(AudioReverbFilter))]
-    public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IProceduralAudioEventListener, IPhysicsImpactEventListener, ISonarPingEventListener, IAcousticEchoEventListener, global::Hecton8.Gameplay.ILaserCutterEventListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IProceduralAudioEventListener, IPhysicsImpactEventListener, ISonarPingEventListener, IAcousticEchoEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const SystemID VaultOwner = SystemID.AudioPlayerCritical;
         private const float TwoPi = 6.28318530718f;
@@ -783,6 +783,7 @@ namespace Hecton8.Audio
         private SpatialAudioManager _spatialAudioManager;
         private int _audioServiceLookupFrame = -4096;
         private int _lastAcousticImpulseSignalFrame = -4096;
+        private int _lastLaserCutterSignalFrame = -4096;
         private int _lastDirectSonarPingFrame = -4096;
         private float _lastDirectSonarPingIntensity;
         private Vector3 _lastDirectSonarPingOrigin;
@@ -791,8 +792,8 @@ namespace Hecton8.Audio
         private bool _registered;
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
-        private bool _scalabilityEventsRegistered;
         private bool _hotSwapRegistered;
+        private int _lastScalabilitySignalFrame = -4096;
         private int _playerContextLookupFrame = -4096;
         private int _ecosystemDirectorLookupFrame = -4096;
         private int _structuralHullLookupFrame = -4096;
@@ -1668,13 +1669,11 @@ namespace Hecton8.Audio
             AudioSettings.OnAudioConfigurationChanged += HandleAudioConfigurationChanged;
             RefreshAudioQualityPolicyCold();
             RefreshAudioRuntimeServicesCold();
-            TryRegisterScalabilityEvents();
             TryRegisterHotSwapListener();
             PhysicsEvents.Register(this);
             ProceduralAudioEvents.Register(this);
             SpectrumEvents.RegisterSonarPingListener(this);
             SpectrumEvents.RegisterAcousticEchoListener(this);
-            LaserCutterEvents.Register(this);
             TryRegister();
             TryBindFromBootstrap();
             StartAudioProducerThread();
@@ -1682,9 +1681,7 @@ namespace Hecton8.Audio
 
         private void OnDisable()
         {
-            TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
-            LaserCutterEvents.Unregister(this);
             SpectrumEvents.UnregisterAcousticEchoListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
             ProceduralAudioEvents.Unregister(this);
@@ -1718,9 +1715,7 @@ namespace Hecton8.Audio
 
         private void OnDestroy()
         {
-            TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
-            LaserCutterEvents.Unregister(this);
             SpectrumEvents.UnregisterAcousticEchoListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
             bool producerStopped = StopAudioProducerThread();
@@ -1960,7 +1955,9 @@ namespace Hecton8.Audio
 
             TryBindFromBootstrap();
             EnsureAudioQualityPolicyCached();
+            ConsumeScalabilitySignals();
             UpdateCaveReverb(deltaTime);
+            ConsumeLaserCutterEventSignals();
 
             if (playerMovement == null || _playerRigidbody == null)
             {
@@ -2125,7 +2122,22 @@ namespace Hecton8.Audio
             PublishAudioSpatializationBlackBoxFrame();
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        private void ConsumeScalabilitySignals()
+        {
+            int frame = Time.frameCount;
+            if (_lastScalabilitySignalFrame == frame)
+                return;
+
+            _lastScalabilitySignalFrame = frame;
+            ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
+            if (signals.Length <= 0)
+                return;
+
+            ScalabilityChangedEvent payload = signals[signals.Length - 1];
+            HandleScalabilityChanged(in payload);
+        }
+
+        private void HandleScalabilityChanged(in ScalabilityChangedEvent payload)
         {
             CacheAudioQualityPolicy(
                 payload.CurrentQualityTier,
@@ -3352,24 +3364,6 @@ namespace Hecton8.Audio
                 tier == HectonQualityTier.Low ||
                 tier == HectonQualityTier.Mx350 ||
                 tier == HectonQualityTier.Unknown;
-        }
-
-        private void TryRegisterScalabilityEvents()
-        {
-            if (_scalabilityEventsRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityEventsRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityEvents()
-        {
-            if (!_scalabilityEventsRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityEventsRegistered = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -4638,11 +4632,20 @@ namespace Hecton8.Audio
             return tap;
         }
 
-        /// <summary>
-        /// Receives deferred laser cutter heat and beam-state events.
-        /// </summary>
-        /// <param name="payload">Blittable cutter event payload.</param>
-        public void OnLaserCutterEvent(in global::Hecton8.Core.Contracts.Signals.LaserCutterEventPayload payload)
+        private void ConsumeLaserCutterEventSignals()
+        {
+            int frame = Time.frameCount;
+            if (_lastLaserCutterSignalFrame == frame)
+                return;
+
+            _lastLaserCutterSignalFrame = frame;
+            ReadOnlySpan<global::Hecton8.Core.Contracts.Signals.LaserCutterEventPayload> payloads =
+                SignalBus<global::Hecton8.Core.Contracts.Signals.LaserCutterEventPayload>.GetFrameSnapshot();
+            for (int i = 0; i < payloads.Length; i++)
+                HandleLaserCutterEvent(in payloads[i]);
+        }
+
+        private void HandleLaserCutterEvent(in global::Hecton8.Core.Contracts.Signals.LaserCutterEventPayload payload)
         {
             if (!IsBoundPlayerCutterEvent(in payload))
                 return;

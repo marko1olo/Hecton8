@@ -154,3 +154,132 @@ Verification:
 - Static docking core scan reports `NO_FORBIDDEN_DOCKING_CORE_MATCHES`.
 - Static drone docking interpolation scan reports `NO_INTERPOLATION_DRONE_DOCKING_MATCHES`.
 - Layout scan reports `NO_LAYOUT_DEBT_MATCHES`.
+
+## 2026-05-16 - Phase 9 Angular Inertia Reaudit
+
+What was wrong:
+- Active spline docking still zeroed `Rigidbody.angularVelocity` every fixed tick. Translation had spline/current authority, but rotation still behaved like a hard visual snap around the angular channel.
+- A concurrent `SubmarineFluidDynamics` vault migration introduced ambiguous `float3`/`Vector3` arithmetic in exterior thermal anomaly slots, blocking focused compile verification before docking could be revalidated.
+
+What was done:
+- Added `_lastDockingSplineRotation` to `VehicleDockingModule`.
+- Added finite quaternion normalization and shortest-arc delta solve.
+- Replaced the active docking tick's angular zero with a clamped command angular velocity derived from spline rotation delta.
+- Kept hard-lock/final release zeroing intact; only active capture motion now carries angular inertia.
+- Fixed the `SubmarineFluidDynamics` compile wall by converting exterior thermal cell centers explicitly between `float3` vault storage and `Vector3` runtime calls.
+
+Cinematic Cheats used:
+- No new physical simulation was added. The angular velocity is a cheap inertial presentation signal derived from the spline rotation already being evaluated.
+- Low tier still uses 10 Hz spline samples and manual position blend. High/Ultra still use zero-jerk progress and typed wake/fluid lanes for visual overkill.
+
+Exact Microseconds saved:
+- No measured profiler data. No microsecond saving is claimed.
+- Runtime impact is 0 B/frame and active-dock-only scalar quaternion/vector math.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 /nr:false -p:UseSharedCompilation=false -p:BuildProjectReferences=false -p:BaseIntermediateOutputPath=Temp/obj_docking/ -p:OutputPath=Temp/bin_docking/` exits 0.
+- Build log: `Docs/AgentLogs/Build_DOCKING_AUTOPILOT_SPLINE_latest.txt` reports `0 Warning(s)` and `0 Error(s)`.
+- Docking core forbidden-pattern scan has no matches for Unity Lerp/Slerp/MoveTowards, `AnimationCurve`, `math.pow`, `math.lerp`, local native storage, `EventBus`, delegates, update-loop methods, or `string.Format`.
+- Drone docking interpolation scan remains clean.
+- Layout scan remains clean for audited docking files.
+
+## 2026-05-17 - Phase 10 Explicit Telemetry Layout
+
+What was wrong:
+- `DockTelemetryEntry` still depended on sequential `Pack = 1` ordering. The packet had a fixed 128-byte size, but the field offsets were not pinned like the spline and signal contracts.
+- Focused validation was blocked by a concurrent `FaunaBrain.Compatibility` edit that removed `using System;` while leaving a `[Flags]` enum.
+
+What was done:
+- Converted `DockTelemetryEntry` to `LayoutKind.Explicit, Pack = 1, Size = 128`.
+- Pinned every telemetry field offset from byte 0 through byte 124, preserving the existing 128-byte blackbox ring contract.
+- Restored the missing `using System;` import in `FaunaBrain.Compatibility.cs` as a one-line compile-surface repair only.
+
+Cinematic Cheats used:
+- None added. This is binary evidence hardening. The existing split remains: Low/MX350 uses 10 Hz spline sampling and manual blend; High/Ultra uses zero-jerk progress and typed wake/fluid lanes for visual overkill.
+
+Exact Microseconds saved:
+- No measured profiler data. No microsecond saving is claimed.
+- Runtime impact is 0 B/frame and unchanged telemetry cadence; value is deterministic ARM64/IL2CPP layout.
+
+Verification:
+- Layout scan over audited docking files finds no `LayoutKind.Sequential` or `Pack = 16` matches.
+- `DockTelemetryEntry`, `ActiveSplineData`, `DockingSplineSample`, and docking signal packets all use explicit `Pack = 1` layouts with fixed sizes.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 /nr:false -p:UseSharedCompilation=false -p:BuildProjectReferences=false -p:BaseIntermediateOutputPath=Temp/obj_docking/ -p:OutputPath=Temp/bin_docking/` exits 0.
+- Build log: `Docs/AgentLogs/Build_DOCKING_AUTOPILOT_SPLINE_latest.txt` reports `0 Warning(s)` and `0 Error(s)`.
+
+## 2026-05-17 - Phase 11 Hot-Path Registry Eviction
+
+What was wrong:
+- `TryResolveDockTelemetry` still called `EnsureDockTelemetry`.
+- `EnsureDockTelemetry` can read `GlobalRegistry.DataVault`, so a missing handle could cause a registry lookup from the `Tick`/`FixedTick` telemetry chain.
+
+What was done:
+- Added `IGlobalRegistryHotSwapListener` to `VehicleDockingModule`.
+- Registered/unregistered the listener during enable/spawn/despawn/disable/destroy.
+- Rebound DataVault telemetry handles from the hot-swap callback.
+- Removed the `EnsureDockTelemetry` call from `TryResolveDockTelemetry`, leaving the hot resolver on cached vault handles only.
+
+Cinematic Cheats used:
+- None added. This is data-sovereignty and cadence hardening. Low tier remains 10 Hz spline sampling; High/Ultra visual overkill remains delegated through typed wake/fluid/completion lanes.
+
+Exact Microseconds saved:
+- No measured profiler data. No microsecond saving is claimed.
+- Runtime impact is 0 B/frame. Static impact is removal of a possible hot-path registry read from the telemetry heartbeat.
+
+Verification:
+- Static docking scan has no Unity Lerp/Slerp/MoveTowards, `AnimationCurve`, `math.pow`, `math.lerp`, local native-storage, `EventBus`, delegates, update-loop methods, or `string.Format` matches.
+- Layout scan over audited docking files finds no `LayoutKind.Sequential` or `Pack = 16` matches.
+- `TryResolveDockTelemetry` no longer calls `EnsureDockTelemetry`; the remaining `GlobalRegistry.DataVault` read is in lifecycle/hot-swap telemetry setup.
+- A single focused restore/build was attempted after the interface change. Restore succeeded, but build is currently blocked outside docking by `World/Biolum/HectonBiolumManager.cs` errors for `BiolumTelemetryEntry.CameraPosition` and `DaylightMask`. Captured build log contains no docking file errors.
+
+## 2026-05-17 - Phase 12 Blackbox Dump I/O Guard
+
+What was wrong:
+- `DumpDockTelemetry` wrote only a magic/length/cursor header and could be invoked in consecutive frames during repeated invalid-pose or abort-path failures.
+- The ring itself was fixed and vault-owned, but the disk path still had avoidable MicroSD-class I/O pressure during failure cascades.
+
+What was done:
+- Added `DockTelemetryDumpCooldownFrames = 30`.
+- Added `_lastDockTelemetryDumpFrame` and a failure-path frame gate before directory/file writes.
+- Added `DockTelemetryDumpVersion` and `DockTelemetryEntrySizeBytes` to the binary header so postmortem tooling can reject stale formats instead of guessing entry stride.
+
+Cinematic Cheats used:
+- None added. This is failure-path blackbox hardening. The existing scalability split remains: Low tier solves at 10 Hz, Middle uses direct Bezier, High/Ultra use zero-jerk progress and route visual overkill through typed wake/fluid/completion lanes.
+
+Exact Microseconds saved:
+- No measured profiler data. No microsecond saving is claimed.
+- Runtime impact is 0 B/frame. Static cost is one integer cooldown check only when the dump path is invoked.
+
+Verification:
+- Static scan confirms `DumpDockTelemetry` now writes magic, version, entry size, telemetry length, and cursor.
+- Static scan confirms the new I/O throttle is failure-path only and does not alter the 300-frame telemetry ring heartbeat.
+- No `dotnet rebuild` was run for this narrow patch because the user explicitly instructed not to rebuild every time; previous compile status remains blocked by external Biolum errors with no docking errors in the captured log.
+
+## 2026-05-17 - Phase 13 Spline Service Hot Read
+
+What was wrong:
+- `DockingAutopilotService.TryEvaluateActiveSpline` used the same resolver as acquire/write.
+- That resolver could call `EnsureSplineBufferAvailable`, which can read `GlobalRegistry.DataVault` if the cached service handle is missing.
+- `VehicleDockingModule` also called `TryWriteActiveSpline` during every raw spline evaluation tick and again during release, so progress/final-state stamping still had repair-capable write paths.
+
+What was done:
+- Added an `allowEnsure` gate to `TryResolveActiveSplines`.
+- Kept acquire/write on the ensure path so setup can create/repair `VehicleDockingActiveSplines`.
+- Moved `TryEvaluateActiveSpline`, `TryReadActiveSpline`, and `TryReleaseSplineSlot` to cached-only resolution.
+- Stamped `Progress01` inside `TryEvaluateActiveSpline` after cached pointer resolution.
+- Removed the module-side `TryWriteActiveSpline` calls from raw spline evaluation and release.
+
+Cinematic Cheats used:
+- None added. This is hot-path cadence hardening. Low tier remains the 10 Hz fake; High/Ultra remain zero-jerk Hermite plus downstream VFX lanes.
+
+Exact Microseconds saved:
+- No measured profiler data. No microsecond saving is claimed.
+- Runtime impact is 0 B/frame. Static impact is removal of a possible registry-backed repair branch from active spline reads.
+
+Verification:
+- Static scan confirms `TryEvaluateActiveSpline`, `TryReadActiveSpline`, and `TryReleaseSplineSlot` call `TryResolveActiveSplines(..., allowEnsure: false)`.
+- Static scan confirms `VehicleDockingModule` only calls `TryWriteActiveSpline` during docking setup, not during evaluation or release.
+- Static docking-domain forbidden scan remains clean for Lerp/Slerp/MoveTowards, `AnimationCurve`, `math.pow`, `math.lerp`, local native storage, `EventBus`, delegates, update loops, and `string.Format`.
+- One focused `dotnet build --no-restore` was run after the consolidated Phase 13 code changes, not after every small edit.
+- Build exits 1 on external missing player signal types (`PlayerFootstepSignal`, `PlayerWaterSplashSignal`, `PlayerExhaleSignal`, `PlayerSprintStateSignal`, `PlayerFatalPressureSignal`, `PlayerTransportBailoutSignal`) plus `World/Biolum/HectonBiolumManager.TryResolveTelemetryRing`.
+- Captured build log contains no `VehicleDockingModule`, `DockingAutopilotService`, `DroneDockingSignals`, or docking automation file errors.

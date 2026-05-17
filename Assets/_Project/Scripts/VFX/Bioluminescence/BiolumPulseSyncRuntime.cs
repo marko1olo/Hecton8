@@ -108,11 +108,7 @@ namespace Hecton8.VFX.Bioluminescence
 
         private void OnDisable()
         {
-            if (_registeredUpdate)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredUpdate = false;
-            }
+            TryUnregisterUpdate();
 
             if (_registeredScalability)
             {
@@ -200,9 +196,19 @@ namespace Hecton8.VFX.Bioluminescence
         {
             if (_registeredUpdate)
                 return;
+            if (_tickDispatcher == null)
+                return;
 
-            RefreshCachedRegistryServices();
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterUpdate()
+        {
+            if (!_registeredUpdate)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _registeredUpdate = false;
         }
 
         private void TryRegisterScalabilityEvents()
@@ -257,7 +263,15 @@ namespace Hecton8.VFX.Bioluminescence
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _tickDispatcher = currentService as ITickDispatcher;
+                    ITickDispatcher tickDispatcher = currentService as ITickDispatcher;
+                    if (!ReferenceEquals(_tickDispatcher, tickDispatcher))
+                    {
+                        TryUnregisterUpdate();
+                        _tickDispatcher = tickDispatcher;
+                    }
+
+                    if (_tickDispatcher != null)
+                        TryRegisterUpdate();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     BindDataVault(currentService as IDataVault);
@@ -446,7 +460,7 @@ namespace Hecton8.VFX.Bioluminescence
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.BiolumProfileFloats);
+                vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
             }
         }
 
@@ -488,14 +502,14 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || !ready)
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.BiolumProfileFloats))
+            if (!vault.TryLockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx))
                 return false;
 
             profileFloats = _profileFloatsHandle.Resolve(vault);
             if (profileFloats.IsCreated && profileFloats.Length >= ProfileFloatCount)
                 return true;
 
-            vault.TryUnlockBuffer(BufferID.BiolumProfileFloats);
+            vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
             profileFloats = default;
             return false;
         }
@@ -507,14 +521,14 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || !HasVaultBuffers())
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.BiolumBlackBox))
+            if (!vault.TryLockBuffer(BufferID.BiolumBlackBox, SystemID.Vfx))
                 return false;
 
             blackBox = _blackBoxHandle.Resolve(vault);
             if (blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
                 return true;
 
-            vault.TryUnlockBuffer(BufferID.BiolumBlackBox);
+            vault.TryUnlockBuffer(BufferID.BiolumBlackBox, SystemID.Vfx);
             blackBox = default;
             return false;
         }
@@ -671,12 +685,12 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || !HasVaultBuffers())
                 return;
 
-            if (!vault.TryLockBuffer(BufferID.BiolumProfileFloats))
+            if (!vault.TryLockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx))
                 return;
 
-            if (!vault.TryLockBuffer(BufferID.BiolumGlobalStates))
+            if (!vault.TryLockBuffer(BufferID.BiolumGlobalStates, SystemID.Vfx))
             {
-                vault.TryUnlockBuffer(BufferID.BiolumProfileFloats);
+                vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
                 return;
             }
 
@@ -684,8 +698,8 @@ namespace Hecton8.VFX.Bioluminescence
             NativeArray<float4> jobStates = _jobStatesHandle.Resolve(vault);
             if (!profileFloats.IsCreated || !jobStates.IsCreated)
             {
-                vault.TryUnlockBuffer(BufferID.BiolumGlobalStates);
-                vault.TryUnlockBuffer(BufferID.BiolumProfileFloats);
+                vault.TryUnlockBuffer(BufferID.BiolumGlobalStates, SystemID.Vfx);
+                vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
                 return;
             }
 
@@ -760,8 +774,8 @@ namespace Hecton8.VFX.Bioluminescence
             IDataVault vault = _dataVault;
             if (vault != null)
             {
-                vault.TryUnlockBuffer(BufferID.BiolumGlobalStates);
-                vault.TryUnlockBuffer(BufferID.BiolumProfileFloats);
+                vault.TryUnlockBuffer(BufferID.BiolumGlobalStates, SystemID.Vfx);
+                vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
             }
 
             _jobLocksHeld = false;
@@ -834,7 +848,7 @@ namespace Hecton8.VFX.Bioluminescence
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.BiolumProfileFloats);
+                vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
             }
         }
 
@@ -857,8 +871,22 @@ namespace Hecton8.VFX.Bioluminescence
             Shader.SetGlobalVector(_GlobalBiolumParamsId, new Vector4(_activeStateCount, (float)_qualityTier, strobe01, overloadFlag));
             Shader.SetGlobalVector(_GlobalBiolumClockId, new Vector4(timeFloat, cadence, _frameCounter, _activeBiolumProfileId));
             Shader.SetGlobalVector(_GlobalBiolumAupOffsetId, new Vector4(_aupOriginOffset.x, _aupOriginOffset.y, _aupOriginOffset.z, _profileSourceHash));
-            Shader.SetGlobalVector(_BiolumIntensityId, new Vector4(math.clamp(_managedStates[0].w, 0f, MaxHdrIntensity), strobe01, _activeStateCount, overloadFlag));
+            Shader.SetGlobalVector(_BiolumIntensityId, new Vector4(ResolveLegacyBiolumIntensity(strobe01), strobe01, _activeStateCount, overloadFlag));
             HectonShaderGlobalDataVaultBridge.PublishBiolumMasterPhase(new Vector4(masterPhase, ResolveTrianglePulse01(masterPhase), strobe01, overloadFlag));
+        }
+
+        private float ResolveLegacyBiolumIntensity(float strobe01)
+        {
+            int activeCount = math.clamp(_activeStateCount, 0, MaxGlobalBiolumStates);
+            float resolved = math.clamp(strobe01 * MaxHdrIntensity, 0f, MaxHdrIntensity);
+            for (int i = 0; i < activeCount; i++)
+            {
+                float intensity = _managedStates[i].w;
+                if (math.isfinite(intensity))
+                    resolved = math.max(resolved, math.clamp(intensity, 0f, MaxHdrIntensity));
+            }
+
+            return math.clamp(resolved, 0f, MaxHdrIntensity);
         }
 
         private void ClearShaderGlobals()
@@ -870,6 +898,7 @@ namespace Hecton8.VFX.Bioluminescence
             Shader.SetGlobalVector(_GlobalBiolumParamsId, Vector4.zero);
             Shader.SetGlobalVector(_GlobalBiolumClockId, Vector4.zero);
             Shader.SetGlobalVector(_GlobalBiolumAupOffsetId, Vector4.zero);
+            Shader.SetGlobalVector(_BiolumIntensityId, Vector4.zero);
             HectonShaderGlobalDataVaultBridge.PublishBiolumMasterPhase(new Vector4(0f, 0.5f, 0f, 0f));
         }
 
@@ -899,7 +928,7 @@ namespace Hecton8.VFX.Bioluminescence
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.BiolumBlackBox);
+                vault.TryUnlockBuffer(BufferID.BiolumBlackBox, SystemID.Vfx);
             }
         }
 
@@ -942,7 +971,7 @@ namespace Hecton8.VFX.Bioluminescence
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.BiolumBlackBox);
+                vault.TryUnlockBuffer(BufferID.BiolumBlackBox, SystemID.Vfx);
             }
         }
 

@@ -76,7 +76,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
     [Preserve]
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5800)]
-    public sealed class ArchitectEyeVisualizer : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable
+    public sealed class ArchitectEyeVisualizer : MonoBehaviour, ISlowTickable, IRenderable
     {
         private const int BlackBoxFrameCount = 300;
         private const int SignalLaneCapacity = 256;
@@ -86,6 +86,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private const int GlyphAtlasRows = 8;
         private const int GlyphAtlasPixels = GlyphCellPixels * GlyphAtlasColumns * GlyphCellPixels * GlyphAtlasRows;
         private const int DefaultMaxQuads = 8192;
+        public const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin";
         private const float ScreenDepth = 0.25f;
         private const float HashToUnit = 1f / 65535f;
         private const uint StateFlagRawStp = 1u << 0;
@@ -95,6 +96,24 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private static readonly int VisualTierId = Shader.PropertyToID("_H8EyeVisualTier");
         private static readonly ProfilerMarker SlowTickMarker = new ProfilerMarker("H8.Diagnostics.ArchitectEye.SlowTick");
         private static readonly ProfilerMarker UploadMarker = new ProfilerMarker("H8.Diagnostics.ArchitectEye.Upload");
+        private static readonly Vector3[] QuadVertices =
+        {
+            new Vector3(-1f, -1f, 0f),
+            new Vector3(1f, -1f, 0f),
+            new Vector3(1f, 1f, 0f),
+            new Vector3(-1f, 1f, 0f)
+        }; // COLD ALLOC: Vector3[4] - shared indirect quad mesh vertices - owner: ArchitectEyeVisualizer
+        private static readonly Vector2[] QuadUvs =
+        {
+            new Vector2(0f, 0f),
+            new Vector2(1f, 0f),
+            new Vector2(1f, 1f),
+            new Vector2(0f, 1f)
+        }; // COLD ALLOC: Vector2[4] - shared indirect quad mesh UVs - owner: ArchitectEyeVisualizer
+        private static readonly int[] QuadIndices =
+        {
+            0, 1, 2, 0, 2, 3
+        }; // COLD ALLOC: int[6] - shared indirect quad mesh indices - owner: ArchitectEyeVisualizer
 
         [SerializeField] private bool _enabled = true;
         [SerializeField] private int _maxQuads = DefaultMaxQuads;
@@ -118,9 +137,9 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private GraphicsBuffer _argsBufferB;
         private GraphicsBuffer _instanceBuffer;
         private GraphicsBuffer _argsBuffer;
+        private int _bufferQuadCapacity;
         private int _gpuWriteBufferIndex;
         private int _frontCount;
-        private bool _updatableRegistered;
         private bool _slowRegistered;
         private bool _renderRegistered;
         private bool _rawStpDebug;
@@ -149,19 +168,12 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 return;
 
             ArchitectEyeDebugBus.EnsureInitialized();
-            _updatableRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             _slowRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
             _renderRegistered = GlobalRegistry.Renderables.TryRegister(this);
         }
 
         private void OnDisable()
         {
-            if (_updatableRegistered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _updatableRegistered = false;
-            }
-
             if (_slowRegistered)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
@@ -226,6 +238,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
             long beginTicks = Stopwatch.GetTimestamp();
             int quadCapacity = ResolveQuadCapacity();
+            EnsureBufferCapacity(quadCapacity);
             NativeArray<ArchitectEyeQuadInstance> quads = vault.GetBuffer<ArchitectEyeQuadInstance>(
                 BufferID.ArchitectEyeQuadInstances,
                 quadCapacity,
@@ -272,6 +285,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             BuildStpPanel(quads, ref count, quadCapacity, stpScale01, stpStress01);
             BuildVisualOverkillDiagnostics(quads, ref count, quadCapacity, in state, signalPressure, gasCo201, stpStress01);
 
+            lastFaultPosition = SanitizeFaultPosition(lastFaultPosition, float3.zero);
             if (nonFiniteCount > 0)
                 BuildNanWarning(quads, ref count, quadCapacity, lastFaultPosition);
 
@@ -280,12 +294,12 @@ namespace Hecton8.Core.Diagnostics.Visuals
             state.Flags |= nonFiniteCount > 0 ? StateFlagNonFinite : 0u;
             state.LastFrame = unchecked((uint)Mathf.Max(0, Time.frameCount));
             state.LastQuadCount = count;
-            state.LastBuildMicroseconds = buildMicroseconds;
-            state.LastHealth01 = health01;
-            state.LastFrameMs = frameTimeMs;
-            state.LastStpScale01 = stpScale01;
-            state.LastGasCo201 = gasCo201;
-            state.LastGasO201 = gasO201;
+            state.LastBuildMicroseconds = NonNegativeFinite(buildMicroseconds);
+            state.LastHealth01 = SaturateFinite(health01);
+            state.LastFrameMs = NonNegativeFinite(frameTimeMs);
+            state.LastStpScale01 = SaturateFinite(stpScale01);
+            state.LastGasCo201 = SaturateFinite(gasCo201);
+            state.LastGasO201 = SaturateFinite(gasO201);
             state.LastSignalLaneCount = laneCount;
             state.LastNonFiniteCount = nonFiniteCount;
             RecordBlackBox(blackBox, ref state, count, laneCount, signalPressure, vault.CapacityPressure01, fragmentation01, health01, frameTimeMs, nonFiniteCount, killSwitchMask, lastFaultPosition, gasCo201, gasO201, stpScale01);
@@ -303,24 +317,22 @@ namespace Hecton8.Core.Diagnostics.Visuals
             }
         }
 
-        public void Tick(float deltaTime)
-        {
-            if (!IsDiagnosticsRuntimeAllowed())
-                return;
-
-            if (UnityEngine.Input.GetKeyDown(KeyCode.F12))
-                _enabled = !_enabled;
-        }
-
         public void Render(float deltaTime)
         {
             if (!IsDiagnosticsRuntimeAllowed())
                 return;
 
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F12))
+            {
+                _enabled = !_enabled;
+                if (!_enabled)
+                    _frontCount = 0;
+            }
+
             if (!_enabled || _frontCount <= 0 || _quadMesh == null || _material == null || _argsBuffer == null)
                 return;
 
-            Graphics.DrawMeshInstancedIndirect(
+            UnityEngine.Graphics.DrawMeshInstancedIndirect(
                 _quadMesh,
                 0,
                 _material,
@@ -349,6 +361,26 @@ namespace Hecton8.Core.Diagnostics.Visuals
             Trim(ref command);
             if (command.Length == 0)
                 return false;
+
+            if (StartsWith(command, "eye "))
+            {
+                ReadOnlySpan<char> tail = command.Slice(4);
+                Trim(ref tail);
+                if (tail.Length == 0)
+                    return false;
+
+                if (IsToken(tail, "toggle"))
+                    _enabled = !_enabled;
+                else if (IsEnabledToken(tail))
+                    _enabled = true;
+                else if (IsDisabledToken(tail))
+                    _enabled = false;
+                else
+                    return false;
+
+                _frontCount = _enabled ? _frontCount : 0;
+                return true;
+            }
 
             if (StartsWith(command, "stp raw"))
             {
@@ -408,7 +440,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 if (!math.all(math.isfinite(position)))
                 {
                     nonFiniteCount++;
-                    lastFaultPosition = new float3(aup.LocalX, aup.LocalY, aup.LocalZ);
+                    lastFaultPosition = SanitizeFaultPosition(new float3(aup.LocalX, aup.LocalY, aup.LocalZ), lastFaultPosition);
                     continue;
                 }
 
@@ -456,7 +488,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             for (int i = 0; i < lanes; i++)
             {
                 SignalLaneTelemetry lane = telemetry[i];
-                float lanePressure = math.saturate((lane.QueuedBeforeFlush + lane.SnapshotCount + lane.DroppedCount * 4) * (1f / 64f));
+                float lanePressure = SaturateFinite((lane.QueuedBeforeFlush + lane.SnapshotCount + lane.DroppedCount * 4) * (1f / 64f));
                 pressure = math.max(pressure, lanePressure);
                 float y = 0.72f - i * 0.022f;
                 float x = -0.93f + lanePressure * 0.16f;
@@ -474,7 +506,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 while (index < 0)
                     index += blackBox.Length;
                 ArchitectEyeBlackBoxEntry entry = blackBox[index % blackBox.Length];
-                float p = math.saturate(entry.SignalPressure01);
+                float p = SaturateFinite(entry.SignalPressure01);
                 float x = -0.93f + (history - 1 - i) * 0.012f;
                 float4 color = math.select(new float4(0.05f, 0.7f, 1f, 0.42f), new float4(1f, 0.2f, 0.05f, 0.7f), p > 0.66f);
                 EmitScreenQuad(quads, ref count, capacity, new float2(x, 0.86f + p * 0.035f), new float2(0.004f, math.max(0.004f, p * 0.04f)), color, 0f, new float4(0f, 0f, 1f, 1f));
@@ -500,7 +532,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 if (!IsFiniteSignal(in signal))
                 {
                     nonFiniteCount++;
-                    lastFaultPosition = signal.Position;
+                    lastFaultPosition = SanitizeFaultPosition(signal.Position, lastFaultPosition);
                     continue;
                 }
 
@@ -533,8 +565,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
                         break;
                     case DebugSignalKind.GasRoom:
                     {
-                        float o2 = math.saturate(signal.Value0);
-                        float co2 = math.saturate(signal.Value1);
+                        float o2 = SaturateFinite(signal.Value0);
+                        float co2 = SaturateFinite(signal.Value1);
                         float4 color = math.select(new float4(0.05f, 1f, 0.25f, 0.4f), new float4(1f, 0.06f, 0.02f, 0.62f), co2 > o2);
                         EmitBillboardQuad(quads, ref count, capacity, signal.Position, new float2(0.35f, 0.35f), color, new float4(0f, 0f, 1f, 1f));
                         break;
@@ -550,14 +582,14 @@ namespace Hecton8.Core.Diagnostics.Visuals
                         break;
                     case DebugSignalKind.SignalEvent:
                     {
-                        signalPressure01 = math.max(signalPressure01, math.saturate(signal.Value0));
+                        signalPressure01 = math.max(signalPressure01, SaturateFinite(signal.Value0));
                         float x = -0.9f + ((signal.Aux0 & 63u) * 0.0125f);
                         EmitScreenQuad(quads, ref count, capacity, new float2(x, 0.73f + signalPressure01 * 0.08f), new float2(0.004f, 0.02f), new float4(0.1f, 0.75f, 1f, 0.62f), 0f, new float4(0f, 0f, 1f, 1f));
                         break;
                     }
                     case DebugSignalKind.LaneSaturation:
                     {
-                        float saturation = math.saturate(signal.Value0);
+                        float saturation = SaturateFinite(signal.Value0);
                         float4 color = math.select(new float4(0.15f, 0.75f, 1f, 0.68f), new float4(1f, 0.08f, 0.02f, 0.85f), saturation >= 0.9f);
                         EmitScreenQuad(quads, ref count, capacity, new float2(-0.84f + saturation * 0.18f, 0.62f - (signal.Aux0 & 15u) * 0.018f), new float2(math.max(0.004f, saturation * 0.18f), 0.006f), color, 0f, new float4(0f, 0f, 1f, 1f));
                         break;
@@ -567,18 +599,18 @@ namespace Hecton8.Core.Diagnostics.Visuals
                         break;
                     case DebugSignalKind.NanGeyser:
                         nonFiniteCount++;
-                        lastFaultPosition = signal.Position;
+                        lastFaultPosition = SanitizeFaultPosition(signal.Position, lastFaultPosition);
                         BuildNanPillar(quads, ref count, capacity, signal.Position);
                         break;
                     case DebugSignalKind.Homeostasis:
-                        health01 = math.saturate(signal.Value0);
+                        health01 = SaturateFinite(signal.Value0);
                         BuildHomeostasisDial(quads, ref count, capacity, health01);
                         break;
                     case DebugSignalKind.GhostPose:
                         EmitBillboardQuad(quads, ref count, capacity, signal.Position, new float2(0.18f, 0.42f), new float4(0.4f, 0.85f, 1f, 0.18f), new float4(0f, 0f, 1f, 1f));
                         break;
                     case DebugSignalKind.VramBudgetSlice:
-                        BuildVramSlice(quads, ref count, capacity, signal.Aux0, math.saturate(signal.Value0));
+                        BuildVramSlice(quads, ref count, capacity, signal.Aux0, SaturateFinite(signal.Value0));
                         break;
                     case DebugSignalKind.AupTeleportPreview:
                         EmitWorldLine(quads, ref count, capacity, signal.Position + new float3(-1f, 0f, 0f), signal.Position + new float3(1f, 0f, 0f), _lineThicknessMeters, new float4(0.1f, 1f, 0.8f, 0.9f));
@@ -651,10 +683,12 @@ namespace Hecton8.Core.Diagnostics.Visuals
             {
                 AbsoluteUniversePosition aup = aups[i];
                 float3 velocity = velocities[i];
-                if (!VaultProbeUtility.IsFinite(in aup) || !math.all(math.isfinite(velocity)))
+                bool finiteAup = VaultProbeUtility.IsFinite(in aup);
+                if (!finiteAup || !math.all(math.isfinite(velocity)))
                 {
                     nonFiniteCount++;
-                    lastFaultPosition = new float3(aup.LocalX, aup.LocalY, aup.LocalZ);
+                    if (finiteAup)
+                        lastFaultPosition = SanitizeFaultPosition(aup.ToRuntimeFloat3(), lastFaultPosition);
                     continue;
                 }
 
@@ -699,8 +733,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
                     continue;
                 }
 
-                float roomO2 = math.saturate(oxygen * SafeRcp(21f));
-                float roomCo2 = math.saturate(carbonDioxide * SafeRcp(8f));
+                float roomO2 = SaturateFinite(oxygen * SafeRcp(21f));
+                float roomCo2 = SaturateFinite(carbonDioxide * SafeRcp(8f));
                 o201 = math.max(o201, roomO2);
                 co201 = math.max(co201, roomCo2);
                 float4 green = new float4(0.05f, 1f, 0.25f, 0.32f + roomO2 * 0.2f);
@@ -716,7 +750,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
         {
             long freeBytes = vault.TotalFreeSpaceBytes;
             long largest = vault.LargestContiguousBlockBytes;
-            float fragmentation01 = freeBytes > 0L ? math.saturate((float)((double)(freeBytes - largest) / freeBytes)) : 0f;
+            float fragmentation01 = freeBytes > 0L ? SaturateFinite((float)((double)(freeBytes - largest) / freeBytes)) : 0f;
             int descriptorCount = math.min(H8Memory.BlockDescriptorCount, 72);
             float x = -0.95f;
             for (int i = 0; i < descriptorCount; i++)
@@ -785,8 +819,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 while (index < 0)
                     index += blackBox.Length;
                 ArchitectEyeBlackBoxEntry entry = blackBox[index % blackBox.Length];
-                float h = math.saturate(entry.SystemHealth01);
-                float t = math.saturate(entry.FrameTimeMs * (1f / 33.3f));
+                float h = SaturateFinite(entry.SystemHealth01);
+                float t = SaturateFinite(entry.FrameTimeMs * SafeRcp(33.3f));
                 float x = 0.1f + (bars - 1 - i) * 0.012f;
                 EmitScreenQuad(quads, ref count, capacity, new float2(x, 0.88f + h * 0.035f), new float2(0.004f, math.max(0.004f, h * 0.035f)), new float4(0.2f, 1f, 0.35f, 0.55f), 0f, new float4(0f, 0f, 1f, 1f));
                 EmitScreenQuad(quads, ref count, capacity, new float2(x, 0.79f + t * 0.035f), new float2(0.004f, math.max(0.004f, t * 0.035f)), new float4(1f, 0.32f, 0.06f, 0.5f), 0f, new float4(0f, 0f, 1f, 1f));
@@ -820,7 +854,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 if (!math.all(math.isfinite(position)))
                     continue;
 
-                float alpha = math.saturate(0.28f - i * (0.24f / history));
+                float alpha = SaturateFinite(0.28f - i * (0.24f / history));
                 EmitBillboardQuad(quads, ref count, capacity, position, new float2(0.12f, 0.32f), new float4(0.35f, 0.82f, 1f, alpha), new float4(0f, 0f, 1f, 1f));
             }
         }
@@ -878,7 +912,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             {
                 float h0 = Hash01(frameSeed, (uint)i, 0x44454E54u);
                 float h1 = Hash01(frameSeed, (uint)i, 0x48554C4Cu);
-                float stress = math.saturate(stpStress01 + signalPressure01 * 0.5f);
+                float stress = SaturateFinite(stpStress01 + signalPressure01 * 0.5f);
                 float2 center = new float2(0.45f + h0 * 0.5f, -0.82f + h1 * 0.28f);
                 float2 size = new float2(math.lerp(0.006f, 0.038f, h0), math.lerp(0.002f, 0.012f, h1));
                 EmitScreenQuad(quads, ref count, capacity, center, size, new float4(1f, 0.48f, 0.16f, 0.055f + stress * 0.20f), 0f, new float4(0f, 0f, 1f, 1f));
@@ -887,6 +921,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private void BuildNanWarning(NativeArray<ArchitectEyeQuadInstance> quads, ref int count, int capacity, float3 faultPosition)
         {
+            faultPosition = SanitizeFaultPosition(faultPosition, float3.zero);
             int length = 0;
             AppendLiteral(_labelScratch, ref length, "NON FINITE VAULT");
             EmitWorldText(quads, ref count, capacity, faultPosition + new float3(0f, 2.2f, 0f), _labelScratch, length, _labelMeters * 2.5f, new float4(1f, 0f, 0f, 1f));
@@ -896,6 +931,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private void BuildNanPillar(NativeArray<ArchitectEyeQuadInstance> quads, ref int count, int capacity, float3 position)
         {
+            position = SanitizeFaultPosition(position, float3.zero);
             EmitWorldLine(quads, ref count, capacity, position, position + new float3(0f, 30f, 0f), 0.18f, new float4(1f, 0f, 0f, 0.92f));
         }
 
@@ -945,18 +981,18 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
                 QuadCount = (ushort)math.min(ushort.MaxValue, math.max(0, quadCount)),
                 SignalLaneCount = (ushort)math.min(ushort.MaxValue, math.max(0, laneCount)),
-                SignalPressure01 = math.saturate(signalPressure01),
-                VaultPressure01 = math.saturate(vaultPressure01),
-                MemoryFragmentation01 = math.saturate(fragmentation01),
-                SystemHealth01 = math.saturate(health01),
-                FrameTimeMs = math.max(0f, frameTimeMs),
+                SignalPressure01 = SaturateFinite(signalPressure01),
+                VaultPressure01 = SaturateFinite(vaultPressure01),
+                MemoryFragmentation01 = SaturateFinite(fragmentation01),
+                SystemHealth01 = SaturateFinite(health01),
+                FrameTimeMs = NonNegativeFinite(frameTimeMs),
                 NonFiniteCount = math.max(0, nonFiniteCount),
                 KillSwitchMask = killSwitchMask,
                 Flags = state.Flags,
-                LastFaultPosition = lastFaultPosition,
-                GasCo201 = math.saturate(gasCo201),
-                GasO201 = math.saturate(gasO201),
-                StpScale01 = math.saturate(stpScale01)
+                LastFaultPosition = SanitizeFaultPosition(lastFaultPosition, float3.zero),
+                GasCo201 = SaturateFinite(gasCo201),
+                GasO201 = SaturateFinite(gasO201),
+                StpScale01 = SaturateFinite(stpScale01)
             };
 
             index++;
@@ -977,7 +1013,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (_instanceBuffer == null || _argsBuffer == null || _quadMesh == null || !quads.IsCreated)
                 return;
 
-            int uploadCount = math.min(count, math.min(quads.Length, _maxQuads));
+            int uploadCount = math.min(count, math.min(quads.Length, _bufferQuadCapacity));
             _gpuWriteBufferIndex ^= 1;
             GraphicsBuffer instanceWriteBuffer = _gpuWriteBufferIndex == 0 ? _instanceBufferA : _instanceBufferB;
             GraphicsBuffer argsWriteBuffer = _gpuWriteBufferIndex == 0 ? _argsBufferA : _argsBufferB;
@@ -1018,10 +1054,10 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
             try
             {
-                string root = Directory.GetCurrentDirectory();
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_ARCHITECT_SPATIAL_PROBE.bin");
+                string path = Path.Combine(Directory.GetCurrentDirectory(), BlackBoxDumpRelativePath);
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
                 using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
                 unsafe
                 {
@@ -1064,6 +1100,27 @@ namespace Hecton8.Core.Diagnostics.Visuals
                    math.isfinite(signal.Value1);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 SanitizeFaultPosition(float3 candidate, float3 fallback)
+        {
+            if (math.all(math.isfinite(candidate)))
+                return candidate;
+
+            return math.all(math.isfinite(fallback)) ? fallback : float3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SaturateFinite(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float NonNegativeFinite(float value)
+        {
+            return math.isfinite(value) && value > 0f ? value : 0f;
+        }
+
         private float ResolveSystemHealth01(out float frameTimeMs, out uint killSwitchMask)
         {
             float health = HomeostasisBrain.SystemHealthIndex01;
@@ -1080,9 +1137,9 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
             ReadOnlySpan<FrameTimeSignal> frameSignals = SignalBus<FrameTimeSignal>.GetFrameSnapshot();
             if (frameSignals.Length > 0)
-                frameTimeMs = frameSignals[frameSignals.Length - 1].FrameTimeEwmaMs;
+                frameTimeMs = NonNegativeFinite(frameSignals[frameSignals.Length - 1].FrameTimeEwmaMs);
 
-            return math.saturate(math.isfinite(health) ? health : 0f);
+            return SaturateFinite(health);
         }
 
         private float ResolveStpScale01(out float stress01)
@@ -1092,8 +1149,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (scaler == null || !scaler.TryGetScaleState(out ResolutionScaleState state))
                 return 1f;
 
-            stress01 = math.saturate(math.isfinite(state.SystemStressEwma01) ? state.SystemStressEwma01 : 0f);
-            return math.saturate(math.isfinite(state.CurrentRenderScale01) ? state.CurrentRenderScale01 : 1f);
+            stress01 = SaturateFinite(state.SystemStressEwma01);
+            return math.isfinite(state.CurrentRenderScale01) ? math.saturate(state.CurrentRenderScale01) : 1f;
         }
 
         private int ResolveEntityBudget()
@@ -1138,6 +1195,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 case HectonQualityTier.Mid:
                     return math.min(_maxQuads, 4096);
                 case HectonQualityTier.Ultra:
+                    return math.max(_maxQuads, DefaultMaxQuads);
+                case HectonQualityTier.High:
                     return math.max(_maxQuads, DefaultMaxQuads);
                 default:
                     return math.min(_maxQuads, 8192);
@@ -1294,21 +1353,9 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private void CreateQuadMesh()
         {
             _quadMesh = new Mesh { name = "ArchitectEyeIndirectQuad" };
-            _quadMesh.vertices = new[]
-            {
-                new Vector3(-1f, -1f, 0f),
-                new Vector3(1f, -1f, 0f),
-                new Vector3(1f, 1f, 0f),
-                new Vector3(-1f, 1f, 0f)
-            };
-            _quadMesh.uv = new[]
-            {
-                new Vector2(0f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(1f, 1f),
-                new Vector2(0f, 1f)
-            };
-            _quadMesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+            _quadMesh.vertices = QuadVertices;
+            _quadMesh.uv = QuadUvs;
+            _quadMesh.triangles = QuadIndices;
             _quadMesh.RecalculateBounds();
         }
 
@@ -1322,7 +1369,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (_material == null)
                 CreateMaterial();
             if (_instanceBufferA == null || _instanceBufferB == null || _argsBufferA == null || _argsBufferB == null)
-                CreateBuffers();
+                CreateBuffers(ResolveQuadCapacity());
 
             if (_material != null)
             {
@@ -1346,12 +1393,28 @@ namespace Hecton8.Core.Diagnostics.Visuals
             _material.SetTexture(GlyphAtlasId, _glyphAtlas);
         }
 
-        private void CreateBuffers()
+        private void EnsureBufferCapacity(int requiredCapacity)
+        {
+            int safeRequired = math.clamp(requiredCapacity, 512, 32768);
+            if (_instanceBufferA != null &&
+                _instanceBufferB != null &&
+                _argsBufferA != null &&
+                _argsBufferB != null &&
+                _bufferQuadCapacity >= safeRequired)
+            {
+                return;
+            }
+
+            CreateBuffers(safeRequired);
+        }
+
+        private void CreateBuffers(int capacity)
         {
             ReleaseBuffersOnly();
+            _bufferQuadCapacity = math.clamp(capacity, 512, 32768);
             int stride = UnsafeUtility.SizeOf<ArchitectEyeQuadInstance>();
-            _instanceBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, _maxQuads, stride);
-            _instanceBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, _maxQuads, stride);
+            _instanceBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, _bufferQuadCapacity, stride);
+            _instanceBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, _bufferQuadCapacity, stride);
             _argsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, sizeof(uint) * 5);
             _argsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, sizeof(uint) * 5);
             _gpuWriteBufferIndex = 0;
@@ -1438,6 +1501,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             _argsBufferB = null;
             _instanceBuffer = null;
             _argsBuffer = null;
+            _bufferQuadCapacity = 0;
             _gpuWriteBufferIndex = 0;
             _frontCount = 0;
         }
@@ -1519,18 +1583,23 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 return;
             }
 
+            uint magnitude;
             if (value < 0)
             {
                 buffer[length++] = '-';
-                value = -value;
+                magnitude = value == int.MinValue ? 2147483648u : (uint)(-value);
+            }
+            else
+            {
+                magnitude = (uint)value;
             }
 
             Span<char> tmp = stackalloc char[12];
             int n = 0;
-            while (value > 0 && n < tmp.Length)
+            while (magnitude > 0u && n < tmp.Length)
             {
-                tmp[n++] = (char)('0' + value % 10);
-                value /= 10;
+                tmp[n++] = (char)('0' + (int)(magnitude % 10u));
+                magnitude /= 10u;
             }
 
             for (int i = n - 1; i >= 0 && length < buffer.Length; i--)
@@ -1591,6 +1660,33 @@ namespace Hecton8.Core.Diagnostics.Visuals
             value = start <= end ? value.Slice(start, end - start + 1) : ReadOnlySpan<char>.Empty;
         }
 
+        private static bool IsEnabledToken(ReadOnlySpan<char> value)
+        {
+            return IsToken(value, "on") || IsToken(value, "1") || IsToken(value, "true") || IsToken(value, "yes");
+        }
+
+        private static bool IsDisabledToken(ReadOnlySpan<char> value)
+        {
+            return IsToken(value, "off") || IsToken(value, "0") || IsToken(value, "false") || IsToken(value, "no");
+        }
+
+        private static bool IsToken(ReadOnlySpan<char> value, string token)
+        {
+            if (value.Length != token.Length)
+                return false;
+
+            for (int i = 0; i < token.Length; i++)
+            {
+                char a = value[i];
+                if (a >= 'A' && a <= 'Z')
+                    a = (char)(a + 32);
+                if (a != token[i])
+                    return false;
+            }
+
+            return true;
+        }
+
         private static bool TryParseHexOrDecimal(ReadOnlySpan<char> value, out uint result)
         {
             Trim(ref value);
@@ -1602,7 +1698,22 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 int digit = DecodeDigit(value[i], hex);
                 if (digit < 0)
                     return false;
-                result = hex ? (result << 4) | (uint)digit : result * 10u + (uint)digit;
+
+                if (hex)
+                {
+                    if (result > 0x0FFFFFFFu)
+                        return false;
+
+                    result = (result << 4) | (uint)digit;
+                }
+                else
+                {
+                    uint nextDigit = (uint)digit;
+                    if (result > (uint.MaxValue - nextDigit) / 10u)
+                        return false;
+
+                    result = result * 10u + nextDigit;
+                }
             }
 
             return value.Length > start;

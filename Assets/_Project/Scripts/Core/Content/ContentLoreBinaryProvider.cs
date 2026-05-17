@@ -61,11 +61,29 @@ namespace Hecton8.Core.Content
         public bool TryReadBlock(uint hash, Span<byte> destination, out int bytesWritten)
         {
             bytesWritten = 0;
-            if (!TryGetBlock(hash, out ContentLoreBlockIndex block))
+            if (hash == 0u)
+            {
+                LogRejectedZeroHashRead();
                 return false;
+            }
 
-            if (!IsBlockReadable(block) || destination.Length < block.Length)
+            if (!TryGetBlock(hash, out ContentLoreBlockIndex block))
+            {
+                LogMissingLoreBlock(hash);
                 return false;
+            }
+
+            if (!IsBlockReadable(block))
+            {
+                LogUnreadableLoreBlock(hash, block.Offset, block.Length, _fileLength);
+                return false;
+            }
+
+            if (destination.Length < block.Length)
+            {
+                LogLoreDestinationTooSmall(hash, destination.Length, block.Length);
+                return false;
+            }
 
 #if UNITY_EDITOR || UNITY_STANDALONE
             if (_accessor != null)
@@ -78,7 +96,10 @@ namespace Hecton8.Core.Content
             }
 #endif
             if (_fallbackStream == null)
+            {
+                LogLoreStreamUnavailable(hash);
                 return false;
+            }
 
             _fallbackStream.Position = block.Offset;
             Span<byte> target = destination.Slice(0, block.Length);
@@ -92,8 +113,14 @@ namespace Hecton8.Core.Content
                 totalRead += read;
             }
 
-            bytesWritten = totalRead;
-            return totalRead == block.Length;
+            if (totalRead != block.Length)
+            {
+                LogPartialLoreRead(hash, totalRead, block.Length);
+                return false;
+            }
+
+            bytesWritten = block.Length;
+            return true;
         }
 
         public bool Open()
@@ -364,13 +391,62 @@ namespace Hecton8.Core.Content
                 ? root
                 : root + Path.DirectorySeparatorChar;
 
-            return candidate.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
+            return candidate.StartsWith(normalizedRoot, StringComparison.Ordinal);
         }
 
         private static bool IsCompressedPackagePath(string path)
         {
             return path.IndexOf("://", StringComparison.Ordinal) >= 0 ||
                    path.StartsWith("jar:", StringComparison.OrdinalIgnoreCase);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogRejectedZeroHashRead()
+        {
+            Debug.LogError("[ContentLoreBinaryProvider] Rejected zero hash lore read.", this);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogMissingLoreBlock(uint hash)
+        {
+            Debug.LogError("[ContentLoreBinaryProvider] Missing lore block hash=0x" + hash.ToString("X8") + ".", this);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogUnreadableLoreBlock(uint hash, long offset, int length, long fileLength)
+        {
+            Debug.LogError("[ContentLoreBinaryProvider] Unreadable lore block hash=0x" +
+                           hash.ToString("X8") + " offset=" + offset + " length=" + length +
+                           " fileLength=" + fileLength + ".", this);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogLoreDestinationTooSmall(uint hash, int destinationLength, int requiredLength)
+        {
+            Debug.LogError("[ContentLoreBinaryProvider] Destination span too small for lore hash=0x" +
+                           hash.ToString("X8") + " destination=" + destinationLength +
+                           " required=" + requiredLength + ".", this);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogLoreStreamUnavailable(uint hash)
+        {
+            Debug.LogError("[ContentLoreBinaryProvider] No readable Babel dictionary stream for hash=0x" +
+                           hash.ToString("X8") + ".", this);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogPartialLoreRead(uint hash, int readLength, int requiredLength)
+        {
+            Debug.LogError("[ContentLoreBinaryProvider] Partial lore read hash=0x" +
+                           hash.ToString("X8") + " read=" + readLength +
+                           " required=" + requiredLength + ".", this);
         }
 
 #if UNITY_EDITOR

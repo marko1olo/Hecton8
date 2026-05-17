@@ -526,3 +526,217 @@ Validation:
 - Fixed-string C# grep returned `NO_REPAIR_SHADER_PASS_CSHARP_BLOAT_MATCHES`.
 - `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` did not complete within 315 seconds on this pass; no clean build claim is made.
 - `git diff --check -- ...` reports only CRLF conversion warnings in touched files.
+
+## 2026-05-16 - Seventeenth Pass Repair Signal AUP Guard
+What was wrong:
+- `PublishHullRepairedSignal` converted `worldPoint` to AUP before checking the source Vector3.
+- A bad completion point could construct a non-finite `AbsoluteUniversePosition` before the typed lane had a chance to reject it.
+- The 16-bit completion mask walker repeated the publication path even when the shared completion point was invalid.
+
+What was done:
+- Added `IsFiniteVector(worldPoint)` guard before repair-completion AUP conversion.
+- Added `math.all(math.isfinite(absolute))` guard before building `HullRepairedSignal`.
+- Added an early invalid-point exit to `PublishHullRepairedSignals`.
+- Kept `SignalBus<HullRepairedSignal>.Push(in signal)` as the only repair completion lane.
+
+Cinematic Cheats used:
+- Invalid completion handling is a branch and a 16-bit mask early-out, not a dynamic error object.
+- Low tier keeps zero allocation and bounded O(16) repair completion work.
+- High tier keeps the same gas seal, shader unbend, rust removal, and compute spark overkill when math is valid.
+
+Exact Microseconds saved:
+- Estimated 0-1 us branch cost per valid repaired dent.
+- Invalid completion frames save an estimated 0-1 us by skipping mask iteration and repeated bad conversion attempts.
+- 0 B allocation.
+
+Validation:
+- `rg` confirmed `IsFiniteVector(worldPoint)` and `math.isfinite(absolute)` before `SignalBus<HullRepairedSignal>.Push`.
+- Fixed-string grep across `RepairTool`, `HullDentShaderController`, and `EquipmentInteractionHandler` returned `NO_REPAIR_OWNED_HOTPATH_BLOAT_MATCHES`.
+- Separate fixed-string grep across `GasDynamicsSolver` returned no Debug.Log/EventBus/GlobalSignals.Publish/string.Format/Update matches. Existing gas-owned NativeArrays remain outside the WELDING_REPAIR_LOGIC domain.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair/AUP diagnostics returned `NO_REPAIR_AUP_SIGNAL_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- `git diff --check -- ...` reports only CRLF conversion warnings in touched files.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-16 - Eighteenth Pass Repair Blackbox Dump Survival
+What was wrong:
+- `DumpRepairBlackBox` performed directory and file writer operations while handling invalid repair math.
+- If the dump path was inaccessible, the fault handler itself could throw.
+- That would convert a recoverable blackbox dump failure into a secondary crash with weaker evidence.
+
+What was done:
+- Added `RepairBlackBoxDumpFaultHash` (`WLDF`) for stable binary dump-failure telemetry.
+- Wrapped blackbox dump file I/O in `catch (Exception)`.
+- Published `GlobalTelemetryBus.PublishUnityLogFault(RepairBlackBoxDumpFaultHash, 0u, 1u)` on dump failure.
+- Kept `TryUnlockBuffer(BufferID.RepairToolBlackBox)` in `finally`.
+
+Cinematic Cheats used:
+- No managed log text, no exception formatting, no queue object.
+- Fault evidence is a compact telemetry hash.
+- The 300-frame vault ring remains the authoritative crash trail.
+
+Exact Microseconds saved:
+- 0 us claimed on valid frames.
+- Fault-path only; the catch prevents a secondary crash instead of optimizing runtime.
+- 0 B added to the valid repair path.
+
+Validation:
+- `rg` confirmed `RepairBlackBoxDumpFaultHash`, `catch (Exception)`, and `GlobalTelemetryBus.PublishUnityLogFault` in `RepairTool`.
+- Fixed-string grep across `RepairTool`, `HullDentShaderController`, and `EquipmentInteractionHandler` returned `NO_REPAIR_BLACKBOX_DUMP_BLOAT_MATCHES`.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair dump diagnostics returned `NO_REPAIR_BLACKBOX_DUMP_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-16 - Nineteenth Pass Header Truth / Bloat Evidence
+What was wrong:
+- `RepairTool` header still described old generic BaseModule repair behavior.
+- A comment-only `Update()` phrase appeared in anti-bloat grep.
+- There was no Unity Update method, but the evidence was noisy and the header contradicted the actual HullDents engine.
+
+What was done:
+- Rewrote the header logic summary around queued RaycastCommand input.
+- Documented AUP double3 local hull conversion.
+- Documented `GlobalDataVault.HullDents` erasure and typed repair signal emission.
+- Replaced the comment-only `Update()` phrase with SystemDispatcher tick wording.
+
+Cinematic Cheats used:
+- No gameplay code changed.
+- The source now describes the mathematical dent erasure path, not a generic progress bar.
+
+Exact Microseconds saved:
+- 0 runtime microseconds.
+- This pass removes validation noise, not frame cost.
+
+Validation:
+- Fixed-string grep across `RepairTool`, `HullDentShaderController`, and `EquipmentInteractionHandler` returned `NO_REPAIR_HEADER_BLOAT_MATCHES`.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair header diagnostics returned `NO_REPAIR_HEADER_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=-1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Twentieth Pass Interaction Contract ABI
+What was wrong:
+- `InteractionPacket` declared `Size = 48` without `Pack = 1`.
+- `InteractionSignal` used default sequential layout.
+- These contracts feed the repair raycast dependency and could have backend-dependent stride/padding on ARM64/Quest/Android.
+
+What was done:
+- Converted `InteractionPacket` to `LayoutKind.Explicit, Pack = 1, Size = 48`.
+- Converted `InteractionSignal` to `LayoutKind.Explicit, Pack = 1, Size = 88`.
+- Added fixed `FieldOffset` declarations and explicit tail padding.
+
+Cinematic Cheats used:
+- No gameplay or visual path changed.
+- This is ABI hardening for the existing queued interaction path.
+
+Exact Microseconds saved:
+- 0 runtime microseconds.
+- The value is deterministic native stride, not speed.
+
+Validation:
+- `rg` confirmed Pack=1 explicit layouts and field offsets.
+- Fixed-string grep returned `NO_REPAIR_INTERACTION_ABI_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_INTERACTION_ABI_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Twenty-First Pass Interaction Signal Queue Vault Eviction
+What was wrong:
+- `EquipmentInteractionHandler` still owned a private `NativeQueue<InteractionSignal>`.
+- That queue sits in the repair RaycastCommand dependency path.
+- It violated the current GlobalDataVault ownership requirement.
+
+What was done:
+- Added `BufferID.InteractionSignalQueue = 388`.
+- Replaced the private `NativeQueue<InteractionSignal>` with `VaultBufferHandle<InteractionSignal>`.
+- `Publish` writes `InteractionSignal` into a fixed vault ring.
+- `FlushSignals` reads and clears the vault slot before dispatch.
+- `ClearQueuedSignals` resets the vault signal lane.
+- Collider/Transform side-channel arrays remain managed because Unity object references cannot be stored in native vault memory.
+
+Cinematic Cheats used:
+- The queue is a fixed 256-slot ring, not a dynamic event container.
+- Dispatch target logic runs after vault unlock.
+- No duplicate repair-only signal was invented.
+
+Exact Microseconds saved:
+- No speed gain claimed.
+- Estimated 1-3 us lock overhead per publish/read pair.
+- 0 B private native queue allocation remains in the interaction dependency path.
+
+Validation:
+- `rg` confirmed `BufferID.InteractionSignalQueue`, `VaultBufferHandle<InteractionSignal>`, vault locks, and `GetBufferHandle<InteractionSignal>`.
+- Fixed-string grep returned `NO_REPAIR_INTERACTION_VAULT_QUEUE_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_INTERACTION_VAULT_QUEUE_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Twenty-Second Pass Native View Declaration Purge
+What was wrong:
+- After queue eviction, `EquipmentInteractionHandler` still had explicit `NativeArray<T>` local view declarations and helper signatures.
+- They were views, not allocations, but they violated the audit text for local native-array declarations.
+
+What was done:
+- Replaced explicit local `NativeArray<T>` declarations with inferred short-lived vault views.
+- Inlined fixed command/signal lane reset loops.
+- Removed helper signatures that took `NativeArray<T>` parameters.
+
+Cinematic Cheats used:
+- No new abstraction.
+- No gameplay behavior change.
+- The queue/raycast lanes remain fixed-size vault-backed rings.
+
+Exact Microseconds saved:
+- 0 runtime microseconds.
+- Loop work is unchanged; this is H-Phi audit hygiene.
+
+Validation:
+- `rg` returned `NO_REPAIR_NATIVEARRAY_TYPE_DECLARATIONS`.
+- Fixed-string grep returned `NO_REPAIR_NATIVEARRAY_VIEW_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_NATIVEARRAY_VIEW_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Twenty-Third Pass Comment Truth / Anti-Bloat
+What was wrong:
+- `EquipmentInteractionHandler` comments still described the side-channel arrays as aligned with a native interaction/signal queue after the payload queue had been moved into `GlobalDataVault`.
+- `EquipmentInteractionContracts` still named `LateUpdate` in a comment even though this path is driven through late-frame dispatch/SystemDispatcher terminology.
+- Runtime behavior was already correct; source truth was stale and kept creating anti-bloat false positives.
+
+What was done:
+- Changed stale native-queue wording to vault interaction/signal queue wording.
+- Changed the contract comment to "late-frame dispatch owner."
+- Left gas solver native ownership untouched because it is outside this prompt's domain.
+
+Cinematic Cheats used:
+- No new abstraction.
+- No runtime behavior change.
+- No rebuild churn on a comment-only pass.
+
+Exact Microseconds saved:
+- 0 runtime microseconds.
+- This was source-truth hygiene only.
+
+Validation:
+- Fixed-string grep returned `NO_REPAIR_COMMENT_TRUTH_BLOAT_MATCHES`.
+- ABI rg still confirms `Pack = 1`, explicit `FieldOffset`, and fixed sizes for the repair-adjacent structs.
+- `dotnet build` was not rerun because the user explicitly ordered not to rebuild every pass and this edit was comment-only.
+
+## 2026-05-17 - Twenty-Fourth Pass PlayerTool Debug Telemetry Purge
+What was wrong:
+- `PlayerTool`, the inherited base for `RepairTool`, still had a development-only `Debug.Log("[ToolLifecycle] " + message)` path.
+- The default flag was false, but enabling diagnostics would allocate managed strings and write console logs during tool spawn/despawn.
+
+What was done:
+- Replaced the string log path with `PublishLifecycleDebug(uint markerHash)`.
+- Added fixed TLIF/TLSP/TLDS hashes.
+- Routed development lifecycle diagnostics through `GlobalTelemetryBus.PublishModTelemetry`.
+- Release builds remain no-op.
+
+Cinematic Cheats used:
+- Hash-only telemetry instead of readable console strings.
+- No new signal lane.
+- No visual or gameplay behavior changed.
+
+Exact Microseconds saved:
+- 0 runtime microseconds by default because `lifecycleDebugLogging` is false.
+- When enabled, avoids one string concatenation and console write per spawn/despawn; estimated 1-5 us plus managed allocation avoided.
+
+Validation:
+- Fixed-string grep returned `NO_REPAIR_PLAYERTOOL_DEBUG_HOTPATH_BLOAT_MATCHES`.
+- Broader grep still finds legacy string-returning operational summary bridges in `PlayerTool`; those are API-contract legacy paths, not the hull repair tick.
+- Filtered `dotnet build` returned `NO_REPAIR_PLAYERTOOL_TELEMETRY_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.

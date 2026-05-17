@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core.Memory;
 using Hecton.Localization;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -755,7 +756,7 @@ namespace Hecton8.Core
                 Allocator allocator = (int)record.Allocator == 0
                     ? Allocator.Persistent
                     : record.Allocator;
-                UnsafeUtility.Free(record.Pointer.ToPointer(), allocator);
+                H8Memory.ReleaseSentinelReapedRaw(record.Pointer.ToPointer(), allocator);
                 RuntimeWatchdog.ReportNativeLeakReaped(
                     ComputeStableHash(record.Owner),
                     ComputeStableHash(record.Label),

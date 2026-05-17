@@ -14,30 +14,6 @@ using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
 
-namespace Hecton8.Core.Contracts.Signals
-{
-    /// <summary>
-    /// Blittable carve ingress packet. Coordinates are absolute-universe meters.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 128)]
-    public struct VoxelCarveEvent : ISignal
-    {
-        public ulong VolumeInstanceId;
-        public float3 AbsoluteHitPoint;
-        public float3 AbsoluteSegmentEnd;
-        public float3 AbsoluteHalfExtents;
-        public float3 AbsoluteImpulseDirection;
-        public double3 AbsoluteHitPointDouble;
-        public double3 AbsoluteSegmentEndDouble;
-        public float RadiusMeters;
-        public float BlendStrengthMeters;
-        public byte Operation;
-        public byte Shape;
-        public byte MaterialId;
-        public byte SourceFlags;
-    }
-}
-
 namespace Hecton8.Caves
 {
     [StructLayout(LayoutKind.Sequential, Pack = 2, Size = 8)]

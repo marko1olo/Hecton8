@@ -297,3 +297,197 @@ Verification:
 Status:
 - Compile validation is green for this checkpoint.
 - Unity runtime, Quest IL2CPP, and profiler/GCMonitor proof remain pending because no Unity Editor/MCP runtime logs are exposed in this session.
+
+## 2026-05-16 | GRAB_IK_PROJECTION | SDF EDGE AND FAULT-DUMP HARDENING
+
+What was wrong:
+- High-tier SDF gradient sampling could reject valid edge contacts when one finite-difference neighbor stepped outside the encoded grid.
+- SDF enablement did not explicitly require a finite range value.
+- NaN fallback dumps depended on external callers remembering the generic telemetry dump path.
+- AUP millimeter quantization rounded finite local meters without an explicit overflow envelope.
+
+What was done:
+- Added finite range gating for SDF projection.
+- Added clamped SDF edge-gradient sampling while preserving strict density sampling for the main contact test.
+- Sanitized vector finite-difference steps and inverse cell scale before gradient solve.
+- Added `TryDumpTelemetryOnFault` to dump the existing 600-entry hand telemetry ring when either output lane reports `OutputFlagNanFallback`.
+- Bounded AUP millimeter quantization to a finite one-million-meter local envelope before rounding.
+
+Cinematic cheats used:
+- Kept the tactile hand block as deterministic SDF/plane projection, not rigidbody hand simulation.
+- High-tier gets better SDF edge continuity; toaster mode still bypasses VR IK or uses the plane fake.
+
+Exact microseconds saved:
+- No new savings claimed.
+- Low/plane paths add 0 us.
+- High-tier SDF stays inside the existing seven-sample/two-hand estimate; added clamp math is below 1 us for two hands.
+- Fault dump helper is cold only: two output-lane checks before dump I/O.
+
+Verification:
+- Targeted Roslyn probe over `VRPhysicalHandPresenceIkJobs.cs`, `LeviathanTerrainIkJobs.cs`, and `LowerBodyPresenceIkJobs.cs` reports `TARGETED_IK_COMPILE_PROBE_CLEAN`, exit 0.
+- Full `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /v:minimal` succeeds with 0 warnings / 0 errors in 3.92s.
+- Owned IK forbidden-pattern scan returns no hits.
+- BufferID scan reports `NO_BUFFERID_COLLISIONS`.
+- `git diff --check` reports no errors for touched files.
+
+Status:
+- Source and build validation are green for this checkpoint.
+- Unity runtime, Quest IL2CPP, Metal, Steam Deck I/O, and profiler/GCMonitor proof remain pending because no Unity Editor/device runtime channel is exposed in this session.
+
+## 2026-05-17 | GRAB_IK_PROJECTION | OWNED TERRAIN SDF PARITY PASS
+
+What was wrong:
+- `LeviathanTerrainIkJob` still used strict in-volume SDF samples for gradient-neighbor fetches.
+- At encoded SDF borders, a valid main density hit could fail the gradient solve and drop out of SDF hugging.
+- The terrain SDF sampler lacked the explicit finite input guards already present in the hand solver.
+
+What was done:
+- Added finite world-position, inverse-cell, and SDF-range guards to leviathan SDF sampling.
+- Added a clamped trilinear SDF sampler for gradient-neighbor reads.
+- Sanitized gradient steps before reciprocal math.
+- Kept the main SDF density sample strict so out-of-volume positions still fail closed.
+
+Cinematic cheats used:
+- Preserved terrain hugging as an encoded SDF/depth fake, not rigidbody or Unity physics truth.
+- Low-tier path remains cheap; High/Ultra keep stronger edge contact continuity.
+
+Exact microseconds saved:
+- No savings claimed.
+- 0 us added outside SDF terrain-hug mode.
+- SDF mode remains one main density fetch plus six gradient-neighbor fetches; clamp/finite scalar math is below 1 us for the affected tail segment group.
+
+Verification:
+- Targeted Roslyn probe over `VRPhysicalHandPresenceIkJobs.cs`, `LeviathanTerrainIkJobs.cs`, and `LowerBodyPresenceIkJobs.cs` reports `TARGETED_IK_COMPILE_PROBE_CLEAN`, exit 0.
+- Full `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /v:minimal` succeeds with 0 warnings / 0 errors in 52.81s.
+- Owned IK forbidden-pattern scan returns no hits.
+- `git diff --check` reports CRLF normalization warnings only.
+
+Status:
+- Source and build validation are green for this checkpoint.
+- Unity runtime, Quest IL2CPP, Metal, Steam Deck I/O, and profiler/GCMonitor proof remain pending because no Unity Editor/device runtime channel is exposed in this session.
+
+## 2026-05-17 | GRAB_IK_PROJECTION | LEVIATHAN TERRAIN BLACKBOX DUMP
+
+What was wrong:
+- `LeviathanTerrainIkJob` wrote 300 telemetry frames but had no owned cold dump serializer.
+- Invalid segment telemetry could be flagged but not exported through a stable binary format.
+- That left the owned IK folder weaker than the hand blackbox path under the same crash-recovery mandate.
+
+What was done:
+- Added `LeviathanTerrainIkBlackBox`.
+- Added a fail-closed `TryDumpTelemetry` path for `Docs/AgentLogs/Dump_GRAB_IK_PROJECTION_LeviathanTerrainIk.bin`.
+- Added `TryDumpTelemetryOnFault`, keyed to `TelemetryFlagInvalid` or cursor corruption.
+- Serialized chronological fixed 96-byte `LeviathanTerrainIkTelemetryEntry` records after ABI, ring-capacity, and cursor-lane validation.
+
+Cinematic cheats used:
+- None. This is postmortem survival work for the existing encoded SDF / terrain-height IK fake.
+
+Exact microseconds saved:
+- No savings claimed.
+- 0 us hot path. The Burst job still only writes the existing DataVault telemetry ring.
+- Cold dump cost occurs only when an external fault path invokes the serializer.
+
+Verification:
+- Targeted Roslyn probe over `VRPhysicalHandPresenceIkJobs.cs`, `LeviathanTerrainIkJobs.cs`, and `LowerBodyPresenceIkJobs.cs` reports `TARGETED_IK_COMPILE_PROBE_CLEAN`, exit 0.
+- A parallel full-build attempt produced a transient `MSB3026` copy warning from concurrent artifact access; the follow-up sequential build is the authoritative result.
+- Final sequential `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /v:minimal` succeeds with 0 warnings / 0 errors in 4.08s.
+- Owned IK forbidden-pattern scan returns no hits.
+- `git diff --check` reports CRLF normalization warnings only.
+
+Status:
+- Source and build validation are green for this checkpoint.
+- Unity runtime, Quest IL2CPP, Metal, Steam Deck I/O, and profiler/GCMonitor proof remain pending because no Unity Editor/device runtime channel is exposed in this session.
+
+## 2026-05-17 | GRAB_IK_PROJECTION | HAND BLACKBOX FIXED-WINDOW HARDENING
+
+What was wrong:
+- Hand blackbox dumping wrote `telemetryRing.Length` entries.
+- If the DataVault rounded the hand telemetry ring above 600 entries, dumps could include stale or unwritten spare capacity.
+- Hand cursor overflow reset to a small value, weakening wrapped chronological ordering.
+
+What was done:
+- Hand dumps now serialize exactly `TelemetryCapacity` entries: 600 records, meaning 300 complete frames for two hands.
+- Header now carries version and 80-byte entry-size fields.
+- Dump start index now uses `cursor - dumpCount` for wrapped chronological ordering.
+- Negative cursor and `int.MaxValue` rollover now preserve wrapped cursor semantics with `ringLength + nextIndex`.
+
+Cinematic cheats used:
+- None. This is crash-evidence hardening for the existing SDF/plane hand presence fake.
+
+Exact microseconds saved:
+- No savings claimed.
+- 0 us normal hot path. The added cursor rollover branch only executes on corrupt cursor or `int.MaxValue`.
+- Cold dump file size is fixed and bounded; no normal-play disk I/O.
+
+Verification:
+- Targeted Roslyn probe over `VRPhysicalHandPresenceIkJobs.cs`, `LeviathanTerrainIkJobs.cs`, and `LowerBodyPresenceIkJobs.cs` reports `TARGETED_IK_COMPILE_PROBE_CLEAN`, exit 0.
+- Owned IK forbidden-pattern scan returns no hits.
+- `git diff --check` reports CRLF normalization warnings only.
+- Full build attempt 1 is blocked outside Animation/IK by `PlayerKinematicsRuntime`, `HectonMusicDirector`, and `AcousticZoneController` signal contract errors.
+- Full build attempt 2 is blocked outside Animation/IK by `TetherManager` missing `ISlowTickable.SlowTick()`.
+
+Status:
+- Owned source validation is green for this checkpoint.
+- Full project compile is blocked by external dependencies, not by `Assets/_Project/Scripts/Animation/IK/`.
+- Unity runtime, Quest IL2CPP, Metal, Steam Deck I/O, and profiler/GCMonitor proof remain pending because no Unity Editor/device runtime channel is exposed in this session.
+
+## 2026-05-17 | GRAB_IK_PROJECTION | HAND SDF NORMAL ANISOTROPY PASS
+
+What was wrong:
+- High-tier hand SDF projection used clamped neighbor density samples but normalized raw axis deltas.
+- Non-cubic SDF cells could bias the open-space normal and make a grabbed hand slide in a subtly wrong direction across stretched cockpit volumes.
+
+What was done:
+- Added reciprocal sanitized-step scaling in `VRPhysicalHandPresenceJob.TryResolveSdfGradient`.
+- Kept the existing seven SDF samples: one main density sample plus six gradient neighbors.
+- Kept low-tier fallback, middle-tier plane slide, DataVault lanes, and blackbox dump schema unchanged.
+
+Cinematic cheats used:
+- Preserved encoded SDF projection as the high-tier physical-contact fake instead of adding rigidbody hand collisions or Unity physics casts.
+- Corrected the fake's normal math so haptic scrape and visual hand lock read as heavier steel contact on high-end rigs.
+
+Exact microseconds saved:
+- No savings claimed.
+- Added cost is three scalar reciprocal-weighted multiplies in SDF mode only; expected cost is below 1 us for two hands on i3/MX350/Quest-class silicon.
+- 0 us impact on low-tier/no-VR fallback and middle-tier plane projection.
+
+Verification:
+- Targeted Roslyn probe over `VRPhysicalHandPresenceIkJobs.cs`, `LeviathanTerrainIkJobs.cs`, and `LowerBodyPresenceIkJobs.cs` reports `TARGETED_IK_COMPILE_PROBE_CLEAN`, exit 0.
+- Owned IK forbidden-pattern scan returns no hits.
+- `git diff --check` reports CRLF normalization warnings only.
+- Full project rebuild was intentionally not run in this loop per current instruction; latest known full-project wall remains outside Animation/IK.
+
+Status:
+- Owned source validation is green for this checkpoint.
+- Unity runtime, Quest IL2CPP, Metal, Steam Deck I/O, and profiler/GCMonitor proof remain pending because no Unity Editor/device runtime channel is exposed in this session.
+
+## 2026-05-17 | GRAB_IK_PROJECTION | LEVIATHAN RSQRT NAN VACCINATION
+
+What was wrong:
+- `LeviathanTerrainIkJob` sanitized vectors for finite components, but huge finite deltas could overflow `math.lengthsq` to infinity.
+- Existing `math.rsqrt` branches could then produce `inf * 0` NaN values in head clamping, distance constraints, or length measurement.
+- A poisoned tangent or segment can reach `float4x4.TRS` and corrupt rendered pose output.
+
+What was done:
+- Added finite squared-distance guards before the head clamp `math.rsqrt`.
+- Added finite squared-distance guards before the follower distance-constraint `math.rsqrt`.
+- Hardened `ResolveLength` to return 0 for non-finite squared lengths.
+
+Cinematic cheats used:
+- Kept leviathan terrain presence as constrained S-curve / terrain-hug math, not physical bodies or Unity joints.
+- Corrupted extreme inputs now collapse to owner-forward visual continuity instead of simulating expensive recovery physics.
+
+Exact microseconds saved:
+- No savings claimed.
+- Added cost is three scalar finite checks in existing branches; expected cost is below 1 us on i3/MX350/Quest-class silicon.
+- 0 B/frame GC, no extra NativeArrays, no file I/O.
+
+Verification:
+- Targeted Roslyn probe over `VRPhysicalHandPresenceIkJobs.cs`, `LeviathanTerrainIkJobs.cs`, and `LowerBodyPresenceIkJobs.cs` reports `TARGETED_IK_COMPILE_PROBE_CLEAN`, exit 0.
+- Owned IK forbidden-pattern scan returns no hits.
+- `git diff --check` reports CRLF normalization warnings only.
+- Full project rebuild was intentionally not run in this loop per current instruction; latest known full-project wall remains outside Animation/IK.
+
+Status:
+- Owned source validation is green for this checkpoint.
+- Unity runtime, Quest IL2CPP, Metal, Steam Deck I/O, and profiler/GCMonitor proof remain pending because no Unity Editor/device runtime channel is exposed in this session.

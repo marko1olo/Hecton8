@@ -697,7 +697,7 @@ namespace Hecton8.World
                 receiveShadows = false,
                 lightProbeUsage = LightProbeUsage.Off
             };
-            Graphics.RenderMeshInstanced(renderParams, _quadMesh, 0, _pressureSprayMatrices, matrixCount);
+            UnityEngine.Graphics.RenderMeshInstanced(renderParams, _quadMesh, 0, _pressureSprayMatrices, matrixCount);
         }
 
         private void DrawDecal(in FluidDecalState decal)
@@ -718,7 +718,7 @@ namespace Hecton8.World
             _drawPropertyBlock.SetFloat(_WakeTearStrengthId, wakeTearStrength);
             _drawPropertyBlock.SetFloat(_WakeThresholdId, wakeThreshold);
 
-            Graphics.DrawMesh(
+            UnityEngine.Graphics.DrawMesh(
                 _quadMesh,
                 matrix,
                 _runtimeMaterial,

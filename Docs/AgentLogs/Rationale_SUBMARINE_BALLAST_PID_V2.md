@@ -2,7 +2,7 @@
 
 Agent: HYDRO_MECHANIC
 Prompt ID: SUBMARINE_BALLAST_PID_V2
-Status: VERIFIED MASTER GRADE / DOTNET BUILD PASS / UNITY RUNTIME PROFILING PENDING
+Status: VERIFIED MASTER GRADE / STATIC PASS CURRENT / FULL BUILD PREVIOUSLY BLOCKED BY EXTERNAL DEPENDENCY / UNITY RUNTIME PROFILING PENDING
 
 ## Decision 0 - Existing Controller vs Parallel Controller
 Problem: The requested domain path is `Assets/_Project/Scripts/Physics/Vehicles/`, while the live submarine controller is currently `Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs`.
@@ -143,3 +143,66 @@ Solution: Removed the dead `RemovedSplashEventPayload` stub, routed hydro black-
 Rejected Alternatives: Keeping the legacy `Dump_KINEMATICS_HYDRO_DRAG.bin` and `Dump_OCEAN_CHEMISTRY_ENGINEER.bin` writes was rejected because it doubles MicroSD fault I/O and violates the task-owned dump contract. Keeping the duplicate splash payload stub was rejected because the canonical `SplashEvent` already exists.
 Scalability potential: Low/Steam Deck gets one bounded fault write and no fault-path string allocation; Quest/Android keeps the same 300-frame hydro telemetry ring without extra I/O. High/Ultra keep the same hydrodynamic black-box payload for deeper diagnostics.
 Hardware Impact: One fault-time file write removed. No measured runtime microseconds claimed because this path runs only on hydro fault/NaN dump. Latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` passed with 0 warnings and 0 errors.
+
+## Decision 20 - Exterior Thermal State Vault Eviction
+Problem: Exterior boil-cell centers, temperatures, lifetimes, and hazard ids were private managed arrays in `SubmarineFluidDynamics`. They are active runtime state for heat hazards and boiling updrafts, not authoring data.
+Solution: Added `BufferID.SubmarineFluidExteriorThermalCenters`, `SubmarineFluidExteriorThermalTemperatures`, `SubmarineFluidExteriorThermalLifetimes`, and `SubmarineFluidExteriorThermalHazardIds`. Converted the four private arrays to `VaultNativeBuffer<float3>`, `VaultNativeBuffer<float>`, `VaultNativeBuffer<float>`, and `VaultNativeBuffer<int>`, with relocation recognition, refresh, dispose, and clear coverage.
+Rejected Alternatives: Leaving the arrays as component-owned state was rejected because it preserves a private state island outside the Vault. Replacing the effect with per-contact physics simulation was rejected because the existing quantized 8 m cell model is the correct Dear Lie for toaster hardware.
+Scalability potential: Low/Steam Deck keeps an 8-cell bounded thermal fake with no per-particle simulation and one Vault authority. High/Ultra can still drive boiling updrafts, hazard registration, and VFX/audio consumers from the same quantized state without changing the physics contract.
+Hardware Impact: No measured runtime microseconds claimed. The expected benefit is ownership hardening and stale-state prevention; current `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` passes with 0 warnings and 0 errors.
+
+## Decision 21 - Current-Disk Build Revalidation
+Problem: The status file still recorded a Core/Memory Defrag compile wall, but current source no longer matched the recorded `using Hecton8.Core.Memory.Defrag` failure.
+Solution: Re-read the live XML/status/rationale, inspected the current Defrag declarations, and reran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` with a longer timeout. The build produced `Temp/bin/Debug/Hecton8.Core.dll` with 0 warnings and 0 errors.
+Rejected Alternatives: Leaving the task blocked on stale compiler output was rejected because disk state is the only authority. Editing unrelated Core/Memory files was rejected because the current build no longer required it.
+Scalability potential: Low/Steam Deck/Quest keep the same Vault-backed, bounded submarine state path; High/Ultra keep 6DOF drag tensor and VFX signal hooks without additional compile debt.
+Hardware Impact: No runtime microseconds claimed. This is compile validation only; Unity runtime profiling and GCMonitor numbers remain pending.
+
+## Decision 22 - Exterior Buoyancy Sample Vault Eviction
+Problem: `_exteriorBuoyancySampleLocalPoints` was a component-owned `Vector3[8]` cache used every fixed step for exterior buoyancy force distribution. It was derived data, but still hot-path hydro authority outside the Vault.
+Solution: Added `BufferID.SubmarineFluidExteriorBuoyancySampleLocalPoints` and converted the cache to `VaultNativeBuffer<float3>`, wired through `GlobalDataVault` allocation, relocation refresh, dispose, clear, and fail-closed hydrodynamics guards.
+Rejected Alternatives: Leaving the managed array was rejected as a private hydro state island. Moving Unity physics query scratch arrays was rejected because `Collider[]`, `Rigidbody[]`, and `GetComponents` list overloads are Unity API boundary scratch, not authoritative simulation state.
+Scalability potential: Low/Steam Deck keeps the same 8-point Dear Lie for exterior displacement instead of mesh-fluid truth; High/Ultra retain 6DOF drag tensor response and VFX signal hooks using the same sample points without adding simulation cost.
+Hardware Impact: No measured runtime microseconds claimed. Current full build passes with 0 warnings and 0 errors; Unity runtime profiling remains pending.
+
+## Decision 23 - Unity API Scratch Classification
+Problem: The final H-Phi scan still surfaced managed arrays/lists in `SubmarineFluidDynamics`, but not all containers are state authority. Some are Unity serialization DTOs or mandatory managed-array scratch for Unity/PhysX/spatial hash APIs.
+Solution: Documented `compartments` and `bulkheads` as inspector-authored DTOs mirrored into `GlobalDataVault` at enable time, and marked `_componentSearchBuffer`, `_pipeBindingBuffer`, `_depressurizationContacts`, `_depressurizationBodies`, and `_exteriorThermalContacts` as Unity API scratch, not simulation authority.
+Rejected Alternatives: Moving `Collider[]`, `Rigidbody[]`, or `SpatialQueryHit[]` scratch into the Vault was rejected because the caller APIs require managed arrays and the buffers do not persist authoritative state past the method scope. Removing the scratch would reintroduce allocations or PhysX query garbage.
+Scalability potential: Low/Steam Deck keeps bounded nonalloc API scratch and Vault-owned hydro truth; High/Ultra keep the same data path for 6DOF drag, VFX signals, and black-box telemetry.
+Hardware Impact: No measured runtime microseconds claimed. The value is audit clarity with no runtime path change; current `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` passes with 0 warnings and 0 errors.
+
+## Decision 24 - Direct Typed-Lane Publish
+Problem: Some submarine VFX/flood broadcasts used `GlobalSignals.Publish` even when the overload was only a thin `SignalBus<T>.Push` facade. That hid the typed-lane contract during audit.
+Solution: Replaced those calls with direct `SignalBus<SubmarineFloodStateSignal>.Push`, `SignalBus<BubbleSpawnSignal>.Push`, and `SignalBus<FluidImpulseSignal>.Push`. Kept `GlobalSignals.Publish` for `AcousticPingSignal`, `ImpactSignal`, `HapticRequest`, and `VocalWarningSignal` paths where GlobalSignals also preserves latest-state or queue compatibility for existing consumers.
+Rejected Alternatives: Replacing all `GlobalSignals.Publish` calls blindly was rejected because impact/audio/vocal lanes have additional side effects beyond typed push. Creating duplicate submarine signals was rejected because the existing signals already cover flood state, bubbles, and fluid impulses.
+Scalability potential: Low/Steam Deck keeps bounded VFX intent through typed lanes; High/Ultra can consume the same lanes for denser silt, wake, and bubble rendering without coupling VFX to physics ownership.
+Hardware Impact: No measured runtime microseconds claimed. The latest full build is blocked outside PHYSICS/VEHICLES by `HectonSurvivalSystem.cs(553,13)` missing `EnsurePhysiologyScalarBuffer`; no submarine files appear in the compiler error set.
+
+## Decision 25 - Inventory Mass Typed-Lane Cargo Coupling
+Problem: `SubmarineFluidDynamics` still consumed cargo mass through the legacy `InventoryEvents` listener and used a fallback registry mass poll inside fixed simulation cadence. That violated the typed-lane audit even though the poll was throttled.
+Solution: Expanded the existing 32-byte explicit `InventoryChangedSignal` payload with `TotalMassKg`, `CarryCapacityKg`, and `Load01`, populated those fields from `PlayerInventory`, removed `IInventoryEventListener` from submarine fluid, and consumed inventory mass through `ReadOnlySpan<InventoryChangedSignal>` in the fixed path. Flood-state math LOD now uses `ScalabilityEvents` instead of a per-frame `GlobalRegistry.ScalabilityTier` read. Because `PlayerInventory` became a touched producer file, its local telemetry/reservation structs were also made explicit `Pack = 1` without changing offsets or sizes.
+Rejected Alternatives: Creating a submarine-only cargo signal was rejected because `InventoryChangedSignal` already exists and had unused explicit-layout space. Keeping `InventoryEvents` was rejected because it is the legacy queue path this pass is purging. Polling `GlobalRegistry.PlayerInventoryMassKg` every 16 frames was rejected because typed-lane data already carries the mass.
+Scalability potential: Low/Steam Deck consumes one bounded inventory snapshot scan only when inventory changes, then keeps the same 1 Hz flood mass Dear Lie. High/Ultra keep the same cargo/flood coupling and can drive heavier drag/VFX without adding a second data source.
+Hardware Impact: No measured runtime microseconds claimed. Static evidence only: stale legacy inventory listener symbols are gone from `SubmarineFluidDynamics`; full build/rebuild was not rerun per user instruction, so prior external `HectonSurvivalSystem.cs` compile wall remains the last full-build fact.
+
+## Decision 26 - Hot-Path Service Snapshot Closure
+Problem: `SubmarineFluidDynamics` still had `Resolve*` helpers that could lazy-read `GlobalRegistry.Player`, `GlobalRegistry.Submarine`, `GlobalRegistry.Fluid`, or `GlobalRegistry.PowerGrid` when fixed-step call chains found a null cache. `SubmarineAutoLevelBallastController` also polled Audio/Fluid/DataVault/scalability during SlowTick and retried `GlobalRegistry.Audio` inside the PID hull-stress publish path.
+Solution: Added hot-swap handling for Player, Submarine, and FluidRuntime service slots, kept registry reads in cold `CacheReferences` / `RegisterRuntime` seed paths, and changed fixed-step `Resolve*` helpers to cached-only fail-closed reads. Ballast SlowTick now only refreshes vault-backed PID buffers and requests a flood solve; scalability changes come from `ScalabilityEvents`, and hull-stress audio falls back to procedural audio if the cached service is absent.
+Rejected Alternatives: Keeping lazy registry lookup was rejected because the Global Registry mandate explicitly bans hiding registry reads inside `Resolve*` helpers called by FixedTick. Creating new service-ready signals was rejected because the existing GlobalRegistry hot-swap listener already carries the service replacement event.
+Scalability potential: Low/Steam Deck/Quest avoid registry polling in submarine fixed-step helpers and keep the scalar flood/cargo Dear Lie. High/Ultra retain cached service access for flow sampling, power ratio, stress audio, and richer drag/VFX without changing the physics contract.
+Hardware Impact: No measured runtime microseconds claimed. Static evidence only: fixed-step helper bodies no longer contain registry fallback reads, legacy inventory listener symbols are absent, and full build/rebuild was not rerun per user instruction.
+
+## Decision 27 - Submarine Signal Facade Purge
+Problem: The submarine domain still used `GlobalSignals.Publish` for acoustic, haptic, impact, and one vocal warning payload. The typed lane existed for most of these packets, so the facade hid direct signal ownership and retained legacy queue side effects in vehicle code.
+Solution: Replaced submarine acoustic, haptic, and impact publishes with direct `SignalBus<T>.Push` calls. Added an explicit finite guard before surfacing impact packets because the old facade used a sanitizer. Routed the crush-depth voice warning through the cached `IVocalWarningSystem` owner interface with GlobalRegistry hot-swap rebinding, avoiding the legacy `VocalWarningSignal` queue facade from the submarine path.
+Rejected Alternatives: Keeping `GlobalSignals.Publish` was rejected because this pass is specifically purging facades in the submarine domain. Adding a new submarine-specific voice signal was rejected because `IVocalWarningSystem` already owns the one-recipient command and creating another lane would duplicate an existing interface.
+Scalability potential: Low/Steam Deck/Quest keep bounded typed-lane presentation packets and no legacy queue fanout from submarine physics. High/Ultra retain the same acoustic, haptic, impact, and fluid impulse hooks for dense VFX/audio consumers without adding physical simulation.
+Hardware Impact: No measured runtime microseconds claimed. Static evidence only: `rg "GlobalSignals\\.Publish|EventBus|delegate|InventoryEvents"` returns no submarine-domain hits, and full build/rebuild was not rerun per user instruction.
+
+## Decision 28 - Docking DataVault Snapshot Closure
+Problem: `DockingAutopilotService.EnsureSplineBufferAvailable` still lazy-read `GlobalRegistry.DataVault`. That helper is reachable from spline slot reserve/write/read/evaluate/release calls, so a missing cache could turn a docking operation into a live service-locator fallback.
+Solution: Added `RefreshDataVaultReferenceCold` and call it during `InitializeService`. `EnsureSplineBufferAvailable` now fails closed when `_dataVault` is absent and relies on the existing DataVault hot-swap listener for live replacement.
+Rejected Alternatives: Leaving the lazy fallback was rejected because vehicle physics hot helpers must use cached service snapshots. Creating a local spline array fallback was rejected because active docking spline authority already belongs in `GlobalDataVault`.
+Scalability potential: Low/Steam Deck/Quest get deterministic cached-vault spline access and fail-closed behavior under DataVault absence. High/Ultra keep the same Bezier docking spline authority without adding a separate state owner.
+Hardware Impact: No measured runtime microseconds claimed. Static evidence only: the spline buffer resolver no longer reads `GlobalRegistry.DataVault`; full build/rebuild was not rerun per user instruction.

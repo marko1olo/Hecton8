@@ -4,7 +4,7 @@ PROMPT IDENTIFIED: KCC_SDF_SQUEEZE_RESOLVER
 ROLE: LOCOMOTION_ENGINEER
 DOMAIN: PHYSICS/LOCOMOTION
 TASK COUNT: 18
-STATUS: VERIFIED MASTER GRADE / KCC SDF SQUEEZE IMPLEMENTED / BUILD GREEN WITH 4 FOREIGN CS0649 WARNINGS
+STATUS: VERIFIED MASTER GRADE / SYSTEM STRESS SNAPSHOT-CONSUMED / MOVEMENT BLACKBOX VAULT-CACHED / SIGNAL SNAPSHOT CONSUMERS / HOT-PATH REGISTRY EVICTED / PADDED SDF VAULT BUFFERS ACCEPTED / DOTNET BUILD EXIT 0 / UNITY RUNTIME PROFILER PENDING
 
 ## Mandates Read
 - PHYS_Physics_Integrity_Determinism_ForceMode.txt
@@ -36,10 +36,10 @@ STATUS: VERIFIED MASTER GRADE / KCC SDF SQUEEZE IMPLEMENTED / BUILD GREEN WITH 4
 - [x] 12. NAN_VACCINATION | DOD: gradient normalization uses `math.rsqrt(math.max(lengthSq, 0.0001f))`, motor-side squeeze/sweep rsqrt sites now finite-check and max-clamp denominators, and NaN fallback flags are emitted; alternative rejected: relying on pre-checks without denominator clamps; microseconds estimate: 2000 us saved in the SDF job, 0 us saved in motor guard polish.
 - [x] 13. BLACKBOX_LOGGING | DOD: SDF interventions write telemetry ring and `Dump_KCC_SDF_SQUEEZE_RESOLVER.bin` on fault dump; alternative rejected: chat-only failure report; microseconds estimate: 5000 us.
 - [x] 14. TRIPLE_STRIKE_REPAIR | DOD: Roslyn found two KCC integration errors (`GlobalSignals.SystemStress01`, misplaced helper), both fixed; alternative rejected: blaming first compile wall; microseconds estimate: 180000000 us spent.
-- [x] 15. HOMEOSTASIS_ADAPTATION | DOD: `SignalBusRegistry.SystemStress01 > 0.8` routes to 5-frame/10Hz-equivalent sampling with cached interpolation; alternative rejected: disable squeeze under stress; microseconds estimate: 25000-60000 us saved during sustained squeeze.
+- [x] 15. HOMEOSTASIS_ADAPTATION | DOD: cached `SystemHealthIndexSignal.Pressure01 > 0.8` from `SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot()` routes to 5-frame/10Hz-equivalent sampling with cached interpolation; alternative rejected: direct `SignalBusRegistry.SystemStress01` hot read or disabling squeeze under stress; microseconds estimate: 25000-60000 us saved during sustained squeeze, 0 us measured this pass.
 - [x] 16. OXYGEN_PENALTY | DOD: stress publishes physiology O2 multiplier and pushes CO2-equivalent load to `IGasDynamicsSolver`; alternative rejected: direct survival stat mutation; microseconds estimate: 8000 us.
 - [x] 17. SPEED_PENALTY | DOD: forward velocity component is reduced by 60% while squeezing; alternative rejected: global speed scalar outside KCC; microseconds estimate: 3000 us.
-- [x] 18. FINAL_VALIDATION | DOD: latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` exits 0 in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop11.exit.txt`; 0 errors, 4 unrelated CS0649 warnings in `Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs`; alternative rejected: trusting stale `vault_polish8` blocker after source had moved; measured validation time: 93277423 us.
+- [x] 18. FINAL_VALIDATION | DOD: latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false` exits 0 in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop16_systemstress_snapshot_retry1.exit.txt`; 0 warnings, 0 errors; alternative rejected: trusting the stale concurrent Biolum compile wall after current-source helpers existed on disk; measured validation time: 81024204 us.
 
 ## Iteration Loop 1 - Scope And Kernel
 - [x] Verified no KCC singleton/collision callback debt in assigned scope.
@@ -114,12 +114,56 @@ STATUS: VERIFIED MASTER GRADE / KCC SDF SQUEEZE IMPLEMENTED / BUILD GREEN WITH 4
 - [x] Re-scanned the KCC/player/tether surface: no private persistent NativeArray fallback, unguarded `math.rsqrt`, legacy `EventBus`, managed delegates, `Update(`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, `KCCManager.Instance`, `TryConsumeFireForManager`, or `TetherFireRequest`.
 - [x] `git diff --check` on touched KCC/player/tether/status/rationale/log paths produced no whitespace errors; whole-tree `git diff --check` still reports pre-existing `Docs/Tasks/CURRENT_BATCH.md:2312` trailing whitespace outside this edit.
 
+## Iteration Loop 12 - Padded SDF Vault Capacity And Compile Wall
+- [x] Re-read status/rationale and re-extracted the exact KCC XML prompt before code.
+- [x] Patched SDF texture length validation in `SdfSqueezeJob`, `PlayerKinematicsBodyJob`, and motor-side SDF fallback so vault or published `VoxelSdfTexture3D` buffers may be larger than `x*y*z` while still requiring the minimum voxel count; alternative rejected: exact length equality that fails valid padded DataVault buffers; microseconds estimate: 0 us runtime saving, prevents false fail-closed traversal.
+- [x] Static scans found no unguarded `math.rsqrt`, stale exact SDF length equality, legacy `EventBus`, managed delegates, `Update(`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, or `KCCManager.Instance` in the scanned KCC/player surface.
+- [x] Added a minimal foreign `EcosystemDirector` open-address index helper shim (`ClearIndexEntries`, `TryFindIndexEntry`, `TryUpsertIndexEntry`, `ResolveVaultIndexCapacity`) after the first Loop 12 build exposed 14 missing-helper errors there; justification: compile-wall repair required for final validation, not KCC behavior ownership.
+- [x] Repaired the KCC-owned compile regression from a concurrent edit by restoring `HasKinematicsStorage()` as an alias for `HasMotionSoaStorage()` in `PlayerKinematicsRuntime`; alternative rejected: broad movement-state refactor; microseconds estimate: 0 us runtime saving.
+- [x] Added the existing `Core/Memory/Defrag/MemoryDefragContracts.cs` to the Core build-target injection after Roslyn proved `GlobalDataVault` and `SystemDispatcher` referenced a contract file present on disk but absent from the injected compile set; alternative rejected: duplicating the enum in runtime source; microseconds estimate: 0 us runtime saving, compile-wall containment only.
+- [x] Verified final `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false` exits 0 in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop12_repair6.exit.txt`; 0 warnings, 0 errors; measured validation time: 212371151 us.
+- [x] Final static scans found no unguarded `math.rsqrt`, stale exact SDF length equality, non-`Pack = 1` `StructLayout`, legacy `EventBus`, managed delegates, `Update(`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, or `KCCManager.Instance` in the scanned KCC/player/tether surface.
+
+## Iteration Loop 13 - Hot-Path Registry Eviction And Padded SDF Recheck
+- [x] Re-read status/rationale and re-extracted the exact KCC XML prompt before code.
+- [x] Cached `IDataVault`, `IGasDynamicsSolver`, fluid, voxel, motor, player context, and scalability tier in `PlayerKinematicsRuntime`; hot SDF payload/state/gas/scalability reads now use cached fields instead of polling `GlobalRegistry`; alternative rejected: per-frame registry polling hidden behind helper accessors; microseconds estimate: 0 us measured, 1-5 us expected on active squeeze frames pending profiler proof.
+- [x] Moved `VaultBufferBinding<T>` off hot registry fallback by storing the vault used for its current alias and resolving aliases through that cached vault only; alternative rejected: `GlobalRegistry.DataVault` inside `ResolveExisting`; microseconds estimate: 0 us measured, removes a service-locator branch from every alias access.
+- [x] Cached `IDataVault`, fluid decals, and scalability profile in `HectonPlayerMotor`; scheduled sweep and kinematic repair target buffers now consume the cached vault and fail closed when unavailable; alternative rejected: `ResolveDataVault()` hot fallback; microseconds estimate: 0 us measured, 1-3 us expected on sweep-allocation frames pending profiler proof.
+- [x] Fixed the last exact SDF capacity check in runtime payload validation to accept padded `VoxelSdfTexture3D` buffers with `Length >= x*y*z`; alternative rejected: trimming/copying padded buffers into local arrays; microseconds estimate: 0 us runtime saving, prevents false fail-closed traversal.
+- [x] Applied a minimal foreign editor-only compile-wall shim in `AcousticZoneController` by qualifying `global::System.Type`; justification: validation unblock only, not KCC ownership; microseconds estimate: 0 us runtime saving.
+- [x] Revalidated current-source `SystemDispatcher` scalability callback state after a transient wall; no KCC patch required there.
+- [x] Final static scans found no unguarded `math.rsqrt`, stale exact SDF length equality, non-`Pack = 1` `StructLayout`, legacy `EventBus`, managed delegates, `Update(`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, or `KCCManager.Instance` in the scanned KCC/player surface.
+- [x] Verified final `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false` exits 0 in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop13_hotpath_registry_repair4.exit.txt`; 0 warnings, 0 errors; measured validation time: 36559639 us.
+
+## Iteration Loop 14 - Signal Snapshot Consumers
+- [x] Re-read status/rationale, AGENTS.md, domain map, the exact KCC XML prompt, and the 8 task-relevant mandates before code.
+- [x] Reconfirmed `GlobalSignals.Publish` is a typed `SignalBus<T>.Push` facade, then removed KCC runtime reads from `GlobalSignals.TryGetLatestPlayerStateSignal` and `GlobalSignals.TryGetLatestPlayerStressSignal`; alternative rejected: latest-cache side channel; microseconds estimate: 0 us measured, correctness/ownership improvement only.
+- [x] `ResolveSdfGradientProbeRequest`, environment IK stress consumption, and squeeze telemetry consumption now scan `ReadOnlySpan<T>` snapshots from `SignalBus<T>.GetFrameSnapshot()` with frame/source de-duplication; alternative rejected: managed delegates or polling sequence counters; microseconds estimate: 0 us measured, no allocation introduced.
+- [x] Re-evicted the reappeared `HectonPlayerMotor.ResolveDataVault()` helper; sweep and kinematic repair target buffers consume only cached `_dataVault`; alternative rejected: hidden hot registry fallback; microseconds estimate: 0 us measured, 1-3 us expected on sweep allocation frames pending profiler proof.
+- [x] Static scans found no `GlobalSignals.TryGetLatest*`, legacy `EventBus`, managed delegates, unguarded `math.rsqrt`, stale exact SDF length equality, non-`Pack = 1` `StructLayout`, `Update(`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, local persistent `new NativeArray`, `Allocator.Persistent`, or `H8Memory.Allocate` in the scanned KCC/player surface.
+- [x] Verified final `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false` exits 0 in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop14_signal_snapshot.exit.txt`; 0 warnings, 0 errors; measured validation time: 60260189 us.
+
+## Iteration Loop 15 - Movement Blackbox Vault Cache
+- [x] Re-read status/rationale and continued the locomotion-domain scan into `HectonPlayerMovement.cs`.
+- [x] Removed `_dataVault ?? GlobalRegistry.DataVault` fallback from cinematic focus blackbox allocation and sample writes; hot blackbox paths now use cached `_dataVault` only; alternative rejected: registry lookup inside `ResolveCinematicFocusBlackBox`; microseconds estimate: 0 us measured, 1-2 us expected only while cinematic focus blackbox is active pending profiler proof.
+- [x] Added a DataVault service-replacement branch in `HectonPlayerMovement.OnGlobalRegistryServiceReplaced` that drops stale vault handles and reacquires player kinematic/cinematic blackbox buffers through the cached replacement; alternative rejected: lazy vault refresh from hot sample paths; microseconds estimate: 0 us measured, correctness/ownership hardening.
+- [x] Wider locomotion static scan found no unguarded `math.rsqrt`, non-`Pack = 1` `StructLayout`, `Update(`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, local persistent `new NativeArray`, `Allocator.Persistent`, `H8Memory.Allocate`, `GlobalSignals.TryGetLatest*`, legacy `EventBus`, or managed delegates in the scanned KCC/player movement surface. The only `Debug.LogWarning/Error` hits are inside `#if UNITY_EDITOR || DEVELOPMENT_BUILD` guards.
+- [x] Verified final `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false` exits 0 in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop15_movement_vault.exit.txt`; 0 warnings, 0 errors; measured validation time: 5397862 us.
+
+## Iteration Loop 16 - System Stress Snapshot Consumption
+- [x] Re-read status/rationale and re-extracted the exact KCC XML prompt before code; task count remains 18 by numbered objectives.
+- [x] Replaced the remaining `SignalBusRegistry.SystemStress01` read in `PlayerKinematicsRuntime.TryApplySdfSqueeze` with `ConsumeSystemStressSignals()`, a bounded `ReadOnlySpan<SystemHealthIndexSignal>` snapshot scan that caches sanitized `Pressure01`; alternative rejected: static registry read in the SDF cadence path; microseconds estimate: 0 us measured, ownership hardening only.
+- [x] Reset `_lastConsumedSystemStressFrame` and `_cachedSystemStress01` with the determinism session state so stale pressure cannot leak across enable/session boundaries; alternative rejected: relying on zeroed construction only; microseconds estimate: 0 us.
+- [x] Static scans found no direct `SignalBusRegistry.SystemStress01`, `GlobalSignals.TryGetLatest*`, legacy `EventBus`, managed delegates, unguarded `math.rsqrt`, non-`Pack = 1` `StructLayout`, `Update(`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, local persistent `new NativeArray`, `Allocator.Persistent`, or `H8Memory.Allocate` in the scanned KCC/player movement surface.
+- [x] First Loop 16 build failed on a transient foreign `World/Biolum/HectonBiolumManager.cs` helper wall while those helpers already existed on disk during inspection; no foreign edit was made.
+- [x] Verified current-source retry `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false` exits 0 in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop16_systemstress_snapshot_retry1.exit.txt`; 0 warnings, 0 errors; measured validation time: 81024204 us.
+
 ## Omega Polish
 - [x] Anti-bloat inquisition read after core checklist completion.
 - [x] `rg` found no `GameObject.Find`, `FindObjectOfType`, `KCCManager`, `Physics.CapsuleCast`, `OnCollisionStay`, `Update(`, `string.Format`, legacy `EventBus`, or managed delegate in the resolver runtime/KCC path.
 - [x] `rg` found all `StructLayout` attributes in the KCC/player locomotion surface use `Pack = 1`.
 - [x] Circular dependency check: KCC job is standalone under `Hecton8.Physics.KCC`; gameplay runtime depends on KCC job, not vice versa.
-- [x] Current build green captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop11.exit.txt`: exit 0, 0 errors, 4 unrelated CS0649 warnings in `Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs`, measured 93277423 us.
+- [x] Current KCC/player movement changes are static-scan clean and latest Core build exits 0 in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop16_systemstress_snapshot_retry1.exit.txt`; Unity runtime profiler proof is still absent.
 
 ## Loop Plan
 - Loop 1: inspect KCC/Vault/SDF/signal contracts, then implement tasks 1-5 if APIs exist.
@@ -133,3 +177,8 @@ STATUS: VERIFIED MASTER GRADE / KCC SDF SQUEEZE IMPLEMENTED / BUILD GREEN WITH 4
 - Loop 9: NaN denominator clamp pass, foreign compile-wall revalidation, report refresh.
 - Loop 10: vault-only state hardening, PHYSICS/LOCOMOTION-adjacent tether compile shim, foreign compile-wall revalidation, report refresh.
 - Loop 11: reconcile current tow signal documentation with the actual sidecar-free implementation, then revalidate compile and scans.
+- Loop 12: accept padded SDF vault buffers, repair ecosystem/core-memory compile walls required for validation, then record the green build and static scans.
+- Loop 13: evict remaining hot-path registry reads from KCC/player SDF traversal, recheck padded SDF validation, repair only validation-blocking compile walls, then record the green build and static scans.
+- Loop 14: replace KCC latest-signal cache consumers with typed `SignalBus<T>` frame snapshots, re-evict hot DataVault fallback, then record the green build and static scans.
+- Loop 15: remove player-movement cinematic blackbox DataVault fallback, add DataVault hot-swap reacquire, then record the green build and wider locomotion static scans.
+- Loop 16: replace the remaining SDF cadence `SystemStress01` registry read with a typed `SystemHealthIndexSignal` snapshot cache, then record the green build and static scans.

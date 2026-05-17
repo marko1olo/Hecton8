@@ -25,6 +25,9 @@ namespace Hecton8.Core.Data
         public const ushort RecordTypeEconomy = 2;
         public const ushort RecordTypePhysics = 3;
         public const ushort RecordTypeFauna = 4;
+        public const ushort MaxPackedRecordType = 15;
+        private const long LookupOffsetMask = ~15L;
+        private const long LookupRecordTypeMask = MaxPackedRecordType;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int AlignUp16(int value)
@@ -53,6 +56,63 @@ namespace Hecton8.Core.Data
                 default:
                     return 0;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort RecordTypeOf<T>() where T : unmanaged
+        {
+            if (typeof(T) == typeof(H8ItemStaticRecord))
+                return RecordTypeItem;
+            if (typeof(T) == typeof(H8EconomyStaticRecord))
+                return RecordTypeEconomy;
+            if (typeof(T) == typeof(H8PhysicsStaticRecord))
+                return RecordTypePhysics;
+            if (typeof(T) == typeof(H8FaunaStaticRecord))
+                return RecordTypeFauna;
+
+            return 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long PackLookupValue(long offset, ushort recordType)
+        {
+            return (offset & LookupOffsetMask) | (recordType & LookupRecordTypeMask);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool CanPackRecordType(ushort recordType)
+        {
+            return recordType > 0 && recordType <= MaxPackedRecordType;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long UnpackLookupOffset(long packedValue)
+        {
+            return packedValue & LookupOffsetMask;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort UnpackLookupRecordType(long packedValue)
+        {
+            return (ushort)(packedValue & LookupRecordTypeMask);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long PackBabelSlice(uint offset, uint length)
+        {
+            return ((long)offset << 32) | length;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint UnpackBabelOffset(long packedValue)
+        {
+            return (uint)(packedValue >> 32);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint UnpackBabelLength(long packedValue)
+        {
+            return (uint)packedValue;
         }
     }
 

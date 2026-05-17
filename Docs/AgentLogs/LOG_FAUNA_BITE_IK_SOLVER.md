@@ -216,3 +216,83 @@ Verification:
 - Forbidden-pattern scan found no Unity physics query, legacy EventBus, `BiteManager.Instance`, `Animator.SetIKPosition`, `string.Format`, or standard `Update/LateUpdate/FixedUpdate` in the audited IK set.
 - Targeted `git diff --check --` on touched files exits 0 with line-ending warnings only. Repository-wide `git diff --check` is blocked by unrelated trailing whitespace in `Docs/Tasks/CURRENT_BATCH.md:2312`.
 - `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly` exits 1 with 38 external errors in `TetherInstance.cs` and `PhysicsApplySystem.cs`. No emitted error targets `LeviathanTentacleVerletSolver.cs`, `H8Memory.cs`, or owned bite IK files.
+
+## 2026-05-16 - Loop 14 Procedural Crab DataVault Eviction
+What was wrong:
+- `ProceduralCrabLegIKRuntime` still owned private persistent `NativeArray<T>` buffers for entity state, foot positions, target feet, step state, raycast commands, raycast hits, low-tier raycast masks, body pose upload data, solved joint matrices, and 300-frame telemetry.
+- The ABI pack sweep fixed struct layout only; it did not remove the private native lifetime from the adjacent fauna IK runtime.
+
+What was done:
+- Re-read status/rationale and extracted the full `FAUNA_BITE_IK_SOLVER` XML assignment before editing.
+- Added dedicated `ProceduralCrab*` `BufferID` values in `H8Memory`.
+- Replaced private persistent native arrays with `VaultBufferHandle<T>` fields.
+- Added a narrow vault-resolution view used for entity registration, pose mutation, Burst scheduling, origin-shift rebase, indirect GPU upload, telemetry write, and dump boundaries.
+- Removed local `new NativeArray<T>` allocation and `NativeMemorySentinel.Register/Unregister` paths from the crab IK runtime.
+- Preserved the existing 300-entry black-box telemetry ring and dump path `Docs/AgentLogs/Dump_ANIM_PROCEDURAL_BEHAVIOR.bin`.
+
+Cinematic Cheats used:
+- No new physics simulation was added. The crab solver still uses scheduled ground probes plus analytical two-bone visual IK.
+- Low/MX350 still probes only two legs per frame; High/Ultra keep all-leg probes, body tilt, and full joint matrix upload with vault-owned data.
+
+Exact Microseconds saved:
+- 0 us measured by profiler. No Unity profiler or GCMonitor capture was available in this CLI session.
+- DataVault eviction: no frame-time saving claimed. Static impact is lower leak/stale-view risk and cleaner memory ownership on Quest/Android and Steam Deck.
+
+Verification:
+- `rg` found no private `NativeArray`, `new NativeArray`, `H8Memory.Allocate/Release`, `NativeMemorySentinel.Register/Unregister`, `SystemID.External`, or private native owner constants in `ProceduralCrabLegIKRuntime.cs`.
+- `rg --pcre2` found no `StructLayout` entry missing `Pack = 1` in the audited owned/adjacent fauna IK files.
+- Forbidden-pattern scan found no Unity physics cast/overlap, legacy EventBus, `BiteManager.Instance`, `Animator.SetIKPosition`, `string.Format`, or standard `Update/LateUpdate/FixedUpdate` in the audited IK set.
+- Targeted `git diff --check --` on touched files exits 0 with line-ending warnings only.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:quiet /clp:ErrorsOnly /m:1` exits 0 with 0 warnings and 0 errors. Two earlier parallel build attempts timed out without diagnostics, then the serialized retry completed cleanly.
+
+## 2026-05-17 - Loops 15-16 ABI Pack And Dead Memory Purge
+What was wrong:
+- `FaunaTier1LodProxyEntry` still used `Pack = 4` while the current ARM64/Quest audit requires `Pack = 1` on native/Burst-adjacent fauna payloads.
+- `FaunaBrain.Compatibility.cs` contained unused `PredatorMemory` dead code with a private persistent `NativeArray<float4>`, local `new NativeArray`, and sentinel register/unregister path.
+
+What was done:
+- Re-read `Status_FAUNA_BITE_IK_SOLVER.md`, `Rationale_FAUNA_BITE_IK_SOLVER.md`, and the full original `FAUNA_BITE_IK_SOLVER` XML assignment from `CURRENT_BATCH.md`.
+- Changed `FaunaTier1LodProxyEntry` to `StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)`.
+- Verified `PredatorMemory` had no in-repo references, then deleted the unused struct instead of migrating dead code to the DataVault.
+- Preserved `using System` in `FaunaBrain.Compatibility.cs` for the existing `[Flags]` usage after the first rebuild exposed that dependency.
+
+Cinematic Cheats used:
+- No new simulation was added. This loop only hardens low-tier proxy ABI and deletes dead memory ownership.
+- Existing bite/toaster/high-tier IK lies remain unchanged.
+
+Exact Microseconds saved:
+- 0 us measured by profiler. No Unity profiler or GCMonitor capture was available in this CLI session.
+- ABI pack correction: 0 us claimed; the gain is layout determinism.
+- Dead `PredatorMemory` deletion: no frame-time saving claimed because the type was unused; static impact is lower memory-governance and leak-risk surface.
+
+Verification:
+- `rg` found no `PredatorMemory`, private `NativeArray`, local `new NativeArray`, `NativeMemorySentinel`, `H8Memory.Allocate/Release`, `SystemID.External`, `EventBus`, `string.Format`, standard `Update/LateUpdate/FixedUpdate`, `BiteManager.Instance`, or `Animator.SetIKPosition` in `FaunaBrain.Compatibility.cs`.
+- `rg --pcre2` found no `StructLayout` entry missing `Pack = 1` in the audited bite/adjacent IK/proxy files.
+- Targeted `git diff --check --` on touched files exits 0 with line-ending warnings only.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore -v:quiet /clp:ErrorsOnly /m:1` exits 1 with one external error in `Assets/_Project/Scripts/AcousticZoneController.cs(3175,17)` missing `Type`. No emitted error targets `FaunaBrain.Compatibility.cs`, `FaunaTier1LodProxyRegistry.cs`, or the owned bite IK files.
+
+## 2026-05-17 - Loop 17 Build Green Revalidation And Shader Audit
+What was wrong:
+- Previous compile-wall records were stale under concurrent repo edits. `AcousticZoneController` and `HectonSurvivalSystem` had already changed by the time their build errors were inspected.
+- The Leviathan-owned shader surface had not been rechecked in this loop for Metal/Mac hazards.
+
+What was done:
+- Re-read `Status_FAUNA_BITE_IK_SOLVER.md`, `Rationale_FAUNA_BITE_IK_SOLVER.md`, the Unity MCP workflow notes, and the full original `FAUNA_BITE_IK_SOLVER` XML assignment.
+- Reran a serialized build with explicit exit capture after inspecting the live external files.
+- Re-ran forbidden-pattern, native ownership, ABI pack, shader, and diff-hygiene scans over the owned/adjacent bite IK set.
+- Did not overwrite the concurrent external fixes; no runtime code was changed in this loop.
+
+Cinematic Cheats used:
+- No new physical simulation was added. Existing bite/mandible/tentacle math lies remain intact.
+- Shader audit found no need to add or remove high-tier visual work in the Leviathan-owned shader pair.
+
+Exact Microseconds saved:
+- 0 us measured by profiler. No Unity profiler or GCMonitor capture was available in this CLI session.
+- Build revalidation and shader audit have no runtime effect.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly /m:1` exits 0 with 0 warnings and 0 errors.
+- `rg` found no local native allocation, private `NativeArray`, `NativeMemorySentinel`, `H8Memory.Allocate/Release`, `SystemID.External`, Unity physics query, legacy EventBus, `string.Format`, standard `Update/LateUpdate/FixedUpdate`, `BiteManager.Instance`, or `Animator.SetIKPosition` in the audited bite/adjacent IK/proxy set.
+- `rg --pcre2` found no `StructLayout` entry missing `Pack = 1` in the audited bite/adjacent IK/proxy set.
+- Leviathan shader scan found no compute kernels, `numthreads`, RW buffers/textures, D3D-only macros, derivative intrinsics, `tex2Dlod`, or `only_renderers` restrictions in `Hecton_LeviathanTentacleIndirect.shader` and `Hecton_LeviathanOrganic.shader`.
+- Targeted `git diff --check --` on touched fauna/docs files exits 0 with line-ending warnings only.

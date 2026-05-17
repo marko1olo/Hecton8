@@ -322,3 +322,91 @@ Verification:
 - `git diff --check` reported no whitespace errors, only CRLF normalization warnings.
 - Final current-state `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:ErrorsOnly` succeeded with `0 Warning(s)` and `0 Error(s)`.
 - Unity Editor import, Play Mode, GCMonitor, profiler, and player build verification were not executed.
+
+## 2026-05-16 - Blind-Signal AUP / Helper ABI Closure
+What was wrong:
+- Blind-state publication could reconstruct absolute universe position from runtime-relative cognition core position.
+- Private helper payloads in the cognition job used implicit layout, and the Alpha directive used bool fields that are not a clean cross-platform payload contract.
+- Retinal post-evaluation telemetry could index vault aliases without first proving those two specific aliases were created.
+
+What was done:
+- `PublishFaunaBlindStateSignal` now resolves its AUP from finite slot input position plus committed floating-origin offset and calls `AbsoluteUniversePosition.FromAbsolutePosition`.
+- Retinal post-evaluation telemetry now checks `_retinalExposure.IsCreated` and `_lastPublishedBlindnessState.IsCreated` before indexing.
+- `RetinalLightResult` and `AlphaLeviathanDirective` now have explicit `Pack = 1` layouts and fixed sizes; directive booleans were converted to byte flags.
+- Re-ran the original XML extraction, status/rationale recovery, targeted retinal debt audit, Pack audit, typed signal duplicate scan, whitespace validation, and current-state build.
+
+Cinematic Cheats used:
+- No physical eye model, no light raycast, and no shader path were added.
+- The behavior remains the cheap retinal fake: typed headlight lane, four cached light records, dot-product glare, clamped exposure, exponential decay, low-tier turn-away/flee, and high-tier deterministic thrash/biolum strobe.
+
+Exact Microseconds saved:
+- Measured exact savings: unavailable; Unity profiler was not run.
+- Hot candidate exposure math is unchanged.
+- Added cost is edge-only signal AUP construction plus two telemetry alias guards; exact CPU delta was not measured.
+
+Verification:
+- Targeted audit returned `NO_RETINAL_HOTPATH_DEBT_OR_RUNTIME_AUP_RECONSTRUCT_MATCHES`.
+- Pack audit returned `NO_NON_PACK1_STRUCTLAYOUT_IN_RETINAL_SCOPE`.
+- Typed signal duplicate scan found one `SubmarineLightsChangedSignal` struct and one `FaunaStateChangedSignal` struct.
+- `git diff --check` reported no whitespace errors.
+- Heartbeat `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildInParallel=false -v:minimal -clp:Summary` is blocked by external error `DiegeticGyroCompassRuntime.cs(1199,27): CS1061 NativeSlice<CompassBlackBoxEntry> does not contain a definition for IsCreated`.
+- No emitted build error cites `PredatorCognitionDomain`, `RetinalExposureMath`, `RetinalAdaptationVault`, `FaunaDataTemplate`, `H8Memory`, or `GlobalDataVault`.
+- Unity Editor import, Play Mode, GCMonitor, profiler, shader validation, and player builds were not executed.
+
+## 2026-05-17 - Current Build Recovery / Domain Re-Audit
+What was wrong:
+- The previous build evidence was stale: it referenced an external UI/navigation `NativeSlice.IsCreated` error that had already moved on disk.
+- Retinal validation needed a current compiler pass and fresh static audits before claiming any status.
+
+What was done:
+- Re-read status/rationale, the original XML prompt, domain boundaries, Unity project workflow notes, and relevant mandates.
+- Rechecked `DiegeticGyroCompassRuntime` and made no retinal-agent edit there because the failing line had already changed to a length guard.
+- Reran current-state `dotnet build` with heartbeat output and saved the build log.
+- Reran retinal debt/AUP audit, Pack=1 audit, typed signal uniqueness scan, LightTrigger purge audit, and 300-frame black-box evidence scan.
+
+Cinematic Cheats used:
+- No new physical simulation was added.
+- Retinal behavior remains the deterministic fake: typed headlight lane, four cached light records, dot-product glare, clamped exposure, exponential decay, low-tier flee/turn-away, and high-tier deterministic thrash/biolum strobe.
+
+Exact Microseconds saved:
+- Measured exact savings: unavailable; Unity profiler was not run.
+- Runtime delta from this loop: 0 us/frame because no runtime source changed.
+- Current validation is compiler/static evidence only.
+
+Verification:
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildInParallel=false -v:minimal -clp:Summary` succeeded with `0 Warning(s)`, `0 Error(s)`, `Time Elapsed 00:00:03.65`.
+- Build output saved to `Docs/AgentLogs/Build_RETINAL_ADAPTATION_AI_loop17_current.out.txt`.
+- Retinal audit returned `NO_RETINAL_HOTPATH_DEBT_OR_RUNTIME_AUP_RECONSTRUCT_MATCHES`.
+- Pack audit returned `NO_NON_PACK1_STRUCTLAYOUT_IN_RETINAL_SCOPE`.
+- Signal scan returned `SubmarineLightsChangedSignalStructCount=1`, `FaunaStateChangedSignalStructCount=1`, `TYPED_SIGNAL_DEFINITIONS_UNIQUE`.
+- LightTrigger audit returned `NO_ACTIVE_LIGHTTRIGGER_MATCHES`.
+- Retinal black-box scan confirmed `RetinalTelemetryCapacity = 300`, `TotalBlindPredators`, and `Dump_FAUNA_RETINAL_ADAPTATION.bin`.
+- Unity Editor import, Play Mode, GCMonitor, profiler, shader validation, and player builds were not executed.
+
+## 2026-05-17 - Dump-Failure Telemetry Polish
+What was wrong:
+- Retinal and adjacent Alpha black-box dump failure catches used `Debug.LogError` plus string concatenation.
+- That was not hot-path, but it was still weak failure reporting in a critical black-box survival path.
+
+What was done:
+- Added `RetinalDumpFailureTelemetryHash` and `AlphaLeviathanDumpFailureTelemetryHash`.
+- Replaced both managed log strings with `GlobalTelemetryBus.PublishPerformanceWarning` calls.
+- Re-read `AI/Perception` domain files and rescanned the adjacent cognition owner for polish debt.
+- Reran static audits and the project build.
+
+Cinematic Cheats used:
+- No new simulation or raycast was added.
+- Retinal response remains the same deterministic fake: typed headlight lane, four-light cache, dot-product glare, clamped exposure, exponential decay, low-tier flee/turn-away, and high-tier deterministic thrash/biolum strobe.
+
+Exact Microseconds saved:
+- Measured exact savings: unavailable; Unity profiler was not run.
+- Steady-frame delta is 0 us/frame.
+- Failure-path managed string allocation was removed; exact CPU delta was not measured.
+
+Verification:
+- Polish debt audit returned `NO_RETINAL_DOMAIN_POLISH_DEBT_MATCHES`.
+- Targeted debt/AUP audit returned `NO_RETINAL_HOTPATH_DEBT_OR_RUNTIME_AUP_RECONSTRUCT_MATCHES`.
+- Pack audit returned `NO_NON_PACK1_STRUCTLAYOUT_IN_RETINAL_SCOPE`.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildInParallel=false -v:minimal -clp:Summary` succeeded with `0 Warning(s)`, `0 Error(s)`, `Time Elapsed 00:00:54.12`.
+- Build output saved to `Docs/AgentLogs/Build_RETINAL_ADAPTATION_AI_loop18_dump_failure_telemetry.out.txt`.
+- Unity Editor import, Play Mode, GCMonitor, profiler, shader validation, and player builds were not executed.

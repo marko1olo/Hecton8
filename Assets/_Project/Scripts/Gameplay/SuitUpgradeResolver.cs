@@ -24,7 +24,7 @@ namespace Hecton8.Gameplay
         ThermalGenerator = 1UL << 10
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     public struct SuitStats
     {
         public float MaxO2;
@@ -271,7 +271,7 @@ namespace Hecton8.Gameplay
     {
         public ulong Upgrades;
         public SuitStats Baseline;
-        [WriteOnly] public NativeArray<SuitStats> Result;
+        [WriteOnly] public NativeSlice<SuitStats> Result;
 
         public void Execute()
         {

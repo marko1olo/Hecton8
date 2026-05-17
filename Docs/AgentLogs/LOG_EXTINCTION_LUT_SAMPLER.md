@@ -262,3 +262,116 @@ Current validation:
 - Unity import still exits 1. Current blocking errors are external to extinction: `Assets/_Project/Scripts/Audio/Virtualization/AudioVirtualizationJobs.cs` assembly/reference errors and `_Project/Editor` missing-reference errors in `HectonDevToolsMenu`, `HectonRenderPipelineValidator`, `HectonSurfacePainter`, `RockDataBakerWindow`, and `SaveSlotManagerWindow`.
 - Latest `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` exits 1 on external `SargassumMicroFaunaBoids` and `TetherInstance` errors. Dump: `Docs/AgentLogs/Dump_EXTINCTION_LUT_SAMPLER_Build.txt`.
 - Runtime/profiler/player validation remains pending. I am not marking VERIFIED MASTER GRADE while the current disk build and Unity import are blocked.
+
+## 2026-05-17 Tenth-Pass Core Compile Revalidation / Unity Boundary
+What was wrong:
+- The previous status carried stale Sargassum/Tether and audio/editor blocker text after the disk state moved under parallel work.
+- Current core validation hit small compile seams outside the extinction shader path: missing lockstep signal constants, a missing `Hecton8.Core.Memory.Defrag` project reference needed by `GlobalDataVault`/`SystemDispatcher`, and an invalid `NativeSlice.IsCreated` guard in the compass blackbox path.
+- Unity import still fails before shader/player validation on external gameplay, GPR, fauna, global-signal, and VR foveation asmdef/compiler errors.
+
+What was done:
+- Added the missing lockstep signal constants required by `LockstepStateValidator`.
+- Added the missing `Hecton8.Core.Memory.Defrag` reference to `Hecton8.Core.csproj`.
+- Repaired the compass blackbox guard to use slice length instead of a nonexistent `NativeSlice.IsCreated` property.
+- Re-ran core dotnet validation and Unity 6000.4.1f1 batch import after the core build turned current.
+
+Cinematic cheats used:
+- No visual-model change. Extinction remains analytical ALU Beer-Lambert on mobile/low-memory fallback, vertex-sampled on LOW, packed LUT per-pixel in material/post paths on higher tiers, and shaft-tinted on high/ultra.
+- No raymarch, Texture3D-only dependency, compute prefilter, emissive branch, sampled fallback `lerp`, or extra `_ExtinctionLUT` bind was added.
+
+Exact microseconds saved:
+- Compile-seam repairs: 0 us expected runtime delta; this pass changed validation/assembly seams only.
+- Exact profiler measurements remain unavailable; no Unity player/profiler run completed.
+- Existing values remain estimates, not measurements: LOW vertex sampling saves 40-140 us/frame versus broad per-pixel object LUT sampling; packed LUT fake saves 80-250 us/frame versus an 8-step raymarch; single global bind avoids 5-40 us/frame of material-loop churn in material-heavy scenes.
+
+Current validation:
+- Latest `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies --no-incremental --disable-build-servers /p:UseSharedCompilation=false /p:RunAnalyzers=false /nr:false /m:1 -v:minimal /clp:ErrorsOnly` exits 0 with 2 warnings and 0 errors. Dump: `Docs/AgentLogs/Dump_EXTINCTION_LUT_SAMPLER_Build.txt`.
+- Unity batch import log `Docs/AgentLogs/Unity_EXTINCTION_LUT_SAMPLER_Import_AfterCoreGreen.log` still exits 1. Current blockers are external to extinction: missing `Hecton8.Core.Determinism` in `PlayerKinematicsRuntime`, missing `Hecton8.World.GPR` / `GroundRadarTelemetryEntry` / `GroundRadarConstants` in `GroundPenetratingRadarRuntime`, missing `IDataVault` and `VaultBufferHandle<>` imports in `ProceduralCrabLegIKRuntime`, missing `VisualFlareSignal` in `GlobalSignals`, and missing `FoveatedRenderingCaps` in `FoveatedRenderCommander`.
+- Post-update scoped debt scans returned no matches for hot-path `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, `EventBus`, local `new NativeArray`/`new NativeList`, `File.ReadAllBytes`, `downloadHandler.data`, `UnityWebRequest.Get`, `StartCoroutine`, managed delegate types, `sampler_ExtinctionLUT`, black-texture fallback binds, or emissive `if` branches in the extinction/rendering surface.
+- `git diff --check` passed for the tracked extinction docs/rendering files with CRLF warnings only.
+- Runtime/profiler/player validation remains pending. I am not marking VERIFIED MASTER GRADE while Unity import is blocked.
+
+## 2026-05-17 Thirteenth-Pass Light-Shaft Vault Eviction / Blackbox Reality Check
+What was wrong:
+- Disk state contradicted the status: `HectonUberNoirRuntimeBridge` only wrote `Dump_UBER_NOIR_INTEGRATOR.bin`, not the required `Dump_EXTINCTION_LUT_SAMPLER.bin`.
+- `ScreenSpaceLightShaftRuntime` owned three persistent VFX `NativeArray` buffers locally through `H8Memory.Allocate`: top contributions, temporal history, and the 300-frame telemetry ring.
+- `LightShaftContribution` had no explicit Pack=1/Size layout, leaving ARM64/Quest layout evidence weaker than the current mandate requires.
+
+What was done:
+- Restored populated and empty fault dump mirroring to `Dump_EXTINCTION_LUT_SAMPLER.bin`.
+- Added `BufferID.LightShaftTopContributions`, `BufferID.LightShaftHistoryContributions`, and `BufferID.LightShaftTelemetryRing`.
+- Converted `ScreenSpaceLightShaftRuntime` from component-owned persistent arrays to `GlobalDataVault` handles, resolved only inside locked frame-buffer windows.
+- Added `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]` to `LightShaftContribution` and `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]` to `LightShaftTelemetryEntry`.
+
+Cinematic cheats used:
+- No new physical lighting simulation. Shafts remain a capped screen-space fake: LOW keeps the 8-tap budget and high tier keeps the richer tint path already driven by extinction.
+- No raymarch, Texture3D-only dependency, compute prefilter, emissive branch, sampled fallback `lerp`, or extra `_ExtinctionLUT` bind was added.
+
+Exact microseconds saved:
+- Measured savings: 0 us; no profiler/player capture completed.
+- Expected normal-frame visual delta: 0 us. The pass changes ownership and dump correctness, not sample count or render passes.
+- Blackbox mirror cost is fault-path file I/O only.
+
+Current validation:
+- `git diff --check` passes for the touched files with CRLF warnings only.
+- Scoped scans show no `H8Memory.Allocate`, `H8Memory.Release`, `private NativeArray`, `new NativeArray`, `File.ReadAllBytes`, `downloadHandler.data`, `UnityWebRequest.Get`, `Texture2D.blackTexture`, `sampler_ExtinctionLUT`, legacy `EventBus`, or managed delegate matches in the scoped extinction/rendering/shaft paths.
+- Targeted `_ExtinctionLUT` scan still shows one real `Shader.SetGlobalTexture(_ExtinctionLutId, _extinctionTexture)` bind and one shader `LOAD_TEXTURE2D(_ExtinctionLUT)` site in the active LUT helper.
+- One targeted `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies --no-incremental --disable-build-servers /p:UseSharedCompilation=false /p:RunAnalyzers=false /nr:false /m:1 -v:q /clp:ErrorsOnly` was run after the enum/signature change. It exits 1 on external player presentation signal project/include drift: `PlayerFootstepSignal`, `PlayerWaterSplashSignal`, `PlayerExhaleSignal`, `PlayerSprintStateSignal`, `PlayerFatalPressureSignal`, and `PlayerTransportBailoutSignal`. The dump is `Docs/AgentLogs/Dump_EXTINCTION_LUT_SAMPLER_Build_AfterLightShaftVault.txt`.
+- The build dump contains no errors naming `ScreenSpaceLightShaftRuntime`, `ScreenSpaceLightShaftSource`, `HectonUberNoirRuntimeBridge`, `LutArrayResolver`, or the extinction shader files.
+- Runtime/profiler/player validation remains pending. I am not marking VERIFIED MASTER GRADE while compile/import validation is blocked.
+
+## 2026-05-17 Twelfth-Pass Signal/Caps Seam Repair / Unity Boundary
+What was wrong:
+- Unity import was blocked before shader validation by two type-resolution seams outside the Beer-Lambert shader files: `VisualFlareSignal` lived in the downstream lighting source file while `GlobalSignals` needed it in core, and `FoveatedRenderCommander` used Unity 6000 `FoveatedRenderingCaps` without `UnityEngine.Rendering`.
+- The status file still named those as active blockers after the disk state moved.
+
+What was done:
+- Added one core `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]` `VisualFlareSignal` contract in `GlobalSignals.cs`.
+- Removed the duplicate light-shaft-local `VisualFlareSignal` definition from `ScreenSpaceLightShaftRuntime.cs`.
+- Added `using UnityEngine.Rendering` to `FoveatedRenderCommander.cs`.
+- Ran targeted scans and one Unity 6000.4.1f1 batch import. No dotnet rebuild was run in this pass.
+
+Cinematic cheats used:
+- No visual-model change. Extinction remains analytical ALU Beer-Lambert on mobile/low-memory fallback, vertex-sampled on LOW, packed LUT per-pixel in material/post paths on higher tiers, and shaft-tinted on high/ultra.
+- No raymarch, Texture3D-only dependency, compute prefilter, emissive branch, sampled fallback `lerp`, or extra `_ExtinctionLUT` bind was added.
+
+Exact microseconds saved:
+- Signal/caps seam repair: 0 us expected normal-frame runtime delta. This is contract placement and namespace resolution only.
+- Exact profiler measurements remain unavailable; no Unity player/profiler run completed.
+- Existing estimates remain estimates, not measurements: LOW vertex sampling saves 40-140 us/frame versus broad per-pixel object LUT sampling; packed LUT fake saves 80-250 us/frame versus an 8-step raymarch; single global bind avoids 5-40 us/frame of material-loop churn in material-heavy scenes.
+
+Current validation:
+- Targeted scan shows exactly one `VisualFlareSignal` definition in `GlobalSignals.cs`.
+- Targeted scan shows `FoveatedRenderCommander.cs` imports `UnityEngine.Rendering` and keeps Unity's `SystemInfo.foveatedRenderingCaps` path.
+- Extinction debt scan returned no matches for `File.ReadAllBytes`, `downloadHandler.data`, `UnityWebRequest.Get`, `sampler_ExtinctionLUT`, `Texture2D.blackTexture`, or emissive `if` branches in the scoped rendering/shader paths.
+- `git diff --check` passes for the touched signal/foveation files with CRLF warnings only.
+- Unity batch import log `Docs/AgentLogs/Unity_EXTINCTION_LUT_SAMPLER_Import_AfterSignalCapsFix.log` no longer reports `VisualFlareSignal` or `FoveatedRenderingCaps`. It exits 1 on external `ProceduralCrabLegIKRuntime`, `LeviathanTentacleVerletSolver`, `SubmarineFluidDynamics`, and `SargassumMicroFaunaBoids` errors.
+- Runtime/profiler/player validation remains pending. I am not marking VERIFIED MASTER GRADE while Unity import is blocked.
+
+## 2026-05-17 Eleventh-Pass Blackbox Alias / Current Unity Boundary
+What was wrong:
+- The docs claimed `HectonUberNoirRuntimeBridge` fault dumps mirrored to `Dump_EXTINCTION_LUT_SAMPLER.bin`, but current code only wrote `Dump_UBER_NOIR_INTEGRATOR.bin` after worktree drift.
+- Current core compile validation moved through unrelated compile seams before it could prove the extinction path: equipment padding width, player movement helper import, and an editor-only `System.Type` import in the acoustic zone controller.
+- Unity import blockers changed again; the old GPR/fauna/player list is no longer current.
+
+What was done:
+- Patched `HectonUberNoirRuntimeBridge` so both full blackbox dumps and empty fallback dumps write `Dump_EXTINCTION_LUT_SAMPLER.bin` alongside the existing integrator dump.
+- Re-ran scoped extinction/rendering debt scans.
+- Re-ran `dotnet build Hecton8.Core.csproj` and Unity 6000.4.1f1 batch import.
+- Preserved current build/import evidence in `Docs/AgentLogs/Dump_EXTINCTION_LUT_SAMPLER_Build.txt` and `Docs/AgentLogs/Unity_EXTINCTION_LUT_SAMPLER_Import_AfterBlackboxAlias.log`.
+
+Cinematic cheats used:
+- No visual-model change. Extinction remains analytical ALU Beer-Lambert on mobile/low-memory fallback, vertex-sampled on LOW, packed LUT per-pixel in material/post paths on higher tiers, and shaft-tinted on high/ultra.
+- No raymarch, Texture3D-only dependency, compute prefilter, emissive branch, sampled fallback `lerp`, or extra `_ExtinctionLUT` bind was added.
+
+Exact microseconds saved:
+- Blackbox alias: 0 us normal-frame runtime delta; extra file write occurs only on fault dump.
+- Validation compile-seam repairs: 0 us expected runtime delta; no shader sample, render pass, hot-path allocation, or texture upload was added.
+- Existing values remain estimates, not measurements: LOW vertex sampling saves 40-140 us/frame versus broad per-pixel object LUT sampling; packed LUT fake saves 80-250 us/frame versus an 8-step raymarch; single global bind avoids 5-40 us/frame of material-loop churn in material-heavy scenes.
+
+Current validation:
+- Latest `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies --no-incremental --disable-build-servers /p:UseSharedCompilation=false /p:RunAnalyzers=false /nr:false /m:1 -v:minimal /clp:ErrorsOnly` exits 0 with 1 warning and 0 errors.
+- Unity batch import log `Docs/AgentLogs/Unity_EXTINCTION_LUT_SAMPLER_Import_AfterBlackboxAlias.log` exits 1. Current blockers are external to extinction: missing `VisualFlareSignal` in `GlobalSignals` and missing `FoveatedRenderingCaps` in `FoveatedRenderCommander`.
+- Post-update scoped debt scans returned no matches for hot-path `Update`/`LateUpdate`/`FixedUpdate`, `string.Format`, `EventBus`, local `new NativeArray`/`new NativeList`, `File.ReadAllBytes`, `downloadHandler.data`, `UnityWebRequest.Get`, `StartCoroutine`, managed delegate types, `sampler_ExtinctionLUT`, black-texture fallback binds, or emissive `if` branches in the extinction/rendering surface.
+- `git diff --check` passed for the tracked extinction docs/rendering files with CRLF warnings only.
+- Runtime/profiler/player validation remains pending. I am not marking VERIFIED MASTER GRADE while Unity import is blocked.

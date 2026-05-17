@@ -204,9 +204,9 @@ namespace Hecton8.Gameplay
 
         internal Transform CachedTransform => _cachedTransform != null ? _cachedTransform : transform;
         internal Transform ActiveTowAnchorTransform => _overrideTowAnchor != null ? _overrideTowAnchor : (towAnchor != null ? towAnchor : CachedTransform);
-        internal Vector3 PlayerRight => ActiveTowAnchorTransform.right;
-        internal Vector3 PlayerForward => ActiveTowAnchorTransform.forward;
-        internal Vector3 PlayerUp => ActiveTowAnchorTransform.up;
+        internal Vector3 PlayerRight => ResolveSafeDirection(ActiveTowAnchorTransform.right, Vector3.right);
+        internal Vector3 PlayerForward => ResolveSafeDirection(ActiveTowAnchorTransform.forward, Vector3.forward);
+        internal Vector3 PlayerUp => ResolveSafeDirection(ActiveTowAnchorTransform.up, Vector3.up);
         internal bool ShouldSuppressTow => playerMovement != null && playerMovement.IsDraggingHeavyCargo;
 
         private void Awake()
@@ -248,6 +248,9 @@ namespace Hecton8.Gameplay
             if (_tetherManager == null)
                 return false;
 
+            if (!TryResolveInitialAttachDistance(initialDistance, out float safeInitialDistance))
+                return false;
+
             if (!TetherSignals.PublishFire(
                     _tetherManager,
                     this,
@@ -255,7 +258,7 @@ namespace Hecton8.Gameplay
                     _playerRigidbody,
                     payloadBody,
                     payloadCollider,
-                    initialDistance,
+                    safeInitialDistance,
                     _tetherManager.CurrentFixedFrameIndex))
             {
                 return false;
@@ -267,12 +270,16 @@ namespace Hecton8.Gameplay
                 _playerRigidbody,
                 payloadBody,
                 payloadCollider,
-                initialDistance);
+                safeInitialDistance);
         }
 
         internal bool CanTowMass(float mass)
         {
-            return mass >= minTowMass && mass <= maxTowMass;
+            if (!math.isfinite(mass))
+                return false;
+
+            ResolveTowMassBounds(out float minMass, out float maxMass);
+            return mass >= minMass && mass <= maxMass;
         }
 
         internal bool TryGetTowPayloadSample(out Vector3 payloadPositionWS, out float payloadRadiusWS)
@@ -348,7 +355,12 @@ namespace Hecton8.Gameplay
 
         internal Vector3 ResolveTowAnchorPosition()
         {
-            return ActiveTowAnchorTransform.position;
+            Vector3 anchorPosition = ActiveTowAnchorTransform.position;
+            if (IsFinite(anchorPosition))
+                return anchorPosition;
+
+            Vector3 fallbackPosition = CachedTransform.position;
+            return IsFinite(fallbackPosition) ? fallbackPosition : Vector3.zero;
         }
 
         internal bool IsTowPayloadValid(Rigidbody payloadBody, Collider payloadCollider)
@@ -357,18 +369,20 @@ namespace Hecton8.Gameplay
                    payloadCollider != null &&
                    payloadBody.gameObject.activeInHierarchy &&
                    !payloadBody.isKinematic &&
-                   payloadBody.mass >= minTowMass &&
-                   payloadBody.mass <= maxTowMass;
+                   CanTowMass(payloadBody.mass);
         }
 
-        internal float ResolveTowSpringStiffness() => math.max(0f, cableSpring);
+        internal float ResolveTowSpringStiffness() => SafeMin(cableSpring, 0f, 0f);
         internal float ResolveTowOverDampingMultiplier() => 1.2f;
         internal float ResolveTowRestLength(float initialDistance)
         {
+            float safeInitialDistance = math.isfinite(initialDistance) ? initialDistance : 1.25f;
+            float safeInitialSlack = math.isfinite(initialCableSlack) ? math.max(0f, initialCableSlack) : 0f;
+            float safeMaxAttachDistance = SafeMin(maxAttachDistance, 1.25f, 1.25f);
             TargetLength = math.clamp(
-                math.max(1.25f, initialDistance - initialCableSlack),
+                math.max(1.25f, safeInitialDistance - safeInitialSlack),
                 1.25f,
-                maxAttachDistance);
+                safeMaxAttachDistance);
             return TargetLength;
         }
 
@@ -377,7 +391,7 @@ namespace Hecton8.Gameplay
             if (!math.isfinite(targetLength))
                 return;
 
-            TargetLength = math.clamp(targetLength, 1.25f, maxAttachDistance);
+            TargetLength = math.clamp(targetLength, 1.25f, SafeMin(maxAttachDistance, 1.25f, 1.25f));
         }
 
         public void AdjustTargetLength(float deltaMeters)
@@ -388,44 +402,51 @@ namespace Hecton8.Gameplay
             SetTargetLength(TargetLength + deltaMeters);
         }
 
-        internal float ResolveMaxTowBreakDistance() => math.max(1.25f, maxTowBreakDistance);
-        internal float ResolveMaxCableAcceleration() => math.max(1f, maxCableForce);
-        internal float ResolveFullTensionExtension() => math.max(0.1f, fullTensionExtension);
+        internal float ResolveMaxTowBreakDistance() => SafeMin(maxTowBreakDistance, 1.25f, 1.25f);
+        internal float ResolveMaxCableAcceleration() => SafeMin(maxCableForce, 1f, 1f);
+        internal float ResolveFullTensionExtension() => SafeMin(fullTensionExtension, 0.1f, 0.1f);
         internal int ResolveMaxBendPoints() => 4;
-        internal float ResolveBendPointClearanceRadius() => math.max(0.3f, cableBendSurfaceOffset);
+        internal float ResolveBendPointClearanceRadius() => SafeMin(cableBendSurfaceOffset, 0.3f, 0.3f);
         internal LayerMask ResolveCableBendObstructionMask() => cableBendObstructionMask;
-        internal float ResolveBendSurfaceOffset() => math.max(0.01f, cableBendSurfaceOffset);
-        internal float ResolveBendEndpointInset() => math.max(0.005f, cableBendEndpointInset);
+        internal float ResolveBendSurfaceOffset() => SafeMin(cableBendSurfaceOffset, 0.01f, 0.01f);
+        internal float ResolveBendEndpointInset() => SafeMin(cableBendEndpointInset, 0.005f, 0.005f);
         internal int ResolveVisualSegmentCount() => 16;
         internal float ResolveVisualSegmentSmoothSpeed() => 12f;
-        internal float ResolvePayloadCurrentStrength() => math.max(0f, payloadCurrentStrength);
-        internal float ResolvePayloadSideCurrentBoost() => math.max(0f, payloadSideCurrentBoost);
-        internal float ResolvePayloadCurrentVerticalFactor() => math.clamp(payloadCurrentVerticalFactor, 0f, 1f);
-        internal float ResolvePayloadCurrentNoiseScale() => math.max(0f, payloadCurrentNoiseScale);
-        internal float ResolvePayloadCurrentTimeScale() => math.max(0f, payloadCurrentTimeScale);
-        internal float ResolvePayloadCurrentDamping() => math.max(0f, payloadCurrentDamping);
-        internal float ResolveMaxPayloadCurrentForce() => math.max(1f, maxPayloadCurrentForce);
-        internal float ResolvePayloadAngularDamping() => math.max(0f, payloadAngularDamping);
-        internal float ResolveMaxPayloadAngularSpeed() => math.max(0.1f, maxPayloadAngularSpeed);
-        internal float ResolveBioCableStressBuildMultiplier() => math.max(0f, bioCableStressBuildMultiplier);
-        internal float ResolveBioCablePayloadPullForce() => math.max(0f, bioCablePayloadPullForce);
-        internal float ResolveBioCableHoldTime() => math.clamp(bioCableHoldTime, 0f, 0.5f);
-        internal float ResolveBioCableBlendSharpness() => math.max(1f, bioCableBlendSharpness);
+        internal float ResolvePayloadCurrentStrength() => SafeMin(payloadCurrentStrength, 0f, 0f);
+        internal float ResolvePayloadSideCurrentBoost() => SafeMin(payloadSideCurrentBoost, 0f, 0f);
+        internal float ResolvePayloadCurrentVerticalFactor() => SafeClamp(payloadCurrentVerticalFactor, 0f, 1f, 0f);
+        internal float ResolvePayloadCurrentNoiseScale() => SafeMin(payloadCurrentNoiseScale, 0f, 0f);
+        internal float ResolvePayloadCurrentTimeScale() => SafeMin(payloadCurrentTimeScale, 0f, 0f);
+        internal float ResolvePayloadCurrentDamping() => SafeMin(payloadCurrentDamping, 0f, 0f);
+        internal float ResolveMaxPayloadCurrentForce() => SafeMin(maxPayloadCurrentForce, 1f, 1f);
+        internal float ResolvePayloadAngularDamping() => SafeMin(payloadAngularDamping, 0f, 0f);
+        internal float ResolveMaxPayloadAngularSpeed() => SafeMin(maxPayloadAngularSpeed, 0.1f, 0.1f);
+        internal float ResolveBioCableStressBuildMultiplier() => SafeMin(bioCableStressBuildMultiplier, 0f, 0f);
+        internal float ResolveBioCablePayloadPullForce() => SafeMin(bioCablePayloadPullForce, 0f, 0f);
+        internal float ResolveBioCableHoldTime() => SafeClamp(bioCableHoldTime, 0f, 0.5f, 0f);
+        internal float ResolveBioCableBlendSharpness() => SafeMin(bioCableBlendSharpness, 1f, 1f);
         internal float ResolvePayloadMass01(float payloadMass)
         {
-            float massRange = math.max(maxTowMass - minTowMass, 0.01f);
-            return math.saturate((payloadMass - minTowMass) / massRange);
+            if (!math.isfinite(payloadMass))
+                return 0f;
+
+            ResolveTowMassBounds(out float minMass, out float maxMass);
+            float massRange = math.max(maxMass - minMass, 0.01f);
+            return math.saturate((payloadMass - minMass) * math.rcp(massRange));
         }
 
         internal float ResolveTowDragMultiplier(float load01)
         {
-            if (load01 <= 0.0001f || maxTowEnvironmentalDrag <= 0f)
+            float clampedLoad = math.isfinite(load01) ? math.saturate(load01) : 0f;
+            float maxDrag = math.isfinite(maxTowEnvironmentalDrag) ? math.max(0f, maxTowEnvironmentalDrag) : 0f;
+            if (clampedLoad <= 0.0001f || maxDrag <= 0f)
                 return 1f;
 
-            float exponent = math.max(0.1f, towDragExponent);
-            float loadedRise = FastTowDragRise(load01 * exponent);
+            float exponent = math.isfinite(towDragExponent) ? math.max(0.1f, towDragExponent) : 0.1f;
+            float loadedRise = FastTowDragRise(clampedLoad * exponent);
             float fullRise = math.max(FastTowDragRise(exponent), 0.0001f);
-            return 1f + (loadedRise / fullRise) * maxTowEnvironmentalDrag;
+            float multiplier = 1f + (loadedRise * math.rcp(fullRise)) * maxDrag;
+            return math.isfinite(multiplier) ? multiplier : 1f;
         }
 
         private static float FastTowDragRise(float x)
@@ -436,15 +457,16 @@ namespace Hecton8.Gameplay
             return math.max(0f, fakeExp - 1f);
         }
 
-        internal float ResolveSnapTensionThreshold() => math.max(1f, maxCableForce);
-        internal float ResolveSnapStressDuration() => math.max(0.1f, tetherSnapHoldDuration);
+        internal float ResolveSnapTensionThreshold() => SafeMin(maxCableForce, 1f, 1f);
+        internal float ResolveSnapStressDuration() => SafeMin(tetherSnapHoldDuration, 0.1f, 0.1f);
 
         internal void ApplyTowLoad(float towDragMultiplier)
         {
             if (playerMovement == null)
                 return;
 
-            playerMovement.ApplyEnvironmentalDrag(IsTowBoundToPlayer() ? towDragMultiplier : 1f);
+            float safeTowDragMultiplier = math.isfinite(towDragMultiplier) ? math.max(0f, towDragMultiplier) : 1f;
+            playerMovement.ApplyEnvironmentalDrag(IsTowBoundToPlayer() ? safeTowDragMultiplier : 1f);
         }
 
         internal bool TryResolveSharedTransportPlatform(
@@ -492,13 +514,13 @@ namespace Hecton8.Gameplay
             if (!_activeTether.TryGetPayloadBody(out Rigidbody payloadBody) || payloadBody == null)
                 return false;
 
-            float exosuitMass = math.max(transportBody.mass, 0.0001f);
-            float wreckMass = math.max(payloadBody.mass, 0.0001f);
-            Vector3 exosuitVelocity = transportBody.linearVelocity;
-            Vector3 wreckVelocity = payloadBody.linearVelocity;
-            Vector3 targetVelocity = ((exosuitMass * exosuitVelocity) + (wreckMass * wreckVelocity)) /
-                                     math.max(exosuitMass + wreckMass, 0.0001f);
-            Vector3 velocityChange = targetVelocity - exosuitVelocity;
+            float exosuitMass = SanitizeMass(transportBody.mass);
+            float wreckMass = SanitizeMass(payloadBody.mass);
+            Vector3 exosuitVelocity = SanitizeVector(transportBody.linearVelocity);
+            Vector3 wreckVelocity = SanitizeVector(payloadBody.linearVelocity);
+            float invCombinedMass = math.rcp(math.max(exosuitMass + wreckMass, 0.0001f));
+            Vector3 targetVelocity = ((exosuitMass * exosuitVelocity) + (wreckMass * wreckVelocity)) * invCombinedMass;
+            Vector3 velocityChange = SanitizeVector(targetVelocity - exosuitVelocity);
 
             _overrideTowAnchor = transportAnchor;
             _overrideTowBody = transportBody;
@@ -523,22 +545,24 @@ namespace Hecton8.Gameplay
             if (suppressPlayerFeedback)
                 return;
 
-            float clampedSeverity = math.saturate(math.max(snapSeverity, 0.01f));
-            Vector3 playerForward = PlayerForward;
-            Vector3 playerRight = PlayerRight;
-            Vector3 playerUp = PlayerUp;
+            float clampedSeverity = math.isfinite(snapSeverity) ? math.saturate(math.max(snapSeverity, 0.01f)) : 0.01f;
+            Vector3 playerForward = ResolveSafeDirection(PlayerForward, Vector3.forward);
+            Vector3 playerRight = ResolveSafeDirection(PlayerRight, Vector3.right);
+            Vector3 playerUp = ResolveSafeDirection(PlayerUp, Vector3.up);
+            Vector3 playerSegmentSafe = ResolveSafeDirection(playerSegmentDirection, -playerForward);
+            Vector3 payloadSegmentSafe = ResolveSafeDirection(payloadSegmentDirection, playerForward);
             Rigidbody activeTowBody = ResolveActiveTowBody();
-            float activeTowMass = activeTowBody != null ? activeTowBody.mass : 1f;
-            Vector3 releasedVelocityChange = playerForward * math.lerp(
+            float activeTowMass = activeTowBody != null ? SanitizeMass(activeTowBody.mass) : 1f;
+            Vector3 releasedVelocityChange = SanitizeVector(playerForward * math.lerp(
                 snapReleaseVelocityChangeMin,
                 snapReleaseVelocityChangeMax,
-                clampedSeverity);
-            Vector3 snapTraumaImpulse = -playerSegmentDirection * (
+                clampedSeverity));
+            Vector3 snapTraumaImpulse = SanitizeVector(-playerSegmentSafe * (
                 snapRecoilImpulse *
                 math.lerp(0.65f, 1.2f, clampedSeverity) *
-                activeTowMass);
-            float signedRoll = math.clamp(math.dot(ToFloat3(playerSegmentDirection), ToFloat3(playerRight)), -1f, 1f);
-            ApplyPayloadSnapResponse(payloadBody, payloadCollider, payloadSegmentDirection, playerUp, playerRight, clampedSeverity);
+                activeTowMass));
+            float signedRoll = math.clamp(math.dot(ToFloat3(playerSegmentSafe), ToFloat3(playerRight)), -1f, 1f);
+            ApplyPayloadSnapResponse(payloadBody, payloadCollider, payloadSegmentSafe, playerUp, playerRight, clampedSeverity);
 
             if (IsTowBoundToPlayer() && playerMovement != null)
             {
@@ -550,7 +574,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                if (activeTowBody != null)
+                if (activeTowBody != null && releasedVelocityChange.sqrMagnitude > 0.000001f)
                     PhysicsForceRouter.QueueForce(activeTowBody, releasedVelocityChange, ForceMode.VelocityChange);
             }
         }
@@ -566,34 +590,40 @@ namespace Hecton8.Gameplay
             if (payloadBody == null)
                 return;
 
-            Vector3 payloadVelocityChange = -payloadSegmentDirection * math.lerp(
+            float clampedSeverity = math.isfinite(snapSeverity) ? math.saturate(snapSeverity) : 0f;
+            Vector3 payloadSegmentSafe = ResolveSafeDirection(payloadSegmentDirection, Vector3.forward);
+            Vector3 playerUpSafe = ResolveSafeDirection(playerUp, Vector3.up);
+            Vector3 playerRightSafe = ResolveSafeDirection(playerRight, Vector3.right);
+            Vector3 payloadVelocityChange = SanitizeVector(-payloadSegmentSafe * math.lerp(
                 snapPayloadVelocityChangeMin,
                 snapPayloadVelocityChangeMax,
-                snapSeverity);
-            PhysicsForceRouter.QueueForce(payloadBody, payloadVelocityChange, ForceMode.VelocityChange);
+                clampedSeverity));
+            if (payloadVelocityChange.sqrMagnitude > 0.000001f)
+                PhysicsForceRouter.QueueForce(payloadBody, payloadVelocityChange, ForceMode.VelocityChange);
 
-            Vector3 torqueAxis = Vector3.Cross(payloadSegmentDirection, playerUp);
+            Vector3 torqueAxis = Vector3.Cross(payloadSegmentSafe, playerUpSafe);
             float torqueAxisSq = torqueAxis.sqrMagnitude;
             if (torqueAxisSq <= 0.0001f || !math.all(math.isfinite(ToFloat3(torqueAxis))))
-                torqueAxis = playerRight;
+                torqueAxis = playerRightSafe;
             else
                 torqueAxis *= math.rsqrt(torqueAxisSq);
 
-            Vector3 payloadTorqueVelocityChange = torqueAxis * math.lerp(
+            Vector3 payloadTorqueVelocityChange = SanitizeVector(torqueAxis * math.lerp(
                 snapPayloadTorqueVelocityChangeMin,
                 snapPayloadTorqueVelocityChangeMax,
-                snapSeverity);
-            PhysicsForceRouter.QueueTorque(payloadBody, payloadTorqueVelocityChange, ForceMode.VelocityChange);
+                clampedSeverity));
+            if (payloadTorqueVelocityChange.sqrMagnitude > 0.000001f)
+                PhysicsForceRouter.QueueTorque(payloadBody, payloadTorqueVelocityChange, ForceMode.VelocityChange);
 
             if (payloadBody.TryGetComponent(out ITowSnapReceiver snapReceiver))
             {
                 snapReceiver.HandleTowCableSnap(
                     new TowSnapEventData(
                         payloadBody,
-                        payloadSegmentDirection,
+                        payloadSegmentSafe,
                         payloadVelocityChange,
                         payloadTorqueVelocityChange,
-                        snapSeverity));
+                        clampedSeverity));
                 return;
             }
 
@@ -602,10 +632,10 @@ namespace Hecton8.Gameplay
                 snapReceiver.HandleTowCableSnap(
                     new TowSnapEventData(
                         payloadBody,
-                        payloadSegmentDirection,
+                        payloadSegmentSafe,
                         payloadVelocityChange,
                         payloadTorqueVelocityChange,
-                        snapSeverity));
+                        clampedSeverity));
             }
         }
 
@@ -614,9 +644,73 @@ namespace Hecton8.Gameplay
             return new float3(value.x, value.y, value.z);
         }
 
+        private void ResolveTowMassBounds(out float minMass, out float maxMass)
+        {
+            minMass = math.isfinite(minTowMass) ? math.max(0.0001f, minTowMass) : 50f;
+            maxMass = math.isfinite(maxTowMass) ? math.max(minMass, maxTowMass) : minMass;
+        }
+
+        private static float SanitizeMass(float mass)
+        {
+            return math.isfinite(mass) ? math.max(0.0001f, mass) : 1f;
+        }
+
+        private static float SafeMin(float value, float minimum, float fallback)
+        {
+            return math.isfinite(value) ? math.max(minimum, value) : fallback;
+        }
+
+        private static float SafeClamp(float value, float minimum, float maximum, float fallback)
+        {
+            return math.isfinite(value) ? math.clamp(value, minimum, maximum) : fallback;
+        }
+
+        private bool TryResolveInitialAttachDistance(float initialDistance, out float safeInitialDistance)
+        {
+            safeInitialDistance = 0f;
+            if (!math.isfinite(initialDistance) || initialDistance < 0f)
+                return false;
+
+            float safeMaxAttachDistance = SafeMin(maxAttachDistance, 1f, 1f);
+            if (initialDistance > safeMaxAttachDistance)
+                return false;
+
+            safeInitialDistance = math.max(0f, initialDistance);
+            return true;
+        }
+
+        private static Vector3 SanitizeVector(Vector3 value)
+        {
+            return IsFinite(value) ? value : Vector3.zero;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.all(math.isfinite(ToFloat3(value)));
+        }
+
+        private static Vector3 ResolveSafeDirection(Vector3 value, Vector3 fallback)
+        {
+            if (!IsFinite(value))
+                value = fallback;
+
+            float sqrMagnitude = value.sqrMagnitude;
+            if (math.isfinite(sqrMagnitude) && sqrMagnitude > 0.000001f)
+                return value * math.rsqrt(sqrMagnitude);
+
+            if (IsFinite(fallback))
+            {
+                float fallbackSqr = fallback.sqrMagnitude;
+                if (math.isfinite(fallbackSqr) && fallbackSqr > 0.000001f)
+                    return fallback * math.rsqrt(fallbackSqr);
+            }
+
+            return Vector3.forward;
+        }
+
         private void CachePayloadIdentity(Rigidbody payloadBody)
         {
-            _payloadMass = payloadBody != null ? payloadBody.mass : 0f;
+            _payloadMass = payloadBody != null && math.isfinite(payloadBody.mass) ? payloadBody.mass : 0f;
             _payloadName = payloadBody != null ? payloadBody.gameObject.name : null;
             _payloadNameUpper = string.IsNullOrWhiteSpace(_payloadName) ? "CARGO" : _payloadName.ToUpperInvariant();
         }
@@ -626,8 +720,7 @@ namespace Hecton8.Gameplay
             if (payloadBody == null || payloadBody == _playerRigidbody || payloadBody.isKinematic)
                 return false;
 
-            float mass = payloadBody.mass;
-            return mass >= minTowMass && mass <= maxTowMass;
+            return CanTowMass(payloadBody.mass);
         }
 
         private void ResetRuntimeState()

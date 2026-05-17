@@ -1363,7 +1363,7 @@ namespace Hecton8.AI.GPU
             // Update world bounds in case center moved
             _renderParams.worldBounds = _simulationBounds;
 
-            Graphics.RenderMeshIndirect(_renderParams, fishMesh, _visibleIndirectArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(_renderParams, fishMesh, _visibleIndirectArgsBuffer, 1, 0);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

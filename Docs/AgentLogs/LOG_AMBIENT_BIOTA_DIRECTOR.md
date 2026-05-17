@@ -143,3 +143,75 @@ Cinematic Cheats used: Low tier remains cheap billboard soup with triangle pulse
 Exact Microseconds saved: No measured microseconds. This pass is a stability/portability repair, not a frame-time claim. Expected hardware impact is lower NaN/crash risk on Quest/Android/Metal and 0 B/frame additional file I/O or managed allocation. Extra shader ALU remains unprofiled because Unity shader import/profiler proof is unavailable here.
 
 Verification: `rg -n "normalize\(" Assets/_Project/Scripts/AI/Ambient/Hecton_AmbientBiotaIndirect.shader` returns no matches. Static ambient forbidden-pattern scan returns no matches. Shader static audit returns no DirectX-only/mobile-hostile terms. `AmbientBiotaDriftJob.Execute` still has no `if (` branch source. `Tick(float deltaTime)` still has no `GlobalRegistry.`, no `EnsureVaultBuffers()`, and no `GlobalSignals.SystemStress01`. Direct Bee compile is blocked by missing `Hecton8.Core.ref.dll`; global build is blocked outside ambient by `World/EcosystemDirector.cs` index-helper/field errors. No ambient source error appears in the build log.
+
+## 2026-05-16 - Loop 13 Inspector Hygiene And Unsafe Shader Rsqrt Closure
+
+What was wrong: The ambient slice had no forbidden runtime patterns, but inspector metadata was incomplete and shader safe-normalize helpers still passed unguarded `lengthSq` into `rsqrt`. The macro hydration code also retained a stale `sdfEmergenceBias` local after the cave/SDF dependency had been removed.
+
+What was done: Added tooltips and headers for every serialized `AmbientBiotaDirector` field. Renamed the stale macro spawn vertical offset variable to `verticalBias`. Hardened shader safe-normalize helpers with `rsqrt(max(lengthSq, 1e-8))`, routed drift direction through `SafeNormalize3`, and removed unused shader constants. Reran ambient static scans, branchless-advection audit, tick-hot-path audit, `git diff --check`, direct Bee response-file validation, and global `dotnet build`.
+
+Cinematic Cheats used: Low tier remains the cheap deterministic fake: billboard biota, triangle pulse/noise, no collision, no texture samples. High/Ultra keep the deliberate overkill: 16-step procedural parallax, rim SSS, flow-driven silt, salt glints, biome tint, and panic biolume. The shader fix preserves overkill without trusting unsafe vector math.
+
+Exact Microseconds saved: No measured microseconds. This pass is stability/editor-hygiene, not a performance claim. CPU hot-path cost is unchanged. GPU cost is only epsilon-guard ALU in normalize helpers; Unity GPU profiler proof remains unavailable.
+
+Verification: Static ambient forbidden-pattern scan returned no matches. Shader audit returned no `normalize(`, stale `rsqrt(lengthSq)`, direct drift `velocityLenSq`, `HECTON_BIOTA_ACTIVE`, or `HECTON_TWO_PI`. `AmbientBiotaDriftJob.Execute` still has no `if (` branch source. `Tick(float deltaTime)` still has no `GlobalRegistry.`, no `EnsureVaultBuffers()`, and no `GlobalSignals.SystemStress01`. `git diff --check` passed. `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false` succeeded with 0 warnings and 0 errors. Direct ambient Bee compile remains blocked before source analysis by missing `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.ref.dll`. Unity shader import/compiler validation is still not available in this shell session.
+
+## 2026-05-17 - Loop 14 Deterministic Spawn Signal Cadence
+
+What was wrong: `TryHydrateMacroSwarms` still published `EntitySpawnSignal.Frame` from `Time.frameCount`. It was not used as a deterministic RNG seed, but it was still Unity-frame metadata leaking into an ambient cross-domain signal.
+
+What was done: Replaced `Time.frameCount` with the director's `_frameIndex`, preserving the existing `EntitySpawnSignal` contract and keeping macro hydration metadata on the same deterministic cadence used by ambient spawn/drift jobs. Re-ran ambient static scans, tick hot-path audit, branchless-advection audit, shader portability audit, diff hygiene, direct ambient Bee validation, and global `dotnet build`.
+
+Cinematic Cheats used: No new physical simulation. Low tier remains billboard/triangle-noise ambient biota with no collision and no texture samples. High/Ultra retain light panic, SSS, procedural parallax, flow silt, salt glints, and biome tint through the existing GPU presentation path.
+
+Exact Microseconds saved: No measured microseconds. Expected runtime timing delta is 0 us; this is deterministic telemetry hygiene. No managed allocation, NativeArray ownership, MicroSD I/O, CPU matrix path, or shader cost was added.
+
+Verification: Static ambient forbidden-pattern scan returned no matches for `Time.frameCount`, `Time.deltaTime`, `Time.fixedDeltaTime`, `SetData`, local persistent `NativeArray`, direct `H8Memory.Allocate`, Unity `Update`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, legacy `EventBus`, managed delegates, scene search, coroutine, or `Resources.Load`. `Tick(float deltaTime)` still has no `GlobalRegistry.`, no `EnsureVaultBuffers()`, no `GlobalSignals.SystemStress01`, and no `Time.` access. `AmbientBiotaDriftJob.Execute` still has no `if (` branch source. Shader static audit remains clean for mobile-hostile/DX-only patterns. `git diff --check` passed with CRLF warnings only. Current global build is blocked outside ambient by `PlayerKinematicsRuntime.cs`, `HectonMusicDirector.cs`, and `AcousticZoneController.cs` signal-contract errors. Direct ambient Bee compile remains blocked before source analysis by missing `Hecton8.Core.ref.dll`. Unity shader import/compiler validation is still unavailable.
+
+## 2026-05-17 - Loop 15 Telemetry Clock Decoupling
+
+What was wrong: `RecountActiveBiota` still computed `CullRatePerSecond` from `Time.unscaledTime`. This was diagnostic telemetry, not spawn authority, but it kept the ambient blackbox partially coupled to Unity wall-clock state instead of the dispatcher tick contract.
+
+What was done: Added a finite-clamped director telemetry clock advanced from `Tick(float deltaTime)`. The clock advances before `_jobPending` exits, so blackbox elapsed-time accounting keeps moving even if a job is still pending. `RecountActiveBiota` now derives elapsed seconds from the director clock; ambient C# has no remaining `Time.` references.
+
+Cinematic Cheats used: No new physical truth. Low tier remains billboard/triangle-noise soup with no collision and no texture samples. High/Ultra retain shader-side pulse, silt, salt glints, SSS, 16-step procedural parallax, panic biolume, and biome tint. Shader `_Time.y` remains presentation-only for pulse/silt motion.
+
+Exact Microseconds saved: No measured microseconds. Runtime timing delta is expected to be effectively 0 us; this is determinism and crash-forensics hygiene. Added cost is two scalar fields and one finite-clamped scalar accumulation per tick; no GC, no NativeArray ownership, no file I/O, no CPU matrix path, and no shader cost were added.
+
+Verification: C# static time audit returned no matches for `Time.frameCount`, `Time.unscaledTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, or `Time.` in `Assets/_Project/Scripts/AI/Ambient/*.cs`. Static ambient forbidden-pattern scan returned no matches for `SetData`, local persistent `NativeArray`, direct `H8Memory.Allocate`, Unity `Update`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, legacy `EventBus`, managed delegates, scene search, coroutine, or `Resources.Load`. `Tick(float deltaTime)` still has no `GlobalRegistry.`, no `EnsureVaultBuffers()`, no `GlobalSignals.SystemStress01`, and no C# `Time.` access. `AmbientBiotaDriftJob.Execute` still has no `if (` branch source. Shader portability audit remains clean for DirectX-only/mobile-hostile terms; shader `_Time.y` appears only in visual pulse/silt math. `git diff --check` passed with CRLF warnings only. `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false` succeeded with 0 warnings and 0 errors. Direct ambient Bee compile remains blocked before source analysis by missing `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.ref.dll`. Unity shader import/compiler and runtime profiler validation are still unavailable.
+
+## 2026-05-17 - Loop 16 Shader Visual Time Decoupling
+
+What was wrong: Ambient C# was free of Unity `Time`, but the indirect shader still used `_Time.y` for pulse and silt motion. That was visual-only, but it left presentation cadence tied to Unity's global shader clock instead of the director's dispatcher-time clock.
+
+What was done: Added `_HectonBiotaVisualTime` to the ambient shader CBUFFER and a cached shader property ID in `AmbientBiotaDirector`. The existing indirect render material parameter path now passes `_telemetryClockSeconds`, and the shader uses it for triangle pulse and silt phase. No new public API, buffer, draw call, MPB, or runtime material clone was added.
+
+Cinematic Cheats used: Low tier keeps the cheap triangle-wave billboard fake and zero texture samples. High/Ultra keep pulse, volumetric-silt fake, salt glints, SSS, panic biolume, and 16-step procedural parallax while visual time comes from the owned director cadence.
+
+Exact Microseconds saved: No measured microseconds. Expected CPU delta is one scalar material write on the existing render path; GPU instruction count is effectively unchanged. No GC, NativeArray ownership, MicroSD I/O, CPU matrix path, or extra draw call was added.
+
+Verification: Static time audit returned no matches for C# `Time.` or shader `_Time` in `Assets/_Project/Scripts/AI/Ambient`. Static ambient forbidden-pattern scan returned no matches for `SetData`, `private NativeArray`, `new NativeArray`, direct `H8Memory.Allocate`, Unity `Update`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, `System.Random`, `UnityEngine.Random`, legacy `EventBus`, managed delegates, scene search, coroutine, or `Resources.Load`. Shader portability audit returned no DirectX-only/mobile-hostile terms. `Tick(float deltaTime)` remains free of hot `GlobalRegistry`, `EnsureVaultBuffers`, `GlobalSignals.SystemStress01`, and C# `Time`. `AmbientBiotaDriftJob.Execute` still has no `if (` branch source. `git diff --check` passed with CRLF warnings only. `dotnet build` was not rerun because the user explicitly requested not to rebuild every time. Unity shader import/compiler and runtime profiler validation remain unavailable.
+
+## 2026-05-17 - Loop 17 Stale Telemetry Identifier Repair
+
+What was wrong: `ResetCapacityDependentRuntimeState()` still reset `_lastRecountTimeSeconds`, a stale field name left behind after the dispatcher-owned telemetry clock replacement. That would become an ambient compile error once Unity/Bee reaches this source.
+
+What was done: Replaced the stale identifier with `_lastRecountClockSeconds`. Re-ran static stale-identifier, time, forbidden-pattern, shader-portability, tick-hot-path, branchless-advection, and diff hygiene audits.
+
+Cinematic Cheats used: No new simulation truth. Low tier remains cheap billboard/triangle-wave ambient biota; High/Ultra retain shader-side visual time, silt, salt glints, SSS, panic biolume, and 16-step procedural parallax.
+
+Exact Microseconds saved: No measured microseconds. Runtime delta is expected to be 0 us because this is a cold reset compile-hygiene repair. No GC, NativeArray ownership, file I/O, shader work, draw call, or CPU matrix path was added.
+
+Verification: `rg -n "_lastRecountTimeSeconds" Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs` returned no matches. Static time audit returned no C# `Time.` or shader `_Time` in ambient. Static forbidden-pattern scan returned no matches for `SetData`, `private NativeArray`, `new NativeArray`, direct `H8Memory.Allocate`, Unity `Update`, `foreach`, `string.Format`, `Instantiate`, `Random.Range`, `System.Random`, `UnityEngine.Random`, legacy `EventBus`, managed delegates, scene search, coroutine, or `Resources.Load`. Shader portability audit returned no DirectX-only/mobile-hostile terms. `Tick(float deltaTime)` remains free of `GlobalRegistry.`. `AmbientBiotaDriftJob.Execute` still has no `if (` branch source. `git diff --check` passed with CRLF warnings only. `dotnet build` was not rerun per user instruction. Unity shader import/compiler and runtime profiler validation remain unavailable.
+
+## 2026-05-17 - Loop 18 AUP Delta Overflow Guard
+
+What was wrong: `DeltaMeters()` subtracted signed 64-bit AUP grid coordinates before converting to meters. Extreme sector separation could overflow the `long` subtraction before the existing double math and finite checks saw the value.
+
+What was done: Cast both AUP grid coordinates to `double` before subtraction on all three axes. Re-ran raw grid-subtraction, time, forbidden-pattern, tick-hot-path, branchless-advection, and diff hygiene audits.
+
+Cinematic Cheats used: No new physical simulation. Low tier keeps billboard/triangle-wave biota; High/Ultra keep light panic, silt, salt glints, SSS, and 16-step procedural parallax. This pass protects the AUP math feeding those visuals.
+
+Exact Microseconds saved: No measured microseconds. Expected runtime delta is negligible: three double casts before existing double distance arithmetic. No GC, NativeArray ownership, file I/O, shader work, draw call, or CPU matrix path was added.
+
+Verification: Source scan for raw `GridX - GridX` / `GridY - GridY` / `GridZ - GridZ` integer subtraction in `AmbientBiotaDirector.cs` returned no raw long-subtract pattern. Static time audit returned no C# `Time.` or shader `_Time` in ambient. Static forbidden-pattern scan returned no matches. `Tick(float deltaTime)` remains free of `GlobalRegistry.`. `AmbientBiotaDriftJob.Execute` still has no `if (` branch source. `git diff --check` passed with CRLF warnings only. `dotnet build` was not rerun per user instruction. Unity shader import/compiler and runtime profiler validation remain unavailable.

@@ -292,3 +292,124 @@ Validation:
 - ABI scan found no sequential or Pack=4/8 ecology DTOs in ecology bridge files.
 - Legacy signal scan found no active `EventBus`, `Action<>`, `Func<>`, or delegate usage in ecology bridge files; hits were documentation/comment wording only.
 - Unity PlayMode, profiler, GC monitor, Quest/Android player build, Metal/Mac player build, Steam Deck runtime pass, and IL2CPP strip build were not executed.
+
+## 2026-05-16 - Player-Build Coefficient I/O Quarantine
+
+What was wrong:
+- `EcosystemPopulationBalancer` still read `Data/Precomputed/ecosystem_coefficients.json` or the legacy JSON path through `FileStream`, `StreamReader.ReadToEnd`, and `JsonUtility.FromJson`.
+- That path is cold, but it is still player-build disk I/O plus managed JSON allocation in the AI/ecology domain.
+
+What was done:
+- Wrapped `TryReadCoefficientJson` body in `#if UNITY_EDITOR`.
+- Non-editor/player builds now skip coefficient JSON entirely and use the sanitized default coefficient written to the DataVault coefficient lane.
+- Left blackbox dump I/O intact because it is the mandated crash/fault export path, not a gameplay coefficient load path.
+- Rebuilt the core assembly and reran targeted ecology scans.
+
+Cinematic Cheats used:
+- Toaster: no coefficient file read, no JSON parse, no MicroSD hitch during ecology service startup.
+- Middle: deterministic default coefficient lane keeps SOA population balancing stable.
+- High/Ultra: visual overkill remains driven by macro-swarm/SDF/signal flags, not runtime balance-file I/O.
+
+Exact Microseconds saved / estimated:
+- Runtime/player coefficient I/O removed; exact frame-time savings were not measured.
+- Avoided one `ReadToEnd` string allocation and one JSON parse in player builds.
+- Build validation: 126.92 s = 126,920,000 us. This is compile wall time, not runtime performance.
+
+Validation:
+- Build: `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` succeeded with 0 warnings / 0 errors in 00:02:06.92.
+- File-I/O scan in `EcosystemPopulationBalancer` now shows coefficient JSON reads only under `#if UNITY_EDITOR`; the other hit is the required blackbox dump writer.
+- Native ownership scan found no local native owner fields/allocations or native collection sentinel registration in ecology bridge files.
+- Anti-bloat scan found no `Schedule().Complete`, standard Unity update loop, `string.Format`, `Instantiate`, `new GameObject`, or `StartCoroutine` in ecology bridge files.
+- Unity PlayMode, profiler, GC monitor, Quest/Android player build, Metal/Mac player build, Steam Deck runtime pass, and IL2CPP strip build were not executed.
+
+## 2026-05-17 - ARM Vault Stride Padding
+
+What was wrong:
+- `EcosystemPopulationCoefficient` was 52 bytes, `EcosystemPopulationCullEvent` was 88 bytes, and `EcosystemPopulationFreeSlot` was 24 bytes.
+- All three used explicit Pack=1 offsets, but their record strides were not 16-byte multiples, which is poor ABI discipline for ARM/Quest and GPU-adjacent vault lanes.
+
+What was done:
+- Padded coefficient records from 52 to 64 bytes.
+- Padded cull events from 88 to 96 bytes.
+- Padded free-slot records from 24 to 32 bytes.
+- Kept existing field offsets stable and added only explicit reserved tail fields.
+- Rebuilt the core assembly and reran focused ecology scans.
+
+Cinematic Cheats used:
+- Toaster: no new math, no extra runtime branch, no gameplay disk I/O.
+- Middle: population-balancer lanes stay deterministic and fixed-stride.
+- High/Ultra: stable vault ABI keeps downstream visual-overkill systems free to spend cycles on presentation without ecology owning VFX.
+
+Exact Microseconds saved / estimated:
+- Runtime savings were not measured and are not claimed.
+- Padding is crash-class hardening and cache/stride discipline: +12 bytes per coefficient record, +8 bytes per cull event, +8 bytes per free-slot record.
+- Build validation: 76.90 s = 76,900,000 us. This is compile wall time, not runtime performance.
+
+Validation:
+- Build: `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` succeeded with 0 warnings / 0 errors in 00:01:16.90.
+- Assigned-domain inventory: `rg --files Assets/_Project/Scripts/AI/Ecosystem` found one source file, `EcosystemPopulationBalancer.cs`, plus metadata.
+- ABI scan found no old `Size = 52`, `Size = 88`, or `Size = 24` population record layouts in the ecology bridge files.
+- Anti-bloat scan found no `Schedule().Complete`, standard Unity update loop, `string.Format`, `Instantiate`, `new GameObject`, or `StartCoroutine` in ecology bridge files.
+- Native ownership scan found no local `new NativeArray/List/Queue/HashMap`, private native collection owner field, or `NativeHashMap` in ecology bridge files.
+- Assigned-domain scans found no forbidden update loops, spawn paths, managed formatting, forced schedule completion, local native allocation/ownership hits, bad pack settings, old odd record sizes, or active legacy bus/delegate patterns.
+- Unity PlayMode, profiler, GC monitor, Quest/Android player build, Metal/Mac player build, Steam Deck runtime pass, and IL2CPP strip build were not executed.
+
+## 2026-05-17 - Dump Path And Player I/O Guard Repair
+
+What was wrong:
+- `EcosystemPopulationBalancer` wrote its blackbox fault dump to `Docs/AgentLogs/Dump_ECOSYSTEM_POPULATION_BALANCER.bin` instead of this agent's mandated `Docs/AgentLogs/Dump_ECOSYSTEM_MIGRATION_LINK.bin`.
+- Current disk also showed `TryReadCoefficientJson` without its `#if UNITY_EDITOR` guard, reopening `FileStream`, `StreamReader.ReadToEnd`, and `JsonUtility.FromJson` in player builds despite prior documentation saying the path was quarantined.
+
+What was done:
+- Changed the population-balancer dump target to `Docs/AgentLogs/Dump_ECOSYSTEM_MIGRATION_LINK.bin`.
+- Restored the `#if UNITY_EDITOR` / `#else return false` guard around coefficient JSON reads.
+- Re-ran targeted scans for dump ownership, player-build I/O quarantine, bad ABI sizes, update loops, spawn paths, managed formatting, forced schedule completion, local native collection ownership, and legacy bus/delegate usage.
+
+Cinematic Cheats used:
+- Toaster: no player-build coefficient file read, no JSON parse, no MicroSD hitch from ecology coefficient loading.
+- Middle: deterministic default/vault coefficients keep the population balancer stable.
+- High/Ultra: visual overkill still comes from macro-swarm/SDF/signal flags; ecology does not add runtime balance-file I/O or VFX coupling.
+
+Exact Microseconds saved / estimated:
+- Dump path fix: 0 us on non-fault frames.
+- Player-build coefficient I/O removed again; exact frame-time savings were not measured.
+- First post-dump build wall: 60.12 s = 60,120,000 us, blocked outside ecology in player/tether/interaction files.
+- Latest post-I/O-guard build wall: 36.68 s = 36,680,000 us, blocked outside ecology in `HectonPlayerMovement.cs`.
+
+Validation:
+- Build attempt 1: `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` failed outside ecology with 6 errors in `HectonPlayerMotor.cs`, `EquipmentInteractionContracts.cs`, `TetherInstance.cs`, and `TetherManager.cs`.
+- Build attempt 2: same command failed outside ecology with 3 errors in `HectonPlayerMovement.cs` for missing `MethodImplAttribute`, `MethodImpl`, and `MethodImplOptions`.
+- Dump scan: no `Dump_ECOSYSTEM_POPULATION_BALANCER.bin` remains in `EcosystemPopulationBalancer`; the population and macro paths both target `Dump_ECOSYSTEM_MIGRATION_LINK.bin`.
+- I/O scan: `StreamReader.ReadToEnd` and `JsonUtility.FromJson` in `EcosystemPopulationBalancer` are under `#if UNITY_EDITOR`; non-editor builds return false.
+- Anti-bloat/native/ABI scan found no `Schedule().Complete`, standard Unity update loop, `string.Format`, `Instantiate`, `new GameObject`, local native owner allocation, private native collection owner, `NativeHashMap`, sequential/Pack=4 DTO, or old 52/88/24 record sizes in the assigned ecology domain and bridge files.
+- Unity PlayMode, profiler, GC monitor, Quest/Android player build, Metal/Mac player build, Steam Deck runtime pass, and IL2CPP strip build were not executed.
+
+## 2026-05-17 - Full-Ring Blackbox Export And Green Build
+
+What was wrong:
+- `DumpBlackBox` exported only `min(writtenCount, capacity)` records, so an early-session fault could produce less than the mandated fixed 300-entry blackbox artifact.
+- Whole-project compile was temporarily noisy while other domains changed; one successful build also emitted a copy-retry warning due a locked DLL.
+
+What was done:
+- Bumped population-balancer dump format from v2 to v3.
+- Changed `dumpCount` to the full telemetry ring capacity.
+- Kept cursor ordering intact: start at slot 0 until the ring fills, then export from the wrapped cursor.
+- Re-ran the build until the transient file-lock warning disappeared and reran focused ecology scans.
+
+Cinematic Cheats used:
+- Toaster: no hot-path work added; fixed-size binary dump happens only on fault.
+- Middle: default/vault coefficients remain deterministic and player-build JSON stays quarantined.
+- High/Ultra: complete fault evidence protects richer downstream visual systems without ecology adding VFX coupling.
+
+Exact Microseconds saved / estimated:
+- Full-ring dump: 0 us on non-fault frames.
+- Fault-path payload: about 19.2 KB for 300 entries at 64 bytes each, plus header.
+- Final build validation: 142.24 s = 142,240,000 us. This is compile wall time, not runtime performance.
+
+Validation:
+- Final build: `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` succeeded with 0 warnings / 0 errors in 00:02:22.24.
+- Static scan confirms `DumpFormatVersion = 3` and `dumpCount = capacity`.
+- Static scan confirms `TryReadCoefficientJson` keeps `StreamReader.ReadToEnd` and `JsonUtility.FromJson` under `#if UNITY_EDITOR`.
+- Static scan found no private `Dump_ECOSYSTEM_POPULATION_BALANCER.bin` target.
+- Anti-bloat/native/ABI scan found no `Schedule().Complete`, standard Unity update loop, `string.Format`, `Instantiate`, `new GameObject`, local native owner allocation, private native collection owner, `NativeHashMap`, sequential/Pack=4 DTO, or old 52/88/24 record sizes in the assigned ecology domain and bridge files.
+- Unity PlayMode, profiler, GC monitor, Quest/Android player build, Metal/Mac player build, Steam Deck runtime pass, and IL2CPP strip build were not executed.

@@ -143,3 +143,183 @@ Cinematic Cheats used -> None. This is fault-path survival work, not simulation 
 Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Hot Burst path is unchanged; the extra work is cold-path dump integrity only.
 
 Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped AI/Cognition forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings.
+
+## 2026-05-16 - Crash Dump Handle Path Pass
+
+What was wrong -> Handle-first owners could dump only through fault-scanning helpers. A hard crash can happen before the current frame is marked with `Fault`, and forcing the crash path to keep raw `NativeArray` views would violate the handle-first DataVault pattern.
+
+What was done -> Added `TryDumpBlackBox(IDataVault, ref AlphaLeviathanVaultHandles, string)`. It resolves current DataVault views from handles and dumps the full 300-frame ring through the same temp-file promotion writer. Corrected the BufferID audit to parse only the `BufferID` enum and verified no duplicate DataVault lane IDs.
+
+Cinematic Cheats used -> None. This is crash-path evidence and DataVault sovereignty work.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Hot Burst path is unchanged; the new cost exists only when a crash handler chooses to write the black box.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped AI/Cognition forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; BufferID audit returns `NO_BUFFERID_DUPLICATES`; root `dotnet build` still fails MSB1011 because the folder contains multiple project/solution files.
+
+## 2026-05-16 - Persisted State NaN Vaccine Pass
+
+What was wrong -> The job sanitized steering outputs and telemetry, but persisted DataVault state could still carry non-finite aggression, phase start time, forward, or previous steering vectors. `PhaseStartSeconds` also existed as a state-machine field but was not updated.
+
+What was done -> `LeviathanStalkJob` now sanitizes persisted aggression, phase start time, forward, and previous steering before reuse and before writeback. Active rows mark `Fault` when persisted state corruption is detected. `PhaseStartSeconds` now updates branchlessly when `CurrentPhase` changes, using sanitized `CurrentTimeSeconds`.
+
+Cinematic Cheats used -> None. This is stability work that protects both low-tier interpolation and high-tier VFX intent from poisoned state.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static cost is several finite checks and safe normalizations per row.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; `git diff --check` reports only CRLF normalization warnings.
+
+## 2026-05-16 - Parallel Telemetry Write Safety Pass
+
+What was wrong -> The parallel job writes telemetry into a 300-frame ring at `frame * 64 + slot`, not at the direct `IJobParallelFor` index. Unity safety checks can reject that pattern without an explicit waiver.
+
+What was done -> Added `[NativeDisableParallelForRestriction]` only to `TelemetryRing`. State and steering arrays keep normal restrictions because they write by dense slot index. The schedule-length guard remains the proof that each telemetry worker writes a unique row.
+
+Cinematic Cheats used -> None. This is Unity job-safety integration work.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Attribute-only safety contract; no new hot-path scheduling.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings. Explicit `dotnet build Hecton8.slnx --no-restore` is blocked by missing Unity-generated project assets files for `Assembly-CSharp-Editor*` and MSB4166 child-node failure.
+
+## 2026-05-17 - Locked Vault Recovery Pass
+
+What was wrong -> The Alpha Leviathan vault bridge treated `IsAllocationLocked` as a total failure condition. That blocks legitimate post-init recovery of already allocated DataVault buffers and pressures owners to keep stale raw `NativeArray` views alive before the allocation sentinel locks.
+
+What was done -> `TryResolve(...)` now resolves existing buffers with `TryGetBuffer(...)` under allocation lock. `TryResolveHandles(...)` now resolves existing handles with `TryGetBufferHandle(...)`, refreshes them through `TryResolveViews(...)`, and verifies required slot capacity. Locked recovery refuses undersized state/sensory/steering buffers and requires the full 300x64 telemetry ring.
+
+Cinematic Cheats used -> None. This is DataVault sovereignty and memory-sentinel compatibility work.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Hot Burst path is unchanged; the patch adds cold resolve-path metadata checks only.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; BufferID audit returns `NO_BUFFERID_DUPLICATES`; `git diff --check` reports only CRLF normalization warnings.
+
+## 2026-05-17 - AUP Snap-Fence Telemetry Pass
+
+What was wrong -> `ShiftFenceActive` existed in the runtime flags but the job did not consume it. The black box could show the first frame that reset steering after a shift, but not the full 300-frame snap-fence window required by the AUP mandate.
+
+What was done -> `LeviathanStalkJob` now reads `ShiftFenceActive` and marks telemetry with `ShiftFenceReset` for every fence-active row. Steering reset remains tied only to `shiftChanged`, so the fence marker does not freeze movement for 300 frames. The telemetry contract summary was updated without changing row size.
+
+Cinematic Cheats used -> None. This is AUP crash-evidence work.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static cost is one flag test and one OR/select per row.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings.
+
+## 2026-05-17 - Strict Burst Float Mode Pass
+
+What was wrong -> `LeviathanStalkJob` used `FloatMode.Fast`, while the installed Burst package documents that mode as allowing assumptions that values contain no NaNs or infinities. That is incompatible with a kernel whose stability contract depends on finite checks and fault telemetry.
+
+What was done -> Changed only the stalking kernel Burst attribute to `FloatMode.Strict` with `FloatPrecision.Standard`. The package-local enum was checked before the edit; `Strict` is supported and `Default` maps to `Strict`, but the explicit mode keeps the safety contract visible.
+
+Cinematic Cheats used -> Low-tier 5Hz cadence and radial fake remain the cost-control mechanism. High-tier SDF contour and visual-overkill scalar outputs remain unchanged.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. This likely spends a small amount of Burst optimization headroom to preserve NaN/fault correctness; no profiler timing was captured.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings. Explicit `dotnet build Hecton8.slnx --no-restore` still fails outside AI/Cognition with missing Unity-generated `project.assets.json`, unrelated Gameplay/Tether/Interaction compile errors, and missing RealtimeCSG source files.
+
+## 2026-05-17 - Blackbox Cursor Wrap Safety Pass
+
+What was wrong -> `ResolveTelemetryCursor(...)` selected the largest raw `uint Frame`. During the first 299 frames after frame counter wrap, stale pre-wrap rows would look newer than valid post-wrap rows. Cleared default rows could also pollute cursor fallback because they have `Frame == 0`.
+
+What was done -> The cursor fallback scan now ignores rows with `StateHash == 0` and uses unsigned wrap-aware frame comparison. The telemetry row stays 64 bytes and the Burst job stays unchanged.
+
+Cinematic Cheats used -> None. This is black-box survival work, not presentation.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Hot path is unchanged; this adds only cold dump-scan checks.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan remains `NO_BRANCH_TOKENS`; scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings.
+
+## 2026-05-17 - Aggression Delta Hitch Clamp Pass
+
+What was wrong -> The aggression integrator accepted any finite positive `DeltaTime`. A hitch-sized producer value could saturate aggression in one tick and trigger charge behavior from a scheduling artifact.
+
+What was done -> Added `MaxDeltaTimeSeconds = 0.25f` and clamp the job delta before applying `NoiseAggressionGainPerSecond`. The low-tier 5Hz cadence remains valid because 0.2s is below the cap.
+
+Cinematic Cheats used -> The low-tier Dear Lie cadence remains the intended performance fake. The clamp prevents hitch recovery from becoming fake aggression.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static cost is one `math.min` per row.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan remains `NO_BRANCH_TOKENS`; scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings.
+
+## 2026-05-17 - Acoustic Lure Input Vaccine Pass
+
+What was wrong -> The sonar lure gate consumed raw ping age and intensity. Negative age could keep a lure alive, and NaN handling depended on comparison behavior instead of an explicit sensory contract.
+
+What was done -> Sanitized sonar ping age to finite non-negative input and saturated sonar intensity before `sonarActive` is computed. The 10s acoustic lure rule and DataVault row contract remain unchanged.
+
+Cinematic Cheats used -> None. This protects the existing acoustic lure illusion from bad producer data.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static cost is two scalar sanitization paths per row.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan remains `NO_BRANCH_TOKENS`; scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings.
+
+## 2026-05-17 - Final Validation Re-Run
+
+What was wrong -> Full solution validation is still blocked outside AI/Cognition. The latest explicit build reports missing Unity-generated editor `project.assets.json` files and missing RealtimeCSG source files.
+
+What was done -> Re-ran the owned AI/Cognition compile and all domain static gates after the last code patches. Re-ran `dotnet build Hecton8.slnx --no-restore -v:minimal /clp:ErrorsOnly` and recorded the dependency wall instead of faking completion.
+
+Cinematic Cheats used -> None. This is verification evidence.
+
+Exact Microseconds saved -> 0 us runtime. Build triage only.
+
+Verification -> Owned AI/Cognition Bee/Csc response file exits 0. Branch scan: `NO_BRANCH_TOKENS`. Forbidden-token scan: `NO_FORBIDDEN_TOKENS`. Struct audit: `ALL_PUBLIC_STRUCTS_PACK1`. `git diff --check` has only CRLF normalization warnings. Full solution build fails with 218 errors and 15 warnings from missing editor restore assets and RealtimeCSG source files outside this domain.
+
+## 2026-05-17 - Phase Timestamp Sanitation Pass
+
+What was wrong -> Phase start and current time were finite-checked but could still be negative. That lets bad producer time become persisted state-machine metadata.
+
+What was done -> Clamped sanitized `PhaseStartSeconds` and `CurrentTimeSeconds` to non-negative values inside `LeviathanStalkJob` before phase transition writeback.
+
+Cinematic Cheats used -> None. This is state recovery and black-box clarity.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static cost is two `math.max` operations per row.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan remains `NO_BRANCH_TOKENS`; scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings.
+
+## 2026-05-17 - Fog Distance Range Vaccine Pass
+
+What was wrong -> The fog distance scalar was finite and positive but unbounded. A bad sensory row could produce a huge ring distance and target offset while still passing NaN checks.
+
+What was done -> Added `MaxFogDistanceMeters = 2048f` and capped sanitized fog distance before ring-distance calculation in `LeviathanStalkJob`.
+
+Cinematic Cheats used -> The normal fog-edge silhouette behavior remains. The cap only prevents pathological data from buying impossible scale.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static cost is one `math.min` per row.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan remains `NO_BRANCH_TOKENS`; scoped forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings.
+
+## 2026-05-17 - AUP Overlap And Local Poison Vaccine Pass
+
+What was wrong -> Same-position overlap was treated as invalid delta and raised `Fault`, despite the task requiring an `Up` fallback for that exact case. Selected AUP anchors could also carry non-finite local offsets into persisted `TargetAnchorAup`.
+
+What was done -> Split finite-delta checks from separated-distance checks. Finite overlap now reports zero distance and branchlessly selects the `Up` fallback steering vector without marking a fault. Selected anchor and persisted Leviathan AUP locals are finite-checked and sanitized before double-distance math and DataVault writeback; non-finite AUP locals still raise active-row fault telemetry.
+
+Cinematic Cheats used -> The overlap fallback is a deterministic motion fake: preserve a readable upward escape vector instead of simulating a collision solver inside cognition. Low-tier 5Hz behavior remains cheap; high-tier SDF/VFX scalar output remains available for valid stalking states.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static cost is two float4 finite checks, two float4 selects, and one steering select per row; this prevents false dump work and NaN propagation rather than claiming speed.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; split scoped scans return `NO_PATHFINDING_TOKENS`, `NO_LOCAL_NATIVE_OR_DELEGATE_TOKENS`, and `NO_HOTPATH_UNITY_TOKENS`; public-struct audit reports no unpacked public structs and `STRUCT_AUDIT_DONE`; `git diff --check` reports only CRLF normalization warnings. No `dotnet build` solution rebuild was run in this pass.
+
+## 2026-05-17 - Gaze Fallback Decontamination Pass
+
+What was wrong -> Invalid or zero `PlayerForward` fell back to `awayFromAnchor`, making the dot-product gaze check read as full exposure. Missing sensory data could therefore raise `PlayerGazeBreak` and feed false fear/VFX intent.
+
+What was done -> Changed the safe-normalize fallback for `PlayerForward` to `toAnchor`. Valid forward vectors are unchanged; invalid rows now produce zero gaze exposure after saturation.
+
+Cinematic Cheats used -> The dot-product vision fake remains the intended cheap perception model. This patch keeps the fake honest by making missing data invisible instead of dramatic.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. No extra ALU was added; the existing fallback vector changed.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; split scoped scans return `NO_PATHFINDING_TOKENS`, `NO_LOCAL_NATIVE_OR_DELEGATE_TOKENS`, and `NO_HOTPATH_UNITY_TOKENS`. No `dotnet build` solution rebuild was run in this pass.
+
+## 2026-05-17 - Faulted Row Output Silence Pass
+
+What was wrong -> Faulted active rows still produced steering, cadence, SDF, acoustic lure, gaze, and VFX output. That is not stable enough: a row can be bad enough to dump a black box and still drive downstream movement.
+
+What was done -> Added a branchless `safeToAct` gate. `Fault` still records when active data is bad, but movement/output/VFX intent now require clean AUP and clean persisted state. The job still writes sanitized state back into the DataVault so a bad row can recover next frame.
+
+Cinematic Cheats used -> No new simulation. The patch spends the existing cheap mask/select path to prevent corrupt rows from buying false silt, salt, SSS, silhouette, or particle overkill.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static cost is one boolean mask and reused selects; any downstream saved work is unmeasured.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; split scoped scans return `NO_PATHFINDING_TOKENS`, `NO_LOCAL_NATIVE_OR_DELEGATE_TOKENS`, and `NO_HOTPATH_UNITY_TOKENS`; public-struct audit reports `STRUCT_AUDIT_DONE`; `git diff --check` reports only CRLF normalization warnings. No `dotnet build` solution rebuild was run in this pass.

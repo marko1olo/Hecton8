@@ -5,7 +5,7 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct HectonAabb
     {
         public float3 Min;
@@ -13,7 +13,7 @@ namespace Hecton8.Core
         public float2 Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
     public struct HectonSphere
     {
         public float3 Center;

@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Core;
@@ -6,7 +7,6 @@ using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
-using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -55,13 +55,13 @@ namespace Hecton8.Systems.AI
             public byte BoolValue;
         }
 
-        private const byte SpawnHordeEventType = 1;
-        private const byte EquipmentGlitchEventType = 2;
-        private const byte RareDiscoveryEventType = 3;
-        private const byte WeatherShiftEventType = 4;
-        private const byte MissionTriggerEventType = 5;
-        private const byte PredatorPressureEventType = 6;
-        private const byte ThreatSpikeEventType = 7;
+        private const byte SpawnHordeEventType = DirectorAIMusicSignal.SpawnHordeEventType;
+        private const byte EquipmentGlitchEventType = DirectorAIMusicSignal.EquipmentGlitchEventType;
+        private const byte RareDiscoveryEventType = DirectorAIMusicSignal.RareDiscoveryEventType;
+        private const byte WeatherShiftEventType = DirectorAIMusicSignal.WeatherShiftEventType;
+        private const byte MissionTriggerEventType = DirectorAIMusicSignal.MissionTriggerEventType;
+        private const byte PredatorPressureEventType = DirectorAIMusicSignal.PredatorPressureEventType;
+        private const byte ThreatSpikeEventType = DirectorAIMusicSignal.ThreatSpikeEventType;
         private const int ExpectedPendingEventCapacity = 24;
         private const int ListenerCapacity = 16;
 
@@ -121,36 +121,42 @@ namespace Hecton8.Systems.AI
         /// <summary>Queues a horde request.</summary>
         public static void RaiseSpawnHordeRequested(Vector3 position)
         {
+            PublishMusicSignal(SpawnHordeEventType, position, 0f, false);
             EnqueuePosition(SpawnHordeEventType, position);
         }
 
         /// <summary>Queues an equipment glitch request.</summary>
         public static void RaiseEquipmentGlitchRequested(float intensity)
         {
+            PublishMusicSignal(EquipmentGlitchEventType, default, intensity, false);
             EnqueueValue(EquipmentGlitchEventType, intensity);
         }
 
         /// <summary>Queues a rare-discovery request.</summary>
         public static void RaiseRareDiscoveryRequested(Vector3 position)
         {
+            PublishMusicSignal(RareDiscoveryEventType, position, 0f, false);
             EnqueuePosition(RareDiscoveryEventType, position);
         }
 
         /// <summary>Queues a weather shift request.</summary>
         public static void RaiseWeatherShiftRequested(float intensity)
         {
+            PublishMusicSignal(WeatherShiftEventType, default, intensity, false);
             EnqueueValue(WeatherShiftEventType, intensity);
         }
 
         /// <summary>Queues a mission trigger request.</summary>
         public static void RaiseMissionTriggerRequested(Vector3 position)
         {
+            PublishMusicSignal(MissionTriggerEventType, position, 0f, false);
             EnqueuePosition(MissionTriggerEventType, position);
         }
 
         /// <summary>Queues a predator pressure state change.</summary>
         public static void RaisePredatorPressureChanged(bool pressureEnabled)
         {
+            PublishMusicSignal(PredatorPressureEventType, default, pressureEnabled ? 1f : 0f, pressureEnabled);
             if (_listeners.Count <= 0)
                 return;
 
@@ -164,6 +170,8 @@ namespace Hecton8.Systems.AI
         /// <summary>Queues a predator threat spike.</summary>
         public static void RaiseThreatSpike(Vector3 position, float intensity)
         {
+            float clampedIntensity = math.saturate(intensity);
+            PublishMusicSignal(ThreatSpikeEventType, position, clampedIntensity, false);
             if (_listeners.Count <= 0)
                 return;
 
@@ -171,7 +179,7 @@ namespace Hecton8.Systems.AI
             {
                 EventType = ThreatSpikeEventType,
                 Position = position,
-                Value = math.saturate(intensity)
+                Value = clampedIntensity
             });
         }
 
@@ -229,6 +237,14 @@ namespace Hecton8.Systems.AI
                 EventType = eventType,
                 Value = value
             });
+        }
+
+        private static void PublishMusicSignal(byte eventType, Vector3 position, float value, bool boolValue)
+        {
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<DirectorAIMusicSignal>.EnsureInitialized();
+            DirectorAIMusicSignal signal = new DirectorAIMusicSignal(eventType, position, value, boolValue);
+            SignalBus<DirectorAIMusicSignal>.Push(in signal);
         }
 
         private static bool Enqueue(in DirectorAIEventPayload payload)
@@ -349,7 +365,7 @@ namespace Hecton8.Systems.AI
     /// <summary>
     /// One Burst-built predator sight ray input. Managed brain references stay outside this native lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     internal struct PredatorSightRaycastInput
     {
         public float3 Origin;

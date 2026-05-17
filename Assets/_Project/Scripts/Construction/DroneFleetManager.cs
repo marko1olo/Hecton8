@@ -3311,7 +3311,7 @@ namespace Hecton8.Construction
                 receiveShadows = false,
                 motionVectorMode = MotionVectorGenerationMode.Camera
             };
-            Graphics.RenderMeshIndirect(renderParams, s_DroneRenderMesh, s_DroneArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, s_DroneRenderMesh, s_DroneArgsBuffer, 1, 0);
             s_DroneMatrixUploadBufferIndex ^= 1;
         }
 
@@ -3354,7 +3354,7 @@ namespace Hecton8.Construction
             s_PhantomDroneMaterial.SetBuffer(PhantomMatricesPropertyId, s_PhantomDroneMatrixBuffer);
             s_PhantomDroneMaterial.SetBuffer(PhantomColorsPropertyId, s_PhantomDroneColorBuffer);
 
-            Graphics.DrawMeshInstancedIndirect(
+            UnityEngine.Graphics.DrawMeshInstancedIndirect(
                 s_DroneRenderMesh,
                 0,
                 s_PhantomDroneMaterial,
@@ -3493,7 +3493,7 @@ namespace Hecton8.Construction
                 receiveShadows = false,
                 motionVectorMode = MotionVectorGenerationMode.Camera
             };
-            Graphics.RenderMeshIndirect(renderParams, s_DroneRenderMesh, s_DroneArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, s_DroneRenderMesh, s_DroneArgsBuffer, 1, 0);
             return true;
         }
 

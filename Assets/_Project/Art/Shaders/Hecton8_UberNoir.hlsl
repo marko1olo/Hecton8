@@ -3,6 +3,9 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+#if defined(H8_UBERNOIR_SHADOW_CASTER_PASS)
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+#endif
 #include "Hecton_WaterExtinction.hlsl"
 
 #if defined(H8_UBERNOIR_SCREEN_REFRACTION)
@@ -109,6 +112,11 @@ float _HectonEquipmentRust01;
 float4 _GlobalWakeBuffer[H8_UBER_NOIR_MAX_GLOBAL_WAKES];
 float4 _GlobalWakeVectors[H8_UBER_NOIR_MAX_GLOBAL_WAKES];
 float4 _GlobalWakeParams; // x=slot limit, y=low tier, z=active count, w=stress
+
+#if defined(H8_UBERNOIR_SHADOW_CASTER_PASS)
+float3 _LightDirection;
+float3 _LightPosition;
+#endif
 
 struct H8UberNoirAttributes
 {
@@ -434,15 +442,17 @@ float H8UberNoirBucklingMask(float3 positionWS, half instanceSeed)
 
 float H8UberNoirRadiusMask(float3 positionWS, float4 centerRadius)
 {
-    if (!all(isfinite(positionWS)) || !all(isfinite(centerRadius)))
-        return 0.0;
-
-    float radius = max(centerRadius.w, 0.0);
-    float3 delta = positionWS - centerRadius.xyz;
+    float positionFinite = all(isfinite(positionWS)) ? 1.0 : 0.0;
+    float centerFinite = all(isfinite(centerRadius)) ? 1.0 : 0.0;
+    float valid = positionFinite * centerFinite;
+    float3 safePositionWS = H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0));
+    float4 safeCenterRadius = centerFinite > 0.5 ? centerRadius : float4(safePositionWS, 0.0);
+    float radius = max(safeCenterRadius.w, 0.0);
+    float3 delta = safePositionWS - safeCenterRadius.xyz;
     float radiusSq = max(radius * radius, H8_UBER_NOIR_EPS);
     float active = step(H8_UBER_NOIR_EPS, radius);
     float falloff = 1.0 - saturate(dot(delta, delta) * H8UberNoirSafeRcp(radiusSq));
-    return falloff * active;
+    return falloff * active * valid;
 }
 
 float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, half instanceSeed)
@@ -942,11 +952,12 @@ half3 H8UberNoirApplyNoirFog(half3 color, half fogFactor, half3 extinctionColor,
     half fog = saturate(fogFactor * (half)max(_NoirFogAlpha, _UberNoirDitherParams.y));
     half fogCurve = fog * fog * (0.82h + fog * 0.18h);
     fogCurve = saturate(fogCurve + H8UberNoirFogIgnDither(positionCS, fogCurve));
-    half3 floorColor = max((half3)_NoirFogColor.rgb, (half3)_NoirAbyssFloorColor.rgb);
+    half3 abyssFloor = max((half3)_NoirAbyssFloorColor.rgb, half3(0.0h, 0.0h, 0.0h));
+    half3 floorColor = max((half3)_NoirFogColor.rgb, abyssFloor);
     half extinctionFogBlend = H8WaterExtinctionFogBlend();
-    floorColor = H8WaterExtinctionApplyFogTint(floorColor, extinctionColor, extinctionFogBlend);
+    floorColor = H8WaterExtinctionApplyFogTint(floorColor, extinctionColor, extinctionFogBlend, floorColor, abyssFloor);
     half extinctionMax = max(extinctionColor.r, max(extinctionColor.g, extinctionColor.b));
-    floorColor = lerp(floorColor, (half3)_NoirAbyssFloorColor.rgb, saturate(fogCurve * (1.0h - extinctionMax)));
+    floorColor = lerp(floorColor, abyssFloor, saturate(fogCurve * (1.0h - extinctionMax)));
     return lerp(color, floorColor, fogCurve);
 }
 
@@ -1041,11 +1052,11 @@ H8UberNoirMotionVaryings H8UberNoirMotionVertex(H8UberNoirAttributes input)
     float4x4 currentObjectToRuntimeWorld = H8UberNoirObjectToRuntimeWorld(instanceData.ObjectToWorld);
     float4x4 previousObjectToRuntimeWorld = H8UberNoirObjectToRuntimeWorld(UNITY_PREV_MATRIX_M);
     float3 normalWS = H8UberNoirTransformNormal(normalOS, instanceData.WorldToObject);
+    float3 previousNormalWS = H8UberNoirTransformNormal(normalOS, UNITY_PREV_MATRIX_I_M);
     float3 currentPositionWS = mul(currentObjectToRuntimeWorld, float4(dentedPositionOS, 1.0)).xyz;
     currentPositionWS = H8UberNoirApplyDynamicHullBendingWS(currentPositionWS, normalWS, (half)safeInstanceSeed);
     H8UberNoirApplyGlobalWakeWS(currentPositionWS, normalWS, (half)safeInstanceSeed);
     float3 previousPositionWS = mul(previousObjectToRuntimeWorld, float4(dentedPositionOS, 1.0)).xyz;
-    float3 previousNormalWS = normalWS;
     previousPositionWS = H8UberNoirApplyDynamicHullBendingWS(previousPositionWS, previousNormalWS, (half)safeInstanceSeed);
     H8UberNoirApplyGlobalWakeWS(previousPositionWS, previousNormalWS, (half)safeInstanceSeed);
 
@@ -1064,6 +1075,60 @@ half4 H8UberNoirMotionFragment(H8UberNoirMotionVaryings input) : SV_Target
     half alpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.baseUv).a * (half)_BaseColor.a * saturate(input.instanceFade);
     H8UberNoirClipDitheredTransparency(alpha, input.positionCS);
     return half4(CalcNdcMotionVectorFromCsPositions(input.positionCSNoJitter, input.previousPositionCSNoJitter), 0.0h, 0.0h);
+}
+#endif
+
+#if defined(H8_UBERNOIR_SHADOW_CASTER_PASS)
+struct H8UberNoirShadowVaryings
+{
+    float4 positionCS : SV_POSITION;
+    float2 baseUv : TEXCOORD0;
+    half instanceFade : TEXCOORD1;
+};
+
+H8UberNoirShadowVaryings H8UberNoirShadowVertex(H8UberNoirAttributes input)
+{
+    H8UberNoirShadowVaryings output;
+    UNITY_SETUP_INSTANCE_ID(input);
+
+    uint resolvedInstanceID = input.instanceID;
+#if UNITY_ANY_INSTANCING_ENABLED
+    resolvedInstanceID = unity_InstanceID;
+#endif
+
+    H8UberNoirInstanceData instanceData = H8UberNoirLoadInstance(resolvedInstanceID);
+    float4x4 objectToRuntimeWorld = H8UberNoirObjectToRuntimeWorld(instanceData.ObjectToWorld);
+    float3 positionOS = H8UberNoirFinite3(input.positionOS.xyz, float3(0.0, 0.0, 0.0));
+    float3 normalOS = H8UberNoirSafeNormalize(input.normalOS, float3(0.0, 1.0, 0.0));
+    float instanceSeedSource = instanceData.SeedFadeFlags.x + _UberNoirInstanceParams.w;
+    float safeInstanceSeed = isfinite(instanceSeedSource) ? instanceSeedSource : 0.0;
+    float instanceFadeSource = instanceData.SeedFadeFlags.y;
+    float safeInstanceFade = isfinite(instanceFadeSource) ? saturate(instanceFadeSource) : 1.0;
+
+    float3 dentedPositionOS = H8UberNoirApplyHullDentsOS(positionOS, normalOS);
+    float3 positionWS = mul(objectToRuntimeWorld, float4(dentedPositionOS, 1.0)).xyz;
+    float3 normalWS = H8UberNoirTransformNormal(normalOS, instanceData.WorldToObject);
+    positionWS = H8UberNoirApplyDynamicHullBendingWS(positionWS, normalWS, (half)safeInstanceSeed);
+    H8UberNoirApplyGlobalWakeWS(positionWS, normalWS, (half)safeInstanceSeed);
+
+#if defined(_CASTING_PUNCTUAL_LIGHT_SHADOW)
+    float3 lightDirectionWS = H8UberNoirSafeNormalize(_LightPosition - positionWS, _LightDirection);
+#else
+    float3 lightDirectionWS = _LightDirection;
+#endif
+
+    float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDirectionWS));
+    output.positionCS = ApplyShadowClamping(positionCS);
+    output.baseUv = input.uv * _BaseMap_ST.xy + _BaseMap_ST.zw;
+    output.instanceFade = (half)safeInstanceFade;
+    return output;
+}
+
+half4 H8UberNoirShadowFragment(H8UberNoirShadowVaryings input) : SV_Target
+{
+    half alpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.baseUv).a * (half)_BaseColor.a * saturate(input.instanceFade);
+    H8UberNoirClipDitheredTransparency(alpha, input.positionCS);
+    return half4(0.0h, 0.0h, 0.0h, 0.0h);
 }
 #endif
 

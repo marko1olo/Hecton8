@@ -63,7 +63,7 @@ namespace Hecton8.Gameplay.Mining.Contracts
     /// <summary>
     /// Blittable extraction result. Slot deltas mirror the exact inventory lanes mutated by the job.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 60)]
     public struct DeployableSdfDrillExtractionResult
     {
         public uint NewSeed;
@@ -155,7 +155,7 @@ namespace Hecton8.Gameplay.Mining.Contracts
         [ReadOnly] public NativeArray<ushort> Capacities;
         [ReadOnly] public NativeArray<uint> ItemHashes;
         [ReadOnly] public NativeArray<uint> OreHashes;
-        public NativeArray<DeployableSdfDrillExtractionResult> Result;
+        public NativeSlice<DeployableSdfDrillExtractionResult> Result;
 
         public void Execute()
         {
@@ -164,7 +164,7 @@ namespace Hecton8.Gameplay.Mining.Contracts
             result.NewSeed = seed;
 
             if (!Quantities.IsCreated || !Capacities.IsCreated || !ItemHashes.IsCreated || !OreHashes.IsCreated ||
-                !Result.IsCreated || Result.Length <= 0)
+                Result.Length <= 0)
             {
                 return;
             }

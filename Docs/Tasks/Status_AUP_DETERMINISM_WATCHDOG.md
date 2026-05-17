@@ -36,7 +36,7 @@ Status hygiene: fresh file created for current batch. Previous status file was m
 - [x] 15. HOMEOSTASIS_ADAPTATION: N/A for core math; no runtime adaptation branch added.
 - [x] 16. GRAVITY_VECTOR_FIX: player default gravity now resolves from predicted AUP absolute position toward the AUP center with guarded double3 normalization.
 - [x] 17. GHOST_REPLAY_VALIDATION: KCC body job, state staging, and sync-fence hashing all use millimeter quantization before persisted replay/hash state.
-- [x] 18. FINAL_VALIDATION: `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` passes with 0 warnings and 0 errors on attempt 15.
+- [x] 18. FINAL_VALIDATION: `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` passes with 0 warnings and 0 errors on attempt 15; attempts 16 and 20 also pass with isolated output/intermediate paths to avoid concurrent workspace file locks.
 
 ## Loop 1 Evidence: Tasks 1-5
 
@@ -135,6 +135,33 @@ Status hygiene: fresh file created for current batch. Previous status file was m
 - Compile DOD: attempt 15 passes with 0 warnings and 0 errors. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt15.txt`.
 - Microsecond estimate: 0.0 us direct frame gain; telemetry writes still resolve to a contiguous DataVault buffer and remain cadence/fault gated.
 
+## Loop 13 Evidence: Floating-Origin And KCC Vault Handle Closure
+
+- Floating-origin DOD: `HectonFloatingOrigin` no longer owns drift-probe `NativeArray<double3>`/`NativeArray<byte>` fields or manual sentinel registrations; drift runtime positions, absolute positions, and invalid masks resolve through `GlobalDataVault` handles under `BufferID.FloatingOriginDriftRuntimePositions`, `FloatingOriginDriftAbsolutePositions`, and `FloatingOriginDriftInvalidMask`.
+- KCC DOD: `PlayerKinematicsRuntime` no longer caches runtime scratch/state/telemetry lanes as private `NativeArray<T>` fields; each lane is a `VaultBufferBinding<T>` that stores only a `VaultBufferHandle<T>` and resolves contiguous views for Burst job scheduling.
+- NaN DOD: floating-origin drift meters and radial anchor direction now clamp `rsqrt` through `math.max(...)`; scan returns no unguarded `rsqrt` in the AUP/player/physics/vehicle scope.
+- Scan DOD: broad AUP/player/physics/vehicle scan returns no matches for private native container ownership, private native allocations, non-`Pack = 1` `StructLayout`, `Vector3.Distance`, direct `math.sqrt`, `math.length`, unguarded `math.rsqrt`, `string.Format`, or standard `Update()`.
+- Compile DOD: attempt 16 passes with 0 warnings and 0 errors using isolated `IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP16\` and `OutputPath=Temp\bin\AUP16\` to avoid concurrent editor-build file locks. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt16.txt`.
+- Microsecond estimate: 0.0 us measured direct frame gain; ownership changes preserve the same contiguous DataVault views and remove duplicate persistent view ownership.
+
+## Loop 14 Evidence: Explicit Downcast And Normalize Inquisition
+
+- Downcast DOD: removed the remaining explicit `(float3)` downcasts from the AUP/player/physics scan scope. Runtime `Vector3` values now convert through explicit component construction at the final Unity/PhysX handoff points.
+- NaN DOD: replaced `math.normalizesafe` camera-forward culling paths in `GlobalPhysicsStateManager` with `NormalizeWithRsqrtGuard`, using finite checks and `math.rsqrt(math.max(lengthSq, 0.0001f))`.
+- Compile-wall DOD: attempt 17 exposed an external `AcousticZoneController` `Type` namespace error; the file now uses fully-qualified `global::System.Type` without adding a duplicate `using System`.
+- Scan DOD: broad AUP/player/physics/vehicle scan returns no matches for explicit `(float3)` casts, `math.normalize*`, forbidden distance/sqrt/length/unguarded-rsqrt math, non-`Pack = 1` `StructLayout`, `string.Format`, or standard `Update()`.
+- Compile DOD: attempt 20 passes with 0 warnings and 0 errors using isolated `IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP20\` and `OutputPath=Temp\bin\AUP20\`. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt20.txt`.
+- Microsecond estimate: 0.0 us measured direct frame gain; this is precision/NaN audit closure, not a claimed performance win.
+
+## Loop 15 Evidence: Player Presentation Typed-Lane Purge
+
+- Signal DOD: removed the `HectonPlayerMovement` managed `System.Action` presentation events for footstep, splash, exhale, sprint, wet-lens, transport bailout, and fatal-pressure ramp. Producers now publish packed unmanaged `ISignal` payloads through typed `SignalBus<T>` lanes.
+- Consumer DOD: player footstep audio, surface weather splash VFX, underwater exhale bubbles, internal visor waterline bubbles, camera sprint FOV juice, and fatal-pressure boot UI now consume `ReadOnlySpan<T>` snapshots instead of `+=`/`-=` callbacks.
+- Interface-chaos DOD: submerge state keeps using the existing water-transition path instead of a duplicate public event; wet-lens pulses reuse the existing `VisorDropletSignal` lane.
+- Scan DOD: targeted scan over the migrated files returns no matches for the removed player movement events, `event System.Action`, local `NativeQueue` ownership, or non-`Pack = 1` structs.
+- Compile DOD: attempt 21 passes with 0 warnings and 0 errors using isolated `IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP21\` and `OutputPath=Temp\bin\AUP21\`. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt21.txt`.
+- Microsecond estimate: 0.0 us measured direct frame gain. Low-tier value is removal of managed delegate subscription surfaces and central SignalBus telemetry/load-shed caps; presentation consumers accept one-frame snapshot latency.
+
 ## Loop State
 
 - Iteration 0: prompt extracted; mandates read; codebase scan complete for AUP/KCC station-keeping targets.
@@ -150,3 +177,6 @@ Status hygiene: fresh file created for current batch. Previous status file was m
 - Iteration 10: migrated `PhysicsApplySystem` force command buffers and validation staging to `GlobalDataVault`; force-queue scans are clean, compile is blocked after three attempts by external UI/SystemDispatcher dependency drift.
 - Iteration 11: migrated `GlobalPhysicsStateManager` native culling/impact storage to `GlobalDataVault`, enforced pack/NaN guards, and confirmed attempt 14 is blocked outside AUP by save/data-baker contract drift.
 - Iteration 12: migrated the remaining player cinematic focus blackbox `NativeArray` field to a DataVault handle; broad AUP/player/physics scans are clean and attempt 15 builds green.
+- Iteration 13: migrated floating-origin drift probes and KCC runtime lanes to vault handles, clamped remaining floating-origin `rsqrt`, restored broad scan cleanliness, and attempt 16 builds green through isolated output paths.
+- Iteration 14: removed remaining explicit `(float3)` downcasts and `math.normalize*` calls from the AUP/player/physics scan scope, repaired the external acoustic compile wall with a fully-qualified type reference, and attempt 20 builds green with 0 warnings and 0 errors.
+- Iteration 15: purged `HectonPlayerMovement` managed presentation events into packed typed `SignalBus<T>` lanes, migrated six consumers to `ReadOnlySpan<T>` snapshots, and attempt 21 builds green with 0 warnings and 0 errors.

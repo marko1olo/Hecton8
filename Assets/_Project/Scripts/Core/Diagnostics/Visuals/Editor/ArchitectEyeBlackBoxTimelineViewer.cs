@@ -16,7 +16,7 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
 {
     public sealed class ArchitectEyeBlackBoxTimelineViewer : EditorWindow
     {
-        private const string DefaultDumpPath = "Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin";
+        private const string DefaultDumpPath = ArchitectEyeVisualizer.BlackBoxDumpRelativePath;
         private const string PoiPath = "Data/Balance/POIs.csv";
         private const float SectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersFloat;
         private const int MaxTimelineFrames = 300;
@@ -123,9 +123,9 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
             long cappedLength = math.min((long)maxBytes, math.max(0L, fileLength));
             int readableBytes = (int)cappedLength;
             byte[] bytes = new byte[readableBytes];
+            int read = 0;
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan))
             {
-                int read = 0;
                 while (read < readableBytes)
                 {
                     int chunk = stream.Read(bytes, read, readableBytes - read);
@@ -136,7 +136,7 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
                 }
             }
 
-            int count = readableBytes / stride;
+            int count = read / stride;
             if (count <= 0)
                 return;
 
@@ -252,11 +252,14 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
 
         private static void PublishTeleportPreview(Vector3 point)
         {
+            if (!Application.isPlaying)
+                return;
+
             DebugSignal signal = default;
             signal.Kind = (uint)DebugSignalKind.AupTeleportPreview;
             signal.Position = (float3)point;
             signal.Frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
-            SignalBus<DebugSignal>.Push(in signal);
+            ArchitectEyeDebugBus.Push(in signal);
         }
 
         private static void HandleBreadcrumbClick()

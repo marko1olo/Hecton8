@@ -10,25 +10,20 @@ namespace Hecton8.Core.Content
         public const int MinSlotIndex = 0;
         public const int MaxSlotIndex = 2;
         public const int MaxSavePathChars = 30;
-        public const string SaveSlotDirectory = "Saves/slot_{0}";
-        public const string PlayerDeltaFile = "slot_{0}.sav";
-        public const string PlayerDeltaBackupFile = "slot_{0}.bak";
-        public const string PlayerDeltaTempFile = "slot_{0}.tmp";
         public const string MacroDatabaseDirectory = "H8_MacroDB";
-        public const string MacroDatabaseSectorFile = "sector_{0:X16}.h8page";
         public const string SeedDerivedMarker = "WORLD_SEED_DERIVED";
+        public const string SaveSlotDirectoryPrefix = "Saves/slot_";
+        public const string SlotFilePrefix = "slot_";
+        public const string PlayerDeltaExtension = ".sav";
+        public const string PlayerDeltaBackupExtension = ".bak";
+        public const string PlayerDeltaTempExtension = ".tmp";
+        public const string MacroDatabaseSectorFilePrefix = "sector_";
+        public const string MacroDatabaseSectorFileSuffix = ".h8page";
 
         public const byte SaveContainsPlayerDelta = 1;
         public const byte MacroDbContainsWorldState = 2;
         public const byte SeedDerivedContainsProceduralState = 3;
 
-        private const string SaveSlotDirectoryPrefix = "Saves/slot_";
-        private const string SlotFilePrefix = "slot_";
-        private const string SaveExtension = ".sav";
-        private const string BackupExtension = ".bak";
-        private const string TempExtension = ".tmp";
-        private const string SectorFilePrefix = "sector_";
-        private const string SectorFileSuffix = ".h8page";
         private const string HexDigits = "0123456789ABCDEF";
 
         /// <summary>
@@ -52,7 +47,7 @@ namespace Hecton8.Core.Content
         /// </summary>
         public static bool TryWritePlayerDeltaFile(int slotIndex, Span<char> destination, out int charsWritten)
         {
-            return TryWriteSlotPath(SlotFilePrefix, slotIndex, SaveExtension, destination, out charsWritten);
+            return TryWriteSlotPath(SlotFilePrefix, slotIndex, PlayerDeltaExtension, destination, out charsWritten);
         }
 
         /// <summary>
@@ -60,7 +55,7 @@ namespace Hecton8.Core.Content
         /// </summary>
         public static bool TryWritePlayerDeltaBackupFile(int slotIndex, Span<char> destination, out int charsWritten)
         {
-            return TryWriteSlotPath(SlotFilePrefix, slotIndex, BackupExtension, destination, out charsWritten);
+            return TryWriteSlotPath(SlotFilePrefix, slotIndex, PlayerDeltaBackupExtension, destination, out charsWritten);
         }
 
         /// <summary>
@@ -68,7 +63,7 @@ namespace Hecton8.Core.Content
         /// </summary>
         public static bool TryWritePlayerDeltaTempFile(int slotIndex, Span<char> destination, out int charsWritten)
         {
-            return TryWriteSlotPath(SlotFilePrefix, slotIndex, TempExtension, destination, out charsWritten);
+            return TryWriteSlotPath(SlotFilePrefix, slotIndex, PlayerDeltaTempExtension, destination, out charsWritten);
         }
 
         /// <summary>
@@ -78,7 +73,7 @@ namespace Hecton8.Core.Content
         {
             charsWritten = 0;
             int cursor = 0;
-            if (!WriteLiteral(SectorFilePrefix, destination, ref cursor))
+            if (!WriteLiteral(MacroDatabaseSectorFilePrefix, destination, ref cursor))
                 return false;
 
             for (int shift = 60; shift >= 0; shift -= 4)
@@ -91,7 +86,7 @@ namespace Hecton8.Core.Content
                 cursor++;
             }
 
-            if (!WriteLiteral(SectorFileSuffix, destination, ref cursor))
+            if (!WriteLiteral(MacroDatabaseSectorFileSuffix, destination, ref cursor))
                 return false;
 
             charsWritten = cursor;

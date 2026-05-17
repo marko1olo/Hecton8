@@ -449,6 +449,7 @@ namespace Hecton8.Core.Memory
         InteractionRaycastScheduledCommands = 385,
         InteractionRaycastScheduledHits = 386,
         InteractionRaycastStagingCommands = 387,
+        InteractionSignalQueue = 388,
         PredatorCognitionSpeciesTargetIds = 389,
         PredatorCognitionSpeciesTargetPositions = 390,
         PredatorCognitionSpeciesTargetCount = 391,
@@ -536,7 +537,53 @@ namespace Hecton8.Core.Memory
         EcosystemBiomassIndexEntries = 473,
         FloatingOriginDriftRuntimePositions = 474,
         FloatingOriginDriftAbsolutePositions = 475,
-        FloatingOriginDriftInvalidMask = 476
+        FloatingOriginDriftInvalidMask = 476,
+        ProceduralCrabLegEntities = 477,
+        ProceduralCrabLegFootPositions = 478,
+        ProceduralCrabLegTargetFootPositions = 479,
+        ProceduralCrabLegStepStates = 480,
+        ProceduralCrabLegRaycastCommands = 481,
+        ProceduralCrabLegRaycastHits = 482,
+        ProceduralCrabLegRaycastLegMask = 483,
+        ProceduralCrabBodyPoses = 484,
+        ProceduralCrabSolvedJointMatrices = 485,
+        ProceduralCrabIkTelemetryRing = 486,
+        SubmarineFluidExteriorThermalCenters = 487,
+        SubmarineFluidExteriorThermalTemperatures = 488,
+        SubmarineFluidExteriorThermalLifetimes = 489,
+        SubmarineFluidExteriorThermalHazardIds = 490,
+        SubmarineFluidExteriorBuoyancySampleLocalPoints = 491,
+        SurfaceWeatherJobOutput = 492,
+        SurvivalPhysiologyScalarResult = 493,
+        SargassumGrazingAnchors = 494,
+        SargassumMassiveThreats = 495,
+        SargassumFormationBeacons = 496,
+        SargassumFormationObstacles = 497,
+        BiolumLegacyPredatorPositions = 498,
+        BiolumLegacyPredatorScores = 499,
+        BiolumLegacyRipplePositions = 500,
+        BiolumLegacyRippleDistances = 501,
+        BiolumLegacyTelemetryRing = 502,
+        HazardExposureJobResult = 503,
+        SuitUpgradeResolverResult = 504,
+        DeployableSdfDrillExtractionResult = 505,
+        LightShaftTopContributions = 506,
+        LightShaftHistoryContributions = 507,
+        LightShaftTelemetryRing = 508,
+        DataArchaeologyUnlockedLoreWords = 509,
+        DataArchaeologyNotifications = 510,
+        DataArchaeologyTelemetryRing = 511,
+        PdaFrequencyTargetWave = 512,
+        PdaFrequencyPlayerWave = 513,
+        PdaFrequencyErrorOutput = 514,
+        PdaFrequencyGpuSegments = 515,
+        PdaFrequencyStageTargets = 516,
+        PdaFrequencyTelemetryRing = 517,
+        SurvivalDatabaseStableHashes = 518,
+        SurvivalDatabaseMassKilograms = 519,
+        SurvivalDatabaseVolumeLiters = 520,
+        SurvivalDatabaseEnergyDensityMegajoulesPerKilogram = 521,
+        SurvivalDatabaseBaseDurability = 522
     }
 
     [Flags]
@@ -1029,7 +1076,7 @@ namespace Hecton8.Core.Memory
             if (!_ownerJobKeys.IsCreated || !_ownerJobHandles.TryAdd(ownerKey, handle))
                 FatalMemoryException.ThrowAllocationTrackingFailed();
 
-            _ownerJobKeys.Add(ownerKey);
+            AddOwnerJobKey(ownerKey);
         }
 
         /// <summary>
@@ -1085,6 +1132,24 @@ namespace Hecton8.Core.Memory
                 _transitionCutoffGeneration = NoTransitionCutoffGeneration;
             }
             return verified;
+        }
+
+        /// <summary>
+        /// Cancels a captured transition cutoff when a scene load is abandoned before Unity unloads the old scene.
+        /// </summary>
+        public static void CancelSceneTransitionPurge()
+        {
+            if (!_initialized)
+                return;
+
+            _transitionCutoffGeneration = NoTransitionCutoffGeneration;
+            _transitionBaselineBytes = 0L;
+            _transitionExpectedBytes = 0L;
+            _lastTransitionReleasedCount = 0;
+            _lastTransitionReleasedBytes = 0L;
+            _lastTransitionBaselineVerified = false;
+            _deferSceneUnloadedVerificationToRuntime = false;
+            RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.SceneTransition);
         }
 
         /// <summary>
@@ -1217,6 +1282,25 @@ namespace Hecton8.Core.Memory
 
             UnregisterPointer(pointer, requester);
             UnsafeUtility.Free(pointer, allocator);
+        }
+
+        /// <summary>
+        /// Releases a raw scene-leak pointer reaped by <c>NativeMemorySentinel</c>, retiring H8 tracking first when present.
+        /// </summary>
+        /// <returns>True when the pointer was known to H8 tracking; false when the pointer was sentinel-only.</returns>
+        public static bool ReleaseSentinelReapedRaw(void* pointer, Allocator fallbackAllocator)
+        {
+            if (pointer == null)
+                return false;
+
+            if (_initialized && TryFindRecordIndex((IntPtr)pointer, out int recordIndex))
+            {
+                H8AllocationRecord releasedRecord;
+                return ForceFreeRecordAt(recordIndex, removeOwnerPointer: true, out releasedRecord);
+            }
+
+            UnsafeUtility.Free(pointer, fallbackAllocator);
+            return false;
         }
 
         /// <summary>
@@ -1443,11 +1527,16 @@ namespace Hecton8.Core.Memory
                 return 0;
 
             CompleteOwnerJobs(owner);
+            ushort ownerKey = GetOwnerKey(owner);
             if (!_ownerPointers.IsCreated ||
-                !_ownerPointers.TryGetValue(GetOwnerKey(owner), out NativeList<IntPtr> pointers) ||
-                !pointers.IsCreated ||
-                pointers.Length == 0)
+                !_ownerPointers.TryGetValue(ownerKey, out NativeList<IntPtr> pointers))
             {
+                return 0;
+            }
+
+            if (!pointers.IsCreated || pointers.Length == 0)
+            {
+                RemoveOwnerPointerLane(ownerKey, ref pointers);
                 return 0;
             }
 
@@ -1487,7 +1576,15 @@ namespace Hecton8.Core.Memory
                 pointers.RemoveAtSwapBack(pointerIndex);
             }
 
-            _ownerPointers[GetOwnerKey(owner)] = pointers;
+            if (pointers.Length == 0)
+            {
+                RemoveOwnerPointerLane(ownerKey, ref pointers);
+            }
+            else
+            {
+                _ownerPointers[ownerKey] = pointers;
+            }
+
             if (releasedCount <= 0)
                 return 0;
 
@@ -1575,8 +1672,61 @@ namespace Hecton8.Core.Memory
                     continue;
 
                 _ownerJobKeys.RemoveAtSwapBack(i);
-                return;
             }
+        }
+
+        private static void AddOwnerJobKey(ushort ownerKey)
+        {
+            if (!_ownerJobKeys.IsCreated)
+                return;
+
+            for (int i = 0; i < _ownerJobKeys.Length; i++)
+            {
+                if (_ownerJobKeys[i] == ownerKey)
+                    return;
+            }
+
+            _ownerJobKeys.Add(ownerKey);
+        }
+
+        private static void RemoveOwnerPointerKey(ushort ownerKey)
+        {
+            if (!_ownerPointerKeys.IsCreated)
+                return;
+
+            for (int i = _ownerPointerKeys.Length - 1; i >= 0; i--)
+            {
+                if (_ownerPointerKeys[i] != ownerKey)
+                    continue;
+
+                _ownerPointerKeys.RemoveAtSwapBack(i);
+            }
+        }
+
+        private static void AddOwnerPointerKey(ushort ownerKey)
+        {
+            if (!_ownerPointerKeys.IsCreated)
+                return;
+
+            for (int i = 0; i < _ownerPointerKeys.Length; i++)
+            {
+                if (_ownerPointerKeys[i] == ownerKey)
+                    return;
+            }
+
+            _ownerPointerKeys.Add(ownerKey);
+        }
+
+        private static void RemoveOwnerPointerLane(ushort ownerKey, ref NativeList<IntPtr> pointers)
+        {
+            if (pointers.IsCreated)
+                pointers.Dispose();
+
+            if (_ownerPointers.IsCreated)
+                _ownerPointers.Remove(ownerKey);
+
+            RemoveOwnerPointerKey(ownerKey);
+            pointers = default;
         }
 
         private static void CompleteSceneTransitionOwnerJobs()
@@ -1697,8 +1847,7 @@ namespace Hecton8.Core.Memory
                     return false;
                 }
 
-                if (_ownerPointerKeys.IsCreated)
-                    _ownerPointerKeys.Add(ownerKey);
+                AddOwnerPointerKey(ownerKey);
             }
 
             pointers.Add(pointer);
@@ -1708,10 +1857,11 @@ namespace Hecton8.Core.Memory
 
         private static void RemoveOwnerPointer(SystemID owner, IntPtr pointer)
         {
+            ushort ownerKey = GetOwnerKey(owner);
             if (owner == SystemID.Unknown ||
                 pointer == IntPtr.Zero ||
                 !_ownerPointers.IsCreated ||
-                !_ownerPointers.TryGetValue(GetOwnerKey(owner), out NativeList<IntPtr> pointers) ||
+                !_ownerPointers.TryGetValue(ownerKey, out NativeList<IntPtr> pointers) ||
                 !pointers.IsCreated)
             {
                 return;
@@ -1723,7 +1873,15 @@ namespace Hecton8.Core.Memory
                     continue;
 
                 pointers.RemoveAtSwapBack(i);
-                _ownerPointers[GetOwnerKey(owner)] = pointers;
+                if (pointers.Length == 0)
+                {
+                    RemoveOwnerPointerLane(ownerKey, ref pointers);
+                }
+                else
+                {
+                    _ownerPointers[ownerKey] = pointers;
+                }
+
                 return;
             }
         }

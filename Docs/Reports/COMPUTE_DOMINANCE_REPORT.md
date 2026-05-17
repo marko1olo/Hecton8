@@ -598,8 +598,6 @@ Process microseconds saved: not claimed. There is no profiler for management con
 
 STATUS: AUDIT COMPLETE.
 
----
-
 ## 2026-05-16 Continuation Addendum
 
 Status: AUDIT COMPLETE
@@ -1350,6 +1348,343 @@ Artifact correlation across 76 valid H-Phi JSONs:
 Verdict: local evidence shows moderate positive association between token burn and H-Phi improvement. It does not prove causation. Score improved strongly, but old absolute budget gates for GlobalRegistry surface, NativeArray refs, ManagedFormat surface, JobComplete surface, and PrimaryManagedRuntimeRisk are not all green.
 
 Latest token pulse: 49,767,593,348 SQLite thread tokens at 2026-05-16T23:14+04:00; 3,815,200 tokens in 30 seconds; 127,173.33 tokens/sec.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 Midnight Rebase
+
+This is a SQLite live rebase and static source scan continuation.
+
+| Metric | Value |
+|---|---:|
+| Current SQLite thread tokens | 49,903,844,533 |
+| Delta vs 23:14 sample | +136,251,185 |
+| 45-second live delta | 4,829,772 |
+| Live rate | 107,328.27 tokens/sec |
+| Live minute equivalent | 6,439,696 tokens/min |
+| Estimated current cache-aware total | USD 33,882.25 |
+| Current energy estimate | 2,495.19 MWh |
+| First-party script files | 1,580 |
+| Physical script LOC | 1,015,982 |
+| Meaningful script LOC | 836,249 |
+| Tokens per meaningful LOC | 59,675.82 |
+
+Strict H-Phi old-budget gate attempt timed out after 244 seconds and produced no completed artifact. Composite H-Phi improvement remains proven by the prior current scan. Strict old absolute-budget success is not proven and should not be claimed.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 Recent Rate Audit
+
+This is the latest bounded JSONL rate pass plus a 30-second SQLite live pulse. It is not a billing export.
+
+| Metric | Value |
+|---|---:|
+| JSONL files scanned | 81 |
+| JSONL bytes scanned | 991,426,469 |
+| Usable token usage rows | 85,425 |
+| Parse errors | 0 |
+| Last 1h tokens | 390,025,115 |
+| Last 1h rate | 108,340.31 tokens/sec |
+| Last 1h cache-aware cost | USD 283.72 |
+| Last 6h tokens | 1,088,865,736 |
+| Last 6h cache-aware cost | USD 827.11 |
+| Last 24h tokens | 5,364,091,619 |
+| Last 24h cache-aware cost | USD 4,123.40 |
+| Last 24h no-cache equivalent | USD 27,223.44 |
+| Last 24h cache ratio | 96.211% |
+| Last 24h cache avoided | USD 23,100.04 |
+| Long-context surcharge events over 272K input | 0 |
+
+Peak cadence:
+
+| Peak | Value |
+|---|---:|
+| Token peak second | 2,780,390 at 2026-05-16T16:54:28+04:00 |
+| Token peak minute | 25,820,127 at 2026-05-16T05:44+04:00 |
+| Token peak hour | 452,526,419 at 2026-05-16T16:00+04:00 |
+| Prompt peak minute | 21 user-message rows at 2026-05-16T09:10+04:00 |
+| Prompt peak hour | 99 user-message rows at 2026-05-16T14:00+04:00 |
+
+SQLite live pulse at 2026-05-17T00:52+04:00:
+
+| Metric | Value |
+|---|---:|
+| Current SQLite thread tokens | 50,027,664,742 |
+| 30-second live delta | 2,659,344 |
+| Live rate | 88,644.80 tokens/sec |
+| Live minute equivalent | 5,318,688 tokens/min |
+| Live day equivalent | 7,658,910,720 tokens/day |
+| Live cache-aware rate | USD 4.07/min; USD 244.41/hour; USD 5,865.91/day |
+| Estimated current cache-aware total | USD 33,977.08 |
+| Current energy estimate | 2,501.38 MWh |
+| Meaningful first-party LOC | 836,910 |
+| Tokens per meaningful LOC | 59,776.64 |
+| Tokens per script byte | 1,121.40 |
+
+Verdict: the 24h average is already absurd at 62,084.39 tokens/sec. The 00:52 live pulse is hotter at 88,644.80 tokens/sec. Cache is suppressing cost, not compute consumption.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 Active Thread Burners
+
+20-second SQLite per-thread delta at 2026-05-17T01:39+04:00.
+
+| Metric | Value |
+|---|---:|
+| Active delta threads | 6 |
+| Total delta | 828,509 tokens |
+| Tokens/sec | 41,425.45 |
+| Tokens/min | 2,485,527 |
+| Cache-aware rate | USD 1.90/min; USD 114.22/hour; USD 2,741.25/day |
+
+| Rank | Thread title | Delta tokens |
+|---:|---|---:|
+| 1 | Build hull repair engine | 196,707 |
+| 2 | Standardize SignalBus lanes | 177,518 |
+| 3 | Build STP dynamic resolution adapter | 172,571 |
+| 4 | Build ballast PID | 139,980 |
+| 5 | CORE_TICK_DILATION prompt thread | 112,168 |
+| 6 | Add sensory input to boid shader | 29,565 |
+
+This is burner attribution only. It does not prove waste without joined LOC/H-Phi/value deltas.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 H-Phi Live Rebase 02:17
+
+Latest valid H-Phi artifact: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_CURRENT_20260517_021429.json`.
+
+| Metric | Previous 17:18 | Current 02:17 | Delta |
+|---|---:|---:|---:|
+| Runtime H-Phi risk | 0.004164939 | 0.004847023 | +0.000682084 |
+| Runtime H-Phi narrow | 0.060806118 | 0.070058393 | +0.009252275 |
+| Data sovereignty | 0.114950891 | 0.131794933 | +0.016844042 |
+| Memory alignment | 0.528974740 | 0.531571219 | +0.002596479 |
+| DataVault refs | 948 | 1,108 | +160 |
+| Owner-blocked NativeArray refs | 5,266 | 5,143 | -123 |
+| Managed format surface | 535 | 541 | +6 |
+| Primary managed runtime risk | 148 | 155 | +7 |
+
+Token spend between these two H-Phi artifacts:
+
+| Metric | Value |
+|---|---:|
+| Window duration | 32,288 sec |
+| Total tokens | 2,183,475,652 |
+| Average rate | 67,624.99 tokens/sec |
+| Cache ratio | 96.554% |
+| Cache-aware cost | USD 1,640.89 |
+| No-cache equivalent | USD 11,075.08 |
+| Tokens per +0.001 Runtime H-Phi risk | 3,201,182,922 |
+| USD per +0.001 Runtime H-Phi risk | USD 2,405.70 |
+
+Current live/code rebase:
+
+| Metric | Value |
+|---|---:|
+| Current SQLite tokens | 50,313,194,499 |
+| 30-second live delta | 1,442,468 |
+| Live rate | 48,082.27 tokens/sec |
+| Estimated current cache-aware total | USD 34,195.77 |
+| Current energy estimate | 2,515.66 MWh |
+| Meaningful first-party LOC | 837,628 |
+| Tokens per meaningful LOC | 60,066.28 |
+| Tokens per script byte | 1,127.01 |
+
+Verdict: H-Phi improved again, but marginal improvement is getting more expensive and old absolute budgets still fail on GlobalRegistry surface, NativeArray refs, ManagedFormat surface, JobComplete surface, and PrimaryManagedRuntimeRisk.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 Burn Spike 03:04
+
+20-second SQLite per-thread delta over Hades cwd rows. This is live burn attribution, not value proof.
+
+| Metric | Value |
+|---|---:|
+| Active delta threads | 20 |
+| Total delta | 3,079,626 tokens |
+| Tokens/sec | 153,981.30 |
+| Tokens/min | 9,238,878 |
+| Tokens/day equivalent | 13,303,984,320 |
+| Cache-aware rate | USD 7.08/min; USD 424.56/hour; USD 10,189.43/day |
+
+Top burners:
+
+| Rank | Thread title | Delta tokens |
+|---:|---|---:|
+| 1 | Build loot magnet system | 255,901 |
+| 2 | Build memory visualizer | 232,292 |
+| 3 | Improve bot memory and CRM | 228,341 |
+| 4 | Implement Beer-Lambert shader | 221,344 |
+| 5 | Build marine snow advection | 206,849 |
+| 6 | ARCHITECT_SPATIAL_PROBE prompt thread | 191,593 |
+| 7 | Automate H8Memory lifecycle | 179,491 |
+| 8 | CORE_TICK_DILATION prompt thread | 176,381 |
+| 9 | Manage biota spawning pool | 168,554 |
+| 10 | Build CSV balance pipeline | 155,171 |
+
+SQLite total at 2026-05-17T03:15:49+04:00: 50,453,850,790 tokens. Estimated cache-aware total: USD 34,303.50. Energy: 2,522.69 MWh. Tokens per meaningful LOC: 60,234.20.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 H-Phi Live Rebase 04:12
+
+Latest valid H-Phi artifact: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_CURRENT_20260517_040910.json`.
+
+| Metric | Previous 02:17 | Current 04:12 | Delta |
+|---|---:|---:|---:|
+| Runtime H-Phi risk | 0.004847023 | 0.004858813 | +0.000011790 |
+| Runtime H-Phi narrow | 0.070058393 | 0.070286230 | +0.000227837 |
+| Data sovereignty | 0.131794933 | 0.132223543 | +0.000428610 |
+| Memory alignment | 0.531571219 | 0.531571219 | 0.000000000 |
+| DataVault refs | 1,108 | 1,112 | +4 |
+| Owner-blocked NativeArray refs | 5,143 | 5,123 | -20 |
+| Managed format surface | 541 | 543 | +2 |
+| Primary managed runtime risk | 155 | 157 | +2 |
+
+Token spend between H-Phi artifacts:
+
+| Metric | Value |
+|---|---:|
+| Total tokens | 418,677,551 |
+| Average rate | 60,730.72 tokens/sec |
+| Cache-aware cost | USD 326.77 |
+| No-cache equivalent | USD 2,122.89 |
+| Tokens per +0.001 Runtime H-Phi risk | 35,511,242,663 |
+| USD per +0.001 Runtime H-Phi risk | USD 27,715.63 |
+
+Current live/code rebase:
+
+| Metric | Value |
+|---|---:|
+| Current SQLite tokens | 50,526,148,304 |
+| 30-second live delta | 1,720,961 |
+| Live rate | 57,365.37 tokens/sec |
+| Estimated current cache-aware total | USD 34,358.87 |
+| Current energy estimate | 2,526.31 MWh |
+| Meaningful first-party LOC | 838,223 |
+| Tokens per meaningful LOC | 60,277.69 |
+| Tokens per script byte | 1,131.03 |
+
+Verdict: H-Phi is now near plateau. The latest interval burned 418.7M tokens for a microscopic score lift while managed runtime debt worsened.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 Token Live Rebase 04:46
+
+No fresh H-Phi scan was run here. The latest valid H-Phi scan finished at 04:11:59+04:00 and took 170,338 ms. This pass measures token drift after that artifact.
+
+Post-04:12 JSONL window:
+
+| Metric | Value |
+|---|---:|
+| Window | 2026-05-17T04:11:59+04:00 to 2026-05-17T04:41:52.884+04:00 |
+| Duration | 1,793.884547 sec |
+| JSONL files scanned | 45 |
+| JSONL bytes scanned | 525,293,697 |
+| Usable usage rows | 1,212 |
+| Parse errors | 0 |
+| Total tokens | 190,381,072 |
+| Input tokens | 189,593,548 |
+| Cached input tokens | 176,339,968 |
+| Output tokens | 628,293 |
+| Cache ratio | 93.009% |
+| Cache-aware cost | USD 173.29 |
+| No-cache equivalent | USD 966.82 |
+| Average rate | 106,127.83 tokens/sec |
+| Average minute | 6,367,669.72 tokens/min |
+| Cache-aware rate | USD 5.80/min; USD 347.75/hour |
+| Peak token second | 1,171,462 at 2026-05-17T04:41:08+04:00 |
+| Peak token minute | 17,679,821 at 2026-05-17T04:41+04:00 |
+
+SQLite and code state:
+
+| Metric | Value |
+|---|---:|
+| SQLite total at 04:45:54 | 50,636,429,732 |
+| Delta since 04:09 SQLite total | +110,281,428 |
+| Estimated current cache-aware total | USD 34,443.33 |
+| Energy estimate | 2,531.82 MWh |
+| First-party script files | 1,581 |
+| Physical script LOC | 1,019,121 |
+| Meaningful script LOC | 839,069 |
+| Tokens per meaningful LOC | 60,348.35 |
+| Tokens per physical LOC | 49,686.38 |
+| Tokens per script byte | 1,131.64 |
+
+04:46 active burner pulse:
+
+| Metric | Value |
+|---|---:|
+| Sample duration | 20 sec |
+| Active delta threads | 3 |
+| Total delta | 497,906 |
+| Tokens/sec | 24,895.30 |
+| Tokens/min | 1,493,718 |
+| Day equivalent | 2,150,953,920 |
+| Blended cache-aware rate | USD 1.14/min; USD 68.64/hour; USD 1,647.40/day |
+
+Top active burners:
+
+| Rank | Thread title | Delta tokens |
+|---:|---|---:|
+| 1 | Add modulo time slicer | 193,366 |
+| 2 | AUDIO_IMPORT_RESIDENCY_GUARD prompt thread | 169,754 |
+| 3 | Add indirect flora drawing | 134,786 |
+
+Verdict: the system had a quiet 30-second SQLite pulse at 04:38, then a JSONL-visible 04:41 burst, then a cooler but still active 04:46 per-thread burn. Token movement after 04:12 does not imply H-Phi movement until another static scan is run.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 Live Pulse 05:34
+
+This is a SQLite live pulse only. It does not update H-Phi.
+
+| Metric | Value |
+|---|---:|
+| Start | 2026-05-17T05:34:08+04:00 |
+| End | 2026-05-17T05:34:38+04:00 |
+| Duration | 30.009129 sec |
+| Start tokens | 50,951,931,900 |
+| End tokens | 50,953,580,001 |
+| Delta tokens | 1,648,101 |
+| Tokens/sec | 54,919.99 |
+| Tokens/min | 3,295,199.27 |
+| Tokens/hour | 197,711,956.25 |
+| Tokens/day equivalent | 4,745,086,950.04 |
+| Active delta threads | 5 |
+
+Cost range:
+
+| Metric | Low cache-aware | Hot cache-aware | No-cache scenario |
+|---|---:|---:|---:|
+| Sample cost | USD 1.26 | USD 1.50 | USD 8.37 |
+| USD/min | USD 2.52 | USD 3.00 | USD 16.73 |
+| USD/hour | USD 151.43 | USD 179.96 | USD 1,004.05 |
+| USD/day equivalent | USD 3,634.23 | USD 4,319.11 | USD 24,097.17 |
+
+Current cumulative state:
+
+| Metric | Value |
+|---|---:|
+| Estimated current cache-aware total, low blend | USD 34,686.23 |
+| Estimated current cache-aware total, hot blend | USD 34,732.01 |
+| Current cumulative energy | 2,547.68 MWh |
+| Sample energy | 82.41 kWh |
+| Tokens per meaningful LOC | 60,726.33 |
+| Tokens per script byte | 1,138.73 |
+
+Top active burners:
+
+| Rank | Thread title | Delta tokens |
+|---:|---|---:|
+| 1 | Enforce DataVault statelessness | 460,086 |
+| 2 | CONTENT_AUTHORITY_DICTATOR prompt thread | 404,169 |
+| 3 | Move reports to batch006 | 328,033 |
+| 4 | Build ballast PID | 284,567 |
+| 5 | Improve bot memory and CRM | 171,246 |
+
+Verdict: burn re-accelerated relative to the 04:46 pulse, but remains below the post-04:12 JSONL window average. It is active, concentrated, and still not a waste conviction without code/value deltas.
 
 STATUS: AUDIT COMPLETE.
 

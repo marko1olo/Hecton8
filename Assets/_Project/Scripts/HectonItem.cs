@@ -210,8 +210,7 @@ namespace Hecton8.Items
             if (_isTickRegistered) return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isTickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _isTickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void StopTicking()
@@ -422,21 +421,31 @@ namespace Hecton8.Items
 
         private bool TryResolveSignalAup(Transform interactor, out AbsoluteUniversePosition positionAup)
         {
-            if (interactor != null && IsFiniteVector(interactor.position))
+            if (interactor != null)
             {
-                positionAup = AbsoluteUniversePosition.FromRuntimePosition(interactor.position);
-                return true;
+                Vector3 interactorPosition = interactor.position;
+                if (IsFiniteVector(interactorPosition) &&
+                    TryBuildFiniteSignalAup(interactorPosition, out positionAup))
+                {
+                    return true;
+                }
             }
 
             Vector3 signalPosition = transform.position;
-            if (IsFiniteVector(signalPosition))
+            if (IsFiniteVector(signalPosition) &&
+                TryBuildFiniteSignalAup(signalPosition, out positionAup))
             {
-                positionAup = AbsoluteUniversePosition.FromRuntimePosition(signalPosition);
                 return true;
             }
 
             positionAup = default;
             return false;
+        }
+
+        private static bool TryBuildFiniteSignalAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            return IsFiniteAup(in positionAup);
         }
 
         private static ushort NormalizeQualityMilli(ushort qualityMilli)
@@ -527,14 +536,19 @@ namespace Hecton8.Items
         {
             if (interactor != null)
             {
-                Vector3 scatterDirection = transform.position - interactor.position;
-                scatterDirection.y = 0f;
-                if (scatterDirection.sqrMagnitude > 0.0001f)
-                    return ResolveDominantPlanarDirection(scatterDirection);
+                Vector3 currentPosition = transform.position;
+                Vector3 interactorPosition = interactor.position;
+                if (IsFiniteVector(currentPosition) && IsFiniteVector(interactorPosition))
+                {
+                    Vector3 scatterDirection = currentPosition - interactorPosition;
+                    scatterDirection.y = 0f;
+                    if (scatterDirection.sqrMagnitude > 0.0001f)
+                        return ResolveDominantPlanarDirection(scatterDirection);
+                }
 
                 Vector3 fallbackForward = -interactor.forward;
                 fallbackForward.y = 0f;
-                if (fallbackForward.sqrMagnitude > 0.0001f)
+                if (IsFiniteVector(fallbackForward) && fallbackForward.sqrMagnitude > 0.0001f)
                     return ResolveDominantPlanarDirection(fallbackForward);
             }
 
@@ -556,6 +570,13 @@ namespace Hecton8.Items
             return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
                    !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
                    !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition value)
+        {
+            return !float.IsNaN(value.LocalX) && !float.IsInfinity(value.LocalX) &&
+                   !float.IsNaN(value.LocalY) && !float.IsInfinity(value.LocalY) &&
+                   !float.IsNaN(value.LocalZ) && !float.IsInfinity(value.LocalZ);
         }
 
         // Editor

@@ -292,7 +292,7 @@ namespace Hecton8.World
             positions[2] = HectonSandboxAbyssalShelfMath.BuildAupXZ(12500.0, 0.0, cellSize);
             positions[3] = HectonSandboxAbyssalShelfMath.BuildAupXZ(-15000.0, 0.0, cellSize);
             positions[4] = HectonSandboxAbyssalShelfMath.BuildAupXZ(0.0, 16500.0, cellSize);
-            positions[5] = HectonSandboxAbyssalShelfMath.BuildAupXZ(5000.0, 5000.0, cellSize);
+            positions[5] = HectonSandboxAbyssalShelfMath.BuildAupXZ(cellSize, cellSize, cellSize);
             positions[6] = HectonSandboxAbyssalShelfMath.BuildAupXZ(50000.0, 50000.0, cellSize);
             positions[7] = HectonSandboxAbyssalShelfMath.BuildAupXZ(50125.0, 50375.0, cellSize);
             positions[8] = HectonSandboxAbyssalShelfMath.BuildAupXZ(-50000.0, 50000.0, cellSize);

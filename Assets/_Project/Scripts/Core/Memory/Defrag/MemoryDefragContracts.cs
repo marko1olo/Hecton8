@@ -1,15 +1,7 @@
 namespace Hecton8.Core.Memory.Defrag
 {
     /// <summary>
-    /// Dispatcher phase contract for native memory compaction.
-    /// </summary>
-    public enum MemoryDefragPhase : byte
-    {
-        PreSimulation = 0
-    }
-
-    /// <summary>
-    /// Shared constants for the core memory defrag assembly boundary.
+    /// Shared constants for the core memory defrag assembly boundary. The phase enum lives in the IDataVault contract.
     /// </summary>
     public static class MemoryDefragContracts
     {

@@ -73,11 +73,13 @@ namespace Hecton8.Core.Bridge
             if (vault == null)
                 return false;
 
-            EnsureDefaultBindings();
+            EnsureBindingList();
             int count = bindings.Count;
             if (count <= 0)
             {
                 ClearExistingBuffer(vault);
+                PublishInputUpdateSignal(0);
+                GlobalTelemetryBus.PublishModTelemetry(H8BridgeHashes.InputFacade, H8BridgeHashes.InputFacade, 0f);
                 return true;
             }
 
@@ -95,7 +97,7 @@ namespace Hecton8.Core.Bridge
                 return false;
 
             Thread.MemoryBarrier();
-            UnsafeUtility.MemClear(bufferPtr, buffer.Length * UnsafeUtility.SizeOf<H8InputFacadeBindingEntry>());
+            ClearBuffer(bufferPtr, buffer.Length);
 
             for (int i = 0; i < count; i++)
             {
@@ -108,6 +110,7 @@ namespace Hecton8.Core.Bridge
             }
 
             Thread.MemoryBarrier();
+            PublishInputUpdateSignal(count);
             GlobalTelemetryBus.PublishModTelemetry(H8BridgeHashes.InputFacade, H8BridgeHashes.InputFacade, count);
             return true;
         }
@@ -126,8 +129,36 @@ namespace Hecton8.Core.Bridge
                 return;
 
             Thread.MemoryBarrier();
-            UnsafeUtility.MemClear(bufferPtr, buffer.Length * UnsafeUtility.SizeOf<H8InputFacadeBindingEntry>());
+            ClearBuffer(bufferPtr, buffer.Length);
             Thread.MemoryBarrier();
+        }
+
+        private static unsafe void ClearBuffer(H8InputFacadeBindingEntry* bufferPtr, int length)
+        {
+            if (bufferPtr == null || length <= 0)
+                return;
+
+            long byteCount = (long)length * UnsafeUtility.SizeOf<H8InputFacadeBindingEntry>();
+            UnsafeUtility.MemClear(bufferPtr, byteCount);
+        }
+
+        private static void PublishInputUpdateSignal(int bindingCount)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            DataVaultUpdateSignal signal = new DataVaultUpdateSignal
+            {
+                SourceHash = H8BridgeHashes.InputFacade,
+                FieldHash = H8BridgeHashes.InputFacade,
+                OffsetBytes = -1,
+                OldValue = 0f,
+                NewValue = bindingCount > 0 ? bindingCount : 0f,
+                Frame = unchecked((uint)Time.frameCount),
+                BufferId = (ushort)BufferID.BridgeInputFacadeBindings,
+                Flags = 0
+            };
+            SignalBus<DataVaultUpdateSignal>.Push(in signal);
         }
 
         private void Reset()
@@ -137,7 +168,7 @@ namespace Hecton8.Core.Bridge
 
         private void OnValidate()
         {
-            EnsureDefaultBindings();
+            EnsureBindingList();
             for (int i = 0; i < bindings.Count; i++)
             {
                 Binding binding = bindings[i];
@@ -149,11 +180,21 @@ namespace Hecton8.Core.Bridge
                 SyncToVault(GlobalRegistry.DataVault);
         }
 
-        private void EnsureDefaultBindings()
+        [ContextMenu("Seed Default Input Bindings")]
+        private void SeedDefaultBindings()
+        {
+            EnsureDefaultBindings();
+        }
+
+        private void EnsureBindingList()
         {
             if (bindings == null)
                 bindings = new List<Binding>(32);
+        }
 
+        private void EnsureDefaultBindings()
+        {
+            EnsureBindingList();
             if (bindings.Count > 0)
                 return;
 

@@ -912,7 +912,7 @@ namespace Hecton8.AI
             }
         }
 
-        private void CaptureTentacleInputs(in TentacleVaultBuffers buffers)
+        private void CaptureTentacleInputs(TentacleVaultBuffers buffers)
         {
             int safeTentacleCount = math.clamp(activeTentacleCount, 0, MaxTentacles);
             Transform target = _grabTarget != null ? _grabTarget : defaultGrabTarget;
@@ -1122,7 +1122,7 @@ namespace Hecton8.AI
                 receiveShadows = receiveShadows,
                 motionVectorMode = MotionVectorGenerationMode.Camera
             };
-            Graphics.RenderMeshIndirect(renderParams, tentacleSegmentMesh, _indirectArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, tentacleSegmentMesh, _indirectArgsBuffer, 1, 0);
             _matrixUploadBufferIndex ^= 1;
         }
 

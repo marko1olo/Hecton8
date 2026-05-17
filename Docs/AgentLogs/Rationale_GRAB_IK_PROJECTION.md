@@ -165,3 +165,87 @@ Solution: Re-ran targeted IK Roslyn compilation after the AUP hardening and then
 Rejected Alternatives: Trusting older green build entries was rejected because concurrent agents changed the tree; Unity runtime readiness was not claimed because no Unity Editor console/MCP log is available in this session.
 Scalability potential: Source/build proof covers all Low/Middle/High/Ultra hand code paths now present in the repository; runtime/profiler proof remains a separate Unity gate.
 Hardware Impact: Verification-only; no runtime cost.
+
+Problem: SDF gradient sampling near volume borders could fail when a finite high-tier hand target was still inside the usable encoded SDF but one finite-difference neighbor stepped just outside the grid.
+Solution: Keep strict unclamped sampling for the main density hit, but use clamped edge samples for the gradient and sanitize SDF range, inverse cell size, and finite-difference step values before projection. Clamp AUP millimeter quantization to a finite one-million-meter local envelope before rounding.
+Rejected Alternatives: Falling back to plane projection at every SDF edge was rejected because it throws away valid high-tier contact data; expanding the SDF buffer on the IK side was rejected because geometry ownership belongs to voxel/world systems.
+Scalability potential: Low tier still bypasses VR IK; Middle keeps plane slide; High/Ultra preserve SDF surface slide at cell boundaries without rigidbody hands or synchronous casts.
+Hardware Impact: 0 us added to plane/low-tier paths. High-tier SDF keeps the same seven density fetches; clamping is scalar math only and remains inside the existing 7 us two-hand estimate.
+
+Problem: NaN fallback telemetry required a caller to remember to invoke the generic dump helper, which made the mandated blackbox path too easy to miss during a fault.
+Solution: Add `TryDumpTelemetryOnFault`, a cold helper that scans the two hand output lanes for `OutputFlagNanFallback` and then writes the existing 600-entry chronological telemetry dump.
+Rejected Alternatives: File I/O inside the Burst job was rejected as non-Burst and hostile to Steam Deck/MicroSD; always dumping every frame was rejected as catastrophic I/O pressure and GC risk.
+Scalability potential: Low/Middle/High/Ultra all share the same fixed fault contract; high-end visual overkill cannot hide a poisoned output because the helper keys off the output lane.
+Hardware Impact: 0 us hot-path cost unless the caller explicitly invokes the cold fault path. Fault scan is two lane checks before dump I/O.
+
+Problem: Final validation needed to cover the new SDF edge/fault-dump patch, not the previous green checkpoint.
+Solution: Re-ran the targeted Roslyn probe, the full `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /v:minimal`, the owned forbidden-pattern scan, the BufferID duplicate scan, and `git diff --check` for touched files.
+Rejected Alternatives: Reusing Loop 20 verification was rejected because this loop changed the hand job after that build.
+Scalability potential: Source/build proof remains current for Low/Middle/High/Ultra hand code paths; runtime/profiler proof still requires Unity Editor or device execution.
+Hardware Impact: Verification-only; no runtime cost.
+
+Problem: Rechecking every owned Animation/IK file found `LeviathanTerrainIkJob` still used strict in-volume SDF samples for gradient neighbors, so valid border contacts could lose SDF hugging even though the hand solver had already been hardened.
+Solution: Add finite guards to the leviathan SDF sampler, add clamped trilinear sampling for gradient-neighbor fetches, and sanitize the gradient step before reciprocal math. The main density sample remains strict so out-of-volume positions still fail closed.
+Rejected Alternatives: Expanding or duplicating the SDF volume inside Animation/IK was rejected because voxel/world owns geometry memory; switching leviathan terrain hugging to Unity physics casts was rejected because the owned IK domain must remain Burst math and zero-GC.
+Scalability potential: Low-tier leviathan still skips SDF hugging. Middle terrain-height fallback is unchanged. High/Ultra keep encoded SDF contact at volume borders and can spend visual budget on terrain-hug silhouettes instead of rigidbody truth.
+Hardware Impact: 0 us added outside SDF mode. High-tier SDF keeps one strict density fetch plus six gradient-neighbor fetches; finite/clamp scalar math stays inside the existing terrain-hug IK budget and adds no I/O or allocation.
+
+Problem: The previous final validation predated the leviathan parity patch.
+Solution: Re-ran the targeted IK Roslyn probe, full core build, forbidden-pattern scan, and diff check after the owned-folder terrain patch.
+Rejected Alternatives: Claiming the hand-only Loop 21 build covered this file was rejected because `LeviathanTerrainIkJobs.cs` changed after that evidence.
+Scalability potential: Current source/build evidence covers the whole owned IK folder touched by this pass.
+Hardware Impact: Verification-only; no runtime cost.
+
+Problem: `LeviathanTerrainIkJob` wrote a 300-frame telemetry ring but had no cold dump serializer or invalid-state dump helper, so postmortem recovery still depended on an external caller inventing the file format.
+Solution: Add `LeviathanTerrainIkBlackBox` with a fail-closed `TryDumpTelemetry` serializer and `TryDumpTelemetryOnFault` helper keyed off `TelemetryFlagInvalid`. The serializer validates ABI size, ring capacity, and cursor lane, then writes chronological 96-byte entries to `Docs/AgentLogs/Dump_GRAB_IK_PROJECTION_LeviathanTerrainIk.bin`.
+Rejected Alternatives: Writing file I/O from the Burst job was rejected; widening the hand dump format to multiplex leviathan entries was rejected because it would weaken both parsers; adding another local persistent ring was rejected because the DataVault ring already exists.
+Scalability potential: Low/Middle/High/Ultra all keep the same bounded 300-frame terrain IK evidence path. High/Ultra can add richer terrain-hug presentation without losing crash reconstruction.
+Hardware Impact: 0 us hot-path cost. Dump path is cold only; normal Steam Deck/MicroSD gameplay performs no disk I/O.
+
+Problem: Final validation needed to cover the new leviathan blackbox serializer.
+Solution: Re-ran targeted IK Roslyn probe, full core build, forbidden-pattern scan, and diff check after the serializer patch. A parallel full-build attempt first produced a transient `MSB3026` output-copy warning from concurrent build artifact access, so the full build was re-run sequentially and finished clean.
+Rejected Alternatives: Reporting the parallel warning as a source issue was rejected because the sequential build proves the code path compiles cleanly; hiding the rerun reason was rejected.
+Scalability potential: Current source/build evidence covers the whole owned IK folder touched by this pass.
+Hardware Impact: Verification-only; no runtime cost.
+
+Problem: Hand IK blackbox dumping still wrote `telemetryRing.Length` entries, so an over-allocated DataVault ring could emit stale or unwritten records beyond the mandated 300 complete two-hand frames.
+Solution: Dump exactly `VRPhysicalHandPresenceConstants.TelemetryCapacity` entries, compute the chronological start from `cursor - dumpCount`, and add explicit version plus `VRHandIkTelemetryEntry` byte-size fields to the header.
+Rejected Alternatives: Trusting DataVault to never over-allocate was rejected; dumping the whole capacity was rejected because postmortem tools need the mandated frame window, not spare storage.
+Scalability potential: Low/Middle/High/Ultra keep the same 600-entry hand evidence window even if a future vault policy rounds capacity upward.
+Hardware Impact: 0 us hot-path cost. Cold dump size becomes fixed; normal Steam Deck/MicroSD gameplay still performs no dump I/O.
+
+Problem: Hand telemetry cursor overflow reset to a small cursor value, which could make subsequent dumps look like early-life unwrapped buffers.
+Solution: On negative cursor or `int.MaxValue`, advance to `ringLength + nextIndex`, preserving wrapped-ring semantics for chronological dump ordering.
+Rejected Alternatives: Letting integer overflow wrap naturally was rejected because it corrupts chronology; widening the cursor lane to `long` was rejected because it would change the existing DataVault ABI.
+Scalability potential: The same int cursor lane remains ABI-stable across Quest, Steam Deck, Mac, and PC while still surviving pathological long sessions.
+Hardware Impact: One cold/corruption branch in the existing telemetry write path; normal per-frame cost is unchanged.
+
+Problem: Full compile validation after the hand blackbox patch is blocked outside the owned Animation/IK domain.
+Solution: Kept the owned patch, recorded the wall, and retained targeted IK Roslyn proof plus static scans for the owned folder. The latest visible external wall is `TetherManager` missing `ISlowTickable.SlowTick()`, after an earlier wall in `PlayerKinematicsRuntime`, `HectonMusicDirector`, and `AcousticZoneController`.
+Rejected Alternatives: Editing Tether, Audio, Gameplay, or Signal contracts was rejected as outside the GRAB_IK_PROJECTION domain.
+Scalability potential: The hand/terrain IK dump ABI is isolated from those external compile repairs.
+Hardware Impact: No runtime impact in the hand or terrain IK domain.
+
+Problem: The high-tier hand SDF gradient used clamped neighbor samples but normalized raw density deltas without dividing by the sanitized axis step, biasing surface normals when encoded SDF cells are non-cubic.
+Solution: Multiply each finite-difference axis by `math.rcp(safeStep)` before normalization, preserving the open-space normal convention already used by the hand and leviathan SDF projection paths.
+Rejected Alternatives: Adding more SDF samples was rejected because it increases high-tier contact cost without fixing the anisotropy root cause; falling back to plane projection on non-uniform cells was rejected because it discards valid high-tier geometry.
+Scalability potential: Low and Middle tiers are unchanged. High/Ultra get more stable surface slide and haptic scrape direction on stretched cockpit SDF volumes without any schema or buffer change.
+Hardware Impact: Adds three reciprocal-scaled multiplies inside the existing SDF-only high-tier branch. No new samples, no allocation, no I/O; expected added cost is below 1 us for two hands on i3/MX350/Quest-class silicon.
+
+Problem: Current verification cadence must avoid full project rebuild churn while other agents are editing external domains.
+Solution: Used the targeted IK Roslyn probe, owned forbidden-pattern scan, and `git diff --check` for this loop; did not run full `dotnet build` after the local scalar math patch.
+Rejected Alternatives: Re-running full `Hecton8.Core.csproj` for every micro-polish pass was rejected by current user instruction and because the latest known full wall is outside Animation/IK.
+Scalability potential: Source-level proof still covers the owned Low/Middle/High/Ultra hand and terrain IK files; Unity runtime/device proof remains a separate gate.
+Hardware Impact: Verification-only; no runtime cost.
+
+Problem: `LeviathanTerrainIkJob` sanitized vectors for finite components, but very large finite deltas could still overflow `math.lengthsq` to infinity before `math.rsqrt`, creating `inf * 0` NaN risk in head clamping, distance constraints, and length measurement.
+Solution: Add `math.isfinite(lengthSq/distanceSq)` gates before every remaining leviathan `math.rsqrt` site that consumes a squared distance and before the helper length return.
+Rejected Alternatives: Clamping all segment positions to an arbitrary world radius was rejected because AUP/world ownership belongs outside this IK kernel; switching to double math was rejected because this job is a float Burst presentation/IK solver, not an authority coordinate system.
+Scalability potential: Low/Middle/High/Ultra all keep the same segment counts and math LOD behavior while extreme corrupted inputs fail back to owner-forward constraints instead of poisoning matrices.
+Hardware Impact: Three scalar finite checks in existing branches. No allocation, no samples, no I/O; expected cost is below 1 us even on i3/MX350/Quest-class silicon.
+
+Problem: The NaN vaccination patch changed owned terrain IK scalar guards after the previous compile probe.
+Solution: Re-ran the targeted IK Roslyn probe plus owned forbidden-pattern scan and `git diff --check`; no full project rebuild was run.
+Rejected Alternatives: Claiming the Loop 25 probe covered this terrain patch was rejected because `LeviathanTerrainIkJobs.cs` changed after that evidence.
+Scalability potential: Current source proof covers the owned hand, leviathan terrain, and lower-body IK files touched by this pass.
+Hardware Impact: Verification-only; no runtime cost.

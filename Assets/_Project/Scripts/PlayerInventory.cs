@@ -134,7 +134,7 @@ namespace Hecton8.Inventory
             Harvestable = 1 << 3
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = InventoryBlackBoxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = InventoryBlackBoxEntrySizeBytes)]
         private struct InventoryTelemetryEntry
         {
             [FieldOffset(0)] public uint Frame;
@@ -155,7 +155,7 @@ namespace Hecton8.Inventory
             [FieldOffset(60)] public int DefragTimeMicroseconds;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = SalinityCorrosionBlackBoxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = SalinityCorrosionBlackBoxEntrySizeBytes)]
         private struct SalinityCorrosionTelemetryEntry
         {
             [FieldOffset(0)] public uint Frame;
@@ -430,7 +430,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 12)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 12)]
         public struct CraftReservation
         {
             public int AnchorIndex;
@@ -3999,7 +3999,10 @@ namespace Hecton8.Inventory
                 Revision = unchecked((uint)InventoryVersion),
                 Frame = (uint)Mathf.Max(0, Time.frameCount),
                 OccupiedCells = _grid != null ? (ushort)math.clamp(_grid.OccupiedCells, 0, ushort.MaxValue) : (ushort)0,
-                Flags = 0
+                Flags = 0,
+                TotalMassKg = math.isfinite(TotalMassKg) ? math.max(0f, TotalMassKg) : 0f,
+                CarryCapacityKg = ResolveCarryCapacityKilograms(),
+                Load01 = math.isfinite(CachedInventoryLoad01) ? math.saturate(CachedInventoryLoad01) : 0f
             });
             InventoryChanged?.Invoke();
         }

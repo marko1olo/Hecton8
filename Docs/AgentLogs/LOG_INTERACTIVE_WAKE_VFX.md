@@ -158,3 +158,128 @@ Verification:
 - Compute thread groups remain 64x1x1 or 1x1x1.
 - First controlled build after this patch was `[BLOCKED BY DEPENDENCY]` with 20 external errors in `TetherInstance` and `PhysicsApplySystem`.
 - Latest controlled build after shared-workspace churn is `[BLOCKED BY DEPENDENCY]` with 86 external errors in `DiegeticGyroCompassRuntime`, `GlobalSignals`, and `ArchitectEyeVisualizer`. No error names `Hecton_FluidAdvection.compute`, `CarveDebrisComputeRenderer`, `FloraInteractionManager`, or wake symbols.
+
+## 2026-05-16 - MarineSnow Global Wake Authority
+
+What was wrong:
+- `Hecton_MarineSnow.compute` still consumed a private 8-slot `_DynamicWakes` path while the authoritative wake publisher writes 16-slot `_GlobalWakeBuffer`/`_GlobalWakeVectors` arrays.
+- `HectonMarineSnowRenderer` still carried dynamic wake IDs, buffer binding state, and `TryGetDynamicWakeGpuPayload` coupling, leaving two wake authorities for one visual event.
+
+What was done:
+- Switched MarineSnow compute advection to `_GlobalWakeBuffer`, `_GlobalWakeVectors`, and `_GlobalWakeParams`.
+- Preserved the low-tier 4-slot shader cap and full-tier 16-slot path.
+- Removed MarineSnow dynamic wake property IDs, dynamic wake capacity, dynamic buffer fields, and dynamic wake debug naming.
+- Kept renderer work to scalar global wake param mirroring for compute dispatch/debug telemetry.
+
+Cinematic Cheats used:
+- Low tier keeps cheap dot/radial wake advection and the 4-slot cap.
+- High/Ultra spend the same global wake signal on denser silt and bubble wash; no fluid solver, WindZone, ForceField, or Unity particle force module was added.
+
+Exact Microseconds saved:
+- 0 us/frame low-tier cost change; this is a wiring correction with the same 4-slot cap.
+- 2-6 us/frame estimated high/ultra GPU wake-silt spend is now connected to actual MarineSnow advection across all 16 global slots.
+- Existing estimates remain: 8-22 us/frame low-tier GPU saved versus full 16-slot vortex math, 3-8 us/frame signal duplication avoided, and 10-80 us/frame main-thread wake-decay fence risk avoided.
+
+Verification:
+- `rg -n "_DynamicWakes|_DynamicWakeVectors|_DynamicWakeParams|DynamicWake|TryGetDynamicWakeGpuPayload|ResolveDynamicWakeFlow|RefreshDynamicWakeBinding|_boundDynamicWake|DynamicWakeCapacity" Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs` returned no hits.
+- Wake scans found no shader `distance()`/raw `normalize()`, no managed Unity wind/force path, no legacy wake queue, no wake singleton, and no domain `Update`/`string.Format`/local wake allocation violation.
+- Compute thread groups remain 64x1x1, 8x8x1, or 1x1x1, below the Metal/Quest 1024-thread ceiling.
+- `dotnet build .\Hecton8.Core.csproj -m:1 /nr:false /p:UseSharedCompilation=false -v:minimal -clp:ErrorsOnly` succeeded with 0 warnings and 0 errors in 00:01:47.60.
+
+## 2026-05-17 - Low-Tier Reactive Silt Param Gate and Compile Wall Repair
+
+What was wrong:
+- `CarveDebrisComputeRenderer` still zeroed global wake params for low tier, so the 4-slot low-tier wake fake in `Hecton_FluidAdvection.compute` could be bypassed before dispatch.
+- The shared workspace had fresh compile drift in non-wake contracts after the last green wake validation.
+
+What was done:
+- `ResolveGlobalWakeParamsForCompute` now passes global wake params to compute, clamps low tier to 4 slots, preserves active wake count, and reports low-tier wake activity truthfully.
+- Applied mechanical compile-wall repairs: explicit signal interface wrappers including `SystemDispatcher`, DataVault pass-through, missing `System` import, valid `ushort` zero literal, tether quality tier forwarding, and direct `float3` conversions.
+
+Cinematic Cheats used:
+- Low/MX350 remains a capped mathematical lie: 4 wake slots, dot/radial/triangle turbulence, no private buffers, no Unity WindZone, no ForceField.
+- High/Ultra keep the 16-slot global wake budget for visible wake-silt wash instead of a separate dynamic wake side-channel.
+
+Exact Microseconds saved:
+- Low-tier inactive wake: 0 us/frame cost.
+- Low-tier active wake: spends capped 0-2 us GPU for visible response instead of disabling the effect.
+- High/Ultra: unchanged 2-6 us/frame GPU wake-silt budget.
+- Compile-wall repairs: 0 us/frame.
+
+Verification:
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false -v:minimal -clp:ErrorsOnly` succeeded with 0 warnings and 0 errors, elapsed 00:01:47.88.
+- Dynamic wake remnants scan: no `_DynamicWakes`, `_DynamicWakeVectors`, `_DynamicWakeParams`, `DynamicWake`, or `TryGetDynamicWakeGpuPayload` hits in fluid, MarineSnow, debris, or MarineSnow renderer paths.
+- Shader/domain ban scan: no `distance()`, raw `normalize()`, `string.Format`, `WindZone`, `forceOverLifetime`, `ParticleSystemForceField`, or `ForceField` hits in wake-owned scripts and wake shaders.
+- Thread groups remain under the Metal/Quest 1024 ceiling: 64x1x1, 8x8x1, or 1x1x1.
+
+## 2026-05-17 - ARM64 Packing and Wake-Trail NaN Guard Pass
+
+What was wrong:
+- Wake-adjacent `FloraInteractionManager` structs still used sequential `Pack = 4` despite fixed-size GPU/job payloads.
+- Wake-trail stamp shaders used raw divisions by radius/length after clamping; valid in normal input, still unnecessary in a mobile-sensitive wake path.
+
+What was done:
+- Converted wake-adjacent flora payload structs to `Pack = 1` while preserving their `Size` declarations.
+- Replaced wake-trail `dot(...) / halfLength` and `dot(...) / radius` with `rcp`-based multipliers after clamping in both the stamp shader and simulation compute.
+
+Cinematic Cheats used:
+- Kept the wake-trail texture as the low-tier lie. No fluid solver, no force component, no extra CPU wake owner.
+- High/Ultra keep the existing global wake wash and dense silt response; this pass removes platform risk without changing visual tier policy.
+
+Exact Microseconds saved:
+- Runtime savings: 0 us/frame claimed.
+- ARM64 packing: 0 us/frame, reduces layout risk.
+- Divide guard: 0 us/frame measurable; prevents NaN poison on degenerate stamp inputs.
+
+Verification:
+- Corrected PCRE scan found no non-`Pack = 1` structs in wake data, flora wake bridge, MarineSnow, or carve debris paths.
+- Wake transport scan found no private wake `NativeArray` allocation, no legacy wake queue, no `WakeManager`, no EventBus wake path, and no dynamic wake buffer remnants.
+- Thread groups remain under the Metal/Quest 1024 ceiling.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false -v:minimal -clp:ErrorsOnly` succeeded with 0 warnings and 0 errors, elapsed 00:01:02.10.
+- Final current validation after audit-file update: same build command succeeded with 0 warnings and 0 errors, elapsed 00:00:06.26; `git diff --check` returned only LF-to-CRLF warnings.
+
+## 2026-05-17 - Direct Typed-Lane Wake Publish Pass
+
+What was wrong:
+- The wake bridge used `GlobalSignals.Publish` for `WakeGeneratedSignal` and `FluidImpulseSignal`.
+- The facade forwards into `SignalBus<T>`, but the wake XML requires explicit typed lanes and `ReadOnlySpan<T>` snapshots.
+
+What was done:
+- Replaced wake publish calls with `SignalBus<WakeGeneratedSignal>.Push` and `SignalBus<FluidImpulseSignal>.Push`.
+- Left existing `ReadOnlySpan<WakeGeneratedSignal>` consumption intact.
+
+Cinematic Cheats used:
+- No new physical simulation. The wake system remains a bounded mathematical displacement signal: 4 slots on low tier, 16 slots on full tiers.
+
+Exact Microseconds saved:
+- 0 us/frame claimed. This is contract clarity and duplicate-interface removal, not a performance claim.
+
+Verification:
+- No `dotnet build` was run for this pass per user instruction.
+- Targeted scans found no legacy wake queue, EventBus/delegate wake path, dynamic wake buffers, private wake `NativeArray` allocation, non-`Pack = 1` struct, banned wind/force component, shader `distance()`, raw `normalize()`, or `string.Format` hit.
+- `git diff --check` returned only LF-to-CRLF warnings.
+
+## 2026-05-17 - MarineSnow Dynamic Wake Side-Channel Purge Correction
+
+What was wrong:
+- The previous report was too broad: the live MarineSnow shader/renderer still had `_DynamicWakes`, `_DynamicWakeVectors`, `_DynamicWakeParams`, `RefreshDynamicWakeBinding`, and `TryGetDynamicWakeGpuPayload`.
+- That left a private MarineSnow wake input beside the authoritative global wake arrays.
+
+What was done:
+- `Hecton_MarineSnow.compute` now uses `_GlobalWakeBuffer`, `_GlobalWakeVectors`, and `_GlobalWakeParams` directly, with 16-slot full-tier and 4-slot low-tier caps.
+- `HectonMarineSnowRenderer` no longer binds dynamic wake buffers, no longer asks `HectonFluidEngine` for a dynamic wake payload, and writes `GlobalWakeCount` telemetry from sanitized global params.
+
+Cinematic Cheats used:
+- Low/MX350 remains the 4-slot radial lie.
+- High/Ultra spend the existing global wake budget on dense MarineSnow turbulence instead of duplicate wake ownership.
+
+Exact Microseconds saved:
+- Low tier: 0 us/frame cost change.
+- High/Ultra: restores the already budgeted 2-6 us/frame GPU wake-silt spend to the authoritative global wake source.
+- Validation pass: no build timing reported because no build was run by request.
+
+Verification:
+- `rg` found no `_DynamicWakes`, `_DynamicWakeVectors`, `_DynamicWakeParams`, `DynamicWake`, `TryGetDynamicWakeGpuPayload`, `ResolveDynamicWakeFlow`, `RefreshDynamicWakeBinding`, `_boundDynamicWake`, or `SanitizeDynamicWakeParams` hits in MarineSnow shader/renderer.
+- Global wake scans found `_GlobalWakeBuffer`, `_GlobalWakeVectors`, `_GlobalWakeParams`, `ResolveGlobalWakeFlow`, `RefreshGlobalWakeBinding`, `SanitizeGlobalWakeParams`, and `GlobalWakeCount`.
+- Shader/domain ban scans found no `distance()`, raw `normalize()`, `string.Format`, `WindZone`, `forceOverLifetime`, `ParticleSystemForceField`, or `ForceField` hits in the checked wake paths.
+- `git diff --check` returned only LF-to-CRLF warnings.

@@ -323,3 +323,183 @@ Rejected Alternatives: Direct final-file streaming was rejected because partial 
 Scalability potential: Low tier and Steam Deck get bounded cold-path I/O hygiene without touching the stalking kernel. Middle/High/Ultra keep the same full telemetry payload and can still diagnose AUP shift fences, SDF contour decisions, and visual-overkill intent after a fault.
 
 Hardware Impact: Measured savings: 0 us. Hot Burst cost is unchanged. Cold fault path adds temp-file promotion and cleanup logic; the benefit is artifact integrity, not frame-time reduction.
+
+## Decision 28: Crash Handlers Need A Direct Handle Dump
+
+Problem: Handle-first owners could create jobs, record heartbeats, and dump on fault through generation-checked handles, but a true crash handler still needed raw `AlphaLeviathanVaultBuffers` to dump the full telemetry ring unconditionally. That encourages long-lived raw `NativeArray` caching exactly where the DataVault handle pattern was supposed to remove it.
+
+Solution: Added `TryDumpBlackBox(IDataVault, ref AlphaLeviathanVaultHandles, string)`. The crash path resolves current views from handles, then uses the same temp-file atomic dump writer as the raw-view overload. DOD pattern used: handle-first crash dump, no new native owner, no hot-path allocation.
+
+Rejected Alternatives: Requiring crash owners to cache raw views was rejected because stale aliases are part of the H-Phi problem. Depending only on `TryDumpBlackBoxOnFrameFault(...)` was rejected because a crash can occur before the job writes a current-frame fault flag. Adding a second telemetry buffer was rejected because the existing 300-frame ring already satisfies the black-box requirement.
+
+Scalability potential: Low tier and Steam Deck keep a cold direct dump route without extra per-frame work. Middle/High/Ultra retain the same full telemetry evidence for AUP shifts, SDF contouring, and VFX intent after faults or hard crashes.
+
+Hardware Impact: Measured savings: 0 us. Hot Burst cost is unchanged. The new overload performs cold handle resolution only during crash dumping.
+
+## Decision 29: Persisted State Must Be Sanitized Before Reuse
+
+Problem: The job sanitized most output paths, but persisted DataVault state could still contain non-finite `AgressionLevel01`, `PhaseStartSeconds`, `Forward`, or `PreviousSteeringDirection` from stale rows or producer corruption. Reusing that state before sanitation risks propagating NaN into steering, hashes, phase timing, or later consumers.
+
+Solution: Sanitize persisted aggression and phase timestamps before use, normalize persisted direction vectors through finite guards, write the sanitized values back when the row is dormant, and flag active rows as `Fault` when persisted state corruption is detected. `PhaseStartSeconds` now updates branchlessly when the phase changes, using sanitized `CurrentTimeSeconds`.
+
+Rejected Alternatives: Trusting producer-side hygiene was rejected because the black-box mandate assumes local crash evidence and local NaN containment. Clearing the entire state row on fault was rejected because owner lifecycle seeding owns AUP truth. Adding managed validation outside the job was rejected because the poison is consumed inside the Burst kernel.
+
+Scalability potential: Low/Middle/High/Ultra all get the same finite state contract. Low tier avoids stale NaN vectors leaking into the Dear Lie interpolation; High/Ultra avoid non-finite presentation intent when SDF and VFX scalar channels are active.
+
+Hardware Impact: Measured savings: 0 us. Static cost is several finite checks and two safe normalizations per row; the benefit is crash containment, not a claimed speed gain.
+
+## Decision 30: Telemetry Ring Writes Need A Narrow Parallel-For Waiver
+
+Problem: `LeviathanStalkJob` writes state and steering outputs at the dense `index`, but telemetry writes land at `(frame % 300) * 64 + slot`. Unity's parallel-for safety model can reject non-index writes in editor/development builds unless the array field declares that the write pattern is intentional.
+
+Solution: Added `[NativeDisableParallelForRestriction]` only to `TelemetryRing`. The schedule-length guard and fixed 64-slot frame layout preserve unique writes per worker. State and steering arrays keep default restrictions because they write directly at `index`.
+
+Rejected Alternatives: Writing telemetry at `index` was rejected because it would destroy the 300-frame ring layout. Disabling restrictions on every array was rejected because it hides real alias bugs. Moving telemetry to a second serial job was rejected because it adds a scheduling dependency for one deterministic row write per slot.
+
+Scalability potential: Low tier keeps the same fixed 300-frame ring without extra job scheduling. High/Ultra retain dense historical evidence for SDF contour and VFX intent while Unity safety checks stay explicit.
+
+Hardware Impact: Measured savings: 0 us. Attribute-only runtime contract; no hot-path math was added.
+
+## Decision 31: Allocation Lock Is Not A Read Lock
+
+Problem: `AlphaLeviathanCognitionVault.TryResolve(...)` and `TryResolveHandles(...)` returned false whenever `IDataVault.IsAllocationLocked` was true. That is correct for missing or undersized buffers, but it also prevents legitimate post-init owners from recovering already allocated DataVault rows after the memory sentinel locks allocation.
+
+Solution: Keep allocation through `GetBuffer(...)`/`GetBufferHandle(...)` when the vault is unlocked. Under allocation lock, resolve only pre-existing lanes through `TryGetBuffer(...)` or `TryGetBufferHandle(...)`, then verify that state/sensory/steering buffers satisfy the requested slot count and the telemetry ring still has full 300x64 capacity. DOD pattern used: no post-lock allocation, no long-lived private NativeArrays, capacity fail-fast.
+
+Rejected Alternatives: Keeping the hard lock failure was rejected because it forces owners to cache raw views before the lock. Allocating fallback arrays was rejected by DataVault sovereignty. Returning undersized existing buffers was rejected because the branchless job relies on owner-side schedule/capacity proof.
+
+Scalability potential: Low tier can recover handle/view access after boot without private buffers. Middle/High/Ultra keep the same telemetry and visual-intent capacity after allocation is locked; high-tier SDF and VFX channels do not need new native owners.
+
+Hardware Impact: Measured savings: 0 us. Hot Burst cost is unchanged. The new work is cold resolve-path metadata checks only.
+
+## Decision 32: Snap-Fence Telemetry Must Cover The Full Fence Window
+
+Problem: The job handled AUP shift changes by resetting steering on the first changed `ObservedShiftFrameId`, but the public `ShiftFenceActive` runtime flag was unused. That means the black box could prove the reset frame, but not every frame inside the mandated 300-frame AUP snap-fence window.
+
+Solution: Consume `AlphaLeviathanStalkRuntimeFlags.ShiftFenceActive` and OR it into the telemetry `ShiftFenceReset` flag while keeping steering reset controlled only by `shiftChanged`. The dump already writes `Reserved1 = ObservedShiftFrameId`, so the fence ID and fence-active marker now travel together without expanding the 64-byte telemetry row.
+
+Rejected Alternatives: Adding a new telemetry flag was rejected because the byte flag field is full and changing the row size would risk Quest/Android binary stride drift. Resetting steering every fence frame was rejected because it would produce visible motion stalls. Leaving the flag unused was rejected because it makes the AUP mandate weaker than the contract advertises.
+
+Scalability potential: Low tier gets cheap hash/fence evidence every 30-frame drift probe window. Middle/High/Ultra retain full SDF/VFX debugging context while the snap fence is active.
+
+Hardware Impact: Measured savings: 0 us. Static cost is one runtime-flag bit test and one OR/select per row; no profiler data captured.
+
+## Decision 33: NaN Guards Require Strict Burst Float Semantics
+
+Problem: `LeviathanStalkJob` used `FloatMode.Fast` while relying on finite checks, NaN containment, and fault telemetry. The installed Burst package documents `Fast` as permitting assumptions that results and arguments contain no NaNs or infinities. That weakens the exact failure mode this AI kernel must detect and report.
+
+Solution: Changed the job attribute to `BurstCompile(FloatMode = FloatMode.Strict, FloatPrecision = FloatPrecision.Standard)`. The installed enum confirms `Strict` is available and that `Default` maps to `Strict`; explicit `Strict` was chosen so the safety contract is visible at the callsite.
+
+Rejected Alternatives: Keeping `FloatMode.Fast` was rejected because it contradicts the NaN vaccination and black-box mandate. Using `FloatMode.Default` was rejected because the attribute would hide the intent even though it currently maps to Strict. Using `FloatMode.Deterministic` was rejected because the first requirement here is strict finite/NaN behavior, while the job already keeps cross-frame state in the DataVault and AUP rows.
+
+Scalability potential: Low tier can absorb the tiny strict-mode cost through its 5Hz cadence and low-tier radial fake. Middle/High/Ultra still get SDF contouring and visual-overkill scalar outputs, but with fault telemetry that the compiler is not allowed to optimize under no-NaN assumptions.
+
+Hardware Impact: Measured savings: 0 us. Expected performance cost was not profiled; static workload remains capped at 64 slots and the safety gain is preventing undiagnosed NaN/fault loss on Quest/Android/Steam Deck.
+
+## Decision 34: Black-Box Cursor Scan Must Survive UInt Wrap
+
+Problem: The dump helper resolved the latest telemetry cursor by selecting the largest raw `uint Frame`. That fails immediately after frame counter wrap because old pre-wrap rows have larger numeric values than new post-wrap rows. It also allowed cleared default rows with `Frame == 0` to influence cursor fallback before any real telemetry was written.
+
+Solution: `ResolveTelemetryCursor(...)` now ignores rows whose `StateHash` is zero and compares frame age with unsigned wrap semantics through `unchecked(candidateFrame - currentFrame) < 0x80000000u`. Real job rows always carry a nonzero hash, so default-cleared rows stay invisible while post-wrap frames can still become the latest cursor.
+
+Rejected Alternatives: Relying only on `TelemetryCursor[0]` was rejected because crash dumps must still be useful if the owner missed the heartbeat call. Keeping raw `>=` comparison was rejected because long-running builds and soak tests can cross `uint.MaxValue`. Expanding the telemetry row with a 64-bit frame was rejected because the 64-byte dump ABI and Quest stride were already locked.
+
+Scalability potential: Low tier and Steam Deck get the same fixed-size dump with safer cursor metadata and no hot-path cost. Middle/High/Ultra retain full SDF/VFX debugging evidence after extremely long sessions or automated soak runs.
+
+Hardware Impact: Measured savings: 0 us. Hot Burst path is unchanged; static cost is one extra cold-path hash check and wrap-aware subtraction per dumped telemetry row.
+
+## Decision 35: Aggression Integration Must Ignore Hitch-Sized Delta Spikes
+
+Problem: Aggression integration used sanitized but unbounded `DeltaTime`. A pause, hitch, or stale producer row could push aggression directly to the charge threshold in one job tick, turning a scheduling fault into a behavior decision.
+
+Solution: Added `AlphaLeviathanStalkConstants.MaxDeltaTimeSeconds = 0.25f` and clamp the job's aggression integration delta before multiplying by the noise gain. The value preserves the required 5Hz low-tier cadence while bounding pathological spikes.
+
+Rejected Alternatives: Trusting producer-side delta was rejected because this job owns the state transition. Clamping below 0.2s was rejected because it would undercut the explicit low-tier cadence. Letting elapsed time catch up after a stall was rejected because predictability is more valuable than realism for predator stalking.
+
+Scalability potential: Low tier keeps the intended 5Hz Dear Lie behavior without accidental instant charge after a stall. Middle/High/Ultra retain high-tier SDF and VFX outputs but do not let a renderer or scheduling hitch rewrite AI intent.
+
+Hardware Impact: Measured savings: 0 us. Static hot-path cost is one `math.min` per row; the gain is behavior stability on i3/MX350, Quest, and Steam Deck under frame delivery spikes.
+
+## Decision 36: Acoustic Lure Inputs Must Be Bounded Before Phase Selection
+
+Problem: The sonar lure gate compared raw `SonarPingAgeSeconds` and `SonarPingIntensity01`. NaN comparisons happened to fail, but negative ages could keep a lure active and unbounded intensity was still producer-trusted sensory data.
+
+Solution: Sanitize sonar age with finite select plus non-negative clamp, and saturate sonar intensity before computing `sonarActive`. The acoustic lure still holds for 10 seconds, but only from bounded sensory values.
+
+Rejected Alternatives: Relying on C# comparison behavior for NaN was rejected because it is not an explicit data contract. Clamping age after `sonarActive` was rejected because the state gate must consume validated values. Adding a new signal was rejected because the existing sensory row already carries the acoustic lane output.
+
+Scalability potential: Low tier avoids stale negative-age pings pulling the predator across the fog ring. Middle/High/Ultra keep the same acoustic lure behavior and VFX intent, with bounded input data for SDF contouring around ping anchors.
+
+Hardware Impact: Measured savings: 0 us. Static hot-path cost is two scalar sanitization paths per row; the benefit is predictable lure duration on weak and mobile hardware.
+
+## Decision 37: Global Build Blockers Stay Outside AI/Cognition
+
+Problem: The final explicit solution build still fails, but the current failures are outside the assigned AI/Cognition domain: missing Unity-generated editor assets files and missing RealtimeCSG source files. The owned AI/Cognition assembly compiles cleanly with the Unity Bee response file.
+
+Solution: Mark final solution validation as blocked by dependency while preserving the clean owned assembly proof and static gates. No RealtimeCSG, editor-project, Gameplay, Tether, or unrelated asset surgery was performed from this domain.
+
+Rejected Alternatives: Editing generated Unity project assets was rejected because those files belong to Unity/restore flow. Adding placeholder RealtimeCSG sources was rejected because it would fake package integrity. Expanding outside AI/Cognition to chase unrelated errors was rejected by the domain boundary and 3-strike protocol.
+
+Scalability potential: Low/Middle/High/Ultra AI behavior is still represented by the compiled AI/Cognition assembly. Global packaging/build repair must happen in the owning domains before full-player validation can be claimed.
+
+Hardware Impact: Measured savings: 0 us. This is build triage, not runtime optimization.
+
+## Decision 38: Phase Time Cannot Be Negative DataVault State
+
+Problem: `PhaseStartSeconds` and `CurrentTimeSeconds` were finite-checked but could remain negative. A negative phase timestamp in the DataVault makes phase-age diagnostics and later owner integration ambiguous.
+
+Solution: Clamp sanitized persisted phase start and current time to non-negative inside `LeviathanStalkJob` before reuse and writeback. The patch stays branchless and does not change phase byte encoding.
+
+Rejected Alternatives: Trusting producer time was rejected because the job owns the phase state row. Resetting the entire state row on negative time was rejected because AUP and steering history remain useful. Changing Fauna phase encoding in the same pass was rejected because it is a cross-domain wire-value decision.
+
+Scalability potential: Low tier keeps stable 5Hz phase timing after bad producer frames. Middle/High/Ultra retain SDF/VFX intent with cleaner black-box phase-time evidence.
+
+Hardware Impact: Measured savings: 0 us. Static cost is two `math.max` operations per row; benefit is deterministic state recovery after bad time input.
+
+## Decision 39: Fog Distance Must Not Create Unbounded Target Offsets
+
+Problem: `FogDistanceMeters` was finite-checked and positive, but unbounded. A corrupted or extreme producer row could generate a huge fog ring and huge `TargetRuntimeOffsetMeters`, pushing downstream movement or presentation consumers into nonsense even though the value was technically finite.
+
+Solution: Added `MaxFogDistanceMeters = 2048f` and clamp sanitized fog distance before ring-distance calculation. Normal fog values, including the existing 80m fallback used by Fauna-side logic, are untouched.
+
+Rejected Alternatives: Trusting producer fog distance was rejected because this job writes steering outputs consumed by other systems. A low mobile-oriented cap was rejected because high-end fog volumes should still be able to stage large silhouettes. Clamping target offset after the fact was rejected because the ring distance itself is telemetry and must be bounded too.
+
+Scalability potential: Low tier avoids one corrupted sensory row dragging the predator into large offset updates. Middle/High/Ultra keep long-range cinematic fog behavior up to a high ceiling while preserving VFX scalars and SDF contouring.
+
+Hardware Impact: Measured savings: 0 us. Static cost is one `math.min` per row; benefit is bounded downstream work and stable telemetry under bad fog input.
+
+## Decision 40: A Valid Overlap Is Not A Black-Box Fault
+
+Problem: The job used the same `validDelta` predicate for safe direction math and fault classification. That made finite zero-distance overlap between the Leviathan and anchor raise `Fault`, even though the assignment explicitly requires the same-position case to fall back to `Up` instead of producing NaN.
+
+Solution: Split delta handling into finite and separated predicates. Finite overlap now reports zero distance, selects the guarded `Up` direction for steering, and avoids the fault flag. Non-finite deltas and non-finite AUP local offsets still raise `Fault` for active rows. Selected anchor and persisted Leviathan AUP locals are sanitized before absolute double conversion and before target-anchor writeback.
+
+Rejected Alternatives: Keeping overlap as `Fault` was rejected because it turns a designed edge case into crash telemetry. Trusting upstream AUP producers was rejected because the DataVault state row can persist poisoned target anchors. Clearing the whole state row was rejected because grid identity and phase/aggression history remain useful for black-box triage.
+
+Scalability potential: Low tier gets a stable 5Hz overlap fallback instead of a fault dump loop. Middle/High/Ultra keep SDF contouring and VFX scalars active for real stalking states while bad AUP locals are fenced before presentation consumers see them.
+
+Hardware Impact: Measured savings: 0 us. Static cost is two float4 finite checks, two float4 selects, and one steering select per row; the gain is preventing false dump work and NaN propagation on Quest/Android, Steam Deck, and low-end PC.
+
+## Decision 41: Missing Gaze Data Must Not Manufacture Exposure
+
+Problem: `PlayerForward` used `awayFromAnchor` as its fallback. When the producer row contained a zero or non-finite player forward vector, the dot product became one and raised `PlayerGazeBreak`, falsely telling downstream telemetry and VFX that the player was staring at the predator.
+
+Solution: Changed the fallback to `toAnchor`, the non-exposure direction for the gaze dot. Valid `PlayerForward` rows still produce the same dot-product vision fake; invalid rows now fail quiet instead of generating fear telemetry.
+
+Rejected Alternatives: Keeping the old fallback was rejected because it creates false-positive psychological pressure from missing data. Adding a new validity flag to the sensory row was rejected because it would expand the packed ABI for a case the existing finite guard can resolve. Branching around gaze scoring was rejected because the Burst job has an explicit branchless polish mandate.
+
+Scalability potential: Low tier avoids 5Hz false flicker/exposure when player-forward input is missing. Middle/High/Ultra still get the cheap dot-product gaze break and can spend visual budget on real exposure events instead of invalid sensory rows.
+
+Hardware Impact: Measured savings: 0 us. No extra math was added; the patch swaps the fallback vector used by the existing safe normalize path.
+
+## Decision 42: Faulted Active Rows Must Be Output-Silent
+
+Problem: Active rows with invalid AUP locals or poisoned persisted state set `Fault`, but they still emitted desired direction, target offset, cadence, SDF, acoustic lure, gaze, and VFX scalars. That lets crash telemetry coexist with movement/presentation intent derived from sanitized-but-untrusted data.
+
+Solution: Added a branchless `safeToAct = eligibleToAct & !faultedInput` predicate. `Fault` still uses `eligibleToAct` so the black box records the bad active row, but all movement, cadence, sensory intent, SDF contour, and visual-overkill channels now require `safeToAct`. Sanitized state still writes back to the DataVault, so the row can recover on the next frame.
+
+Rejected Alternatives: Continuing to output motion while faulted was rejected because downstream systems may not re-check `Fault`. Clearing the row completely was rejected because it would destroy slot identity and phase history useful for the black box. Moving the guard to consumers was rejected because this job owns the authoritative output row.
+
+Scalability potential: Low tier avoids false 5Hz interpolation and particle work from corrupt rows. Middle/High/Ultra retain visual overkill for clean rows only; bad data buys black-box evidence, not extra rendering.
+
+Hardware Impact: Measured savings: 0 us. Static cost is one combined boolean mask and existing `math.select` gates; possible saved downstream work is not measured and not claimed.

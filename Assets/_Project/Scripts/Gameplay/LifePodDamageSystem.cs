@@ -296,7 +296,7 @@ namespace Hecton8.Gameplay
             if (activeCount <= 0)
                 return;
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 sparkQuadMesh,
                 0,
                 sparkMaterial,

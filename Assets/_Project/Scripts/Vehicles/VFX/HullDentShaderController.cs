@@ -401,7 +401,7 @@ namespace Hecton8.Vehicles.VFX
             if (vault == null)
                 return false;
 
-            if (!EnsureHullDentsHandle(vault) || !vault.TryLockBuffer(BufferID.HullDents))
+            if (!EnsureHullDentsHandle(vault) || !vault.TryLockBuffer(BufferID.HullDents, SystemID.Vfx))
                 return false;
 
             try
@@ -440,7 +440,7 @@ namespace Hecton8.Vehicles.VFX
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.HullDents);
+                vault.TryUnlockBuffer(BufferID.HullDents, SystemID.Vfx);
             }
         }
 
@@ -450,7 +450,7 @@ namespace Hecton8.Vehicles.VFX
             if (vault == null)
                 return false;
 
-            if (!EnsureHullDentsHandle(vault) || !vault.TryLockBuffer(BufferID.HullDents))
+            if (!EnsureHullDentsHandle(vault) || !vault.TryLockBuffer(BufferID.HullDents, SystemID.Vfx))
                 return false;
 
             try
@@ -472,7 +472,7 @@ namespace Hecton8.Vehicles.VFX
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.HullDents);
+                vault.TryUnlockBuffer(BufferID.HullDents, SystemID.Vfx);
             }
         }
 
@@ -485,7 +485,7 @@ namespace Hecton8.Vehicles.VFX
             if (vault == null)
                 return false;
 
-            if (!EnsureHullDentsHandle(vault) || !vault.TryLockBuffer(BufferID.HullDents))
+            if (!EnsureHullDentsHandle(vault) || !vault.TryLockBuffer(BufferID.HullDents, SystemID.Vfx))
                 return false;
 
             try
@@ -501,7 +501,7 @@ namespace Hecton8.Vehicles.VFX
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.HullDents);
+                vault.TryUnlockBuffer(BufferID.HullDents, SystemID.Vfx);
             }
         }
 

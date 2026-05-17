@@ -113,6 +113,34 @@ Shader "Hecton8/Rendering/UberNoir"
             #include "Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl"
             ENDHLSL
         }
+
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags { "LightMode" = "ShadowCaster" }
+
+            Cull Back
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+            AlphaToMask On
+
+            HLSLPROGRAM
+            #pragma target 4.5
+            #pragma vertex H8UberNoirShadowVertex
+            #pragma fragment H8UberNoirShadowFragment
+
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling renderinglayer
+            #pragma multi_compile _ DOTS_INSTANCING_ON
+            #pragma multi_compile _ _MATH_LOD_LOW
+            #pragma multi_compile _ H8_UBERNOIR_USE_INSTANCE_BUFFER
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #define H8_UBERNOIR_SHADOW_CASTER_PASS 1
+
+            #include "Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl"
+            ENDHLSL
+        }
     }
 
     FallBack Off

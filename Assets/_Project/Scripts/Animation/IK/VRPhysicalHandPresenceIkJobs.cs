@@ -311,18 +311,22 @@ namespace Hecton8.Animation.IK
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(0x4752494Bu);
-                    writer.Write(VRPhysicalHandPresenceConstants.TelemetryMarkerIKLockState);
                     int cursor = telemetryCursor[0];
-                    int startIndex = cursor >= telemetryRing.Length
-                        ? PositiveModulo(cursor, telemetryRing.Length)
+                    int ringLength = telemetryRing.Length;
+                    int dumpCount = VRPhysicalHandPresenceConstants.TelemetryCapacity;
+                    int startIndex = cursor >= dumpCount
+                        ? PositiveModulo(cursor - dumpCount, ringLength)
                         : 0;
 
-                    writer.Write(telemetryRing.Length);
+                    writer.Write(0x4752494Bu);
+                    writer.Write(VRPhysicalHandPresenceConstants.TelemetryMarkerIKLockState);
+                    writer.Write(1u);
+                    writer.Write(VRPhysicalHandPresenceLayout.TelemetryEntryBytes);
+                    writer.Write(dumpCount);
                     writer.Write(cursor);
-                    for (int i = 0; i < telemetryRing.Length; i++)
+                    for (int i = 0; i < dumpCount; i++)
                     {
-                        int sourceIndex = PositiveModulo(startIndex + i, telemetryRing.Length);
+                        int sourceIndex = PositiveModulo(startIndex + i, ringLength);
                         WriteEntry(writer, telemetryRing[sourceIndex]);
                     }
                 }
@@ -788,9 +792,18 @@ namespace Hecton8.Animation.IK
                 ControllerSeparation = separation
             };
 
-            TelemetryCursor[0] = cursor < 0 || cursor == int.MaxValue
-                ? PositiveModulo(index + 1, TelemetryRing.Length)
-                : cursor + 1;
+            if (cursor < 0 || cursor == int.MaxValue)
+            {
+                int nextIndex = index + 1;
+                if (nextIndex >= TelemetryRing.Length)
+                    nextIndex = 0;
+
+                TelemetryCursor[0] = TelemetryRing.Length + nextIndex;
+            }
+            else
+            {
+                TelemetryCursor[0] = cursor + 1;
+            }
         }
 
         private VRHandPresenceOutput BuildNanFallback(in VRHandPresenceInput input, VRHandGrabState previousState, int hand, uint flags)
@@ -1010,7 +1023,9 @@ namespace Hecton8.Animation.IK
                 return false;
             }
 
-            normal = NormalizeSafe(new float3(nx - px, ny - py, nz - pz), normal);
+            float3 invStep = math.rcp(safeStep);
+            float3 gradient = new float3((nx - px) * invStep.x, (ny - py) * invStep.y, (nz - pz) * invStep.z);
+            normal = NormalizeSafe(gradient, normal);
             return math.all(math.isfinite(normal));
         }
 

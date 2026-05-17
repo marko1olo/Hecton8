@@ -149,7 +149,7 @@ namespace Hecton8.Optimization.Editor
             try
             {
                 // Blit source RT to temp RT (scales to target resolution)
-                Graphics.Blit(rt, tempRT);
+                UnityEngine.Graphics.Blit(rt, tempRT);
                 
                 // Read pixels to Texture2D
                 var prevRT = RenderTexture.active;

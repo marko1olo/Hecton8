@@ -348,7 +348,7 @@ namespace Hecton8.EditorTools
 
             try
             {
-                Graphics.Blit(texture, tempRt);
+                UnityEngine.Graphics.Blit(texture, tempRt);
                 RenderTexture.active = tempRt;
                 snapshot.ReadPixels(new Rect(0f, 0f, width, height), 0, 0, false);
                 snapshot.Apply(false, false);

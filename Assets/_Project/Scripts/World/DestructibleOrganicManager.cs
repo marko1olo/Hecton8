@@ -3,6 +3,7 @@ using System;
 using Hecton8.Audio;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
@@ -2504,23 +2505,29 @@ namespace Hecton8.World
             float normalizedPower,
             uint instanceUid)
         {
-            IDebrisService debrisService = GlobalRegistry.Debris;
-            if (debrisService == null || !debrisService.IsInitialized)
-                return;
-
             OrganicDebrisProfile profile = ResolveDebrisProfile(materialClass);
             if (profile == null || !profile.IsValid)
                 return;
 
-            Vector3 fallbackNormal = NormalizeVector3Fast(hitNormal, Vector3.up);
-            debrisService.SpawnBurst(
-                profile,
-                instancePosition,
-                instanceMatrix.rotation,
-                hitPoint,
-                fallbackNormal,
-                Mathf.Max(0.1f, normalizedPower),
-                instanceUid ^ 0x7F4A7C15u);
+            float3 spawnPosition = new float3(hitPoint.x, hitPoint.y, hitPoint.z);
+            if (!math.all(math.isfinite(spawnPosition)))
+                spawnPosition = new float3(instancePosition.x, instancePosition.y, instancePosition.z);
+
+            if (!math.all(math.isfinite(spawnPosition)))
+                return;
+
+            float safePower = math.isfinite(normalizedPower) ? math.max(0.1f, normalizedPower) : 0.1f;
+            DebrisSpawnSignal signal = new DebrisSpawnSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(spawnPosition.x, spawnPosition.y, spawnPosition.z)),
+                SpeciesHash = unchecked((uint)materialClass) ^ 0x4F524741u,
+                SourceEntityId = instanceUid ^ 0x7F4A7C15u,
+                Intensity01 = math.saturate(safePower),
+                DebrisKind = DebrisSpawnSignal.DebrisKindOrganicScrap,
+                Flags = DebrisSpawnSignal.FlagComputeShard,
+                Quantity = 0
+            };
+            SignalBus<DebrisSpawnSignal>.Push(in signal);
         }
 
         private void QueueYieldEvent(

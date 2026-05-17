@@ -239,3 +239,89 @@ Rejected Alternatives: Copying `_GlobalWakeBuffer` and `_GlobalWakeVectors` into
 Scalability potential: Low = no wake loop, explicit zero params. Middle = bounded 16-slot wake response only when the global wake publisher provides active slots. High/Ultra = debris shards can visibly react to wake turbulence while the blackbox records when that path was active.
 
 Hardware Impact: No measured microseconds are claimed. Static low-tier impact is preserved at zero wake work. Middle/high add one scalar global-param read on CPU and one compute uniform set; the wake loop remains bounded to 16 slots and only runs off low tier.
+
+## Decision 21 - Rich Tier Recovery And Low-Memory Refresh
+
+Problem: The debris renderer sampled the two-tier platform profile byte and the rich quality tier together, but `IsLowTierPayload` treated `ScalabilityTierProfiles.LowMx350` as authoritative even when `GlobalRegistry.ScalabilityTier` was `Mid`. That collapsed the intended 4096-shard middle tier into the 1024-shard MX350 path. The low-memory flag was also only refreshed during scalability seeding, so a fallback low-memory boot state could become stale after events.
+
+Solution: Added `RefreshScalabilityTierCandidate()` and call it during initial seed and scalability events. The refresh samples `GlobalRegistry.H8_LOW_MEMORY_PROFILE`, `GlobalRegistry.ScalabilityTierProfileByte`, and the rich `GlobalRegistry.ScalabilityTier` as one coherent candidate. `IsLowTierPayload` now uses the two-tier byte only when the rich quality tier is `Unknown`; explicit `Low`/`Mx350` remain low, `Mid` becomes the 4096-shard middle path, and `High`/`Ultra` remain the 16,384-shard overkill path.
+
+Rejected Alternatives: Trusting `ScalabilityChangedEvent.CurrentQualityTier` was rejected because the event converts the profile byte into only `Mx350` or `High`, losing `Mid` and `Ultra` intent. Keeping the profile byte as the first low-tier gate was rejected because it punished mid hardware with toaster visuals. Polling `GlobalRegistry` every frame was rejected because the signal-lane mandate forbids frame polling for state-change detection.
+
+Scalability potential: Low = explicit Low/Mx350 or fallback low-memory still caps at 1024 with no wake/SDF. Middle = true 4096-shard path survives on rich `Mid` hardware. High = 16,384 with SDF/wake/tumble/motion vectors. Ultra = same high path with material overkill hooks intact.
+
+Hardware Impact: No measured microseconds are claimed. Static impact: mid hardware no longer loses 3072 available active debris slots through a profile-byte alias, while low-memory devices keep the cheaper 1024 active cap from boot seed or the next scalability event sample.
+
+## Decision 22 - Low-Tier Triangle Tumble And High-Tier Relief
+
+Problem: The status text overstated per-tick scalability refresh, which would violate the signal-lane mandate against polling `GlobalRegistry` every frame for state-change detection. The shader also used `sincos` for tumble on every tier, including MX350, while the high-tier material still lacked a clear 16-tap relief/POM-style overkill path.
+
+Solution: Kept rich-tier refresh on initial seed and scalability events only, then fixed `IsLowTierPayload` so `Mid` is no longer collapsed to `LowMx350`. In `Hecton_CarveDebrisIndirect.shader`, low-tier tumble now uses a normalized triangle-wave spin fake in both forward and motion-vector passes. High tier now adds a fixed 16-tap procedural relief/parallax fake, salt-crystal mask, relief occlusion, and normal perturbation inside the existing high-tier branch.
+
+Rejected Alternatives: Per-frame registry polling was rejected because the signal-lane mandate forbids it. Texture-based normal maps/POM were rejected for this pass because Unity shader import is still externally blocked and new assets would expand the validation surface. Applying relief to all tiers was rejected because MX350/Quest must keep the Dear Lie path.
+
+Scalability potential: Low = 1024 shards, no wake/SDF, triangle-wave tumble, cheap material. Middle = 4096 shards with sinusoidal tumble and baseline material. High = 16,384 shards with SDF/wake/tumble/motion vectors plus 16-tap procedural relief and salt-crystal response. Ultra = same path can later bind authored POM/SSS assets once import validation is clean.
+
+Hardware Impact: No measured microseconds are claimed. Static low-tier impact: removes per-vertex `sincos` from the low-tier debris draw and its motion-vector pass. Static high-tier impact: intentionally spends ALU only when `_CarveDebrisMaterialParams.w > 0.5`; no CPU upload or texture I/O is added.
+
+## Decision 23 - Explicit Low-Tier Wake Telemetry Guard
+
+Problem: Low tier already forced `_GlobalWakeParams` to zero before compute dispatch, but `_lastWakeActive` briefly relied on those zeroed values instead of carrying an explicit `!lowTier` gate. That was functionally safe, but weaker evidence for the blackbox contract.
+
+Solution: Restored the explicit `!lowTier` guard in `CarveDebrisComputeRenderer` when setting `_lastWakeActive`. Re-ran XML extraction, debris forbidden-pattern scan, shader portability scan, brace balance, `git diff --check`, and the current core compile gate.
+
+Rejected Alternatives: Leaving wake telemetry dependent only on zeroed params was rejected because telemetry flags should mirror the tier contract directly. Polling global wake state every frame beyond the dispatch path was rejected because it would add unnecessary state reads and violate the signal-lane direction.
+
+Scalability potential: Low = blackbox wake flag remains false even if future global wake params drift. Middle = wake telemetry can mark bounded 16-slot wake response. High/Ultra = wake-active telemetry remains available while dense shard, SDF, relief, and motion-vector work stays tier gated.
+
+Hardware Impact: No measured microseconds are claimed. Static impact is telemetry correctness only; the low-tier compute path remains zero wake/SDF and high-tier wake response remains unchanged.
+
+## Decision 24 - ARM64 Layout Stamp And Zero-Managed Blackbox Dump
+
+Problem: The GPU/native payload structs already had explicit 64-byte Pack=1 layout, but the two Burst job structs were not layout-stamped. The blackbox dump path also allocated a managed `byte[]` before writing `Dump_DEBRIS_PHYSICS_FAKE.bin`, which is unacceptable for a crash/NaN path that should preserve memory pressure evidence.
+
+Solution: Added `[StructLayout(LayoutKind.Sequential, Pack = 1)]` to `AgeCarveDebrisMirrorJob` and `CarveDebrisInjectBatchJob`, matching local Burst job precedent. Replaced the managed `byte[]` dump assembly with a 4-byte `stackalloc` header plus direct `FileStream.Write(ReadOnlySpan<byte>)` over the DataVault-backed native telemetry ring.
+
+Rejected Alternatives: Keeping implicit job layout was rejected because the current inquisition requires explicit ARM64 layout proof. Keeping `File.WriteAllBytes` was rejected because it duplicates the blackbox ring into managed heap memory at the worst possible time. Moving dump I/O to an async/background service was rejected as cross-domain crash-telemetry work outside this debris prompt.
+
+Scalability potential: Low = no new runtime work; crash dump remains available without copying the 300-entry ring into managed memory. Middle = same telemetry path. High/Ultra = same dense debris telemetry with direct native ring export.
+
+Hardware Impact: No measured microseconds are claimed. Static impact: removes one managed array allocation of `UnsafeUtility.SizeOf<CarveDebrisTelemetryEntry>() * 300 + 4` bytes from the invalid-state dump path and stamps all debris C# structs with explicit sequential Pack=1 layout.
+
+## Decision 25 - High-Tier Salt Subsurface Fake
+
+Problem: The high-tier debris material had 16-tap procedural relief and salt masking, but the PC God-mode pass still lacked a specific subsurface/translucency cue for salt-like chips. Adding texture-driven SSS was not viable while Unity shader import remains blocked externally.
+
+Solution: Added `ResolveSaltSubsurfaceFake` to `Hecton_CarveDebrisIndirect.shader`. It uses the existing procedural shard-height bands, view grazing, salt mask, and crystal mask to add a small cyan-green internal scatter term only inside the `_CarveDebrisMaterialParams.w > 0.5` high-tier branch.
+
+Rejected Alternatives: Authored SSS/normal textures were rejected because shader import validation is currently blocked and new assets would expand the unverified surface. Applying scatter to all tiers was rejected because low/MX350 must keep the triangle-wave Dear Lie path. Real translucency/ray tracing was rejected because this is debris feedback, not gameplay truth.
+
+Scalability potential: Low = unchanged cheap material, triangle tumble, no SDF/wake. Middle = unchanged baseline material. High = 16,384 shards with relief, salt mask, occlusion, and fake internal scatter. Ultra = same hook can later blend authored salt/rock maps once asset import is clean.
+
+Hardware Impact: No measured microseconds are claimed. Static impact: high-tier-only fragment ALU spend; no CPU upload, no texture fetch, no material clone churn, and no low-tier cost.
+
+Compile Evidence: A fresh non-shared `Hecton8.Core.csproj` build after this shader patch failed outside debris in `Assets/_Project/Scripts/HectonSurvivalSystem.cs` on missing `EnsurePhysiologyScalarBuffer`. No debris-domain compiler error was reported.
+
+## Decision 26 - High-Tier Relief Tangent NaN Guard
+
+Problem: The 16-tap high-tier relief path derived its tangent directly from the view vector projected onto the normal plane. At grazing extremes this is fine, but when view direction is nearly parallel to the shard normal the tangent can collapse and force a weak fallback frame through the shared safe-normalize helper.
+
+Solution: Added `ResolveReliefTangent` in `Hecton_CarveDebrisIndirect.shader`. It builds a deterministic basis tangent from the normal, then uses the view-projected tangent only when its length is valid. The relief, salt mask, occlusion, and subsurface fake now share this safer tangent frame.
+
+Rejected Alternatives: Leaving the tangent to the shared fallback was rejected because the blackbox/NaN mandate applies to shader math too. Adding texture-space tangents was rejected because the fallback octahedron chip mesh is procedural and the debris path must not add CPU-side tangent uploads. Applying the extra frame math to low/mid tiers was rejected because the relief path is high-tier only.
+
+Scalability potential: Low = unchanged triangle-tumble Dear Lie. Middle = unchanged baseline material. High/Ultra = more stable relief and salt scatter on dense shard clouds without new assets or CPU state.
+
+Hardware Impact: No measured microseconds are claimed. Static impact: high-tier-only ALU guard; no low-tier cost, no texture fetch, no CPU upload, and no material churn.
+
+## Decision 27 - Producer-Side Legacy Debris Service Purge
+
+Problem: A fresh mining/geology producer scan still found `GlobalRegistry.Debris` and `IDebrisService.SpawnBurst` in `WorldGenerativeGeologyVoxelBridgeDirector`, and an earlier pass found the same service path in `DestructibleOrganicManager`. A wider kind/lane scan also found seismic rockfall publishing debris through the old global queue with a literal kind ID. These files are outside the authoritative VFX/Debris implementation directory, but they are direct debris producers for organic harvest, seismic trench, and rockfall impacts, so leaving them would preserve non-compute debris routes the XML prompt explicitly targeted.
+
+Solution: Converted organic harvest, seismic trench, and seismic rockfall producers to publish unmanaged `DebrisSpawnSignal` payloads through `SignalBus<DebrisSpawnSignal>`. `DestructibleOrganicManager` now emits `DebrisSpawnSignal.DebrisKindOrganicScrap` with finite hit-point fallback and AUP conversion through the existing `Vector3` overload. `WorldGenerativeGeologyVoxelBridgeDirector`, `HectonSeismicTideDirector`, and `HarvestableOutcrop` now emit `DebrisSpawnSignal.DebrisKindRockShard` from finite rebased trench/rockfall/outcrop positions. Added shared debris-kind constants to the existing 64-byte `DebrisSpawnSignal` contract, switched existing organic biota/water splash producers to those constants, and replaced the drill debris literal flag with `DebrisSpawnSignal.FlagToolSparks`.
+
+Rejected Alternatives: Keeping the `IDebrisService` fallback was rejected because producer-side fallback keeps the old CPU debris path alive. Deleting `DebrisManager` or the `IDebrisService` contract was rejected because it is a broader gameplay/core API removal outside this VFX producer purge and may still be owned by another batch agent. Creating a second seismic debris signal or more private debris-kind constants was rejected because `DebrisSpawnSignal` already exists and is consumed by the GPU debris renderer.
+
+Scalability potential: Low/MX350 keeps bounded signal ingestion and the renderer's 1024-shard no-wake/no-SDF Dear Lie path. Middle keeps the 4096-shard path. High/Ultra can spend the same producer signals on 16,384 shards with wake, SDF, motion vectors, 16-tap relief, salt masking, and fake subsurface response.
+
+Hardware Impact: No measured microseconds are claimed. Static impact: organic harvest and seismic trench producers no longer enqueue CPU chunk debris or check the legacy debris service, and seismic rockfall no longer routes through the old global debris queue. Validation for this pass was static only because the user explicitly instructed not to run `dotnet build` every time.

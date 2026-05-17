@@ -286,3 +286,297 @@ Solution: Logged attempts 46-51. Attempt 48 editor minimal build exited 0 with 0
 Rejected Alternatives: Editing VFX or vendor project restore state was rejected because those files are outside the content authority surface and not required cross-domain interfaces for pending-load vault normalization or blackbox fault containment.
 Scalability potential: Not applicable to compile wall.
 Hardware Impact: Not applicable until external VFX/vendor restore walls are cleared.
+
+## Phase 16 Save Topology and Lore Root Hardening
+Problem: `ContentSaveSlotTopology` exposed only format-string templates for slot and macro database paths. That is not a hot-path allocation by itself, but it steers future save/content callers toward `string.Format` and weakens the no-string-format mandate. `ContentLoreBinaryProvider.TryResolveFileUnder()` still trusted `Path.GetFullPath` and `Path.Combine` to succeed on every Unity root, which is not a safe assumption across Android package paths, Mac paths, or restricted persistent-data paths.
+Solution: Added `Span<char>` writers for save-slot directory names, `.sav`, `.bak`, `.tmp`, and fixed-width macro sector page filenames. The writers validate `slot_0..slot_2`, write all literals and hex digits into caller-owned storage, and do not allocate strings. Wrapped lore root full-path resolution in recoverable exception handling so path failures return false and flow into the existing controlled missing-dictionary diagnostic.
+Rejected Alternatives: Removing the existing public template constants was rejected because it would be a public API break during a multi-agent batch. Allowing unbounded slot numbers was rejected because the save contract explicitly defines slot_0 through slot_2. Letting path resolution throw was rejected because lore is an asset pipeline service and must fail loud through its own diagnostic path, not a platform exception.
+Scalability potential: Low/Quest/MX350 avoid managed path formatting in future save/content callers and keep Android packaged lore resolution controlled. Steam Deck benefits from deterministic path failure and bounded lore I/O. High/Ultra keeps the same topology contract without divergent save/lore plumbing.
+Hardware Impact: No new per-frame work. Save writers only execute when a caller asks for a path and write into caller-owned spans. Lore root containment is cold open only. Exact microseconds are not claimed without profiler/device traces.
+
+## Phase 16 Compile Recovery
+Problem: The previous status had a current external VFX/vendor restore wall. After this pass, that wall cleared, so keeping task 20 blocked would be stale.
+Solution: Waited for a separate workspace `dotnet` build/restore to finish, then ran attempt 52 core and attempt 53 editor with `/m:1 /nr:false`. Both exited 0 with 0 warnings and 0 errors. Static scans remained clean for content-domain banned patterns and first-party Resources load calls.
+Rejected Alternatives: Killing another active workspace build was rejected because multiple agents are running. Compiling during contention was rejected because it produces timeouts and false walls.
+Scalability potential: Not applicable to compile recovery.
+Hardware Impact: Not applicable; verification only.
+
+## Phase 17 Save Topology Build Gate Proof
+Problem: The zero-GC save topology writers existed, but the build gate did not prove the exact output contract. A future edit could drift `Saves/slot_N`, `.sav/.bak/.tmp`, or macro sector filenames while still compiling, and callers would be tempted back toward format-string templates.
+Solution: Added `ValidateSaveTopologyWriters()` to the content build validator. It uses fixed stack spans in editor/build time, checks exact writer output for slot directory, player delta, backup, temp, and fixed-width macro sector page paths, and fails if slots outside `slot_0..slot_2` are accepted.
+Rejected Alternatives: Trusting constants was rejected because constants do not prove writer behavior. Runtime assertions were rejected because save topology is an asset/content contract and must fail before player build. String-format reconstruction was rejected because this pass exists to remove format-string pressure.
+Scalability potential: Low/Quest/MX350 keep deterministic save/content path assembly without managed formatting. Steam Deck keeps fixed-width macro page naming for predictable disk access. High/Ultra uses the same topology while the visual budget remains reserved for Overkill content instead of path plumbing.
+Hardware Impact: Build-time only, 0 runtime us. The validator uses stack spans and fixed loops in editor/build code; no gameplay Tick, asset streaming Tick, or save hot path was changed.
+
+## Phase 17 Compile Recovery
+Problem: The editor validator changed, so the current green compile status needed to be refreshed rather than inherited from phase 16.
+Solution: Static scans remained clean for content-domain banned patterns and first-party Resources load calls. Attempt 54 core and attempt 55 editor both exited 0 with 0 warnings and 0 errors using `/m:1 /nr:false`.
+Rejected Alternatives: Compiling only `Hecton8.Editor.csproj` was rejected because `PLATINUM_COMPILE` is a project-level claim and stale core status is not evidence.
+Scalability potential: Not applicable to compile recovery.
+Hardware Impact: Not applicable; verification only.
+
+## Phase 18 Binary Export Strictness
+Problem: `ContentAssetEntry` carried `[StructLayout(Pack = 1)]` even though it contains managed strings, Unity object references, Addressables references, and managed arrays. That creates false ARM64/Quest confidence: the real binary payload is `ContentAssetBinaryRecord`, not the managed authoring row. `ToBinaryRecord()` also silently clamped dependency counts and negative VRAM estimates, which let malformed registry data be converted into a believable but wrong binary bridge.
+Solution: Removed native layout metadata from `ContentAssetEntry` and documented it as authoring-only managed data. Kept `ContentAssetBinaryRecord` as the packed 32-byte native/binary payload. Added a cold export validation step inside `ToBinaryRecord()` that rejects zero hashes, invalid enum/tier/LOD shape, negative VRAM estimates, dependency overflow, zero dependencies, self-dependencies, and duplicate dependencies before a binary record can be emitted.
+Rejected Alternatives: Keeping `[StructLayout]` on a managed authoring row was rejected because it blurs the ARM64 binary contract. Letting `ToBinaryRecord()` clamp malformed data was rejected because binary export must fail loud and early. Adding a managed `HashSet<uint>` for duplicate dependency detection was rejected because a cold fixed loop is enough and does not create allocation pressure.
+Scalability potential: Low/Quest/MX350 get a stricter boundary between managed Unity asset references and packed binary records, reducing the chance of malformed registry data entering runtime streaming. Steam Deck gets deterministic registry export without silent dependency truncation. High/Ultra keeps Overkill tier routing tied to valid binary metadata rather than coerced authoring mistakes.
+Hardware Impact: No gameplay Tick path changed. Runtime hash lookup behavior is unchanged for valid maps. The validation work is cold export-only; no profiler-backed microseconds are claimed.
+
+## Phase 18 Compile Wall
+Problem: The content hash-map patch reached a green core checkpoint once, but current core/editor compile cannot hold PLATINUM because other agents are changing external Gameplay, Audio, Tether, AcousticZone, PlayerMovement, and Submarine files.
+Solution: Logged attempts 56-62. Attempt 58 core exited 0 with 0 warnings and 0 errors after the content patch. Attempts 59-62 fail outside CORE/ASSETS in interface/math drift. Static scans remained clean for content-domain banned patterns and first-party Resources load calls. No compiler error referenced `Assets/_Project/Scripts/Core/Content`.
+Rejected Alternatives: Editing `SubmarineFluidDynamics.cs`, `Gameplay/HectonPlayerMotor.cs`, `HectonPlayerMovement.cs`, `PlayerKinematicsRuntime.cs`, `TetherManager.cs`, `Audio/HectonMusicDirector.cs`, or `AcousticZoneController.cs` was rejected because those files are outside the content authority surface and active external ownership.
+Scalability potential: Not applicable to compile wall.
+Hardware Impact: Not applicable until external Gameplay/Audio/Tether compile churn clears.
+
+## Phase 19 Binary Export Validator Proof
+Problem: `ToBinaryRecord()` now fails loud, but the build validator only checked the authoring shape. If exporter logic drifted later, validation could still pass while the packed binary record emitted wrong flags, dependency count, reserved bytes, or tier metadata.
+Solution: Added `ValidateBinaryRecordExport()` and call it for every `ContentAssetHashMap` row after shape validation. The pass executes `ToBinaryRecord(0)` and checks exported hash, VRAM, dependency offset/count, kind, tier, biome, LOD, flags, and reserved fields against the authoring row.
+Rejected Alternatives: Trusting `ValidateEntryShape()` was rejected because shape validation is not export validation. Reflection over fields was rejected because direct typed checks are clearer and safer. Runtime checks were rejected because binary export failures must stop editor/build flows before player launch.
+Scalability potential: Low/Quest/MX350 get a stricter binary asset bridge with no silent dependency/flag drift. Steam Deck gets predictable content metadata for disk-resident lore/assets. High/Ultra keeps Overkill content tied to exact tier and visual flags instead of exporter accidents.
+Hardware Impact: Build-time only, 0 runtime us. No gameplay Tick, asset load Tick, Addressables handle state, or GlobalDataVault state changed.
+
+## Phase 19 Compile Wall
+Problem: Core compile is green after the export-validator proof, but editor compile cannot prove PLATINUM because a third-party MapMagic build output is locked by another process.
+Solution: Logged attempt 63 core green and attempt 64 editor failure in `MapMagic.csproj` on `Temp/obj/MapMagic/MapMagic.dll`. Static scans remain clean for content-domain banned patterns and first-party Resources load calls. No compile error references CORE/ASSETS.
+Rejected Alternatives: Killing unknown dotnet workers was rejected because multiple agents operate in this workspace and the lock may belong to another active build. Editing or deleting third-party MapMagic outputs was rejected because it is outside the content authority surface.
+Scalability potential: Not applicable to compile wall.
+Hardware Impact: Not applicable until the external third-party file lock clears.
+
+## Phase 20 Fixed VFX Handle Ledger
+Problem: The VFX prewarm path used managed `List<AsyncOperationHandle>` ledgers for pending and resident Addressables handles. They were capacity-seeded, but the content authority runtime is supposed to be fixed-capacity and predictable; a list is still a managed collection with private mutable runtime state and growth semantics that do not belong in this subsystem.
+Solution: Replaced both VFX handle lists with fixed `AsyncOperationHandle[64]` arrays and explicit counts. Dispatch now queues only into fixed slots, releases handles that cannot be tracked, moves completed handles into a fixed resident ledger, and releases every tracked handle through bounded array cleanup on destroy.
+Rejected Alternatives: Keeping pre-sized lists was rejected because "capacity is probably enough" is not a hard content authority contract. Moving Unity `AsyncOperationHandle` values into `GlobalDataVault` was rejected because Addressables handles are managed Unity ownership tokens, not stable native vault payloads. Letting completed VFX handles survive without a resident ledger was rejected because prewarm ownership must have an explicit release path.
+Scalability potential: Low/Quest/MX350 keep VFX prewarm bounded to 64 handles with no managed ledger growth. Steam Deck avoids collection growth churn around loading-screen asset warmup. High/Ultra still prewarms heavy particle/compute assets while Overkill visual features remain released through explicit handle ownership.
+Hardware Impact: No profiler-backed microseconds claimed. Deterministic facts: no new Tick allocation path; VFX handle scans are bounded by 64; failed queue/resident cases release Addressables handles instead of leaking ownership.
+
+## Phase 20 Compile Recovery
+Problem: The previous current editor compile state was a third-party MapMagic DLL lock. After the fixed-ledger runtime patch, compile proof had to be refreshed rather than carrying the stale block forward.
+Solution: Static scans remained clean. Attempt 65 core build exited 0 with 0 warnings and 0 errors. A bare editor build returned exit 1 without compiler lines under `ErrorsOnly`, so it was diagnosed with explicit restore/build separation. Attempt 67 restore exited 0, and attempt 68 editor `dotnet build --no-restore` exited 0 with 0 warnings and 0 errors.
+Rejected Alternatives: Treating the empty editor exit as a compile error was rejected because it had no compiler evidence. Reporting the old MapMagic lock was rejected after a fresh editor build succeeded. Killing unknown workspace dotnet workers was still rejected because multiple agents are active.
+Scalability potential: Not applicable to compile recovery.
+Hardware Impact: Not applicable; verification only.
+
+## Phase 21 Prefab-Aware VFX Prewarm Gate
+Problem: Particle VFX prewarm loaded particle entries strictly as `ParticleSystem`. Real Addressables VFX content is often prefab-backed: a `GameObject` Addressable with one or more child `ParticleSystem` components. The old path could reject or fail to warm valid prefab VFX and leave combat-time instantiation pressure.
+Solution: Particle prewarm entries now load as `UnityEngine.Object` and warm direct `ParticleSystem` results or prefab `GameObject` results containing a child `ParticleSystem`. Editor validation now proves particle prewarm references resolve to one of those shapes, and compute references resolve to `ComputeShader`, before player build.
+Rejected Alternatives: Forcing all particle VFX to be bare `ParticleSystem` assets was rejected because it fights Unity prefab workflows and asset authoring reality. Instantiating prefab VFX during prewarm was rejected because task 14 exists to avoid mid-combat instantiation and hidden object churn. Trusting runtime type checks was rejected because missing VFX must fail loud before build.
+Scalability potential: Low/Quest/MX350 get loading-screen prewarm for prefab-backed particles without combat hitch risk. Steam Deck avoids microSD/content stalls from late prefab VFX loads. High/Ultra keeps Overkill particle and compute VFX addressable through the same fixed 64-handle ledger.
+Hardware Impact: No profiler-backed microseconds claimed. Deterministic facts: no new combat Tick path; prewarm scanning remains bounded by 64 handles; type validation is editor/build time only.
+
+## Phase 21 Compile Recovery
+Problem: The VFX type-widening changed both runtime and editor validation, so the phase 20 green compile state was stale. One editor build after the change reported 14 warnings despite exit 0, which required rechecking instead of claiming a clean build.
+Solution: Attempt 69 core build exited 0 with 0 warnings and 0 errors. Attempt 70 editor restore exited 0. Attempt 71 editor build exited 0 with 14 warnings and 0 errors, then attempt 72 warning diagnostic and attempt 73 final editor build both reported 0 warnings and 0 errors. Static scans remained clean.
+Rejected Alternatives: Claiming zero warnings from attempt 71 was rejected because the summary contradicted it. Treating a later clean build as proof of measured performance was rejected; this is only compile evidence.
+Scalability potential: Not applicable to compile recovery.
+Hardware Impact: Not applicable; verification only.
+
+## Phase 22 VFX Hierarchy Traversal Budget
+Problem: Prefab-backed VFX prewarm warmed only the first child `ParticleSystem`. Multi-emitter prefabs would still have cold child emitters. Replacing that with blind recursion would create another fault: malformed or extremely deep prefabs could turn loading-screen prewarm into unbounded traversal.
+Solution: Runtime prewarm now walks the prefab transform hierarchy and simulates every child `ParticleSystem`, bounded by `ContentVfxPrewarmManifest.MaxParticlePrefabDepth=32` and `MaxParticlePrefabNodes=256`. Editor validation rejects prefab VFX entries that exceed the same traversal budget before player build.
+Rejected Alternatives: First-match `GetComponentInChildren` was rejected because it misses multi-emitter VFX. `GetComponentsInChildren` was rejected in runtime because it allocates arrays. Unbounded recursion was rejected because content authority must fail malformed assets early and keep loading-screen work predictable.
+Scalability potential: Low/Quest/MX350 get bounded prefab VFX warmup without combat stutter. Steam Deck avoids late microSD/content stalls from partially warmed prefab VFX. High/Ultra can use complex multi-emitter Overkill VFX while still obeying explicit hierarchy budgets.
+Hardware Impact: No profiler-backed microseconds claimed. Deterministic facts: no combat Tick work; loading-screen traversal is capped at 256 transform nodes and depth 32; build validation is editor-time only.
+
+## Phase 22 Compile Wall
+Problem: Latest compile cannot hold PLATINUM_COMPILE after the VFX traversal budget because external World code currently fails first.
+Solution: Attempts 74 and 75 both fail outside CORE/ASSETS in `World/SargassumMicroFaunaBoids.cs` with missing `_grazingAnchors`, `_massiveThreats`, `_formationBeacons`, and `_formationObstacles`. Static scans remain clean for content-domain banned patterns and first-party Resources load calls. No compiler error references `Assets/_Project/Scripts/Core/Content`.
+Rejected Alternatives: Editing World/Sargassum ownership was rejected because it is outside the content authority surface. Reporting phase 21 green builds as current was rejected because the latest phase 22 code has not passed due to the external wall.
+Scalability potential: Not applicable to compile wall.
+Hardware Impact: Not applicable until external World compile wall clears.
+
+## Phase 23 LOD Contract Correction
+Problem: Task 11 required LOD0 at 100%, LOD1 at 30%, and LOD2 impostor/cull behavior. The importer still generated LOD0 at `0.60f`, which is a normal Unity default-style threshold but not the explicit contract in this assignment.
+Solution: Replaced the magic LOD thresholds with named constants and changed LOD0 to `1.00f`, LOD1 to `0.30f`, and LOD2 impostor/cull placeholder to `0.05f`.
+Rejected Alternatives: Keeping `0.60f` was rejected because it contradicts the prompt even if it is a common LOD authoring convention. Creating synthetic impostor meshes during import was rejected because the current domain has no impostor material/atlas generator contract and silently inventing one would create bad assets.
+Scalability potential: Low/Quest/MX350 keep aggressive environment LOD switching under the explicit ratios. High/Ultra can still use real higher-detail LOD0 meshes when an object dominates the screen, while Overkill visuals remain gated by tier policy.
+Hardware Impact: Import-time only. No gameplay Tick path changed; no profiler-backed microseconds claimed.
+
+## Phase 23 Compile Recovery
+Problem: The previous current compile state was blocked by external World/Sargassum errors, so the LOD correction needed a fresh compile proof.
+Solution: Attempt 76 core build exited 0 with 0 warnings and 0 errors. Attempt 77 editor build exited 0 with 48 warnings and 0 errors. The warnings are in Unity package cache and third-party GPUInstancer, MapMagic/Den.Tools, Crest, ShaderGraph, and WaveHarmonic projects; none reference CORE/ASSETS.
+Rejected Alternatives: Preserving the stale World/Sargassum block was rejected after it cleared. Treating third-party package warnings as content failures was rejected because they are outside the authority domain and no CORE/ASSETS warning appeared.
+Scalability potential: Not applicable to compile recovery.
+Hardware Impact: Not applicable; verification only.
+
+## Phase 24 Hologram Pool Runtime Clamp
+Problem: The build validator rejects `ContentAuthorityRuntime` prefab hologram pool capacities above `MaxPendingLoadCount`, but runtime `Awake()` still trusted the serialized value and could allocate an oversized proxy pool if a scene object bypassed validation or was created manually.
+Solution: `Awake()` now clamps `hologramPoolCapacity` to `1..ContentAuthorityRuntime.MaxPendingLoadCount` before allocating pending-target, proxy, and renderer arrays.
+Rejected Alternatives: Relying on editor validation alone was rejected because content authority runtime must guard its own memory ceiling. Throwing during `Awake()` was rejected because the validator already fails authored prefabs; runtime should clamp cold allocation size and keep the service bounded.
+Scalability potential: Low/Quest/MX350 cannot accidentally allocate a huge hologram proxy pool from bad serialized data. High/Ultra keeps the same fixed cap and can still render proxy coverage without unbounded memory.
+Hardware Impact: Cold `Awake` only. No gameplay Tick path changed; exact microseconds not claimed.
+
+## Phase 24 Compile Wall
+Problem: Latest compile cannot hold PLATINUM_COMPILE after the hologram pool clamp because external World/Biolum and VFX code currently fails first.
+Solution: Attempt 78 fails outside CORE/ASSETS in `World/Biolum/HectonBiolumManager.cs` missing `CameraPosition`/`DaylightMask` fields on `BiolumTelemetryEntry`, and `VFX/HectonMarineSnowRenderer.cs` missing `IsFiniteVector` and `_boundGlobalWakeParams`. Static scans remain clean. No compiler error references content.
+Rejected Alternatives: Editing World/Biolum or VFX ownership was rejected because it is outside the content authority surface. Reporting phase 23 green builds as current was rejected because the latest phase 24 code has not passed due to the external wall.
+Scalability potential: Not applicable to compile wall.
+Hardware Impact: Not applicable until external World/VFX compile wall clears.
+
+## Phase 25 Runtime Fail-Loud Diagnostics
+Problem: Several runtime authority APIs still returned `false` silently: missing hash maps, unknown asset hashes, invalid async-load tracking, pending-load vault failures, full pending-load ledgers, unmatched async completion, VFX prewarm invalid references, VFX ledger exhaustion, failed handles, and hologram proxy exhaustion. That violates the "missing asset fails loud" mandate and makes invisible blockers harder to trace.
+Solution: Added editor/development-only diagnostic methods and routed the failure paths through them. The logs are guarded with `Conditional("UNITY_EDITOR")` and `Conditional("DEVELOPMENT_BUILD")`, so release/player hot paths do not evaluate log string construction.
+Rejected Alternatives: Throwing exceptions in gameplay paths was rejected because these are runtime service APIs and the build validators already own fatal authoring failures. Keeping silent `false` returns was rejected because it hides broken content authority state. Running a full dotnet build immediately was rejected because the user explicitly instructed not to rebuild every time; this pass was static-verified instead.
+Scalability potential: Low/Quest/MX350 get fail-loud diagnostics during development without release log allocation. High/Ultra keeps the same fixed content ledgers while development builds expose the exact missing hash, invalid prewarm reference, or proxy exhaustion point.
+Hardware Impact: No profiler-backed microseconds claimed. Deterministic fact: diagnostic calls are compiled out outside editor/development builds; no normal release Tick path work is added.
+
+## Phase 25 Verification Deferral
+Problem: The diagnostics pass touched runtime code, but the user directed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content banned-pattern scan, first-party `Resources.Load*` scan, focused symbol scan for `targetRenderer`/new diagnostics, and `git diff --check` for the touched runtime file. Compile remains at the latest recorded state until the next meaningful batch checkpoint.
+Rejected Alternatives: Ignoring the user's build-cost instruction was rejected. Claiming PLATINUM recovery without a compile was rejected.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 26 Bundle Refcount Ownership Guard
+Problem: `ContentBundleReferenceCounter` owns fixed vault rows for loaded bundle residency, but public `Remove()` could delete a row even when `RefCount > 0`. `Acquire()` also accepted negative byte estimates and invalid tiers by normalizing bytes later, which can hide malformed registry/runtime metadata.
+Solution: `Acquire()` now rejects zero hashes, negative bytes, and invalid tiers before touching the vault. `Remove()` now rejects zero hashes and refuses to remove rows with positive ref counts, logging the hash and live count in editor/development builds.
+Rejected Alternatives: Clamping negative bytes to zero was rejected because it corrupts VRAM accounting. Allowing active removal was rejected because it can desynchronize Addressables handles from the residency ledger. Throwing in runtime was rejected; development diagnostics plus hard `false` preserve service stability.
+Scalability potential: Low/Quest/MX350 get stricter VRAM residency accounting and fewer hidden duplicate/active bundle ownership failures. High/Ultra keeps Overkill residency tied to valid ref counts and exact metadata.
+Hardware Impact: No profiler-backed microseconds claimed. Deterministic fact: added scalar guards only on acquire/remove paths; no per-frame Tick work was added.
+
+## Phase 26 Verification Deferral
+Problem: This was the second small runtime guard after the last compile wall, and the user explicitly directed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content banned-pattern scan, focused symbol scan for the new guard methods, and `git diff --check` on the touched runtime file. Compile remains deferred until a meaningful batch checkpoint.
+Rejected Alternatives: Running a full project build for every scalar guard was rejected. Reporting compile recovery without a compile was rejected.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 27 Addressables Handle Acquire Rollback
+Problem: The overload that registers a content-owned `AsyncOperationHandle` first increments the bundle refcount via `RegisterBundleAcquire(hash)`, then previously returned success when the handle was invalid. That could mark a bundle resident in the vault and VRAM tracker without a releasable Addressables handle.
+Solution: Added `RollbackBundleAcquire(hash)` and used it when the handle is invalid or cannot be tracked. The rollback releases the acquired refcount, removes the row if it became unused, and refreshes the VRAM ledger. Invalid handles now fail loud in editor/development builds.
+Rejected Alternatives: Treating invalid handles as ledger-only acquires was rejected because this overload explicitly owns Addressables handles. Duplicating rollback code was rejected because refcount/VRAM ownership must stay centralized.
+Scalability potential: Low/Quest/MX350 avoid phantom bundle residency that can block VRAM eviction under the 1.8 GB ceiling. High/Ultra keeps Overkill bundle residency tied to actual release handles.
+Hardware Impact: Failure path only. No profiler-backed microseconds claimed; no per-frame Tick work added.
+
+## Phase 27 Verification Deferral
+Problem: This was another failure-path ownership guard and the user requested no dotnet rebuild every time.
+Solution: Performed static gates only: content banned-pattern scan, focused symbol scan for rollback/invalid-handle paths, and `git diff --check` on the touched runtime file. Compile remains deferred until a meaningful batch checkpoint.
+Rejected Alternatives: Running a full project build after each failure-path edit was rejected. Claiming compile recovery without a compile was rejected.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 29 Lore Read Fail-Loud Diagnostics
+Problem: `ContentLoreBinaryProvider.TryReadBlock` still returned `false` silently for zero hashes, missing block hashes, unreadable byte ranges, too-small caller spans, unavailable fallback streams, and partial file reads. That violates the content authority rule that missing assets/data fail loud and early, and it makes Babel UI failures indistinguishable from an empty text block.
+Solution: Added editor/development-only diagnostics guarded by `Conditional("UNITY_EDITOR")` and `Conditional("DEVELOPMENT_BUILD")`. The read path now rejects zero hash before lookup, logs missing blocks, logs invalid range/length/file-size state, logs destination span mismatches, logs unavailable streams, and returns failure without reporting partial bytes as a successful read.
+Rejected Alternatives: Throwing runtime exceptions was rejected because UI and runtime lore callers should receive a controlled `false` while development builds expose the exact failure. Returning partial bytes was rejected because it can render corrupted localization content. Re-running dotnet immediately was rejected because the user explicitly requested not to rebuild after every small guard.
+Scalability potential: Low/Quest/MX350 get strict lore-byte diagnostics without release-build string/log evaluation. Steam Deck gets clearer microSD/fallback-stream failure evidence. High/Ultra keeps the same hash-routed lore interface used by texture/content requests, so rich UI text can fail with exact hashes instead of invisible blanks.
+Hardware Impact: Failure path only. No profiler-backed microseconds claimed. Deterministic facts: release builds compile out diagnostic calls; the normal successful read path still uses caller-owned `Span<byte>` and existing MMF/FileStream reads with no new Tick work.
+
+## Phase 29 Verification Deferral
+Problem: The lore diagnostics patch touched IO failure paths, but the user directed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused lore diagnostic symbol scan, and `git diff --check` on the touched lore file. Compile remains deferred until the next meaningful batch checkpoint.
+Rejected Alternatives: Running a full project build after another small diagnostics patch was rejected. Claiming compile recovery without a compile was rejected.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 30 Object Batch Registry Coverage Gate
+Problem: `ValidateObjectBatchPayloads` proved mesh/material bindings and chunk ranges, but it did not prove that each object-batch `AssetHash` actually resolves to registered 3D content, nor that chunk ranges cover every instance exactly once. That leaves a hole between binary hashes, Addressables registry rows, and BRG payload ranges.
+Solution: Passed the loaded `ContentAssetHashMap` set into object-batch validation, built a registered visual-hash set from entries with `HasVisual3D()`, and failed batches whose instances reference unregistered/non-visual hashes. Added a byte coverage map per batch so overlapping chunk ranges and unchunked instances fail during editor/build validation.
+Rejected Alternatives: Trusting the baked mesh/material table alone was rejected because the assignment requires hash-to-asset authority, not just local mesh arrays. Sorting chunks and checking only monotonic order was rejected because it would miss gaps. Runtime asserts were rejected because malformed BRG payloads must be stopped before player build.
+Scalability potential: Low/Quest/MX350 avoid invisible debris/wreck chunks caused by missing hash bindings or bad batch ranges. Steam Deck avoids streaming a batch that later exposes holes during low I/O bandwidth traversal. High/Ultra can push denser debris batches while keeping every instance tied to registry-backed visual content.
+Hardware Impact: Build-time only, 0 runtime us. The coverage map is allocated only inside the editor validator; no gameplay Tick, BRG bind, Addressables, or GlobalDataVault path changed.
+
+## Phase 30 Compile Checkpoint
+Problem: Lore diagnostics plus object-batch validator changes were enough to justify one batched compile checkpoint, while still respecting the user's instruction not to rebuild after every small edit.
+Solution: Ran `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false`. It exited 0 with 48 warnings and 0 errors. The warning count is external Unity package/third-party project noise already seen in prior editor builds; no CORE/ASSETS compiler error appeared.
+Rejected Alternatives: Running separate core and editor builds after each small guard was rejected. Reporting phase 24's external compile wall as current was rejected after this editor build exited 0.
+Scalability potential: Not applicable to compile verification.
+Hardware Impact: Not applicable; verification only.
+
+## Phase 31 Tier Policy Invalid-Value Guard
+Problem: `ContentTieredGroupPolicy` accepted any `ContentTier` enum value. Values above `Overkill` would pass `CanDownload` as non-overkill or resolve to the mid/high visual budget, which lets malformed registry metadata bypass the Quest/MX350 Overkill download denial and visual-budget routing.
+Solution: Added `IsValidTier()` and editor/development diagnostics for invalid tier bytes. `CanDownload` now denies invalid tiers. `ResolveVisualBudget` logs and clamps invalid tiers to the low/XR Dear Lie budget, which is the safest path for malformed metadata.
+Rejected Alternatives: Throwing in runtime was rejected because tier policy may be queried during content load decisions and must fail controlled. Treating invalid values as `Core` was rejected because that makes bad data highest priority. Letting invalid values fall through to mid/high was rejected because it spends premium VFX budget on corrupt metadata.
+Scalability potential: Low/Quest/MX350 cannot accidentally download or render malformed Overkill-class content through a stray tier byte. High/Ultra still receives raymarch/POM/particle budgets only from valid `Overkill` metadata.
+Hardware Impact: Scalar guard only on content tier policy calls. No profiler-backed microseconds claimed; no Tick, Addressables handle, BRG, or GlobalDataVault state changed.
+
+## Phase 31 Verification Deferral
+Problem: This was a one-method scalar guard added after the phase 30 batched compile.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused tier-policy symbol scan, and `git diff --check` on `ContentRuntimeServices.cs`. Compile remains at the phase 30 editor-green checkpoint until the next meaningful batch compile.
+Rejected Alternatives: Running dotnet build immediately after one scalar guard was rejected because the user instructed not to rebuild every time. Claiming a fresh compile for phase 31 was rejected because no compile was run after this guard.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 32 Save Topology Format-String Purge
+Problem: `ContentSaveSlotTopology` already used span writers, but it still exposed public `{0}` format-string constants such as `slot_{0}.sav` and `sector_{0:X16}.h8page`. Those constants were unused inside the repo and create a future footgun: another caller can reintroduce `string.Format` into save/data topology.
+Solution: Removed the format-pattern constants and exposed literal prefix/suffix contracts instead: save-slot prefix, slot-file prefix, delta extensions, and macro-sector prefix/suffix. The existing span writers continue to generate `Saves/slot_N`, `slot_N.sav/.bak/.tmp`, and `sector_XXXXXXXXXXXXXXXX.h8page` without heap formatting.
+Rejected Alternatives: Keeping the constants and relying on discipline was rejected because anti-bloat policy should remove the easy misuse path. Marking them obsolete was rejected because it would leave the string-format patterns in the public surface. Replacing span writers with formatted strings was rejected outright.
+Scalability potential: Low/Quest/MX350 keep save topology string-free and predictable. Steam Deck avoids avoidable string formatting during disk/path composition. High/Ultra gets the same deterministic topology while content scale increases.
+Hardware Impact: Static/cold contract cleanup only. No profiler-backed microseconds claimed; no gameplay Tick, Addressables, BRG, GlobalDataVault, or IO read path changed.
+
+## Phase 32 Verification Deferral
+Problem: This was a small anti-bloat API cleanup after the phase 30 batched compile.
+Solution: Performed static gates only: focused scan for remaining `{0}` topology constants, content-domain banned-pattern scan, first-party `Resources.Load*` scan, and `git diff --check` on `ContentSaveSlotTopology.cs`. Compile remains deferred until the next meaningful batch checkpoint.
+Rejected Alternatives: Running dotnet build for every public constant cleanup was rejected by the user's instruction. Claiming phase 32 compile proof was rejected because no compile was run after this cleanup.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 33 Hologram Capacity Truthfulness
+Problem: Phase 24 clamped the hologram proxy pool allocation, but the serialized `hologramPoolCapacity` field itself still retained the bad input value. That means `HologramPoolCapacity` could report `999` while the runtime actually allocated 64 proxies, weakening diagnostics and validator readback.
+Solution: `Awake()` now writes the clamped capacity back into `hologramPoolCapacity` before allocating arrays and building proxies. Public capacity readback now matches the actual runtime pool size.
+Rejected Alternatives: Leaving the property as serialized authoring data was rejected because this runtime service exposes capacity as an operational invariant, not just an inspector echo. Throwing on bad runtime values was rejected because build validation already owns authored prefab failure; runtime should bound and report truthfully.
+Scalability potential: Low/Quest/MX350 cannot accidentally report a huge proxy capacity that was not actually allocated. High/Ultra gets honest diagnostics when tuning the 100 ms hologram stand-in path.
+Hardware Impact: Cold `Awake` scalar assignment only. No profiler-backed microseconds claimed; no gameplay Tick, Addressables handle, BRG, or GlobalDataVault state changed.
+
+## Phase 33 Verification Deferral
+Problem: This was a one-line cold-path invariant fix after the phase 30 batched compile.
+Solution: Performed static gates only: focused hologram capacity scan, content-domain banned-pattern scan, first-party `Resources.Load*` scan, and `git diff --check` on `ContentRuntimeServices.cs`. Compile remains deferred until the next meaningful batch checkpoint.
+Rejected Alternatives: Running dotnet build after this one-line patch was rejected by user instruction. Claiming a fresh compile for phase 33 was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 34 Registry Visual Kind Authority
+Problem: `ContentAssetEntry.HasVisual3D()` treated any row with a prefab or mesh reference as visual 3D content, regardless of `ContentAssetKind`. A stray mesh on a Material, Texture, Audio, or LoreText row could satisfy economy mesh validation or object-batch hash coverage even though the registry kind did not authorize 3D world content.
+Solution: Added `IsVisual3DKind()` and made `HasVisual3D()` kind-aware. Editor validation now fails 3D bindings on non-visual kinds, Mesh rows without Mesh bindings, and Prefab rows without a prefab/mesh binding.
+Rejected Alternatives: Keeping `HasVisual3D()` as a loose null check was rejected because it weakens the hash-to-asset authority bridge. Runtime-only checks were rejected because malformed registry metadata must fail during editor/build validation. Forcing every VFX row to have a mesh was rejected because VFX Addressables may be particle/compute payloads validated through the prewarm manifest instead.
+Scalability potential: Low/Quest/MX350 cannot stream a debris/object-batch or economy item whose hash points to a non-visual registry row with a stray reference. High/Ultra can keep dense Overkill registry content while the build gate proves the declared kind matches the visual binding.
+Hardware Impact: Build/editor validation only for the new shape failures. Runtime change is a scalar predicate inside existing hash lookup paths; no profiler-backed microseconds claimed and no Tick, Addressables handle, BRG bind, or GlobalDataVault path was added.
+
+## Phase 34 Verification Deferral
+Problem: The registry visual-kind patch is small and the user explicitly instructed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused symbol scan for `IsVisual3DKind` and validator failures, and `git diff --check` on the touched files. Compile remains deferred after the phase 30 batched editor-green checkpoint.
+Rejected Alternatives: Running a full dotnet build for this editor/build-gate refinement was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 35 Async Hologram Registry Proof
+Problem: `ContentAuthorityRuntime.TrackAsyncLoad` accepted any nonzero hash and renderer before writing pending-load metadata to the GlobalDataVault. That allowed the 100 ms hologram fallback to track an asset hash that was not actually present in the content registry.
+Solution: The tracker now requires `assetHashMap` to be bound and requires `assetHashMap.TryGetEntry(hash, out _)` to succeed before touching the pending-load vault. Existing fail-loud diagnostics report missing maps and unknown hashes in editor/development builds.
+Rejected Alternatives: Deferring the check until `CompleteAsyncLoad` was rejected because the pending-load ledger should only contain registry-authorized hashes. Throwing in runtime was rejected because this API is called by loaders; controlled failure plus diagnostics preserves service stability. Requiring visual-only hashes was rejected for this pass because material/texture-backed renderer loads can legitimately use the hologram visibility path while the registry still proves the hash exists.
+Scalability potential: Low/Quest/MX350 avoid wasting pending-load slots and hologram proxy pool entries on unknown hashes. High/Ultra keeps the same proxy path for slow loads but with registry proof before any pending state is written.
+Hardware Impact: One registry hash lookup at load-start only. No profiler-backed microseconds claimed; no Tick, VRAM intercept, Addressables handle, BRG bind, or telemetry path was added.
+
+## Phase 35 Verification Deferral
+Problem: The async tracker patch is a focused load-start guard and the user explicitly instructed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused `TrackAsyncLoad` registry-proof scan, and `git diff --check` on `ContentRuntimeServices.cs`. Compile remains deferred after the phase 30 batched editor-green checkpoint.
+Rejected Alternatives: Running dotnet build after another scalar guard was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 36 Required Hash Copy Exactness
+Problem: `ContentAssetHashMap.CopyRequiredHashes` copied until the caller-provided destination filled, then returned the partial count. A too-small buffer could silently drop required build hashes and weaken strict build/resource validation.
+Solution: Added `CountRequiredBuildHashes()` and changed `CopyRequiredHashes` to reject undersized destinations with `-1` plus editor/development diagnostics. If there are required hashes, the copy is now exact or it fails.
+Rejected Alternatives: Keeping partial-copy semantics was rejected because required build hashes are authority data, not a best-effort list. Allocating a new array inside the method was rejected because callers should own buffers and the zero-GC policy forbids surprise allocations.
+Scalability potential: Low/Quest/MX350 cannot accidentally omit required core content because a small buffer truncated the export. High/Ultra can carry larger required sets while callers size buffers explicitly from the count API.
+Hardware Impact: Cold registry copy/export path only. No profiler-backed microseconds claimed; no Tick, Addressables handle, BRG bind, VRAM, or GlobalDataVault path changed.
+
+## Phase 36 Verification Deferral
+Problem: The exact-copy patch is a small registry API guard and the user explicitly instructed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused required-hash copy scan, and `git diff --check` on `ContentAssetHashMap.cs`. Compile remains deferred after the phase 30 batched editor-green checkpoint.
+Rejected Alternatives: Running a full dotnet build for a non-Tick API guard was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.
+
+## Phase 37 Telemetry Bundle Count Coalescing
+Problem: The content heartbeat asked `ContentBundleReferenceCounter` for resident bytes, then called `_bundleRefs.Count` for the state hash, then called `_bundleRefs.Count` again for the telemetry row. That creates redundant vault resolve/count paths every Tick.
+Solution: Added `EstimateResidentBytes(out int residentCount)` and changed `WriteTelemetry` to resolve bytes and bundle count together, then reuse the count for both `StateHash` and `BundleRefCount`.
+Rejected Alternatives: Leaving the redundant reads was rejected because the blackbox is a critical per-frame heartbeat. Caching bundle count globally was rejected because the vault ledger is authoritative and the count should be read from the same scan as resident bytes.
+Scalability potential: Low/Quest/MX350 reduce heartbeat overhead while preserving the 300-frame blackbox. High/Ultra keeps richer content residency telemetry without extra per-frame vault resolves.
+Hardware Impact: Removes redundant count lookups from the content Tick heartbeat. No profiler-backed microseconds claimed; no Addressables handle, BRG bind, VFX prewarm, or VRAM eviction logic changed.
+
+## Phase 37 Verification Deferral
+Problem: The coalescing patch is localized hot-path cleanup and the user explicitly instructed not to run dotnet rebuild every time.
+Solution: Performed static gates only: content-domain banned-pattern scan, first-party `Resources.Load*` scan, focused coalesced-count scan, and `git diff --check` on `ContentRuntimeServices.cs`. Compile remains deferred after the phase 30 batched editor-green checkpoint.
+Rejected Alternatives: Running dotnet build for every heartbeat cleanup was rejected. Claiming fresh compile proof was rejected because no compile was run after this change.
+Scalability potential: Not applicable to verification policy.
+Hardware Impact: Not applicable; verification policy only.

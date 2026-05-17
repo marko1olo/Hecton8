@@ -183,3 +183,45 @@ Solution: Add dedicated `LeviathanTentacle*` `BufferID` values, replace private 
 Rejected Alternatives: Keeping `H8Memory.Allocate` with `SystemID.AnimationFauna` was better than `External` but still a private data island. Reusing `LeviathanBoneMatrices` or bite buffers would corrupt ownership and conflate tentacle Verlet state with spine or jaw state. Calling `ReleaseOwnerBuffers(SystemID.AnimationFauna)` on teardown was rejected because the owner bucket is shared by adjacent animation/fauna systems.
 Scalability potential: Low keeps one-iteration cheap tentacle motion and fixed-size vault buffers; Middle/High/Ultra use the same vault-owned streams while spending CPU/GPU budget on richer matrix/radius upload, suction pulse, flow-reactive motion, and high-tier AUP contact direction.
 Hardware Impact: No profiler capture was available, so 0 us measured. Static expectation is lower leak/stale-view risk on Quest/Android and Steam Deck, no new per-frame allocation, and no claimed frame-time saving beyond removing private native lifetime management.
+
+## Decision 26 - Procedural Crab DataVault Eviction
+Problem: `ProceduralCrabLegIKRuntime` still owned persistent private `NativeArray<T>` fields for crab entity state, foot positions, target feet, step scheduler state, raycast command/result buffers, low-tier raycast masks, body pose upload data, solved joint matrices, and black-box telemetry.
+Solution: Add dedicated `ProceduralCrab*` `BufferID` values, replace the private arrays with `VaultBufferHandle<T>` fields, and resolve short-lived views only at entity registration, pose updates, Burst scheduling, origin-shift rebase, indirect GPU upload, telemetry write, and crash dump boundaries.
+Rejected Alternatives: Keeping local `new NativeArray<T>` allocations plus `NativeMemorySentinel` registrations would preserve a private data island. Reusing the dispatcher raycast buffers was rejected because crab ground probes have a different lifetime and would create cross-system aliasing. Calling `ReleaseOwnerBuffers(SystemID.AnimationFauna)` on teardown was rejected because the owner bucket is shared by bite, spine, tentacle, and adjacent fauna animation systems.
+Scalability potential: Low/MX350 keeps the existing two-leg raycast budget and cheap analytical leg fake; Middle/High/Ultra keep all-leg probes and richer body tilt/joint matrix upload without any new private memory ownership.
+Hardware Impact: No profiler capture was available, so 0 us measured. Static expectation is lower leak/stale-view risk on Quest/Android and Steam Deck, no per-frame allocation, and no claimed CPU speedup beyond removing private native lifetime management.
+
+## Decision 27 - Tier1 Fauna Proxy Pack Correction
+Problem: The broad ARM64/Quest audit found `FaunaTier1LodProxyEntry` using `StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)`, leaving an adjacent low-tier fauna proxy with nonstandard packing while the rest of the audited IK payloads use `Pack = 1`.
+Solution: Change the declaration to `Pack = 1` and retain explicit `Size = 64`; field order and runtime behavior do not change.
+Rejected Alternatives: Leaving `Pack = 4` because the file is adjacent rather than authoritative would preserve a platform-layout exception in the low-tier fauna visual path. Reordering fields was rejected because the explicit size already keeps the packet stable.
+Scalability potential: Low/MX350 keeps the cheap proxy path with deterministic ABI metadata; Middle/High/Ultra behavior is unchanged and still spends detail budget in the richer IK/tentacle paths.
+Hardware Impact: 0 us measured. Static expectation is zero runtime cost and lower IL2CPP/ARM64 layout risk on Quest/Android and Steam Deck.
+
+## Decision 28 - Dead Predator Memory Deletion
+Problem: `FaunaBrain.Compatibility.cs` still contained an unused `PredatorMemory` struct with a private persistent `NativeArray<float4>`, local allocation, and sentinel registration path.
+Solution: Verify there are no in-repo references, then delete the dead struct instead of moving unused memory to the vault. Preserve `using System` because the file still uses `[Flags]`.
+Rejected Alternatives: DataVault-migrating a dead compatibility type would keep a public API and allocation surface nobody calls. Leaving it in place would keep a dormant private native island in a fauna file already touched by this slice.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; the win is removing unused memory ownership and future leak surface from adjacent fauna cognition compatibility.
+Hardware Impact: 0 us measured. Static expectation is lower memory-governance risk on Quest/Android and Steam Deck, with no claimed frame-time improvement.
+
+## Decision 29 - Loop 16 External Compile Wall
+Problem: After the dead-code deletion was corrected for the missing `System` using, repository compilation still exits 1.
+Solution: Rerun the serialized build and record the current external blocker: `Assets/_Project/Scripts/AcousticZoneController.cs(3175,17)` cannot resolve `Type`.
+Rejected Alternatives: Editing audio/acoustic ownership from the animation IK agent would violate the domain boundary. Claiming build green would be false.
+Scalability potential: Bite IK and adjacent fauna IK scalability remain unchanged; full integration proof waits on the external compile wall.
+Hardware Impact: No runtime impact from the compile wall.
+
+## Decision 30 - Build Green Revalidation After Concurrent Edits
+Problem: The latest compile wall was moving under concurrent external edits; `AcousticZoneController` and `HectonSurvivalSystem` errors were stale against the live worktree by the time they were inspected.
+Solution: Inspect the live files, avoid overwriting other agents' corrections, rerun a serialized build with explicit exit capture, and record the current result: build exits 0 with 0 warnings and 0 errors.
+Rejected Alternatives: Reverting or overwriting external edits would risk destroying other agents' work. Keeping the stale blocked status would be false once the live build passed.
+Scalability potential: Low/Middle/High/Ultra bite IK paths now have objective C# build proof again; no tier behavior changed.
+Hardware Impact: 0 us measured. Build revalidation has no runtime impact.
+
+## Decision 31 - Leviathan Shader Metal Audit
+Problem: The multiplatform inquisition requires checking the owned visual surface for Metal/Mac hazards, especially compute thread-group and DirectX-only shortcuts.
+Solution: Scan `Hecton_LeviathanTentacleIndirect.shader` and `Hecton_LeviathanOrganic.shader` for compute kernels, `numthreads`, RW resources, D3D-only macros, derivative intrinsics, `tex2Dlod`, and renderer restrictions; no matches were found.
+Rejected Alternatives: Treating shader compliance as irrelevant to animation IK would miss the Leviathan tentacle/jaw visual upload surface. Editing shaders without a detected violation was rejected as churn.
+Scalability potential: Low keeps CPU-side cheap IK/proxy paths; High/Ultra retain existing Leviathan visual surfaces without introducing Metal-incompatible overkill.
+Hardware Impact: 0 us measured. Static expectation is lower platform risk only; no frame-time claim.

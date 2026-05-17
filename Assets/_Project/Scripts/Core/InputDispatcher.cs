@@ -105,7 +105,7 @@ namespace Hecton8.Core
             public uint PackedAxes;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct BufferedActionEntry
         {
             public PlayerBufferedAction Action;

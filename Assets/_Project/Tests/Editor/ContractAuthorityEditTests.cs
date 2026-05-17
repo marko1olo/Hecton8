@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using NUnit.Framework;
@@ -53,24 +54,26 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void SignalLaneIds_AreUnique()
         {
-            byte[] lanes =
-            {
-                HectonSignalLaneContract.AcousticPingSignal,
-                HectonSignalLaneContract.AupShiftSignal,
-                HectonSignalLaneContract.CombatDamageSignal,
-                HectonSignalLaneContract.FrameTimeSignal,
-                HectonSignalLaneContract.KillSwitchSignal,
-                HectonSignalLaneContract.SaveRequestSignal,
-                HectonSignalLaneContract.SystemHealthSignal,
-                HectonSignalLaneContract.WfcOutpostStateChangedSignal
-            };
+            FieldInfo[] fields = typeof(HectonSignalLaneContract).GetFields(BindingFlags.Public | BindingFlags.Static);
+            bool[] seen = new bool[HectonDataSovereigntyContract.TypedSignalLaneMaxCount + 1];
+            int laneCount = 0;
 
-            for (int i = 0; i < lanes.Length; i++)
+            for (int i = 0; i < fields.Length; i++)
             {
-                Assert.That(lanes[i], Is.Not.EqualTo(0));
-                for (int j = i + 1; j < lanes.Length; j++)
-                    Assert.That(lanes[i], Is.Not.EqualTo(lanes[j]));
+                FieldInfo field = fields[i];
+                if (field.FieldType != typeof(byte))
+                    continue;
+
+                byte lane = (byte)field.GetRawConstantValue();
+                Assert.That(lane, Is.Not.EqualTo(0), field.Name + " uses reserved lane 0.");
+                Assert.That(lane, Is.LessThanOrEqualTo(HectonDataSovereigntyContract.TypedSignalLaneMaxCount), field.Name + " exceeds lane capacity.");
+                Assert.That(seen[lane], Is.False, field.Name + " duplicates lane id " + lane + ".");
+                seen[lane] = true;
+                laneCount++;
             }
+
+            Assert.That(laneCount, Is.GreaterThan(0));
+            Assert.That(HectonSignalLaneContract.SignalLaneRegistryHash, Is.Not.EqualTo(0u));
         }
 
         [Test]

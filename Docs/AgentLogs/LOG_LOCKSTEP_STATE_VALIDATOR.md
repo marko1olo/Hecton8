@@ -145,3 +145,81 @@ Verification: Static scan after the patch shows typed snapshot/glitch lane confi
 Post-log drift note: A later broad scan caught `GlobalSignals.InitializeAllQueues()` restored again in `ConfigureSignalLanes()`. It was re-patched to typed snapshot/glitch lane configuration and immediately re-scanned clean; the only remaining NativeArray scan hit is the DataVault helper return.
 
 Final compiler slot after drift repair: `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260516_ghost_cursor_final_dotnet.log` exits 1 on external `Assets/_Project/Scripts/HectonFloatingOrigin.cs(1426,66)` CS0120 against `_totalOffsetDouble`. The log contains 0 `LockstepStateValidator` and 0 `Hecton8.Core.Determinism` diagnostics. I did not edit that file from the lockstep role because it is outside the authoritative determinism folder and already modified by another worker.
+
+Revalidation note: after the active AUP source changed, I reran `dotnet build Hecton8.Core.csproj`. `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260516_rerun_after_aup_dotnet.log` returns `EXIT=0`. No runtime microseconds are claimed; this is compiler evidence only.
+
+## 2026-05-16 Typed Lane Constants Repair / Defrag Compile Wall
+
+What was wrong: Disk truth drifted again. `LockstepStateValidator.ConfigureSignalLanes()` was back to `GlobalSignals.InitializeAllQueues()`, and the local typed-lane capacity/hash constants were missing from the file.
+
+What was done: Restored the four lockstep lane constants and the narrow typed setup for `SignalBus<LockstepSnapshotSignal>` and `SignalBus<SystemGlitchSignal>`. Re-scanned `Assets/_Project/Scripts/Core/Determinism` for signal drift, NativeArray misuse, Update-family methods, string formatting, direct physics/transform authority reads, stale signal namespace, per-byte blackbox writes, and Pack=1 drift.
+
+Cinematic Cheats used: None. This pass is deterministic signal plumbing. The scalability move remains bounded evidence flow: Low/MX350 avoids broad cold queue initialization, while High/Ultra keep 60-frame hash snapshots and fault-only glitch pulses through typed lanes.
+
+Exact Microseconds saved: 0us measured on the hot path. This is cold `OnEnable` configuration and compile validation. No profiler number is claimed.
+
+Verification: Static scans now show the snapshot/glitch constants exactly once, typed `SignalBus.Configure` calls present, no `GlobalSignals.InitializeAllQueues()` in `Core/Determinism`, and no determinism hot-path debt beyond `GetVaultBuffer<T>` returning vault-owned storage. `git diff --check` reports only CRLF normalization warnings for the lockstep file. `dotnet build Hecton8.Core.csproj` log `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260516_typed_lane_repair_dotnet.log` exits 1 on external `Hecton8.Core.Memory.Defrag` / `MemoryDefragPhase` wiring in `SystemDispatcher.cs` and `GlobalDataVault.cs`; it reports 0 `LockstepStateValidator` and 0 `Hecton8.Core.Determinism` diagnostics. I did not edit generated `Hecton8.Core.csproj` or core-memory files from this role.
+
+## 2026-05-17 Typed Lane Drift Repair / Green Core Build
+
+What was wrong: Source drift repeated. `LockstepStateValidator.ConfigureSignalLanes()` had reverted to `GlobalSignals.InitializeAllQueues()`, so the validator was again reaching for global queue initialization instead of its two typed lanes. The previous defrag build wall also needed fresh validation against current disk state.
+
+What was done: Re-read the status/rationale, original XML, `AGENTS.md`, domain map, and the relevant AUP/zero-GC/physics mandates. Restored the four snapshot/glitch lane constants and the narrow typed `SignalBus<LockstepSnapshotSignal>` / `SignalBus<SystemGlitchSignal>` setup.
+
+Cinematic Cheats used: None. This is deterministic evidence plumbing. The existing math LOD remains intact: Low/MX350 skips normal-play hashing, replay forces validation, High/Ultra hash every 60 frames, and high stress defers to 1200 frames.
+
+Exact Microseconds saved: 0us measured on the hot path. This is cold `OnEnable` signal-lane setup. No profiler microseconds are claimed.
+
+Verification: Static scans show no `GlobalSignals.InitializeAllQueues()` in `Core/Determinism`, no determinism `foreach`, no `Update/FixedUpdate/LateUpdate`, no `string.Format`, no local `new NativeArray`, no private persistent NativeArray fields, no `H8Memory.Allocate`, no direct physics/transform authority reads, no `UnityEngine.Random`, no stale signal namespace, no per-byte `WriteByte`, and no Pack=1 layout drift. The conditional `Debug.LogError` helper is editor/development-only. `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260517_default_obj_dotnet.log` returns `EXIT=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`. The isolated-object `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260517_typed_lane_repair_dotnet.log` failed only because `--no-restore` had no `project.assets.json`; it is not source evidence.
+
+Post-green drift note: A later scan caught `GlobalSignals.InitializeAllQueues()` restored again after the docs update. I re-applied the typed snapshot/glitch lane setup and re-ran the static scans. `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260517_post_scan_drift_dotnet.log` now exits 1 on external `Assets/_Project/Scripts/SubmarineFluidDynamics.cs(5095,49)` CS9342 ambiguous `Vector3`/`float3` operator resolution. The log contains 0 `LockstepStateValidator` and 0 `Hecton8.Core.Determinism` diagnostics. I did not edit submarine/fluid code from the lockstep role.
+
+## 2026-05-17 Final Drift Repair / Gameplay Compile Wall
+
+What was wrong: Disk truth drifted again. `LockstepStateValidator.ConfigureSignalLanes()` was restored to `GlobalSignals.InitializeAllQueues()`, and the validator no longer declared its snapshot/glitch lane constants.
+
+What was done: Restored the four typed lane constants and the narrow `SignalBus<LockstepSnapshotSignal>` / `SignalBus<SystemGlitchSignal>` configuration. Re-ran the determinism static scan, Pack=1 negative scan, and `dotnet build Hecton8.Core.csproj`.
+
+Cinematic Cheats used: None. This is deterministic signal plumbing. Scalability stays bounded: Low/MX350 avoids broad cold queue initialization; High/Ultra keep 60-frame snapshot evidence and fault-only glitch signals through typed lanes.
+
+Exact Microseconds saved: 0us hot-path measured. This repair is cold `OnEnable` setup. No profiler microseconds are claimed.
+
+Verification: Static scan now shows typed lane constants and typed `SignalBus.Configure` calls, with no `GlobalSignals.InitializeAllQueues()` in `Core/Determinism`; no determinism `foreach`, Update-family methods, `string.Format`, local `new NativeArray`, private persistent NativeArray fields, `H8Memory.Allocate`, direct physics/transform authority reads, stale signal namespace, per-byte `WriteByte`, or Pack=1 drift. `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260517_final_drift_repair_dotnet.log` exits 1 on external `Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs` CS0535 interface implementation errors. The log contains 0 `LockstepStateValidator` and 0 `Hecton8.Core.Determinism` diagnostics. I did not edit gameplay motor code from the lockstep role.
+
+## 2026-05-17 Desync Blackbox Evidence Pass
+
+What was wrong: Replay desync dumping was ordered incorrectly. `ReportDesync()` dumped the blackbox before the current fault frame entered the 300-frame telemetry ring, so the binary dump could miss the frame that actually failed. Ghost replay input faults could also stop replay without first writing a desync heartbeat.
+
+What was done: `ApplyGhostReplayInput()` and `ValidateReplayHash()` now return fault status to `PostFixedTick()`. On poisoned replay cursor, undersized replay buffer, frame mismatch, or hash mismatch, the validator marks desync, writes the current frame telemetry, dumps the blackbox, and exits before staging any replay write. `ReportDesync()` now only publishes typed desync/glitch signals and pauses/stops replay.
+
+Cinematic Cheats used: None. This is blackbox evidence ordering, not rendering. The scalability behavior remains: Low/MX350 avoids normal-play hashing, replay forces proof, High/Ultra hash every 60 frames, and stress >0.9 backs off to 1200 frames.
+
+Exact Microseconds saved: No profiler microseconds are claimed. Added cost is O(1) boolean/branch flow at replay/hash cadence and 0 B heap. Fault-path value is correctness: the dump now contains the fault heartbeat.
+
+Verification: Static scans show typed snapshot/glitch lanes, no broad global signal init, no determinism `foreach`, no Update-family methods, no `string.Format`, no local NativeArray allocation, no private persistent NativeArray fields, no `H8Memory.Allocate`, no direct physics/transform authority reads, no stale signal namespace, no per-byte `WriteByte`, and no Pack=1 drift. `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260517_desync_blackbox_dotnet.log` returns `EXIT=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+
+Final post-doc lane repair: a later scan caught `GlobalSignals.InitializeAllQueues()` restored again in `ConfigureSignalLanes()`. I restored the typed snapshot/glitch lane constants and `SignalBus.Configure` calls again. A timed-out validation left `Temp/obj/Hecton8.Core/project.assets.json` missing; `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260517_restore_after_timeout.log` restores it with `EXIT=0`. Final compiler evidence is `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260517_final_desync_lane_repair_dotnet.log`: `EXIT=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+
+## 2026-05-17 Raw Hash Source NaN Preservation Pass
+
+What was wrong: DataVault read semantics had a hidden conflict with the NaN vaccination mandate. `GlobalDataVault.TryGetBuffer<T>` sanitizes `float`, `float3`, `double3`, and related numeric vector payloads before returning views. The validator then hashed those returned views, so external `RigidbodyAUPs` or `EntityAUPs` NaNs could be zeroed before `HashDouble3ArrayJob` / `HashFloat3ArrayJob` marked `ArrayFlagNonFinite`.
+
+What was done: `LockstepStateValidator.ExecuteHashJobs()` now resolves hash source lanes through `TryGetBufferHandle` and creates raw native views only after pointer-alignment validation. This keeps source storage in GlobalDataVault, preserves the existing Burst hash jobs, and prevents the validator from erasing NaN evidence before the blackbox/fatal-desync path sees it.
+
+Cinematic Cheats used: None. This is deterministic evidence hardening. The scalability behavior is unchanged: Low/MX350 avoids normal-play hash cost, replay forces proof, High/Ultra use 60-frame hash cadence, and stress >0.9 backs off to 1200 frames.
+
+Exact Microseconds saved: No profiler microseconds are claimed. Added cost is four handle resolves and four O(1) pointer-alignment checks at hash cadence. Hot-path heap remains 0 B.
+
+Verification: Static scan shows typed snapshot/glitch lanes, no broad global signal init, no determinism `foreach`, no Update-family methods, no `string.Format`, no local NativeArray allocation, no private persistent NativeArray fields, no `H8Memory.Allocate`, no direct physics/transform authority reads, no stale signal namespace, no per-byte `WriteByte`, and no Pack=1 drift. `git diff --check` reports only CRLF normalization warnings. One targeted `dotnet build Hecton8.Core.csproj --no-restore` was run into `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260517_raw_hash_source_dotnet.log`; it exits 1 on external `Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs` missing methods/fields and reports 0 `LockstepStateValidator` / 0 `Hecton8.Core.Determinism` diagnostics.
+
+## 2026-05-17 Telemetry Cursor Restore / Replay Writer Fence
+
+What was wrong: The lockstep blackbox ring lives in GlobalDataVault, but the validator's private telemetry cursor and post-simulation frame reset on component re-enable. That could make the next crash dump contain valid entries with a misleading write order after component churn. The replay writer shutdown also disposed the writer event and stream even if a 250 ms join timed out, risking a disposed-handle race during slow MicroSD flushes.
+
+What was done: Added `RestoreTelemetryCursorFromVault()` to resume from the newest non-zero frame in the 300-entry telemetry ring. Repaired the recurring typed-lane drift again so the validator configures only `LockstepSnapshotSignal` and `SystemGlitchSignal` with fixed capacities and lane hashes. Hardened `StopReplayWriter()` so a live writer after timeout is marked faulted and left stopped instead of disposing resources under it.
+
+Cinematic Cheats used: None in rendering. The low-tier trick is preserving evidence with cold integer scans and fail-fast shutdown fencing, not adding simulation cost. High/Ultra keep richer hash cadence without broad signal queue traffic.
+
+Exact Microseconds saved: No profiler microseconds are claimed. Fixed-tick cost is unchanged. Added work is a cold O(300) DataVault scan on enable plus a cold shutdown branch; hot-path heap remains 0 B.
+
+Verification: Static scan shows typed snapshot/glitch constants and `SignalBus.Configure` calls, `TryGetHashSourceBuffer`, `RestoreTelemetryCursorFromVault`, and the fenced `StopReplayWriter()`. It finds no `GlobalSignals.InitializeAllQueues()` in `Core/Determinism`, no determinism `foreach`, no Update-family methods, no `string.Format`, no local NativeArray allocation, no private persistent NativeArray fields, no `H8Memory.Allocate`, no direct physics/transform authority reads, no stale signal namespace, no per-byte `WriteByte`, and no Pack=1 drift. `git diff --check` reports only CRLF normalization warnings. No dotnet rebuild was run in this pass per explicit instruction.

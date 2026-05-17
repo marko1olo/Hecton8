@@ -6,6 +6,9 @@
 
 #define HECTON_SCATTER_THREADS 64
 #define HECTON_SCATTER_FRUSTUM_PLANES 6
+#define HECTON_SCATTER_MAX_SAFE_UINT_FLOAT 16777215.0
+#define HECTON_SCATTER_MAX_SAFE_UINT 16777215u
+#define HECTON_SCATTER_MAX_GRID_RESOLUTION 16384u
 
 struct ScatterInstanceGpuData
 {
@@ -95,6 +98,42 @@ float Hash01(uint value)
     return (HashUint(value) & 0x00FFFFFFu) * rcp(16777215.0);
 }
 
+float SanitizeNonNegativeFinite(float value)
+{
+    return isfinite(value) ? max(value, 0.0) : 0.0;
+}
+
+float SanitizePositiveFinite(float value, float fallbackValue)
+{
+    return isfinite(value) && value > fallbackValue ? value : fallbackValue;
+}
+
+float2 SanitizeFinite2(float2 value, float2 fallbackValue)
+{
+    return all(isfinite(value)) ? value : fallbackValue;
+}
+
+float3 SanitizeFinite3(float3 value, float3 fallbackValue)
+{
+    return all(isfinite(value)) ? value : fallbackValue;
+}
+
+float4 SanitizeFinite4(float4 value, float4 fallbackValue)
+{
+    return all(isfinite(value)) ? value : fallbackValue;
+}
+
+uint ResolveSafeUInt(int value, uint maxValue)
+{
+    return value > 0 ? min((uint)value, maxValue) : 0u;
+}
+
+uint ResolveSafeFloatUInt(float value, uint maxValue)
+{
+    float cappedValue = min(SanitizeNonNegativeFinite(value), min((float)maxValue, HECTON_SCATTER_MAX_SAFE_UINT_FLOAT));
+    return (uint)floor(cappedValue);
+}
+
 float2 Hash02(uint value)
 {
     return float2(Hash01(value), Hash01(value ^ 0x68bc21ebu));
@@ -102,7 +141,8 @@ float2 Hash02(uint value)
 
 float ResolveScatterBlueNoise01(uint2 cellCoord, uint hashSeed)
 {
-    uint2 blueCoord = (cellCoord + uint2(hashSeed, hashSeed >> 8) + (uint)_HectonScatterDitherParams.z) & 7u;
+    uint ditherFrame = ResolveSafeFloatUInt(_HectonScatterDitherParams.z, HECTON_SCATTER_MAX_SAFE_UINT);
+    uint2 blueCoord = (cellCoord + uint2(hashSeed, hashSeed >> 8) + ditherFrame) & 7u;
     uint blueIndex = blueCoord.x + (blueCoord.y << 3);
     return ((float)HECTON_SCATTER_BLUE_NOISE_8X8[blueIndex] + 0.5) * rcp(64.0);
 }
@@ -114,16 +154,19 @@ float4 ResolveScatterBounds(uint speciesIndex)
 
     uint safeIndex = min(speciesIndex, (uint)(_HectonScatterBoundsLutCount - 1));
     float4 boundsData = _HectonScatterBoundsLut[safeIndex];
-    boundsData.w = max(boundsData.w, 0.05);
+    boundsData = SanitizeFinite4(boundsData, float4(0.0, 0.5, 0.0, 1.0));
+    boundsData.w = SanitizePositiveFinite(boundsData.w, 0.05);
     return boundsData;
 }
 
 float SampleHeight01(float2 uv)
 {
     uv = saturate(uv);
-    float2 sampleCoord = uv * _HectonScatterHeightResolutionMinusOne;
-    int2 pixelMin = (int2)floor(sampleCoord);
-    int2 pixelMax = min(pixelMin + 1, int2(_HectonScatterHeightMaxPixel, _HectonScatterHeightMaxPixel));
+    float resolutionMinusOne = SanitizeNonNegativeFinite(_HectonScatterHeightResolutionMinusOne);
+    int maxPixel = (int)ResolveSafeFloatUInt((float)_HectonScatterHeightMaxPixel, HECTON_SCATTER_MAX_GRID_RESOLUTION);
+    float2 sampleCoord = uv * resolutionMinusOne;
+    int2 pixelMin = clamp((int2)floor(sampleCoord), int2(0, 0), int2(maxPixel, maxPixel));
+    int2 pixelMax = min(pixelMin + 1, int2(maxPixel, maxPixel));
     float2 fracPart = frac(sampleCoord);
 
     float h00 = _HectonScatterHeightTexture.Load(int3(pixelMin, 0));
@@ -131,6 +174,10 @@ float SampleHeight01(float2 uv)
     float h01 = _HectonScatterHeightTexture.Load(int3(int2(pixelMin.x, pixelMax.y), 0));
     float h11 = _HectonScatterHeightTexture.Load(int3(pixelMax, 0));
 
+    h00 = SanitizeNonNegativeFinite(h00);
+    h10 = SanitizeNonNegativeFinite(h10);
+    h01 = SanitizeNonNegativeFinite(h01);
+    h11 = SanitizeNonNegativeFinite(h11);
     float hx0 = lerp(h00, h10, fracPart.x);
     float hx1 = lerp(h01, h11, fracPart.x);
     return lerp(hx0, hx1, fracPart.y);
@@ -138,7 +185,7 @@ float SampleHeight01(float2 uv)
 
 float3 SampleTerrainNormal(float2 uv)
 {
-    float texel = _HectonScatterHeightTexelSize;
+    float texel = SanitizePositiveFinite(_HectonScatterHeightTexelSize, 0.000001);
     float2 offsetX = float2(texel, 0.0);
     float2 offsetZ = float2(0.0, texel);
 
@@ -157,9 +204,10 @@ uint SampleBiomeHeatmapId(float2 terrainUv)
     if (_HectonScatterBiomeParams.y <= 0.5)
         return 0u;
 
-    float maxPixel = max(_HectonScatterBiomeParams.x, 1.0);
-    int2 pixel = clamp((int2)(saturate(terrainUv) * maxPixel + 0.5), int2(0, 0), int2((int)maxPixel, (int)maxPixel));
-    return (uint)(_HectonBiomeHeatmapTex.Load(int3(pixel, 0)) * 255.0 + 0.5);
+    int maxPixel = (int)ResolveSafeFloatUInt(SanitizePositiveFinite(_HectonScatterBiomeParams.x, 1.0), HECTON_SCATTER_MAX_GRID_RESOLUTION);
+    int2 pixel = clamp((int2)(saturate(terrainUv) * (float)maxPixel + 0.5), int2(0, 0), int2(maxPixel, maxPixel));
+    float biomeValue = SanitizeNonNegativeFinite(_HectonBiomeHeatmapTex.Load(int3(pixel, 0)));
+    return ResolveSafeFloatUInt(biomeValue * 255.0 + 0.5, 255u);
 }
 
 float ResolveBiomeScatterDensity01(uint biomeId, uint baseHash)
@@ -200,13 +248,19 @@ bool PassesDotThresholdSq(float dotValue, float threshold, float lengthProductSq
 
 uint ResolveFrustumRejectMask(float3 centerWS, float radius)
 {
-    float paddedRadius = radius + max(0.0, _HectonScatterFrustumPadding);
+    if (!all(isfinite(centerWS)))
+        return 0x3Fu;
+
+    float paddedRadius = SanitizePositiveFinite(radius, 0.001) + SanitizeNonNegativeFinite(_HectonScatterFrustumPadding);
     uint rejectMask = 0u;
 
     [unroll]
     for (int nearFarPlaneIndex = 0; nearFarPlaneIndex < 2; nearFarPlaneIndex++)
     {
         float4 plane = _HectonScatterFrustumPlanes[nearFarPlaneIndex];
+        if (!all(isfinite(plane)))
+            return 0x3Fu;
+
         if (dot(plane.xyz, centerWS) + plane.w < -paddedRadius)
             return 1u << nearFarPlaneIndex;
     }
@@ -215,6 +269,9 @@ uint ResolveFrustumRejectMask(float3 centerWS, float radius)
     for (int planeIndex = 2; planeIndex < HECTON_SCATTER_FRUSTUM_PLANES; planeIndex++)
     {
         float4 plane = _HectonScatterFrustumPlanes[planeIndex];
+        if (!all(isfinite(plane)))
+            return 0x3Fu;
+
         if (dot(plane.xyz, centerWS) + plane.w < -paddedRadius)
             rejectMask |= 1u << planeIndex;
     }
@@ -224,19 +281,31 @@ uint ResolveFrustumRejectMask(float3 centerWS, float radius)
 
 float2 ResolveClipUv(float4 clipPosition)
 {
+    if (!all(isfinite(clipPosition)) || clipPosition.w <= 0.0001)
+        return -1.0.xx;
+
     float2 uv = clipPosition.xy / max(clipPosition.w, 0.0001);
     return uv * 0.5 + 0.5;
 }
 
 float ResolveEyeDepth(float3 positionWS)
 {
+    if (!all(isfinite(positionWS)))
+        return 0.0;
+
     float3 positionVS = mul(_HectonScatterViewMatrix, float4(positionWS, 1.0)).xyz;
+    if (!all(isfinite(positionVS)))
+        return 0.0;
+
     return max(0.0, -positionVS.z);
 }
 
 float ResolveProjectedPixelRadius(float4 clipCenter, float radius)
 {
-    return radius * _HectonScatterScreenParams.w * rcp(max(clipCenter.w, 0.0001));
+    if (!all(isfinite(clipCenter)) || !isfinite(radius) || clipCenter.w <= 0.0001)
+        return 0.0;
+
+    return SanitizeNonNegativeFinite(radius) * SanitizeNonNegativeFinite(_HectonScatterScreenParams.w) * rcp(max(clipCenter.w, 0.0001));
 }
 
 float SampleScatterDepthPyramid(float2 uv, int mipLevel)
@@ -244,7 +313,8 @@ float SampleScatterDepthPyramid(float2 uv, int mipLevel)
     if (_HectonScatterDepthPyramidMipCount <= 0)
         return 0.0;
 
-    int2 mipSize = max(int2(1, 1), int2(_HectonScatterDepthPyramidTexelSize.zw) >> mipLevel);
+    float2 depthPyramidSize = max(SanitizeFinite2(_HectonScatterDepthPyramidTexelSize.zw, 1.0.xx), 1.0.xx);
+    int2 mipSize = max(int2(1, 1), int2(depthPyramidSize) >> mipLevel);
     int2 pixel = clamp(int2(uv * mipSize), int2(0, 0), mipSize - 1);
     return _HectonScatterDepthPyramid.Load(int3(pixel, mipLevel));
 }
@@ -286,10 +356,11 @@ bool IsOccludedByScatterDepthPyramid(float3 centerWS, float boundsRadius)
     if (minUv.x >= maxUv.x || minUv.y >= maxUv.y)
         return false;
 
-    float2 rectPixels = (maxUv - minUv) * _HectonScatterDepthPyramidTexelSize.zw;
+    float2 depthPyramidSize = max(SanitizeFinite2(_HectonScatterDepthPyramidTexelSize.zw, 1.0.xx), 1.0.xx);
+    float2 rectPixels = (maxUv - minUv) * depthPyramidSize;
     float rectExtent = max(rectPixels.x, rectPixels.y);
     int mipLevel = (int)clamp(floor(log2(max(rectExtent, 1.0))), 0.0, (float)(_HectonScatterDepthPyramidMipCount - 1));
-    float rawDepth = SampleScatterDepthPyramid((minUv + maxUv) * 0.5, mipLevel);
+    float rawDepth = SanitizeNonNegativeFinite(SampleScatterDepthPyramid((minUv + maxUv) * 0.5, mipLevel));
 #if defined(UNITY_REVERSED_Z)
     if (rawDepth <= 0.0001)
         return false;
@@ -298,28 +369,38 @@ bool IsOccludedByScatterDepthPyramid(float3 centerWS, float boundsRadius)
         return false;
 #endif
 
+    if (!all(isfinite(_HectonScatterZBufferParams)))
+        return false;
+
     float sceneEyeDepth = LinearEyeDepth(rawDepth, _HectonScatterZBufferParams);
-    return nearestObjectDepth - sceneEyeDepth > _HectonScatterOcclusionDepthBias;
+    if (!isfinite(sceneEyeDepth))
+        return false;
+
+    return nearestObjectDepth - sceneEyeDepth > SanitizeNonNegativeFinite(_HectonScatterOcclusionDepthBias);
 }
 
 uint ResolveFoveatedUpdateMask(float2 uv, uint instanceIndex)
 {
+    if (!all(isfinite(uv)))
+        return 0u;
+
     float2 centerDelta = uv - 0.5;
-    uint outsideFovea = dot(centerDelta, centerDelta) > _HectonScatterFoveatedParams.x ? 1u : 0u;
-    uint cadenceMiss = (((uint)_HectonScatterFoveatedParams.y + instanceIndex) & 3u) != 0u ? 1u : 0u;
-    uint forceFull = (uint)min(max(_HectonScatterFoveatedParams.z, 0.0), 1.0);
+    uint outsideFovea = dot(centerDelta, centerDelta) > SanitizeNonNegativeFinite(_HectonScatterFoveatedParams.x) ? 1u : 0u;
+    uint cadence = ResolveSafeFloatUInt(_HectonScatterFoveatedParams.y, HECTON_SCATTER_MAX_SAFE_UINT);
+    uint cadenceMiss = ((cadence + instanceIndex) & 3u) != 0u ? 1u : 0u;
+    uint forceFull = ResolveSafeFloatUInt(saturate(SanitizeNonNegativeFinite(_HectonScatterFoveatedParams.z)), 1u);
     return 1u ^ (outsideFovea & cadenceMiss & (1u - forceFull));
 }
 
 bool PassesDitheredRadiusCull(float distanceSq, uint hashSeed, uint2 cellCoord)
 {
-    if (distanceSq > _HectonScatterMaxDistanceSq)
+    if (!isfinite(distanceSq) || distanceSq > SanitizeNonNegativeFinite(_HectonScatterMaxDistanceSq))
         return false;
 
-    if (distanceSq <= _HectonScatterDitherParams.x || _HectonScatterDitherParams.y <= 0.0)
+    if (distanceSq <= SanitizeNonNegativeFinite(_HectonScatterDitherParams.x) || _HectonScatterDitherParams.y <= 0.0)
         return true;
 
-    float keep01 = saturate((_HectonScatterMaxDistanceSq - distanceSq) * _HectonScatterDitherParams.y);
+    float keep01 = saturate((SanitizeNonNegativeFinite(_HectonScatterMaxDistanceSq) - distanceSq) * SanitizeNonNegativeFinite(_HectonScatterDitherParams.y));
     float dither = ResolveScatterBlueNoise01(cellCoord, hashSeed);
     return dither <= keep01;
 }
@@ -330,34 +411,44 @@ void AccumulateScatterDensity(float distanceSq, float scale)
         return;
 
     float normalizedDistanceSq = saturate(distanceSq * max(_HectonScatterDensityParams.x, 0.0));
-    uint binIndex = min((uint)(normalizedDistanceSq * _HectonScatterDensityBinCount), (uint)(_HectonScatterDensityBinCount - 1));
-    uint encodedDensity = (uint)max(1.0, min(255.0, scale * max(_HectonScatterDensityParams.y, 1.0)));
+    uint binCount = ResolveSafeUInt(_HectonScatterDensityBinCount, HECTON_SCATTER_MAX_SAFE_UINT);
+    if (binCount == 0u)
+        return;
+
+    uint binIndex = min(ResolveSafeFloatUInt(normalizedDistanceSq * (float)binCount, binCount - 1u), binCount - 1u);
+    uint encodedDensity = ResolveSafeFloatUInt(max(1.0, min(255.0, SanitizeNonNegativeFinite(scale) * max(SanitizeNonNegativeFinite(_HectonScatterDensityParams.y), 1.0))), 255u);
     InterlockedAdd(_HectonScatterDensityBins[binIndex], encodedDensity);
 }
 
 float SampleCaveSignedDistance(float3 positionWS)
 {
-    if (_HectonCaveVoxelActive <= 0.5)
-        return _HectonCaveVoxelHalfExtents.w;
+    float fallbackDistance = SanitizePositiveFinite(_HectonCaveVoxelHalfExtents.w, 1.0);
+    if (_HectonCaveVoxelActive <= 0.5 || !all(isfinite(positionWS)))
+        return fallbackDistance;
 
     float3 invDoubleHalfExtents = _HectonCaveVoxelInvDoubleHalfExtents.xyz;
-    if (any(invDoubleHalfExtents <= 0.0))
-        return _HectonCaveVoxelHalfExtents.w;
+    if (!all(isfinite(invDoubleHalfExtents)) || any(invDoubleHalfExtents <= 0.0))
+        return fallbackDistance;
 
     float3 localPosition = mul(_HectonCaveVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
+    if (!all(isfinite(localPosition)))
+        return fallbackDistance;
+
     float3 sampleUv = localPosition * invDoubleHalfExtents + 0.5;
     if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
-        return _HectonCaveVoxelHalfExtents.w;
+        return fallbackDistance;
 
     float encoded = _HectonCaveVoxelSdfTex.SampleLevel(sampler_HectonCaveVoxelSdfTex, sampleUv, 0).r;
-    return lerp(-_HectonCaveVoxelHalfExtents.w, _HectonCaveVoxelHalfExtents.w, encoded);
+    encoded = saturate(SanitizeNonNegativeFinite(encoded));
+    return lerp(-fallbackDistance, fallbackDistance, encoded);
 }
 
 [numthreads(HECTON_SCATTER_THREADS, 1, 1)]
 void ClearScatterDensityBuffer(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
     uint binIndex = dispatchThreadId.x;
-    if (binIndex >= (uint)_HectonScatterDensityBinCount)
+    uint binCount = ResolveSafeUInt(_HectonScatterDensityBinCount, HECTON_SCATTER_MAX_SAFE_UINT);
+    if (binIndex >= binCount)
         return;
 
     _HectonScatterDensityBins[binIndex] = 0u;
@@ -367,8 +458,11 @@ void ClearScatterDensityBuffer(uint3 dispatchThreadId : SV_DispatchThreadID)
 void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
     uint instanceIndex = dispatchThreadId.x;
-    uint gridResolution = (uint)_HectonScatterGridResolution;
-    uint totalCount = (uint)_HectonScatterCandidateCount;
+    uint gridResolution = ResolveSafeUInt(_HectonScatterGridResolution, HECTON_SCATTER_MAX_GRID_RESOLUTION);
+    uint totalCount = ResolveSafeUInt(_HectonScatterCandidateCount, HECTON_SCATTER_MAX_SAFE_UINT);
+    if (gridResolution == 0u || totalCount == 0u)
+        return;
+
     if (instanceIndex >= totalCount)
         return;
 
@@ -376,18 +470,22 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     uint cellZ = instanceIndex / gridResolution;
     uint halfGrid = max(1u, gridResolution >> 1);
     uint quadrant = (cellX >= halfGrid ? 1u : 0u) | (cellZ >= halfGrid ? 2u : 0u);
-    if (quadrant != (uint)(_HectonScatterFrameQuadrant & 3))
+    uint frameQuadrant = ResolveSafeUInt(_HectonScatterFrameQuadrant & 3, 3u);
+    if (quadrant != frameQuadrant)
         return;
 
-    float safeCellSize = max(_HectonScatterCellSize, 0.0001);
-    float2 cellAnchorWorldXZ = _HectonScatterFieldRect.xy + float2(cellX, cellZ) * safeCellSize;
-    int2 stableCellCoord = (int2)floor((cellAnchorWorldXZ + _HectonScatterAupGridOffset.xy) * rcp(safeCellSize));
+    float safeCellSize = SanitizePositiveFinite(_HectonScatterCellSize, 0.0001);
+    float2 fieldOrigin = SanitizeFinite2(_HectonScatterFieldRect.xy, 0.0.xx);
+    float2 aupGridOffset = SanitizeFinite2(_HectonScatterAupGridOffset.xy, 0.0.xx);
+    float2 cellAnchorWorldXZ = fieldOrigin + float2(cellX, cellZ) * safeCellSize;
+    int2 stableCellCoord = (int2)floor((cellAnchorWorldXZ + aupGridOffset) * rcp(safeCellSize));
     uint stableCellHash = ((uint)stableCellCoord.x * 73856093u) ^ ((uint)stableCellCoord.y * 19349663u);
     uint baseHash = HashUint(stableCellHash ^ instanceIndex ^ (uint)_HectonScatterSeed);
     float2 jitter = Hash02(baseHash);
     float2 worldXZ = cellAnchorWorldXZ + jitter * safeCellSize;
 
-    float2 planarCameraDelta = worldXZ - _HectonScatterCameraPosition.xz;
+    float3 safeCameraPosition = SanitizeFinite3(_HectonScatterCameraPosition, float3(0.0, 0.0, 0.0));
+    float2 planarCameraDelta = worldXZ - safeCameraPosition.xz;
     float planarDistanceSq = dot(planarCameraDelta, planarCameraDelta);
     if (!PassesDitheredRadiusCull(planarDistanceSq, baseHash ^ 0x31415927u, uint2(cellX, cellZ)))
     {
@@ -395,8 +493,10 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
     }
 
-    float2 terrainUv = (worldXZ - float2(_HectonScatterTerrainPosition.x, _HectonScatterTerrainPosition.z)) *
-        _HectonScatterTerrainSizeInvXZ;
+    float3 terrainPosition = SanitizeFinite3(_HectonScatterTerrainPosition, float3(0.0, 0.0, 0.0));
+    float3 terrainSize = SanitizeFinite3(_HectonScatterTerrainSize, float3(1.0, 1.0, 1.0));
+    float2 terrainInvSizeXZ = SanitizeFinite2(_HectonScatterTerrainSizeInvXZ, float2(1.0, 1.0));
+    float2 terrainUv = (worldXZ - float2(terrainPosition.x, terrainPosition.z)) * terrainInvSizeXZ;
 
     if (any(terrainUv < 0.0) || any(terrainUv > 1.0))
     {
@@ -413,12 +513,23 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     }
 
     float height01 = SampleHeight01(terrainUv);
+    if (!isfinite(height01))
+    {
+        _HectonScatterVisibilityCache[instanceIndex] = 0u;
+        return;
+    }
+
     float3 positionWS = float3(
         worldXZ.x,
-        _HectonScatterTerrainPosition.y + height01 * _HectonScatterTerrainSize.y,
+        terrainPosition.y + height01 * terrainSize.y,
         worldXZ.y);
+    if (!all(isfinite(positionWS)))
+    {
+        _HectonScatterVisibilityCache[instanceIndex] = 0u;
+        return;
+    }
 
-    float3 toCamera = positionWS - _HectonScatterCameraPosition;
+    float3 toCamera = positionWS - safeCameraPosition;
     float distanceToCameraSq = dot(toCamera, toCamera);
     if (distanceToCameraSq <= 0.00000001 || !PassesDitheredRadiusCull(distanceToCameraSq, baseHash ^ 0x7f4a7c15u, uint2(cellX, cellZ)))
     {
@@ -445,22 +556,26 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
     }
 
-    float dotForward = dot(toCamera, _HectonScatterCameraForward);
-    if (distanceToCameraSq > _HectonScatterPeripheralDistanceSq &&
-        !PassesDotThresholdSq(dotForward, _HectonScatterPeripheralDot, distanceToCameraSq))
+    float3 cameraForward = SanitizeFinite3(_HectonScatterCameraForward, float3(0.0, 0.0, 1.0));
+    float dotForward = dot(toCamera, cameraForward);
+    float peripheralDot = isfinite(_HectonScatterPeripheralDot) ? _HectonScatterPeripheralDot : 0.0;
+    if (distanceToCameraSq > SanitizeNonNegativeFinite(_HectonScatterPeripheralDistanceSq) &&
+        !PassesDotThresholdSq(dotForward, peripheralDot, distanceToCameraSq))
     {
         _HectonScatterVisibilityCache[instanceIndex] = 0u;
         return;
     }
 
-    float scale = lerp(_HectonScatterScaleRange.x, _HectonScatterScaleRange.y, Hash01(baseHash ^ 0x9f6abc1du));
+    float4 scaleRange = SanitizeFinite4(_HectonScatterScaleRange, float4(1.0, 1.0, 0.0, 0.0));
+    scaleRange.xy = max(scaleRange.xy, 0.001.xx);
+    float scale = lerp(scaleRange.x, max(scaleRange.x, scaleRange.y), Hash01(baseHash ^ 0x9f6abc1du));
     if (biomeId != 0u)
         scale *= lerp(0.74, 1.22, Hash01((biomeId * 2246822519u) ^ baseHash));
     uint speciesIndex = ResolveBiomeScatterSpecies(biomeId, baseHash);
     float4 boundsData = ResolveScatterBounds(speciesIndex);
-    float radius = max(boundsData.w * scale, 0.15);
+    float radius = max(SanitizeNonNegativeFinite(boundsData.w * scale), 0.15);
     float pixelRadius = ResolveProjectedPixelRadius(clipCenter, radius);
-    if (pixelRadius < _HectonScatterScreenParams.z)
+    if (pixelRadius < SanitizeNonNegativeFinite(_HectonScatterScreenParams.z))
     {
         _HectonScatterVisibilityCache[instanceIndex] = 0u;
         return;
@@ -506,17 +621,23 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 [numthreads(HECTON_SCATTER_THREADS, 1, 1)]
 void CompactVisibleScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-    DeviceMemoryBarrierWithGroupSync();
-
     uint instanceIndex = dispatchThreadId.x;
-    if (instanceIndex >= (uint)_HectonScatterCandidateCount)
+    uint totalCount = ResolveSafeUInt(_HectonScatterCandidateCount, HECTON_SCATTER_MAX_SAFE_UINT);
+    if (instanceIndex >= totalCount)
         return;
 
     if (_HectonScatterVisibilityCache[instanceIndex] != 0u)
     {
         float3 instancePosition = _HectonScatterInstances[instanceIndex].PositionScale.xyz;
-        float3 toCamera = instancePosition - _HectonScatterCameraPosition;
+        if (!all(isfinite(instancePosition)))
+            return;
+
+        float3 safeCameraPosition = SanitizeFinite3(_HectonScatterCameraPosition, float3(0.0, 0.0, 0.0));
+        float3 toCamera = instancePosition - safeCameraPosition;
         float distanceSq = dot(toCamera, toCamera);
+        if (!isfinite(distanceSq))
+            return;
+
         AccumulateScatterDensity(distanceSq, _HectonScatterInstances[instanceIndex].PositionScale.w);
         _HectonVisibleScatterIndices.Append(instanceIndex);
     }

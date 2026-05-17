@@ -414,9 +414,9 @@ namespace Hecton8.VFX.Debris
             ApplyRegistryServiceRebind(serviceSlot, currentService);
         }
 
-        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent _)
         {
-            QueueScalabilityTierCandidate(payload.CurrentTier, payload.CurrentQualityTier, _forceLowMemoryProfile);
+            RefreshScalabilityTierCandidate();
         }
 
         private void TryRegisterScalabilityEvents()
@@ -441,11 +441,7 @@ namespace Hecton8.VFX.Debris
 
         private void RefreshScalabilityTierSeed()
         {
-            _forceLowMemoryProfile = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
-            QueueScalabilityTierCandidate(
-                GlobalRegistry.ScalabilityTierProfileByte,
-                GlobalRegistry.ScalabilityTier,
-                _forceLowMemoryProfile);
+            RefreshScalabilityTierCandidate();
             if (_tierCacheInitialized)
                 return;
 
@@ -455,6 +451,15 @@ namespace Hecton8.VFX.Debris
             _pendingHighEndTier = _sampledHighEndTier;
             _pendingTierFrames = 0;
             _tierCacheInitialized = true;
+        }
+
+        private void RefreshScalabilityTierCandidate()
+        {
+            _forceLowMemoryProfile = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+            QueueScalabilityTierCandidate(
+                GlobalRegistry.ScalabilityTierProfileByte,
+                GlobalRegistry.ScalabilityTier,
+                _forceLowMemoryProfile);
         }
 
         private void QueueScalabilityTierCandidate(byte tierProfile, HectonQualityTier qualityTier, bool lowMemoryProfile)
@@ -995,7 +1000,7 @@ namespace Hecton8.VFX.Debris
             fluidAdvectionCompute.SetVector(AbyssalFlowTextureParamsId, flowTextureParams);
             fluidAdvectionCompute.SetFloat(AbyssalFlowTextureActiveId, flowTextureActive);
             Vector4 globalWakeParams = ResolveGlobalWakeParamsForCompute(lowTier);
-            _lastWakeActive = !lowTier && globalWakeParams.x > 0.5f && globalWakeParams.z > 0.5f;
+            _lastWakeActive = globalWakeParams.x > 0.5f && globalWakeParams.z > 0.5f;
             fluidAdvectionCompute.SetVector(GlobalWakeParamsId, globalWakeParams);
             fluidAdvectionCompute.SetMatrix(VoxelSdfWorldToLocalId, sdfWorldToLocal);
             fluidAdvectionCompute.SetVector(VoxelSdfInvDoubleHalfExtentsId, sdfInvDoubleHalfExtents);
@@ -1005,18 +1010,16 @@ namespace Hecton8.VFX.Debris
 
         private static Vector4 ResolveGlobalWakeParamsForCompute(bool lowTier)
         {
-            if (lowTier)
-                return new Vector4(0f, 1f, 0f, 0f);
-
             Vector4 wakeParams = Shader.GetGlobalVector(GlobalWakeParamsId);
             if (!IsFiniteVector(wakeParams))
-                return Vector4.zero;
+                return lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
 
-            float slotLimit = math.clamp(wakeParams.x, 0f, 16f);
+            float maxSlotLimit = lowTier ? 4f : 16f;
+            float slotLimit = math.clamp(wakeParams.x, 0f, maxSlotLimit);
             float activeCount = math.clamp(wakeParams.z, 0f, slotLimit);
             return new Vector4(
                 slotLimit,
-                0f,
+                lowTier ? 1f : 0f,
                 activeCount,
                 math.saturate(wakeParams.w));
         }
@@ -1401,7 +1404,7 @@ namespace Hecton8.VFX.Debris
                 receiveShadows = highEndTier,
                 motionVectorMode = MotionVectorGenerationMode.Object
             };
-            Graphics.RenderMeshIndirect(renderParams, mesh, _indirectArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _indirectArgsBuffer, 1, 0);
         }
 
         private void BindStaticRenderMaterialState(Material material, bool highEndTier)
@@ -1639,10 +1642,13 @@ namespace Hecton8.VFX.Debris
 
         private static bool IsLowTierPayload(byte tierProfile, HectonQualityTier qualityTier)
         {
-            return tierProfile == ScalabilityTierProfiles.LowMx350 ||
-                   qualityTier == HectonQualityTier.Unknown ||
-                   qualityTier == HectonQualityTier.Low ||
-                   qualityTier == HectonQualityTier.Mx350;
+            if (qualityTier == HectonQualityTier.Low || qualityTier == HectonQualityTier.Mx350)
+                return true;
+
+            if (qualityTier == HectonQualityTier.Unknown)
+                return tierProfile == ScalabilityTierProfiles.LowMx350;
+
+            return false;
         }
 
         private bool TryBuildComputeShardRequest(
@@ -1909,15 +1915,17 @@ namespace Hecton8.VFX.Debris
                 Directory.CreateDirectory(directory);
 
             int entrySize = UnsafeUtility.SizeOf<CarveDebrisTelemetryEntry>();
-            byte[] bytes = new byte[entrySize * blackBox.Length + sizeof(uint)];
-            fixed (byte* bytesPtr = bytes)
+            Span<byte> header = stackalloc byte[sizeof(uint)];
+            header[0] = (byte)reasonFlags;
+            header[1] = (byte)(reasonFlags >> 8);
+            header[2] = (byte)(reasonFlags >> 16);
+            header[3] = (byte)(reasonFlags >> 24);
+            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             {
-                UnsafeUtility.CopyStructureToPtr(ref reasonFlags, bytesPtr);
-                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
-                UnsafeUtility.MemCpy(bytesPtr + sizeof(uint), source, entrySize * blackBox.Length);
+                stream.Write(header);
+                stream.Write(new ReadOnlySpan<byte>(source, entrySize * blackBox.Length));
             }
-
-            File.WriteAllBytes(path, bytes);
         }
 
         private void ReleaseGpuState()
@@ -2037,6 +2045,7 @@ namespace Hecton8.VFX.Debris
             destination.UnlockBufferAfterWrite<T>(safeCount);
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct AgeCarveDebrisMirrorJob : IJob
         {
@@ -2076,6 +2085,7 @@ namespace Hecton8.VFX.Debris
             }
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CarveDebrisInjectBatchJob : IJob
         {

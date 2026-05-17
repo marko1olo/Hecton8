@@ -225,3 +225,74 @@ Exact Microseconds saved:
 Validation:
 - Broad AUP/player/physics/vehicle scan returns no matches for private native container ownership, private native allocations, non-`Pack = 1` `StructLayout`, `Vector3.Distance`, direct `math.sqrt`, `math.length`, unguarded `math.rsqrt`, `string.Format`, or standard `Update()`.
 - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` passes with 0 warnings and 0 errors. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt15.txt`.
+
+## 2026-05-16 Floating-Origin And KCC Vault Handle Closure
+
+What was wrong:
+- `HectonFloatingOrigin` still owned private persistent drift-probe native buffers.
+- `PlayerKinematicsRuntime` still cached KCC scratch/state/telemetry lanes as private `NativeArray<T>` fields even though their storage was DataVault-first.
+- Floating-origin had two remaining scanned `rsqrt` sites that needed clamp-form guards.
+
+What was done:
+- Added DataVault BufferIDs for floating-origin drift runtime positions, absolute positions, and invalid masks.
+- Converted floating-origin drift probes to `VaultBufferHandle<T>` storage and resolved native views at schedule/consume time.
+- Converted KCC runtime storage fields to `VaultBufferBinding<T>` handles and removed the local allocation/disposal helper path.
+- Clamped the remaining floating-origin drift and radial normalization `rsqrt` paths.
+
+Cinematic Cheats used:
+- No new physical simulation. Kept the drift probe and KCC state compact so low-tier budget stays available for visual/audio masking of AUP rebases.
+
+Exact Microseconds saved:
+- 0.0 us measured direct frame-time gain.
+- Static estimate: neutral CPU; benefit is removal of hidden private native ownership and tighter memory sentinel accounting.
+
+Validation:
+- Broad AUP/player/physics/vehicle scans return no matches for private native ownership, private native allocations, non-packed `StructLayout`, forbidden distance/sqrt/length/unguarded-rsqrt math, `string.Format`, or standard `Update()`.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:BuildInParallel=false -p:RunAnalyzers=false -p:IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP16\ -p:OutputPath=Temp\bin\AUP16\ -v:minimal -clp:Summary` passes with 0 warnings and 0 errors. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt16.txt`.
+
+## 2026-05-17 Explicit Downcast And Normalize Inquisition
+
+What was wrong:
+- Explicit `(float3)` downcasts remained in AUP/player/physics glue after the prior sovereignty pass.
+- `GlobalPhysicsStateManager` still used `math.normalizesafe` in two camera-forward culling paths instead of the project clamp-form `rsqrt` guard.
+- Attempt 17 failed on an external acoustic editor validation line using unqualified `Type`.
+
+What was done:
+- Replaced remaining explicit `(float3)` downcasts with explicit component construction at final Unity/PhysX handoff points.
+- Added a guarded `NormalizeWithRsqrtGuard` path for global physics camera-forward culling.
+- Changed the acoustic compile-wall line to `global::System.Type`.
+
+Cinematic Cheats used:
+- No new physical simulation. Kept this as scalar handoff cleanup and preserved existing fake-first presentation boundaries.
+
+Exact Microseconds saved:
+- 0.0 us measured direct frame-time gain.
+- Static estimate: neutral CPU; benefit is cleaner precision/NaN audit surface.
+
+Validation:
+- Broad AUP/player/physics/vehicle scans return no matches for explicit `(float3)` casts, `math.normalize*`, forbidden distance/sqrt/length/unguarded-rsqrt math, non-packed `StructLayout`, `string.Format`, or standard `Update()`.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:BuildInParallel=false -p:RunAnalyzers=false -p:IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP20\ -p:OutputPath=Temp\bin\AUP20\ -v:minimal -clp:Summary` passes with 0 warnings and 0 errors. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt20.txt`.
+
+## 2026-05-17 Player Presentation Typed-Lane Purge
+
+What was wrong:
+- `HectonPlayerMovement` still exposed managed `System.Action` presentation events for footstep, splash, submerge, exhale, wet-lens, transport bailout, fatal-pressure ramp, and sprint transitions.
+- Those callbacks bypassed typed lane telemetry and forced direct subscription edges from audio/VFX/UI back into the player movement component.
+
+What was done:
+- Added packed unmanaged `PlayerFootstepSignal`, `PlayerWaterSplashSignal`, `PlayerExhaleSignal`, `PlayerSprintStateSignal`, `PlayerFatalPressureSignal`, and `PlayerTransportBailoutSignal`.
+- Replaced player movement event invocations with `SignalBus<T>.Push`.
+- Migrated `PlayerFootstepAudio`, `HectonSurfaceWeatherDirector`, `HectonUnderwaterVisuals`, `InternalFloodWaterlineRuntime`, `CameraJuiceSystem`, and `HectonOSBootManager` to `ReadOnlySpan<T>` snapshot consumption.
+- Reused existing `VisorDropletSignal` for wet-lens pulses and kept submerge on the existing water-transition path instead of inventing duplicate lanes.
+
+Cinematic Cheats used:
+- Presentation pulses stay bounded and non-authoritative. No extra physics simulation was added; SignalBus low-tier caps can drop noncritical visual/audio pulses while preserving authority.
+
+Exact Microseconds saved:
+- 0.0 us measured direct frame-time gain.
+- Static estimate: neutral-to-sub-microsecond dispatch cost shift; the practical gain is no managed delegate subscription surface in the player movement presentation path.
+
+Validation:
+- Targeted scan over migrated files returns no matches for the removed player movement event names, `event System.Action`, local `NativeQueue` ownership, or non-packed structs.
+- Broad AUP/player/physics scan remains clean for explicit `(float3)`, `math.normalize*`, direct sqrt/length/unguarded-rsqrt math, `string.Format`, and standard `Update()`. The only `math.distancesq` hit is a squared-distance API and not a forbidden `math.distance` call.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:BuildInParallel=false -p:RunAnalyzers=false -p:IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP21\ -p:OutputPath=Temp\bin\AUP21\ -v:minimal -clp:Summary` passes with 0 warnings and 0 errors. Log: `Docs/AgentLogs/Dump_AUP_DETERMINISM_WATCHDOG_build_attempt21.txt`.

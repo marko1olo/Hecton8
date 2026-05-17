@@ -23,6 +23,7 @@ namespace Hecton8.Core
         private const float StressRecoveryThreshold = 0.72f;
         private const uint DumpMagic = 0x55424E52u; // UBNR
         private const string IntegratorDumpFileName = "Dump_UBER_NOIR_INTEGRATOR.bin";
+        private const string ExtinctionDumpFileName = "Dump_EXTINCTION_LUT_SAMPLER.bin";
 
         private const uint FeaturePom = 1u << 0;
         private const uint FeatureAnalyticalCaustics = 1u << 1;
@@ -225,7 +226,7 @@ namespace Hecton8.Core
                 return;
 
             IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryLockBuffer(BufferID.ShaderFeatureTelemetryRing))
+            if (vault == null || !vault.TryLockBuffer(BufferID.ShaderFeatureTelemetryRing, SystemID.GraphicsScalability))
                 return;
 
             try
@@ -257,7 +258,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShaderFeatureTelemetryRing);
+                vault.TryUnlockBuffer(BufferID.ShaderFeatureTelemetryRing, SystemID.GraphicsScalability);
             }
         }
 
@@ -273,7 +274,7 @@ namespace Hecton8.Core
             }
 
             IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryLockBuffer(BufferID.ShaderFeatureTelemetryRing))
+            if (vault == null || !vault.TryLockBuffer(BufferID.ShaderFeatureTelemetryRing, SystemID.GraphicsScalability))
             {
                 WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
                 return;
@@ -293,6 +294,7 @@ namespace Hecton8.Core
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
                 WriteBlackBoxFile(Path.Combine(logDirectory, IntegratorDumpFileName), reasonFlags, _telemetryCursor, ring);
+                WriteBlackBoxFile(Path.Combine(logDirectory, ExtinctionDumpFileName), reasonFlags, _telemetryCursor, ring);
             }
             catch (Exception)
             {
@@ -300,7 +302,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShaderFeatureTelemetryRing);
+                vault.TryUnlockBuffer(BufferID.ShaderFeatureTelemetryRing, SystemID.GraphicsScalability);
             }
         }
 
@@ -316,6 +318,7 @@ namespace Hecton8.Core
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
                 WriteEmptyBlackBoxFile(Path.Combine(logDirectory, IntegratorDumpFileName), reasonFlags, _telemetryCursor);
+                WriteEmptyBlackBoxFile(Path.Combine(logDirectory, ExtinctionDumpFileName), reasonFlags, _telemetryCursor);
             }
             catch (Exception)
             {

@@ -1407,7 +1407,7 @@ namespace Hecton8.UI
                 _appliedPhosphorDecay = resolvedPhosphorDecay;
                 _phosphorDecayMaterial.SetFloat(_DecayId, resolvedPhosphorDecay);
             }
-            Graphics.Blit(null, _phosphorBackTexture, _phosphorDecayMaterial, 0);
+            UnityEngine.Graphics.Blit(null, _phosphorBackTexture, _phosphorDecayMaterial, 0);
 
             RenderTexture swap = _phosphorFrontTexture;
             _phosphorFrontTexture = _phosphorBackTexture;

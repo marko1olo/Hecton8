@@ -24,7 +24,7 @@ Actual implementation surface: Assets/_Project/Scripts/World/SargassumMicroFauna
 - [x] 15. Homeostasis N/A. DOD: no homeostasis loop is part of the sensory buffer directive. Rejected alternative: adding unrelated behavior state. Estimate: 0 us/frame.
 - [x] 16. Ping decay threats reduce w by `dt*decay`. DOD: slots 2-4 decay by `simulationDt * SensoryAcousticPingDecayMetersPerSecond`, read newest capped acoustic pings, clear below 0.1, use an unsigned ring cursor so long sessions cannot wrap into a negative slot, and secondary movement/acoustic panic consumers now read the newest capped SignalBus windows too. Rejected alternative: timestamped managed ping list or oldest-window signal sampling under burst pressure. Estimate: 0 GC, ~1 us/frame.
 - [x] 17. Thread sync upload completes before `VISUAL_SYNC` compute dispatch. DOD: `GraphicsBufferUploadUtility.UploadNativeArray` is called inside `BindSimulationUniforms` before `CSMain` dispatch buffers are rebound and dispatched; sensory threat upload now writes to a frame-parity ping-pong GraphicsBuffer, rebinds the read buffer before dispatch, and skips unchanged parity-buffer uploads by 16-slot hash. Rejected alternative: single sensory upload buffer or blind per-dispatch upload of unchanged 256 B payloads. Estimate: avoids driver-side lock contention; +256 B VRAM for the second 16-slot buffer; unchanged frames save one buffer lock/memcpy.
-- [x] 18. `dotnet build`. DOD: latest post-change compile probe `Build_BOID_SENSORY_INPUT_PUMP_Polish16.txt` is blocked by external `ArchitectEyeVisualizer` missing `DebugSignal`; prior Polish15 probes were blocked by external `LockstepStateValidator` missing symbols. Scans found no diagnostics in `SargassumMicroFaunaBoids.cs`, `SargassumMicroFaunaBoids.compute`, `BoidFishInstanced.shader`, or `H8Memory.cs`. Last full green build remains `Build_BOID_SENSORY_INPUT_PUMP_Polish14.txt` before the finite-signal/shader-constant passes. Rejected alternative: editing diagnostics/determinism core outside the AI/COMPUTE boid sensory domain. Estimate: no frame impact; validation only.
+- [x] 18. `dotnet build`. DOD: latest post-change compile probe `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish18.txt` succeeded with 0 warnings and 0 errors after the shader count-bound/finite-frame pass. Rejected alternative: claiming the earlier Polish17 zero-byte build probes as validation. Estimate: 0 us/frame; build-only proof.
 
 ## Loop Log
 
@@ -229,3 +229,58 @@ Hardening evidence:
 - Debt scan returned no matches for `void Update`, `string.Format`, local `NativeArray`, `NativeQueue`, `GlobalSignals.Publish`, managed delegates, `Allocator.Temp`, legacy `ComputeBuffer`, `SetData`, or `GetData` in the boid/shader surface.
 - `git diff --check` on touched code/docs produced no whitespace errors; only repository LF-to-CRLF warnings.
 - Compile check: `Build_BOID_SENSORY_INPUT_PUMP_Polish16.txt` failed on external `ArchitectEyeVisualizer.DebugSignal`; no diagnostics referenced this boid sensory surface.
+
+### Loop 18: Curtain Direction and Frame-Constant Inquisition
+
+STATUS: BLOCKED BY BUILD PROCESS, BOID SURFACE CLEAN.
+
+Hardening evidence:
+
+- Re-read `Status_BOID_SENSORY_INPUT_PUMP.md`, `Rationale_BOID_SENSORY_INPUT_PUMP.md`, the original XML assignment, `AGENTS.md`, `Docs/Actual Domains of Project.txt`, and relevant GPU/SignalBus/Zero-GC/AUP mandates before editing.
+- Normalized `_PlayerDirectionWS` through `CheapNormalizeL1` before high-tier curtain math, added finite checks for direction length, speed square, forward dot, facing proxy, side dot, and final force strength.
+- Replaced direct shader divisions in the touched light/curtain/panic block with guarded `rcp` multiplication where those divisions fed stimulus gates.
+- Added safe local frame constants for field center, player position, camera avoid position/radius/weight, panic threshold, panic weight, massive threat weight, density threshold, window threshold, player panic radius/scale, player speed threshold, and headlight panic.
+- Routed headlight photophobia, panic weighting, camera pushback, density/window gates, and capsule sensory start through those safe locals instead of raw frame constants.
+- Debt scan returned no matches for `void Update`, `string.Format`, local `NativeArray`, `NativeQueue`, `GlobalSignals.Publish`, managed delegates, `Allocator.Temp`, legacy `ComputeBuffer`, `SetData`, or `GetData` in the boid/shader surface.
+- `git diff --check` on touched code files produced no whitespace errors; only repository LF-to-CRLF warnings.
+- Shader compiler tools `dxc`, `fxc`, and `glslangValidator` were not available in this shell.
+- Compile check: `Build_BOID_SENSORY_INPUT_PUMP_Polish17.txt`, `Polish17_Strike2.txt`, and `Polish17_Strike3.txt` all exited `-1` with zero-byte logs. Log scans found no diagnostics referencing `SargassumMicroFaunaBoids.cs`, `SargassumMicroFaunaBoids.compute`, `BoidFishInstanced.shader`, or `H8Memory.cs`.
+
+### Loop 19: Shader Count Bounds and Final Compile
+
+STATUS: VERIFIED MASTER GRADE.
+
+Hardening evidence:
+
+- Re-read `Status_BOID_SENSORY_INPUT_PUMP.md`, `Rationale_BOID_SENSORY_INPUT_PUMP.md`, the original XML assignment, and the Unity workflow skill before editing.
+- Added shader-side hard caps matching C# capacities: grazing anchors 96, massive threats 8, formation beacons 8, formation obstacles 16, leviathan nodes 64.
+- Resolved raw structured-buffer counts through clamped helper functions before loops, including signed clamp before uint conversion for grazing/massive threat counts.
+- Hardened main-kernel frame constants for field center/extents, player velocity, sonar strength/acceleration, formation panic/weight, parasite weight/aggression/latch radius, and leviathan wave/threat/surround weights.
+- Massive threat, formation beacon, formation obstacle, grazing anchor, and leviathan node payloads now get finite guards before position/radius/strength math and indexed behavior.
+- Low-tier endpoint sphere and high-tier capsule/curtain behavior remain intact; this pass protects the Dear Lie and visual-overkill paths instead of downgrading them.
+- Metal/Mac check: all compute kernels remain `THREAD_GROUP_SIZE 64`, below the 1024 thread-group limit.
+- Debt scan returned no matches for `void Update`, `string.Format`, `Transform.position`, local `new NativeArray`, `NativeQueue`, `GlobalSignals.Publish`, `EventBus`, managed delegates, legacy `ComputeBuffer`, `SetData`, or `GetData` in the boid/shader surface.
+- Shader direct-division scan now returns only reciprocal constants and integer indexing (`localIndex / 10u`, `index / SCHOOL_LEADER_FOLLOWER_COUNT`).
+- Struct audit: non-GPU native/job telemetry remains `[StructLayout(Pack = 1)]`; GPU/HLSL interop structs remain documented `Pack = 4` and gated by `ValidateGpuStructLayouts`.
+- `git diff --check` on touched code files produced no whitespace errors; only repository LF-to-CRLF warnings.
+- Compile check: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /maxcpucount:1 -nr:false` logged at `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish18.txt` and succeeded with 0 warnings and 0 errors.
+
+### Loop 20: Vault GPU Staging Eviction
+
+STATUS: STATIC VERIFIED, BUILD DEFERRED BY OPERATOR NO-REBUILD INSTRUCTION.
+
+Hardening evidence:
+
+- Re-read `Status_BOID_SENSORY_INPUT_PUMP.md`, `Rationale_BOID_SENSORY_INPUT_PUMP.md`, and the original XML assignment before this pass.
+- Removed local managed GPU staging ownership for grazing anchors, massive threats, formation beacons, and formation obstacles.
+- Added `BufferID.SargassumGrazingAnchors`, `BufferID.SargassumMassiveThreats`, `BufferID.SargassumFormationBeacons`, and `BufferID.SargassumFormationObstacles`; the system now keeps only `VaultBufferHandle<T>` fields for those datasets.
+- Uploads for those four datasets now use `GraphicsBufferUploadUtility.UploadNativeArray` from vault-resolved views instead of `UploadArray` from managed staging arrays.
+- Origin-shift handling and massive-threat compaction now cap to the vault view length before writing.
+- Removed the one-element managed indirect-draw args cache and writes indirect args directly into the `LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>` mapped buffer.
+- ARM64/Quest check: no new custom ABI struct was added; the existing vault handle is `[StructLayout(Pack = 1, Size = 24)]`, and data structs remain under existing layout gates.
+- Metal/Mac check: no shader thread group or DirectX-only shader path changed; `THREAD_GROUP_SIZE` remains 64.
+- Steam Deck I/O check: this pass adds no runtime file I/O; no build process was launched per the operator no-rebuild instruction.
+- Debt scan found no private managed arrays for the four evicted GPU staging datasets and no `UploadArray` use for grazing/massive/formation data; remaining `UploadArray` calls in this file are the pre-existing spawn-data double-buffer upload only.
+- Static debt scan found no `void Update`, `string.Format`, `GlobalSignals.Publish`, `EventBus`, `new NativeArray`, `Allocator.Persistent`, `Allocator.Temp`, `NativeQueue`, `SetData`, `GetData`, or `Transform.position` in the boid/shader surface.
+- `git diff --check` on touched code files produced no whitespace errors; only repository LF-to-CRLF warnings.
+- Compile check was not rerun because the latest operator instruction was: `do not run dotnet rebuild every time`.

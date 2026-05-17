@@ -1574,23 +1574,7 @@ namespace Hecton8.Gameplay
         //  EVENTS
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
-        /// <summary>Fired on each grounded footstep cycle. Used by audio and VFX systems.</summary>
-        public event System.Action OnFootstep;
-
-        /// <summary>Fired when a splash is detected. Float = intensity 0-1.</summary>
-        public event System.Action<float> OnWaterSplash;
-
-        /// <summary>Fired when head crosses submerge threshold. Bool = now submerged.</summary>
-        public event System.Action<bool> OnSubmergeChange;
-
-        /// <summary>Fired on each exhale cycle underwater. For bubble VFX / audio.</summary>
-        public event System.Action OnExhale;
-        /// <summary>Fired when the controller decides the visor/camera should receive a wet-lens pulse. Float = intensity 0-1.</summary>
-        public event System.Action<float> OnWetLensPulse;
-        /// <summary>Fired when active transport control is ripped away and the player is forcefully bailed out. Args: severity, world impulse.</summary>
-        public event System.Action<float, Vector3> OnTransportBailout;
-        /// <summary>Fired while the fatal pressure loop ramps toward implosion. Float = normalized sequence intensity 0-1.</summary>
-        public event System.Action<float> OnFatalPressureSequence;
+        private uint PlayerSignalSourceId => unchecked((uint)EntityId.ToULong(GetEntityId()));
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  CONSTANTS
@@ -2631,8 +2615,7 @@ namespace Hecton8.Gameplay
             if (ResolveCinematicFocusBlackBox().IsCreated)
                 return;
 
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
-            _dataVault = vault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return;
 
@@ -2645,11 +2628,10 @@ namespace Hecton8.Gameplay
 
         NativeArray<CinematicFocusTelemetryEntry> ResolveCinematicFocusBlackBox()
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || !_cinematicFocusBlackBoxHandle.IsCreated)
                 return default;
 
-            _dataVault = vault;
             return _cinematicFocusBlackBoxHandle.Resolve(vault);
         }
 
@@ -3521,7 +3503,7 @@ namespace Hecton8.Gameplay
             if (_fixedGroundSweepHitCount <= 0 ||
                 _fixedGroundSweepMaxDistance <= 0f ||
                 distance > _fixedGroundSweepMaxDistance ||
-                math.dot((float3)direction, new float3(0f, -1f, 0f)) < BatchedGroundProbeDownDot)
+                math.dot(new float3(direction.x, direction.y, direction.z), new float3(0f, -1f, 0f)) < BatchedGroundProbeDownDot)
             {
                 return false;
             }
@@ -3585,7 +3567,7 @@ namespace Hecton8.Gameplay
             if (_playerMotor == null)
                 return false;
 
-            float downDot = math.dot((float3)direction, new float3(0f, -1f, 0f));
+            float downDot = math.dot(new float3(direction.x, direction.y, direction.z), new float3(0f, -1f, 0f));
             if (downDot < BatchedGroundProbeDownDot)
                 return false;
 
@@ -3922,6 +3904,13 @@ namespace Hecton8.Gameplay
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.DataVault:
+                    _playerKinematicsNativeState.Dispose();
+                    DisposeCinematicFocusBlackBox();
+                    _dataVault = currentService as IDataVault;
+                    EnsurePlayerKinematicsNativeState();
+                    EnsureCinematicFocusBlackBox();
+                    break;
                 case GlobalRegistryServiceSlot.Audio:
                     _audioService = currentService as IAudioService;
                     break;
@@ -6495,7 +6484,6 @@ namespace Hecton8.Gameplay
         {
             return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
         }
-
         private void SanitizeKccFiniteState()
         {
             if (_rb == null)
@@ -6943,19 +6931,13 @@ namespace Hecton8.Gameplay
         //  SPRINT EVENTS (for CameraJuiceSystem integration)
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
-        public event System.Action OnSprintStarted;
-        public event System.Action OnSprintEnded;
-
         private void SetSprintingState(bool isSprinting)
         {
             if (_isSprinting == isSprinting)
                 return;
 
             _isSprinting = isSprinting;
-            if (isSprinting)
-                OnSprintStarted?.Invoke();
-            else
-                OnSprintEnded?.Invoke();
+            PublishPlayerSprintStateSignal(isSprinting);
         }
 
         private void SeedInputStateFromService(IInputService inputService)
@@ -7115,7 +7097,7 @@ namespace Hecton8.Gameplay
 
                 if (_juiceOutput.stepEvent)
                 {
-                    OnFootstep?.Invoke();
+                    PublishPlayerFootstepSignal();
                     TryEmitRaycastedFootstepAudio();
                     EmitExosuitFootstepSeismicPing();
                     UpdateStepDiagnostics();
@@ -7123,7 +7105,11 @@ namespace Hecton8.Gameplay
 
                 if (_juiceProcessor.SplashThisFrame)
                 {
-                    OnWaterSplash?.Invoke(_juiceProcessor.SplashIntensity);
+                    PublishPlayerWaterSplashSignal(
+                        _juiceProcessor.SplashIntensity,
+                        _juiceProcessor.IsSubmerged,
+                        EffectiveWaterSurfaceY,
+                        math.abs(_rb != null ? _rb.linearVelocity.y : 0f));
                     PublishWaterTransitionEvent(
                         WaterTransitionKind.Splash,
                         _juiceProcessor.IsSubmerged,
@@ -7134,7 +7120,6 @@ namespace Hecton8.Gameplay
 
                 if (_juiceProcessor.SubmergeChangedThisFrame)
                 {
-                    OnSubmergeChange?.Invoke(_juiceProcessor.IsSubmerged);
                     PublishWaterTransitionEvent(
                         WaterTransitionKind.SubmergeChanged,
                         _juiceProcessor.IsSubmerged,
@@ -7145,7 +7130,7 @@ namespace Hecton8.Gameplay
 
                 if (_juiceProcessor.ExhaleThisFrame)
                 {
-                    OnExhale?.Invoke();
+                    PublishPlayerExhaleSignal();
                 }
 
                 UpdateUnderwaterSomaticCameraOffsets(deltaTime);
@@ -8622,7 +8607,7 @@ namespace Hecton8.Gameplay
                 if (_juiceProcessor != null)
                     _juiceProcessor.RegisterEntanglementStrain(math.lerp(0.22f, 0.8f, _fatalPressureSequenceIntensity));
 
-                OnFatalPressureSequence?.Invoke(_fatalPressureSequenceIntensity);
+                PublishFatalPressureSignal(_fatalPressureSequenceIntensity);
 
                 if (_fatalPressureSequenceTimer <= 0f)
                 {
@@ -9857,7 +9842,7 @@ namespace Hecton8.Gameplay
             _impulseBypassTimer = math.max(_impulseBypassTimer, wipeoutImpulseBypassDuration);
             ApplyMotorImpulse(bailoutImpulse);
             TriggerBailoutDisorientation(severity, bailoutImpulse);
-            OnTransportBailout?.Invoke(severity, bailoutImpulse);
+            PublishTransportBailoutSignal(severity, bailoutImpulse);
         }
 
         private Vector3 ResolveAbyssalAmbientFlowWithNoise()
@@ -10332,7 +10317,7 @@ namespace Hecton8.Gameplay
             if (_wetLensPulseCooldownTimer < cooldown)
                 _wetLensPulseCooldownTimer = cooldown;
 
-            OnWetLensPulse?.Invoke(clampedIntensity);
+            PublishWetLensDropletSignal(clampedIntensity);
         }
 
         private static float NormalizeSignedAngle(float angle)
@@ -10453,13 +10438,119 @@ namespace Hecton8.Gameplay
             };
 
             FluidFeedbackEvents.PublishSplashQueued(in splashEvent);
-            OnWaterSplash?.Invoke(1f);
+            PublishPlayerWaterSplashSignal(1f, true, surfaceY, upwardSpeed);
             if (_juiceProcessor != null)
                 _juiceProcessor.RegisterSplash(1f, currentSuitData);
 
             EmitBreachImpactFeedback(1f);
             EmitBreachSplashRing(1f);
             EmitWetLensPulse(math.max(wetLensBreachPulseIntensity, 1f), wetLensStormPulseCooldown);
+        }
+
+        private void PublishPlayerFootstepSignal()
+        {
+            PlayerFootstepSignal signal = new PlayerFootstepSignal
+            {
+                SourceId = PlayerSignalSourceId,
+                Frame = unchecked((uint)Time.frameCount),
+                Intensity01 = 1f,
+                Flags = (byte)(_isGrounded ? 1 : 0)
+            };
+            SignalBus<PlayerFootstepSignal>.Push(in signal);
+        }
+
+        private void PublishPlayerWaterSplashSignal(
+            float intensity,
+            bool isSubmerged,
+            float surfaceY,
+            float verticalSpeed)
+        {
+            float safeIntensity = math.isfinite(intensity) ? math.saturate(intensity) : 0f;
+            if (safeIntensity <= 0f)
+                return;
+
+            PlayerWaterSplashSignal signal = new PlayerWaterSplashSignal
+            {
+                SourceId = PlayerSignalSourceId,
+                Frame = unchecked((uint)Time.frameCount),
+                Intensity01 = safeIntensity,
+                SurfaceY = math.isfinite(surfaceY) ? surfaceY : 0f,
+                VerticalSpeed = math.isfinite(verticalSpeed) ? math.max(0f, verticalSpeed) : 0f,
+                IsSubmerged = (byte)(isSubmerged ? 1 : 0),
+                Flags = 0
+            };
+            SignalBus<PlayerWaterSplashSignal>.Push(in signal);
+        }
+
+        private void PublishPlayerExhaleSignal()
+        {
+            PlayerExhaleSignal signal = new PlayerExhaleSignal
+            {
+                SourceId = PlayerSignalSourceId,
+                Frame = unchecked((uint)Time.frameCount),
+                Flags = (byte)(_isSurfaceSwimming || IsPlayerSubmerged ? 1 : 0)
+            };
+            SignalBus<PlayerExhaleSignal>.Push(in signal);
+        }
+
+        private void PublishPlayerSprintStateSignal(bool isSprinting)
+        {
+            PlayerSprintStateSignal signal = new PlayerSprintStateSignal
+            {
+                SourceId = PlayerSignalSourceId,
+                Frame = unchecked((uint)Time.frameCount),
+                IsSprinting = (byte)(isSprinting ? 1 : 0),
+                Flags = 0
+            };
+            SignalBus<PlayerSprintStateSignal>.Push(in signal);
+        }
+
+        private void PublishFatalPressureSignal(float intensity)
+        {
+            PlayerFatalPressureSignal signal = new PlayerFatalPressureSignal
+            {
+                SourceId = PlayerSignalSourceId,
+                Frame = unchecked((uint)Time.frameCount),
+                Intensity01 = math.isfinite(intensity) ? math.saturate(intensity) : 0f,
+                Flags = 0
+            };
+            SignalBus<PlayerFatalPressureSignal>.Push(in signal);
+        }
+
+        private void PublishTransportBailoutSignal(float severity, Vector3 bailoutImpulse)
+        {
+            float3 safeImpulse = math.all(math.isfinite(new float3(bailoutImpulse.x, bailoutImpulse.y, bailoutImpulse.z)))
+                ? new float3(bailoutImpulse.x, bailoutImpulse.y, bailoutImpulse.z)
+                : float3.zero;
+            PlayerTransportBailoutSignal signal = new PlayerTransportBailoutSignal
+            {
+                SourceId = PlayerSignalSourceId,
+                Frame = unchecked((uint)Time.frameCount),
+                Severity01 = math.isfinite(severity) ? math.saturate(severity) : 0f,
+                WorldImpulse = safeImpulse,
+                Flags = 0
+            };
+            SignalBus<PlayerTransportBailoutSignal>.Push(in signal);
+        }
+
+        private void PublishWetLensDropletSignal(float intensity)
+        {
+            float safeIntensity = math.isfinite(intensity) ? math.saturate(intensity) : 0f;
+            if (safeIntensity <= 0f)
+                return;
+
+            Vector3 runtimePosition = ResolvePlayerAupRuntimePosition();
+            VisorDropletSignal signal = new VisorDropletSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition),
+                Intensity01 = safeIntensity,
+                DurationSeconds = math.max(0.1f, wetLensStormPulseCooldown),
+                SourceHash = PlayerSignalSourceId,
+                DropletKind = VisorDropletSignal.DropletKindMassiveSplash,
+                Flags = VisorDropletSignal.FlagExternalSplash,
+                Sequence = unchecked((ushort)Time.frameCount)
+            };
+            SignalBus<VisorDropletSignal>.Push(in signal);
         }
 
         private void PublishWaterTransitionEvent(
@@ -11607,7 +11698,9 @@ namespace Hecton8.Gameplay
             if (movedSq > KinematicRepairProbeAupReuseDistanceSq)
                 return false;
 
-            float directionDot = math.dot((float3)rayDirection, (float3)_lastKinematicRepairProbeCullDirection);
+            float directionDot = math.dot(
+                new float3(rayDirection.x, rayDirection.y, rayDirection.z),
+                new float3(_lastKinematicRepairProbeCullDirection.x, _lastKinematicRepairProbeCullDirection.y, _lastKinematicRepairProbeCullDirection.z));
             if (directionDot < KinematicRepairProbeDirectionReuseDot)
                 return false;
 

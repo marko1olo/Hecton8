@@ -270,6 +270,11 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define _SonarScatterStrength (_SargassumSimulationFrame[0].Ecosystem0.y)
 #define _SonarScatterBandWidth (_SargassumSimulationFrame[0].Ecosystem0.z)
 #define MASSIVE_THREAT_FLAG_LEVIATHAN_HUNT_PULSE 1u
+#define GRAZING_ANCHOR_MAX_COUNT 96
+#define MASSIVE_THREAT_MAX_COUNT 8
+#define FORMATION_BEACON_MAX_COUNT 8
+#define FORMATION_OBSTACLE_MAX_COUNT 16
+#define LEVIATHAN_NODE_MAX_COUNT 64
 #define _SonarScatterAcceleration (_SargassumSimulationFrame[0].Ecosystem0.w)
 #define _FragmentationCenterAWS (_SargassumSimulationFrame[0].Fragmentation0.xyz)
 #define _FragmentationStrength (_SargassumSimulationFrame[0].Fragmentation0.w)
@@ -443,7 +448,7 @@ float3 ResolveFlowField(float3 positionWS, float phaseTime)
     float nx = ValueNoise2(float2(sx + time, sz + 31.71)) * 2.0 - 1.0;
     float nz = ValueNoise2(float2(sz + time + 67.30, sx + 149.20)) * 2.0 - 1.0;
     float ny = (ValueNoise2(float2(sx + time * 0.7 + 211.50, sz + time * 0.3)) * 2.0 - 1.0) * 0.12;
-    float3 driftVelocity = _DeltaTime > 0.0001 ? (_GlobalDriftDelta / max(_DeltaTime, 0.0001)) : float3(0.0, 0.0, 0.0);
+    float3 driftVelocity = _DeltaTime > 0.0001 ? (_GlobalDriftDelta * rcp(max(_DeltaTime, 0.0001))) : float3(0.0, 0.0, 0.0);
     float3 weatherCurrent = _AbyssalFlowWeatherCurrentWS;
     if (dot(weatherCurrent, weatherCurrent) > 1.0e+16)
         weatherCurrent = float3(0.0, 0.0, 0.0);
@@ -624,7 +629,9 @@ float3 ResolveSensoryThreatScatter(float3 positionCR, out float panic01, out flo
     float3 scatterCR = float3(0.0, 0.0, 0.0);
     uint threatCount = min(_SensoryThreatCount, SENSORY_THREAT_MAX_THREATS);
     uint highEndBeam = ((_SensoryThreatFlags & SENSORY_THREAT_FLAG_FLASHLIGHT_CAPSULE) != 0u) ? 1u : 0u;
-    float3 playerCR = ToCameraRelative(_PlayerPositionWS);
+    float3 playerCR = IsFiniteFloat3(_PlayerPositionWS)
+        ? ToCameraRelative(_PlayerPositionWS)
+        : positionCR;
 
     [loop]
     for (uint threatIndex = 0u; threatIndex < threatCount; threatIndex++)
@@ -695,7 +702,7 @@ bool TryResolveGridCell(float3 positionWS, int3 resolution, out int3 cell)
 
     float safeCellSize = ResolveGridCellSize();
     float3 boundsMin = _SpatialGridOrigin.xyz;
-    float3 local = (positionWS - boundsMin) / safeCellSize;
+    float3 local = (positionWS - boundsMin) * rcp(max(safeCellSize, EPSILON));
     if (!IsFiniteFloat3(local))
         return false;
 
@@ -712,6 +719,31 @@ bool HasThreatGridData()
     return _ThreatGridActive > 0 &&
            _ThreatGridResolution > 1 &&
            _ThreatGridCellSizeWS > 0.0;
+}
+
+uint ResolveGrazingAnchorCount()
+{
+    return (uint)clamp(_SargassumSimulationFrame[0].Counts0.y, 0, GRAZING_ANCHOR_MAX_COUNT);
+}
+
+uint ResolveMassiveThreatCount()
+{
+    return (uint)clamp(_SargassumSimulationFrame[0].Counts0.z, 0, MASSIVE_THREAT_MAX_COUNT);
+}
+
+int ResolveFormationBeaconCount()
+{
+    return clamp(_FormationBeaconCount, 0, FORMATION_BEACON_MAX_COUNT);
+}
+
+int ResolveFormationObstacleCount()
+{
+    return clamp(_FormationObstacleCount, 0, FORMATION_OBSTACLE_MAX_COUNT);
+}
+
+int ResolveLeviathanNodeCount()
+{
+    return clamp(_LeviathanNodeCount, 0, LEVIATHAN_NODE_MAX_COUNT);
 }
 
 bool IsThreatGridInside(int2 cell)
@@ -739,7 +771,7 @@ bool TryWorldToThreatGridCell(float3 worldPositionWS, out int2 cell)
     if (any(local < 0.0))
         return false;
 
-    int2 candidate = (int2)floor(local / max(_ThreatGridCellSizeWS, EPSILON));
+    int2 candidate = (int2)floor(local * rcp(max(_ThreatGridCellSizeWS, EPSILON)));
     if (!IsThreatGridInside(candidate))
         return false;
 
@@ -774,7 +806,7 @@ float2 ComputeThreatGridGradientAtWorldPosition(float3 worldPositionWS)
     if (!TryWorldToThreatGridCell(worldPositionWS, cell))
         return float2(0.0, 0.0);
 
-    float invSpan = 1.0 / max(_ThreatGridCellSizeWS * 2.0, EPSILON);
+    float invSpan = rcp(max(_ThreatGridCellSizeWS * 2.0, EPSILON));
     return float2(
         (SampleThreatGridCell(cell + int2(1, 0)) - SampleThreatGridCell(cell + int2(-1, 0))) * invSpan,
         (SampleThreatGridCell(cell + int2(0, 1)) - SampleThreatGridCell(cell + int2(0, -1))) * invSpan);
@@ -785,8 +817,20 @@ bool TryResolveTransportCapsuleAvoidance(float3 positionWS, float3 velocityWS, o
     avoidanceNormalWS = float3(0.0, 0.0, 0.0);
     vortexRepulsionWS = float3(0.0, 0.0, 0.0);
     avoidanceGate = 0.0;
-    if (_TransportCapsuleRadius <= EPSILON || _TransportCapsuleHalfLength <= EPSILON)
+    if (!IsFiniteFloat3(positionWS) ||
+        !IsFiniteFloat3(velocityWS) ||
+        !IsFiniteFloat3(_TransportCapsulePositionWS) ||
+        !IsFiniteFloat3(_TransportCapsuleVelocityWS) ||
+        !IsFiniteFloat(_TransportCapsuleRadius) ||
+        !IsFiniteFloat(_TransportCapsuleHalfLength) ||
+        !IsFiniteFloat(_PanicPlayerRadius) ||
+        !IsFiniteFloat(_PanicPlayerRadiusScale) ||
+        !IsFiniteFloat(_BoidBodyRadius) ||
+        _TransportCapsuleRadius <= EPSILON ||
+        _TransportCapsuleHalfLength <= EPSILON)
+    {
         return false;
+    }
 
     float3 capsuleForward = CheapNormalizeL1(_TransportCapsuleVelocityWS, float3(0.0, 0.0, 0.0));
     if (dot(capsuleForward, capsuleForward) <= EPSILON)
@@ -810,14 +854,14 @@ bool TryResolveTransportCapsuleAvoidance(float3 positionWS, float3 velocityWS, o
     float capsuleShellSq = max(influenceRadiusSq - capsuleRadiusSq, EPSILON);
     float signedDistanceSq = max(distanceSq - capsuleRadiusSq, 0.0);
     avoidanceNormalWS = distanceSq > EPSILON ? CheapNormalizeL1(awayFromCapsule, -capsuleForward) : -capsuleForward;
-    avoidanceGate = 1.0 - saturate(signedDistanceSq / capsuleShellSq);
+    avoidanceGate = 1.0 - saturate(signedDistanceSq * rcp(capsuleShellSq));
     float3 motionVector = dot(velocityWS, velocityWS) > EPSILON ? velocityWS : _TransportCapsuleVelocityWS;
     float3 swirlDirectionWS = CheapNormalizeL1(cross(avoidanceNormalWS, motionVector), float3(0.0, 0.0, 0.0));
     if (dot(swirlDirectionWS, swirlDirectionWS) <= EPSILON)
         swirlDirectionWS = CheapNormalizeL1(cross(avoidanceNormalWS, capsuleForward), float3(0.0, 0.0, 0.0));
 
     float axialOffset = dot(positionWS - _TransportCapsulePositionWS, capsuleForward);
-    float trailingGate = saturate((-axialOffset + _TransportCapsuleRadius) / max(halfLength + influenceRadius, 0.001));
+    float trailingGate = saturate((-axialOffset + _TransportCapsuleRadius) * rcp(max(halfLength + influenceRadius, 0.001)));
     float3 velocityDirectionWS = CheapNormalizeL1(velocityWS, float3(0.0, 0.0, 0.0));
     float velocityAlignment = dot(velocityDirectionWS, velocityDirectionWS) > EPSILON
         ? saturate(0.5 + 0.5 * dot(velocityDirectionWS, capsuleForward))
@@ -834,8 +878,16 @@ bool TryResolveSubmarineWakeRepulsion(float3 positionWS, out float3 repulsionWS,
     repulsionWS = float3(0.0, 0.0, 0.0);
     vortexWS = float3(0.0, 0.0, 0.0);
     wakeGate = 0.0;
-    if (_SubmarineWakeRadius <= EPSILON)
+    if (!IsFiniteFloat3(positionWS) ||
+        !IsFiniteFloat3(_SubmarineWakePositionWS) ||
+        !IsFiniteFloat3(_SubmarineWakeVelocityWS) ||
+        !IsFiniteFloat(_SubmarineWakeRadius) ||
+        !IsFiniteFloat(_SubmarineWakeHalfLength) ||
+        !IsFiniteFloat(_BoidBodyRadius) ||
+        _SubmarineWakeRadius <= EPSILON)
+    {
         return false;
+    }
 
     float3 hullVelocityWS = _SubmarineWakeVelocityWS;
     float hullSpeedSq = dot(hullVelocityWS, hullVelocityWS);
@@ -850,17 +902,17 @@ bool TryResolveSubmarineWakeRepulsion(float3 positionWS, out float3 repulsionWS,
         return false;
 
     float3 radialNormalWS = distanceSq > EPSILON ? CheapNormalizeL1(deltaToHullWS, -wakeAxisWS) : -wakeAxisWS;
-    float radialGate = 1.0 - saturate(distanceSq / max(radiusSq, EPSILON));
+    float radialGate = 1.0 - saturate(distanceSq * rcp(max(radiusSq, EPSILON)));
     float minimumDistanceSq = max(_BoidBodyRadius * _BoidBodyRadius, EPSILON);
-    float inverseSquareGate = saturate((_BoidBodyRadius * _SubmarineWakeRadius) / max(distanceSq, minimumDistanceSq));
-    wakeGate = saturate((radialGate * 0.65 + inverseSquareGate * 0.35) * saturate(hullSpeedSq / 16.0));
+    float inverseSquareGate = saturate((_BoidBodyRadius * _SubmarineWakeRadius) * rcp(max(distanceSq, minimumDistanceSq)));
+    wakeGate = saturate((radialGate * 0.65 + inverseSquareGate * 0.35) * saturate(hullSpeedSq * rcp(16.0)));
     if (wakeGate <= 0.0)
         return false;
 
     float halfLength = max(_SubmarineWakeHalfLength, _SubmarineWakeRadius);
     float axialOffset = dot(deltaToHullWS, wakeAxisWS);
-    float trailingGate = saturate((-axialOffset + _SubmarineWakeRadius) / max(halfLength + _SubmarineWakeRadius, 0.001));
-    float propellerGate = trailingGate * saturate(hullSpeedSq / 324.0);
+    float trailingGate = saturate((-axialOffset + _SubmarineWakeRadius) * rcp(max(halfLength + _SubmarineWakeRadius, 0.001)));
+    float propellerGate = trailingGate * saturate(hullSpeedSq * rcp(324.0));
     float3 tangentWS = CheapNormalizeL1(cross(wakeAxisWS, radialNormalWS), float3(0.0, 0.0, 0.0));
     if (dot(tangentWS, tangentWS) <= EPSILON)
         tangentWS = CheapNormalizeL1(cross(float3(0.0, 1.0, 0.0), radialNormalWS), float3(1.0, 0.0, 0.0));
@@ -877,6 +929,12 @@ bool TryResolveGlobalWakeRepulsion(float3 positionWS, out float3 repulsionWS, ou
     repulsionWS = float3(0.0, 0.0, 0.0);
     vortexWS = float3(0.0, 0.0, 0.0);
     wakeGate = 0.0;
+    if (!IsFiniteFloat3(positionWS) ||
+        !IsFiniteFloat3(_GlobalWakeParams.xyz) ||
+        !IsFiniteFloat(_GlobalWakeParams.w))
+    {
+        return false;
+    }
 
     int rawSlotLimit = min((int)max(_GlobalWakeParams.x, 0.0), HECTON_GLOBAL_WAKE_CAPACITY);
     int slotLimit = (_GlobalWakeParams.y > 0.5 || _SimulationLodTier != SIM_LOD_TIER_FULL)
@@ -897,6 +955,14 @@ bool TryResolveGlobalWakeRepulsion(float3 positionWS, out float3 repulsionWS, ou
 
         float4 wake = _GlobalWakeBuffer[i];
         float4 vectorRadius = _GlobalWakeVectors[i];
+        if (!IsFiniteFloat3(wake.xyz) ||
+            !IsFiniteFloat(wake.w) ||
+            !IsFiniteFloat3(vectorRadius.xyz) ||
+            !IsFiniteFloat(vectorRadius.w))
+        {
+            continue;
+        }
+
         float intensity = max(wake.w, 0.0);
         float radius = max(vectorRadius.w, 0.0);
         if (intensity <= EPSILON || radius <= EPSILON)
@@ -910,7 +976,7 @@ bool TryResolveGlobalWakeRepulsion(float3 positionWS, out float3 repulsionWS, ou
 
         float3 wakeAxisWS = CheapNormalizeL1(vectorRadius.xyz, float3(0.0, 0.0, 1.0));
         float3 radialWS = distanceSq > EPSILON ? CheapNormalizeL1(deltaToWakeWS, -wakeAxisWS) : -wakeAxisWS;
-        float radialGate = 1.0 - saturate(distanceSq / max(radiusSq, EPSILON));
+        float radialGate = 1.0 - saturate(distanceSq * rcp(max(radiusSq, EPSILON)));
         float gate = radialGate * radialGate * saturate(intensity);
         if (gate <= EPSILON)
             continue;
@@ -943,12 +1009,18 @@ void AccumulateGrazingAnchorSample(
     inout float grazingHoldPhase,
     inout float3 closestAnchorDelta)
 {
-    if (anchorIndex >= _GrazingAnchorCount)
+    if (anchorIndex >= ResolveGrazingAnchorCount())
         return;
 
     GrazingAnchorData anchor = _GrazingAnchors[anchorIndex];
-    if (anchor.Strength <= 0.0)
+    if (!IsFiniteFloat3(anchor.Position) ||
+        !IsFiniteFloat(anchor.Radius) ||
+        !IsFiniteFloat(anchor.Strength) ||
+        !IsFiniteFloat(anchor.Phase) ||
+        anchor.Strength <= 0.0)
+    {
         return;
+    }
 
     float3 anchorPosition = ToCameraRelative(anchor.Position);
     if (!IsFiniteFloat3(anchorPosition))
@@ -961,7 +1033,7 @@ void AccumulateGrazingAnchorSample(
     if (anchorDistanceSq > anchorRadiusSq)
         return;
 
-    float anchorFalloff = 1.0 - saturate(anchorDistanceSq / max(anchorRadiusSq, EPSILON));
+    float anchorFalloff = 1.0 - saturate(anchorDistanceSq * rcp(max(anchorRadiusSq, EPSILON)));
     float phase = WrapAngle(seed * TAU + anchor.Phase * TAU);
     float3 swirl = float3(-toAnchor.z, SafeSin(phase) * 0.18, toAnchor.x);
     float deepAnchorBlend = saturate(_DeepMode);
@@ -1057,7 +1129,7 @@ float3 ResolveHeadlightPhotophobiaForce(float3 positionWS, float headlightPanic0
     if (axialDistance <= 0.0 || axialDistance >= coneLength)
         return float3(0.0, 0.0, 0.0);
 
-    float axial01 = saturate(axialDistance / coneLength);
+    float axial01 = saturate(axialDistance * rcp(max(coneLength, EPSILON)));
     float coneRadius = lerp(max(_BoidBodyRadius * 4.0, 0.35), max(_PanicPlayerRadius, 0.5), axial01);
     float3 coneCenter = _PlayerPositionWS + lightDirectionWS * axialDistance;
     float3 radialOffset = positionWS - coneCenter;
@@ -1066,20 +1138,23 @@ float3 ResolveHeadlightPhotophobiaForce(float3 positionWS, float headlightPanic0
     if (!IsFiniteFloat(radialDistanceSq) || !IsFiniteFloat(coneRadiusSq) || radialDistanceSq >= coneRadiusSq)
         return float3(0.0, 0.0, 0.0);
 
-    float radialSq01 = saturate(radialDistanceSq / max(coneRadiusSq, EPSILON));
+    float radialSq01 = saturate(radialDistanceSq * rcp(max(coneRadiusSq, EPSILON)));
     float centerlineGate = 1.0 - radialSq01;
     float3 awayFromCenterline = CheapNormalizeL1(radialOffset + lightDirectionWS * 0.12, float3(0.0, 0.0, 0.0));
     if (dot(awayFromCenterline, awayFromCenterline) <= EPSILON)
         awayFromCenterline = CheapNormalizeL1(positionWS - _PlayerPositionWS, -lightDirectionWS);
 
-    float nearOriginFade = saturate(axialDistance / max(_PanicPlayerRadius * 0.35, 0.25));
+    float nearOriginFade = saturate(axialDistance * rcp(max(max(_PanicPlayerRadius * 0.35, 0.25), EPSILON)));
     float force = centerlineGate * centerlineGate * panicGate * nearOriginFade * max(_PanicWeight, 1.0) * 2.2;
+    if (!IsFiniteFloat(force))
+        return float3(0.0, 0.0, 0.0);
     return awayFromCenterline * force;
 }
 
 float3 ResolvePlayerCurtainPartingForce(float3 positionCR, float3 velocityCR, float3 playerPositionCR, float playerThreatGate, float panicFromPlayer)
 {
     if (ShouldSkipBoidGroupCurtainMath() ||
+        !IsFiniteFloat(_ParasiteMode) ||
         _ParasiteMode > 0.5 ||
         !IsFiniteFloat3(positionCR) ||
         !IsFiniteFloat3(velocityCR) ||
@@ -1093,16 +1168,29 @@ float3 ResolvePlayerCurtainPartingForce(float3 positionCR, float3 velocityCR, fl
         return float3(0.0, 0.0, 0.0);
     }
 
-    float3 toPlayer = _PlayerDirectionWS;
-    if (dot(toPlayer, toPlayer) <= EPSILON)
+    float3 toPlayer = CheapNormalizeL1(_PlayerDirectionWS, float3(0.0, 0.0, 0.0));
+    float toPlayerSq = dot(toPlayer, toPlayer);
+    if (!IsFiniteFloat(toPlayerSq) || toPlayerSq <= EPSILON)
+    {
         toPlayer = CheapNormalizeL1(playerPositionCR - positionCR, float3(0.0, 0.0, 0.0));
+        toPlayerSq = dot(toPlayer, toPlayer);
+    }
 
-    if (dot(toPlayer, toPlayer) <= EPSILON)
+    if (!IsFiniteFloat(toPlayerSq) || toPlayerSq <= EPSILON)
         return float3(0.0, 0.0, 0.0);
 
     float speedSq = dot(velocityCR, velocityCR);
+    if (!IsFiniteFloat(speedSq))
+        return float3(0.0, 0.0, 0.0);
+
     float forwardDot = speedSq > EPSILON ? dot(velocityCR, toPlayer) : 1.0;
-    float facingProxy = speedSq > EPSILON ? forwardDot * abs(forwardDot) / max(speedSq, EPSILON) : 1.0;
+    if (!IsFiniteFloat(forwardDot))
+        return float3(0.0, 0.0, 0.0);
+
+    float facingProxy = speedSq > EPSILON ? forwardDot * abs(forwardDot) * rcp(max(speedSq, EPSILON)) : 1.0;
+    if (!IsFiniteFloat(facingProxy))
+        return float3(0.0, 0.0, 0.0);
+
     float facingGate = smoothstep(0.0144, 0.7396, facingProxy);
     if (facingGate <= 0.001)
         return float3(0.0, 0.0, 0.0);
@@ -1116,10 +1204,17 @@ float3 ResolvePlayerCurtainPartingForce(float3 positionCR, float3 velocityCR, fl
     if (dot(lateral, lateral) <= EPSILON)
         lateral = float3(1.0, 0.0, 0.0);
 
-    float sideSign = dot(positionCR - playerPositionCR, lateral) >= 0.0 ? 1.0 : -1.0;
+    float sideDot = dot(positionCR - playerPositionCR, lateral);
+    if (!IsFiniteFloat(sideDot))
+        return float3(0.0, 0.0, 0.0);
+
+    float sideSign = sideDot >= 0.0 ? 1.0 : -1.0;
     float headlightGate = saturate(_HeadlightPanic * playerThreatGate);
     float panicGate = max(saturate(panicFromPlayer), headlightGate);
     float strength = facingGate * playerThreatGate * max(0.18, panicGate) * max(_PanicWeight, 1.0) * 4.2;
+    if (!IsFiniteFloat(strength))
+        return float3(0.0, 0.0, 0.0);
+
     return lateral * sideSign * strength;
 }
 
@@ -1189,7 +1284,11 @@ uint PbdCorrectionByteOffset(uint boidIndex)
 
 void AccumulatePBDCorrection(uint boidIndex, float3 correctionWS)
 {
-    int3 quantizedCorrection = int3(round(correctionWS * PBD_CORRECTION_QUANTIZE));
+    if (boidIndex >= _BoidCount || !IsFiniteFloat3(correctionWS))
+        return;
+
+    float3 clampedCorrectionWS = clamp(correctionWS, float3(-8.0, -8.0, -8.0), float3(8.0, 8.0, 8.0));
+    int3 quantizedCorrection = int3(round(clampedCorrectionWS * PBD_CORRECTION_QUANTIZE));
     uint baseOffset = PbdCorrectionByteOffset(boidIndex);
     uint ignoredValue = 0u;
     _PbdCorrections.InterlockedAdd(baseOffset, asuint(quantizedCorrection.x), ignoredValue);
@@ -1204,7 +1303,7 @@ float3 LoadPBDCorrection(uint boidIndex)
         asint(_PbdCorrections.Load(baseOffset)),
         asint(_PbdCorrections.Load(baseOffset + 4u)),
         asint(_PbdCorrections.Load(baseOffset + 8u)));
-    return float3(quantizedCorrection.x, quantizedCorrection.y, quantizedCorrection.z) / PBD_CORRECTION_QUANTIZE;
+    return float3(quantizedCorrection.x, quantizedCorrection.y, quantizedCorrection.z) * rcp(PBD_CORRECTION_QUANTIZE);
 }
 
 float SampleDensity01(float2 worldXZ)
@@ -1260,12 +1359,18 @@ float2 SampleCutGradient(float2 worldXZ)
 void ApplyObstacleRepulsion(float3 positionCR, float bodyRadius, out float3 obstacleForce, inout float3 targetCR)
 {
     obstacleForce = float3(0.0, 0.0, 0.0);
+    int obstacleCount = ResolveFormationObstacleCount();
     [loop]
-    for (int obstacleIndex = 0; obstacleIndex < _FormationObstacleCount; obstacleIndex++)
+    for (int obstacleIndex = 0; obstacleIndex < obstacleCount; obstacleIndex++)
     {
         FormationObstacleData obstacle = _FormationObstacles[obstacleIndex];
-        if (obstacle.Weight <= 0.0)
+        if (!IsFiniteFloat3(obstacle.Position) ||
+            !IsFiniteFloat(obstacle.Radius) ||
+            !IsFiniteFloat(obstacle.Weight) ||
+            obstacle.Weight <= 0.0)
+        {
             continue;
+        }
 
         float3 obstaclePositionCR = ToCameraRelative(obstacle.Position);
         if (!IsFiniteFloat3(obstaclePositionCR))
@@ -1287,7 +1392,7 @@ void ApplyObstacleRepulsion(float3 positionCR, float bodyRadius, out float3 obst
         float distanceToObstacleSq = dot(fromObstacle, fromObstacle);
         float repelRadius = obstacle.Radius + bodyRadius * 2.0;
         float repelRadiusSq = max(repelRadius * repelRadius, EPSILON);
-        float repelGate = 1.0 - saturate(distanceToObstacleSq / repelRadiusSq);
+        float repelGate = 1.0 - saturate(distanceToObstacleSq * rcp(repelRadiusSq));
         if (repelGate > 0.0)
             obstacleForce += CheapNormalizeL1(fromObstacle, float3(0.0, 1.0, 0.0)) * (repelGate * obstacle.Weight);
     }
@@ -1464,7 +1569,7 @@ void KernelPBDSolve(uint3 dispatchThreadID : SV_DispatchThreadID)
                         directionWS = CheapNormalizeL1(deltaWS, float3(0.0, 0.0, 1.0));
                     }
 
-                    float overlap01 = saturate((minDistanceSq - distanceSq) / max(minDistanceSq, EPSILON));
+                    float overlap01 = saturate((minDistanceSq - distanceSq) * rcp(max(minDistanceSq, EPSILON)));
                     float3 correctionWS = directionWS * (overlap01 * minDistance * 0.5);
                     AccumulatePBDCorrection(index, correctionWS);
                     AccumulatePBDCorrection(otherIndex, -correctionWS);
@@ -1482,6 +1587,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         return;
 
     BoidData selfBoid = _BoidsBufferRead[index];
+    float3 safeFieldCenterWS = IsFiniteFloat3(_FieldCenterWS) ? _FieldCenterWS : float3(0.0, 0.0, 0.0);
     if (!ShouldUpdateSimulationBucket(index))
     {
         _BoidsBufferWrite[index] = selfBoid;
@@ -1496,7 +1602,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         consumedBoid.Panic = saturate(selfBoid.Panic + _DeltaTime * max(_ConsumedCollapseSpeed, 0.01));
         consumedBoid.StateFlags = BOID_FLAG_CONSUMED | visualMutationFlags;
         if (!IsFiniteFloat3(consumedBoid.Position))
-            consumedBoid.Position = _FieldCenterWS;
+            consumedBoid.Position = safeFieldCenterWS;
         _BoidsBufferWrite[index] = consumedBoid;
         return;
     }
@@ -1507,7 +1613,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         sleepingBoid.Velocity = float3(0.0, 0.0, 0.0);
         sleepingBoid.StateFlags = (selfBoid.StateFlags & ~BOID_FLAG_LIGHT_STIMULUS) | visualMutationFlags;
         if (!IsFiniteFloat3(sleepingBoid.Position))
-            sleepingBoid.Position = _FieldCenterWS;
+            sleepingBoid.Position = safeFieldCenterWS;
         _BoidsBufferWrite[index] = sleepingBoid;
         return;
     }
@@ -1520,15 +1626,22 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     uint stateFlags = selfBoid.StateFlags;
     float phaseTime = GetPhaseTime();
     bool simplifiedTier = _SimulationLodTier == SIM_LOD_TIER_SIMPLIFIED;
-    bool leaderFollowerSchool = _FormationMode > 0.5 &&
-                                _FormationBeaconCount > 0 &&
-                                _ParasiteMode <= 0.5 &&
-                                _LeviathanModeBlend < 0.001;
-    float3 leaderAdvectionField = _AbyssalFlowWeatherCurrentWS;
+    uint safeGrazingAnchorCount = ResolveGrazingAnchorCount();
+    uint safeMassiveThreatCount = ResolveMassiveThreatCount();
+    int safeFormationBeaconCount = ResolveFormationBeaconCount();
+    int safeLeviathanNodeCount = ResolveLeviathanNodeCount();
+    float safeFormationMode = IsFiniteFloat(_FormationMode) ? _FormationMode : 0.0;
+    float safeParasiteMode = IsFiniteFloat(_ParasiteMode) ? _ParasiteMode : 0.0;
+    float safeLeviathanModeBlend = IsFiniteFloat(_LeviathanModeBlend) ? saturate(_LeviathanModeBlend) : 0.0;
+    bool leaderFollowerSchool = safeFormationMode > 0.5 &&
+                                safeFormationBeaconCount > 0 &&
+                                safeParasiteMode <= 0.5 &&
+                                safeLeviathanModeBlend < 0.001;
+    float3 leaderAdvectionField = IsFiniteFloat3(_AbyssalFlowWeatherCurrentWS) ? _AbyssalFlowWeatherCurrentWS : float3(0.0, 0.0, 0.0);
     if (!IsFiniteFloat3(position) || !IsFiniteFloat3(velocity) || !IsFiniteFloat(panic))
     {
-        position = ToCameraRelative(_FieldCenterWS);
-        positionWS = _FieldCenterWS;
+        position = ToCameraRelative(safeFieldCenterWS);
+        positionWS = safeFieldCenterWS;
         velocity = float3(0.0, 0.0, 0.0);
         panic = 0.0;
         stateFlags = BuildAliveStateFlags();
@@ -1544,9 +1657,9 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         gridResolution = ResolveGridResolution();
         if (!TryResolveGridCell(positionWS, gridResolution, homeCell))
         {
-            position = ToCameraRelative(_FieldCenterWS);
-            positionWS = _FieldCenterWS;
-            homeCell = clamp((int3)floor((positionWS - _SpatialGridOrigin.xyz) / ResolveGridCellSize()), int3(0, 0, 0), gridResolution - 1);
+            position = ToCameraRelative(safeFieldCenterWS);
+            positionWS = safeFieldCenterWS;
+            homeCell = clamp((int3)floor((positionWS - _SpatialGridOrigin.xyz) * rcp(ResolveGridCellSize())), int3(0, 0, 0), gridResolution - 1);
         }
     }
 
@@ -1557,7 +1670,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         {
             position += pbdCorrectionWS;
             positionWS += pbdCorrectionWS;
-            velocity += pbdCorrectionWS / max(_DeltaTime, 0.0001);
+            velocity += pbdCorrectionWS * rcp(max(_DeltaTime, 0.0001));
         }
     }
 
@@ -1587,7 +1700,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
                     int cellIndex = FlattenGridCell(neighbourCell, gridResolution);
                     uint cellCount = LoadSpatialGridCount(cellIndex);
-                    float densityOverflow01 = saturate(((float)cellCount - DENSITY_CAP_MAX_BOIDS) / DENSITY_CAP_MAX_BOIDS);
+                    float densityOverflow01 = saturate(((float)cellCount - DENSITY_CAP_MAX_BOIDS) * rcp(DENSITY_CAP_MAX_BOIDS));
                     int cellBaseIndex = cellIndex * max(_SpatialGridMeta.w, 1);
                     [loop]
                     for (uint slotIndex = 0u; slotIndex < cellCount; slotIndex++)
@@ -1610,16 +1723,17 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
                                     cohesionSum += otherPosition;
                                     neighbourCount += 1.0;
 
-                                    float contagionThreshold = max(_PanicThreshold, PANIC_CONTAGION_THRESHOLD);
+                                    float contagionThresholdSource = IsFiniteFloat(_PanicThreshold) ? _PanicThreshold : PANIC_CONTAGION_THRESHOLD;
+                                    float contagionThreshold = max(contagionThresholdSource, PANIC_CONTAGION_THRESHOLD);
                                     float otherPanic = saturate(otherBoid.Panic);
-                                    float contagionGate = saturate((otherPanic - contagionThreshold) / max(1.0 - contagionThreshold, 0.001));
+                                    float contagionGate = saturate((otherPanic - contagionThreshold) * rcp(max(1.0 - contagionThreshold, 0.001)));
                                     panicContagion = saturate(max(panicContagion, otherPanic * contagionGate * PANIC_CONTAGION_GAIN));
 
                                     if (distanceSq <= separationRadiusSq)
                                     {
                                         float clampedDistanceSq = max(distanceSq, 0.04);
                                         float3 awayDirection = CheapNormalizeL1(-toOther, float3(0.0, 0.0, 1.0));
-                                        float falloff = saturate(1.0 - (distanceSq / max(separationRadiusSq, EPSILON)));
+                                        float falloff = saturate(1.0 - (distanceSq * rcp(max(separationRadiusSq, EPSILON))));
                                         float inverseSquare = rcp(clampedDistanceSq);
                                         float densityPenalty = densityOverflow01 > 0.0 && distanceSq <= DENSITY_CAP_RADIUS_SQ
                                             ? densityOverflow01 * 3.75 * inverseSquare
@@ -1645,19 +1759,44 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     }
 
     float2 worldXZ = positionWS.xz;
-    float3 fieldCenterCR = ToCameraRelative(_FieldCenterWS);
-    float3 playerPositionCR = ToCameraRelative(_PlayerPositionWS);
-    float3 cameraAvoidPositionCR = ToCameraRelative(_CameraAvoidPositionWS);
+    float3 fieldCenterCR = ToCameraRelative(safeFieldCenterWS);
+    float3 safeFieldExtents = IsFiniteFloat3(_FieldExtents) ? max(_FieldExtents, float3(0.001, 0.001, 0.001)) : float3(64.0, 32.0, 64.0);
+    float3 safePlayerPositionWS = IsFiniteFloat3(_PlayerPositionWS) ? _PlayerPositionWS : positionWS;
+    float3 playerPositionCR = ToCameraRelative(safePlayerPositionWS);
+    float3 safePlayerVelocityWS = IsFiniteFloat3(_PlayerVelocityWS) ? _PlayerVelocityWS : float3(0.0, 0.0, 0.0);
+    float3 safeCameraAvoidPositionWS = IsFiniteFloat3(_CameraAvoidPositionWS) ? _CameraAvoidPositionWS : positionWS;
+    float3 cameraAvoidPositionCR = ToCameraRelative(safeCameraAvoidPositionWS);
     float cutMask = SampleCutMask01(worldXZ);
-    float panicFromCut = saturate((cutMask - _PanicThreshold) / max(1.0 - _PanicThreshold, 0.001));
-    float effectivePlayerPanicRadius = max(_PanicPlayerRadius * _PanicPlayerRadiusScale, 0.001);
+    float safePanicThreshold = IsFiniteFloat(_PanicThreshold) ? saturate(_PanicThreshold) : 1.0;
+    float panicFromCut = saturate((cutMask - safePanicThreshold) * rcp(max(1.0 - safePanicThreshold, 0.001)));
+    float safePanicWeight = IsFiniteFloat(_PanicWeight) ? max(_PanicWeight, 0.0) : 1.0;
+    float safeMassiveThreatWeight = IsFiniteFloat(_MassiveThreatWeight) ? max(_MassiveThreatWeight, 0.0) : safePanicWeight;
+    float safeCameraAvoidRadius = IsFiniteFloat(_CameraAvoidRadius) ? max(_CameraAvoidRadius, 0.0) : 0.0;
+    float safeCameraAvoidWeight = IsFiniteFloat(_CameraAvoidWeight) ? max(_CameraAvoidWeight, 0.0) : 0.0;
+    float safeDensityThreshold = IsFiniteFloat(_DensityThreshold) ? max(_DensityThreshold, 0.001) : 1.0;
+    float safeWindowThreshold = IsFiniteFloat(_WindowThreshold) ? max(_WindowThreshold, 0.001) : 1.0;
+    float safePlayerPanicRadius = IsFiniteFloat(_PanicPlayerRadius) ? max(_PanicPlayerRadius, 0.0) : 0.0;
+    float safePlayerPanicRadiusScale = IsFiniteFloat(_PanicPlayerRadiusScale) ? max(_PanicPlayerRadiusScale, 0.0) : 1.0;
+    float safePlayerSpeed = IsFiniteFloat(_PlayerSpeed) ? max(_PlayerSpeed, 0.0) : 0.0;
+    float safePlayerSpeedThreshold = IsFiniteFloat(_PanicPlayerSpeedThreshold) ? max(_PanicPlayerSpeedThreshold, 0.001) : 0.001;
+    float safeHeadlightPanic = IsFiniteFloat(_HeadlightPanic) ? saturate(_HeadlightPanic) : 0.0;
+    float safeFormationBreakPanicThreshold = IsFiniteFloat(_FormationBreakPanicThreshold) ? max(_FormationBreakPanicThreshold, 0.001) : 1.0;
+    float safeFormationWeight = IsFiniteFloat(_FormationWeight) ? max(_FormationWeight, 0.0) : 0.0;
+    float safeParasiteAffinityWeight = IsFiniteFloat(_ParasiteAffinityWeight) ? max(_ParasiteAffinityWeight, 0.0) : 0.0;
+    float safeParasiteAggression = IsFiniteFloat(_ParasiteAggression) ? saturate(_ParasiteAggression) : 0.0;
+    float safeParasiteLatchRadius = IsFiniteFloat(_ParasiteLatchRadius) ? max(_ParasiteLatchRadius, 0.001) : 0.001;
+    float safeSonarScatterStrength = IsFiniteFloat(_SonarScatterStrength) ? max(_SonarScatterStrength, 0.0) : 0.0;
+    float safeSonarScatterAcceleration = IsFiniteFloat(_SonarScatterAcceleration) ? max(_SonarScatterAcceleration, 0.0) : 0.0;
+    float effectivePlayerPanicRadius = max(safePlayerPanicRadius * safePlayerPanicRadiusScale, 0.001);
     float playerDistanceSq = dot(position - playerPositionCR, position - playerPositionCR);
     float effectivePlayerPanicRadiusSq = effectivePlayerPanicRadius * effectivePlayerPanicRadius;
-    float playerSpeedGate = saturate((_PlayerSpeed - _PanicPlayerSpeedThreshold) / max(_PanicPlayerSpeedThreshold, 0.001));
-    float playerThreatGate = 1.0 - saturate(playerDistanceSq / max(effectivePlayerPanicRadiusSq, EPSILON));
-    float panicFromPlayer = _ParasiteMode > 0.5
+    float playerSpeedGate = saturate((safePlayerSpeed - safePlayerSpeedThreshold) * rcp(max(safePlayerSpeedThreshold, 0.001)));
+    float playerThreatGate = IsFiniteFloat(playerDistanceSq)
+        ? 1.0 - saturate(playerDistanceSq * rcp(max(effectivePlayerPanicRadiusSq, EPSILON)))
+        : 0.0;
+    float panicFromPlayer = safeParasiteMode > 0.5
         ? 0.0
-        : max(playerSpeedGate * playerThreatGate, _HeadlightPanic * playerThreatGate);
+        : max(playerSpeedGate * playerThreatGate, safeHeadlightPanic * playerThreatGate);
     float threatGridPanic = SampleThreatGridAtWorldPosition(positionWS);
     float2 threatGridGradient = ComputeThreatGridGradientAtWorldPosition(positionWS);
     float panicFromMassive = 0.0;
@@ -1674,7 +1813,10 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float3 sensoryThreatScatterDirectionCR = ResolveSensoryThreatScatter(position, panicFromSensoryThreat, lightStimulusGate);
     float3 sonarScatterDirectionWS = float3(0.0, 0.0, 0.0);
     float3 acousticPanicDirectionWS = ResolveAcousticPanicChaos(positionWS, index, panicFromAcoustic);
-    if (_SonarScatterStrength > 0.001)
+    if (safeSonarScatterStrength > 0.001 &&
+        IsFiniteFloat3(_SonarScatterOriginWS) &&
+        IsFiniteFloat(_SonarScatterWaveFrontWS) &&
+        IsFiniteFloat(_SonarScatterBandWidth))
     {
         float3 fromSonarOrigin = positionWS - _SonarScatterOriginWS;
         float sonarRadius = max(_SonarScatterWaveFrontWS, 0.0);
@@ -1684,19 +1826,26 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float sonarDistanceSq = dot(fromSonarOrigin, fromSonarOrigin);
         float sonarRadiusSq = sonarRadius * sonarRadius;
         float sonarBandSq = max((sonarOuterRadius * sonarOuterRadius) - (sonarInnerRadius * sonarInnerRadius), EPSILON);
-        float sonarGate = 1.0 - saturate(abs(sonarDistanceSq - sonarRadiusSq) / sonarBandSq);
+        float sonarGate = 1.0 - saturate(abs(sonarDistanceSq - sonarRadiusSq) * rcp(sonarBandSq));
         if (sonarGate > 0.0)
         {
             sonarScatterDirectionWS = CheapNormalizeL1(fromSonarOrigin, float3(0.0, 0.0, 1.0));
-            panicFromSonar = sonarGate * _SonarScatterStrength;
+            panicFromSonar = sonarGate * safeSonarScatterStrength;
         }
     }
     bool consumedByLeviathan = false;
     [loop]
-    for (uint threatIndex = 0; threatIndex < _MassiveThreatCount; threatIndex++)
+    for (uint threatIndex = 0; threatIndex < safeMassiveThreatCount; threatIndex++)
     {
         MassiveThreatData threat = _MassiveThreats[threatIndex];
-        if (threat.Strength <= 0.0 || threat.EndTime <= phaseTime)
+        if (!IsFiniteFloat3(threat.Position) ||
+            !IsFiniteFloat(threat.InnerRadius) ||
+            !IsFiniteFloat(threat.PanicRadius) ||
+            !IsFiniteFloat(threat.Strength) ||
+            !IsFiniteFloat(threat.EndTime) ||
+            !IsFiniteFloat3(threat.DirectionWS) ||
+            threat.Strength <= 0.0 ||
+            threat.EndTime <= phaseTime)
             continue;
 
         float3 threatPosition = ToCameraRelative(threat.Position);
@@ -1704,7 +1853,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             continue;
 
         float3 fieldDelta = abs(threatPosition - fieldCenterCR);
-        float3 fieldLimit = _FieldExtents + threat.PanicRadius;
+        float3 fieldLimit = safeFieldExtents + threat.PanicRadius;
         if (any(fieldDelta > fieldLimit))
             continue;
 
@@ -1713,7 +1862,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float distanceSqToThreatCR = dot(awayFromThreat, awayFromThreat);
         float innerRadiusSq = threat.InnerRadius * threat.InnerRadius;
         float panicRadiusSq = panicRadius * panicRadius;
-        float threatGate = 1.0 - saturate((distanceSqToThreatCR - innerRadiusSq) / max(panicRadiusSq - innerRadiusSq, EPSILON));
+        float threatGate = 1.0 - saturate((distanceSqToThreatCR - innerRadiusSq) * rcp(max(panicRadiusSq - innerRadiusSq, EPSILON)));
         if (threatGate <= 0.0)
             continue;
 
@@ -1724,7 +1873,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         if (isLeviathanHuntPulse)
         {
             float distanceSqToThreat = dot(positionWS - threat.Position, positionWS - threat.Position);
-            float fleeGate = saturate(1.0 - (distanceSqToThreat / 1600.0));
+            float fleeGate = saturate(1.0 - (distanceSqToThreat * rcp(1600.0)));
             leviathanHuntPulse = max(leviathanHuntPulse, fleeGate * threat.Strength);
             stateFlags = distanceSqToThreat < 1600.0 ? BuildFleeStateFlags() : stateFlags;
             continue;
@@ -1734,8 +1883,9 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         if (dot(threatDirection, threatDirection) > EPSILON)
         {
             float axialOffset = dot(positionWS - threat.Position, threatDirection);
-            float frontGate = threatGate * saturate(axialOffset / max(panicRadius, 0.001));
-            float rearGate = threatGate * saturate(-axialOffset / max(panicRadius, 0.001));
+            float inversePanicRadius = rcp(max(panicRadius, 0.001));
+            float frontGate = threatGate * saturate(axialOffset * inversePanicRadius);
+            float rearGate = threatGate * saturate(-axialOffset * inversePanicRadius);
             float3 radialOffset = (positionWS - threat.Position) - (threatDirection * axialOffset);
             float3 lateralFallback = CheapNormalizeL1(cross(threatDirection, float3(0.0, 1.0, 0.0)), float3(1.0, 0.0, 0.0));
             if (dot(lateralFallback, lateralFallback) <= EPSILON)
@@ -1750,12 +1900,12 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             if (rearGate > 0.0)
                 collapseImpulse += CheapNormalizeL1(fieldCenterCR - position, -threatDirection) * (rearGate * threat.Strength);
         }
-        if (_LeviathanModeBlend < 0.001)
+        if (safeLeviathanModeBlend < 0.001)
             stateFlags = BuildFleeStateFlags();
 
         float mouthRadius = max(threat.InnerRadius * 0.85, _SeparationRadius * 0.5);
         float mouthRadiusSq = mouthRadius * mouthRadius;
-        if (_LeviathanModeBlend < 0.001 && distanceSqToThreatCR <= mouthRadiusSq)
+        if (safeLeviathanModeBlend < 0.001 && distanceSqToThreatCR <= mouthRadiusSq)
         {
             consumedByLeviathan = true;
             break;
@@ -1793,15 +1943,15 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     if (panicFromSonar > 0.0 && dot(sonarScatterDirectionWS, sonarScatterDirectionWS) > EPSILON)
     {
-        acceleration += sonarScatterDirectionWS * (_SonarScatterAcceleration * panicFromSonar);
+        acceleration += sonarScatterDirectionWS * (safeSonarScatterAcceleration * panicFromSonar);
     }
 
-    acceleration += ResolveHeadlightPhotophobiaForce(positionWS, _HeadlightPanic);
+    acceleration += ResolveHeadlightPhotophobiaForce(positionWS, safeHeadlightPanic);
     acceleration += ResolvePlayerCurtainPartingForce(position, velocity, playerPositionCR, playerThreatGate, panicFromPlayer);
 
     if (panicFromAcoustic > 0.0 && dot(acousticPanicDirectionWS, acousticPanicDirectionWS) > EPSILON)
     {
-        float acousticImpulse = _SonarScatterAcceleration * (1.2 + panicFromAcoustic);
+        float acousticImpulse = safeSonarScatterAcceleration * (1.2 + panicFromAcoustic);
         acceleration += acousticPanicDirectionWS * (acousticImpulse * panicFromAcoustic);
         velocity += acousticPanicDirectionWS * (_MaxSpeed * panicFromAcoustic * _DeltaTime);
     }
@@ -1809,7 +1959,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     if (panicFromPredatorAup > 0.0 && dot(predatorAupScatterDirectionWS, predatorAupScatterDirectionWS) > EPSILON)
     {
         float3 predatorAupDirectionWS = SafeNormalizeRsqrt(predatorAupScatterDirectionWS, float3(0.0, 0.0, 1.0));
-        acceleration += predatorAupDirectionWS * (_PanicWeight * PREDATOR_AUP_FLEE_SPEED_SCALE * panicFromPredatorAup);
+        acceleration += predatorAupDirectionWS * (safePanicWeight * PREDATOR_AUP_FLEE_SPEED_SCALE * panicFromPredatorAup);
         velocity += predatorAupDirectionWS * (_MaxSpeed * PREDATOR_AUP_FLEE_SPEED_SCALE * panicFromPredatorAup * _DeltaTime);
     }
 
@@ -1817,7 +1967,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     {
         float3 sensoryDirection = SafeNormalizeRsqrt(sensoryThreatScatterDirectionCR, float3(0.0, 0.0, 1.0));
         float sensoryScale = lerp(1.35, 2.35, saturate(lightStimulusGate));
-        acceleration += sensoryDirection * (_PanicWeight * sensoryScale * panicFromSensoryThreat);
+        acceleration += sensoryDirection * (safePanicWeight * sensoryScale * panicFromSensoryThreat);
         velocity += sensoryDirection * (_MaxSpeed * sensoryScale * panicFromSensoryThreat * _DeltaTime);
     }
 
@@ -1826,7 +1976,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float fleeMaxSpeedMultiplier = fleeState ? lerp(2.0, 2.8, saturate(max(panicFromPredatorAup, panicFromSensoryThreat))) : 1.0;
     if (separationCount > 0.0)
     {
-        float3 separationForce = separationSum / separationCount;
+        float3 separationForce = separationSum * rcp(max(separationCount, EPSILON));
         if (IsFiniteFloat3(separationForce))
         {
             float separationMagnitudeSq = dot(separationForce, separationForce);
@@ -1839,8 +1989,9 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     if (neighbourCount > 0.0)
     {
-        float3 averageVelocity = alignmentSum / neighbourCount;
-        float3 averagePosition = cohesionSum / neighbourCount;
+        float inverseNeighbourCount = rcp(max(neighbourCount, EPSILON));
+        float3 averageVelocity = alignmentSum * inverseNeighbourCount;
+        float3 averagePosition = cohesionSum * inverseNeighbourCount;
         float3 alignmentForce = SafeNormalize(averageVelocity);
         float3 cohesionForce = SafeNormalize(averagePosition - position);
         float cohesionBreak = fleeState ? PREDATOR_AUP_COHESION_BREAK : 1.0;
@@ -1848,8 +1999,8 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         acceleration += cohesionForce * (_CohesionWeight * cohesionBreak);
     }
 
-    float densityDeficit = _DeepMode > 0.5 ? 0.0 : saturate((_DensityThreshold - effectiveDensity) / max(_DensityThreshold, 0.001));
-    float cutIntrusion = _DeepMode > 0.5 ? 0.0 : saturate(cutMask / max(_WindowThreshold, 0.001));
+    float densityDeficit = _DeepMode > 0.5 ? 0.0 : saturate((safeDensityThreshold - effectiveDensity) * rcp(safeDensityThreshold));
+    float cutIntrusion = _DeepMode > 0.5 ? 0.0 : saturate(cutMask * rcp(safeWindowThreshold));
     if (_DeepMode < 0.5 && (densityDeficit > 0.0 || cutIntrusion > 0.0))
     {
         densityGradient = SampleDensityGradient(worldXZ);
@@ -1868,7 +2019,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         {
             float3 transportSteerForce = (transportAvoidanceNormalWS * _MaxSpeed) - velocity;
             float3 vortexSteerForce = (transportVortexRepulsionWS * _MaxSpeed) - velocity;
-            float transportForceWeight = transportAvoidanceGate * max(_PanicWeight, 1.0);
+            float transportForceWeight = transportAvoidanceGate * max(safePanicWeight, 1.0);
             float vortexForceWeight = transportAvoidanceGate * transportAvoidanceGate * max(_AlignmentWeight, 0.35);
             acceleration += transportSteerForce * transportForceWeight;
             acceleration += vortexSteerForce * vortexForceWeight;
@@ -1883,11 +2034,11 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         if (TryResolveSubmarineWakeRepulsion(positionWS, submarineRepulsionWS, submarineVortexWS, submarineWakeGate))
         {
             float submarineWakeSpeedSq = dot(_SubmarineWakeVelocityWS, _SubmarineWakeVelocityWS);
-            float submarineSpeed01 = saturate(submarineWakeSpeedSq / 484.0);
+            float submarineSpeed01 = saturate(submarineWakeSpeedSq * rcp(484.0));
             float wakeSpeedScale = 1.0 + submarineSpeed01;
             float3 repulsionSteerForce = (submarineRepulsionWS * _MaxSpeed * wakeSpeedScale) - velocity;
             float3 vortexSteerForce = (submarineVortexWS * _MaxSpeed * wakeSpeedScale) - velocity;
-            float repulsionWeight = submarineWakeGate * max(_PanicWeight, 1.0) * (2.4 + submarineSpeed01 * 3.2);
+            float repulsionWeight = submarineWakeGate * max(safePanicWeight, 1.0) * (2.4 + submarineSpeed01 * 3.2);
             float vortexWeight = submarineWakeGate * submarineWakeGate * max(_AlignmentWeight, 0.5) * (1.6 + submarineSpeed01 * 2.8);
             acceleration += repulsionSteerForce * repulsionWeight;
             acceleration += vortexSteerForce * vortexWeight;
@@ -1907,7 +2058,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             float wakeSpeedScale = 1.0 + globalWakeGate;
             float3 repulsionSteerForce = (globalWakeRepulsionWS * _MaxSpeed * wakeSpeedScale) - velocity;
             float3 vortexSteerForce = (globalWakeVortexWS * _MaxSpeed * wakeSpeedScale) - velocity;
-            float repulsionWeight = globalWakeGate * max(_PanicWeight, 1.0) * 1.65;
+            float repulsionWeight = globalWakeGate * max(safePanicWeight, 1.0) * 1.65;
             float vortexWeight = globalWakeGate * globalWakeGate * max(_AlignmentWeight, 0.5) * 1.15;
             acceleration += repulsionSteerForce * repulsionWeight;
             acceleration += vortexSteerForce * vortexWeight;
@@ -1930,7 +2081,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             float3 toFragmentTarget = fragmentTarget - position;
             float fragmentationRadius = max(_FragmentationRadiusWS, 0.001);
             float distanceToFragmentSq = dot(toFragmentTarget, toFragmentTarget);
-            float fragmentationGate = 1.0 - saturate(distanceToFragmentSq / (fragmentationRadius * fragmentationRadius));
+            float fragmentationGate = 1.0 - saturate(distanceToFragmentSq * rcp(max(fragmentationRadius * fragmentationRadius, EPSILON)));
             float splitStrength = _FragmentationStrength * max(fragmentationGate, 0.35);
             acceleration += SafeNormalize(toFragmentTarget) * (_FragmentationWeight * splitStrength);
             acceleration += splitAxis * (sideSign * (_FragmentationWeight * 0.55 * splitStrength));
@@ -1939,7 +2090,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     if (!simplifiedTier)
     {
-        uint grazingAnchorCount = _GrazingAnchorCount;
+        uint grazingAnchorCount = safeGrazingAnchorCount;
         if (grazingAnchorCount > 0u)
         {
             uint primaryAnchorIndex = (index + (uint)(seed * 4096.0)) % grazingAnchorCount;
@@ -1970,25 +2121,34 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     }
 
     float feedingHold = 0.0;
-    float leviathanModeBlend = saturate(_LeviathanModeBlend);
+    float leviathanModeBlend = safeLeviathanModeBlend;
     float nonLeviathanBlend = 1.0 - leviathanModeBlend;
+    float safeLeviathanBodyWeight = IsFiniteFloat(_LeviathanBodyWeight) ? max(_LeviathanBodyWeight, 0.0) : 0.0;
+    float safeLeviathanForwardWeight = IsFiniteFloat(_LeviathanForwardWeight) ? max(_LeviathanForwardWeight, 0.0) : 0.0;
+    float safeLeviathanWaveAmplitude = IsFiniteFloat(_LeviathanWaveAmplitude) ? _LeviathanWaveAmplitude : 0.0;
+    float safeLeviathanWaveFrequency = IsFiniteFloat(_LeviathanWaveFrequency) ? _LeviathanWaveFrequency : 0.0;
+    float safeLeviathanThreatLevel = IsFiniteFloat(_LeviathanThreatLevel) ? saturate(_LeviathanThreatLevel) : 0.0;
+    float safeLeviathanSurroundThreatThreshold = IsFiniteFloat(_LeviathanSurroundThreatThreshold) ? saturate(_LeviathanSurroundThreatThreshold) : 1.0;
+    float safeLeviathanSurroundRadius = IsFiniteFloat(_LeviathanSurroundRadius) ? max(_LeviathanSurroundRadius, 0.0) : 0.0;
+    float safeLeviathanSurroundWeight = IsFiniteFloat(_LeviathanSurroundWeight) ? max(_LeviathanSurroundWeight, 0.0) : 0.0;
+    float safeLeviathanSurroundSpinSpeed = IsFiniteFloat(_LeviathanSurroundSpinSpeed) ? _LeviathanSurroundSpinSpeed : 0.0;
 
     if (!simplifiedTier && grazingWeightSum > 0.0 && panic < 0.2 && nonLeviathanBlend > 0.001)
     {
         float grazingPullWeight = lerp(_GrazingWeight, max(_GrazingWeight, _DeepClusterWeight), saturate(_DeepMode));
-        acceleration += SafeNormalize(grazingForce / grazingWeightSum) * ((1.0 - panic) * grazingPullWeight * nonLeviathanBlend);
+        acceleration += SafeNormalize(grazingForce * rcp(max(grazingWeightSum, EPSILON))) * ((1.0 - panic) * grazingPullWeight * nonLeviathanBlend);
         float grazePausePhase = WrapAngle(phaseTime * lerp(1.35, 1.85, saturate(_DeepMode)) + seed * 11.0 + grazingHoldPhase * TAU);
         float grazePauseSignal = SafeSin(grazePausePhase) * 0.5 + 0.5;
-        float grazeHold = saturate((grazingHoldPeak - _GrazingRestHoldThreshold) / max(1.0 - _GrazingRestHoldThreshold, 0.001));
-        feedingHold = grazeHold * saturate((grazePauseSignal - lerp(0.72, 0.6, saturate(_DeepMode))) / lerp(0.18, 0.24, saturate(_DeepMode))) * (1.0 - panic) * nonLeviathanBlend;
+        float grazeHold = saturate((grazingHoldPeak - _GrazingRestHoldThreshold) * rcp(max(1.0 - _GrazingRestHoldThreshold, 0.001)));
+        feedingHold = grazeHold * saturate((grazePauseSignal - lerp(0.72, 0.6, saturate(_DeepMode))) * rcp(max(lerp(0.18, 0.24, saturate(_DeepMode)), EPSILON))) * (1.0 - panic) * nonLeviathanBlend;
         if (feedingHold > 0.0)
             acceleration += SafeNormalize(closestAnchorDelta) * (feedingHold * grazingPullWeight * lerp(0.3, 0.6, saturate(_DeepMode)));
     }
 
     if (!simplifiedTier && _DeepMode < 0.5 && panic < 0.2 && _CanopyAffinityWeight > 0.0 && nonLeviathanBlend > 0.001)
     {
-        float calmCanopyThreshold = saturate(_DensityThreshold * 0.85);
-        float canopyAffinity = saturate((effectiveDensity - calmCanopyThreshold) / max(1.0 - calmCanopyThreshold, 0.001));
+        float calmCanopyThreshold = saturate(safeDensityThreshold * 0.85);
+        float canopyAffinity = saturate((effectiveDensity - calmCanopyThreshold) * rcp(max(1.0 - calmCanopyThreshold, 0.001)));
         if (canopyAffinity > 0.0)
         {
             if (!densityGradientResolved)
@@ -1999,103 +2159,121 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
     }
 
-    if (leaderFollowerSchool && panic < _FormationBreakPanicThreshold && nonLeviathanBlend > 0.001)
+    if (leaderFollowerSchool && panic < safeFormationBreakPanicThreshold && nonLeviathanBlend > 0.001)
     {
         uint schoolIndex = index / SCHOOL_LEADER_FOLLOWER_COUNT;
-        uint beaconIndex = schoolIndex % (uint)max(_FormationBeaconCount, 1);
+        uint beaconIndex = schoolIndex % (uint)max(safeFormationBeaconCount, 1);
         FormationBeaconData beacon = _FormationBeacons[beaconIndex];
-        leaderAdvectionField += float3(beacon.Padding.x, 0.0, beacon.Padding.y);
-        float formationCalm = 1.0 - saturate(panic / max(_FormationBreakPanicThreshold, 0.001));
-        float3 followTarget = ResolveLeaderFollowerSchoolTarget(beacon, index, seed, phaseTime, fieldCenterCR);
-        float3 toFollowTarget = followTarget - position;
-        float3 desiredVelocity = SafeNormalize(toFollowTarget) * (_CruiseSpeed * lerp(0.72, 1.08, formationCalm));
-        acceleration += SafeNormalize(toFollowTarget) * (_FormationWeight * formationCalm * beacon.Strength * nonLeviathanBlend);
-        acceleration += SafeNormalize(desiredVelocity - velocity) * (_FormationWeight * 0.52 * formationCalm * beacon.Strength * nonLeviathanBlend);
+        bool validBeacon = IsFiniteFloat3(beacon.Position) &&
+                           IsFiniteFloat(beacon.Radius) &&
+                           IsFiniteFloat(beacon.Strength) &&
+                           IsFiniteFloat(beacon.Phase) &&
+                           IsFiniteFloat(beacon.Padding.x) &&
+                           IsFiniteFloat(beacon.Padding.y);
+        if (validBeacon)
+        {
+            leaderAdvectionField += float3(beacon.Padding.x, 0.0, beacon.Padding.y);
+            float formationCalm = 1.0 - saturate(panic * rcp(safeFormationBreakPanicThreshold));
+            float3 followTarget = ResolveLeaderFollowerSchoolTarget(beacon, index, seed, phaseTime, fieldCenterCR);
+            float3 toFollowTarget = followTarget - position;
+            float3 desiredVelocity = SafeNormalize(toFollowTarget) * (_CruiseSpeed * lerp(0.72, 1.08, formationCalm));
+            acceleration += SafeNormalize(toFollowTarget) * (safeFormationWeight * formationCalm * beacon.Strength * nonLeviathanBlend);
+            acceleration += SafeNormalize(desiredVelocity - velocity) * (safeFormationWeight * 0.52 * formationCalm * beacon.Strength * nonLeviathanBlend);
+        }
     }
 
-    if (!simplifiedTier && leviathanModeBlend > 0.001 && _LeviathanNodeCount > 1)
+    if (!simplifiedTier && leviathanModeBlend > 0.001 && safeLeviathanNodeCount > 1)
     {
-        float bodyT = _BoidCount > 1 ? (float)index / max((float)(_BoidCount - 1), 1.0) : 0.0;
-        int safeNodeCount = max(_LeviathanNodeCount, 2);
+        float bodyT = _BoidCount > 1 ? (float)index * rcp(max((float)(_BoidCount - 1), 1.0)) : 0.0;
+        int safeNodeCount = max(safeLeviathanNodeCount, 2);
         float nodeCursor = bodyT * (float)(safeNodeCount - 1);
         int previousNodeIndex = clamp((int)floor(nodeCursor), 0, safeNodeCount - 2);
         int nextNodeIndex = previousNodeIndex + 1;
         LeviathanNodeData previousNode = _LeviathanNodes[previousNodeIndex];
         LeviathanNodeData nextNode = _LeviathanNodes[nextNodeIndex];
 
-        float segmentT = saturate(nodeCursor - (float)previousNodeIndex);
-        float3 splinePosition = lerp(ToCameraRelative(previousNode.Position), ToCameraRelative(nextNode.Position), segmentT);
-        float3 splineTangent = SafeNormalize(lerp(previousNode.Tangent, nextNode.Tangent, segmentT));
-        if (dot(splineTangent, splineTangent) <= EPSILON)
-            splineTangent = float3(0.0, 0.0, 1.0);
-
-        float bodyRadius = max(0.5, lerp(previousNode.Radius, nextNode.Radius, segmentT));
-        float3 lateral = SafeNormalize(cross(float3(0.0, 1.0, 0.0), splineTangent));
-        if (dot(lateral, lateral) <= EPSILON)
-            lateral = float3(1.0, 0.0, 0.0);
-        float3 vertical = SafeNormalize(cross(splineTangent, lateral));
-        float wavePhase = WrapAngle((phaseTime * _LeviathanWaveFrequency) + bodyT * 18.0 + seed * TAU);
-        float lateralWave = SafeSin(wavePhase) * (bodyRadius * _LeviathanWaveAmplitude);
-        float verticalWaveOffset = SafeCos(wavePhase * 0.63) * (bodyRadius * _LeviathanWaveAmplitude * 0.35);
-        float3 leviathanTarget = splinePosition + lateral * lateralWave + vertical * verticalWaveOffset;
-        float leviathanCalm = 1.0 - saturate(panic);
-        float leviathanThreatScale = lerp(0.85, 1.45, saturate(_LeviathanThreatLevel));
-        float surroundAttack = saturate((_LeviathanThreatLevel - _LeviathanSurroundThreatThreshold) / max(1.0 - _LeviathanSurroundThreatThreshold, 0.001));
-
-        float ringAngle = WrapAngle(bodyT * TAU + phaseTime * _LeviathanSurroundSpinSpeed + seed * 0.35);
-        float ringRadius = max(_LeviathanSurroundRadius, bodyRadius * 2.4);
-        float ringPulse = SafeSin(phaseTime * (_LeviathanWaveFrequency * 0.7) + bodyT * 12.0 + seed * 3.1415926);
-        float3 ringOffset = float3(SafeCos(ringAngle), ringPulse * (bodyRadius * 0.18), SafeSin(ringAngle)) * (ringRadius + ringPulse * bodyRadius * 0.22);
-        float3 ringTarget = playerPositionCR + ringOffset;
-        float3 ringTangent = SafeNormalize(float3(-SafeSin(ringAngle), 0.0, SafeCos(ringAngle)));
-        if (dot(ringTangent, ringTangent) <= EPSILON)
-            ringTangent = splineTangent;
-
-        float3 targetPosition = lerp(leviathanTarget, ringTarget, surroundAttack);
-        float3 targetVelocity = lerp(
-            splineTangent * (_CruiseSpeed * lerp(0.95, 1.45, saturate(_LeviathanThreatLevel))),
-            ringTangent * (_CruiseSpeed * lerp(1.1, 1.6, surroundAttack)),
-            surroundAttack);
-
-        float3 obstacleForce = float3(0.0, 0.0, 0.0);
-        ApplyObstacleRepulsion(position, bodyRadius, obstacleForce, targetPosition);
-
-        float3 toLeviathanTarget = targetPosition - position;
-        acceleration += SafeNormalize(toLeviathanTarget) * ((_LeviathanBodyWeight + _LeviathanSurroundWeight * surroundAttack) * leviathanCalm * leviathanThreatScale * leviathanModeBlend);
-        acceleration += SafeNormalize(targetVelocity - velocity) * ((_LeviathanForwardWeight + _LeviathanSurroundWeight * surroundAttack * 0.35) * leviathanThreatScale * leviathanModeBlend);
-        if (surroundAttack > 0.0)
+        bool validLeviathanNodes = IsFiniteFloat3(previousNode.Position) &&
+                                   IsFiniteFloat3(previousNode.Tangent) &&
+                                   IsFiniteFloat(previousNode.Radius) &&
+                                   IsFiniteFloat3(nextNode.Position) &&
+                                   IsFiniteFloat3(nextNode.Tangent) &&
+                                   IsFiniteFloat(nextNode.Radius);
+        if (validLeviathanNodes)
         {
-            float3 ringCenterForce = SafeNormalize(playerPositionCR - position);
-            acceleration += ringCenterForce * (_LeviathanSurroundWeight * surroundAttack * leviathanCalm * 0.3 * leviathanModeBlend);
-        }
+            float segmentT = saturate(nodeCursor - (float)previousNodeIndex);
+            float3 splinePosition = lerp(ToCameraRelative(previousNode.Position), ToCameraRelative(nextNode.Position), segmentT);
+            float3 splineTangent = SafeNormalize(lerp(previousNode.Tangent, nextNode.Tangent, segmentT));
+            if (dot(splineTangent, splineTangent) <= EPSILON)
+                splineTangent = float3(0.0, 0.0, 1.0);
 
-        if (dot(obstacleForce, obstacleForce) > EPSILON)
-            acceleration += SafeNormalize(obstacleForce) * (_FormationObstacleWeight * leviathanCalm * leviathanModeBlend);
+            float bodyRadius = max(0.5, lerp(previousNode.Radius, nextNode.Radius, segmentT));
+            float3 lateral = SafeNormalize(cross(float3(0.0, 1.0, 0.0), splineTangent));
+            if (dot(lateral, lateral) <= EPSILON)
+                lateral = float3(1.0, 0.0, 0.0);
+            float3 vertical = SafeNormalize(cross(splineTangent, lateral));
+            float wavePhase = WrapAngle((phaseTime * safeLeviathanWaveFrequency) + bodyT * 18.0 + seed * TAU);
+            float lateralWave = SafeSin(wavePhase) * (bodyRadius * safeLeviathanWaveAmplitude);
+            float verticalWaveOffset = SafeCos(wavePhase * 0.63) * (bodyRadius * safeLeviathanWaveAmplitude * 0.35);
+            float3 leviathanTarget = splinePosition + lateral * lateralWave + vertical * verticalWaveOffset;
+            float leviathanCalm = 1.0 - saturate(panic);
+            float leviathanThreatScale = lerp(0.85, 1.45, safeLeviathanThreatLevel);
+            float surroundAttack = saturate((safeLeviathanThreatLevel - safeLeviathanSurroundThreatThreshold) * rcp(max(1.0 - safeLeviathanSurroundThreatThreshold, 0.001)));
+
+            float ringAngle = WrapAngle(bodyT * TAU + phaseTime * safeLeviathanSurroundSpinSpeed + seed * 0.35);
+            float ringRadius = max(safeLeviathanSurroundRadius, bodyRadius * 2.4);
+            float ringPulse = SafeSin(phaseTime * (safeLeviathanWaveFrequency * 0.7) + bodyT * 12.0 + seed * 3.1415926);
+            float3 ringOffset = float3(SafeCos(ringAngle), ringPulse * (bodyRadius * 0.18), SafeSin(ringAngle)) * (ringRadius + ringPulse * bodyRadius * 0.22);
+            float3 ringTarget = playerPositionCR + ringOffset;
+            float3 ringTangent = SafeNormalize(float3(-SafeSin(ringAngle), 0.0, SafeCos(ringAngle)));
+            if (dot(ringTangent, ringTangent) <= EPSILON)
+                ringTangent = splineTangent;
+
+            float3 targetPosition = lerp(leviathanTarget, ringTarget, surroundAttack);
+            float3 targetVelocity = lerp(
+                splineTangent * (_CruiseSpeed * lerp(0.95, 1.45, safeLeviathanThreatLevel)),
+                ringTangent * (_CruiseSpeed * lerp(1.1, 1.6, surroundAttack)),
+                surroundAttack);
+
+            float3 obstacleForce = float3(0.0, 0.0, 0.0);
+            ApplyObstacleRepulsion(position, bodyRadius, obstacleForce, targetPosition);
+
+            float3 toLeviathanTarget = targetPosition - position;
+            acceleration += SafeNormalize(toLeviathanTarget) * ((safeLeviathanBodyWeight + safeLeviathanSurroundWeight * surroundAttack) * leviathanCalm * leviathanThreatScale * leviathanModeBlend);
+            acceleration += SafeNormalize(targetVelocity - velocity) * ((safeLeviathanForwardWeight + safeLeviathanSurroundWeight * surroundAttack * 0.35) * leviathanThreatScale * leviathanModeBlend);
+            if (surroundAttack > 0.0)
+            {
+                float3 ringCenterForce = SafeNormalize(playerPositionCR - position);
+                acceleration += ringCenterForce * (safeLeviathanSurroundWeight * surroundAttack * leviathanCalm * 0.3 * leviathanModeBlend);
+            }
+
+            if (dot(obstacleForce, obstacleForce) > EPSILON)
+                acceleration += SafeNormalize(obstacleForce) * (_FormationObstacleWeight * leviathanCalm * leviathanModeBlend);
+        }
     }
 
-    if (!simplifiedTier && _ParasiteMode > 0.5 && _ParasiteAffinityWeight > 0.0 && nonLeviathanBlend > 0.001)
+    if (!simplifiedTier && safeParasiteMode > 0.5 && safeParasiteAffinityWeight > 0.0 && nonLeviathanBlend > 0.001)
     {
         float3 toPlayer = playerPositionCR - position;
         float playerDistanceToHullSq = dot(toPlayer, toPlayer);
-        float parasiteRadius = max(_PanicPlayerRadius * lerp(1.4, 2.25, saturate(_ParasiteAggression)), _ParasiteLatchRadius + 0.001);
+        float parasiteRadius = max(safePlayerPanicRadius * lerp(1.4, 2.25, safeParasiteAggression), safeParasiteLatchRadius + 0.001);
         float parasiteRadiusSq = max(parasiteRadius * parasiteRadius, EPSILON);
-        float parasiteGate = 1.0 - saturate(playerDistanceToHullSq / parasiteRadiusSq);
+        float parasiteGate = 1.0 - saturate(playerDistanceToHullSq * rcp(parasiteRadiusSq));
         if (parasiteGate > 0.0)
         {
-            float3 orbitDirection = SafeNormalize(cross(float3(0.0, 1.0, 0.0), _PlayerVelocityWS));
+            float3 orbitDirection = SafeNormalize(cross(float3(0.0, 1.0, 0.0), safePlayerVelocityWS));
             if (dot(orbitDirection, orbitDirection) <= EPSILON)
                 orbitDirection = float3(0.0, 0.0, 1.0);
 
-            float3 affinityDirection = SafeNormalize(toPlayer + orbitDirection * lerp(0.35, 0.08, saturate(_ParasiteAggression)));
-            float affinityWeight = _ParasiteAffinityWeight * lerp(0.55, 1.85, saturate(_ParasiteAggression));
+            float3 affinityDirection = SafeNormalize(toPlayer + orbitDirection * lerp(0.35, 0.08, safeParasiteAggression));
+            float affinityWeight = safeParasiteAffinityWeight * lerp(0.55, 1.85, safeParasiteAggression);
             acceleration += affinityDirection * parasiteGate * affinityWeight * nonLeviathanBlend;
 
-            float parasiteLatchRadiusSq = max(_ParasiteLatchRadius * _ParasiteLatchRadius, EPSILON);
+            float parasiteLatchRadiusSq = max(safeParasiteLatchRadius * safeParasiteLatchRadius, EPSILON);
             if (playerDistanceToHullSq < parasiteLatchRadiusSq)
             {
-                float latch01 = 1.0 - saturate(playerDistanceToHullSq / parasiteLatchRadiusSq);
-                velocity = lerp(velocity, _PlayerVelocityWS, latch01 * lerp(0.28, 0.82, saturate(_ParasiteAggression)));
-                if (_ParasiteAggression > 0.05)
+                float latch01 = 1.0 - saturate(playerDistanceToHullSq * rcp(parasiteLatchRadiusSq));
+                velocity = lerp(velocity, safePlayerVelocityWS, latch01 * lerp(0.28, 0.82, safeParasiteAggression));
+                if (safeParasiteAggression > 0.05)
                 {
                     float3 localOffset = float3(
                         dot(position - playerPositionCR, _PlayerRightWS),
@@ -2118,9 +2296,9 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     {
         float2 cutGradient = SampleCutGradient(worldXZ);
         float cutPanicWeight = panicFromCut;
-        float playerPanicWeight = _ParasiteMode > 0.5
+        float playerPanicWeight = safeParasiteMode > 0.5
             ? panicFromPlayer
-            : max(panicFromPlayer, _HeadlightPanic);
+            : max(panicFromPlayer, safeHeadlightPanic);
         float threatGridPanicWeight = threatGridPanic;
         float massivePanicWeight = panicFromMassive;
         float predatorAupPanicWeight = panicFromPredatorAup;
@@ -2141,18 +2319,20 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         else
             fleeForce = SafeNormalize(fleeForce);
 
-        float panicWeight = lerp(_PanicWeight, _MassiveThreatWeight, saturate(max(massivePanicWeight, max(predatorAupPanicWeight, sensoryThreatPanicWeight))));
+        float panicWeight = lerp(safePanicWeight, safeMassiveThreatWeight, saturate(max(massivePanicWeight, max(predatorAupPanicWeight, sensoryThreatPanicWeight))));
         acceleration += fleeForce * panic * panicWeight;
     }
 
-    if (!simplifiedTier && _CameraAvoidWeight > 0.0 && _CameraAvoidRadius > 0.0)
+    if (!simplifiedTier && safeCameraAvoidWeight > 0.0 && safeCameraAvoidRadius > 0.0)
     {
         float3 fromCamera = position - cameraAvoidPositionCR;
         float cameraDistanceSq = dot(fromCamera, fromCamera);
-        float cameraAvoidRadiusSq = max(_CameraAvoidRadius * _CameraAvoidRadius, EPSILON);
-        float cameraAvoidGate = 1.0 - saturate(cameraDistanceSq / cameraAvoidRadiusSq);
+        float cameraAvoidRadiusSq = max(safeCameraAvoidRadius * safeCameraAvoidRadius, EPSILON);
+        float cameraAvoidGate = IsFiniteFloat(cameraDistanceSq)
+            ? 1.0 - saturate(cameraDistanceSq * rcp(cameraAvoidRadiusSq))
+            : 0.0;
         if (cameraAvoidGate > 0.0)
-            acceleration += SafeNormalize(fromCamera) * (cameraAvoidGate * _CameraAvoidWeight);
+            acceleration += SafeNormalize(fromCamera) * (cameraAvoidGate * safeCameraAvoidWeight);
     }
 
     float noisePhase = seed * 17.0 + position.x * 0.13 + position.z * 0.21 + position.y * 0.09;
@@ -2162,8 +2342,8 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         Hash11(noisePhase + 3.0) * 2.0 - 1.0);
     acceleration += SafeNormalize(noiseForce) * _NoiseWeight;
 
-    float3 minBounds = fieldCenterCR - _FieldExtents;
-    float3 maxBounds = fieldCenterCR + _FieldExtents;
+    float3 minBounds = fieldCenterCR - safeFieldExtents;
+    float3 maxBounds = fieldCenterCR + safeFieldExtents;
     float minY = _WaterLevel - _MaxDepthBelowSurface - _CameraPosition.y;
     float maxY = _WaterLevel - _MinDepthBelowSurface - _CameraPosition.y;
     if (position.y < minY)
@@ -2204,7 +2384,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         velocity += SafeNormalize(collapseImpulse) * collapseImpulseMagnitude;
     }
 
-    float3 clusterDriftVelocity = _DeltaTime > 0.0001 ? (_GlobalDriftDelta / max(_DeltaTime, 0.0001)) : float3(0.0, 0.0, 0.0);
+    float3 clusterDriftVelocity = _DeltaTime > 0.0001 ? (_GlobalDriftDelta * rcp(max(_DeltaTime, 0.0001))) : float3(0.0, 0.0, 0.0);
     float3 leaderClusterFlowField = clusterDriftVelocity + leaderAdvectionField;
     float3 flowField = leaderFollowerSchool ? leaderClusterFlowField : ResolveFlowField(positionWS, phaseTime);
     float3 flowDirection = SafeNormalize(flowField);
@@ -2217,7 +2397,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float dragAttenuation = saturate(1.0 - dragMultiplier * 0.15 * saturate(_DeltaTime * 60.0));
         velocity *= dragAttenuation;
 
-        float turbulenceScale = saturate((dragMultiplier - 0.7) / 0.3);
+        float turbulenceScale = saturate((dragMultiplier - 0.7) * rcp(0.3));
         if (turbulenceScale > 0.0 && !leaderFollowerSchool)
         {
             velocity += ResolveFlowTurbulence(positionWS, phaseTime) * (turbulenceScale * 0.15);
@@ -2262,18 +2442,18 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     position += velocity * _DeltaTime;
 
-    if (!simplifiedTier && _CameraAvoidRadius > 0.0)
+    if (!simplifiedTier && safeCameraAvoidRadius > 0.0)
     {
         float3 fromCamera = position - cameraAvoidPositionCR;
         float cameraDistanceSq = dot(fromCamera, fromCamera);
-        float cameraRadiusSq = _CameraAvoidRadius * _CameraAvoidRadius;
-        if (cameraDistanceSq < cameraRadiusSq)
+        float cameraRadiusSq = safeCameraAvoidRadius * safeCameraAvoidRadius;
+        if (IsFiniteFloat(cameraDistanceSq) && cameraDistanceSq < cameraRadiusSq)
         {
             float3 pushDirection = SafeNormalize(fromCamera);
             if (dot(pushDirection, pushDirection) <= EPSILON)
                 pushDirection = float3(0.0, 0.0, 1.0);
 
-            position = cameraAvoidPositionCR + pushDirection * _CameraAvoidRadius;
+            position = cameraAvoidPositionCR + pushDirection * safeCameraAvoidRadius;
         }
     }
 

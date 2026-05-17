@@ -957,7 +957,7 @@ namespace Hecton8.World
                 shadowCastingMode = shadowCastingMode,
                 receiveShadows = receiveShadows
             };
-            Graphics.RenderMeshIndirect(renderParams, oreMesh, _argsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, oreMesh, _argsBuffer, 1, 0);
         }
 
         private void UpdateIndirectArgsBuffer(uint instanceCount)

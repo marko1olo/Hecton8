@@ -57,6 +57,7 @@ namespace Hecton8.VFX.Materials
 
         private IDataVault _dataVault;
         private VaultBufferHandle<MaterialDecayState> _blackBoxHandle;
+        private ITickDispatcher _tickDispatcher;
         private Texture2D _runtimeFallbackAtlas;
         private Vector4 _lastRuntimeVector = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
         private Vector4 _lastBloodVector = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -74,6 +75,7 @@ namespace Hecton8.VFX.Materials
         private bool _registered;
         private bool _hotSwapRegistered;
         private bool _scalabilityEventsRegistered;
+        private bool _dispatcherReady;
         private bool _lowTier;
         private bool _hasDurabilitySignal;
         private bool _blackBoxReady;
@@ -143,6 +145,8 @@ namespace Hecton8.VFX.Materials
             TryUnregisterTick();
             TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
+            _tickDispatcher = null;
+            _dispatcherReady = false;
             UploadZeroState();
         }
 
@@ -183,7 +187,7 @@ namespace Hecton8.VFX.Materials
 
         private void TryRegisterTick()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !Application.isPlaying || !_dispatcherReady)
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
@@ -257,11 +261,27 @@ namespace Hecton8.VFX.Materials
 
         private void RefreshCachedRegistryServices()
         {
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Dispatcher, GlobalRegistry.TickDispatcher);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
         }
 
         private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                ITickDispatcher tickDispatcher = currentService as ITickDispatcher;
+                if (!ReferenceEquals(_tickDispatcher, tickDispatcher))
+                {
+                    TryUnregisterTick();
+                    _tickDispatcher = tickDispatcher;
+                }
+
+                _dispatcherReady = tickDispatcher != null;
+                if (_dispatcherReady)
+                    TryRegisterTick();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
                 BindDataVault(currentService as IDataVault);
         }

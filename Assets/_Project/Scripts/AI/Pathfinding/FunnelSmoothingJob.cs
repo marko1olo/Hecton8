@@ -48,7 +48,25 @@ namespace Hecton8.AI.Pathfinding
 
             float3 start = SanitizePoint(StartPosition, float3.zero, ref flags);
             float3 goal = SanitizePoint(GoalPosition, start, ref flags);
-            int portalCount = ResolvePortalCount();
+            int requestedPortalCount = ResolveRequestedPortalCount(ref flags);
+            if (PortalCount < 0)
+            {
+                result.Status = PathFunnelStatus.InvalidInput;
+                result.Flags = flags;
+                WriteResult(result);
+                return;
+            }
+
+            if (requestedPortalCount > 0 && (!Portals.IsCreated || Portals.Length <= 0))
+            {
+                flags |= PathFunnelResultFlags.PortalInputClamped;
+                result.Status = PathFunnelStatus.InvalidInput;
+                result.Flags = flags;
+                WriteResult(result);
+                return;
+            }
+
+            int portalCount = ResolvePortalCount(requestedPortalCount, ref flags);
             int lookAhead = ResolveLookAhead(result.MathLod);
             int portalLimit = math.min(portalCount, lookAhead);
             ushort blockedCell = 0;
@@ -56,7 +74,7 @@ namespace Hecton8.AI.Pathfinding
             for (int i = 0; i < portalLimit; i++)
             {
                 NavPortal portal = Portals[i];
-                if (!IsWfcDoorBlocked(in portal, out blockedCell))
+                if (!IsWfcDoorBlocked(in portal, ref flags, out blockedCell))
                     continue;
 
                 flags |= PathFunnelResultFlags.WfcDoorBlocked;
@@ -65,7 +83,7 @@ namespace Hecton8.AI.Pathfinding
                 int blockedCount = 0;
                 AppendWaypoint(ref blockedCount, start, ref flags);
                 result.WaypointCount = blockedCount;
-                result.ProcessedPortalCount = i;
+                result.ProcessedPortalCount = i + 1;
                 result.Flags = flags;
                 ConvertWaypointsToAup(blockedCount, ref flags);
                 result.Flags = flags;
@@ -73,11 +91,11 @@ namespace Hecton8.AI.Pathfinding
                 return;
             }
 
-            bool partialLookAhead = portalLimit < portalCount;
+            bool partialLookAhead = portalLimit < requestedPortalCount;
             if (partialLookAhead)
                 flags |= PathFunnelResultFlags.PartialLookAhead;
 
-            float3 effectiveGoal = ResolveEffectiveGoal(goal, portalLimit, portalCount, ref flags);
+            float3 effectiveGoal = ResolveEffectiveGoal(goal, portalLimit, requestedPortalCount, ref flags);
             int waypointCount = 0;
             AppendWaypoint(ref waypointCount, start, ref flags);
 
@@ -183,12 +201,27 @@ namespace Hecton8.AI.Pathfinding
             WriteResult(result);
         }
 
-        private int ResolvePortalCount()
+        private int ResolveRequestedPortalCount(ref uint flags)
         {
-            if (!Portals.IsCreated || PortalCount <= 0)
+            if (PortalCount < 0)
+            {
+                flags |= PathFunnelResultFlags.PortalInputClamped;
+                return 0;
+            }
+
+            return PortalCount;
+        }
+
+        private int ResolvePortalCount(int requestedPortalCount, ref uint flags)
+        {
+            if (requestedPortalCount <= 0 || !Portals.IsCreated)
                 return 0;
 
-            return math.min(PortalCount, Portals.Length);
+            int portalCount = math.min(requestedPortalCount, Portals.Length);
+            if (portalCount < requestedPortalCount)
+                flags |= PathFunnelResultFlags.PortalInputClamped;
+
+            return portalCount;
         }
 
         private byte ResolveEffectiveMathLod(ref uint flags)
@@ -252,8 +285,18 @@ namespace Hecton8.AI.Pathfinding
             if ((portal.Flags & PathFunnelConstants.PortalFlagNoRadiusShrink) != 0)
                 return;
 
-            float radius = math.select(0f, AgentRadiusMeters, math.isfinite(AgentRadiusMeters));
-            radius = math.max(0f, radius);
+            float radius = AgentRadiusMeters;
+            if (!math.isfinite(radius))
+            {
+                flags |= PathFunnelResultFlags.NonFiniteInput | PathFunnelResultFlags.AgentRadiusClamped;
+                radius = 0f;
+            }
+            else if (radius < 0f)
+            {
+                flags |= PathFunnelResultFlags.AgentRadiusClamped;
+                radius = 0f;
+            }
+
             if (radius <= PathFunnelConstants.Epsilon)
                 return;
 
@@ -287,7 +330,7 @@ namespace Hecton8.AI.Pathfinding
             portal.Right -= edgeDir * radius;
         }
 
-        private bool IsWfcDoorBlocked(in NavPortal portal, out ushort blockedCell)
+        private bool IsWfcDoorBlocked(in NavPortal portal, ref uint flags, out ushort blockedCell)
         {
             blockedCell = 0;
             if ((portal.Flags & PathFunnelConstants.PortalFlagWfcDoor) == 0 ||
@@ -297,13 +340,13 @@ namespace Hecton8.AI.Pathfinding
                 return false;
             }
 
-            if (IsDoorCellBlocked(portal.LeftCellIndex))
+            if (IsDoorCellBlocked(portal.LeftCellIndex, ref flags))
             {
                 blockedCell = portal.LeftCellIndex;
                 return true;
             }
 
-            if (portal.RightCellIndex != portal.LeftCellIndex && IsDoorCellBlocked(portal.RightCellIndex))
+            if (portal.RightCellIndex != portal.LeftCellIndex && IsDoorCellBlocked(portal.RightCellIndex, ref flags))
             {
                 blockedCell = portal.RightCellIndex;
                 return true;
@@ -312,13 +355,19 @@ namespace Hecton8.AI.Pathfinding
             return false;
         }
 
-        private bool IsDoorCellBlocked(ushort cellIndex)
+        private bool IsDoorCellBlocked(ushort cellIndex, ref uint flags)
         {
+            if (cellIndex >= PathFunnelConstants.WfcOutpostCellCount)
+            {
+                flags |= PathFunnelResultFlags.InvalidWfcCell;
+                return false;
+            }
+
             if (cellIndex >= WfcGridBitmasks.Length)
                 return false;
 
-            byte flags = WfcGridBitmasks[cellIndex];
-            return (flags & PathFunnelConstants.WfcDoorOpenFlag) == 0;
+            byte cellFlags = (byte)(WfcGridBitmasks[cellIndex] & PathFunnelConstants.WfcMutableFlagMask);
+            return (cellFlags & PathFunnelConstants.WfcDoorOpenFlag) == 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -383,7 +432,11 @@ namespace Hecton8.AI.Pathfinding
             if (!WaypointAups.IsCreated || waypointCount <= 0)
                 return;
 
-            int count = math.min(waypointCount, math.min(Waypoints.Length, WaypointAups.Length));
+            int safeWaypointCount = math.min(waypointCount, Waypoints.Length);
+            if (WaypointAups.Length < safeWaypointCount)
+                flags |= PathFunnelResultFlags.AupOutputClamped;
+
+            int count = math.min(safeWaypointCount, WaypointAups.Length);
             for (int i = 0; i < count; i++)
             {
                 float3 local = Waypoints[i];

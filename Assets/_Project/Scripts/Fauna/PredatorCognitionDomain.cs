@@ -373,6 +373,7 @@ namespace Hecton8.AI
         private const float RetinalMaxLightRangeMeters = 10000f;
         private const float RetinalMaxLightIntensity = 100000f;
         private const uint RetinalBlindPredatorsTelemetryHash = 0x5242544Cu; // RBTL
+        private const uint RetinalDumpFailureTelemetryHash = 0x5244464Cu; // RDFL
         private const uint RetinalTelemetryContextHash = 0x4641554Eu; // FAUN
         private const float AlphaLeviathanSlowTickIntervalSeconds = 0.1f;
         private const float AlphaLeviathanEvaluationStaggerStepSeconds = AlphaLeviathanSlowTickIntervalSeconds * 0.03125f;
@@ -391,6 +392,7 @@ namespace Hecton8.AI
         private const float AlphaRingCorrectionScale = 0.08f;
         private const byte AlphaLeviathanTelemetryNoPlayerTarget = 1 << 5;
         private const uint AlphaLeviathanPhaseTelemetryHash = 0x414C5048u; // ALPH
+        private const uint AlphaLeviathanDumpFailureTelemetryHash = 0x4144464Cu; // ADFL
         private const uint AlphaLeviathanTelemetryContextHash = 0x4C564354u; // LVCT
         private const float PredatorInterceptLeadSeconds = 0.65f;
         private const float PredatorHeadlessDistanceSqr = 1000000f;
@@ -2185,9 +2187,12 @@ namespace Hecton8.AI
                     }
                 }
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-                Debug.LogError("Retinal black-box dump failed: " + exception.Message);
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    RetinalDumpFailureTelemetryHash,
+                    RetinalTelemetryContextHash,
+                    frameId);
             }
         }
 
@@ -2367,9 +2372,12 @@ namespace Hecton8.AI
                     }
                 }
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-                Debug.LogError("Alpha Leviathan black-box dump failed: " + exception.Message);
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    AlphaLeviathanDumpFailureTelemetryHash,
+                    AlphaLeviathanTelemetryContextHash,
+                    frameId);
             }
         }
 

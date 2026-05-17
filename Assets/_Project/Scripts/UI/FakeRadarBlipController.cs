@@ -588,7 +588,7 @@ namespace Hecton8.UI
         {
             ApplyRadarBlipMaterialProperties();
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 _radarBlipMesh,
                 0,
                 _radarBlipMaterial,

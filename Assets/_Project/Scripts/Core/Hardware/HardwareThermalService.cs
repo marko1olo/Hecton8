@@ -18,7 +18,13 @@ namespace Hecton8.Core.Hardware
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9948)]
-    public sealed class HardwareThermalService : MonoBehaviour, IHardwareThermalService, IFrostTickable, IUpdatable
+    public sealed class HardwareThermalService :
+        MonoBehaviour,
+        IHardwareThermalService,
+        IFrostTickable,
+        IUpdatable,
+        IGlobalRegistryHotSwapListener,
+        IGlobalRegistryHotSwapRefListener
     {
         private const int BlackBoxFrameCount = 300;
         private const short UnknownTemperatureTenthsCelsius = short.MinValue;
@@ -82,11 +88,16 @@ namespace Hecton8.Core.Hardware
         private bool _serviceRegistered;
         private bool _registeredFrostTick;
         private bool _registeredFrameTick;
+        private bool _hotSwapRegistered;
         private bool _policyInitialized;
         private bool _throttlingPolicyApplied;
         private bool _criticalPolicyApplied;
         private bool _hapticMuteApplied;
+        private bool _transientLowTierOverrideApplied;
         private bool _criticalDumped;
+        private IFoveatedSimulationDirector _foveatedDirector;
+        private SystemDispatcher _dispatcher;
+        private ToolHapticsRuntime _haptics;
 
         public byte CurrentSeverity => _severity;
         public byte BatteryPercent => _batteryPercent;
@@ -210,6 +221,8 @@ namespace Hecton8.Core.Hardware
             if (!_serviceRegistered)
                 return;
 
+            RebindCachedServicesCold();
+            TryRegisterHotSwap();
             TryRegisterFrameTick();
             TryRegisterFrostTick();
             SampleAndApplyCold();
@@ -235,6 +248,7 @@ namespace Hecton8.Core.Hardware
         {
             TryUnregisterFrostTick();
             TryUnregisterFrameTick();
+            TryUnregisterHotSwap();
             TryUnregisterService();
             ReleaseThermalPolicies();
             DisposeNativeState();
@@ -500,7 +514,7 @@ namespace Hecton8.Core.Hardware
             {
                 GlobalRegistry.SetSystemKillSwitchBits(GlobalRegistry.SystemKillSwitchLane4VfxMask, throttling);
 
-                IFoveatedSimulationDirector foveated = GlobalRegistry.FoveatedSimulationDirector;
+                IFoveatedSimulationDirector foveated = _foveatedDirector;
                 if (foveated != null)
                     foveated.SetThermalFreezeDistanceOverride(throttling, ThermalFreezeDistanceMeters);
 
@@ -509,7 +523,7 @@ namespace Hecton8.Core.Hardware
 
             if (!_policyInitialized || critical != _criticalPolicyApplied)
             {
-                SystemDispatcher dispatcher = GlobalRegistry.Dispatcher;
+                SystemDispatcher dispatcher = _dispatcher;
                 if (dispatcher != null)
                     dispatcher.SetThermalCriticalSlowTick(critical);
 
@@ -518,7 +532,7 @@ namespace Hecton8.Core.Hardware
 
             if (!_policyInitialized || hapticMute != _hapticMuteApplied)
             {
-                ToolHapticsRuntime haptics = GlobalRegistry.ToolHaptics;
+                ToolHapticsRuntime haptics = _haptics;
                 if (haptics != null)
                     haptics.SetPowerSaveMute(hapticMute);
 
@@ -539,8 +553,14 @@ namespace Hecton8.Core.Hardware
                 SignalBus<HUDNotificationSignal>.Push(in warning);
             }
 
-            if (throttling || hapticMute)
-                GlobalRegistry.RegisterScalabilityTierOverride(0);
+            bool transientLowTierOverride = throttling || hapticMute;
+            if (!_policyInitialized || transientLowTierOverride != _transientLowTierOverrideApplied)
+            {
+                GlobalRegistry.SetTransientLowScalabilityOverride(
+                    GlobalRegistry.TransientScalabilityThermalPressureMask,
+                    transientLowTierOverride);
+                _transientLowTierOverrideApplied = transientLowTierOverride;
+            }
 
             _policyInitialized = true;
         }
@@ -551,22 +571,30 @@ namespace Hecton8.Core.Hardware
                 return;
 
             GlobalRegistry.SetSystemKillSwitchBits(GlobalRegistry.SystemKillSwitchLane4VfxMask, false);
-            IFoveatedSimulationDirector foveated = GlobalRegistry.FoveatedSimulationDirector;
+            IFoveatedSimulationDirector foveated = _foveatedDirector;
             if (foveated != null)
                 foveated.SetThermalFreezeDistanceOverride(false, ThermalFreezeDistanceMeters);
 
-            SystemDispatcher dispatcher = GlobalRegistry.Dispatcher;
+            SystemDispatcher dispatcher = _dispatcher;
             if (dispatcher != null)
                 dispatcher.SetThermalCriticalSlowTick(false);
 
-            ToolHapticsRuntime haptics = GlobalRegistry.ToolHaptics;
+            ToolHapticsRuntime haptics = _haptics;
             if (haptics != null)
                 haptics.SetPowerSaveMute(false);
+
+            if (_transientLowTierOverrideApplied)
+            {
+                GlobalRegistry.SetTransientLowScalabilityOverride(
+                    GlobalRegistry.TransientScalabilityThermalPressureMask,
+                    false);
+            }
 
             _policyInitialized = false;
             _throttlingPolicyApplied = false;
             _criticalPolicyApplied = false;
             _hapticMuteApplied = false;
+            _transientLowTierOverrideApplied = false;
         }
 
         private void PublishSignalsCold(uint frame, byte previousSeverity)
@@ -725,6 +753,21 @@ namespace Hecton8.Core.Hardware
             _blackBoxCursor = 0;
         }
 
+        public void OnGlobalRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            RebindCachedService(serviceSlot, currentService);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            RebindCachedService(serviceSlot, currentService);
+        }
+
         private bool TryResolveThermalSeverity(out NativeArray<byte> severity)
         {
             severity = default;
@@ -792,6 +835,48 @@ namespace Hecton8.Core.Hardware
                 GlobalRegistry.UnregisterHardwareThermalService(this);
 
             _serviceRegistered = false;
+        }
+
+        private void RebindCachedServicesCold()
+        {
+            _foveatedDirector = GlobalRegistry.FoveatedSimulationDirector;
+            _dispatcher = GlobalRegistry.Dispatcher;
+            _haptics = GlobalRegistry.ToolHaptics;
+        }
+
+        private void RebindCachedService(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.FoveatedSimulationDirector)
+            {
+                _foveatedDirector = currentService as IFoveatedSimulationDirector;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _dispatcher = currentService as SystemDispatcher;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.ToolHapticsRuntime)
+                _haptics = currentService as ToolHapticsRuntime;
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void TryRegisterFrostTick()

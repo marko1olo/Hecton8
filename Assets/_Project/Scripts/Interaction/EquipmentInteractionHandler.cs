@@ -32,7 +32,7 @@ namespace Hecton8.Interaction
         private static int _interactableLayer = int.MinValue;
         private static int _voxelLayer = int.MinValue;
 
-        // COLD ALLOC: Collider[256] - queued target side-channel aligned with the native interaction queue - owner: EquipmentInteractionHandler
+        // COLD ALLOC: Collider[256] - queued target side-channel aligned with the vault interaction queue - owner: EquipmentInteractionHandler
         private readonly Collider[] _queuedTargetColliders = new Collider[MaxQueuedSignals];
         // COLD ALLOC: ulong[64] - requester ids for the writable raycast staging lane - owner: EquipmentInteractionHandler
         private readonly ulong[] _stagingRequesterIds = new ulong[MaxQueuedRayRequests];
@@ -46,17 +46,17 @@ namespace Hecton8.Interaction
         private readonly bool[] _completedHasHit = new bool[MaxQueuedRayRequests];
         // COLD ALLOC: int[64] - frame stamps for completed frame-latent raycast results - owner: EquipmentInteractionHandler
         private readonly int[] _completedHitFrames = new int[MaxQueuedRayRequests];
-        // COLD ALLOC: Transform[256] - platform-local hit point side-channel aligned with the native signal queue - owner: EquipmentInteractionHandler
+        // COLD ALLOC: Transform[256] - platform-local hit point side-channel aligned with the vault signal queue - owner: EquipmentInteractionHandler
         private readonly Transform[] _queuedPlatformTransforms = new Transform[MaxQueuedSignals];
-        // COLD ALLOC: Vector3[256] - local platform hit points aligned with the native signal queue - owner: EquipmentInteractionHandler
+        // COLD ALLOC: Vector3[256] - local platform hit points aligned with the vault signal queue - owner: EquipmentInteractionHandler
         private readonly Vector3[] _queuedPlatformLocalHitPoints = new Vector3[MaxQueuedSignals];
-        // COLD ALLOC: Vector3[256] - local platform hit normals aligned with the native signal queue - owner: EquipmentInteractionHandler
+        // COLD ALLOC: Vector3[256] - local platform hit normals aligned with the vault signal queue - owner: EquipmentInteractionHandler
         private readonly Vector3[] _queuedPlatformLocalHitNormals = new Vector3[MaxQueuedSignals];
-        // COLD ALLOC: bool[256] - platform-local hit validity bits aligned with the native signal queue - owner: EquipmentInteractionHandler
+        // COLD ALLOC: bool[256] - platform-local hit validity bits aligned with the vault signal queue - owner: EquipmentInteractionHandler
         private readonly bool[] _queuedHasPlatformLocalHit = new bool[MaxQueuedSignals];
 
-        private NativeQueue<InteractionSignal> _signalQueue;
         private IDataVault _dataVault;
+        private VaultBufferHandle<InteractionSignal> _signalQueueHandle;
         private VaultBufferHandle<RaycastCommand> _scheduledCommandsHandle;
         private VaultBufferHandle<RaycastHit> _scheduledHitsHandle;
         private VaultBufferHandle<RaycastCommand> _stagingCommandsHandle;
@@ -114,7 +114,7 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public bool Publish(in InteractionSignal signal, Collider targetCollider)
         {
-            if (!_signalQueue.IsCreated || targetCollider == null || !IsValidSignal(in signal))
+            if (targetCollider == null || !IsValidSignal(in signal) || !EnsureSignalQueueHandle())
                 return false;
 
             int currentFrame = Time.frameCount;
@@ -130,13 +130,28 @@ namespace Hecton8.Interaction
                 return false;
             }
 
-            _signalQueue.Enqueue(signal);
-            _queuedTargetColliders[_queueTail] = targetCollider;
-            CachePlatformRelativeHit(_queueTail, in signal, targetCollider);
-            _queueTail = (_queueTail + 1) % MaxQueuedSignals;
-            _queueCount++;
-            _packetAdmissionCount++;
-            return true;
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || !vault.TryLockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools))
+                return false;
+
+            try
+            {
+                var signalQueue = _signalQueueHandle.Resolve(vault);
+                if (!signalQueue.IsCreated || signalQueue.Length < MaxQueuedSignals)
+                    return false;
+
+                signalQueue[_queueTail] = signal;
+                _queuedTargetColliders[_queueTail] = targetCollider;
+                CachePlatformRelativeHit(_queueTail, in signal, targetCollider);
+                _queueTail = (_queueTail + 1) % MaxQueuedSignals;
+                _queueCount++;
+                _packetAdmissionCount++;
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools);
+            }
         }
 
         /// <inheritdoc />
@@ -171,12 +186,21 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public void ClearQueuedSignals()
         {
-            if (_signalQueue.IsCreated)
+            IDataVault vault = ResolveDataVault();
+            if (vault != null && EnsureSignalQueueHandle() && vault.TryLockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools))
             {
-                int drainIterations = 0;
-                while (drainIterations < MaxQueuedSignals && _signalQueue.TryDequeue(out _))
+                try
                 {
-                    drainIterations++;
+                    var signalQueue = _signalQueueHandle.Resolve(vault);
+                    if (signalQueue.IsCreated)
+                    {
+                        for (int i = 0; i < signalQueue.Length; i++)
+                            signalQueue[i] = default;
+                    }
+                }
+                finally
+                {
+                    vault.TryUnlockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools);
                 }
             }
 
@@ -198,18 +222,7 @@ namespace Hecton8.Interaction
                 ActiveRuntimeInstance = this;
 
             EnsureLayerCache();
-
-            if (!_signalQueue.IsCreated)
-            {
-                _signalQueue = new NativeQueue<InteractionSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InteractionSignal>(Persistent) - deferred interaction signal bus - owner: EquipmentInteractionHandler
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _signalQueue,
-                    MaxQueuedSignals,
-                    nameof(EquipmentInteractionHandler),
-                    nameof(_signalQueue),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _signalQueue, MaxQueuedSignals);
-            }
+            EnsureSignalQueueHandle();
 
             if (EnsureRaycastBufferHandles())
             {
@@ -263,20 +276,6 @@ namespace Hecton8.Interaction
             }
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
-        }
-
         /// <inheritdoc />
         public void LateFrameTick()
         {
@@ -302,14 +301,9 @@ namespace Hecton8.Interaction
             _isInitialized = false;
 
             ClearQueuedSignals();
-            if (_signalQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(EquipmentInteractionHandler), nameof(_signalQueue));
-                _signalQueue.Dispose();
-                _signalQueue = default;
-            }
 
             DisposeRaycastBuffers();
+            _signalQueueHandle = default;
             _scheduledRaycastHandle = default;
             _scheduledRaycastActive = false;
             _scheduledRequestCount = 0;
@@ -328,7 +322,7 @@ namespace Hecton8.Interaction
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
-                if (!_signalQueue.TryDequeue(out InteractionSignal signal))
+                if (!TryReadQueuedSignal(_queueHead, out InteractionSignal signal))
                     break;
 
                 processedCount++;
@@ -740,12 +734,12 @@ namespace Hecton8.Interaction
             }
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null || !vault.TryLockBuffer(_stagingCommandsHandle.BufferId))
+            if (vault == null || !vault.TryLockBuffer(_stagingCommandsHandle.BufferId, SystemID.GameplayTools))
                 return;
 
             try
             {
-                NativeArray<RaycastCommand> stagingCommands = _stagingCommandsHandle.Resolve(vault);
+                var stagingCommands = _stagingCommandsHandle.Resolve(vault);
                 if (!stagingCommands.IsCreated || stagingCommands.Length < MaxQueuedRayRequests)
                     return;
 
@@ -759,7 +753,7 @@ namespace Hecton8.Interaction
             }
             finally
             {
-                vault.TryUnlockBuffer(_stagingCommandsHandle.BufferId);
+                vault.TryUnlockBuffer(_stagingCommandsHandle.BufferId, SystemID.GameplayTools);
             }
         }
 
@@ -806,9 +800,29 @@ namespace Hecton8.Interaction
             if (!DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: false))
                 return;
 
-            if (!TryResolveScheduledRaycastBuffers(
-                    out NativeArray<RaycastCommand> scheduledCommands,
-                    out NativeArray<RaycastHit> scheduledHits))
+            if (!EnsureRaycastBufferHandles())
+            {
+                UnlockScheduledRaycastVaultBuffers();
+                _scheduledRequestCount = 0;
+                _scheduledRaycastActive = false;
+                return;
+            }
+
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+            {
+                UnlockScheduledRaycastVaultBuffers();
+                _scheduledRequestCount = 0;
+                _scheduledRaycastActive = false;
+                return;
+            }
+
+            var scheduledCommands = _scheduledCommandsHandle.Resolve(vault);
+            var scheduledHits = _scheduledHitsHandle.Resolve(vault);
+            if (!scheduledCommands.IsCreated ||
+                scheduledCommands.Length < MaxQueuedRayRequests ||
+                !scheduledHits.IsCreated ||
+                scheduledHits.Length < MaxQueuedRayRequests)
             {
                 UnlockScheduledRaycastVaultBuffers();
                 _scheduledRequestCount = 0;
@@ -840,7 +854,8 @@ namespace Hecton8.Interaction
 
             _scheduledRequestCount = 0;
             _scheduledRaycastActive = false;
-            ResetCommandLane(scheduledCommands);
+            for (int i = 0; i < scheduledCommands.Length; i++)
+                scheduledCommands[i] = CreateInvalidRaycastCommand();
             UnlockScheduledRaycastVaultBuffers();
         }
 
@@ -862,24 +877,24 @@ namespace Hecton8.Interaction
 
             try
             {
-                if (!vault.TryLockBuffer(_stagingCommandsHandle.BufferId))
+                if (!vault.TryLockBuffer(_stagingCommandsHandle.BufferId, SystemID.GameplayTools))
                     return;
 
                 stagingCommandsLocked = true;
 
-                if (!vault.TryLockBuffer(_scheduledCommandsHandle.BufferId))
+                if (!vault.TryLockBuffer(_scheduledCommandsHandle.BufferId, SystemID.GameplayTools))
                     return;
 
                 scheduledCommandsLocked = true;
 
-                if (!vault.TryLockBuffer(_scheduledHitsHandle.BufferId))
+                if (!vault.TryLockBuffer(_scheduledHitsHandle.BufferId, SystemID.GameplayTools))
                     return;
 
                 scheduledHitsLocked = true;
 
-                NativeArray<RaycastCommand> stagingCommands = _stagingCommandsHandle.Resolve(vault);
-                NativeArray<RaycastCommand> scheduledCommands = _scheduledCommandsHandle.Resolve(vault);
-                NativeArray<RaycastHit> scheduledHits = _scheduledHitsHandle.Resolve(vault);
+                var stagingCommands = _stagingCommandsHandle.Resolve(vault);
+                var scheduledCommands = _scheduledCommandsHandle.Resolve(vault);
+                var scheduledHits = _scheduledHitsHandle.Resolve(vault);
                 if (!stagingCommands.IsCreated ||
                     stagingCommands.Length < MaxQueuedRayRequests ||
                     !scheduledCommands.IsCreated ||
@@ -891,12 +906,14 @@ namespace Hecton8.Interaction
                 }
 
                 int scheduledCount = _stagedRequestCount;
-                ResetCommandLane(scheduledCommands);
+                for (int i = 0; i < scheduledCommands.Length; i++)
+                    scheduledCommands[i] = CreateInvalidRaycastCommand();
+
                 for (int i = 0; i < scheduledCount; i++)
                     scheduledCommands[i] = stagingCommands[i];
 
-                NativeArray<RaycastCommand> commandBatch = scheduledCommands.GetSubArray(0, scheduledCount);
-                NativeArray<RaycastHit> hitBatch = scheduledHits.GetSubArray(0, scheduledCount);
+                var commandBatch = scheduledCommands.GetSubArray(0, scheduledCount);
+                var hitBatch = scheduledHits.GetSubArray(0, scheduledCount);
                 _scheduledRaycastHandle = RaycastCommand.ScheduleBatch(commandBatch, hitBatch, MinCommandsPerJob, default);
                 _scheduledRaycastActive = true;
                 _scheduledRequestCount = scheduledCount;
@@ -904,7 +921,8 @@ namespace Hecton8.Interaction
 
                 System.Array.Copy(_stagingRequesterIds, _scheduledRequesterIds, scheduledCount);
                 System.Array.Clear(_stagingRequesterIds, 0, scheduledCount);
-                ResetCommandLane(stagingCommands);
+                for (int i = 0; i < stagingCommands.Length; i++)
+                    stagingCommands[i] = CreateInvalidRaycastCommand();
 
                 _stagedRequestCount = 0;
                 scheduledCommandsLocked = false;
@@ -913,13 +931,13 @@ namespace Hecton8.Interaction
             finally
             {
                 if (stagingCommandsLocked)
-                    vault.TryUnlockBuffer(_stagingCommandsHandle.BufferId);
+                    vault.TryUnlockBuffer(_stagingCommandsHandle.BufferId, SystemID.GameplayTools);
 
                 if (scheduledCommandsLocked)
-                    vault.TryUnlockBuffer(_scheduledCommandsHandle.BufferId);
+                    vault.TryUnlockBuffer(_scheduledCommandsHandle.BufferId, SystemID.GameplayTools);
 
                 if (scheduledHitsLocked)
-                    vault.TryUnlockBuffer(_scheduledHitsHandle.BufferId);
+                    vault.TryUnlockBuffer(_scheduledHitsHandle.BufferId, SystemID.GameplayTools);
             }
         }
 
@@ -976,6 +994,53 @@ namespace Hecton8.Interaction
             return true;
         }
 
+        private bool EnsureSignalQueueHandle()
+        {
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return false;
+
+            if (!_signalQueueHandle.IsCreated ||
+                _signalQueueHandle.BufferId != BufferID.InteractionSignalQueue ||
+                _signalQueueHandle.Length < MaxQueuedSignals ||
+                !vault.ResolveBuffer(ref _signalQueueHandle))
+            {
+                _signalQueueHandle = vault.GetBufferHandle<InteractionSignal>(
+                    BufferID.InteractionSignalQueue,
+                    MaxQueuedSignals,
+                    SystemID.GameplayTools,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            return _signalQueueHandle.IsCreated && _signalQueueHandle.Length >= MaxQueuedSignals;
+        }
+
+        private bool TryReadQueuedSignal(int queueIndex, out InteractionSignal signal)
+        {
+            signal = default;
+            if ((uint)queueIndex >= MaxQueuedSignals || !EnsureSignalQueueHandle())
+                return false;
+
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || !vault.TryLockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools))
+                return false;
+
+            try
+            {
+                var signalQueue = _signalQueueHandle.Resolve(vault);
+                if (!signalQueue.IsCreated || signalQueue.Length < MaxQueuedSignals)
+                    return false;
+
+                signal = signalQueue[queueIndex];
+                signalQueue[queueIndex] = default;
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools);
+            }
+        }
+
         private static bool EnsureRaycastBufferHandle<T>(
             IDataVault vault,
             ref VaultBufferHandle<T> handle,
@@ -998,28 +1063,6 @@ namespace Hecton8.Interaction
             return handle.IsCreated && handle.Length >= requiredLength;
         }
 
-        private bool TryResolveScheduledRaycastBuffers(
-            out NativeArray<RaycastCommand> scheduledCommands,
-            out NativeArray<RaycastHit> scheduledHits)
-        {
-            scheduledCommands = default;
-            scheduledHits = default;
-
-            if (!EnsureRaycastBufferHandles())
-                return false;
-
-            IDataVault vault = ResolveDataVault();
-            if (vault == null)
-                return false;
-
-            scheduledCommands = _scheduledCommandsHandle.Resolve(vault);
-            scheduledHits = _scheduledHitsHandle.Resolve(vault);
-            return scheduledCommands.IsCreated &&
-                   scheduledCommands.Length >= MaxQueuedRayRequests &&
-                   scheduledHits.IsCreated &&
-                   scheduledHits.Length >= MaxQueuedRayRequests;
-        }
-
         private void UnlockScheduledRaycastVaultBuffers()
         {
             if (!_scheduledRaycastVaultLocked)
@@ -1028,8 +1071,8 @@ namespace Hecton8.Interaction
             IDataVault vault = ResolveDataVault();
             if (vault != null)
             {
-                vault.TryUnlockBuffer(_scheduledCommandsHandle.BufferId);
-                vault.TryUnlockBuffer(_scheduledHitsHandle.BufferId);
+                vault.TryUnlockBuffer(_scheduledCommandsHandle.BufferId, SystemID.GameplayTools);
+                vault.TryUnlockBuffer(_scheduledHitsHandle.BufferId, SystemID.GameplayTools);
             }
 
             _scheduledRaycastVaultLocked = false;
@@ -1043,18 +1086,21 @@ namespace Hecton8.Interaction
             if (vault == null || !handle.IsCreated || handle.BufferId != bufferId)
                 return;
 
-            if (!vault.TryLockBuffer(bufferId))
+            if (!vault.TryLockBuffer(bufferId, SystemID.GameplayTools))
                 return;
 
             try
             {
-                NativeArray<RaycastCommand> commands = handle.Resolve(vault);
+                var commands = handle.Resolve(vault);
                 if (commands.IsCreated && commands.Length >= MaxQueuedRayRequests)
-                    ResetCommandLane(commands);
+                {
+                    for (int i = 0; i < commands.Length; i++)
+                        commands[i] = CreateInvalidRaycastCommand();
+                }
             }
             finally
             {
-                vault.TryUnlockBuffer(bufferId);
+                vault.TryUnlockBuffer(bufferId, SystemID.GameplayTools);
             }
         }
 
@@ -1080,13 +1126,5 @@ namespace Hecton8.Interaction
             return CreateRaycastCommand(Vector3.zero, Vector3.forward, 0f, 0, QueryTriggerInteraction.Ignore);
         }
 
-        private static void ResetCommandLane(NativeArray<RaycastCommand> commands)
-        {
-            if (!commands.IsCreated)
-                return;
-
-            for (int i = 0; i < commands.Length; i++)
-                commands[i] = CreateInvalidRaycastCommand();
-        }
     }
 }

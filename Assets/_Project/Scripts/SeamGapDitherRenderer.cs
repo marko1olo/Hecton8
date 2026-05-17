@@ -204,7 +204,7 @@ namespace Hecton8.World
             drawMaterial.SetVector(_CameraPositionId, targetCamera.transform.position);
             drawMaterial.SetFloat(_MaxCameraDistanceId, Mathf.Max(0.5f, maxCameraDistance));
 
-            Graphics.DrawMeshInstancedIndirect(
+            UnityEngine.Graphics.DrawMeshInstancedIndirect(
                 _quadMesh,
                 0,
                 drawMaterial,

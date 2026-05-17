@@ -167,3 +167,99 @@ Solution: Re-read the source as the authority, changed the Burst job to the comp
 Rejected Alternatives: Leaving docs ahead of source was rejected because the anti-amnesia protocol requires disk truth. Resolving the invalidation buffer for register/unregister was rejected because it widens the mutation view without need. Passing unknown Math LOD bytes through to result telemetry was rejected because blackbox consumers need executed-tier truth.
 Scalability potential: Low/Toaster = malformed LOD input falls back to cheap two-portal smoothing with an explicit flag. Middle = active-path registration touches fewer vault buffers. High/Ultra = overkill smoothing remains available only for known High/Ultra requests, preserving telemetry truth.
 Hardware Impact: No measured microsecond saving is claimed for this pass. The expected runtime effect is reduced vault handle traffic during register/unregister and deterministic fallback for invalid LOD input; compile validation remains blocked upstream with zero owned pathfinding diagnostics.
+
+## Decision 022 - Blackbox Dump Catch Narrowing
+
+Problem: `TryDumpBlackBox` contained dump-path failures, but its broad `catch (Exception)` could also hide unexpected runtime bugs in the crash evidence path.
+Solution: Replaced the broad catch with specific filesystem/path exception catches: `IOException`, `UnauthorizedAccessException`, `NotSupportedException`, and `ArgumentException`.
+Rejected Alternatives: Letting dump I/O exceptions escape was rejected because the blackbox must not create a second crash. Catching all exceptions was rejected because unknown runtime faults should not be silently downgraded to a dump failure bit.
+Scalability potential: Low/Toaster = same no-hot-path disk I/O behavior. Middle/High/Ultra = crash tooling still gets a deterministic dump-failure flag for expected file/path failures, while unexpected faults remain visible to integration diagnostics.
+Hardware Impact: No measured microsecond saving is claimed. This is survival semantics on a non-hot explicit dump path.
+
+## Decision 023 - WFC Cell Contract Boundary
+
+Problem: The Burst door-block check treated any portal cell index inside the current `WfcGridBitmasks` buffer length as valid. If an oversized or stale grid buffer existed, out-of-contract portal cells could participate in path blocking despite the WFC contract defining the authoritative cell count.
+Solution: `IsDoorCellBlocked` now rejects cell indices greater than or equal to `PathFunnelConstants.WfcOutpostCellCount`, emits `PathFunnelResultFlags.InvalidWfcCell`, and only then checks the buffer length. Blocked-path telemetry now reports `ProcessedPortalCount = i + 1` so the count reflects the examined portal, not its zero-based index.
+Rejected Alternatives: Trusting the buffer length was rejected because GlobalDataVault capacity is not the semantic contract. Blocking on invalid cells was rejected because malformed portal data should be flagged and ignored, not converted into a false closed door.
+Scalability potential: Low/Toaster = no extra allocation and only a branch before door flag lookup. Middle/High/Ultra = blackbox consumers can distinguish malformed portal data from real WFC closures without changing the ABI.
+Hardware Impact: No measured microsecond saving is claimed. This is correctness and diagnostics hardening; the extra branch is non-material compared with path repair churn from false invalidation.
+
+## Decision 024 - Active Path Cell Count Truth
+
+Problem: `RegisterActivePath` ignored invalid corridor cells when setting the exact WFC bitmask, but still stored the clamped input count in `PathFunnelActivePath.CellCount`. That made active-path metadata claim cells that were not actually represented in the mask.
+Solution: `SetPathCell` now returns whether it packed a cell, and registration stores a `validCellCount` based only on successful bit writes.
+Rejected Alternatives: Counting raw caller input was rejected because the bitmask is the authoritative invalidation truth. Throwing on invalid cells was rejected because path registration must stay fail-soft and zero-GC under malformed corridor data.
+Scalability potential: Low/Toaster = same loop, one boolean return, no allocation. Middle/High/Ultra = active-path metadata now matches the exact mask used by invalidation consumers.
+Hardware Impact: No measured microsecond saving is claimed. This prevents misleading telemetry and avoids downstream recovery logic overestimating corridor coverage.
+
+## Decision 025 - Unique WFC Cell Count Truth
+
+Problem: The previous cell-count fix counted every successful `SetPathCell` call, but duplicate corridor entries can target a bit that is already set. That still lets caller duplication inflate `PathFunnelActivePath.CellCount` above the unique WFC mask truth used by invalidation.
+Solution: `SetPathCell` now reads the target mask word, returns false when the bit is already set, and only increments `validCellCount` on a new bit write. Refreshed build evidence after the change: `Hecton8.Core.csproj` exits 0, while Assembly-CSharp remains blocked by 216 `RealtimeCSG.csproj` CS2001 missing source errors with 0 owned pathfinding matches.
+Rejected Alternatives: Counting duplicate input cells was rejected because the bitmask is the only authoritative invalidation surface. Adding a separate deduplication container was rejected because it would add memory traffic and violate the zero-allocation path registration goal. Editing RealtimeCSG or generated build inputs was rejected because those files are outside AI/PATHING.
+Scalability potential: Low/Toaster = one hot word load and bit test prevents duplicate metadata without allocation. Middle = active path metadata stays aligned with exact invalidation masks. High/Ultra = richer path telemetry can trust cell counts when rendering/debugging high-density route diagnostics, while this prompt still owns no VFX.
+Hardware Impact: No measured microsecond saving is claimed. The expected gain is correctness under noisy WFC corridor input and avoiding downstream recovery work based on inflated cell counts; Core build validation is green, Assembly validation remains blocked outside this domain.
+
+## Decision 026 - Signal/Vault Phase Truth
+
+Problem: `ProcessWfcStateSignal` resolved `CurrentFlags` from `BufferID.WfcOutpostGrid` when the vault cell existed. Save persistence writes that vault from the same typed signal lane, so phase ordering can leave the vault one frame behind the signal. A door close could be published with `CurrentFlags` closed while the vault still reads open, causing path invalidation to be skipped.
+Solution: Treat `WfcOutpostStateChangedSignal.CurrentFlags` as the authoritative transition value for close detection, mask it with `WfcOutpostPersistenceConstants.MutableFlagMask`, keep reading the vault cell as an audited snapshot, and set `PathFunnelTelemetryFlags.WfcVaultSignalMismatch` when the vault snapshot disagrees with the signal. No new signal lane was created.
+Rejected Alternatives: Trusting the vault over the signal was rejected because it can miss a live door-close event under phase lag. Polling WFC implementation classes was rejected as cross-domain coupling. Creating a duplicate pathfinding-specific door signal was rejected because `WfcOutpostStateChangedSignal` already exists as the typed lane. Running another dotnet build was rejected for this pass because the user explicitly ordered no repeated rebuilds.
+Scalability potential: Low/Toaster = one masked byte compare keeps the fast exact-bit invalidation path and avoids expensive re-path recovery from missed closes. Middle = blackbox can distinguish normal close events from signal/vault phase disagreement. High/Ultra = presentation/debug consumers can react to trustworthy invalidation state without increasing gameplay broadcast cost; VFX remains out of scope for this XML.
+Hardware Impact: No measured microsecond saving is claimed. The hot-path change is one byte mask and optional mismatch bit set per WFC state signal; the correctness gain is preventing stale-vault close misses that would force later AI recovery work.
+
+## Decision 027 - WFC Mutable Mask Isolation
+
+Problem: WFC state payloads are byte fields with a defined mutable flag mask. Runtime invalidation already masked `CurrentFlags`, but `PreviousFlags` was still tested raw, and the Burst door check read raw vault bytes. Future or reserved bits should not be able to influence door-open truth.
+Solution: Mask `signal.PreviousFlags` with `PathFunnelConstants.WfcMutableFlagMask` before testing the close transition, pass the masked previous flags into invalidation payloads, and mask Burst-side `WfcGridBitmasks[cellIndex]` before checking `WfcDoorOpenFlag`.
+Rejected Alternatives: Trusting producers to always mask forever was rejected because pathfinding is a critical AI/survival consumer and must defend its own contract boundary. Adding a new local mask constant was rejected because the Core persistence contract already owns `MutableFlagMask`. Running a rebuild was rejected because the current user instruction says not to rebuild every pass.
+Scalability potential: Low/Toaster = one byte mask in runtime and one byte mask in the Burst door check keeps exact path invalidation predictable. Middle/High/Ultra = WFC can add future mutable bits without destabilizing pathing door truth or blackbox decoding.
+Hardware Impact: No measured microsecond saving is claimed. The extra byte masks are negligible; the value is preventing reserved-bit false positives or false negatives in door invalidation.
+
+## Decision 028 - Blackbox Transient Flag Truth
+
+Problem: `PathFunnelTelemetryFlags.WfcVaultSignalMismatch` was recorded by setting `runtimeState.TelemetryFlags`. Without a frame-scope clear, one signal/vault disagreement would make every later blackbox frame look like an active phase mismatch.
+Solution: Added `PathFunnelTelemetryFlags.TransientFrameMask` and clear transient bits immediately after `WriteTelemetry` captures the current frame. Dump failure handling preserves the just-written frame flags and patches the current slot with `BlackBoxDumpFailed` if the explicit dump fails, while keeping `BlackBoxDumpFailed` persistent in runtime state.
+Rejected Alternatives: Leaving mismatch sticky was rejected because blackbox evidence must show when a fault occurred, not smear it across later frames. Clearing all telemetry flags was rejected because dump failure is a durable status until the next dump request. Running another rebuild was rejected because the current user instruction says not to rebuild every pass.
+Scalability potential: Low/Toaster = one ushort mask per late-frame telemetry write keeps crash evidence precise without allocation. Middle/High/Ultra = tools can distinguish a one-frame signal/vault phase race from ongoing runtime failure without adding signal traffic or path scans.
+Hardware Impact: No measured microsecond saving is claimed. The extra ushort mask is negligible; the value is postmortem correctness and avoiding false investigation trails.
+
+## Decision 029 - Portal Input Clamp Truth
+
+Problem: `FunnelSmoothingJob` clamped `PortalCount` to `Portals.Length`, then used that clamped count as the truth for partial-lookahead status. If the caller requested more portals than the native buffer held, the job could report `Complete` after smoothing only the available prefix. A negative portal count also collapsed to a direct start-goal path with only a flag.
+Solution: Added `PathFunnelResultFlags.PortalInputClamped`, made negative `PortalCount` return `InvalidInput`, made positive counts with missing/empty portal buffers return `InvalidInput`, and compared partial-lookahead status against the requested portal count rather than the clamped buffer length. Truncated buffers now stop at the last available portal midpoint and report partial/truncated flags.
+Rejected Alternatives: Trusting the caller was rejected because corridor input is a safety boundary; a fake complete path can cut corners through closed geometry. Allocating a repair buffer was rejected because the Burst job must stay zero-allocation and caller-owned. Running another rebuild was rejected because the current user instruction says not to rebuild every pass.
+Scalability potential: Low/Toaster = malformed path requests fail fast with no recovery allocation or physics probe. Middle/High/Ultra = blackbox and path consumers can distinguish real partial look-ahead from complete corridor smoothing before spending cycles on presentation/debug overlays.
+Hardware Impact: No measured microsecond saving is claimed. The extra branches run once per job entry and prevent later expensive re-path/debug work caused by false complete results.
+
+## Decision 030 - AUP Sidecar Clamp Truth
+
+Problem: `ConvertWaypointsToAup` converted `min(WaypointCount, Waypoints.Length, WaypointAups.Length)` entries without flagging when the optional AUP sidecar buffer was smaller than the produced waypoint count. Consumers could receive `WaypointCount = N` but only the first M AUP entries valid, with no telemetry bit explaining the partial sidecar.
+Solution: Added `PathFunnelResultFlags.AupOutputClamped` and set it when `WaypointAups.Length` is smaller than the safe waypoint count. The job still writes only the valid prefix and does not allocate or repair caller buffers.
+Rejected Alternatives: Forcing AUP output to be required was rejected because the prompt defines `NativeArray<float3> Waypoints` as the primary SOA output and AUP is a sidecar. Allocating a larger sidecar was rejected because the Burst job must use caller-owned NativeArrays only. Running another rebuild was rejected because the current user instruction says not to rebuild every pass.
+Scalability potential: Low/Toaster = no allocation and one length compare prevents hidden deterministic-coordinate loss. Middle/High/Ultra = debug and presentation consumers can detect incomplete AUP sidecars before spending cycles on route overlays or postmortem decoding.
+Hardware Impact: No measured microsecond saving is claimed. The added compare is negligible; the value is preventing silent mismatch between visual waypoint count and deterministic AUP output.
+
+## Decision 031 - Agent Radius Clamp Telemetry
+
+Problem: `TightenPortalForRadius` made non-finite `AgentRadiusMeters` safe by selecting zero, but the result payload did not expose that malformed radius input changed corner-shrink behavior. Negative radius values were also clamped to zero without telemetry.
+Solution: Added `PathFunnelResultFlags.AgentRadiusClamped`. Non-finite radius sets both `NonFiniteInput` and `AgentRadiusClamped`; negative finite radius sets `AgentRadiusClamped` and clamps to zero.
+Rejected Alternatives: Silent clamping was rejected because NaN vaccination must be visible in blackbox/result payloads. Throwing or failing the whole path was rejected because malformed caller tuning should not break path output when a deterministic safe fallback exists. Running another rebuild was rejected because the current user instruction says not to rebuild every pass.
+Scalability potential: Low/Toaster = no allocation and one branch prevents bad radius data from poisoning the path. Middle/High/Ultra = tuning/debug consumers can detect radius sanitation instead of misreading corner quality as a funnel math problem.
+Hardware Impact: No measured microsecond saving is claimed. The added branch is negligible; the value is deterministic safety and postmortem clarity.
+
+## Decision 032 - Telemetry Ring Contract Clamp
+
+Problem: The blackbox telemetry buffer is requested at 300 entries, but vault handles can resolve a larger buffer if the shared `BufferID` was ever grown. `WriteTelemetry` and `TryDumpBlackBox` used the resolved length directly, which could widen the ring and dump beyond the mandated last 300 frames.
+Solution: Added `ResolveTelemetryRingLength` and used it for telemetry cursor clamping, telemetry cursor advancement, runtime-state initialization in the telemetry path, and dump byte count. The buffer still requires at least 300 entries, but the contract window remains exactly `PathFunnelConstants.TelemetryFrames`.
+Rejected Alternatives: Trusting vault capacity was rejected because blackbox evidence must be a fixed-size contract. Shrinking or reallocating the vault buffer was rejected because pathfinding does not own arena compaction and must not add memory churn. Running another rebuild was rejected because the current user instruction says not to rebuild every pass.
+Scalability potential: Low/Toaster = fixed 300-entry dump prevents unnecessary MicroSD write pressure. Middle/High/Ultra = postmortem decoders can rely on a stable binary length independent of vault growth.
+Hardware Impact: No measured microsecond saving is claimed. The extra `min` is negligible; dump I/O is bounded to the intended 300-frame payload.
+
+## Decision 033 - Editor-Time Registry Guard
+
+Problem: `PathFunnelNavmeshRuntime.OnEnable` registered fast tick, late-frame tick, hot-swap listener, and vault handles without checking `Application.isPlaying`. A scene object enabled during editor/import time could mutate runtime registries outside the dispatcher lifecycle.
+Solution: Added an early `Application.isPlaying` guard to `OnEnable`; runtime registration and vault handle resolution now happen only in play mode.
+Rejected Alternatives: Relying on the absence of `[ExecuteAlways]` was rejected because Unity lifecycle calls can still surprise tooling during editor scene handling. Moving registration to `Awake` was rejected because cross-system registry wiring should stay in enable/disable lifecycle and remain reversible. Running another rebuild was rejected because the current user instruction says not to rebuild every pass.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged; editor/import stability improves by avoiding accidental registry mutation.
+Hardware Impact: No runtime microsecond saving is claimed. The guard executes once per enable and prevents cold-path lifecycle corruption.

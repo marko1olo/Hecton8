@@ -98,7 +98,7 @@ namespace Hecton8.Gameplay
                     height,
                     1f);
                 s_splashMatrix[0] = Matrix4x4.TRS(center, rotation, scale);
-                Graphics.DrawMeshInstanced(
+                UnityEngine.Graphics.DrawMeshInstanced(
                     s_quadMesh,
                     0,
                     splashMaterial,
@@ -115,7 +115,7 @@ namespace Hecton8.Gameplay
                 float diameter = math.max(0.01f, rippleDiameterMeters) * (0.35f + age01 * 0.65f);
                 Vector3 scale = new Vector3(diameter, diameter, 1f);
                 s_rippleMatrix[0] = Matrix4x4.TRS(origin, rotation * s_flatRippleRotation, scale);
-                Graphics.DrawMeshInstanced(
+                UnityEngine.Graphics.DrawMeshInstanced(
                     s_quadMesh,
                     0,
                     distortionRippleMaterial,

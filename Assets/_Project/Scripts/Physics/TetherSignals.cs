@@ -1,64 +1,10 @@
 using System;
-using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 using CoreTetherFiredSignal = Hecton8.Core.Contracts.Signals.TetherFiredSignal;
-
-namespace Hecton8.Core.Contracts.Signals
-{
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 144)]
-    public struct TetherTensionSignal : ISignal
-    {
-        public AbsoluteUniversePosition AnchorAup;
-        public AbsoluteUniversePosition PayloadAup;
-        public float3 DirectionToPayload;
-        public uint TetherId;
-        public uint FrameIndex;
-        public float TensionForce;
-        public float SnapThreshold;
-        public float Tension01;
-        public float ReactiveVfx01;
-        public ushort NodeCount;
-        public byte Flags;
-        public byte Reserved;
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
-    public struct TetherSnappedSignal : ISignal
-    {
-        public AbsoluteUniversePosition SnapAup;
-        public uint TetherId;
-        public uint FrameIndex;
-        public float PeakTension;
-        public float SnapThreshold;
-        public float Severity01;
-        public ushort NodeCount;
-        public byte Reason;
-        public byte Flags;
-        public ulong ReservedPadding;
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
-    public struct TetherFiredSignal : ISignal
-    {
-        public int ManagerInstanceId;
-        public int OwnerInstanceId;
-        public int PayloadBodyInstanceId;
-        public int PayloadColliderInstanceId;
-        public int RequestSlot;
-        public uint RequestVersion;
-        public uint FrameIndex;
-        public float InitialDistance;
-        public uint Flags;
-        public uint Reserved;
-        public ulong ReservedPadding;
-    }
-
-}
 
 namespace Hecton8.Physics
 {
@@ -102,6 +48,9 @@ namespace Hecton8.Physics
             if (manager == null || owner == null || playerBody == null || payloadBody == null || payloadCollider == null)
                 return false;
 
+            if (!math.isfinite(initialDistance) || initialDistance < 0f)
+                return false;
+
             EnsureInitialized();
 
             CoreTetherFiredSignal signal = new CoreTetherFiredSignal
@@ -113,7 +62,7 @@ namespace Hecton8.Physics
                 RequestSlot = -1,
                 RequestVersion = 0u,
                 FrameIndex = frameIndex,
-                InitialDistance = initialDistance,
+                InitialDistance = math.max(0f, initialDistance),
                 Flags = 0
             };
 

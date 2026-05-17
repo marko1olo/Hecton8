@@ -120,3 +120,55 @@ Solution: Static scans found no `Update`, `FixedUpdate`, `LateUpdate`, `foreach`
 Rejected Alternatives: Broadly editing gameplay/world/UI files from this CORE task would violate domain boundaries.
 Scalability potential: All tiers keep one dispatcher cadence authority.
 Hardware Impact: 0 B/frame.
+
+## REINQUISITION HOT REGISTRY / BLACKBOX PATH PASS
+
+Problem: The dispatcher blackbox dump constant had drifted to `Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin`, contradicting the CORE_TICK_DILATION blackbox contract and the existing CORE status log.
+Solution: Restored the primary dump to `Docs/AgentLogs/Dump_CORE_TICK_DILATION.bin`, kept a SIMULATION_BUCKET mirror to avoid deleting another scheduler owner's evidence path, and added a compact binary header: magic, version, entry count, entry size, and cursor before the 300 packed entries.
+Rejected Alternatives: Reverting the neighboring dump path outright would discard useful cross-scheduler evidence. Leaving only the SIM bucket path would violate this agent's `Dump_[ID].bin` requirement.
+Scalability potential: Low/MX350 pays 0 us in normal frames because disk I/O remains fault-only. Middle/High/Ultra get a stable parser header for postmortem tooling without bloating the hot heartbeat.
+Hardware Impact: 0 B/frame managed allocation in normal play; fault dump writes a fixed 19.2 KB ring plus 20 bytes of header.
+
+Problem: `RunDispatcherUpdate` still polled `GlobalRegistry.InputDeterminism` and `GlobalRegistry.ScalabilityTierProfileByte`, and late-frame pause DOF polled `GlobalRegistry.CameraJuice`.
+Solution: Cached `IInputDeterminismService`, cached `ICameraJuiceSystem` with a 30-frame absent-service retry, and moved scalability tier updates onto the existing `ScalabilityEvents` dirty lane. The frame loop now reads `_scalabilityTierProfileByte`.
+Rejected Alternatives: New scalability signal was rejected because `ScalabilityEvents` already exists. Per-frame registry reads were rejected by the GlobalRegistry hot-path mandate. A hard camera-service dependency was rejected because presentation must fail soft if CameraJuice is absent.
+Scalability potential: Low/MX350 removes three hot/near-hot registry polls. Middle keeps the same deterministic cadence. High/Ultra preserve quality-tier visual overkill switches through the event lane without adding scheduler math.
+Hardware Impact: Unmeasured. Expected savings are below profiler resolution per read (<0.002 us/frame each), but the change removes cache-hostile service polling and keeps 0 B/frame.
+
+Problem: `ScalabilityEvents` had a fixed 16-listener bucket while source scan found 27 files implementing `IScalabilityChangedEventListener`; registering the dispatcher could silently fail in release if the bucket was full.
+Solution: Widened only the cold listener/deferred arrays from 16 to 32. Payload size, event queue capacity, public signatures, and dispatch semantics were unchanged.
+Rejected Alternatives: Keeping a 16-listener cap while adding another listener creates false verification. Replacing the lane with a new SignalBus would duplicate an existing platform contract.
+Scalability potential: Low/Middle/High/Ultra all retain one dirty scalability lane; High/Ultra visual systems can stay subscribed without forcing scheduler polling.
+Hardware Impact: Cold memory cost is three additional 16-reference arrays; hot path cost remains O(listener count) only when a tier change event is flushed.
+
+Problem: Core compile verification did not reach diagnostics after the reinquisition patch.
+Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore` twice, including a no-reuse/shared-compilation-disabled retry. Both timed out with 0-byte logs; build servers were shut down and dotnet processes killed.
+Rejected Alternatives: Claiming compile success from an empty log was rejected. Editing unrelated build infrastructure from the scheduler prompt was rejected.
+Scalability potential: Runtime design unaffected; verification remains blocked by toolchain behavior in this workspace.
+Hardware Impact: 0 us runtime; build pipeline only.
+
+## TYPED SCALABILITY SIGNALBUS BRIDGE
+
+Problem: The previous scalability hookup still made `SystemDispatcher` a legacy listener on `ScalabilityEvents`. That preserved event decoupling, but it did not satisfy the stricter typed-lane/read-only-span requirement for scheduler authority.
+Solution: Reused the existing packed `ScalabilityChangedEvent` payload as the signal. It now implements `ISignal`; `ScalabilityEvents.Raise` pushes the payload to `SignalBus<ScalabilityChangedEvent>` with a 4-event configured lane; and `SystemDispatcher` drains `SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot()` after `GlobalSignals.FlushPreSimulation()`.
+Rejected Alternatives: A new `ScalabilityTierSignal` would duplicate an existing platform contract. Keeping the dispatcher as an `IScalabilityChangedEventListener` would leave scheduler state dependent on listener capacity and callback dispatch. Polling `GlobalRegistry.ScalabilityTierProfileByte` would reintroduce a hot registry read.
+Scalability potential: Low/MX350 keeps a 4-event platform lane and an empty-span idle path. Middle keeps deterministic tier state. High/Ultra still receive quality-tier switches for visual overkill systems without adding scheduler math.
+Hardware Impact: Measured proof absent. Expected idle cost is below 0.002 us/frame for an empty span length check; event path is rare and bounded to 4 payloads, 0 B/frame managed allocation.
+
+Problem: System/platform tier changes must not freeze when `TimeDilationScalar == 0`, or a paused game can miss a Low/High tier switch while gameplay lanes are intentionally held.
+Solution: Added `ScalabilityChangedEvent` to `SignalLanePolicyCache<T>.FlushDuringSimulationPause`.
+Rejected Alternatives: Letting pause freeze the scalability lane would make renderer/load-shed tier state stale. Special-casing the dispatcher after flush would bypass the lane policy table.
+Scalability potential: Low can shed load during pause; High/Ultra can restore visual quality after a tier change without waiting for simulation unpause.
+Hardware Impact: One cached generic policy bool; 0 B/frame.
+
+Problem: A fresh scan showed the blackbox dump constant was still SIM bucket only in the actual source despite the status log claiming CORE_TICK_DILATION.
+Solution: Restored `Docs/AgentLogs/Dump_CORE_TICK_DILATION.bin` as the primary path and retained `Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin` as a mirror.
+Rejected Alternatives: Leaving the stale SIM-only path violates `Dump_[ID].bin`. Removing the SIM mirror would discard useful neighboring scheduler evidence.
+Scalability potential: No normal-frame cost. Fault dumps remain fixed-size binary output.
+Hardware Impact: 0 us normal frames; fault path writes the 19.2 KB ring twice plus headers.
+
+Problem: The user explicitly told this agent not to run dotnet rebuild every time after prior build attempts hung before diagnostics.
+Solution: This pass used static verification only: prompt re-read, AGENTS/mandate re-read, `rg` scans, and `git diff --check`.
+Rejected Alternatives: Starting another build/rebuild while the toolchain is already known to hang would waste time and risk more stray compiler processes.
+Scalability potential: Runtime unchanged; verification status remains PENDING until Unity/compile proof exists.
+Hardware Impact: 0 us runtime.

@@ -186,26 +186,6 @@ The root cause is not "too many lines of code." The root cause is long-context a
 
 STATUS: AUDIT COMPLETE.
 
-## Live Rebase - 2026-05-16T23:14+04:00
-
-This is a SQLite live rebase, not a new full JSONL rescan.
-
-| Metric | Value |
-|---|---:|
-| Current SQLite thread tokens | 49,767,593,348 |
-| Delta vs 14:57 SQLite rebase | +1,006,277,623 |
-| 30-second live delta | 3,815,200 |
-| Live rate | 127,173.33 tokens/sec |
-| Live minute equivalent | 7,630,400 tokens/min |
-| Live day equivalent | 10,987,776,000 tokens/day |
-| Estimated current cache-aware total | USD 33,777.90 |
-| Delta cost since 14:57, cache-aware blended | USD 770.70 |
-| Current energy estimate | 2,488.38 MWh |
-
-The 23:14 pulse is hotter than both previous same-day continuation samples. It should be treated as burst evidence, not a stable daily forecast.
-
-STATUS: AUDIT COMPLETE.
-
 ## Continuation Rebase - 2026-05-16T14:57+04:00
 
 This section does not replace the full 03:56 JSONL scan. It rebases the live total with SQLite and recalculates code ratios after the source tree moved.
@@ -250,3 +230,199 @@ The contract ratio changed because the current scanner classifies `I*.cs`, `*Int
 
 STATUS: AUDIT COMPLETE.
 
+## Live Rebase - 2026-05-16T23:14+04:00
+
+This is a SQLite live rebase, not a new full JSONL rescan.
+
+| Metric | Value |
+|---|---:|
+| Current SQLite thread tokens | 49,767,593,348 |
+| Delta vs 14:57 SQLite rebase | +1,006,277,623 |
+| 30-second live delta | 3,815,200 |
+| Live rate | 127,173.33 tokens/sec |
+| Live minute equivalent | 7,630,400 tokens/min |
+| Live day equivalent | 10,987,776,000 tokens/day |
+| Estimated current cache-aware total | USD 33,777.90 |
+| Delta cost since 14:57, cache-aware blended | USD 770.70 |
+| Current energy estimate | 2,488.38 MWh |
+
+The 23:14 pulse is hotter than both previous same-day continuation samples. It should be treated as burst evidence, not a stable daily forecast.
+
+STATUS: AUDIT COMPLETE.
+
+## Midnight Live Rebase - 2026-05-17T00:00+04:00
+
+This is a SQLite live rebase and current source LOC scan, not a new full JSONL rescan.
+
+| Metric | Value |
+|---|---:|
+| Current SQLite thread tokens | 49,903,844,533 |
+| Delta vs 23:14 SQLite sample | +136,251,185 |
+| Delta vs 14:57 SQLite rebase | +1,142,528,808 |
+| 45-second live delta | 4,829,772 |
+| Live rate | 107,328.27 tokens/sec |
+| Live minute equivalent | 6,439,696 tokens/min |
+| Live day equivalent | 9,273,162,240 tokens/day |
+| Estimated current cache-aware total | USD 33,882.25 |
+| Delta cost since 23:14, cache-aware blended | USD 104.35 |
+| Delta cost since 14:57, cache-aware blended | USD 875.05 |
+| Current energy estimate | 2,495.19 MWh |
+
+Current source ratios:
+
+| Metric | Value |
+|---|---:|
+| First-party script files | 1,580 |
+| Physical script LOC | 1,015,982 |
+| Meaningful script LOC | 836,249 |
+| Script bytes | 44,057,472 |
+| Logic density | 82.31% |
+| Tokens per meaningful LOC | 59,675.82 |
+| Tokens per physical LOC | 49,118.83 |
+| Burn tokens per script byte | 1,132.70 |
+
+STATUS: AUDIT COMPLETE.
+
+## Recent JSONL Rate Audit - 2026-05-17T00:52+04:00
+
+This is a bounded recent-file JSONL pass plus a 30-second SQLite live pulse. It supersedes short-pulse-only estimates for 1h/6h/24h cadence, but it is still not a billing export.
+
+| Metric | Value |
+|---|---:|
+| JSONL files scanned | 81 |
+| JSONL bytes scanned | 991,426,469 |
+| Usable `last_token_usage` rows | 85,425 |
+| Parse errors | 0 |
+| Fresh model bucket | `gpt-5.5` |
+| Max per-event input delta | 266,037 |
+| Long-context surcharge events over 272K input | 0 |
+
+Rolling windows:
+
+| Window | Tokens | Tokens/sec | Cache-aware USD | USD/min | No-cache USD |
+|---|---:|---:|---:|---:|---:|
+| Last 1h | 390,025,115 | 108,340.31 | 283.72 | 4.73 | 1,978.29 |
+| Last 6h | 1,088,865,736 | 50,410.45 | 827.11 | 2.30 | 5,524.96 |
+| Last 24h | 5,364,091,619 | 62,084.39 | 4,123.40 | 2.86 | 27,223.44 |
+
+Last 24h cache ratio: 96.211%. Last 24h cache avoided: USD 23,100.04.
+
+Peak cadence:
+
+| Peak | Value |
+|---|---:|
+| Token peak second | 2,780,390 at 2026-05-16T16:54:28+04:00 |
+| Token peak minute | 25,820,127 at 2026-05-16T05:44+04:00 |
+| Token peak hour | 452,526,419 at 2026-05-16T16:00+04:00 |
+| Prompt peak minute | 21 user-message rows at 2026-05-16T09:10+04:00 |
+| Prompt peak hour | 99 user-message rows at 2026-05-16T14:00+04:00 |
+
+SQLite 30-second live pulse:
+
+| Metric | Value |
+|---|---:|
+| Current SQLite tokens | 50,027,664,742 |
+| 30-second delta | 2,659,344 |
+| Tokens/sec | 88,644.80 |
+| Tokens/min | 5,318,688 |
+| Tokens/hour | 319,121,280 |
+| Tokens/day equivalent | 7,658,910,720 |
+| Live cache-aware rate | USD 4.07/min; USD 244.41/hour; USD 5,865.91/day |
+| Estimated current cache-aware total | USD 33,977.08 |
+| Current energy estimate | 2,501.38 MWh |
+
+Current source ratios:
+
+| Metric | Value |
+|---|---:|
+| First-party script files | 1,580 |
+| Physical script LOC | 1,016,698 |
+| Meaningful script LOC | 836,910 |
+| Script bytes | 44,611,915 |
+| Logic density | 82.3165% |
+| Tokens per meaningful LOC | 59,776.64 |
+| Tokens per physical LOC | 49,206.02 |
+| Burn tokens per script byte | 1,121.40 |
+| Burn / source-text proxy ratio | 4,485.59x |
+
+STATUS: AUDIT COMPLETE.
+
+## Token Live Rebase - 2026-05-17T04:46+04:00
+
+This is a post-H-Phi token rebase. It does not replace the 04:12 H-Phi score artifact.
+
+Post-04:12 JSONL window:
+
+| Metric | Value |
+|---|---:|
+| Window | 2026-05-17T04:11:59+04:00 to 2026-05-17T04:41:52.884+04:00 |
+| JSONL files scanned | 45 |
+| JSONL bytes scanned | 525,293,697 |
+| Usable usage rows | 1,212 |
+| Parse errors | 0 |
+| Total tokens | 190,381,072 |
+| Cached-input ratio | 93.009% |
+| Cache-aware cost | USD 173.29 |
+| No-cache equivalent | USD 966.82 |
+| Average rate | 106,127.83 tokens/sec |
+| Average minute | 6,367,669.72 tokens/min |
+| Cache-aware rate | USD 5.80/min; USD 347.75/hour |
+| Peak token minute | 17,679,821 at 2026-05-17T04:41+04:00 |
+
+SQLite/code rebase:
+
+| Metric | Value |
+|---|---:|
+| Current SQLite tokens | 50,636,429,732 |
+| Delta since 04:09 SQLite total | +110,281,428 |
+| Estimated current cache-aware total | USD 34,443.33 |
+| Current energy estimate | 2,531.82 MWh |
+| First-party script files | 1,581 |
+| Physical script LOC | 1,019,121 |
+| Meaningful script LOC | 839,069 |
+| Script bytes | 44,746,126 |
+| Logic density | 82.3326% |
+| Tokens per meaningful LOC | 60,348.35 |
+| Tokens per physical LOC | 49,686.38 |
+| Burn tokens per script byte | 1,131.64 |
+
+04:46 live burner sample:
+
+| Metric | Value |
+|---|---:|
+| Sample duration | 20 sec |
+| Active delta threads | 3 |
+| Total delta | 497,906 |
+| Tokens/sec | 24,895.30 |
+| Tokens/min | 1,493,718 |
+| Tokens/day equivalent | 2,150,953,920 |
+| Cache-aware rate, blended | USD 1.14/min; USD 68.64/hour; USD 1,647.40/day |
+
+Top burners: `Add modulo time slicer` 193,366; `AUDIO_IMPORT_RESIDENCY_GUARD` 169,754; `Add indirect flora drawing` 134,786.
+
+STATUS: AUDIT COMPLETE.
+
+## Live Pulse - 2026-05-17T05:34+04:00
+
+This is a SQLite live pulse only. It uses the latest 04:46 LOC denominator and does not update H-Phi.
+
+| Metric | Value |
+|---|---:|
+| Start | 2026-05-17T05:34:08+04:00 |
+| End | 2026-05-17T05:34:38+04:00 |
+| Duration | 30.009129 sec |
+| Current SQLite tokens | 50,953,580,001 |
+| 30-second delta | 1,648,101 |
+| Tokens/sec | 54,919.99 |
+| Tokens/min | 3,295,199.27 |
+| Tokens/hour | 197,711,956.25 |
+| Tokens/day equivalent | 4,745,086,950.04 |
+| Cache-aware rate range | USD 2.52-3.00/min; USD 151.43-179.96/hour |
+| No-cache scenario rate | USD 16.73/min; USD 1,004.05/hour |
+| Current energy estimate | 2,547.68 MWh |
+| Tokens per meaningful LOC | 60,726.33 |
+| Tokens per script byte | 1,138.73 |
+
+Top burners: `Enforce DataVault statelessness` 460,086; `CONTENT_AUTHORITY_DICTATOR` 404,169; `Move reports to batch006` 328,033; `Build ballast PID` 284,567; `Improve bot memory and CRM` 171,246.
+
+STATUS: AUDIT COMPLETE.

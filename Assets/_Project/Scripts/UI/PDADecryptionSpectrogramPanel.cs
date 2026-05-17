@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Meta;
 using Hecton8.Tools;
@@ -70,12 +71,12 @@ namespace Hecton8.UI
         [SerializeField, Min(0.01f)] private float hardDriftFrequency = 0.17f;
         [SerializeField, Min(0.02f)] private float feedbackIntervalSeconds = 0.1f;
 
-        private NativeArray<float> _targetWave;
-        private NativeArray<float> _playerWave;
-        private NativeArray<float> _errorOutput;
-        private NativeArray<FrequencyTuningWaveGpuSegment> _gpuSegments;
-        private NativeArray<FrequencyTuningStageTarget> _stageTargets;
-        private NativeArray<FrequencyTuningTelemetryEntry> _telemetryRing;
+        private VaultBufferHandle<float> _targetWaveHandle;
+        private VaultBufferHandle<float> _playerWaveHandle;
+        private VaultBufferHandle<float> _errorOutputHandle;
+        private VaultBufferHandle<FrequencyTuningWaveGpuSegment> _gpuSegmentsHandle;
+        private VaultBufferHandle<FrequencyTuningStageTarget> _stageTargetsHandle;
+        private VaultBufferHandle<FrequencyTuningTelemetryEntry> _telemetryRingHandle;
         private GraphicsBuffer _segmentBuffer;
         private GraphicsBuffer _argsBuffer;
         private Material _runtimeMaterial;
@@ -162,6 +163,10 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            if (!_nativeReady)
+                EnsureNativeResources();
+            if (!_graphicsReady)
+                EnsureGraphicsResources();
             if (!_nativeReady || !_graphicsReady)
                 return;
 
@@ -216,19 +221,122 @@ namespace Hecton8.UI
             _pointCount = ResolvePointCount();
             _waveSegmentCount = math.max(1, _pointCount - 1);
             _gpuSegmentCapacity = _waveSegmentCount * 2;
-            _targetWave = new NativeArray<float>(_pointCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32/128] - target frequency wave - owner: PDADecryptionSpectrogramPanel
-            _playerWave = new NativeArray<float>(_pointCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32/128] - player frequency wave - owner: PDADecryptionSpectrogramPanel
-            _errorOutput = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - Burst error output - owner: PDADecryptionSpectrogramPanel
-            _gpuSegments = new NativeArray<FrequencyTuningWaveGpuSegment>(_gpuSegmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FrequencyTuningWaveGpuSegment>[62/254] - PDA wave GPU upload - owner: PDADecryptionSpectrogramPanel
-            _stageTargets = new NativeArray<FrequencyTuningStageTarget>(StageCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FrequencyTuningStageTarget>[3] - deterministic stage targets - owner: PDADecryptionSpectrogramPanel
-            _telemetryRing = new NativeArray<FrequencyTuningTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FrequencyTuningTelemetryEntry>[300] - black box ring - owner: PDADecryptionSpectrogramPanel
-            RegisterNativeArray(_targetWave, nameof(_targetWave));
-            RegisterNativeArray(_playerWave, nameof(_playerWave));
-            RegisterNativeArray(_errorOutput, nameof(_errorOutput));
-            RegisterNativeArray(_gpuSegments, nameof(_gpuSegments));
-            RegisterNativeArray(_stageTargets, nameof(_stageTargets));
-            RegisterNativeArray(_telemetryRing, nameof(_telemetryRing));
+
+            if (!TryResolveTargetWave(out NativeArray<float> targetWave) ||
+                !TryResolvePlayerWave(out NativeArray<float> playerWave) ||
+                !TryResolveErrorOutput(out NativeArray<float> errorOutput) ||
+                !TryResolveGpuSegments(out NativeArray<FrequencyTuningWaveGpuSegment> gpuSegments) ||
+                !TryResolveStageTargets(out NativeArray<FrequencyTuningStageTarget> stageTargets) ||
+                !TryResolveTelemetryRing(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
+            {
+                return;
+            }
+
+            ClearNativeState(targetWave, playerWave, errorOutput, gpuSegments, stageTargets, telemetryRing);
             _nativeReady = true;
+        }
+
+        private bool TryResolveTargetWave(out NativeArray<float> targetWave)
+        {
+            return TryResolveVaultBuffer(
+                ref _targetWaveHandle,
+                BufferID.PdaFrequencyTargetWave,
+                math.max(1, _pointCount),
+                NativeArrayOptions.ClearMemory,
+                out targetWave);
+        }
+
+        private bool TryResolvePlayerWave(out NativeArray<float> playerWave)
+        {
+            return TryResolveVaultBuffer(
+                ref _playerWaveHandle,
+                BufferID.PdaFrequencyPlayerWave,
+                math.max(1, _pointCount),
+                NativeArrayOptions.ClearMemory,
+                out playerWave);
+        }
+
+        private bool TryResolveErrorOutput(out NativeArray<float> errorOutput)
+        {
+            return TryResolveVaultBuffer(
+                ref _errorOutputHandle,
+                BufferID.PdaFrequencyErrorOutput,
+                1,
+                NativeArrayOptions.ClearMemory,
+                out errorOutput);
+        }
+
+        private bool TryResolveGpuSegments(out NativeArray<FrequencyTuningWaveGpuSegment> gpuSegments)
+        {
+            return TryResolveVaultBuffer(
+                ref _gpuSegmentsHandle,
+                BufferID.PdaFrequencyGpuSegments,
+                math.max(1, _gpuSegmentCapacity),
+                NativeArrayOptions.ClearMemory,
+                out gpuSegments);
+        }
+
+        private bool TryResolveStageTargets(out NativeArray<FrequencyTuningStageTarget> stageTargets)
+        {
+            return TryResolveVaultBuffer(
+                ref _stageTargetsHandle,
+                BufferID.PdaFrequencyStageTargets,
+                StageCount,
+                NativeArrayOptions.ClearMemory,
+                out stageTargets);
+        }
+
+        private bool TryResolveTelemetryRing(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing)
+        {
+            return TryResolveVaultBuffer(
+                ref _telemetryRingHandle,
+                BufferID.PdaFrequencyTelemetryRing,
+                TelemetryCapacity,
+                NativeArrayOptions.ClearMemory,
+                out telemetryRing);
+        }
+
+        private static bool TryResolveVaultBuffer<T>(
+            ref VaultBufferHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || requiredLength <= 0)
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (!handle.IsCreated || handle.Length < requiredLength)
+                handle = vault.GetBufferHandle<T>(bufferId, requiredLength, SystemID.UI, options);
+
+            buffer = handle.Resolve(vault);
+            return buffer.IsCreated && buffer.Length >= requiredLength;
+        }
+
+        private static void ClearNativeState(
+            NativeArray<float> targetWave,
+            NativeArray<float> playerWave,
+            NativeArray<float> errorOutput,
+            NativeArray<FrequencyTuningWaveGpuSegment> gpuSegments,
+            NativeArray<FrequencyTuningStageTarget> stageTargets,
+            NativeArray<FrequencyTuningTelemetryEntry> telemetryRing)
+        {
+            for (int i = 0; i < targetWave.Length; i++)
+                targetWave[i] = 0f;
+            for (int i = 0; i < playerWave.Length; i++)
+                playerWave[i] = 0f;
+            for (int i = 0; i < errorOutput.Length; i++)
+                errorOutput[i] = 0f;
+            for (int i = 0; i < gpuSegments.Length; i++)
+                gpuSegments[i] = default;
+            for (int i = 0; i < stageTargets.Length; i++)
+                stageTargets[i] = default;
+            for (int i = 0; i < telemetryRing.Length; i++)
+                telemetryRing[i] = default;
         }
 
         private void EnsureGraphicsResources()
@@ -366,11 +474,19 @@ namespace Hecton8.UI
         private void ScheduleWaveJobs()
         {
             int safePointCount = math.clamp(_pointCount, LowPointCount, HighPointCount);
+            if (!TryResolveTargetWave(out NativeArray<float> targetWave) ||
+                !TryResolvePlayerWave(out NativeArray<float> playerWave) ||
+                !TryResolveErrorOutput(out NativeArray<float> errorOutput) ||
+                !TryResolveGpuSegments(out NativeArray<FrequencyTuningWaveGpuSegment> gpuSegments))
+            {
+                return;
+            }
+
             FrequencyWaveGenerateJob generateJob = new FrequencyWaveGenerateJob
             {
-                TargetWave = _targetWave,
-                PlayerWave = _playerWave,
-                GpuSegments = _gpuSegments,
+                TargetWave = new NativeSlice<float>(targetWave, 0, safePointCount),
+                PlayerWave = new NativeSlice<float>(playerWave, 0, safePointCount),
+                GpuSegments = new NativeSlice<FrequencyTuningWaveGpuSegment>(gpuSegments, 0, math.max(1, _gpuSegmentCapacity)),
                 PointCount = safePointCount,
                 SegmentCount = math.min(_waveSegmentCount, math.max(1, safePointCount - 1)),
                 TargetFrequency = _targetFrequency,
@@ -384,9 +500,9 @@ namespace Hecton8.UI
             JobHandle generateHandle = generateJob.Schedule(safePointCount, 32);
             FrequencyWaveErrorJob errorJob = new FrequencyWaveErrorJob
             {
-                TargetWave = _targetWave,
-                PlayerWave = _playerWave,
-                ErrorOutput = _errorOutput,
+                TargetWave = new NativeSlice<float>(targetWave, 0, safePointCount),
+                PlayerWave = new NativeSlice<float>(playerWave, 0, safePointCount),
+                ErrorOutput = new NativeSlice<float>(errorOutput, 0, 1),
                 PointCount = safePointCount
             };
             _waveJobHandle = errorJob.Schedule(generateHandle);
@@ -395,7 +511,10 @@ namespace Hecton8.UI
 
         private void CommitWaveResult(float deltaTime)
         {
-            float rawError = _errorOutput[0];
+            if (!TryResolveErrorOutput(out NativeArray<float> errorOutput))
+                return;
+
+            float rawError = errorOutput[0];
             if (!math.isfinite(rawError))
             {
                 DumpTelemetryCold();
@@ -454,10 +573,10 @@ namespace Hecton8.UI
 
         private void UploadGpuWave()
         {
-            if (_segmentBuffer == null || !_gpuSegments.IsCreated)
+            if (_segmentBuffer == null || !TryResolveGpuSegments(out NativeArray<FrequencyTuningWaveGpuSegment> gpuSegments))
                 return;
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_segmentBuffer, _gpuSegments, _gpuSegmentCapacity);
+            GraphicsBufferUploadUtility.UploadNativeArray(_segmentBuffer, gpuSegments, _gpuSegmentCapacity);
         }
 
         private void RenderWaveMesh()
@@ -492,7 +611,7 @@ namespace Hecton8.UI
                 receiveShadows = false,
                 motionVectorMode = MotionVectorGenerationMode.ForceNoMotion
             };
-            Graphics.RenderMeshIndirect(renderParams, _resolvedMesh, _argsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, _resolvedMesh, _argsBuffer, 1, 0);
         }
 
         private void UpdateDrawArgs(int instanceCount)
@@ -572,7 +691,7 @@ namespace Hecton8.UI
 
         private void RecordTelemetry()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolveTelemetryRing(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
                 return;
 
             if (!math.all(math.isfinite(new float4(_targetFrequency, _targetAmplitude, _playerFrequency, _playerAmplitude))) ||
@@ -582,7 +701,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            _telemetryRing[_telemetryCursor] = new FrequencyTuningTelemetryEntry
+            telemetryRing[_telemetryCursor] = new FrequencyTuningTelemetryEntry
             {
                 Frame = _lastTickFrame,
                 ArtifactHash = _artifactHash,
@@ -602,7 +721,7 @@ namespace Hecton8.UI
 
         private void DumpTelemetryCold()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolveTelemetryRing(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
                 return;
 
             try
@@ -617,7 +736,7 @@ namespace Hecton8.UI
                 writer.Write(_telemetryCursor);
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
-                    FrequencyTuningTelemetryEntry entry = _telemetryRing[i];
+                    FrequencyTuningTelemetryEntry entry = telemetryRing[i];
                     writer.Write(entry.Frame);
                     writer.Write(entry.ArtifactHash);
                     writer.Write(entry.TargetFrequency);
@@ -640,7 +759,7 @@ namespace Hecton8.UI
 
         private void BuildStageTargets(uint seed)
         {
-            if (!_stageTargets.IsCreated)
+            if (!TryResolveStageTargets(out NativeArray<FrequencyTuningStageTarget> stageTargets))
                 return;
 
             uint state = seed != 0u ? seed : DefaultArtifactHash;
@@ -648,7 +767,7 @@ namespace Hecton8.UI
             {
                 float r0 = Next01(ref state);
                 float r1 = Next01(ref state);
-                _stageTargets[i] = new FrequencyTuningStageTarget
+                stageTargets[i] = new FrequencyTuningStageTarget
                 {
                     Frequency = math.clamp(1.05f + i * 0.8f + r0 * 0.35f, playerFrequencyMin, playerFrequencyMax),
                     Amplitude = math.clamp(0.32f + i * 0.12f + r1 * 0.32f, playerAmplitudeMin, playerAmplitudeMax)
@@ -659,7 +778,9 @@ namespace Hecton8.UI
         private void ResolveTargetForCurrentStage(out float frequency, out float amplitude)
         {
             int safeStage = math.clamp(_stageIndex, 0, StageCount - 1);
-            FrequencyTuningStageTarget target = _stageTargets.IsCreated ? _stageTargets[safeStage] : default;
+            FrequencyTuningStageTarget target = TryResolveStageTargets(out NativeArray<FrequencyTuningStageTarget> stageTargets)
+                ? stageTargets[safeStage]
+                : default;
             frequency = target.Frequency > 0f ? target.Frequency : 1.5f;
             amplitude = target.Amplitude > 0f ? target.Amplitude : 0.55f;
 
@@ -731,12 +852,12 @@ namespace Hecton8.UI
             if (_waveJobScheduled)
                 CompleteWaveJobForTeardown();
 
-            DisposeNativeArray(ref _targetWave);
-            DisposeNativeArray(ref _playerWave);
-            DisposeNativeArray(ref _errorOutput);
-            DisposeNativeArray(ref _gpuSegments);
-            DisposeNativeArray(ref _stageTargets);
-            DisposeNativeArray(ref _telemetryRing);
+            _targetWaveHandle = default;
+            _playerWaveHandle = default;
+            _errorOutputHandle = default;
+            _gpuSegmentsHandle = default;
+            _stageTargetsHandle = default;
+            _telemetryRingHandle = default;
             _nativeReady = false;
         }
 
@@ -804,21 +925,6 @@ namespace Hecton8.UI
             _materialBufferBound = false;
         }
 
-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
-        {
-            NativeMemorySentinel.RegisterNativeArray(array, nameof(PDADecryptionSpectrogramPanel), label, NativeAllocationLifetime.Scene);
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
-        }
-
         private static float ResolveDampedLerpAlpha(float speed, float deltaTime)
         {
             float x = math.max(0f, speed) * math.max(0f, deltaTime);
@@ -844,9 +950,9 @@ namespace Hecton8.UI
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
         private struct FrequencyWaveGenerateJob : IJobParallelFor
         {
-            [WriteOnly] public NativeArray<float> TargetWave;
-            [WriteOnly] public NativeArray<float> PlayerWave;
-            [NativeDisableParallelForRestriction] public NativeArray<FrequencyTuningWaveGpuSegment> GpuSegments;
+            [WriteOnly] public NativeSlice<float> TargetWave;
+            [WriteOnly] public NativeSlice<float> PlayerWave;
+            [NativeDisableParallelForRestriction] public NativeSlice<FrequencyTuningWaveGpuSegment> GpuSegments;
             public int PointCount;
             public int SegmentCount;
             public float TargetFrequency;
@@ -910,9 +1016,9 @@ namespace Hecton8.UI
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
         private struct FrequencyWaveErrorJob : IJob
         {
-            [ReadOnly] public NativeArray<float> TargetWave;
-            [ReadOnly] public NativeArray<float> PlayerWave;
-            [WriteOnly] public NativeArray<float> ErrorOutput;
+            [ReadOnly] public NativeSlice<float> TargetWave;
+            [ReadOnly] public NativeSlice<float> PlayerWave;
+            [WriteOnly] public NativeSlice<float> ErrorOutput;
             public int PointCount;
 
             public void Execute()
@@ -926,14 +1032,14 @@ namespace Hecton8.UI
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
         private struct FrequencyTuningStageTarget
         {
             public float Frequency;
             public float Amplitude;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
         private struct FrequencyTuningWaveGpuSegment
         {
             public float4 CenterRadius;
@@ -941,7 +1047,7 @@ namespace Hecton8.UI
             public float4 ColorStage;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
         private struct FrequencyTuningTelemetryEntry
         {
             public uint Frame;

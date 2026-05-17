@@ -29,9 +29,43 @@ float HectonFiniteNonNegative(float value, float fallback)
     return max(0.0, HectonFiniteValue(value, fallback));
 }
 
+float2 HectonFinite2(float2 value, float2 fallback)
+{
+    return all(isfinite(value)) ? value : fallback;
+}
+
+float3 HectonFinite3(float3 value, float3 fallback)
+{
+    return all(isfinite(value)) ? value : fallback;
+}
+
 float4 HectonFinite4(float4 value, float4 fallback)
 {
     return all(isfinite(value)) ? value : fallback;
+}
+
+float HectonInvalidSceneRawDepth()
+{
+#if UNITY_REVERSED_Z
+    return 0.0;
+#else
+    return 1.0;
+#endif
+}
+
+float HectonFiniteSceneRawDepth(float rawDepth)
+{
+    return isfinite(rawDepth) ? saturate(rawDepth) : HectonInvalidSceneRawDepth();
+}
+
+float HectonSceneDepthValid01(float rawDepth)
+{
+    float safeRawDepth = HectonFiniteSceneRawDepth(rawDepth);
+#if UNITY_REVERSED_Z
+    return step(0.0001, safeRawDepth);
+#else
+    return step(safeRawDepth, 0.9999);
+#endif
 }
 
 float HectonSnellSafeRcp(float value)

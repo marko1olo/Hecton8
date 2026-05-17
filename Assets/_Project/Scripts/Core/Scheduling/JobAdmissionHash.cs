@@ -15,7 +15,7 @@ namespace Hecton8.Core.Scheduling
         private static uint ComputeTypeHash()
         {
             string typeName = typeof(TJob).FullName ?? typeof(TJob).Name;
-            return JobAdmissionHash.ComputeFnv1a(typeName);
+            return JobAdmissionHash.ComputeFnv1a(typeName.AsSpan());
         }
     }
 
@@ -33,8 +33,17 @@ namespace Hecton8.Core.Scheduling
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ComputeFnv1a(string text)
         {
+            return ComputeFnv1a(text.AsSpan());
+        }
+
+        /// <summary>Computes a stable FNV1a hash for a managed type name on cold paths.</summary>
+        /// <param name="text">Type name span.</param>
+        /// <returns>Non-zero hash.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ComputeFnv1a(ReadOnlySpan<char> text)
+        {
             uint hash = FnvOffset;
-            if (!string.IsNullOrEmpty(text))
+            if (!text.IsEmpty)
             {
                 for (int i = 0; i < text.Length; i++)
                 {

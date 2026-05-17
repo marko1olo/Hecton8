@@ -285,3 +285,36 @@ Validation:
 
 Residual risk:
 - Play Mode, GCMonitor, profiler timing, Quest/Android IL2CPP, Metal/Mac, and Steam Deck I/O profiling are still not executed from this terminal pass.
+
+## 2026-05-17 - Same-Frame Gate And Unity Asmdef Wall
+What was wrong:
+- The acoustic refresh path still let multiple predators in the same frame re-enter the "job still running" branch.
+- Current Unity batchmode evidence contradicted the stale Unity-green status: root editor tools and audio virtualization failed under Unity asmdef compilation.
+
+What was done:
+- Re-ran the mandatory status/rationale read and re-extracted the exact XML assignment.
+- Confirmed AI/Sensory static scan remains clean: no `EchoTapWriter`, no `AsParallelWriter()`, no private persistent `NativeArray`, no `new NativeArray`, no `Update`/`LateUpdate`/`FixedUpdate`, no `string.Format`, no legacy EventBus, and no managed `Action`/`Func`.
+- Kept all four acoustic structs on `[StructLayout(..., Pack = 1)]`.
+- Added same-frame stalled-job gating in `AcousticEchoLocationRuntime.RefreshForFrame`.
+- Added `Assets/_Project/Editor/Hecton8.Project.Editor.asmdef` plus meta so root `_Project/Editor` scripts compile against the same project/editor references as the existing editor assembly.
+- Added direct `Hecton8.Core.Contracts` reference to `Assets/_Project/Scripts/Audio/Virtualization/Hecton8.Audio.Virtualization.asmdef`.
+
+Cinematic Cheats used:
+- No physical acoustic wavefield, raymarch, or smell simulation was added.
+- Low tier remains the direct-node fake with 64 queued taps and 32 scored taps.
+- High/Ultra remain portal breadcrumb plus cheap sine head sweep; saved CPU remains available to consumer presentation systems.
+
+Exact Microseconds saved/estimated:
+- Same-frame stalled-job gate: 0 us when the job is complete; estimated 1-3 us saved per 32 predator resolver calls during a stalled acoustic job on i3/MX350.
+- Unity asmdef repair: 0 us runtime, compile topology only.
+- Latest green C# compile gate wall-clock: 331,190,000 us.
+- Unity moved compiler wall reported by Tundra: 9,610,000 us inside `Unity_ACOUSTIC_ECHO_LOCATION_AI_ASMDEF2.log`.
+
+Validation:
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`: Build succeeded, 0 warnings, 0 errors, 5m31.19s.
+- `Unity_ACOUSTIC_ECHO_LOCATION_AI_CURRENT.log` first failed in root editor/audio asmdef contracts.
+- After the asmdef repair, `Unity_ACOUSTIC_ECHO_LOCATION_AI_ASMDEF2.log` moved the wall outside AI/Sensory to `PlayerKinematicsRuntime`, `GroundPenetratingRadarRuntime`, `ProceduralCrabLegIKRuntime`, `FoveatedRenderCommander`, and `GlobalSignals`.
+
+Integrator notes:
+- Task 18 remains green for the explicit XML `dotnet build` requirement.
+- Unity batchmode, Play Mode, GCMonitor, profiler, Quest/Android, Metal/Mac, and Steam Deck I/O validation remain blocked by external Unity asmdef/runtime ownership, not by acoustic echo code.

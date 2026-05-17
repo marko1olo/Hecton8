@@ -1,0 +1,11 @@
+Command:
+dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false /m:1
+
+Result:
+Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:46.07

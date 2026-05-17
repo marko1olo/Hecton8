@@ -36,11 +36,11 @@ namespace Hecton8.Core.Data
                     ColumnSpec.Text("Name"),
                     ColumnSpec.Text("Description"),
                     ColumnSpec.UInt("CategoryId"),
-                    ColumnSpec.Int("Cost"),
-                    ColumnSpec.UShort("StackMax"),
-                    ColumnSpec.Float("MassKg"),
+                    ColumnSpec.IntMin("Cost", 0d),
+                    ColumnSpec.UShortMin("StackMax", 1d),
+                    ColumnSpec.FloatMin("MassKg", 0d),
                     ColumnSpec.UShort("IconIndex"),
-                    ColumnSpec.Float("AccessFrequency")
+                    ColumnSpec.FloatMin("AccessFrequency", 0d)
                 }),
             new SheetSchema(
                 "Economy.csv",
@@ -51,11 +51,11 @@ namespace Hecton8.Core.Data
                     ColumnSpec.Version("version_id"),
                     ColumnSpec.Text("Name"),
                     ColumnSpec.Text("Description"),
-                    ColumnSpec.Float("BasePrice"),
-                    ColumnSpec.Float("Scarcity01"),
-                    ColumnSpec.Float("Demand01"),
-                    ColumnSpec.Float("SupplyRefreshSeconds"),
-                    ColumnSpec.Float("AccessFrequency")
+                    ColumnSpec.FloatMin("BasePrice", 0d),
+                    ColumnSpec.FloatRange("Scarcity01", 0d, 1d),
+                    ColumnSpec.FloatRange("Demand01", 0d, 1d),
+                    ColumnSpec.FloatMin("SupplyRefreshSeconds", 0d),
+                    ColumnSpec.FloatMin("AccessFrequency", 0d)
                 }),
             new SheetSchema(
                 "Physics.csv",
@@ -66,12 +66,12 @@ namespace Hecton8.Core.Data
                     ColumnSpec.Version("version_id"),
                     ColumnSpec.Text("Name"),
                     ColumnSpec.Text("Description"),
-                    ColumnSpec.Float("MassKg"),
-                    ColumnSpec.Float("AddedMass"),
-                    ColumnSpec.Float("LinearDrag"),
-                    ColumnSpec.Float("Buoyancy"),
-                    ColumnSpec.Float("CrushDepthM"),
-                    ColumnSpec.Float("AccessFrequency")
+                    ColumnSpec.FloatMin("MassKg", 0d),
+                    ColumnSpec.FloatMin("AddedMass", 0d),
+                    ColumnSpec.FloatMin("LinearDrag", 0d),
+                    ColumnSpec.FloatMin("Buoyancy", 0d),
+                    ColumnSpec.FloatMin("CrushDepthM", 0d),
+                    ColumnSpec.FloatMin("AccessFrequency", 0d)
                 }),
             new SheetSchema(
                 "Fauna.csv",
@@ -82,12 +82,12 @@ namespace Hecton8.Core.Data
                     ColumnSpec.Version("version_id"),
                     ColumnSpec.Text("Name"),
                     ColumnSpec.Text("Description"),
-                    ColumnSpec.Float("SwimSpeed"),
-                    ColumnSpec.Float("TurnRate"),
-                    ColumnSpec.Float("Aggression01"),
-                    ColumnSpec.Float("FleeDistanceM"),
-                    ColumnSpec.Float("BiolumIntensity"),
-                    ColumnSpec.Float("AccessFrequency")
+                    ColumnSpec.FloatMin("SwimSpeed", 0d),
+                    ColumnSpec.FloatMin("TurnRate", 0d),
+                    ColumnSpec.FloatRange("Aggression01", 0d, 1d),
+                    ColumnSpec.FloatMin("FleeDistanceM", 0d),
+                    ColumnSpec.FloatMin("BiolumIntensity", 0d),
+                    ColumnSpec.FloatMin("AccessFrequency", 0d)
                 })
         };
 
@@ -113,8 +113,12 @@ namespace Hecton8.Core.Data
 
             Directory.CreateDirectory(outputDirectory);
 
+            // COLD ALLOC: List<PendingRecord>[128] - validated bake records before contiguous binary write - owner: H8DataBaker
             List<PendingRecord> records = new List<PendingRecord>(128);
+            // COLD ALLOC: Dictionary<uint,string>[256] - Babel text pool for cold bake output - owner: H8DataBaker
             Dictionary<uint, string> stringPool = new Dictionary<uint, string>(256);
+            // COLD ALLOC: HashSet<uint>[256] - duplicate ID collision gate before runtime lookup map - owner: H8DataBaker
+            HashSet<uint> recordHashes = new HashSet<uint>(256);
             for (int i = 0; i < Schemas.Length; i++)
             {
                 SheetSchema schema = Schemas[i];
@@ -122,7 +126,7 @@ namespace Hecton8.Core.Data
                 if (!File.Exists(path))
                     return Fail("Required balance sheet missing: " + schema.FileName);
 
-                H8DataBakeResult validation = ParseSheet(path, schema, records, stringPool);
+                H8DataBakeResult validation = ParseSheet(path, schema, records, stringPool, recordHashes);
                 if (!validation.Success)
                     return validation;
             }
@@ -167,7 +171,8 @@ namespace Hecton8.Core.Data
             string path,
             SheetSchema schema,
             List<PendingRecord> records,
-            Dictionary<uint, string> stringPool)
+            Dictionary<uint, string> stringPool,
+            HashSet<uint> recordHashes)
         {
             H8CsvTable table;
             try
@@ -189,6 +194,12 @@ namespace Hecton8.Core.Data
                 if (index < 0)
                     return Fail("[CRITICAL_DATA_VOID]: Column '" + schema.Columns[i].Name + "' in " + schema.FileName + " is empty.");
 
+                if (table.CountHeader(schema.Columns[i].Name) != 1)
+                    return Fail("[CRITICAL_DATA_SCHEMA]: Column '" + schema.Columns[i].Name + "' in " + schema.FileName + " is duplicated.");
+
+                if (i == 0 && index != 0)
+                    return Fail("[CRITICAL_DATA_SCHEMA]: First column in " + schema.FileName + " must be 'Id' for stable FNV identity.");
+
                 columnMap[i] = index;
             }
 
@@ -207,6 +218,9 @@ namespace Hecton8.Core.Data
                 {
                     return Fail("[CRITICAL_DATA_COLLISION]: " + ex.Message);
                 }
+
+                if (!recordHashes.Add(record.Hash))
+                    return Fail("[CRITICAL_DATA_COLLISION]: Duplicate ID hash 0x" + record.Hash.ToString("X8", CultureInfo.InvariantCulture) + " in " + schema.FileName + " row " + (row + 2).ToString(CultureInfo.InvariantCulture) + ".");
 
                 records.Add(record);
             }
@@ -230,6 +244,9 @@ namespace Hecton8.Core.Data
                 switch (spec.Type)
                 {
                     case ColumnType.Key:
+                        if (!IsCanonicalKey(value))
+                            return Fail("[CRITICAL_DATA_KEY]: Column '" + spec.Name + "' in " + schema.FileName + " must be lowercase ASCII snake_case, got '" + value + "'.");
+                        break;
                     case ColumnType.Text:
                         break;
                     case ColumnType.Version:
@@ -237,20 +254,28 @@ namespace Hecton8.Core.Data
                             return Fail("Schema version mismatch in " + schema.FileName + ": expected " + ExpectedVersionText + " but found " + value + ".");
                         break;
                     case ColumnType.UInt:
-                        if (!uint.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
+                        if (!uint.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out uint parsedUInt))
                             return TypeFail(spec.Name, schema.FileName, "uint", value);
+                        if (!IsInRange(parsedUInt, spec))
+                            return RangeFail(spec.Name, schema.FileName, value, spec);
                         break;
                     case ColumnType.UShort:
-                        if (!ushort.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
+                        if (!ushort.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out ushort parsedUShort))
                             return TypeFail(spec.Name, schema.FileName, "ushort", value);
+                        if (!IsInRange(parsedUShort, spec))
+                            return RangeFail(spec.Name, schema.FileName, value, spec);
                         break;
                     case ColumnType.Int:
-                        if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
+                        if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedInt))
                             return TypeFail(spec.Name, schema.FileName, "int", value);
+                        if (!IsInRange(parsedInt, spec))
+                            return RangeFail(spec.Name, schema.FileName, value, spec);
                         break;
                     case ColumnType.Float:
                         if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed) || float.IsNaN(parsed) || float.IsInfinity(parsed))
                             return TypeFail(spec.Name, schema.FileName, "float", value);
+                        if (!IsInRange(parsed, spec))
+                            return RangeFail(spec.Name, schema.FileName, value, spec);
                         break;
                 }
             }
@@ -261,6 +286,46 @@ namespace Hecton8.Core.Data
         private static H8DataBakeResult TypeFail(string column, string fileName, string expectedType, string value)
         {
             return Fail("[CRITICAL_DATA_TYPE]: Column '" + column + "' in " + fileName + " expected " + expectedType + " but got '" + value + "'.");
+        }
+
+        private static H8DataBakeResult RangeFail(string column, string fileName, string value, ColumnSpec spec)
+        {
+            return Fail("[CRITICAL_DATA_RANGE]: Column '" + column + "' in " + fileName + " is outside " + FormatRange(spec) + ", got '" + value + "'.");
+        }
+
+        private static bool IsInRange(double value, ColumnSpec spec)
+        {
+            if (spec.HasMin && value < spec.MinValue)
+                return false;
+            if (spec.HasMax && value > spec.MaxValue)
+                return false;
+
+            return true;
+        }
+
+        private static string FormatRange(ColumnSpec spec)
+        {
+            string min = spec.HasMin ? spec.MinValue.ToString(CultureInfo.InvariantCulture) : "-inf";
+            string max = spec.HasMax ? spec.MaxValue.ToString(CultureInfo.InvariantCulture) : "+inf";
+            return "[" + min + ", " + max + "]";
+        }
+
+        private static bool IsCanonicalKey(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return false;
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                bool valid = (c >= 'a' && c <= 'z') ||
+                             (c >= '0' && c <= '9') ||
+                             c == '_';
+                if (!valid)
+                    return false;
+            }
+
+            return true;
         }
 
         private static PendingRecord BuildRecord(
@@ -668,20 +733,43 @@ namespace Hecton8.Core.Data
         {
             public readonly string Name;
             public readonly ColumnType Type;
+            public readonly double MinValue;
+            public readonly double MaxValue;
+            public readonly bool HasMin;
+            public readonly bool HasMax;
 
             private ColumnSpec(string name, ColumnType type)
             {
                 Name = name;
                 Type = type;
+                MinValue = 0d;
+                MaxValue = 0d;
+                HasMin = false;
+                HasMax = false;
+            }
+
+            private ColumnSpec(string name, ColumnType type, double minValue, double maxValue, bool hasMin, bool hasMax)
+            {
+                Name = name;
+                Type = type;
+                MinValue = minValue;
+                MaxValue = maxValue;
+                HasMin = hasMin;
+                HasMax = hasMax;
             }
 
             public static ColumnSpec Key(string name) { return new ColumnSpec(name, ColumnType.Key); }
             public static ColumnSpec Version(string name) { return new ColumnSpec(name, ColumnType.Version); }
             public static ColumnSpec Text(string name) { return new ColumnSpec(name, ColumnType.Text); }
             public static ColumnSpec UInt(string name) { return new ColumnSpec(name, ColumnType.UInt); }
+            public static ColumnSpec UIntMin(string name, double minValue) { return new ColumnSpec(name, ColumnType.UInt, minValue, 0d, true, false); }
             public static ColumnSpec UShort(string name) { return new ColumnSpec(name, ColumnType.UShort); }
+            public static ColumnSpec UShortMin(string name, double minValue) { return new ColumnSpec(name, ColumnType.UShort, minValue, 0d, true, false); }
             public static ColumnSpec Int(string name) { return new ColumnSpec(name, ColumnType.Int); }
+            public static ColumnSpec IntMin(string name, double minValue) { return new ColumnSpec(name, ColumnType.Int, minValue, 0d, true, false); }
             public static ColumnSpec Float(string name) { return new ColumnSpec(name, ColumnType.Float); }
+            public static ColumnSpec FloatMin(string name, double minValue) { return new ColumnSpec(name, ColumnType.Float, minValue, 0d, true, false); }
+            public static ColumnSpec FloatRange(string name, double minValue, double maxValue) { return new ColumnSpec(name, ColumnType.Float, minValue, maxValue, true, true); }
         }
 
         private readonly struct SheetSchema
@@ -753,6 +841,18 @@ namespace Hecton8.Core.Data
 
             return -1;
         }
+
+        public int CountHeader(string name)
+        {
+            int count = 0;
+            for (int i = 0; i < _headers.Length; i++)
+            {
+                if (string.Equals(_headers[i], name, StringComparison.OrdinalIgnoreCase))
+                    count++;
+            }
+
+            return count;
+        }
     }
 
     internal static class H8CsvReader
@@ -808,11 +908,25 @@ namespace Hecton8.Core.Data
                 cell.Append(c);
             }
 
+            if (inQuotes)
+                throw new InvalidDataException("Unclosed quoted field in " + Path.GetFileName(path) + ".");
+
             FinishRow(rows, cells, cell);
             if (rows.Count == 0)
                 return new H8CsvTable(Array.Empty<string>(), new List<string[]>(0));
 
             string[] headers = rows[0];
+            for (int i = 1; i < rows.Count; i++)
+            {
+                if (rows[i].Length != headers.Length)
+                {
+                    throw new InvalidDataException(
+                        "Row " + (i + 1).ToString(CultureInfo.InvariantCulture) +
+                        " has " + rows[i].Length.ToString(CultureInfo.InvariantCulture) +
+                        " cells; expected " + headers.Length.ToString(CultureInfo.InvariantCulture) + ".");
+                }
+            }
+
             rows.RemoveAt(0);
             return new H8CsvTable(headers, rows);
         }

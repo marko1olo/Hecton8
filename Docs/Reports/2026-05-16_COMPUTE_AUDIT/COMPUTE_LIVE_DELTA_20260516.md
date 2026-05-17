@@ -80,6 +80,54 @@ This remains a high-concurrency, high-cache-reuse workload. Cache makes it affor
 
 STATUS: AUDIT COMPLETE.
 
+## Continuation Sample 4 - 2026-05-16T23:59+04:00
+
+Source: `C:\Users\danat\.codex\state_5.sqlite`.
+Boundary: SQLite live-tail only. Costs use the latest full JSONL blended `gpt-5.5` cache-aware/no-cache rates.
+
+| Metric | Value |
+|---|---:|
+| Sample start | 2026-05-16T23:58:34+04:00 |
+| Sample end | 2026-05-16T23:59:20+04:00 |
+| Elapsed | 45 sec |
+| Start SQLite tokens | 49,899,014,761 |
+| End SQLite tokens | 49,903,844,533 |
+| Delta | 4,829,772 tokens |
+| Tokens/sec | 107,328.27 |
+| Tokens/min | 6,439,696.00 |
+| Tokens/hour | 386,381,760.00 |
+| Tokens/day equivalent | 9,273,162,240.00 |
+| Cache-aware rate, blended | USD 4.93/min; USD 295.93/hour; USD 7,102.25/day |
+| Active threads | 29 |
+
+Delta since the 23:14 live sample:
+
+| Metric | Value |
+|---|---:|
+| 23:14 SQLite tokens | 49,767,593,348 |
+| 23:59 SQLite tokens | 49,903,844,533 |
+| Delta | 136,251,185 tokens |
+| Cache-aware estimated cost, blended | USD 104.35 |
+
+Top live threads in this sample:
+
+| Rank | Delta tokens | Model | Thread title |
+|---:|---:|---|---|
+| 1 | 400,840 | `gpt-5.5` | ARCHITECT_SPATIAL_PROBE prompt thread |
+| 2 | 397,216 | `gpt-5.5` | Study Subnautica and project |
+| 3 | 274,984 | `gpt-5.5` | Add Burst funnel smoothing |
+| 4 | 227,974 | `gpt-5.5` | Fix ASMDEF graph |
+| 5 | 222,845 | `gpt-5.5` | Add modulo time slicer |
+| 6 | 221,776 | `gpt-5.5` | Automate H8Memory lifecycle |
+| 7 | 217,172 | `gpt-5.5` | Implement SDF gap traversal |
+| 8 | 216,741 | `gpt-5.5` | CONTENT_AUTHORITY_DICTATOR prompt thread |
+| 9 | 210,578 | `gpt-5.5` | Add VR foveated rendering |
+| 10 | 207,765 | `gpt-5.5` | Build ballast PID |
+
+The pulse cooled from the 23:14 short peak but remains above 100K tokens/sec.
+
+STATUS: AUDIT COMPLETE.
+
 ## Continuation Sample 3 - 2026-05-16T23:14+04:00
 
 Source: `C:\Users\danat\.codex\state_5.sqlite`.

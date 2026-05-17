@@ -98,7 +98,7 @@ namespace Hecton8.Core
 
         private static void VerifyEcosystemPopulationLayouts()
         {
-            AssertSize<EcosystemPopulationCoefficient>(52);
+            AssertSize<EcosystemPopulationCoefficient>(64);
             AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.BirthRate), 0);
             AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.DeathRate), 4);
             AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.DeltaTimeSeconds), 8);
@@ -112,6 +112,9 @@ namespace Hecton8.Core
             AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.IntegrationSteps), 40);
             AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.Flags), 44);
             AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.Reserved), 48);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.Reserved1), 52);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.Reserved2), 56);
+            AssertOffset<EcosystemPopulationCoefficient>(nameof(EcosystemPopulationCoefficient.Reserved3), 60);
 
             AssertSize<EcosystemPopulationSectorState>(112);
             AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.SampleAup), 0);
@@ -131,7 +134,7 @@ namespace Hecton8.Core
             AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.Reserved1), 104);
             AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.Reserved2), 108);
 
-            AssertSize<EcosystemPopulationCullEvent>(88);
+            AssertSize<EcosystemPopulationCullEvent>(96);
             AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.PositionAup), 0);
             AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.SectorHash), 48);
             AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.EntityHash), 56);
@@ -142,13 +145,17 @@ namespace Hecton8.Core
             AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.Reserved1), 76);
             AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.Reserved2), 80);
             AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.Reserved3), 84);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.Reserved4), 88);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.Reserved5), 92);
 
-            AssertSize<EcosystemPopulationFreeSlot>(24);
+            AssertSize<EcosystemPopulationFreeSlot>(32);
             AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.SectorHash), 0);
             AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.EntityIndex), 8);
             AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.Frame), 12);
             AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.Flags), 16);
             AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.Reserved), 20);
+            AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.Reserved1), 24);
+            AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.Reserved2), 28);
 
             AssertSize<EcosystemPopulationTelemetryEntry>(64);
             AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.Frame), 0);

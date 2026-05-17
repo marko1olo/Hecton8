@@ -259,10 +259,50 @@ Rejected Alternatives: Keeping feature-local Configure calls would leave lane ca
 Scalability potential: Low keeps deterministic small anomaly/compass/glitch caps from the central registry; Middle/High/Ultra can spend stable packets on richer compass glass, glitch feedback, visor cues, and replay diagnostics without local lane policy drift.
 Hardware Impact: Estimated 2-6 us saved during cold bootstrap/reinitialization by removing repeated local policy mutation. Runtime hot path is unchanged.
 
-## Decision - Current Ecosystem Compile Wall
+## Decision - Current Dependency Compile Wall
 
-Problem: After signal scans were clean, the current `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` fails outside CORE/SIGNALS in `World/EcosystemDirector.cs` with duplicate definitions for `ResolveVaultIndexCapacity` and `TryFindIndexEntry`.
-Solution: Classified this as a dependency wall after repeated build attempts moved through unrelated contract/tether/world errors under concurrent agent churn. No SignalBus registry, signal namespace, signal layout, or managed signal-format errors are emitted.
-Rejected Alternatives: Editing `World/EcosystemDirector.cs` from the signal authority pass would violate the domain boundary and risk overwriting the ecosystem owner; claiming a current green build would be false.
-Scalability potential: Signal lanes remain clean and bounded for low-tier devices and retain high-tier propagation semantics. The World/Ecosystem owner must repair the duplicate helper merge before a current core build can be marked green again.
+Problem: After signal scans were clean, build verification became unstable under concurrent workspace churn. Completed attempts moved through unrelated `World/EcosystemDirector.cs` helper merge errors and `Gameplay/PlayerKinematicsRuntime.cs` vault binding errors; one later build attempt timed out after 304 seconds and spawned dotnet/VBCSCompiler workers that had to be stopped.
+Solution: Classified this as a dependency wall after re-closing all signal lane drift again. Final static signal scans are clean; no current completed green build exists after the final reclosure.
+Rejected Alternatives: Editing World/Ecosystem, PlayerKinematics, or generated build plumbing from the signal authority pass would violate the domain boundary and risk overwriting owning agents; claiming a current green build would be false.
+Scalability potential: Signal lanes remain clean and bounded for low-tier devices and retain high-tier propagation semantics. Owning World/Gameplay/Integrator agents must repair their compile walls before core build green can be re-certified.
 Hardware Impact: 0 us runtime gain. This is ownership isolation and compile-wall truth maintenance.
+
+## Decision - 2026-05-17 Recurrent Drift Closure And Core Build Green
+
+Problem: A fresh re-inquisition after status/rationale/XML reload found local `SignalBus<T>.Configure` drift had returned in lockstep/glitch, compass/anomaly, and Architect Eye debug surfaces.
+Solution: Removed the local Configure calls and stale local capacity/hash constants again. Those surfaces now call `GlobalSignals.InitializeAllQueues()` and only use typed `EnsureInitialized()`/Push/snapshot APIs. Re-ran bounded scans and `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`, which passed with 0 warnings and 0 errors.
+Rejected Alternatives: Leaving feature-owned Configure calls would keep lane capacity/hash authority order-dependent; editing unrelated submarine compile debt was rejected after the first failed attempt because the final post-reclosure core build passed without it.
+Scalability potential: Low/MX350 and Quest keep deterministic central lane caps, low-tier VFX/debug shedding, and no managed signal strings; Middle/High/Ultra can consume stable signal packets for richer compass glass, glitch overlays, dense debug visuals, visor salt, wake/silt feedback, and hull response without increasing gameplay broadcast authority cost.
+Hardware Impact: Estimated 2-6 us saved during cold bootstrap/reinitialization by removing repeated local policy mutation. Runtime hot path remains bounded; build recovery adds 0 us runtime.
+
+## Decision - 2026-05-17 Final Post-Churn Compile Wall
+
+Problem: After another local Configure reclosure, a final build attempt failed outside CORE/SIGNALS with `SubmarineFluidDynamics.cs(729,43): CS0102` because `SubmarineFluidDynamics` now contains a duplicate `_exteriorBuoyancySampleLocalPoints` definition.
+Solution: Classified the final build state as dependency-blocked and corrected the status/audit records so the earlier green core build is not represented as the current final state. Signal scans remain clean after the final reclosure.
+Rejected Alternatives: Editing submarine fluid dynamics from the signal authority pass would violate the domain boundary; claiming a current green build after the final failure would be false.
+Scalability potential: Signal lanes remain bounded and centrally owned for low-tier devices and retain high-tier visual/audio propagation semantics. The submarine owner must resolve its duplicate field before build green can be re-certified.
+Hardware Impact: 0 us runtime gain. This is compile-wall truth maintenance and ownership isolation.
+
+## Decision - 2026-05-17 Acoustic Zone Signal Closure
+
+Problem: `AcousticZoneChangedEvent : ISignal` was declared in `Hecton8.Audio`, used a 1-byte payload, and `AcousticZoneEvents` configured its own lane/hash outside `GlobalSignals`.
+Solution: Moved the payload into `Hecton8.Core.Contracts.Signals`, padded it to `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]`, removed local Configure/hash state, and registered the lane centrally in `GlobalSignals.InitializeAllQueues()`.
+Rejected Alternatives: Leaving the audio-owned signal as a facade-local event would preserve duplicate authority; adding a new audio-specific bus would violate the typed lane registry mandate.
+Scalability potential: Low/MX350 keeps acoustic zone transitions at a four-packet central cap; Middle/High/Ultra can use the same packet for richer interior/exterior mix transitions and high-tier acoustic presentation without increasing gameplay broadcast cost.
+Hardware Impact: Estimated 1-2 us saved during cold bootstrap by removing repeated local lane configuration. Runtime hot path remains a single typed Push and bounded snapshot read.
+
+## Decision - 2026-05-17 Used SignalBus Lane Closure
+
+Problem: An alias-aware scan of every concrete `SignalBus<T>` use found four lanes that could still fall back to default generic policy: `DataVaultUpdateSignal`, `PrefabAcousticSignatureSignal`, `PrefabLoreLinkSignal`, and `ScalabilityChangedEvent`. A second pass also exposed `DirectorAIMusicSignal` as a typed lane without central registry policy, while concurrent churn reintroduced compass/anomaly and lockstep/glitch local Configure helpers.
+Solution: Added central capacities, low-tier caps, hashes, and size validators for the bridge lanes and DirectorAI music cue in `GlobalSignals.InitializeAllQueues()`. Moved `ScalabilityChangedEvent` into `Hecton8.Core.Contracts.Signals`, padded it to Pack=1 Size=16, and changed `ScalabilityEvents` to enter through `GlobalSignals.InitializeAllQueues()` instead of local `Configure`. Compass and lockstep helper methods now only call central init plus typed `EnsureInitialized()`.
+Rejected Alternatives: Letting `SignalBus<T>` defaults stand would silently bypass low-tier caps and stable hashes; keeping `ScalabilityChangedEvent` at Size=2 would leave an ARM64/Quest hostile payload; deleting the existing listener bridge in one pass would exceed the signal authority boundary and risk breaking 30+ scalability listeners.
+Scalability potential: Low/MX350 gets deterministic four-packet scalability events, 16-packet low-tier bridge bursts, and 8-packet DirectorAI music cues. Middle keeps bounded registry traffic. High and Ultra can spend stable data-vault, prefab, and music cue packets on richer acoustic lore, material/audio presentation, dense debug overlays, visor salt, silt wake, and hull feedback without increasing broadcast authority cost.
+Hardware Impact: Estimated 2-8 us saved during cold bootstrap/reinitialization by eliminating default-policy fallback and recurrent local Configure mutation. Runtime frame gain is 0 us for the struct padding; the value is stable ABI and bounded low-tier propagation. Verification build adds 0 us runtime.
+
+## Decision - 2026-05-17 Physical Signal Authority And Residual Lane Policy Closure
+
+Problem: The contract namespace was clean, but many `ISignal` payload declarations still physically lived in feature files. That left authority split across physics, tether, docking, voxel, movement, homeostasis, diagnostics, and bridge surfaces. A stricter alias-aware audit also found eight active `SignalBus<T>` lanes still falling through generic default policy: `BrownoutSignal`, `DebrisSpawnSignal`, `HUDNotificationSignal`, `ToolAcousticSignal`, `SeismicSignal`, `SubmarineLightsChangedSignal`, `PhysiologyStateSignal`, and `PlayerStressSignal`.
+Solution: Moved the remaining payload definitions into `Assets/_Project/Scripts/Core/GlobalSignals.cs`, deleted the duplicate feature-file definitions, stripped reintroduced compass and lockstep `Configure` calls, and added explicit central capacity/hash/low-tier policies for the eight residual lanes. The final non-rebuild core compile passed with 0 warnings and 0 errors.
+Rejected Alternatives: Keeping feature-file payload declarations would preserve two authority surfaces even with the correct namespace; relying on `SignalBus<T>` default policy would bypass low-tier throttles and stable lane hashes; running another rebuild was rejected because the user explicitly asked not to rebuild every time and a normal build is sufficient after scoped source edits.
+Scalability potential: Low/MX350 and Quest now get deterministic bounded policies for stress, physiology, HUD, seismic, brownout, debris, tool acoustic, and submarine light traffic. Middle keeps full bounded gameplay/presentation lanes. High and Ultra can spend the same clean packets on richer camera shake, hull light response, material decay, tool audio, brownout ambience, dense debris, visor salt, silt wake, and overkill lighting without local lane policy drift.
+Hardware Impact: Estimated 3-10 us saved during cold bootstrap/reinitialization by removing residual default-policy fallback and local Configure mutation. Runtime frame savings are workload-dependent; ABI centralization and struct relocation add 0 us but remove mobile/IL2CPP integration risk.

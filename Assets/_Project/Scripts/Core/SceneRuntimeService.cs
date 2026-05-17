@@ -50,6 +50,8 @@ namespace Hecton8.Core
         private const byte MemoryTransitionLockFlag = 1 << 0;
         private const byte MemoryTransitionReleasedFlag = 1 << 1;
         private const byte MemoryTransitionFailedFlag = 1 << 2;
+        private const byte MemoryTransitionVaultBlockedFlag = 1 << 3;
+        private const byte MemoryTransitionVaultLockedFlag = 1 << 4;
         private static readonly int _TransitionDitherProgressId = Shader.PropertyToID("_DitherProgress");
         private static readonly int _TransitionDitherColorId = Shader.PropertyToID("_Color");
         private static readonly int _HectonFreezeFrameDitherId = Shader.PropertyToID("_HectonFreezeFrameDither");
@@ -107,8 +109,12 @@ namespace Hecton8.Core
         private bool _sceneActivationReleased;
         private bool _cinematicTransitionActive;
         private bool _memoryLifecycleTransitionActive;
+        private bool _memoryLifecycleSceneUnloadObserved;
         private IDataVault _dataVault;
         private uint _memoryLifecyclePauseSequence;
+        private int _lastSceneOwnedVaultRemainingCount;
+        private int _lastSceneOwnedVaultLockedCount;
+        private long _lastSceneOwnedVaultRemainingBytes;
         private float _cinematicTransitionElapsed;
         private Camera _cinematicCamera;
         private Camera _configuredCinematicCamera;
@@ -308,7 +314,7 @@ namespace Hecton8.Core
             finally
             {
                 EndMainMenuCinematicTransition();
-                CompleteMemoryLifecycleTransition();
+                CompleteMemoryLifecycleTransitionAfterLoadAttempt();
                 _sceneLoadInFlight = false;
                 _pendingSceneName = null;
                 _pendingSceneLoadOperation = null;
@@ -369,7 +375,7 @@ namespace Hecton8.Core
         private void ShutdownServiceState()
         {
             if (_memoryLifecycleTransitionActive)
-                H8Memory.SetSceneUnloadedVerificationDeferred(false);
+                CancelMemoryLifecycleTransition();
 
             TryUnregisterUpdatable();
             TryUnregisterSceneCallbacks();
@@ -393,7 +399,10 @@ namespace Hecton8.Core
 
             SceneRuntimeService runtime = GlobalRegistry.SceneRuntime;
             if (runtime != null)
+            {
+                runtime._memoryLifecycleSceneUnloadObserved = true;
                 runtime.CompleteMemoryLifecycleTransition();
+            }
         }
 
         private static void ClearRuntimeState()
@@ -421,28 +430,64 @@ namespace Hecton8.Core
             H8Memory.BeginSceneTransitionPurge();
             H8Memory.SetSceneUnloadedVerificationDeferred(true);
             _memoryLifecycleTransitionActive = true;
+            _memoryLifecycleSceneUnloadObserved = false;
             PublishMemoryLifecyclePause(paused: true, MemoryTransitionLockFlag);
+        }
+
+        private void CompleteMemoryLifecycleTransitionAfterLoadAttempt()
+        {
+            if (!_memoryLifecycleTransitionActive)
+                return;
+            if (_memoryLifecycleSceneUnloadObserved)
+            {
+                CompleteMemoryLifecycleTransition();
+                return;
+            }
+
+            CancelMemoryLifecycleTransition();
         }
 
         private void CompleteMemoryLifecycleTransition()
         {
             if (!_memoryLifecycleTransitionActive)
                 return;
+            if (!_memoryLifecycleSceneUnloadObserved)
+                return;
 
-            ReleaseSceneOwnedVaultBuffers();
+            bool vaultVerified = ReleaseSceneOwnedVaultBuffers();
             bool verified = H8Memory.CompleteSceneTransitionVerification();
-            if (verified)
+            if (verified && vaultVerified)
             {
                 H8Memory.SetSceneUnloadedVerificationDeferred(false);
                 PublishMemoryLifecyclePause(paused: false, MemoryTransitionReleasedFlag);
                 _memoryLifecycleTransitionActive = false;
+                _memoryLifecycleSceneUnloadObserved = false;
                 return;
             }
 
-            PublishMemoryLifecyclePause(paused: true, MemoryTransitionFailedFlag);
+            byte failureFlags = MemoryTransitionFailedFlag;
+            if (_lastSceneOwnedVaultRemainingCount > 0)
+                failureFlags |= MemoryTransitionVaultBlockedFlag;
+            if (_lastSceneOwnedVaultLockedCount > 0)
+                failureFlags |= MemoryTransitionVaultLockedFlag;
+            PublishMemoryLifecyclePause(paused: true, failureFlags);
             GlobalTelemetryBus.PublishMemoryBreachEvent(
                 MemoryTransitionPauseSourceHash,
-                H8Memory.TotalAllocatedBytes * GlobalTelemetryBus.BytesToMegabytes);
+                (H8Memory.TotalAllocatedBytes + _lastSceneOwnedVaultRemainingBytes) * GlobalTelemetryBus.BytesToMegabytes);
+        }
+
+        private void CancelMemoryLifecycleTransition()
+        {
+            if (!_memoryLifecycleTransitionActive)
+                return;
+
+            H8Memory.CancelSceneTransitionPurge();
+            _memoryLifecycleTransitionActive = false;
+            _memoryLifecycleSceneUnloadObserved = false;
+            _lastSceneOwnedVaultRemainingCount = 0;
+            _lastSceneOwnedVaultLockedCount = 0;
+            _lastSceneOwnedVaultRemainingBytes = 0L;
+            PublishMemoryLifecyclePause(paused: false, MemoryTransitionFailedFlag);
         }
 
         private void PublishMemoryLifecyclePause(bool paused, byte flags)
@@ -457,16 +502,26 @@ namespace Hecton8.Core
             GlobalSignals.Publish(in signal);
         }
 
-        private void ReleaseSceneOwnedVaultBuffers()
+        private bool ReleaseSceneOwnedVaultBuffers()
         {
+            _lastSceneOwnedVaultRemainingCount = 0;
+            _lastSceneOwnedVaultLockedCount = 0;
+            _lastSceneOwnedVaultRemainingBytes = 0L;
             IDataVault vault = _dataVault;
             if (vault == null)
                 vault = CacheDataVaultCold();
             if (vault == null)
-                return;
+                return true;
 
             long releasedBytes;
-            vault.ReleaseSceneOwnedBuffers(out releasedBytes);
+            int remainingCount;
+            long remainingBytes;
+            int lockedCount;
+            vault.ReleaseSceneOwnedBuffers(out releasedBytes, out remainingCount, out remainingBytes, out lockedCount);
+            _lastSceneOwnedVaultRemainingCount = remainingCount;
+            _lastSceneOwnedVaultLockedCount = lockedCount;
+            _lastSceneOwnedVaultRemainingBytes = remainingBytes;
+            return remainingCount == 0 && lockedCount == 0;
         }
 
         private IDataVault CacheDataVaultCold()

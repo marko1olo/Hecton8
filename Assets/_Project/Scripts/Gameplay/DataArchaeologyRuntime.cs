@@ -1,8 +1,10 @@
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using Hecton8.Tools;
@@ -109,6 +111,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Burst-compatible input packet for scanner frequency tuning.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 28)]
     public struct DataArchaeologyFrequencyInput
     {
         public uint ArtifactHash;
@@ -123,6 +126,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Burst-compatible scanner tuning result.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct DataArchaeologyFrequencyResult
     {
         public float Signal;
@@ -133,11 +137,14 @@ namespace Hecton8.Gameplay
         public float FeedbackPitchScale;
         public float FeedbackFrequency01;
         public byte Matched;
+        public byte Reserved0;
+        public ushort Reserved1;
     }
 
     /// <summary>
     /// Zero-allocation notification payload for HUD/PDA consumers.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
     public struct DataArchaeologyNotification
     {
         public uint EntryHash;
@@ -146,6 +153,7 @@ namespace Hecton8.Gameplay
         public byte Flags;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     internal struct DataArchaeologyTelemetryEntry
     {
         public uint Frame;
@@ -155,6 +163,7 @@ namespace Hecton8.Gameplay
         public byte Flags;
         public byte Reserved0;
         public ushort ProgressPermille;
+        public uint Reserved1;
     }
 
     /// <summary>
@@ -250,12 +259,12 @@ namespace Hecton8.Gameplay
     public struct DataArchaeologyFrequencyTuningJob : IJob
     {
         public DataArchaeologyFrequencyInput Input;
-        public NativeArray<DataArchaeologyFrequencyResult> Output;
+        public NativeSlice<DataArchaeologyFrequencyResult> Output;
 
         /// <inheritdoc />
         public void Execute()
         {
-            if (!Output.IsCreated || Output.Length == 0)
+            if (Output.Length == 0)
                 return;
 
             Output[0] = DataArchaeologyFrequencyKernel.Evaluate(in Input);
@@ -338,9 +347,9 @@ namespace Hecton8.Gameplay
 
         private NativeParallelHashMap<uint, float3> _fragmentPositions;
         private NativeParallelHashMap<int, byte> _scanStates;
-        private NativeArray<ulong> _unlockedLoreWords;
-        private NativeArray<DataArchaeologyNotification> _notifications;
-        private NativeArray<DataArchaeologyTelemetryEntry> _telemetryRing;
+        private VaultBufferHandle<ulong> _unlockedLoreWordsHandle;
+        private VaultBufferHandle<DataArchaeologyNotification> _notificationsHandle;
+        private VaultBufferHandle<DataArchaeologyTelemetryEntry> _telemetryRingHandle;
         private LoreMmfEncyclopedia _loreMmf;
         private Material _runtimeMaterial;
         private Mesh _resolvedReconstructionMesh;
@@ -608,10 +617,10 @@ namespace Hecton8.Gameplay
         public bool TryDequeueNotification(out DataArchaeologyNotification notification)
         {
             notification = default;
-            if (!_notifications.IsCreated || _notificationCount <= 0)
+            if (!TryResolveNotifications(out NativeArray<DataArchaeologyNotification> notifications) || _notificationCount <= 0)
                 return false;
 
-            notification = _notifications[_notificationRead];
+            notification = notifications[_notificationRead];
             _notificationRead = (_notificationRead + 1) & (NotificationCapacity - 1);
             _notificationCount--;
             return true;
@@ -726,7 +735,7 @@ namespace Hecton8.Gameplay
             if (mesh == null || material == null)
                 return;
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 mesh,
                 0,
                 material,
@@ -775,26 +784,9 @@ namespace Hecton8.Gameplay
                 _scanStates = default;
             }
 
-            if (_unlockedLoreWords.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_unlockedLoreWords);
-                _unlockedLoreWords.Dispose();
-                _unlockedLoreWords = default;
-            }
-
-            if (_notifications.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_notifications);
-                _notifications.Dispose();
-                _notifications = default;
-            }
-
-            if (_telemetryRing.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
-                _telemetryRing.Dispose();
-                _telemetryRing = default;
-            }
+            _unlockedLoreWordsHandle = default;
+            _notificationsHandle = default;
+            _telemetryRingHandle = default;
 
             if (_runtimeMaterial != null)
             {
@@ -915,24 +907,78 @@ namespace Hecton8.Gameplay
                 NativeMemorySentinel.RegisterNativeParallelHashMap(_scanStates, NativeMemoryOwner, nameof(_scanStates), NativeAllocationLifetime.Scene);
             }
 
-            if (!_unlockedLoreWords.IsCreated)
+            bool loreHandleWasCreated = _unlockedLoreWordsHandle.IsCreated;
+            if (TryResolveUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords) && !loreHandleWasCreated)
+                SyncManagedLoreToNative(unlockedLoreWords);
+
+            TryResolveNotifications(out _);
+            TryResolveTelemetryRing(out _);
+        }
+
+        private bool TryResolveUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords)
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
             {
-                _unlockedLoreWords = new NativeArray<ulong>(DiscoveryWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ulong>[16] - SOA lore unlock bitmask - owner: DataArchaeologyRuntime
-                NativeMemorySentinel.RegisterNativeArray(_unlockedLoreWords, NativeMemoryOwner, nameof(_unlockedLoreWords), NativeAllocationLifetime.Scene);
-                SyncManagedLoreToNative();
+                unlockedLoreWords = default;
+                return false;
             }
 
-            if (!_notifications.IsCreated)
+            if (!_unlockedLoreWordsHandle.IsCreated || _unlockedLoreWordsHandle.Length < DiscoveryWordCount)
             {
-                _notifications = new NativeArray<DataArchaeologyNotification>(NotificationCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DataArchaeologyNotification>[32] - HUD notification ring - owner: DataArchaeologyRuntime
-                NativeMemorySentinel.RegisterNativeArray(_notifications, NativeMemoryOwner, nameof(_notifications), NativeAllocationLifetime.Scene);
+                _unlockedLoreWordsHandle = vault.GetBufferHandle<ulong>(
+                    BufferID.DataArchaeologyUnlockedLoreWords,
+                    DiscoveryWordCount,
+                    SystemID.GameplayTools,
+                    NativeArrayOptions.ClearMemory);
             }
 
-            if (!_telemetryRing.IsCreated)
+            unlockedLoreWords = _unlockedLoreWordsHandle.Resolve(vault);
+            return unlockedLoreWords.IsCreated && unlockedLoreWords.Length >= DiscoveryWordCount;
+        }
+
+        private bool TryResolveNotifications(out NativeArray<DataArchaeologyNotification> notifications)
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
             {
-                _telemetryRing = new NativeArray<DataArchaeologyTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DataArchaeologyTelemetryEntry>[300] - black-box scan telemetry - owner: DataArchaeologyRuntime
-                NativeMemorySentinel.RegisterNativeArray(_telemetryRing, NativeMemoryOwner, nameof(_telemetryRing), NativeAllocationLifetime.Scene);
+                notifications = default;
+                return false;
             }
+
+            if (!_notificationsHandle.IsCreated || _notificationsHandle.Length < NotificationCapacity)
+            {
+                _notificationsHandle = vault.GetBufferHandle<DataArchaeologyNotification>(
+                    BufferID.DataArchaeologyNotifications,
+                    NotificationCapacity,
+                    SystemID.GameplayTools,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            notifications = _notificationsHandle.Resolve(vault);
+            return notifications.IsCreated && notifications.Length >= NotificationCapacity;
+        }
+
+        private bool TryResolveTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing)
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+            {
+                telemetryRing = default;
+                return false;
+            }
+
+            if (!_telemetryRingHandle.IsCreated || _telemetryRingHandle.Length < TelemetryCapacity)
+            {
+                _telemetryRingHandle = vault.GetBufferHandle<DataArchaeologyTelemetryEntry>(
+                    BufferID.DataArchaeologyTelemetryRing,
+                    TelemetryCapacity,
+                    SystemID.GameplayTools,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            telemetryRing = _telemetryRingHandle.Resolve(vault);
+            return telemetryRing.IsCreated && telemetryRing.Length >= TelemetryCapacity;
         }
 
         private void EnsureReconstructionResources()
@@ -987,40 +1033,45 @@ namespace Hecton8.Gameplay
 
         private void SetNativeLoreBit(int bitIndex)
         {
-            if (!_unlockedLoreWords.IsCreated || (uint)bitIndex >= MaxDiscoveryCount)
+            if (!TryResolveUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords) || (uint)bitIndex >= MaxDiscoveryCount)
                 return;
 
             int word = bitIndex >> 6;
             int bit = bitIndex & 63;
-            _unlockedLoreWords[word] = _unlockedLoreWords[word] | (1UL << bit);
-            _discoveryWords[word] = (long)_unlockedLoreWords[word];
+            unlockedLoreWords[word] = unlockedLoreWords[word] | (1UL << bit);
+            _discoveryWords[word] = (long)unlockedLoreWords[word];
         }
 
         private void SyncManagedLoreToNative()
         {
-            if (!_unlockedLoreWords.IsCreated)
+            if (!TryResolveUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords))
                 return;
 
+            SyncManagedLoreToNative(unlockedLoreWords);
+        }
+
+        private void SyncManagedLoreToNative(NativeArray<ulong> unlockedLoreWords)
+        {
             for (int i = 0; i < DiscoveryWordCount; i++)
-                _unlockedLoreWords[i] = unchecked((ulong)_discoveryWords[i]);
+                unlockedLoreWords[i] = unchecked((ulong)_discoveryWords[i]);
         }
 
         private void SyncNativeLoreToManaged()
         {
-            if (!_unlockedLoreWords.IsCreated)
+            if (!TryResolveUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords))
                 return;
 
             for (int i = 0; i < DiscoveryWordCount; i++)
-                _discoveryWords[i] = unchecked((long)_unlockedLoreWords[i]);
+                _discoveryWords[i] = unchecked((long)unlockedLoreWords[i]);
         }
 
         private void ClearNativeLoreWords()
         {
-            if (!_unlockedLoreWords.IsCreated)
+            if (!TryResolveUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords))
                 return;
 
             for (int i = 0; i < DiscoveryWordCount; i++)
-                _unlockedLoreWords[i] = 0UL;
+                unlockedLoreWords[i] = 0UL;
         }
 
         private void PublishCompletionSignals(uint hash, float3 position)
@@ -1209,7 +1260,7 @@ namespace Hecton8.Gameplay
 
         private void EnqueueNotification(uint hash, ushort progressPermille, byte kind, byte flags)
         {
-            if (!_notifications.IsCreated)
+            if (!TryResolveNotifications(out NativeArray<DataArchaeologyNotification> notifications))
                 return;
 
             DataArchaeologyNotification notification = new DataArchaeologyNotification
@@ -1220,7 +1271,7 @@ namespace Hecton8.Gameplay
                 Flags = flags
             };
 
-            _notifications[_notificationWrite] = notification;
+            notifications[_notificationWrite] = notification;
             _notificationWrite = (_notificationWrite + 1) & (NotificationCapacity - 1);
             if (_notificationCount < NotificationCapacity)
             {
@@ -1351,7 +1402,7 @@ namespace Hecton8.Gameplay
 
         private void RecordTelemetry(uint hash, byte flags, float3 position, float match01, ushort progressPermille)
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolveTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing))
                 return;
 
             if (!math.all(math.isfinite(new float4(position, match01))))
@@ -1360,7 +1411,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _telemetryRing[_telemetryCursor] = new DataArchaeologyTelemetryEntry
+            telemetryRing[_telemetryCursor] = new DataArchaeologyTelemetryEntry
             {
                 Frame = (uint)Time.frameCount,
                 Hash = hash,
@@ -1664,7 +1715,7 @@ namespace Hecton8.Gameplay
         private void DumpTelemetryCold()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolveTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing))
                 return;
 
             try
@@ -1675,7 +1726,7 @@ namespace Hecton8.Gameplay
                 {
                     for (int i = 0; i < TelemetryCapacity; i++)
                     {
-                        DataArchaeologyTelemetryEntry entry = _telemetryRing[i];
+                        DataArchaeologyTelemetryEntry entry = telemetryRing[i];
                         writer.Write(entry.Frame);
                         writer.Write(entry.Hash);
                         writer.Write(entry.Position.x);

@@ -13,7 +13,6 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Contracts;
 using Hecton8.Environment.Fluids;
 using Hecton8.Gameplay;
-using Hecton8.Inventory;
 using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Burst;
@@ -38,7 +37,7 @@ namespace Hecton8.Physics
         IFixedTickable,
         IPostFixedTickable,
         IOriginShiftListener,
-        IInventoryEventListener,
+        IScalabilityChangedEventListener,
         IGlobalRegistryHotSwapListener
     {
         private const int CompartmentCapacity = 8;
@@ -46,7 +45,6 @@ namespace Hecton8.Physics
         private const int RingBufferLength = 8;
         private const int RingBufferMask = RingBufferLength - 1;
         private const int SloshDelayFrames = 3;
-        private const int CargoMassFallbackPollFrameMask = 15;
         private const float WaterDensityKgPerCubicMeter = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
         private const float MinimumMassForReciprocal = 0.01f;
         private const float GravityMetersPerSecondSquared = HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
@@ -153,6 +151,11 @@ namespace Hecton8.Physics
         private const int VaultHydroOutputFlag = 1 << 20;
         private const int VaultHydroBlackBoxFlag = 1 << 21;
         private const int VaultCompartmentStatesFlag = 1 << 22;
+        private const int VaultExteriorThermalCentersFlag = 1 << 23;
+        private const int VaultExteriorThermalTemperaturesFlag = 1 << 24;
+        private const int VaultExteriorThermalLifetimesFlag = 1 << 25;
+        private const int VaultExteriorThermalHazardIdsFlag = 1 << 26;
+        private const int VaultExteriorBuoyancySamplesFlag = 1 << 27;
         private const float ExteriorThermalCellSizeMeters = 8f;
         private const float ExteriorWaterSpecificHeatCapacityJoulesPerKilogramCelsius = 3990f;
         private const float ExteriorWaterReferenceTemperatureCelsius = 6f;
@@ -238,9 +241,11 @@ namespace Hecton8.Physics
 
         [Header("â”€â”€ Compartments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Authored compartment capacities, breach openings, and local centroids. Maximum supported count is eight.")]
+        // Inspector-authored DTO only. Runtime flood authority is mirrored into GlobalDataVault during enable.
         [SerializeField] private CompartmentDefinition[] compartments = new CompartmentDefinition[CompartmentCapacity];
 
         [Tooltip("Adjacency map for water transfer. If empty, a linear bow-to-stern chain is generated.")]
+        // Inspector-authored DTO only. Runtime bulkhead state is mirrored into GlobalDataVault during enable.
         [SerializeField] private BulkheadDefinition[] bulkheads = new BulkheadDefinition[0];
 
         [Header("â”€â”€ Inertia Blend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
@@ -382,8 +387,8 @@ namespace Hecton8.Physics
         [SerializeField, Range(1f, 3f)] private float exteriorBuoyancyTorqueClampScale = DefaultExteriorBuoyancyTorqueClampScale;
 
         [Header("-- Payload Buoyancy --")]
-        [Tooltip("When true, listens to the SOA inventory event lane and mirrors the latest cached mass scalar into submarine cargo mass.")]
-        [SerializeField] private bool syncCargoMassFromInventoryEvents = true;
+        [Tooltip("When true, consumes typed inventory change signals and mirrors the latest cargo mass scalar into submarine buoyancy.")]
+        [SerializeField] private bool syncCargoMassFromInventorySignals = true;
 
         [Tooltip("Maximum cargo mass that can affect buoyancy and draft.")]
         [SerializeField, Min(0f)] private float maxCargoMassKilograms = DefaultMaxCargoMassKilograms;
@@ -618,11 +623,11 @@ namespace Hecton8.Physics
         private ISubmarineRuntimeContext _submarineRuntime;
         private HectonFluidEngine _fluidRuntime;
         private IPowerGridService _powerGridService;
-        private int _cachedFloodStateMathLodFrame = int.MinValue;
         private byte _cachedFloodStateMathLod;
         private bool _registered;
         private bool _registeredOriginShiftListener;
         private bool _registeredHotSwapListener;
+        private bool _registeredScalabilityListener;
         private bool _vaultNativeRefreshRequested;
         private bool _fluidJobRunning;
         private bool _skipHydrodynamicsForCurrentFixedTick;
@@ -660,13 +665,12 @@ namespace Hecton8.Physics
         private float3 _externalFloodAngularDragTensor = new float3(1f);
         private float _lastResolvedCargoMassKilograms = -1f;
         private float _lastResolvedCargoScalar = -1f;
-        private int _lastCargoMassFallbackPollFrame = -1;
+        private uint _lastInventoryMassSignalRevision;
         private float _ballastBlowTimer;
         private float _targetBuoyancyBias01;
         private float _thrustInput01;
         private float _cavitationCooldownTimer;
         private float _towingTensionHoldTimer;
-        private bool _registeredInventoryEvents;
         private bool _hydroKinematicJobRunning;
         private bool _hydroKinematicOutputReady;
         private Vector3 _reportedFloodCenterOfMassLocal;
@@ -694,23 +698,17 @@ namespace Hecton8.Physics
         private SubmarineAtmosphereSystem _atmosphereSystem;
         private ISubmarineHullBreachReadModel _structuralBreachReadModel;
         private IHectonOceanKinematics _oceanKinematics;
-        private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>[4] - local component search scratch for structural breach wiring - owner: SubmarineFluidDynamics
-        private readonly List<LogisticsPipeNode> _pipeBindingBuffer = new List<LogisticsPipeNode>(16); // COLD ALLOC: List<LogisticsPipeNode>[16] - rare cold-path pipe rupture propagation cache - owner: SubmarineFluidDynamics
-        // COLD ALLOC: Vector3[8] â€” cached local buoyancy sample points for exterior waterline force distribution â€” owner: SubmarineFluidDynamics
-        private readonly Vector3[] _exteriorBuoyancySampleLocalPoints = new Vector3[ExteriorBuoyancySampleCount];
-        // COLD ALLOC: SpatialQueryHit[16] â€” breach depressurization loose-body query scratch â€” owner: SubmarineFluidDynamics
+        private ResourceDistributionDirector _resourceDistributionRuntime;
+        private IVocalWarningSystem _vocalWarningSystem;
+        private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>[4] - Unity GetComponents scratch, not runtime authority - owner: SubmarineFluidDynamics
+        private readonly List<LogisticsPipeNode> _pipeBindingBuffer = new List<LogisticsPipeNode>(16); // COLD ALLOC: List<LogisticsPipeNode>[16] - Unity GetComponentsInChildren scratch, not runtime authority - owner: SubmarineFluidDynamics
+        // COLD ALLOC: SpatialQueryHit[16] - WorldSpatialHashGrid managed-array API scratch, not runtime authority - owner: SubmarineFluidDynamics
         private readonly SpatialQueryHit[] _depressurizationContacts = new SpatialQueryHit[DepressurizationContactCapacity];
         // COLD ALLOC: Rigidbody[16] â€” unique rigidbody scratch for depressurization routing â€” owner: SubmarineFluidDynamics
+        // Unity/PhysX managed reference scratch only; authoritative force output routes immediately through PhysicsForceRouter.
         private readonly Rigidbody[] _depressurizationBodies = new Rigidbody[DepressurizationContactCapacity];
-        // COLD ALLOC: Vector3[8] â€” runtime centers of localized exterior boil cells quantized to 8m volumes â€” owner: SubmarineFluidDynamics
-        private readonly Vector3[] _exteriorThermalAnomalyCenters = new Vector3[ExteriorThermalAnomalyCapacity];
-        // COLD ALLOC: float[8] â€” per-cell exterior water temperatures in Celsius for temporary plasma boil anomalies â€” owner: SubmarineFluidDynamics
-        private readonly float[] _exteriorThermalAnomalyTemperatures = new float[ExteriorThermalAnomalyCapacity];
-        // COLD ALLOC: float[8] â€” remaining lifetime of each exterior boil anomaly in seconds â€” owner: SubmarineFluidDynamics
-        private readonly float[] _exteriorThermalAnomalyLifetimes = new float[ExteriorThermalAnomalyCapacity];
-        // COLD ALLOC: int[8] â€” hazard source ids mapped one-to-one with exterior boil anomaly slots â€” owner: SubmarineFluidDynamics
-        private readonly int[] _exteriorThermalHazardIds = new int[ExteriorThermalAnomalyCapacity];
         // COLD ALLOC: Collider[16] â€” bounded boiling-water rigidbody query scratch â€” owner: SubmarineFluidDynamics
+        // Unity OverlapSphereNonAlloc scratch only; exterior thermal state lives in GlobalDataVault.
         private readonly Collider[] _exteriorThermalContacts = new Collider[ExteriorThermalContactCapacity];
 
         private VaultNativeBuffer<float> _compartmentFloodVolumes;
@@ -729,6 +727,7 @@ namespace Hecton8.Physics
         private VaultNativeBuffer<FloodMassPropertiesResult> _massPropertiesBack;
         private VaultNativeBuffer<float3> _angularVelocityHistoryLocal;
         private VaultNativeBuffer<float> _previousExteriorSampleSubmersionFactors;
+        private VaultNativeBuffer<float3> _exteriorBuoyancySampleLocalPoints;
         private VaultNativeBuffer<CompartmentState> _compartmentStates;
         private VaultNativeBuffer<float> _jobFloodVolumes;
         private VaultNativeBuffer<uint> _jobCompartmentFlags;
@@ -736,6 +735,10 @@ namespace Hecton8.Physics
         private VaultNativeBuffer<HydroKinematicJobInput> _hydroKinematicInput;
         private VaultNativeBuffer<HydroKinematicJobOutput> _hydroKinematicOutput;
         private VaultNativeBuffer<HydroBlackBoxEntry> _hydroBlackBox;
+        private VaultNativeBuffer<float3> _exteriorThermalAnomalyCenters;
+        private VaultNativeBuffer<float> _exteriorThermalAnomalyTemperatures;
+        private VaultNativeBuffer<float> _exteriorThermalAnomalyLifetimes;
+        private VaultNativeBuffer<int> _exteriorThermalHazardIds;
         private FluidMathCore _fluidMathCore;
         private bool _fluidSimulationRegistered;
         private bool _isBrineSubmerged;
@@ -1191,8 +1194,9 @@ namespace Hecton8.Physics
             TryRegisterFluidSimulationService();
             CacheReferences();
             TryRegisterHotSwapListener();
-            RebuildExteriorBuoyancySampleLocalPoints();
+            TryRegisterScalabilityListener();
             EnsureNativeState();
+            RebuildExteriorBuoyancySampleLocalPoints();
             RefreshResolvedInertiaTensors();
             SeedNativeStateFromAuthoring();
             RefreshDerivedConstants(DefaultFixedStepSeconds);
@@ -1200,11 +1204,10 @@ namespace Hecton8.Physics
             {
                 TryRegister();
                 TryRegisterOriginShiftListener();
-                TryRegisterInventoryEventListener();
+                SeedCargoMassFromRegistryCold();
             }
             else
             {
-                TryUnregisterInventoryEventListener();
                 TryUnregisterOriginShiftListener();
                 TryUnregister();
             }
@@ -1216,7 +1219,7 @@ namespace Hecton8.Physics
         {
             TryUnregisterFluidSimulationService();
             TryUnregisterHotSwapListener();
-            TryUnregisterInventoryEventListener();
+            TryUnregisterScalabilityListener();
             TryUnregisterOriginShiftListener();
             TryUnregister();
             ClearExteriorThermalAnomalies();
@@ -1230,7 +1233,6 @@ namespace Hecton8.Physics
         {
             TryUnregisterFluidSimulationService();
             TryUnregisterHotSwapListener();
-            TryUnregisterInventoryEventListener();
             TryUnregisterOriginShiftListener();
             TryUnregister();
             ClearExteriorThermalAnomalies();
@@ -1255,7 +1257,7 @@ namespace Hecton8.Physics
 
             _skipHydrodynamicsForCurrentFixedTick = false;
             _currentFixedDeltaTime = fixedDeltaTime;
-            RefreshCargoMassScalarFromGlobalCache();
+            ConsumeInventoryMassSignals();
             UpdateHydroRuntimeState(fixedDeltaTime);
             ApplyCompletedHydroKinematicOutput();
             float depthMeters = ResolveExternalDepthMeters();
@@ -1342,6 +1344,49 @@ namespace Hecton8.Physics
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerRuntime = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Submarine)
+            {
+                _submarineRuntime = currentService as ISubmarineRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
+            {
+                _fluidRuntime = currentService as HectonFluidEngine;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                IHectonOceanKinematicsService oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                _oceanKinematics = oceanKinematicsService != null ? oceanKinematicsService.ActiveProvider : null;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.SubmarineHullBreach)
+            {
+                _structuralBreachReadModel = currentService as ISubmarineHullBreachReadModel;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.ResourceDistributionRuntime)
+            {
+                _resourceDistributionRuntime = currentService as ResourceDistributionDirector;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.VocalWarningRuntime)
+            {
+                _vocalWarningSystem = currentService as IVocalWarningSystem;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -1358,6 +1403,11 @@ namespace Hecton8.Physics
             SeedNativeStateFromAuthoring();
             RefreshDerivedConstants(DefaultFixedStepSeconds);
             RefreshDebugState();
+        }
+
+        public void OnScalabilityChanged(in Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent payload)
+        {
+            _cachedFloodStateMathLod = payload.CurrentTier == ScalabilityTierProfiles.LowMx350 ? (byte)0 : (byte)1;
         }
 
         /// <summary>
@@ -1412,31 +1462,6 @@ namespace Hecton8.Physics
             _damageControlLeakAddedMassKilograms = math.min(maxLeakMass, _damageControlLeakAddedMassKilograms + deltaKg);
             _debugDamageControlLeakAddedMassKilograms = _damageControlLeakAddedMassKilograms;
             ApplyFloodMassPropertiesToRigidbody(force: false);
-        }
-
-        /// <summary>
-        /// Receives SOA inventory mass from the event lane. Future submarine storage owners can drive the same scalar
-        /// through <see cref="SetCargoMassScalar"/> without taking a hard dependency on this component.
-        /// </summary>
-        public void OnInventoryEvent(in InventoryEventPayload payload)
-        {
-            if (!syncCargoMassFromInventoryEvents)
-                return;
-
-            ushort eventType = payload.EventType;
-            if (eventType != (ushort)InventoryEventType.EncumbranceChanged &&
-                eventType != (ushort)InventoryEventType.InventoryChanged)
-            {
-                return;
-            }
-
-            if (eventType == (ushort)InventoryEventType.EncumbranceChanged)
-            {
-                CommitCargoMassScalar(payload.TotalMassKg);
-                return;
-            }
-
-            RefreshCargoMassScalarFromGlobalCache(force: true);
         }
 
         /// <summary>
@@ -1518,16 +1543,17 @@ namespace Hecton8.Physics
             _ballastBlowTimer = math.max(0.05f, math.isfinite(durationSeconds) ? durationSeconds : ballastBlowDurationSeconds);
             _targetBuoyancyBias01 = 1f;
 
-            VocalWarningSignal warning = new VocalWarningSignal
+            if (_vocalWarningSystem != null)
             {
-                WarningHash = VocalWarningHashes.CrushDepth,
-                SourceId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u,
-                Severity01 = 0.85f,
-                CooldownSeconds = 0.6f,
-                Priority = (byte)VocalWarningId.CrushDepth,
-                Flags = VocalWarningSignalFlags.HabitatIntegrityCompromised
-            };
-            GlobalSignals.Publish(in warning);
+                uint sourceId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u;
+                _vocalWarningSystem.TryQueueWarning(
+                    (byte)VocalWarningId.CrushDepth,
+                    0.85f,
+                    0.6f,
+                    VocalWarningSignalFlags.HabitatIntegrityCompromised,
+                    sourceId);
+            }
+
             return true;
         }
 
@@ -1836,8 +1862,15 @@ namespace Hecton8.Physics
 
         private void InjectLocalizedWaterHeatJoulesInternal(Vector3 runtimePoint, float heatEnergyJoules)
         {
-            if (_cachedTransform == null || heatEnergyJoules <= 0f)
+            if (_cachedTransform == null ||
+                heatEnergyJoules <= 0f ||
+                !_exteriorThermalAnomalyCenters.IsCreated ||
+                !_exteriorThermalAnomalyTemperatures.IsCreated ||
+                !_exteriorThermalAnomalyLifetimes.IsCreated ||
+                !_exteriorThermalHazardIds.IsCreated)
+            {
                 return;
+            }
 
             float surfaceY = ResolveSurfaceHeightAtSample(runtimePoint, runtimePoint.y);
             float depthMeters = math.max(0f, surfaceY - runtimePoint.y);
@@ -1845,12 +1878,13 @@ namespace Hecton8.Physics
                 return;
 
             Vector3 quantizedCenter = QuantizeExteriorThermalCell(runtimePoint);
+            float3 quantizedCenterFloat = ToFloat3(quantizedCenter);
             int slotIndex = ResolveExteriorThermalSlot(quantizedCenter);
             if (slotIndex < 0)
                 return;
 
             if (_exteriorThermalAnomalyLifetimes[slotIndex] > 0f &&
-                (_exteriorThermalAnomalyCenters[slotIndex] - quantizedCenter).sqrMagnitude > 0.01f &&
+                math.lengthsq(ResolveExteriorThermalAnomalyCenter(slotIndex) - quantizedCenterFloat) > 0.01f &&
                 _exteriorThermalHazardIds[slotIndex] != 0)
             {
                 HectonHazardManager.Unregister(_exteriorThermalHazardIds[slotIndex]);
@@ -1866,7 +1900,7 @@ namespace Hecton8.Physics
             float currentTemperature = _exteriorThermalAnomalyLifetimes[slotIndex] > 0f
                 ? _exteriorThermalAnomalyTemperatures[slotIndex]
                 : ExteriorWaterReferenceTemperatureCelsius;
-            _exteriorThermalAnomalyCenters[slotIndex] = quantizedCenter;
+            _exteriorThermalAnomalyCenters[slotIndex] = quantizedCenterFloat;
             _exteriorThermalAnomalyTemperatures[slotIndex] = math.max(ExteriorWaterReferenceTemperatureCelsius, currentTemperature + deltaTemperature);
             _exteriorThermalAnomalyLifetimes[slotIndex] = math.max(_exteriorThermalAnomalyLifetimes[slotIndex], ExteriorThermalLifetimeSeconds);
             _debugLastThermalAnomalyCenter = quantizedCenter;
@@ -1920,6 +1954,12 @@ namespace Hecton8.Physics
                 _oceanKinematics = oceanKinematicsService != null ? oceanKinematicsService.ActiveProvider : null;
             }
 
+            if (_resourceDistributionRuntime == null)
+                _resourceDistributionRuntime = GlobalRegistry.ResourceDistribution;
+
+            if (_vocalWarningSystem == null || IsUnityObjectInvalid(_vocalWarningSystem))
+                _vocalWarningSystem = GlobalRegistry.VocalWarnings;
+
             IDataVault registryDataVault = GlobalRegistry.DataVault;
             if (!ReferenceEquals(_dataVault, registryDataVault))
             {
@@ -1928,7 +1968,8 @@ namespace Hecton8.Physics
             }
 
             RefreshRuntimeActorContextsIfMissing();
-            ResolvePowerGridService();
+            if (_powerGridService == null || IsUnityObjectInvalid(_powerGridService))
+                _powerGridService = GlobalRegistry.PowerGrid;
 
             if (_structuralBreachReadModel == null)
             {
@@ -2007,6 +2048,7 @@ namespace Hecton8.Physics
                 case BufferID.SubmarineFluidMassPropertiesBack:
                 case BufferID.SubmarineFluidAngularVelocityHistoryLocal:
                 case BufferID.SubmarineFluidPreviousExteriorSampleSubmersionFactors:
+                case BufferID.SubmarineFluidExteriorBuoyancySampleLocalPoints:
                 case BufferID.SubmarineFluidCompartmentStates:
                 case BufferID.SubmarineFluidJobFloodVolumes:
                 case BufferID.SubmarineFluidJobCompartmentFlags:
@@ -2014,6 +2056,10 @@ namespace Hecton8.Physics
                 case BufferID.SubmarineHydroKinematicInput:
                 case BufferID.SubmarineHydroKinematicOutput:
                 case BufferID.SubmarineHydroBlackBox:
+                case BufferID.SubmarineFluidExteriorThermalCenters:
+                case BufferID.SubmarineFluidExteriorThermalTemperatures:
+                case BufferID.SubmarineFluidExteriorThermalLifetimes:
+                case BufferID.SubmarineFluidExteriorThermalHazardIds:
                     return true;
                 default:
                     return false;
@@ -2054,6 +2100,8 @@ namespace Hecton8.Physics
             EnsureNativeStateBuffer(ref _angularVelocityHistoryLocal, BufferID.SubmarineFluidAngularVelocityHistoryLocal, RingBufferLength, nameof(_angularVelocityHistoryLocal), VaultAngularVelocityHistoryFlag);
             // COLD ALLOC: NativeArray<float>[8] â€” previous sampled exterior submersion factors for splash transition detection â€” owner: SubmarineFluidDynamics
             EnsureNativeStateBuffer(ref _previousExteriorSampleSubmersionFactors, BufferID.SubmarineFluidPreviousExteriorSampleSubmersionFactors, ExteriorBuoyancySampleCount, nameof(_previousExteriorSampleSubmersionFactors), VaultExteriorSubmersionHistoryFlag);
+            // COLD ALLOC: NativeArray<float3>[8] - exterior buoyancy local sample points - owner: GlobalDataVault/VehiclesPhysics
+            EnsureNativeStateBuffer(ref _exteriorBuoyancySampleLocalPoints, BufferID.SubmarineFluidExteriorBuoyancySampleLocalPoints, ExteriorBuoyancySampleCount, nameof(_exteriorBuoyancySampleLocalPoints), VaultExteriorBuoyancySamplesFlag);
             // COLD ALLOC: NativeArray<CompartmentState>[8] - authoritative compartment flood snapshots for CoM and telemetry - owner: GlobalDataVault/VehiclesPhysics
             EnsureNativeStateBuffer(ref _compartmentStates, BufferID.SubmarineFluidCompartmentStates, CompartmentCapacity, nameof(_compartmentStates), VaultCompartmentStatesFlag);
             // COLD ALLOC: NativeArray<float>[8] Ã¢â‚¬â€ Burst fluid-transfer output volumes Ã¢â‚¬â€ owner: SubmarineFluidDynamics
@@ -2068,6 +2116,14 @@ namespace Hecton8.Physics
             EnsureNativeStateBuffer(ref _hydroKinematicOutput, BufferID.SubmarineHydroKinematicOutput, 1, nameof(_hydroKinematicOutput), VaultHydroOutputFlag);
             // COLD ALLOC: NativeArray<HydroBlackBoxEntry>[300] - fixed hydro crash telemetry ring - owner: SubmarineFluidDynamics
             EnsureNativeStateBuffer(ref _hydroBlackBox, BufferID.SubmarineHydroBlackBox, HydroBlackBoxCapacity, nameof(_hydroBlackBox), VaultHydroBlackBoxFlag);
+            // COLD ALLOC: NativeArray<float3>[8] - exterior boil-cell centers - owner: GlobalDataVault/VehiclesPhysics
+            EnsureNativeStateBuffer(ref _exteriorThermalAnomalyCenters, BufferID.SubmarineFluidExteriorThermalCenters, ExteriorThermalAnomalyCapacity, nameof(_exteriorThermalAnomalyCenters), VaultExteriorThermalCentersFlag);
+            // COLD ALLOC: NativeArray<float>[8] - exterior boil-cell temperatures - owner: GlobalDataVault/VehiclesPhysics
+            EnsureNativeStateBuffer(ref _exteriorThermalAnomalyTemperatures, BufferID.SubmarineFluidExteriorThermalTemperatures, ExteriorThermalAnomalyCapacity, nameof(_exteriorThermalAnomalyTemperatures), VaultExteriorThermalTemperaturesFlag);
+            // COLD ALLOC: NativeArray<float>[8] - exterior boil-cell lifetimes - owner: GlobalDataVault/VehiclesPhysics
+            EnsureNativeStateBuffer(ref _exteriorThermalAnomalyLifetimes, BufferID.SubmarineFluidExteriorThermalLifetimes, ExteriorThermalAnomalyCapacity, nameof(_exteriorThermalAnomalyLifetimes), VaultExteriorThermalLifetimesFlag);
+            // COLD ALLOC: NativeArray<int>[8] - exterior boil-cell hazard ids - owner: GlobalDataVault/VehiclesPhysics
+            EnsureNativeStateBuffer(ref _exteriorThermalHazardIds, BufferID.SubmarineFluidExteriorThermalHazardIds, ExteriorThermalAnomalyCapacity, nameof(_exteriorThermalHazardIds), VaultExteriorThermalHazardIdsFlag);
             _vaultNativeRefreshRequested = false;
         }
 
@@ -2255,6 +2311,7 @@ namespace Hecton8.Physics
             DisposeNativeStateBuffer(ref _massPropertiesBack, VaultMassPropertiesBackFlag);
             DisposeNativeStateBuffer(ref _angularVelocityHistoryLocal, VaultAngularVelocityHistoryFlag);
             DisposeNativeStateBuffer(ref _previousExteriorSampleSubmersionFactors, VaultExteriorSubmersionHistoryFlag);
+            DisposeNativeStateBuffer(ref _exteriorBuoyancySampleLocalPoints, VaultExteriorBuoyancySamplesFlag);
             DisposeNativeStateBuffer(ref _compartmentStates, VaultCompartmentStatesFlag);
             DisposeNativeStateBuffer(ref _jobFloodVolumes, VaultJobFloodVolumesFlag);
             DisposeNativeStateBuffer(ref _jobCompartmentFlags, VaultJobCompartmentFlagsFlag);
@@ -2262,6 +2319,10 @@ namespace Hecton8.Physics
             DisposeNativeStateBuffer(ref _hydroKinematicInput, VaultHydroInputFlag);
             DisposeNativeStateBuffer(ref _hydroKinematicOutput, VaultHydroOutputFlag);
             DisposeNativeStateBuffer(ref _hydroBlackBox, VaultHydroBlackBoxFlag);
+            DisposeNativeStateBuffer(ref _exteriorThermalAnomalyCenters, VaultExteriorThermalCentersFlag);
+            DisposeNativeStateBuffer(ref _exteriorThermalAnomalyTemperatures, VaultExteriorThermalTemperaturesFlag);
+            DisposeNativeStateBuffer(ref _exteriorThermalAnomalyLifetimes, VaultExteriorThermalLifetimesFlag);
+            DisposeNativeStateBuffer(ref _exteriorThermalHazardIds, VaultExteriorThermalHazardIdsFlag);
             ClearNativeStateViews();
             DispatcherJobSwap.TryComplete(ref _disposeHandle, true);
 
@@ -2333,13 +2394,14 @@ namespace Hecton8.Physics
             _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
-        private void TryRegisterInventoryEventListener()
+        private void TryRegisterScalabilityListener()
         {
-            if (_registeredInventoryEvents || !syncCargoMassFromInventoryEvents || !Application.isPlaying)
+            if (_registeredScalabilityListener || !Application.isPlaying)
                 return;
 
-            InventoryEvents.Register(this);
-            _registeredInventoryEvents = true;
+            _cachedFloodStateMathLod = DistanceMath.IsHighQualityTier(GlobalRegistry.ScalabilityTier) ? (byte)1 : (byte)0;
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
         }
 
         private void TryUnregister()
@@ -2379,13 +2441,13 @@ namespace Hecton8.Physics
             _registeredOriginShiftListener = false;
         }
 
-        private void TryUnregisterInventoryEventListener()
+        private void TryUnregisterScalabilityListener()
         {
-            if (!_registeredInventoryEvents)
+            if (!_registeredScalabilityListener)
                 return;
 
-            InventoryEvents.Unregister(this);
-            _registeredInventoryEvents = false;
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
         }
 
         private void ResetSloshHistoryForOriginShift()
@@ -2609,7 +2671,7 @@ namespace Hecton8.Physics
             signal.RoomCount = (ushort)math.min(ushort.MaxValue, math.max(0, _configuredCompartmentCount));
             signal.MathLod = ResolveFloodStateMathLod();
             signal.Flags = flags;
-            GlobalSignals.Publish(in signal);
+            SignalBus<SubmarineFloodStateSignal>.Push(in signal);
         }
 
         private void CompleteHydroKinematicJobInPostFixedSwapWindow()
@@ -2741,22 +2803,11 @@ namespace Hecton8.Physics
             return math.all(math.isfinite(flow)) ? flow : float3.zero;
         }
 
-        private void RefreshCargoMassScalarFromGlobalCache(bool force = false)
+        private void SeedCargoMassFromRegistryCold()
         {
-            if (!syncCargoMassFromInventoryEvents)
+            if (!syncCargoMassFromInventorySignals)
                 return;
 
-            int currentFrame = Time.frameCount;
-            if (!force && _lastResolvedCargoMassKilograms >= 0f)
-            {
-                if (_lastCargoMassFallbackPollFrame == currentFrame ||
-                    (currentFrame & CargoMassFallbackPollFrameMask) != 0)
-                {
-                    return;
-                }
-            }
-
-            _lastCargoMassFallbackPollFrame = currentFrame;
             float cachedMass = GlobalRegistry.PlayerInventoryMassKg;
             if (!math.isfinite(cachedMass))
                 cachedMass = 0f;
@@ -2768,6 +2819,35 @@ namespace Hecton8.Physics
             }
 
             CommitCargoMassScalar(cachedMass);
+        }
+
+        private void ConsumeInventoryMassSignals()
+        {
+            if (!syncCargoMassFromInventorySignals)
+                return;
+
+            ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly InventoryChangedSignal signal = ref signals[i];
+                if (signal.Revision != 0u &&
+                    _lastInventoryMassSignalRevision != 0u &&
+                    signal.Revision <= _lastInventoryMassSignalRevision)
+                {
+                    continue;
+                }
+
+                float massKg = math.isfinite(signal.TotalMassKg) ? math.max(0f, signal.TotalMassKg) : 0f;
+                if (math.abs(massKg - _lastResolvedCargoMassKilograms) <= 0.05f &&
+                    math.abs(_cargoMassScalar - _lastResolvedCargoScalar) <= 0.0001f)
+                {
+                    _lastInventoryMassSignalRevision = signal.Revision;
+                    continue;
+                }
+
+                CommitCargoMassScalar(massKg);
+                _lastInventoryMassSignalRevision = signal.Revision;
+            }
         }
 
         private void CommitCargoMassScalar(float massKg)
@@ -4122,10 +4202,20 @@ namespace Hecton8.Physics
             float submergedVolume = 0f;
             Matrix4x4 localToWorldMatrix = _cachedTransform.localToWorldMatrix;
             IHectonOceanKinematics oceanKinematics = ResolveOceanKinematicsProvider();
+            if (!_exteriorBuoyancySampleLocalPoints.IsCreated ||
+                _exteriorBuoyancySampleLocalPoints.Length < ExteriorBuoyancySampleCount)
+            {
+                EmergencyResetHydrodynamics();
+                _externalSubmergedVolumeCubicMeters = 0f;
+                _submersionFactor = 0f;
+                _lastExternalBuoyancyForce = Vector3.zero;
+                _lastExternalBuoyancyTorque = Vector3.zero;
+                return;
+            }
 
             for (int i = 0; i < ExteriorBuoyancySampleCount; i++)
             {
-                Vector3 worldPoint = localToWorldMatrix.MultiplyPoint3x4(_exteriorBuoyancySampleLocalPoints[i]);
+                Vector3 worldPoint = localToWorldMatrix.MultiplyPoint3x4(ToVector3(_exteriorBuoyancySampleLocalPoints[i]));
                 float3 worldPointFloat = new float3(worldPoint.x, worldPoint.y, worldPoint.z);
                 if (math.any(math.isnan(worldPointFloat)) || !math.all(math.isfinite(worldPointFloat)))
                 {
@@ -4232,13 +4322,13 @@ namespace Hecton8.Physics
             _lastExternalBuoyancyTorque = ApplyHydrodynamicAngularInertiaScale(totalEquivalentTorque);
         }
 
-        private static bool TryResolveHullBrineLayer(Vector3 runtimePosition, out BrineLayerSample sample)
+        private bool TryResolveHullBrineLayer(Vector3 runtimePosition, out BrineLayerSample sample)
         {
             sample = default;
             if (!IsFiniteVector(runtimePosition))
                 return false;
 
-            ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;
+            ResourceDistributionDirector director = _resourceDistributionRuntime;
             if (director == null || !director.TrySampleBrineLayer(runtimePosition, out sample))
                 return false;
 
@@ -4272,7 +4362,7 @@ namespace Hecton8.Physics
             signal.SourceId = SubmarineFluidDynamicsContextHash;
             signal.Channel = BrineLayerConstants.AcousticThickFluidChannel;
             signal.Flags = _isBrineSubmerged ? BrineLayerConstants.EnteredFlag : BrineLayerConstants.ExitedFlag;
-            GlobalSignals.Publish(in signal);
+            SignalBus<AcousticPingSignal>.Push(in signal);
         }
 
         private void ResetBrineHullState()
@@ -4407,8 +4497,14 @@ namespace Hecton8.Physics
 
         private void UpdateExteriorThermalAnomalies(float fixedDeltaTime)
         {
-            if (fixedDeltaTime <= 0f)
+            if (fixedDeltaTime <= 0f ||
+                !_exteriorThermalAnomalyCenters.IsCreated ||
+                !_exteriorThermalAnomalyTemperatures.IsCreated ||
+                !_exteriorThermalAnomalyLifetimes.IsCreated ||
+                !_exteriorThermalHazardIds.IsCreated)
+            {
                 return;
+            }
 
             EnsurePlayerBindings();
 
@@ -4424,7 +4520,7 @@ namespace Hecton8.Physics
                     ExteriorWaterReferenceTemperatureCelsius,
                     currentTemperature - (ExteriorThermalDecayPerSecond * fixedDeltaTime));
 
-                Vector3 cellCenter = _exteriorThermalAnomalyCenters[slotIndex];
+                Vector3 cellCenter = ToVector3(_exteriorThermalAnomalyCenters[slotIndex]);
                 float surfaceY = ResolveSurfaceHeightAtSample(cellCenter, cellCenter.y);
                 float depthMeters = math.max(0f, surfaceY - cellCenter.y);
                 float boilingPointCelsius = ResolveBoilingPointCelsius(depthMeters);
@@ -4453,7 +4549,7 @@ namespace Hecton8.Physics
                     _exteriorThermalHazardIds[slotIndex] = 0;
                 }
 
-                _exteriorThermalAnomalyCenters[slotIndex] = Vector3.zero;
+                _exteriorThermalAnomalyCenters[slotIndex] = float3.zero;
                 _exteriorThermalAnomalyTemperatures[slotIndex] = ExteriorWaterReferenceTemperatureCelsius;
                 _exteriorThermalAnomalyLifetimes[slotIndex] = 0f;
             }
@@ -4531,13 +4627,21 @@ namespace Hecton8.Physics
 
         private void ClearExteriorThermalAnomalies()
         {
+            if (!_exteriorThermalAnomalyCenters.IsCreated ||
+                !_exteriorThermalAnomalyTemperatures.IsCreated ||
+                !_exteriorThermalAnomalyLifetimes.IsCreated ||
+                !_exteriorThermalHazardIds.IsCreated)
+            {
+                return;
+            }
+
             for (int slotIndex = 0; slotIndex < ExteriorThermalAnomalyCapacity; slotIndex++)
             {
                 if (_exteriorThermalHazardIds[slotIndex] != 0)
                     HectonHazardManager.Unregister(_exteriorThermalHazardIds[slotIndex]);
 
                 _exteriorThermalHazardIds[slotIndex] = 0;
-                _exteriorThermalAnomalyCenters[slotIndex] = Vector3.zero;
+                _exteriorThermalAnomalyCenters[slotIndex] = float3.zero;
                 _exteriorThermalAnomalyTemperatures[slotIndex] = ExteriorWaterReferenceTemperatureCelsius;
                 _exteriorThermalAnomalyLifetimes[slotIndex] = 0f;
             }
@@ -4559,15 +4663,22 @@ namespace Hecton8.Physics
 
         private int ResolveExteriorThermalSlot(Vector3 quantizedCenter)
         {
+            if (!_exteriorThermalAnomalyCenters.IsCreated ||
+                !_exteriorThermalAnomalyLifetimes.IsCreated)
+            {
+                return -1;
+            }
+
             int expiredSlot = -1;
             float lowestLifetime = float.MaxValue;
             int oldestSlot = 0;
+            float3 quantizedCenterFloat = ToFloat3(quantizedCenter);
 
             for (int slotIndex = 0; slotIndex < ExteriorThermalAnomalyCapacity; slotIndex++)
             {
                 if (_exteriorThermalAnomalyLifetimes[slotIndex] > 0f)
                 {
-                    if ((_exteriorThermalAnomalyCenters[slotIndex] - quantizedCenter).sqrMagnitude <= 0.01f)
+                    if (math.lengthsq(ResolveExteriorThermalAnomalyCenter(slotIndex) - quantizedCenterFloat) <= 0.01f)
                         return slotIndex;
 
                     if (_exteriorThermalAnomalyLifetimes[slotIndex] < lowestLifetime)
@@ -4586,8 +4697,24 @@ namespace Hecton8.Physics
             return expiredSlot >= 0 ? expiredSlot : oldestSlot;
         }
 
+        private float3 ResolveExteriorThermalAnomalyCenter(int slotIndex)
+        {
+            if (!_exteriorThermalAnomalyCenters.IsCreated ||
+                slotIndex < 0 ||
+                slotIndex >= _exteriorThermalAnomalyCenters.Length)
+            {
+                return float3.zero;
+            }
+
+            float3 center = _exteriorThermalAnomalyCenters[slotIndex];
+            return math.all(math.isfinite(center)) ? center : float3.zero;
+        }
+
         private int ResolveExteriorThermalHazardId(int slotIndex)
         {
+            if (!_exteriorThermalHazardIds.IsCreated || slotIndex < 0 || slotIndex >= _exteriorThermalHazardIds.Length)
+                return 0;
+
             if (_exteriorThermalHazardIds[slotIndex] != 0)
                 return _exteriorThermalHazardIds[slotIndex];
 
@@ -4868,7 +4995,7 @@ namespace Hecton8.Physics
                 SecondaryMaterialId = 0,
                 Flags = 1
             };
-            GlobalSignals.Publish(in impactSignal);
+            SignalBus<ImpactSignal>.Push(in impactSignal);
         }
 
         private static void PublishSplashFluidImpulse(
@@ -4902,7 +5029,7 @@ namespace Hecton8.Physics
             impulse.Frame = unchecked((uint)Time.frameCount);
             impulse.SourceHash = 0x53504C48u; // SPLH
             impulse.Flags = 1u;
-            GlobalSignals.Publish(in impulse);
+            SignalBus<FluidImpulseSignal>.Push(in impulse);
         }
 
         private void QueueSurfacingBreachSignalIfNeeded(Vector3 worldPoint, float sampleHullMass)
@@ -4924,6 +5051,9 @@ namespace Hecton8.Physics
 
             float effectiveSampleMass = math.max(sampleHullMass, Epsilon);
             float kineticEnergyJoules = 0.5f * effectiveSampleMass * upwardSpeedMetersPerSecond * upwardSpeedMetersPerSecond;
+            if (!math.isfinite(effectiveSampleMass) || !math.isfinite(kineticEnergyJoules))
+                return;
+
             ImpactSignal impactSignal = new ImpactSignal
             {
                 PointAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePosition),
@@ -4935,7 +5065,7 @@ namespace Hecton8.Physics
                 SecondaryMaterialId = 0,
                 Flags = 2
             };
-            GlobalSignals.Publish(in impactSignal);
+            SignalBus<ImpactSignal>.Push(in impactSignal);
         }
 
         private static uint ResolveSplashLcgHash(double3 absoluteUniversePosition, int sampleIndex)
@@ -4977,8 +5107,13 @@ namespace Hecton8.Physics
 
         private void RebuildExteriorBuoyancySampleLocalPoints()
         {
-            if (_cachedTransform == null)
+            if (_cachedTransform == null ||
+                !_exteriorBuoyancySampleLocalPoints.IsCreated ||
+                _exteriorBuoyancySampleLocalPoints.Length < ExteriorBuoyancySampleCount)
+            {
+                _exteriorBuoyancyMaxLeverArm = 1f;
                 return;
+            }
 
             Vector3 centerLocal = SanitizeCenterOfMass(dryCenterOfMassLocal, Vector3.zero);
             Vector3 extentsLocal = Vector3.one;
@@ -5020,10 +5155,10 @@ namespace Hecton8.Physics
                 {
                     for (int zSign = -1; zSign <= 1; zSign += 2)
                     {
-                        _exteriorBuoyancySampleLocalPoints[sampleIndex++] = centerLocal + new Vector3(
+                        _exteriorBuoyancySampleLocalPoints[sampleIndex++] = ToFloat3(centerLocal + new Vector3(
                             extentsLocal.x * xSign,
                             extentsLocal.y * ySign,
-                            extentsLocal.z * zSign);
+                            extentsLocal.z * zSign));
                     }
                 }
             }
@@ -5031,7 +5166,7 @@ namespace Hecton8.Physics
             float maxLeverArmSq = 0.01f;
             for (int i = 0; i < ExteriorBuoyancySampleCount; i++)
             {
-                float leverArmSq = (centerLocal - _exteriorBuoyancySampleLocalPoints[i]).sqrMagnitude;
+                float leverArmSq = (centerLocal - ToVector3(_exteriorBuoyancySampleLocalPoints[i])).sqrMagnitude;
                 if (leverArmSq > maxLeverArmSq)
                     maxLeverArmSq = leverArmSq;
             }
@@ -5050,10 +5185,7 @@ namespace Hecton8.Physics
             if (oceanKinematics != null && oceanKinematics.IsAvailable)
                 return oceanKinematics;
 
-            IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
-            oceanKinematics = oceanKinematicsService != null ? oceanKinematicsService.ActiveProvider : null;
-            _oceanKinematics = oceanKinematics;
-            return oceanKinematics;
+            return null;
         }
 
         private static float ResolveSurfaceHeightAtSample(Vector3 worldPoint, float fallbackSurfaceY, IHectonOceanKinematics oceanKinematics)
@@ -5123,52 +5255,63 @@ namespace Hecton8.Physics
 
         private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
-            if (_playerRuntime == null || IsUnityObjectInvalid(_playerRuntime))
-                _playerRuntime = GlobalRegistry.Player;
+            if (IsUnityObjectInvalid(_playerRuntime))
+            {
+                _playerRuntime = null;
+                return null;
+            }
 
             return _playerRuntime;
         }
 
         private ISubmarineRuntimeContext ResolveSubmarineRuntimeContext()
         {
-            if (_submarineRuntime == null || IsUnityObjectInvalid(_submarineRuntime))
-                _submarineRuntime = GlobalRegistry.Submarine;
+            if (IsUnityObjectInvalid(_submarineRuntime))
+            {
+                _submarineRuntime = null;
+                return null;
+            }
 
             return _submarineRuntime;
         }
 
         private HectonFluidEngine ResolveFluidRuntime()
         {
-            if (_fluidRuntime == null)
-                _fluidRuntime = GlobalRegistry.Fluid;
+            if (IsUnityObjectInvalid(_fluidRuntime))
+            {
+                _fluidRuntime = null;
+                return null;
+            }
 
             return _fluidRuntime;
         }
 
         private IPowerGridService ResolvePowerGridService()
         {
-            if (_powerGridService == null || IsUnityObjectInvalid(_powerGridService))
-                _powerGridService = GlobalRegistry.PowerGrid;
+            if (IsUnityObjectInvalid(_powerGridService))
+            {
+                _powerGridService = null;
+                return null;
+            }
 
             return _powerGridService;
         }
 
         private byte ResolveFloodStateMathLod()
         {
-            int frame = Time.frameCount;
-            if (_cachedFloodStateMathLodFrame == frame)
-                return _cachedFloodStateMathLod;
-
-            _cachedFloodStateMathLod = DistanceMath.IsHighQualityTier(GlobalRegistry.ScalabilityTier) ? (byte)1 : (byte)0;
-            _cachedFloodStateMathLodFrame = frame;
             return _cachedFloodStateMathLod;
         }
 
         private void RefreshRuntimeActorContextsIfMissing()
         {
-            ResolvePlayerRuntimeContext();
-            ResolveSubmarineRuntimeContext();
-            ResolveFluidRuntime();
+            if (_playerRuntime == null || IsUnityObjectInvalid(_playerRuntime))
+                _playerRuntime = GlobalRegistry.Player;
+
+            if (_submarineRuntime == null || IsUnityObjectInvalid(_submarineRuntime))
+                _submarineRuntime = GlobalRegistry.Submarine;
+
+            if (_fluidRuntime == null || IsUnityObjectInvalid(_fluidRuntime))
+                _fluidRuntime = GlobalRegistry.Fluid;
         }
 
         private void ClearRuntimeServiceCaches()
@@ -5177,7 +5320,8 @@ namespace Hecton8.Physics
             _submarineRuntime = null;
             _fluidRuntime = null;
             _powerGridService = null;
-            _cachedFloodStateMathLodFrame = int.MinValue;
+            _resourceDistributionRuntime = null;
+            _vocalWarningSystem = null;
         }
 
         private static bool IsUnityObjectInvalid(object context)
@@ -5812,6 +5956,11 @@ namespace Hecton8.Physics
             return IsFiniteVector(value) ? new float3(value.x, value.y, value.z) : float3.zero;
         }
 
+        private static Vector3 ToVector3(float3 value)
+        {
+            return math.all(math.isfinite(value)) ? new Vector3(value.x, value.y, value.z) : Vector3.zero;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint QuantizeHydroBlackBox(float value)
         {
@@ -5859,6 +6008,7 @@ namespace Hecton8.Physics
             RefreshNativeStateBuffer(ref _massPropertiesBack, VaultMassPropertiesBackFlag);
             RefreshNativeStateBuffer(ref _angularVelocityHistoryLocal, VaultAngularVelocityHistoryFlag);
             RefreshNativeStateBuffer(ref _previousExteriorSampleSubmersionFactors, VaultExteriorSubmersionHistoryFlag);
+            RefreshNativeStateBuffer(ref _exteriorBuoyancySampleLocalPoints, VaultExteriorBuoyancySamplesFlag);
             RefreshNativeStateBuffer(ref _compartmentStates, VaultCompartmentStatesFlag);
             RefreshNativeStateBuffer(ref _jobFloodVolumes, VaultJobFloodVolumesFlag);
             RefreshNativeStateBuffer(ref _jobCompartmentFlags, VaultJobCompartmentFlagsFlag);
@@ -5866,6 +6016,10 @@ namespace Hecton8.Physics
             RefreshNativeStateBuffer(ref _hydroKinematicInput, VaultHydroInputFlag);
             RefreshNativeStateBuffer(ref _hydroKinematicOutput, VaultHydroOutputFlag);
             RefreshNativeStateBuffer(ref _hydroBlackBox, VaultHydroBlackBoxFlag);
+            RefreshNativeStateBuffer(ref _exteriorThermalAnomalyCenters, VaultExteriorThermalCentersFlag);
+            RefreshNativeStateBuffer(ref _exteriorThermalAnomalyTemperatures, VaultExteriorThermalTemperaturesFlag);
+            RefreshNativeStateBuffer(ref _exteriorThermalAnomalyLifetimes, VaultExteriorThermalLifetimesFlag);
+            RefreshNativeStateBuffer(ref _exteriorThermalHazardIds, VaultExteriorThermalHazardIdsFlag);
         }
 
         private void RefreshNativeStateBuffer<T>(ref VaultNativeBuffer<T> buffer, int vaultFlag) where T : struct
@@ -5894,6 +6048,7 @@ namespace Hecton8.Physics
             _massPropertiesBack = default;
             _angularVelocityHistoryLocal = default;
             _previousExteriorSampleSubmersionFactors = default;
+            _exteriorBuoyancySampleLocalPoints = default;
             _compartmentStates = default;
             _jobFloodVolumes = default;
             _jobCompartmentFlags = default;
@@ -5901,6 +6056,10 @@ namespace Hecton8.Physics
             _hydroKinematicInput = default;
             _hydroKinematicOutput = default;
             _hydroBlackBox = default;
+            _exteriorThermalAnomalyCenters = default;
+            _exteriorThermalAnomalyTemperatures = default;
+            _exteriorThermalAnomalyLifetimes = default;
+            _exteriorThermalHazardIds = default;
         }
 
         private void DisposeNativeStateBuffer<T>(ref VaultNativeBuffer<T> buffer, int vaultFlag) where T : struct

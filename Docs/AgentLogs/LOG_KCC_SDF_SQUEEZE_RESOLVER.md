@@ -193,3 +193,179 @@ Validation:
 - Exit code: 0.
 - Static scan found no local persistent `H8Memory.Allocate`, `Allocator.Persistent`, `NativeMemorySentinel.RegisterNativeArray`, `COLD FALLBACK`, or `AllocateLocalArray` in the scanned KCC/player/tether surface.
 - Static scan found no unguarded `math.rsqrt`, `Update`, `string.Format`, legacy `EventBus`, managed delegate, `GameObject.Find`, `FindObjectOfType`, `Physics.CapsuleCast`, `OnCollisionStay`, `KCCManager.Instance`, `TryConsumeFireForManager`, or `TetherFireRequest` in the scanned surface.
+
+## 2026-05-16 - Loop 12 Padded SDF Vault Acceptance
+What was wrong:
+- KCC and player-side SDF fallback accepted only exact SDF buffer length. That rejects valid padded DataVault buffers even when the first `x*y*z` bytes contain the required 3D SDF payload.
+- The first Loop 12 validation also exposed a foreign `EcosystemDirector` compile wall: missing open-address index helpers.
+
+What was done:
+- Changed `SdfSqueezeJob`, `PlayerKinematicsBodyJob`, and `HectonPlayerMotor` SDF validation from exact equality to minimum capacity checks.
+- Changed player and motor DataVault SDF resolution to accept `vaultSdf.Length >= expectedLength`.
+- Added a minimal `EcosystemDirector` compile-wall shim for `ClearIndexEntries`, `TryFindIndexEntry`, `TryUpsertIndexEntry`, and `ResolveVaultIndexCapacity`.
+
+Cinematic cheats used:
+- No new visual code was added.
+- Existing Dear Lie path remains: MX350 4-tap SDF, stress cadence interpolation, signal-driven scrape, high-tier camera roll, and high/ultra `FluidImpulseSignal` for downstream silt/wake.
+
+Exact microseconds saved:
+- Runtime saving claimed for this pass: 0 us measured.
+- Correctness gain: valid padded SDF vault buffers no longer false-fail tight-gap traversal.
+- First failed validation time: 82187319 us.
+- Follow-up failed validation time: 11138143 us.
+
+Validation:
+- KCC/player static scans: no unguarded `math.rsqrt`, exact SDF length equality, legacy `EventBus`, managed delegate, `Update`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, or `KCCManager.Instance`.
+- `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop12_repair1.exit.txt` exits 1 on a foreign syntax error in `Assets/_Project/Scripts/SubmarineFluidDynamics.cs(5934,1)`.
+- No diagnostics name `SdfSqueezeJob`, `HectonPlayerMotor`, or `PlayerKinematicsRuntime`.
+
+## 2026-05-17 - Loop 12 Final Compile Closure
+What was wrong:
+- The padded-SDF validation path exposed moving compile walls after the initial KCC change.
+- `PlayerKinematicsRuntime` was missing the narrow `HasKinematicsStorage()` guard expected by a concurrent path.
+- Core memory defrag contracts existed on disk, but `Directory.Build.targets` injected `GlobalDataVault.cs` without injecting `Core/Memory/Defrag/MemoryDefragContracts.cs`, so `MemoryDefragPhase` failed Roslyn resolution.
+
+What was done:
+- Restored `HasKinematicsStorage()` in `PlayerKinematicsRuntime` as an alias to the existing motion SOA storage guard.
+- Added the existing `MemoryDefragContracts.cs` file to the Core compile injection in `Directory.Build.targets`.
+- Kept the earlier `EcosystemDirector` open-address helper shim because it was required to advance validation and does not change KCC behavior.
+- Reran the Core build with node reuse and shared compilation disabled.
+
+Cinematic cheats used:
+- No new visual code was added.
+- Existing KCC Dear Lie path remains: MX350 4-tap SDF, stress cadence interpolation, typed scrape feedback, high-tier camera roll, and high/ultra `FluidImpulseSignal` for downstream silt/wake.
+
+Exact microseconds saved:
+- Runtime saving claimed for this pass: 0 us measured.
+- Correctness gain: valid padded SDF vault buffers no longer false-fail tight-gap traversal.
+- Final measured build validation time: 212371151 us.
+
+Validation:
+- `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop12_repair6.exit.txt` exits 0.
+- Warnings: 0.
+- Errors: 0.
+- Static scans found no unguarded `math.rsqrt`, exact SDF length equality, legacy `EventBus`, managed delegate, `Update`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, or `KCCManager.Instance` in the scanned KCC/player surface.
+- Static scan found every `StructLayout` in the scanned KCC/player/tether surface uses `Pack = 1`.
+- `dotnet msbuild /pp` shows the existing Defrag contract file injected once after the remove/include filter.
+- Unity runtime profiler and GCMonitor proof remain absent; code-review/build validation only.
+
+## 2026-05-17 - Loop 13 Hot-Path Registry Eviction
+What was wrong:
+- `PlayerKinematicsRuntime` still had registry-backed helper paths for DataVault, gas dynamics, scalability, and SDF payload/state access after the earlier vault pass.
+- `VaultBufferBinding<T>` could resolve aliases through `GlobalRegistry.DataVault` from accessors.
+- `HectonPlayerMotor` sweep/repair allocation helpers still used a `ResolveDataVault()` fallback that could poll `GlobalRegistry` outside the cold rebind path.
+- Runtime SDF payload validation still had one exact SDF buffer length check.
+
+What was done:
+- Cached DataVault, gas dynamics, fluid, voxel, player context, motor, and scalability tier in `PlayerKinematicsRuntime` through cold registry rebind and typed scalability events.
+- Bound `VaultBufferBinding<T>` to its current vault alias and removed the hot registry fallback.
+- Cached DataVault, fluid decals, and scalability profile in `HectonPlayerMotor`; sweep and kinematic repair target buffers now use `_dataVault` directly and fail closed if it is absent.
+- Changed the last runtime SDF validation check to `Length >= expectedLength` for padded vault buffers.
+- Applied a minimal foreign editor-only acoustic compile shim by qualifying `global::System.Type`.
+- Revalidated a transient `SystemDispatcher` scalability callback wall against current source; no KCC patch was needed there.
+
+Cinematic cheats used:
+- No new renderer code was added.
+- Existing Dear Lie path remains active: MX350 4-tap SDF, 5-frame stress cadence interpolation, typed scrape feedback, high-tier camera roll, and high/ultra `FluidImpulseSignal` for downstream silt/wake overkill.
+
+Exact microseconds saved:
+- Runtime saving measured in this pass: 0 us.
+- Non-profiler estimate from registry-branch eviction: 1-8 us on active or sweep-allocation frames.
+- First failed Loop 13 build: 65069984 us, blocked by foreign editor-only `AcousticZoneController` `Type` resolution.
+- Acoustic repair build: 57499674 us, exit 0.
+- Post hot-path eviction failed build: 72720886 us, blocked by transient foreign `SystemDispatcher` scalability callback state.
+- Timed wrapper build reported `Build succeeded` with MSBuild elapsed 00:11:01.56 but did not append an exit code before the tool timeout, so it is not used as final validation.
+- Final measured build validation time: 36559639 us.
+
+Validation:
+- `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop13_hotpath_registry_repair4.exit.txt` exits 0.
+- Warnings: 0.
+- Errors: 0.
+- Static scans found no unguarded `math.rsqrt`, stale exact SDF length equality, non-`Pack = 1` `StructLayout`, legacy `EventBus`, managed delegate, `Update`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, or `KCCManager.Instance` in the scanned KCC/player surface.
+- Remaining `GlobalRegistry.DataVault` references in the KCC/player scan are cold cache-fill sites: motor hot-swap registration and runtime registry rebind.
+- Unity runtime profiler and GCMonitor proof remain absent; this pass is source/build/static validation only.
+
+## 2026-05-17 - Loop 15 Movement Blackbox Vault Cache
+What was wrong:
+- Wider locomotion scanning found `HectonPlayerMovement` resolving its cinematic focus blackbox through `_dataVault ?? GlobalRegistry.DataVault`.
+- The resolver is called by active cinematic focus blackbox sample/dump paths, so the registry fallback was not cold-only.
+
+What was done:
+- Removed the DataVault registry fallback from `EnsureCinematicFocusBlackBox`.
+- Removed the DataVault registry fallback from `ResolveCinematicFocusBlackBox`.
+- Added DataVault hot-swap handling to drop stale vault handles and reacquire player kinematic plus cinematic blackbox buffers through cached `_dataVault`.
+
+Cinematic cheats used:
+- No new renderer code was added.
+- Existing Dear Lie path remains: MX350 4-tap SDF, stress cadence interpolation, typed scrape feedback, high-tier camera roll, high/ultra `FluidImpulseSignal`, and camera-focus blackbox telemetry for presentation failures.
+
+Exact microseconds saved:
+- Runtime saving measured in this pass: 0 us.
+- Non-profiler estimate: 1-2 us only while cinematic focus blackbox writes are active.
+- Final measured build validation time: 5397862 us.
+
+Validation:
+- `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop15_movement_vault.exit.txt` exits 0.
+- Warnings: 0.
+- Errors: 0.
+- Wider locomotion static scans found no unguarded `math.rsqrt`, non-`Pack = 1` `StructLayout`, `Update`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, local persistent `new NativeArray`, `Allocator.Persistent`, `H8Memory.Allocate`, `GlobalSignals.TryGetLatest*`, legacy `EventBus`, or managed delegates in the scanned KCC/player movement surface.
+- The only `Debug.LogWarning/Error` hits in the widened scan are inside `#if UNITY_EDITOR || DEVELOPMENT_BUILD` guards.
+- Unity runtime profiler and GCMonitor proof remain absent; this pass is source/build/static validation only.
+
+## 2026-05-17 - Loop 14 Signal Snapshot Consumers
+What was wrong:
+- KCC runtime still read squeeze and stress through `GlobalSignals.TryGetLatestPlayerStateSignal` and `GlobalSignals.TryGetLatestPlayerStressSignal`.
+- Those getters are latest-cache side channels. The mandate requires typed lanes consumed as `ReadOnlySpan<T>` snapshots.
+- Concurrent churn reintroduced `HectonPlayerMotor.ResolveDataVault()`, restoring a hidden hot registry fallback.
+
+What was done:
+- Replaced `ResolveSdfGradientProbeRequest` latest-cache access with a bounded `SignalBus<PlayerStateSignal>.GetFrameSnapshot()` scan.
+- Replaced environment IK stress polling with `SignalBus<PlayerStressSignal>.GetFrameSnapshot()` and frame de-duplication.
+- Replaced squeeze telemetry latest-cache consumption with `SignalBus<PlayerStateSignal>.GetFrameSnapshot()` and frame/source de-duplication.
+- Removed the reappeared `ResolveDataVault()` helper; motor sweep and repair target buffers now use cached `_dataVault` only.
+
+Cinematic cheats used:
+- No new renderer code was added.
+- Existing Dear Lie path remains: MX350 4-tap SDF, 5-frame stress cadence interpolation, typed scrape feedback, high-tier camera roll, and high/ultra `FluidImpulseSignal` for downstream silt/wake overkill.
+
+Exact microseconds saved:
+- Runtime saving measured in this pass: 0 us.
+- Non-profiler estimate from re-evicting the DataVault fallback: 1-3 us on sweep-allocation frames.
+- Final measured build validation time: 60260189 us.
+
+Validation:
+- `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop14_signal_snapshot.exit.txt` exits 0.
+- Warnings: 0.
+- Errors: 0.
+- Static scans found no `GlobalSignals.TryGetLatest*`, legacy `EventBus`, managed delegate, unguarded `math.rsqrt`, stale exact SDF length equality, non-`Pack = 1` `StructLayout`, `Update`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, local persistent `new NativeArray`, `Allocator.Persistent`, or `H8Memory.Allocate` in the scanned KCC/player surface.
+- Remaining `GlobalRegistry.DataVault` references in the KCC/player scan are cold cache-fill sites: motor hot-swap registration and runtime registry rebind.
+- Unity runtime profiler and GCMonitor proof remain absent; this pass is source/build/static validation only.
+
+## 2026-05-17 - Loop 16 System Stress Snapshot Consumption
+What was wrong:
+- `PlayerKinematicsRuntime.TryApplySdfSqueeze` still read `SignalBusRegistry.SystemStress01` directly for SDF slow-cadence routing.
+- That was the last static signal side channel in the active KCC squeeze path after the player-state and player-stress consumers had moved to typed snapshots.
+
+What was done:
+- Added `_cachedSystemStress01` and `_lastConsumedSystemStressFrame`.
+- Reset both fields with the determinism session state.
+- Added `ConsumeSystemStressSignals()`, a bounded `SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot()` scan over `ReadOnlySpan<SystemHealthIndexSignal>`.
+- Replaced the direct registry read with sanitized cached `SystemHealthIndexSignal.Pressure01` before scheduling `SdfSqueezeJob`.
+- Revalidated a transient foreign Biolum compile wall against current source; no Biolum edit was made.
+
+Cinematic cheats used:
+- No renderer code was added from locomotion.
+- Existing Dear Lie path remains: MX350 4-tap SDF, 5-frame stress cadence interpolation, typed scrape feedback, high-tier camera roll, and high/ultra `FluidImpulseSignal` for downstream silt/wake overkill.
+
+Exact microseconds saved:
+- Runtime saving measured in this pass: 0 us.
+- Non-profiler estimate from removing the static stress registry branch: 0-1 us on active squeeze frames.
+- First Loop 16 build: 48494221 us, exit 1, transient foreign `World/Biolum/HectonBiolumManager.cs` helper wall.
+- Final measured build validation time: 81024204 us.
+
+Validation:
+- `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_loop16_systemstress_snapshot_retry1.exit.txt` exits 0.
+- Warnings: 0.
+- Errors: 0.
+- Static scans found no direct `SignalBusRegistry.SystemStress01`, `GlobalSignals.TryGetLatest*`, legacy `EventBus`, managed delegate, unguarded `math.rsqrt`, non-`Pack = 1` `StructLayout`, `Update`, `string.Format`, `Physics.CapsuleCast`, `OnCollisionStay`, local persistent `new NativeArray`, `Allocator.Persistent`, or `H8Memory.Allocate` in the scanned KCC/player movement surface.
+- Unity runtime profiler and GCMonitor proof remain absent; this pass is source/build/static validation only.

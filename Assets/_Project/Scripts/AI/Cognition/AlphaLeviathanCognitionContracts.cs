@@ -50,7 +50,7 @@ namespace Hecton8.AI.Cognition
         /// <summary>Headlight exposure forced retreat behavior.</summary>
         public const byte LightRetreat = 1 << 6;
 
-        /// <summary>AUP shift frame changed and steering history was reset.</summary>
+        /// <summary>AUP shift fence is active; first changed frame also reset steering history.</summary>
         public const byte ShiftFenceReset = 1 << 7;
     }
 

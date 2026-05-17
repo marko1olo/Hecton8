@@ -22,6 +22,7 @@ namespace Hecton8.Core.Scheduling
         private const int CriticalDebtKillFrames = 60;
         private const float DefaultEstimatedCostMs = 0.025f;
         private const float OverflowEstimatedCostMs = 0.20f;
+        private const float AdmissionCostClampMs = 1000f;
         private const float LowTierBudgetScalar = 0.60f;
         private const float MissedFrameRefillScalar = 0.50f;
         private const float TargetFrameMilliseconds = 16.667f;
@@ -189,7 +190,15 @@ namespace Hecton8.Core.Scheduling
 
             for (int lane = 0; lane < LaneCount; lane++)
             {
-                float refill = baseRefillMs[lane] * refillScale;
+                float baseRefill = baseRefillMs[lane];
+                if (!math.isfinite(baseRefill) || baseRefill < 0f)
+                {
+                    ReportNonFinite((JobAdmissionLane)lane, 0u, baseRefill);
+                    baseRefill = 0f;
+                    baseRefillMs[lane] = 0f;
+                }
+
+                float refill = baseRefill * refillScale;
                 if (!math.isfinite(refill))
                 {
                     ReportNonFinite((JobAdmissionLane)lane, 0u, refill);
@@ -203,8 +212,14 @@ namespace Hecton8.Core.Scheduling
                     current = 0f;
                 }
 
+                float cap = baseRefill * MaxDeltaRefillScale * tierScale;
+                if (!math.isfinite(cap) || cap < 0f)
+                {
+                    ReportNonFinite((JobAdmissionLane)lane, 0u, cap);
+                    cap = 0f;
+                }
+
                 float next = current + refill;
-                float cap = baseRefillMs[lane] * MaxDeltaRefillScale * tierScale;
                 if (!math.isfinite(next))
                 {
                     ReportNonFinite((JobAdmissionLane)lane, 0u, next);
@@ -249,6 +264,10 @@ namespace Hecton8.Core.Scheduling
                 ReportNonFinite(normalizedLane, jobHash, estimatedCostMs);
                 estimatedCostMs = DefaultEstimatedCostMs;
             }
+            else
+            {
+                estimatedCostMs = math.min(estimatedCostMs, AdmissionCostClampMs);
+            }
 
             float budget = laneBudgetsMs[laneIndex];
             if (!math.isfinite(budget))
@@ -256,6 +275,11 @@ namespace Hecton8.Core.Scheduling
                 ReportNonFinite(normalizedLane, jobHash, budget);
                 budget = 0f;
                 laneBudgetsMs[laneIndex] = 0f;
+            }
+            else if (budget > AdmissionCostClampMs)
+            {
+                budget = AdmissionCostClampMs;
+                laneBudgetsMs[laneIndex] = budget;
             }
 
             if (_aupBarrierActive && laneIndex != JobAdmissionLanes.Lane0Critical)
@@ -309,6 +333,8 @@ namespace Hecton8.Core.Scheduling
                 ReportNonFinite(normalizedLane, jobHash, measuredCompleteMs);
                 return;
             }
+
+            measuredCompleteMs = math.min(measuredCompleteMs, AdmissionCostClampMs);
 
             int slot = FindOrAllocateCostSlot(jobHash, jobHashes, ewmaCostsMs);
             if (slot < 0)
@@ -449,7 +475,9 @@ namespace Hecton8.Core.Scheduling
             }
 
             float cached = ewmaCostsMs[costSlot];
-            return cached > 0f && math.isfinite(cached) ? cached : DefaultEstimatedCostMs;
+            return cached > 0f && math.isfinite(cached)
+                ? math.min(cached, AdmissionCostClampMs)
+                : DefaultEstimatedCostMs;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -457,7 +485,7 @@ namespace Hecton8.Core.Scheduling
         {
             float overflow = _overflowEwmaCostMs;
             return overflow > 0f && math.isfinite(overflow)
-                ? math.max(overflow, DefaultEstimatedCostMs)
+                ? math.min(math.max(overflow, DefaultEstimatedCostMs), AdmissionCostClampMs)
                 : OverflowEstimatedCostMs;
         }
 
@@ -592,8 +620,8 @@ namespace Hecton8.Core.Scheduling
             {
                 FrameSequence = _refillFrameSequence,
                 JobHash = jobHash,
-                EstimatedCostMs = math.isfinite(estimatedCostMs) ? estimatedCostMs : 0f,
-                RemainingBudgetMs = math.isfinite(remainingBudgetMs) ? remainingBudgetMs : 0f,
+                EstimatedCostMs = ClampTelemetryMilliseconds(estimatedCostMs),
+                RemainingBudgetMs = ClampTelemetryMilliseconds(remainingBudgetMs),
                 CriticalDebtFrames = _criticalDebtFrameCount,
                 Lane = (byte)ClampLane(lane),
                 Flags = admitted ? (byte)1 : (byte)0,
@@ -601,6 +629,14 @@ namespace Hecton8.Core.Scheduling
                 Reserved = 0,
                 StateHash = ComputeBlackboxHash(jobHash, estimatedCostMs, remainingBudgetMs, admitted)
             };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ClampTelemetryMilliseconds(float milliseconds)
+        {
+            return math.isfinite(milliseconds)
+                ? math.clamp(milliseconds, LaneDebtFloorMs, AdmissionCostClampMs)
+                : 0f;
         }
 
         private uint ComputeBlackboxHash(uint jobHash, float estimatedCostMs, float remainingBudgetMs, bool admitted)
@@ -683,15 +719,19 @@ namespace Hecton8.Core.Scheduling
     [BurstCompile]
     public static class JobAdmissionMath
     {
+        private const float DefaultCostMs = 0.025f;
         private const float EwmaWeight = 0.10f;
+        private const float CostClampMs = 1000f;
 
         /// <summary>Computes a 10 percent EWMA update with finite guards.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float UpdateEwma(float previousMs, float measuredMs)
         {
-            float previous = math.isfinite(previousMs) && previousMs > 0f ? previousMs : measuredMs;
-            float measured = math.isfinite(measuredMs) && measuredMs > 0f ? measuredMs : previous;
-            return math.lerp(previous, measured, EwmaWeight);
+            float measured = math.isfinite(measuredMs) && measuredMs > 0f ? measuredMs : DefaultCostMs;
+            float previous = math.isfinite(previousMs) && previousMs > 0f ? previousMs : measured;
+            previous = math.min(previous, CostClampMs);
+            measured = math.min(measured, CostClampMs);
+            return math.min(math.lerp(previous, measured, EwmaWeight), CostClampMs);
         }
     }
 }

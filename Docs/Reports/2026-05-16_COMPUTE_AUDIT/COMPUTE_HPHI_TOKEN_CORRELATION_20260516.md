@@ -206,4 +206,45 @@ Current SQLite-based total estimate:
 | Energy estimate | 2,488.38 MWh |
 | 30 kWh/day household equivalent | 82,946 home-days |
 
+## Strict Budget Gate Attempt
+
+Timestamp: 2026-05-17T00:00+04:00.
+
+The full strict H-Phi command with the old baseline absolute budgets timed out after 244 seconds. No completed `COMPUTE_HPHI_BUDGET_GATE_*.json` artifact was produced.
+
+Therefore:
+
+| Claim | Status |
+|---|---|
+| Current H-Phi score improved | proven by `COMPUTE_HPHI_CURRENT_20260516_171857.json` |
+| Old absolute budget gates are all green | false by current counters |
+| Fresh strict gate command produced an `EXIT=0`/`EXIT=1` artifact | not proven; command timed out |
+
+The honest operating state is: H-Phi score improved, but strict old budget compliance remains not clean.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 02:17 Superseding H-Phi Rebase
+
+This file's "Current H-Phi" section was current at 2026-05-16T17:18+04:00. A later static H-Phi scan now supersedes it for current-state reporting:
+
+`Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_0217.md`
+
+Latest current values:
+
+| Metric | Value |
+|---|---:|
+| Runtime H-Phi risk | 0.004847023 |
+| Runtime H-Phi narrow | 0.070058393 |
+| Data sovereignty | 0.131794933 |
+| Memory alignment | 0.531571219 |
+| DataVault refs | 1,108 |
+| Owner-blocked NativeArray refs | 5,143 |
+| Managed format surface | 541 |
+| Primary managed runtime risk | 155 |
+
+Delta from the 17:18 artifact: +0.000682084 Runtime H-Phi risk, +0.009252275 Runtime H-Phi narrow, +160 DataVault refs, -123 owner-blocked NativeArray refs.
+
+Token spend between the 17:18 and 02:17 artifacts: 2,183,475,652 tokens, USD 1,640.89 cache-aware, USD 11,075.08 no-cache. Marginal Runtime H-Phi risk efficiency: 3,201,182,922 tokens per +0.001.
+
 STATUS: AUDIT COMPLETE.

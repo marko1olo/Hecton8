@@ -1023,11 +1023,11 @@ namespace Hecton8.World
             if (_damageVolumeRead == null || _damageVolumeWrite == null)
                 return;
 
-            Graphics.SetRenderTarget(_damageVolumeRead, 0, CubemapFace.Unknown, -1);
+            UnityEngine.Graphics.SetRenderTarget(_damageVolumeRead, 0, CubemapFace.Unknown, -1);
             GL.Clear(false, true, Color.clear);
-            Graphics.SetRenderTarget(_damageVolumeWrite, 0, CubemapFace.Unknown, -1);
+            UnityEngine.Graphics.SetRenderTarget(_damageVolumeWrite, 0, CubemapFace.Unknown, -1);
             GL.Clear(false, true, Color.clear);
-            Graphics.SetRenderTarget(null);
+            UnityEngine.Graphics.SetRenderTarget(null);
             _queuedDamageVolumeStampCount = 0;
         }
 

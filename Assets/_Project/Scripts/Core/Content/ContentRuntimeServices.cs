@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -113,10 +112,26 @@ namespace Hecton8.Core.Content
         public unsafe bool Acquire(uint hash, long bytes, byte biomeId, ContentTier tier, bool isBiomeCache, int frame)
         {
             if (hash == 0u)
+            {
+                LogRefCountViolation(hash);
                 return false;
+            }
+            if (bytes < 0L)
+            {
+                LogInvalidAcquireMetadata(hash, bytes, tier);
+                return false;
+            }
+            if (tier > ContentTier.Overkill)
+            {
+                LogInvalidAcquireMetadata(hash, bytes, tier);
+                return false;
+            }
 
             if (!TryResolveNormalized(out ContentBundleRefState* states, out int* countPtr, out int count))
+            {
+                LogVaultUnavailable("acquire", hash);
                 return false;
+            }
 
             for (int i = 0; i < count; i++)
             {
@@ -141,7 +156,10 @@ namespace Hecton8.Core.Content
             }
 
             if (count >= _capacity)
+            {
+                LogBundleRefCapacityExceeded(hash, _capacity);
                 return false;
+            }
 
             states[count] = new ContentBundleRefState
             {
@@ -167,7 +185,10 @@ namespace Hecton8.Core.Content
             }
 
             if (!TryResolveNormalized(out ContentBundleRefState* states, out int* _, out int count))
+            {
+                LogVaultUnavailable("release", hash);
                 return false;
+            }
 
             for (int i = 0; i < count; i++)
             {
@@ -243,13 +264,28 @@ namespace Hecton8.Core.Content
 
         public unsafe bool Remove(uint hash)
         {
-            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* countPtr, out int count))
+            if (hash == 0u)
+            {
+                LogRefCountViolation(hash);
                 return false;
+            }
+
+            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* countPtr, out int count))
+            {
+                LogVaultUnavailable("remove", hash);
+                return false;
+            }
 
             for (int i = 0; i < count; i++)
             {
                 if (states[i].Hash != hash)
                     continue;
+
+                if (states[i].RefCount > 0)
+                {
+                    LogActiveRemoveRejected(hash, states[i].RefCount);
+                    return false;
+                }
 
                 int last = count - 1;
                 states[i] = states[last];
@@ -263,9 +299,18 @@ namespace Hecton8.Core.Content
 
         public unsafe long EstimateResidentBytes()
         {
-            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* _, out int count))
-                return 0L;
+            return EstimateResidentBytes(out int _);
+        }
 
+        public unsafe long EstimateResidentBytes(out int residentCount)
+        {
+            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* _, out int count))
+            {
+                residentCount = 0;
+                return 0L;
+            }
+
+            residentCount = count;
             long total = 0L;
             for (int i = 0; i < count; i++)
             {
@@ -364,6 +409,38 @@ namespace Hecton8.Core.Content
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidAcquireMetadata(uint hash, long bytes, ContentTier tier)
+        {
+            Debug.LogError("[ContentBundleReferenceCounter] Invalid acquire metadata hash=0x" +
+                           hash.ToString("X8") + " bytes=" + bytes + " tier=" + tier + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogActiveRemoveRejected(uint hash, int refCount)
+        {
+            Debug.LogError("[ContentBundleReferenceCounter] Refused to remove active bundle hash=0x" +
+                           hash.ToString("X8") + " refCount=" + refCount + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogVaultUnavailable(string operation, uint hash)
+        {
+            Debug.LogError("[ContentBundleReferenceCounter] Vault unavailable during " +
+                           operation + " hash=0x" + hash.ToString("X8") + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogBundleRefCapacityExceeded(uint hash, int capacity)
+        {
+            Debug.LogError("[ContentBundleReferenceCounter] Bundle ref ledger full capacity=" +
+                           capacity + " rejectedHash=0x" + hash.ToString("X8") + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogLedgerCountCorruption()
         {
             Debug.LogError("[ContentBundleReferenceCounter] Vault ledger count exceeded fixed capacity; cleared residency ledger.");
@@ -374,6 +451,8 @@ namespace Hecton8.Core.Content
     public sealed class ContentVfxPrewarmManifest : ScriptableObject
     {
         public const int MaxEntries = 64;
+        public const int MaxParticlePrefabDepth = 32;
+        public const int MaxParticlePrefabNodes = 256;
 
 #if UNITY_ADDRESSABLES_EXIST
         [Header("Addressable VFX")]
@@ -434,10 +513,10 @@ namespace Hecton8.Core.Content
         private readonly uint[] _bundleHandleHashes = new uint[BundleHandleCapacity];
         // COLD ALLOC: AsyncOperationHandle[256] - Addressables handles released by content authority - owner: ContentAuthorityRuntime
         private readonly AsyncOperationHandle[] _bundleHandles = new AsyncOperationHandle[BundleHandleCapacity];
-        // COLD ALLOC: List<AsyncOperationHandle>[64] - VFX prewarm handle ledger - owner: ContentAuthorityRuntime
-        private readonly List<AsyncOperationHandle> _vfxPrewarmHandles = new List<AsyncOperationHandle>(64);
-        // COLD ALLOC: List<AsyncOperationHandle>[64] - resident prewarmed VFX handles for release - owner: ContentAuthorityRuntime
-        private readonly List<AsyncOperationHandle> _vfxResidentHandles = new List<AsyncOperationHandle>(64);
+        // COLD ALLOC: AsyncOperationHandle[64] - fixed VFX prewarm handle ledger - owner: ContentAuthorityRuntime
+        private readonly AsyncOperationHandle[] _vfxPrewarmHandles = new AsyncOperationHandle[ContentVfxPrewarmManifest.MaxEntries];
+        // COLD ALLOC: AsyncOperationHandle[64] - fixed resident prewarmed VFX release ledger - owner: ContentAuthorityRuntime
+        private readonly AsyncOperationHandle[] _vfxResidentHandles = new AsyncOperationHandle[ContentVfxPrewarmManifest.MaxEntries];
 #endif
         private IDataVault _dataVault;
         private VRAMMonitor _vramMonitor;
@@ -456,6 +535,11 @@ namespace Hecton8.Core.Content
         private string _blackBoxDumpPath;
         private int _nextHologramIndex;
         private int _hologramsActive;
+        private bool _hologramPoolExhaustedLogged;
+#if UNITY_ADDRESSABLES_EXIST
+        private int _vfxPrewarmHandleCount;
+        private int _vfxResidentHandleCount;
+#endif
 
         public ContentAssetHashMap AssetHashMap => assetHashMap;
         public ContentBundleReferenceCounter BundleReferenceCounter => _bundleRefs;
@@ -464,7 +548,8 @@ namespace Hecton8.Core.Content
 
         private void Awake()
         {
-            int capacity = Mathf.Max(1, hologramPoolCapacity);
+            int capacity = Mathf.Clamp(hologramPoolCapacity, 1, MaxPendingLoadCount);
+            hologramPoolCapacity = capacity;
             // COLD ALLOC: Renderer[64] - Unity object bridge for vault pending-load records - owner: ContentAuthorityRuntime
             _pendingLoadTargets = new Renderer[PendingLoadCapacity];
             // COLD ALLOC: GameObject[capacity] - hidden hologram proxy pool - owner: ContentAuthorityRuntime
@@ -499,18 +584,10 @@ namespace Hecton8.Core.Content
             ClearBundleResidencyState();
 
 #if UNITY_ADDRESSABLES_EXIST
-            for (int i = 0; i < _vfxPrewarmHandles.Count; i++)
-            {
-                if (_vfxPrewarmHandles[i].IsValid())
-                    Addressables.Release(_vfxPrewarmHandles[i]);
-            }
-            _vfxPrewarmHandles.Clear();
-            for (int i = 0; i < _vfxResidentHandles.Count; i++)
-            {
-                if (_vfxResidentHandles[i].IsValid())
-                    Addressables.Release(_vfxResidentHandles[i]);
-            }
-            _vfxResidentHandles.Clear();
+            ReleaseVfxHandleRange(_vfxPrewarmHandles, _vfxPrewarmHandleCount);
+            ReleaseVfxHandleRange(_vfxResidentHandles, _vfxResidentHandleCount);
+            _vfxPrewarmHandleCount = 0;
+            _vfxResidentHandleCount = 0;
 #endif
             for (int i = 0; i < _hologramPool.Length; i++)
             {
@@ -536,8 +613,17 @@ namespace Hecton8.Core.Content
             if (_dataVault == null)
                 CacheDependencies();
 
-            if (assetHashMap == null || !assetHashMap.TryGetEntry(hash, out ContentAssetEntry entry))
+            if (assetHashMap == null)
+            {
+                LogMissingAssetHashMap(hash);
                 return false;
+            }
+
+            if (!assetHashMap.TryGetEntry(hash, out ContentAssetEntry entry))
+            {
+                LogMissingAssetHash(hash);
+                return false;
+            }
 
             bool accepted = _bundleRefs.Acquire(
                 hash,
@@ -569,15 +655,17 @@ namespace Hecton8.Core.Content
             }
 
             if (!handle.IsValid())
-                return true;
+            {
+                RollbackBundleAcquire(hash);
+                LogInvalidBundleHandle(hash);
+                return false;
+            }
 
             if (TryTrackBundleHandle(hash, handle))
                 return true;
 
-            _bundleRefs.Release(hash, Time.frameCount, out bool becameUnused);
-            if (becameUnused)
-                _bundleRefs.Remove(hash);
-            VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
+            RollbackBundleAcquire(hash);
+            LogBundleHandleTrackFailed(hash);
             return false;
         }
 #endif
@@ -609,13 +697,31 @@ namespace Hecton8.Core.Content
         public unsafe bool TrackAsyncLoad(uint hash, Renderer targetRenderer)
         {
             if (hash == 0u || targetRenderer == null)
+            {
+                LogInvalidAsyncLoadTrack(hash, targetRenderer == null);
                 return false;
+            }
 
             if (_dataVault == null)
                 CacheDependencies();
 
-            if (!TryResolvePendingLoadsNormalized(out ContentPendingLoadState* pendingLoads, out int* countPtr, out int count))
+            if (assetHashMap == null)
+            {
+                LogMissingAssetHashMap(hash);
                 return false;
+            }
+
+            if (!assetHashMap.TryGetEntry(hash, out ContentAssetEntry _))
+            {
+                LogMissingAssetHash(hash);
+                return false;
+            }
+
+            if (!TryResolvePendingLoadsNormalized(out ContentPendingLoadState* pendingLoads, out int* countPtr, out int count))
+            {
+                LogPendingLoadVaultUnavailable(hash);
+                return false;
+            }
 
             for (int i = 0; i < count; i++)
             {
@@ -626,7 +732,10 @@ namespace Hecton8.Core.Content
             }
 
             if (count >= PendingLoadCapacity)
+            {
+                LogPendingLoadCapacityExceeded(hash);
                 return false;
+            }
 
             pendingLoads[count] = new ContentPendingLoadState
             {
@@ -642,7 +751,10 @@ namespace Hecton8.Core.Content
         public unsafe bool CompleteAsyncLoad(uint hash, Renderer targetRenderer)
         {
             if (!TryResolvePendingLoadsNormalized(out ContentPendingLoadState* pendingLoads, out int* countPtr, out int count))
+            {
+                LogPendingLoadVaultUnavailable(hash);
                 return false;
+            }
 
             for (int i = count - 1; i >= 0; i--)
             {
@@ -655,6 +767,7 @@ namespace Hecton8.Core.Content
                 return true;
             }
 
+            LogAsyncLoadCompletionMiss(hash, targetRenderer == null);
             return false;
         }
 
@@ -663,10 +776,14 @@ namespace Hecton8.Core.Content
             if (assetHashMap == null)
             {
                 entry = default;
+                LogMissingAssetHashMap(hash);
                 return false;
             }
 
-            return assetHashMap.TryGetEntry(hash, out entry);
+            bool resolved = assetHashMap.TryGetEntry(hash, out entry);
+            if (!resolved)
+                LogMissingAssetHash(hash);
+            return resolved;
         }
 
         public void StartVfxPrewarm()
@@ -681,22 +798,38 @@ namespace Hecton8.Core.Content
             {
                 AssetReference reference = vfxPrewarmManifest.GetParticleSystem(i);
                 if (reference == null || !reference.RuntimeKeyIsValid())
+                {
+                    LogInvalidVfxPrewarmReference(i, true);
                     continue;
+                }
 
-                AsyncOperationHandle handle = reference.LoadAssetAsync<ParticleSystem>();
-                _vfxPrewarmHandles.Add(handle);
-                dispatched++;
+                AsyncOperationHandle handle = reference.LoadAssetAsync<UnityEngine.Object>();
+                if (TryQueueVfxPrewarmHandle(handle))
+                    dispatched++;
+                else if (handle.IsValid())
+                {
+                    LogVfxPrewarmLedgerFull(true);
+                    Addressables.Release(handle);
+                }
             }
 
             for (int i = 0; i < vfxPrewarmManifest.ComputeShaderCount && dispatched < ContentVfxPrewarmManifest.MaxEntries; i++)
             {
                 AssetReference reference = vfxPrewarmManifest.GetComputeShader(i);
                 if (reference == null || !reference.RuntimeKeyIsValid())
+                {
+                    LogInvalidVfxPrewarmReference(i, false);
                     continue;
+                }
 
                 AsyncOperationHandle handle = reference.LoadAssetAsync<ComputeShader>();
-                _vfxPrewarmHandles.Add(handle);
-                dispatched++;
+                if (TryQueueVfxPrewarmHandle(handle))
+                    dispatched++;
+                else if (handle.IsValid())
+                {
+                    LogVfxPrewarmLedgerFull(false);
+                    Addressables.Release(handle);
+                }
             }
 #endif
         }
@@ -750,7 +883,10 @@ namespace Hecton8.Core.Content
         private int ShowHologram(Renderer target)
         {
             if (target == null || _hologramPool == null || _hologramPool.Length == 0)
+            {
+                LogHologramProxyUnavailable(target == null);
                 return -1;
+            }
 
             int index = -1;
             GameObject proxy = null;
@@ -771,7 +907,15 @@ namespace Hecton8.Core.Content
             }
 
             if (proxy == null)
+            {
+                if (!_hologramPoolExhaustedLogged)
+                {
+                    _hologramPoolExhaustedLogged = true;
+                    LogHologramPoolExhausted();
+                }
+
                 return -1;
+            }
 
             _nextHologramIndex = index + 1;
             if (_nextHologramIndex >= poolLength)
@@ -783,6 +927,7 @@ namespace Hecton8.Core.Content
             proxyTransform.localScale = targetTransform.lossyScale;
             proxy.SetActive(true);
             _hologramsActive++;
+            _hologramPoolExhaustedLogged = false;
 
             return index;
         }
@@ -890,7 +1035,7 @@ namespace Hecton8.Core.Content
         private void TickVfxPrewarm()
         {
 #if UNITY_ADDRESSABLES_EXIST
-            for (int i = _vfxPrewarmHandles.Count - 1; i >= 0; i--)
+            for (int i = _vfxPrewarmHandleCount - 1; i >= 0; i--)
             {
                 AsyncOperationHandle handle = _vfxPrewarmHandles[i];
                 if (!handle.IsDone)
@@ -898,13 +1043,17 @@ namespace Hecton8.Core.Content
 
                 if (handle.Status == AsyncOperationStatus.Succeeded)
                 {
-                    if (handle.Result is ParticleSystem particleSystem)
-                        particleSystem.Simulate(0f, true, true, true);
+                    TryPrewarmParticleHandleResult(handle);
 
-                    _vfxResidentHandles.Add(handle);
+                    if (!TryQueueResidentVfxHandle(handle) && handle.IsValid())
+                    {
+                        LogVfxResidentLedgerFull();
+                        Addressables.Release(handle);
+                    }
                 }
                 else if (handle.IsValid())
                 {
+                    LogVfxPrewarmFailed();
                     Addressables.Release(handle);
                 }
 
@@ -914,6 +1063,78 @@ namespace Hecton8.Core.Content
         }
 
 #if UNITY_ADDRESSABLES_EXIST
+        private bool TryQueueVfxPrewarmHandle(AsyncOperationHandle handle)
+        {
+            if (!handle.IsValid() || _vfxPrewarmHandleCount >= _vfxPrewarmHandles.Length)
+                return false;
+
+            _vfxPrewarmHandles[_vfxPrewarmHandleCount] = handle;
+            _vfxPrewarmHandleCount++;
+            return true;
+        }
+
+        private bool TryQueueResidentVfxHandle(AsyncOperationHandle handle)
+        {
+            if (!handle.IsValid() || _vfxResidentHandleCount >= _vfxResidentHandles.Length)
+                return false;
+
+            _vfxResidentHandles[_vfxResidentHandleCount] = handle;
+            _vfxResidentHandleCount++;
+            return true;
+        }
+
+        private static void TryPrewarmParticleHandleResult(AsyncOperationHandle handle)
+        {
+            object result = handle.Result;
+            if (result is ParticleSystem particleSystem)
+            {
+                particleSystem.Simulate(0f, true, true, true);
+                return;
+            }
+
+            if (result is GameObject gameObject)
+            {
+                int visitedNodes = 0;
+                PrewarmParticleHierarchy(gameObject.transform, 0, ref visitedNodes);
+            }
+        }
+
+        private static void PrewarmParticleHierarchy(Transform root, int depth, ref int visitedNodes)
+        {
+            if (root == null)
+                return;
+            if (depth > ContentVfxPrewarmManifest.MaxParticlePrefabDepth)
+                return;
+            if (visitedNodes >= ContentVfxPrewarmManifest.MaxParticlePrefabNodes)
+                return;
+
+            visitedNodes++;
+            if (root.TryGetComponent(out ParticleSystem particleSystem))
+                particleSystem.Simulate(0f, true, true, true);
+
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount; i++)
+                PrewarmParticleHierarchy(root.GetChild(i), depth + 1, ref visitedNodes);
+        }
+
+        private static void ReleaseVfxHandleRange(AsyncOperationHandle[] handles, int count)
+        {
+            if (handles == null)
+                return;
+
+            if ((uint)count > (uint)handles.Length)
+                count = handles.Length;
+
+            for (int i = 0; i < count; i++)
+            {
+                AsyncOperationHandle handle = handles[i];
+                if (handle.IsValid())
+                    Addressables.Release(handle);
+
+                handles[i] = default;
+            }
+        }
+
         private bool TryTrackBundleHandle(uint hash, AsyncOperationHandle handle)
         {
             if (hash == 0u || !handle.IsValid())
@@ -980,16 +1201,20 @@ namespace Hecton8.Core.Content
 
         private void RemoveVfxPrewarmHandleAt(int index)
         {
-            int last = _vfxPrewarmHandles.Count - 1;
+            if ((uint)index >= (uint)_vfxPrewarmHandleCount)
+                return;
+
+            int last = _vfxPrewarmHandleCount - 1;
             _vfxPrewarmHandles[index] = _vfxPrewarmHandles[last];
-            _vfxPrewarmHandles.RemoveAt(last);
+            _vfxPrewarmHandles[last] = default;
+            _vfxPrewarmHandleCount = last;
         }
 #endif
 
         private unsafe void WriteTelemetry(uint flags)
         {
             VRAMPressureMonitor pressure = _vramPressure;
-            long estimate = _bundleRefs.EstimateResidentBytes();
+            long estimate = _bundleRefs.EstimateResidentBytes(out int bundleRefCount);
             float rawVramPressure = pressure != null ? pressure.VramPressureFactor : 0f;
             float rawRamPressure = pressure != null ? pressure.RamPressureFactor : 0f;
             bool nonFinite = !IsFinite(rawVramPressure) || !IsFinite(rawRamPressure);
@@ -1000,7 +1225,7 @@ namespace Hecton8.Core.Content
 
             int pendingLoadCount = GetPendingLoadCount();
             uint stateHash = unchecked((uint)pendingLoadCount * 73856093u) ^
-                             unchecked((uint)_bundleRefs.Count * 19349663u) ^
+                             unchecked((uint)bundleRefCount * 19349663u) ^
                              unchecked((uint)_hologramsActive * 83492791u);
 
             if (!TryResolveTelemetryPointer(out ContentAuthorityTelemetryEntry* telemetry, out int* cursorPtr))
@@ -1016,7 +1241,7 @@ namespace Hecton8.Core.Content
                 Flags = flags,
                 PendingLoads = pendingLoadCount,
                 HologramsActive = _hologramsActive,
-                BundleRefCount = _bundleRefs.Count,
+                BundleRefCount = bundleRefCount,
                 EstimatedVramBytes = estimate,
                 VramPressure01 = vramPressure,
                 RamPressure01 = ramPressure,
@@ -1151,6 +1376,14 @@ namespace Hecton8.Core.Content
                 pendingLoads[i] = default;
 
             *countPtr = 0;
+        }
+
+        private void RollbackBundleAcquire(uint hash)
+        {
+            if (_bundleRefs.Release(hash, Time.frameCount, out bool becameUnused) && becameUnused)
+                _bundleRefs.Remove(hash);
+
+            VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
         }
 
         private void ClearPendingLoadTargets()
@@ -1337,6 +1570,108 @@ namespace Hecton8.Core.Content
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingAssetHashMap(uint hash)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Asset hash map missing for hash 0x" + hash.ToString("X8") + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingAssetHash(uint hash)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] No content registry entry for hash 0x" + hash.ToString("X8") + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogBundleHandleTrackFailed(uint hash)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Failed to track Addressables bundle handle for hash 0x" + hash.ToString("X8") + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidBundleHandle(uint hash)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Invalid Addressables bundle handle for hash 0x" + hash.ToString("X8") + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidAsyncLoadTrack(uint hash, bool nullTarget)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Rejected async load tracking hash=0x" +
+                           hash.ToString("X8") + " nullTarget=" + nullTarget + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPendingLoadVaultUnavailable(uint hash)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Pending-load vault unavailable for hash 0x" + hash.ToString("X8") + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPendingLoadCapacityExceeded(uint hash)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Pending-load ledger full for hash 0x" + hash.ToString("X8") + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogAsyncLoadCompletionMiss(uint hash, bool nullTarget)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Async load completion had no pending entry hash=0x" +
+                           hash.ToString("X8") + " nullTarget=" + nullTarget + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidVfxPrewarmReference(int index, bool particle)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Invalid VFX prewarm Addressables reference kind=" +
+                           (particle ? "particle" : "compute") + " index=" + index + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogVfxPrewarmLedgerFull(bool particle)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] VFX prewarm handle ledger full kind=" +
+                           (particle ? "particle" : "compute") + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogVfxResidentLedgerFull()
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Resident VFX handle ledger full; releasing completed prewarm handle.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogVfxPrewarmFailed()
+        {
+            Debug.LogError("[ContentAuthorityRuntime] VFX prewarm handle failed; releasing Addressables handle.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogHologramProxyUnavailable(bool nullTarget)
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Hologram proxy unavailable nullTarget=" + nullTarget + ".");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogHologramPoolExhausted()
+        {
+            Debug.LogError("[ContentAuthorityRuntime] Hologram proxy pool exhausted; pending asset will remain invisible until a proxy frees.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogPendingLoadCountCorruption()
         {
             Debug.LogError("[ContentAuthorityRuntime] Pending load vault count exceeded fixed capacity; cleared pending-load ledger.");
@@ -1418,6 +1753,12 @@ namespace Hecton8.Core.Content
 
         public static bool CanDownload(ContentTier tier)
         {
+            if (!IsValidTier(tier))
+            {
+                LogInvalidContentTier(tier);
+                return false;
+            }
+
             if (tier != ContentTier.Overkill)
                 return true;
 
@@ -1443,21 +1784,14 @@ namespace Hecton8.Core.Content
 
         public static ContentVisualFeatureBudget ResolveVisualBudget(ContentTier tier)
         {
-            if (HectonXRRuntimeState.IsXRActive || SystemInfo.graphicsMemorySize <= 2048)
+            if (!IsValidTier(tier))
             {
-                return new ContentVisualFeatureBudget
-                {
-                    FeatureMask = DearLieOneDimensionalLut |
-                                  DearLieTriangleNoise |
-                                  DearLieDotProductVision,
-                    MaxParticles = 512,
-                    RaymarchSteps = 8,
-                    PomTaps = 0,
-                    SiltWakeLayers = 1,
-                    SaltCrystalLayers = 1,
-                    HullDentOctaves = 1
-                };
+                LogInvalidContentTier(tier);
+                return ResolveLowVisualBudget();
             }
+
+            if (HectonXRRuntimeState.IsXRActive || SystemInfo.graphicsMemorySize <= 2048)
+                return ResolveLowVisualBudget();
 
             if (tier == ContentTier.Overkill && SystemInfo.graphicsMemorySize > 4096)
             {
@@ -1489,6 +1823,34 @@ namespace Hecton8.Core.Content
                 SaltCrystalLayers = 2,
                 HullDentOctaves = 2
             };
+        }
+
+        private static bool IsValidTier(ContentTier tier)
+        {
+            return tier <= ContentTier.Overkill;
+        }
+
+        private static ContentVisualFeatureBudget ResolveLowVisualBudget()
+        {
+            return new ContentVisualFeatureBudget
+            {
+                FeatureMask = DearLieOneDimensionalLut |
+                              DearLieTriangleNoise |
+                              DearLieDotProductVision,
+                MaxParticles = 512,
+                RaymarchSteps = 8,
+                PomTaps = 0,
+                SiltWakeLayers = 1,
+                SaltCrystalLayers = 1,
+                HullDentOctaves = 1
+            };
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidContentTier(ContentTier tier)
+        {
+            Debug.LogError("[ContentTieredGroupPolicy] Invalid content tier value=" + (byte)tier + ".");
         }
     }
 }

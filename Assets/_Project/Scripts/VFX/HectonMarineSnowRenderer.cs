@@ -125,7 +125,7 @@ namespace Hecton8.Environment
             public int Frame;
             public int ActiveSiltCount;
             public int Capacity;
-            public int GlobalWakeCount;
+            public int DynamicWakeCount;
             public float Throttle;
             public float SystemStress01;
             public float MaxSiltSpeed;
@@ -198,7 +198,9 @@ namespace Hecton8.Environment
             internal static readonly int AbyssalFlowSpacingId = Shader.PropertyToID("_AbyssalFlowSpacing");
             internal static readonly int AbyssalFlowTextureParamsId = Shader.PropertyToID("_AbyssalFlowTextureParams");
             internal static readonly int AbyssalFlowTextureActiveId = Shader.PropertyToID("_AbyssalFlowTextureActive");
-            internal static readonly int GlobalWakeParamsId = Shader.PropertyToID("_GlobalWakeParams");
+            internal static readonly int DynamicWakesId = Shader.PropertyToID("_DynamicWakes");
+            internal static readonly int DynamicWakeVectorsId = Shader.PropertyToID("_DynamicWakeVectors");
+            internal static readonly int DynamicWakeParamsId = Shader.PropertyToID("_DynamicWakeParams");
             internal static readonly int MaelstromsId = Shader.PropertyToID("_MarineSnowMaelstroms");
             internal static readonly int MaelstromParamsId = Shader.PropertyToID("_MarineSnowMaelstromParams");
             internal static readonly int FrameConstantsId = Shader.PropertyToID("_HectonMarineSnowFrame");
@@ -425,6 +427,7 @@ namespace Hecton8.Environment
         private IWeatherService _weatherService;
         private DynamicResolutionScaler _dynamicResolutionScaler;
         private VRAMMonitor _vramMonitor;
+        private ITickDispatcher _tickDispatcher;
         private int _nextFluidRebindFrame;
         private int _nextDataVaultRebindFrame;
         private Vector4 _fogDensityTexelSize;
@@ -444,7 +447,9 @@ namespace Hecton8.Environment
         private Vector4 _boundAbyssalFlowCenter;
         private Vector4 _boundAbyssalFlowSpacing;
         private Vector4 _boundAbyssalFlowTextureParams;
-        private Vector4 _boundGlobalWakeParams;
+        private GraphicsBuffer _boundDynamicWakeBuffer;
+        private GraphicsBuffer _boundDynamicWakeVectorBuffer;
+        private Vector4 _boundDynamicWakeParams = InvalidVector;
         private Vector4 _boundMaelstromParams = InvalidVector;
         private float _boundAbyssalFlowTextureActive = float.NaN;
         private float _boundFlashlightActive = float.NaN;
@@ -505,13 +510,14 @@ namespace Hecton8.Environment
         private int _lastTelemetryPublishFrame = -TelemetryPublishFrameCadence;
         private int _telemetryWriteIndex;
         private int _telemetryWrittenCount;
-        private int _debugGlobalWakeCount;
+        private int _debugDynamicWakeCount;
         private Vector3 _pendingAupShiftOffset;
         private bool _vehicleCommandListenerRegistered;
         private bool _nativeStateReady;
         private bool _blackBoxDumped;
         private bool _hotSwapRegistered;
         private bool _scalabilityEventsRegistered;
+        private bool _dispatcherReady;
         private bool _particleBuffersNeedGpuBootstrap;
         private bool _externalGpuBindingsDirty = true;
         private bool _sonarGlowGlobalsDirty = true;
@@ -576,6 +582,8 @@ namespace Hecton8.Environment
             _weatherService = null;
             _dynamicResolutionScaler = null;
             _vramMonitor = null;
+            _tickDispatcher = null;
+            _dispatcherReady = false;
             _nextFluidRebindFrame = 0;
             _nextDataVaultRebindFrame = 0;
         }
@@ -722,6 +730,7 @@ namespace Hecton8.Environment
 
         private void RefreshCachedRegistryServices()
         {
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Dispatcher, GlobalRegistry.TickDispatcher);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.FluidRuntime, GlobalRegistry.Fluid);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Weather, GlobalRegistry.Weather);
@@ -735,6 +744,23 @@ namespace Hecton8.Environment
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    ITickDispatcher tickDispatcher = currentService as ITickDispatcher;
+                    if (!ReferenceEquals(_tickDispatcher, tickDispatcher))
+                    {
+                        if (_registeredTick)
+                        {
+                            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                            _registeredTick = false;
+                        }
+
+                        _tickDispatcher = tickDispatcher;
+                    }
+
+                    _dispatcherReady = tickDispatcher != null;
+                    if (_dispatcherReady)
+                        TryRegisterTick();
+                    break;
                 case GlobalRegistryServiceSlot.FluidRuntime:
                     _fluidEngine = currentService as HectonFluidEngine;
                     break;
@@ -1068,7 +1094,7 @@ namespace Hecton8.Environment
         {
             if (_registeredTick)
                 return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || !_dispatcherReady)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
@@ -1359,8 +1385,13 @@ namespace Hecton8.Environment
             marineSnowCompute.SetBuffer(_clearVisibleKernel, ShaderIds.IndirectArgsId, _indirectArgsBuffer);
             marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.AbyssalFlowFieldResultId, _emptyAbyssalFlowBuffer);
             _boundAbyssalFlowBuffer = _emptyAbyssalFlowBuffer;
-            marineSnowCompute.SetVector(ShaderIds.GlobalWakeParamsId, Vector4.zero);
-            _boundGlobalWakeParams = Vector4.zero;
+            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.DynamicWakesId, _emptyAbyssalFlowBuffer);
+            _boundDynamicWakeBuffer = _emptyAbyssalFlowBuffer;
+            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.DynamicWakeVectorsId, _emptyAbyssalFlowBuffer);
+            _boundDynamicWakeVectorBuffer = _emptyAbyssalFlowBuffer;
+            Vector4 dynamicWakeParams = SanitizeDynamicWakeParams(Vector4.zero);
+            marineSnowCompute.SetVector(ShaderIds.DynamicWakeParamsId, dynamicWakeParams);
+            _boundDynamicWakeParams = dynamicWakeParams;
             marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.MaelstromsId, _emptyAbyssalFlowBuffer);
             _boundSimulationMaelstromBuffer = _emptyAbyssalFlowBuffer;
             marineSnowCompute.SetVector(ShaderIds.MaelstromParamsId, Vector4.zero);
@@ -1548,7 +1579,7 @@ namespace Hecton8.Environment
                 ShaderIds.FlashlightActiveId,
                 flashlightActive,
                 ref _boundFlashlightActive);
-            RefreshGlobalWakeBinding();
+            RefreshDynamicWakeBinding();
         }
 
         private void RefreshColdGpuBindings(float dt)
@@ -1627,11 +1658,44 @@ namespace Hecton8.Environment
             SetComputeBinaryFloatIfChanged(ShaderIds.AbyssalFlowTextureActiveId, textureActive, ref _boundAbyssalFlowTextureActive);
         }
 
-        private void RefreshGlobalWakeBinding()
+        private void RefreshDynamicWakeBinding()
         {
-            Vector4 wakeParams = Shader.GetGlobalVector(ShaderIds.GlobalWakeParamsId);
-            SetComputeVectorHotIfChanged(ShaderIds.GlobalWakeParamsId, wakeParams, ref _boundGlobalWakeParams);
-            _debugGlobalWakeCount = math.max(0, (int)wakeParams.z);
+            GraphicsBuffer wakeBuffer = _emptyAbyssalFlowBuffer;
+            GraphicsBuffer wakeVectorBuffer = _emptyAbyssalFlowBuffer;
+            Vector4 wakeParams = Vector4.zero;
+
+            HectonFluidEngine fluidEngine = _fluidEngine;
+            if (fluidEngine != null &&
+                fluidEngine.TryGetDynamicWakeGpuPayload(
+                    out GraphicsBuffer publishedWakeBuffer,
+                    out GraphicsBuffer publishedWakeVectorBuffer,
+                    out Vector4 publishedWakeParams) &&
+                publishedWakeBuffer != null &&
+                publishedWakeBuffer.IsValid() &&
+                publishedWakeVectorBuffer != null &&
+                publishedWakeVectorBuffer.IsValid())
+            {
+                wakeBuffer = publishedWakeBuffer;
+                wakeVectorBuffer = publishedWakeVectorBuffer;
+                wakeParams = publishedWakeParams;
+            }
+
+            wakeParams = SanitizeDynamicWakeParams(wakeParams);
+            SetKernelBufferIfChanged(_kernelIndex, ShaderIds.DynamicWakesId, wakeBuffer, ref _boundDynamicWakeBuffer);
+            SetKernelBufferIfChanged(_kernelIndex, ShaderIds.DynamicWakeVectorsId, wakeVectorBuffer, ref _boundDynamicWakeVectorBuffer);
+            SetComputeVectorHotIfChanged(ShaderIds.DynamicWakeParamsId, wakeParams, ref _boundDynamicWakeParams);
+            _debugDynamicWakeCount = math.max(0, (int)wakeParams.z);
+        }
+
+        private static Vector4 SanitizeDynamicWakeParams(Vector4 wakeParams)
+        {
+            if (!IsFiniteVector(wakeParams))
+                return Vector4.zero;
+
+            float lowTier = wakeParams.y >= 0.5f ? 1f : 0f;
+            float slotLimit = math.clamp(wakeParams.x, 0f, lowTier > 0.5f ? 4f : 16f);
+            float activeCount = math.clamp(wakeParams.z, 0f, slotLimit);
+            return new Vector4(slotLimit, lowTier, activeCount, math.max(0f, wakeParams.w));
         }
 
         private void RefreshMaelstromBinding()
@@ -2196,6 +2260,14 @@ namespace Hecton8.Environment
                    math.abs(left.w - right.w) <= epsilon;
         }
 
+        private static bool IsFiniteVector(Vector4 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z) &&
+                   math.isfinite(value.w);
+        }
+
         private static bool NearlyEqual(Matrix4x4 left, Matrix4x4 right, float epsilon)
         {
             return math.abs(left.m00 - right.m00) <= epsilon &&
@@ -2444,7 +2516,7 @@ namespace Hecton8.Environment
                 receiveShadows = false,
                 camera = _targetCameraComponent
             };
-            Graphics.RenderMeshIndirect(renderParams, _quadMesh, _indirectArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, _quadMesh, _indirectArgsBuffer, 1, 0);
         }
 
         private void ReleaseBuffers()
@@ -2493,6 +2565,8 @@ namespace Hecton8.Environment
             _boundSimulationFlowFieldBuffer = null;
             _boundSimulationVisibleParticleIndexBuffer = null;
             _boundSimulationIndirectArgsBuffer = null;
+            _boundDynamicWakeBuffer = null;
+            _boundDynamicWakeVectorBuffer = null;
             _boundSimulationMaelstromBuffer = null;
             _boundMaelstromUploadHash = 0u;
             _boundMaelstromUploadCount = -1;
@@ -2508,7 +2582,7 @@ namespace Hecton8.Environment
             _boundAbyssalFlowCenter = Vector4.zero;
             _boundAbyssalFlowSpacing = Vector4.zero;
             _boundAbyssalFlowTextureParams = Vector4.zero;
-            _boundGlobalWakeParams = Vector4.zero;
+            _boundDynamicWakeParams = InvalidVector;
             _boundMaelstromParams = Vector4.zero;
             _boundCaveVoxelHalfExtents = Vector4.zero;
             _boundCaveVoxelInvDoubleHalfExtents = Vector4.zero;
@@ -2672,7 +2746,7 @@ namespace Hecton8.Environment
                 Frame = Time.frameCount,
                 ActiveSiltCount = math.max(0, _activeParticleCount),
                 Capacity = math.max(0, _allocatedParticleCapacity),
-                GlobalWakeCount = math.max(0, _debugGlobalWakeCount),
+                DynamicWakeCount = math.max(0, _debugDynamicWakeCount),
                 Throttle = _lastVehicleThrottle,
                 SystemStress01 = systemStress01,
                 MaxSiltSpeed = maxSpeed,
@@ -2733,7 +2807,7 @@ namespace Hecton8.Environment
                 writer.Write(entry.Frame);
                 writer.Write(entry.ActiveSiltCount);
                 writer.Write(entry.Capacity);
-                writer.Write(entry.GlobalWakeCount);
+                writer.Write(entry.DynamicWakeCount);
                 writer.Write(entry.Throttle);
                 writer.Write(entry.SystemStress01);
                 writer.Write(entry.MaxSiltSpeed);

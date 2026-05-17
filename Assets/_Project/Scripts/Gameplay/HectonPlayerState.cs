@@ -340,7 +340,7 @@ namespace Hecton8.Gameplay
         private const int VaultKinematicRepairTargetResultsFlag = 1 << 3;
         private int _vaultNativeStateMask;
 
-        public void EnsureScheduledSweepState(int commandCount, int resultCount)
+        public void EnsureScheduledSweepState(int commandCount, int resultCount, IDataVault vault)
         {
             int requiredCommandCount = ResolveCacheLinePaddedElementCount<CapsulecastCommand>(commandCount);
             int requiredResultCount = ResolveCacheLinePaddedElementCount<RaycastHit>(resultCount);
@@ -362,7 +362,8 @@ namespace Hecton8.Gameplay
                     requiredCommandCount,
                     nameof(ScheduledSweepCommands),
                     VaultScheduledSweepCommandsFlag,
-                    NativeArrayOptions.UninitializedMemory);
+                    NativeArrayOptions.UninitializedMemory,
+                    vault);
             }
 
             if (!ScheduledSweepResults.IsCreated)
@@ -372,7 +373,8 @@ namespace Hecton8.Gameplay
                     requiredResultCount,
                     nameof(ScheduledSweepResults),
                     VaultScheduledSweepResultsFlag,
-                    NativeArrayOptions.UninitializedMemory);
+                    NativeArrayOptions.UninitializedMemory,
+                    vault);
             }
         }
 
@@ -385,7 +387,7 @@ namespace Hecton8.Gameplay
             return math.max(safeCount, (paddedBytes + elementBytes - 1) / elementBytes);
         }
 
-        public void EnsureKinematicRepairTargetState(int commandCount, int resultCount)
+        public void EnsureKinematicRepairTargetState(int commandCount, int resultCount, IDataVault vault)
         {
             if (!KinematicRepairTargetCommands.IsCreated)
             {
@@ -394,7 +396,8 @@ namespace Hecton8.Gameplay
                     math.max(1, commandCount),
                     nameof(KinematicRepairTargetCommands),
                     VaultKinematicRepairTargetCommandsFlag,
-                    NativeArrayOptions.ClearMemory);
+                    NativeArrayOptions.ClearMemory,
+                    vault);
             }
 
             if (!KinematicRepairTargetResults.IsCreated)
@@ -404,7 +407,8 @@ namespace Hecton8.Gameplay
                     math.max(1, resultCount),
                     nameof(KinematicRepairTargetResults),
                     VaultKinematicRepairTargetResultsFlag,
-                    NativeArrayOptions.ClearMemory);
+                    NativeArrayOptions.ClearMemory,
+                    vault);
             }
         }
 
@@ -413,10 +417,10 @@ namespace Hecton8.Gameplay
             int count,
             string label,
             int vaultFlag,
-            NativeArrayOptions options) where T : struct
+            NativeArrayOptions options,
+            IDataVault vault) where T : struct
         {
             int safeCount = math.max(1, count);
-            IDataVault vault = GlobalRegistry.DataVault;
             if (vault != null)
             {
                 NativeArray<T> vaultArray = vault.GetBuffer<T>(

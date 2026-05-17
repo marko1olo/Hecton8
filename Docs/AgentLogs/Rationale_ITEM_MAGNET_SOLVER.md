@@ -2,7 +2,7 @@
 
 Prompt: ITEM_MAGNET_SOLVER
 Domain: GAMEPLAY/ITEMS
-Status: VERIFIED MASTER GRADE
+Status: SOURCE-CLEAN / BUILD GATE DEFERRED PER USER NO-REBUILD-EVERY-TIME ORDER
 
 ## Initial Decision Log
 
@@ -353,3 +353,87 @@ Solution: Ran three no-restore core build attempts. Attempt 1 failed outside ite
 Rejected Alternatives: Claiming the stale Pass 20 green build; editing winch, lockstep, or ecosystem ownership from the item-magnet task without a direct item contract; hiding the dependency wall.
 Scalability potential: No runtime scalability change for loot magnet. The item magnet Low/Middle/High/Ultra source remains clean while external owners repair compile drift.
 Hardware Impact: 0 runtime impact in item magnet. Failed build gates totaled 294.75 seconds; no microseconds claimed.
+
+Problem: `PickupItem` and duplicate `HectonItem` registered through void `GlobalRegistry.Register*` wrappers, then polled `GlobalRegistry.*Tickables.Contains(this)` to infer registration state. That was a cold-path cache walk and a weaker truth source than the existing atomic `TryRegister*` contract.
+Solution: Replaced post-register collection polling with `GlobalRegistry.TryRegisterSlowTickable`, `TryRegisterFixedTickable`, and `TryRegisterUpdatable` return values inside the item domain.
+Rejected Alternatives: Adding new registry APIs; leaving the collection poll because it was cold-path only; editing unrelated systems that still use the older pattern.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The item pickup surfaces now record dispatcher registration acceptance directly, which avoids stale state during dispatcher failure or concurrent registry churn.
+Hardware Impact: Cold registration path only. No benchmarked hot-frame microseconds claimed.
+
+Problem: Current build validation is blocked again outside item magnet after the registry commit-state patch.
+Solution: Ran item-domain forbidden scans, interpolation scan, local NativeArray ownership scan, registration-poll scan, scoped `git diff --check`, and two no-restore core build attempts. The first build timed out after 364.22 seconds and spawned dotnet workers were stopped. The retry failed outside item magnet with 40 `SubmarineFluidDynamics.cs` errors for missing exterior thermal anomaly/hazard fields. No item-magnet compile errors were emitted.
+Rejected Alternatives: Claiming the stale green result; editing submarine fluid/thermal ownership from the loot magnet task; hiding the timeout or leaving dotnet workers running.
+Scalability potential: No runtime scalability change for loot magnet. Low still uses 10 Hz cheap movement; High/Ultra still preserve wake/fluid/debris visual-overkill lanes.
+Hardware Impact: 0 runtime impact in item magnet. Validation failed in an external domain; no microseconds claimed.
+
+Problem: `PickupItem.FixedTick` already rejected non-finite sampled currents, but still wrote `_lastSpatialPosition = transform.position` after force enqueue and used `transform.position.y` for submerged-depth checks without a finite gate.
+Solution: Added finite pickup transform checks before fixed-tick spatial refresh state writes and before submerged-depth calculation. Non-finite transforms now fail closed through the existing damping restore path instead of feeding spatial hashes or current-force decisions.
+Rejected Alternatives: Trusting the earlier SlowTick spatial guard; allowing `SurfaceStateUtility` to receive NaN depth; editing world spatial hash internals from the item task.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged for valid transforms. Bad pickup presentation data now stops at the item boundary before downstream world/fauna/current systems waste work.
+Hardware Impact: Branch-only fixed-tick guard. No benchmarked microseconds claimed.
+
+Problem: Current build validation shifted again after the fixed-tick NaN vaccination.
+Solution: Captured `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` output through a log file. The latest failure is outside item magnet: missing `Hecton8.Core.Memory.Defrag` namespace and `MemoryDefragPhase` in `SystemDispatcher.cs` / `GlobalDataVault.cs`. No item-magnet compile errors were emitted.
+Rejected Alternatives: Claiming the previous submarine-fluid wall is still current; editing core memory-defrag ownership from the loot magnet task; treating an empty exit-1 build as evidence without recapturing output.
+Scalability potential: No runtime scalability change for loot magnet. Low keeps 10 Hz cheap movement; High/Ultra keep wake/fluid/debris visual-overkill lanes.
+Hardware Impact: 0 runtime impact in item magnet. Validation failed in external core memory wiring; no microseconds claimed.
+
+Problem: Cold item paths still read transform data before finite ownership checks. `RegisterSpatialHandle` wrote `_lastSpatialPosition` from `transform.position`, world-state identity anchored on `transform.position`, and overflow scatter in both pickup surfaces could derive force vectors from non-finite pickup/interactor transforms.
+Solution: Added finite gates before spatial registration and world-state identity creation in `PickupItem`; cached interactor position once before AUP conversion; guarded pickup/interactor positions and fallback forward vectors before overflow scatter in `PickupItem` and duplicate `HectonItem`.
+Rejected Alternatives: Relying only on SlowTick/FixedTick guards; allowing non-finite world-state keys to be generated; queuing default scatter forces from poisoned transforms; editing world spatial hash internals from the item task.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged for valid data. Bad cold-path item data now fails at the item boundary before world-state, fauna/spatial hash, or physics-force consumers do wasted work.
+Hardware Impact: Cold-path branch guards only. No benchmarked microseconds claimed.
+
+Problem: Current build validation moved again after the cold-path transform vaccination.
+Solution: Re-ran the captured no-restore core build. The latest failure is outside item magnet: `SubmarineFluidDynamics.cs` references missing `_exteriorBuoyancySampleLocalPoints` at three call sites. No item-magnet compile errors were emitted.
+Rejected Alternatives: Carrying forward stale core-memory defrag errors; editing submarine fluid ownership from the loot magnet task; claiming green because item-domain scans are clean.
+Scalability potential: No runtime scalability change for loot magnet. Low keeps 10 Hz cheap movement; High/Ultra keep wake/fluid/debris visual-overkill lanes.
+Hardware Impact: 0 runtime impact in item magnet. Validation failed in external submarine fluid code after 83.60 seconds; no microseconds claimed.
+
+Problem: The item-domain transform checks rejected non-finite `Vector3` inputs, but the `AbsoluteUniversePosition.FromRuntimePosition` conversion result was still trusted in manual pickup signals, magnet DataVault ingest, and player fallback pose resolution.
+Solution: Added post-conversion finite AUP helpers. `PickupItem`, duplicate `HectonItem`, and `LootMagnetSystem` now publish/write only if the converted AUP local payload is finite; direct `FromRuntimePosition` calls in the scoped item-magnet surface now exist only inside finite-guard helper bodies.
+Rejected Alternatives: Trusting pre-conversion `Vector3` checks only; publishing default-origin fallback AUPs; writing possibly poisoned AUPs into `GlobalDataVault`; adding a new signal lane instead of hardening the existing typed lane.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged for valid data. Low avoids wasted downstream inventory/VFX/fluid work on poisoned item/player positions. High/Ultra keep wake/fluid/debris visual-overkill lanes only when AUP authority is finite.
+Hardware Impact: Branch-only guard on ingest/manual-pickup paths. No benchmarked microseconds claimed.
+
+Problem: Current build validation did not reach compiler diagnostics after the AUP conversion guard pass.
+Solution: Ran scoped forbidden, interpolation, local NativeArray ownership, direct `FromRuntimePosition`, and scoped `git diff --check` scans; all item-magnet scans are clean. The first no-restore core build returned `-1` with an empty log after 194.09 seconds; the retry timed out after 608.05 seconds while external dotnet build processes were active.
+Rejected Alternatives: Claiming the stale previous compile wall; claiming green without compiler output; killing unrelated external dotnet build processes owned by other agents.
+Scalability potential: No runtime scalability change. The item magnet Low/Middle/High/Ultra source remains source-clean pending a non-contended build gate.
+Hardware Impact: 0 runtime impact. Validation infrastructure contention only; no microseconds claimed.
+
+Problem: Current non-contended build validation is blocked outside the item magnet domain.
+Solution: Re-ran the no-restore core build after dotnet contention cleared. The build failed with one external error: `SubmarineFluidDynamics.cs(1439,41)` cannot resolve `InventoryEventPayload`. No item-magnet compiler diagnostics were emitted.
+Rejected Alternatives: Carrying forward the contention-only status; editing submarine fluid ownership from the loot magnet task; claiming a green build without compiler proof.
+Scalability potential: No runtime scalability change for loot magnet. Low keeps 10 Hz cheap movement; High/Ultra keep wake/fluid/debris visual-overkill lanes.
+Hardware Impact: 0 runtime impact in item magnet. Build gate failed after 47.10 seconds outside the assigned domain.
+
+Problem: Multiplatform ABI scan found two unpacked item-magnet structs: `LootMagnetJob` and `LootMagnetVaultViews`.
+Solution: Verified packet-facing structs (`LootMagnetSignalEvent`, `LootMagnetTelemetryEntry`, emitted item/acoustic/wake/fluid/debris signals, and embedded AUP payloads) already use explicit `Pack=1` layouts. Rejected packing `LootMagnetJob`/`LootMagnetVaultViews` because they carry `NativeArray<T>` handles; forcing `Pack=1` would place native pointer fields at unaligned offsets on ARM64 and is a Quest risk, not a fix.
+Rejected Alternatives: Blindly applying `Pack=1` to every struct; creating duplicate packed job DTOs that are never serialized; treating NativeArray handle containers as wire packets.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged. ABI-stable payloads remain portable while Burst/job handle containers retain platform-safe pointer alignment.
+Hardware Impact: 0 runtime impact. This is source audit and layout-risk avoidance, not measured speed work.
+
+Problem: The adjacent inventory SPSC queue payloads still used implicit sequential layout while the item-acquisition path depends on a stable item/inventory signal boundary. `InventoryEventPayload` currently resolves to 24 bytes and `InventoryPhysicalDropRequestPayload` to 48 bytes by field math, but that was not encoded in source for Quest/ARM64 review.
+Solution: Added explicit `Pack=1` and fixed `Size` values to both inventory queue payload structs without changing field order or public method signatures.
+Rejected Alternatives: Leaving implicit layout because the current field order happens to align; moving item magnet back to the legacy inventory queue; changing `IInventoryEventListener` or publish signatures during a batch.
+Scalability potential: Low/Middle/High/Ultra item magnet behavior is unchanged. This protects the inventory boundary while Low keeps the 10 Hz magnet fake and High/Ultra keep wake/fluid/debris visual-overkill signal consumers.
+Hardware Impact: 0 hot-frame runtime impact. Attribute-only ABI hardening; no benchmarked microseconds claimed.
+
+Problem: The compile gate is required for final proof, but the current user instruction explicitly says not to run a `dotnet rebuild` every time.
+Solution: Deferred the compile gate after this ABI-only source patch and ran static validation instead: inventory layout scan, scoped forbidden-pattern scan, local NativeArray ownership scan, and scoped `git diff --check`.
+Rejected Alternatives: Running another full build immediately against instruction; claiming a green build from the previous pass; claiming item-magnet compile failure without fresh compiler output.
+Scalability potential: No runtime scalability change.
+Hardware Impact: 0 runtime impact. Validation only.
+
+Problem: The item-magnet blackbox writer had exact 128-byte records, but still used the default `FileStream` buffer for a roughly 38 KiB fault dump. On Steam Deck or MicroSD-class storage, tiny default buffering is unnecessary pressure during a fault path.
+Solution: Added `TelemetryDumpFileBufferBytes = 64 * 1024` and passed it into the `FileStream` constructor. Dump version, record size, field order, and chronological ring order are unchanged.
+Rejected Alternatives: Allocating a large managed byte array per dump; switching to write-through I/O; changing the telemetry binary ABI again; moving blackbox ownership out of the item-magnet system.
+Scalability potential: Low/Middle/High/Ultra gameplay behavior is unchanged. Fault export is less likely to fragment into small buffered writes on handheld/storage-limited hardware.
+Hardware Impact: 0 hot-frame runtime impact. Fault-path I/O only; no benchmarked microseconds claimed.
+
+Problem: The compile gate remains required for final proof, but the no-rebuild-every-time order still applies after this small I/O patch.
+Solution: Deferred build again and used static validation: dump-buffer scan, scoped forbidden-pattern scan, local NativeArray ownership scan, and scoped `git diff --check`.
+Rejected Alternatives: Running another full build immediately against instruction; claiming runtime I/O gain without MicroSD profiling; claiming green from older build output.
+Scalability potential: No runtime scalability change.
+Hardware Impact: 0 runtime impact outside blackbox fault export.

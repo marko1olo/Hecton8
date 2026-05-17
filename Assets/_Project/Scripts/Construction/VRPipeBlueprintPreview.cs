@@ -85,7 +85,7 @@ namespace Hecton8.Construction
             if (_cachedMatrixCount <= 0)
                 return;
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 segmentMesh,
                 0,
                 previewMaterial,

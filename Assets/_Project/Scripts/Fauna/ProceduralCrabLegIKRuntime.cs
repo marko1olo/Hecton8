@@ -1,6 +1,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
@@ -575,8 +576,6 @@ namespace Hecton8.AI
         private const int MinCommandsPerJob = 32;
         private const int TelemetryCapacity = 300;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ANIM_PROCEDURAL_BEHAVIOR.bin";
-        private const string NativeMemoryOwner = nameof(ProceduralCrabLegIKRuntime);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly int BodyPoseBufferId = Shader.PropertyToID("_H8CrabBodyPoseBuffer");
         private static readonly int LegJointBufferId = Shader.PropertyToID("_H8CrabLegJointBuffer");
 
@@ -650,16 +649,17 @@ namespace Hecton8.AI
         // COLD ALLOC: int[maxEntities] - free-slot stack for data-only crab registration - owner: ProceduralCrabLegIKRuntime
         private int[] _freeSlots;
 
-        private NativeArray<ProceduralCrabLegEntityState> _entities;
-        private NativeArray<float3> _footPositions;
-        private NativeArray<float3> _targetFootPositions;
-        private NativeArray<ProceduralCrabLegStepState> _stepStates;
-        private NativeArray<RaycastCommand> _raycastCommands;
-        private NativeArray<RaycastHit> _raycastHits;
-        private NativeArray<int> _raycastLegMask;
-        private NativeArray<ProceduralCrabBodyPose> _bodyPoses;
-        private NativeArray<ProceduralCrabSolvedJointMatrices> _solvedJointMatrices;
-        private NativeArray<ProceduralCrabIkTelemetryEntry> _telemetryRing;
+        private IDataVault _dataVault;
+        private VaultBufferHandle<ProceduralCrabLegEntityState> _entitiesHandle;
+        private VaultBufferHandle<float3> _footPositionsHandle;
+        private VaultBufferHandle<float3> _targetFootPositionsHandle;
+        private VaultBufferHandle<ProceduralCrabLegStepState> _stepStatesHandle;
+        private VaultBufferHandle<RaycastCommand> _raycastCommandsHandle;
+        private VaultBufferHandle<RaycastHit> _raycastHitsHandle;
+        private VaultBufferHandle<int> _raycastLegMaskHandle;
+        private VaultBufferHandle<ProceduralCrabBodyPose> _bodyPosesHandle;
+        private VaultBufferHandle<ProceduralCrabSolvedJointMatrices> _solvedJointMatricesHandle;
+        private VaultBufferHandle<ProceduralCrabIkTelemetryEntry> _telemetryRingHandle;
 
         private GraphicsBuffer _bodyPoseGraphicsBuffer;
         private GraphicsBuffer _jointMatrixGraphicsBuffer;
@@ -668,7 +668,6 @@ namespace Hecton8.AI
         private int _argsUploadInstanceCount = -1;
 
         private JobHandle _pendingHandle;
-        private JobHandle _disposeHandle;
         private bool _pipelineScheduled;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
@@ -681,23 +680,42 @@ namespace Hecton8.AI
         private int _telemetryCursor;
         private float3 _pendingOriginShiftOffset;
 
-        internal NativeArray<float3> FootPositions => _footPositions;
-        internal NativeArray<float3> TargetFootPositions => _targetFootPositions;
+        internal NativeArray<float3> FootPositions =>
+            TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers) ? buffers.FootPositions : default;
 
-        private int EntityCapacity => _entities.IsCreated ? _entities.Length : math.clamp(_maxEntities, 1, 4096);
+        internal NativeArray<float3> TargetFootPositions =>
+            TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers) ? buffers.TargetFootPositions : default;
 
-        private int LegCapacity => _footPositions.IsCreated ? _footPositions.Length : EntityCapacity * MaxLegsPerEntity;
+        private int EntityCapacity => math.clamp(_maxEntities, 1, 4096);
+
+        private int LegCapacity => EntityCapacity * MaxLegsPerEntity;
+
+        private struct CrabLegVaultBuffers
+        {
+            public NativeArray<ProceduralCrabLegEntityState> Entities;
+            public NativeArray<float3> FootPositions;
+            public NativeArray<float3> TargetFootPositions;
+            public NativeArray<ProceduralCrabLegStepState> StepStates;
+            public NativeArray<RaycastCommand> RaycastCommands;
+            public NativeArray<RaycastHit> RaycastHits;
+            public NativeArray<int> RaycastLegMask;
+            public NativeArray<ProceduralCrabBodyPose> BodyPoses;
+            public NativeArray<ProceduralCrabSolvedJointMatrices> SolvedJointMatrices;
+            public NativeArray<ProceduralCrabIkTelemetryEntry> TelemetryRing;
+        }
 
         private void Awake()
         {
             EnsureManagedSlotBuffers();
             InitializeFreeSlots();
+            RefreshColdDependencies();
             EnsurePersistentBuffers();
         }
 
         private void OnEnable()
         {
             EnsureManagedSlotBuffers();
+            RefreshColdDependencies();
             EnsurePersistentBuffers();
             TryRegister();
             TryRegisterOriginShiftListener();
@@ -721,7 +739,7 @@ namespace Hecton8.AI
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (shiftOffset.sqrMagnitude <= 0.000001f || !_footPositions.IsCreated)
+            if (shiftOffset.sqrMagnitude <= 0.000001f || !HasPersistentBuffers())
                 return;
 
             float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
@@ -747,14 +765,14 @@ namespace Hecton8.AI
 
         public void Tick(float deltaTime)
         {
-            if (!_entities.IsCreated || _pipelineScheduled)
+            if (_pipelineScheduled || !TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
                 return;
 
-            int activeCount = CaptureFrameState(deltaTime);
+            int activeCount = CaptureFrameState(deltaTime, in buffers);
             if (activeCount <= 0)
                 return;
 
-            ScheduleGroundAndStepPipeline();
+            ScheduleGroundAndStepPipeline(in buffers);
         }
 
         public void LateFrameTick()
@@ -781,6 +799,8 @@ namespace Hecton8.AI
             slotIndex = -1;
             EnsureManagedSlotBuffers();
             EnsurePersistentBuffers();
+            if (!TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+                return false;
 
             if (_freeSlotCount <= 0)
                 return false;
@@ -791,32 +811,31 @@ namespace Hecton8.AI
             _slotActive[slotIndex] = true;
 
             ProceduralCrabLegEntityState entity = BuildDefaultEntityState(slotIndex, rootPosition, rootRotation, legCount, scale);
-            _entities[slotIndex] = entity;
-            SeedLegTargets(in entity);
+            buffers.Entities[slotIndex] = entity;
+            SeedLegTargets(in entity, in buffers);
             return true;
         }
 
         internal void UnregisterEntity(int slotIndex)
         {
-            if (!IsValidSlot(slotIndex) || !_slotActive[slotIndex])
+            if (!IsValidSlot(slotIndex) || !_slotActive[slotIndex] || !TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
                 return;
 
             _slotActive[slotIndex] = false;
-            ProceduralCrabLegEntityState entity = _entities[slotIndex];
-            ClearLegRange(in entity);
-            _entities[slotIndex] = default;
-            if (_bodyPoses.IsCreated)
-                _bodyPoses[slotIndex] = default;
+            ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
+            ClearLegRange(in entity, in buffers);
+            buffers.Entities[slotIndex] = default;
+            buffers.BodyPoses[slotIndex] = default;
             _freeSlots[_freeSlotCount] = slotIndex;
             _freeSlotCount++;
         }
 
         internal void SetEntityPose(int slotIndex, float3 rootPosition, quaternion rootRotation, float3 velocity, int health)
         {
-            if (!IsValidSlot(slotIndex) || !_slotActive[slotIndex])
+            if (!IsValidSlot(slotIndex) || !_slotActive[slotIndex] || !TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
                 return;
 
-            ProceduralCrabLegEntityState entity = _entities[slotIndex];
+            ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
             entity.RootPosition = SanitizeFiniteFloat3(rootPosition, entity.RootPosition);
             entity.RootRotation = SanitizeFiniteQuaternion(rootRotation, entity.RootRotation);
             entity.Velocity = SanitizeFiniteFloat3(velocity, float3.zero);
@@ -826,18 +845,18 @@ namespace Hecton8.AI
                 entity.CorpseState = 1;
                 entity.StateFlags |= EntityFlagCorpse;
             }
-            _entities[slotIndex] = entity;
+            buffers.Entities[slotIndex] = entity;
         }
 
         internal void SetSpatialHashAvoidance(int slotIndex, float3 separationOffset, float strength)
         {
-            if (!IsValidSlot(slotIndex) || !_slotActive[slotIndex])
+            if (!IsValidSlot(slotIndex) || !_slotActive[slotIndex] || !TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
                 return;
 
-            ProceduralCrabLegEntityState entity = _entities[slotIndex];
+            ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
             entity.SpatialHashAvoidanceOffset = math.select(separationOffset, float3.zero, !math.all(math.isfinite(separationOffset)));
             entity.SpatialHashAvoidanceStrength = math.isfinite(strength) ? math.saturate(strength) : 0f;
-            _entities[slotIndex] = entity;
+            buffers.Entities[slotIndex] = entity;
         }
 
         private void EnsureManagedSlotBuffers()
@@ -868,122 +887,103 @@ namespace Hecton8.AI
         {
             int entityCapacity = EntityCapacity;
             int legCapacity = LegCapacity;
-            if (!_entities.IsCreated)
-            {
-                _entities = new NativeArray<ProceduralCrabLegEntityState>(
-                    entityCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ProceduralCrabLegEntityState> - S.O.A. crab entity state - owner: ProceduralCrabLegIKRuntime
-                NativeMemorySentinel.RegisterNativeArray(_entities, NativeMemoryOwner, nameof(_entities), NativeMemoryLifetime);
-            }
+            if (TryResolvePersistentBuffers(out _))
+                return;
 
-            if (!_footPositions.IsCreated)
-            {
-                _footPositions = new NativeArray<float3>(
-                    legCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3> - solved foot positions S.O.A. - owner: ProceduralCrabLegIKRuntime
-                NativeMemorySentinel.RegisterNativeArray(_footPositions, NativeMemoryOwner, nameof(_footPositions), NativeMemoryLifetime);
-            }
+            ClearVaultHandles();
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            _dataVault = vault;
+            if (vault == null)
+                return;
 
-            if (!_targetFootPositions.IsCreated)
-            {
-                _targetFootPositions = new NativeArray<float3>(
-                    legCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3> - target foot positions S.O.A. - owner: ProceduralCrabLegIKRuntime
-                NativeMemorySentinel.RegisterNativeArray(_targetFootPositions, NativeMemoryOwner, nameof(_targetFootPositions), NativeMemoryLifetime);
-            }
+            _entitiesHandle = vault.GetBufferHandle<ProceduralCrabLegEntityState>(BufferID.ProceduralCrabLegEntities, entityCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _footPositionsHandle = vault.GetBufferHandle<float3>(BufferID.ProceduralCrabLegFootPositions, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _targetFootPositionsHandle = vault.GetBufferHandle<float3>(BufferID.ProceduralCrabLegTargetFootPositions, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _stepStatesHandle = vault.GetBufferHandle<ProceduralCrabLegStepState>(BufferID.ProceduralCrabLegStepStates, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _raycastCommandsHandle = vault.GetBufferHandle<RaycastCommand>(BufferID.ProceduralCrabLegRaycastCommands, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _raycastHitsHandle = vault.GetBufferHandle<RaycastHit>(BufferID.ProceduralCrabLegRaycastHits, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _raycastLegMaskHandle = vault.GetBufferHandle<int>(BufferID.ProceduralCrabLegRaycastLegMask, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _bodyPosesHandle = vault.GetBufferHandle<ProceduralCrabBodyPose>(BufferID.ProceduralCrabBodyPoses, entityCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _solvedJointMatricesHandle = vault.GetBufferHandle<ProceduralCrabSolvedJointMatrices>(BufferID.ProceduralCrabSolvedJointMatrices, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _telemetryRingHandle = vault.GetBufferHandle<ProceduralCrabIkTelemetryEntry>(BufferID.ProceduralCrabIkTelemetryRing, TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
 
-            if (!_stepStates.IsCreated)
-            {
-                _stepStates = new NativeArray<ProceduralCrabLegStepState>(
-                    legCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ProceduralCrabLegStepState> - per-leg scheduler state - owner: ProceduralCrabLegIKRuntime
-                NativeMemorySentinel.RegisterNativeArray(_stepStates, NativeMemoryOwner, nameof(_stepStates), NativeMemoryLifetime);
-            }
-
-            if (!_raycastCommands.IsCreated)
-            {
-                _raycastCommands = new NativeArray<RaycastCommand>(
-                    legCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand> - async crab ground probes - owner: ProceduralCrabLegIKRuntime
-                NativeMemorySentinel.RegisterNativeArray(_raycastCommands, NativeMemoryOwner, nameof(_raycastCommands), NativeMemoryLifetime);
-            }
-
-            if (!_raycastHits.IsCreated)
-            {
-                _raycastHits = new NativeArray<RaycastHit>(
-                    legCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit> - async crab ground probe results - owner: ProceduralCrabLegIKRuntime
-                NativeMemorySentinel.RegisterNativeArray(_raycastHits, NativeMemoryOwner, nameof(_raycastHits), NativeMemoryLifetime);
-            }
-
-            if (!_raycastLegMask.IsCreated)
-            {
-                _raycastLegMask = new NativeArray<int>(
-                    legCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int> - low-tier raycast budget mask - owner: ProceduralCrabLegIKRuntime
-                NativeMemorySentinel.RegisterNativeArray(_raycastLegMask, NativeMemoryOwner, nameof(_raycastLegMask), NativeMemoryLifetime);
-            }
-
-            if (!_bodyPoses.IsCreated)
-            {
-                _bodyPoses = new NativeArray<ProceduralCrabBodyPose>(
-                    entityCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ProceduralCrabBodyPose> - GPU body pose upload source - owner: ProceduralCrabLegIKRuntime
-                NativeMemorySentinel.RegisterNativeArray(_bodyPoses, NativeMemoryOwner, nameof(_bodyPoses), NativeMemoryLifetime);
-            }
-
-            if (!_solvedJointMatrices.IsCreated)
-            {
-                _solvedJointMatrices = new NativeArray<ProceduralCrabSolvedJointMatrices>(
-                    legCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ProceduralCrabSolvedJointMatrices> - GPU leg joint matrix upload source - owner: ProceduralCrabLegIKRuntime
-                NativeMemorySentinel.RegisterNativeArray(_solvedJointMatrices, NativeMemoryOwner, nameof(_solvedJointMatrices), NativeMemoryLifetime);
-            }
-
-            if (!_telemetryRing.IsCreated)
-            {
-                _telemetryRing = new NativeArray<ProceduralCrabIkTelemetryEntry>(
-                    TelemetryCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ProceduralCrabIkTelemetryEntry>[300] - black-box crab IK telemetry ring - owner: ProceduralCrabLegIKRuntime
-                NativeMemorySentinel.RegisterNativeArray(_telemetryRing, NativeMemoryOwner, nameof(_telemetryRing), NativeMemoryLifetime);
-            }
+            if (!TryResolvePersistentBuffers(out _))
+                ClearVaultHandles();
         }
 
         private void DisposeBuffers(JobHandle dependency)
         {
-            DisposeNativeArray(ref _entities, dependency);
-            DisposeNativeArray(ref _footPositions, dependency);
-            DisposeNativeArray(ref _targetFootPositions, dependency);
-            DisposeNativeArray(ref _stepStates, dependency);
-            DisposeNativeArray(ref _raycastCommands, dependency);
-            DisposeNativeArray(ref _raycastHits, dependency);
-            DisposeNativeArray(ref _raycastLegMask, dependency);
-            DisposeNativeArray(ref _bodyPoses, dependency);
-            DisposeNativeArray(ref _solvedJointMatrices, dependency);
-            DisposeNativeArray(ref _telemetryRing, dependency);
-            _disposeHandle = default;
+            _pendingHandle = dependency;
+            ClearVaultHandles();
             _pendingHandle = default;
             _pipelineScheduled = false;
         }
 
-        private void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        private void RefreshColdDependencies()
         {
-            if (!array.IsCreated)
-                return;
+            _dataVault = GlobalRegistry.DataVault;
+        }
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, array.Dispose(dependency));
-            array = default;
+        private void ClearVaultHandles()
+        {
+            _entitiesHandle = default;
+            _footPositionsHandle = default;
+            _targetFootPositionsHandle = default;
+            _stepStatesHandle = default;
+            _raycastCommandsHandle = default;
+            _raycastHitsHandle = default;
+            _raycastLegMaskHandle = default;
+            _bodyPosesHandle = default;
+            _solvedJointMatricesHandle = default;
+            _telemetryRingHandle = default;
+        }
+
+        private bool HasPersistentBuffers()
+        {
+            return TryResolvePersistentBuffers(out _);
+        }
+
+        private bool TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers)
+        {
+            buffers = default;
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            _dataVault = vault;
+            if (vault == null)
+                return false;
+
+            buffers.Entities = _entitiesHandle.Resolve(vault);
+            buffers.FootPositions = _footPositionsHandle.Resolve(vault);
+            buffers.TargetFootPositions = _targetFootPositionsHandle.Resolve(vault);
+            buffers.StepStates = _stepStatesHandle.Resolve(vault);
+            buffers.RaycastCommands = _raycastCommandsHandle.Resolve(vault);
+            buffers.RaycastHits = _raycastHitsHandle.Resolve(vault);
+            buffers.RaycastLegMask = _raycastLegMaskHandle.Resolve(vault);
+            buffers.BodyPoses = _bodyPosesHandle.Resolve(vault);
+            buffers.SolvedJointMatrices = _solvedJointMatricesHandle.Resolve(vault);
+            buffers.TelemetryRing = _telemetryRingHandle.Resolve(vault);
+
+            int entityCapacity = EntityCapacity;
+            int legCapacity = LegCapacity;
+            return buffers.Entities.IsCreated &&
+                buffers.FootPositions.IsCreated &&
+                buffers.TargetFootPositions.IsCreated &&
+                buffers.StepStates.IsCreated &&
+                buffers.RaycastCommands.IsCreated &&
+                buffers.RaycastHits.IsCreated &&
+                buffers.RaycastLegMask.IsCreated &&
+                buffers.BodyPoses.IsCreated &&
+                buffers.SolvedJointMatrices.IsCreated &&
+                buffers.TelemetryRing.IsCreated &&
+                buffers.Entities.Length >= entityCapacity &&
+                buffers.FootPositions.Length >= legCapacity &&
+                buffers.TargetFootPositions.Length >= legCapacity &&
+                buffers.StepStates.Length >= legCapacity &&
+                buffers.RaycastCommands.Length >= legCapacity &&
+                buffers.RaycastHits.Length >= legCapacity &&
+                buffers.RaycastLegMask.Length >= legCapacity &&
+                buffers.BodyPoses.Length >= entityCapacity &&
+                buffers.SolvedJointMatrices.Length >= legCapacity &&
+                buffers.TelemetryRing.Length >= TelemetryCapacity;
         }
 
         private void TryRegister()
@@ -1034,7 +1034,7 @@ namespace Hecton8.AI
             _registeredOriginShiftListener = false;
         }
 
-        private int CaptureFrameState(float deltaTime)
+        private int CaptureFrameState(float deltaTime, CrabLegVaultBuffers buffers)
         {
             int activeCount = 0;
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
@@ -1049,11 +1049,11 @@ namespace Hecton8.AI
                 if (!_slotActive[slotIndex])
                     continue;
 
-                ProceduralCrabLegEntityState entity = _entities[slotIndex];
+                ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
                 entity.DeltaTime = safeDeltaTime;
                 entity.FrameIndex = frameIndex;
                 entity.RaycastBudgetMode = raycastBudgetMode;
-                _entities[slotIndex] = entity;
+                buffers.Entities[slotIndex] = entity;
                 activeCount++;
             }
 
@@ -1061,53 +1061,53 @@ namespace Hecton8.AI
             return activeCount;
         }
 
-        private void ScheduleGroundAndStepPipeline()
+        private void ScheduleGroundAndStepPipeline(in CrabLegVaultBuffers buffers)
         {
             ProceduralCrabGroundRaycastBuildJob buildJob = new ProceduralCrabGroundRaycastBuildJob
             {
-                Entities = _entities,
-                Commands = _raycastCommands,
-                RaycastLegMask = _raycastLegMask
+                Entities = buffers.Entities,
+                Commands = buffers.RaycastCommands,
+                RaycastLegMask = buffers.RaycastLegMask
             };
 
             JobHandle buildHandle = buildJob.Schedule(LegCapacity, MinCommandsPerJob);
-            JobHandle raycastHandle = RaycastCommand.ScheduleBatch(_raycastCommands, _raycastHits, MinCommandsPerJob, buildHandle);
+            JobHandle raycastHandle = RaycastCommand.ScheduleBatch(buffers.RaycastCommands, buffers.RaycastHits, MinCommandsPerJob, buildHandle);
 
             ProceduralCrabGroundTargetResolveJob targetJob = new ProceduralCrabGroundTargetResolveJob
             {
-                Entities = _entities,
-                Hits = _raycastHits,
-                RaycastLegMask = _raycastLegMask,
-                TargetFootPositions = _targetFootPositions,
-                StepStates = _stepStates
+                Entities = buffers.Entities,
+                Hits = buffers.RaycastHits,
+                RaycastLegMask = buffers.RaycastLegMask,
+                TargetFootPositions = buffers.TargetFootPositions,
+                StepStates = buffers.StepStates
             };
             JobHandle targetHandle = targetJob.Schedule(LegCapacity, MinCommandsPerJob, raycastHandle);
 
             ProceduralCrabStepSchedulerJob stepJob = new ProceduralCrabStepSchedulerJob
             {
-                Entities = _entities,
-                FootPositions = _footPositions,
-                TargetFootPositions = _targetFootPositions,
-                StepStates = _stepStates
+                Entities = buffers.Entities,
+                FootPositions = buffers.FootPositions,
+                TargetFootPositions = buffers.TargetFootPositions,
+                StepStates = buffers.StepStates
             };
 
             JobHandle stepHandle = stepJob.Schedule(EntityCapacity, 16, targetHandle);
 
             ProceduralCrabBodyTiltJob bodyTiltJob = new ProceduralCrabBodyTiltJob
             {
-                Entities = _entities,
-                FootPositions = _footPositions,
-                BodyPoses = _bodyPoses,
+                Entities = buffers.Entities,
+                FootPositions = buffers.FootPositions,
+                BodyPoses = buffers.BodyPoses,
                 BodyVisualScale = 1f
             };
             JobHandle bodyHandle = bodyTiltJob.Schedule(EntityCapacity, 16, stepHandle);
 
             ProceduralCrabAnalyticalTwoBoneIkJob ikJob = new ProceduralCrabAnalyticalTwoBoneIkJob
             {
-                Entities = _entities,
-                FootPositions = _footPositions,
-                BodyPoses = _bodyPoses,
-                SolvedJointMatrices = _solvedJointMatrices,
+                Entities = buffers.Entities,
+                FootPositions = buffers.FootPositions,
+                BodyPoses = buffers.BodyPoses,
+                SolvedJointMatrices = buffers.SolvedJointMatrices,
                 JointVisualScale = math.max(0.0001f, _jointVisualScale)
             };
 
@@ -1120,15 +1120,15 @@ namespace Hecton8.AI
             if (!_renderIndirect || _crabBodyMesh == null || _crabBodyMaterial == null)
                 return;
 
-            if (!_bodyPoses.IsCreated || !_solvedJointMatrices.IsCreated)
+            if (!TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
                 return;
 
             EnsureGraphicsBuffers();
             if (_bodyPoseGraphicsBuffer == null || _jointMatrixGraphicsBuffer == null || _indirectArgsBuffer == null)
                 return;
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_bodyPoseGraphicsBuffer, _bodyPoses, EntityCapacity);
-            GraphicsBufferUploadUtility.UploadNativeArray(_jointMatrixGraphicsBuffer, _solvedJointMatrices, LegCapacity);
+            GraphicsBufferUploadUtility.UploadNativeArray(_bodyPoseGraphicsBuffer, buffers.BodyPoses, EntityCapacity);
+            GraphicsBufferUploadUtility.UploadNativeArray(_jointMatrixGraphicsBuffer, buffers.SolvedJointMatrices, LegCapacity);
             _crabBodyMaterial.SetBuffer(BodyPoseBufferId, _bodyPoseGraphicsBuffer);
             _crabBodyMaterial.SetBuffer(LegJointBufferId, _jointMatrixGraphicsBuffer);
             UploadIndirectArgs(EntityCapacity);
@@ -1141,7 +1141,7 @@ namespace Hecton8.AI
                 receiveShadows = true,
                 motionVectorMode = MotionVectorGenerationMode.Camera
             };
-            Graphics.RenderMeshIndirect(renderParams, _crabBodyMesh, _indirectArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, _crabBodyMesh, _indirectArgsBuffer, 1, 0);
         }
 
         private void EnsureGraphicsBuffers()
@@ -1205,7 +1205,7 @@ namespace Hecton8.AI
 
         private void WriteTelemetryFrame()
         {
-            if (!_telemetryRing.IsCreated || !_entities.IsCreated || !_footPositions.IsCreated || !_bodyPoses.IsCreated)
+            if (!TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
                 return;
 
             int firstActiveSlot = -1;
@@ -1225,9 +1225,9 @@ namespace Hecton8.AI
 
             if (firstActiveSlot >= 0)
             {
-                ProceduralCrabLegEntityState entity = _entities[firstActiveSlot];
-                float3 firstFoot = _footPositions[entity.LegStartIndex];
-                ProceduralCrabBodyPose bodyPose = _bodyPoses[firstActiveSlot];
+                ProceduralCrabLegEntityState entity = buffers.Entities[firstActiveSlot];
+                float3 firstFoot = buffers.FootPositions[entity.LegStartIndex];
+                ProceduralCrabBodyPose bodyPose = buffers.BodyPoses[firstActiveSlot];
                 bool invalidTelemetry = !math.all(math.isfinite(entity.RootPosition)) ||
                     !math.all(math.isfinite(firstFoot)) ||
                     !math.all(math.isfinite(bodyPose.BodyNormal));
@@ -1241,14 +1241,14 @@ namespace Hecton8.AI
                 if (invalidTelemetry && !_telemetryDumped)
                 {
                     entry.Flags |= 0x8000;
-                    _telemetryRing[_telemetryCursor % TelemetryCapacity] = entry;
+                    buffers.TelemetryRing[_telemetryCursor % TelemetryCapacity] = entry;
                     DumpTelemetryBlackBoxOnce();
                     _telemetryCursor++;
                     return;
                 }
             }
 
-            _telemetryRing[_telemetryCursor % TelemetryCapacity] = entry;
+            buffers.TelemetryRing[_telemetryCursor % TelemetryCapacity] = entry;
             _telemetryCursor++;
         }
 
@@ -1262,7 +1262,7 @@ namespace Hecton8.AI
 
         private void DumpTelemetryBlackBox()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
                 return;
 
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -1277,7 +1277,7 @@ namespace Hecton8.AI
             writer.Write(_telemetryCursor);
             for (int i = 0; i < TelemetryCapacity; i++)
             {
-                ProceduralCrabIkTelemetryEntry entry = _telemetryRing[i];
+                ProceduralCrabIkTelemetryEntry entry = buffers.TelemetryRing[i];
                 writer.Write(entry.FrameIndex);
                 writer.Write(entry.ActiveEntityCount);
                 writer.Write(entry.EntityIndex);
@@ -1356,7 +1356,7 @@ namespace Hecton8.AI
 
         private void ApplyOriginShiftRebase(float3 offset)
         {
-            if (!_entities.IsCreated || !_footPositions.IsCreated || !_targetFootPositions.IsCreated || !_stepStates.IsCreated)
+            if (!TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
                 return;
 
             if (!math.all(math.isfinite(offset)))
@@ -1370,32 +1370,29 @@ namespace Hecton8.AI
                 if (!_slotActive[slotIndex])
                     continue;
 
-                ProceduralCrabLegEntityState entity = _entities[slotIndex];
+                ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
                 entity.RootPosition -= offset;
-                _entities[slotIndex] = entity;
+                buffers.Entities[slotIndex] = entity;
 
                 for (int localLegIndex = 0; localLegIndex < MaxLegsPerEntity; localLegIndex++)
                 {
                     int legIndex = entity.LegStartIndex + localLegIndex;
-                    _footPositions[legIndex] -= offset;
-                    _targetFootPositions[legIndex] -= offset;
+                    buffers.FootPositions[legIndex] -= offset;
+                    buffers.TargetFootPositions[legIndex] -= offset;
 
-                    ProceduralCrabLegStepState state = _stepStates[legIndex];
+                    ProceduralCrabLegStepState state = buffers.StepStates[legIndex];
                     state.StepFrom -= offset;
                     state.StepTo -= offset;
-                    _stepStates[legIndex] = state;
+                    buffers.StepStates[legIndex] = state;
                 }
 
-                if (!_bodyPoses.IsCreated)
-                    continue;
-
-                ProceduralCrabBodyPose pose = _bodyPoses[slotIndex];
+                ProceduralCrabBodyPose pose = buffers.BodyPoses[slotIndex];
                 if (pose.IsActive == 0)
                     continue;
 
                 float4 c3 = pose.BodyMatrix.c3;
                 pose.BodyMatrix.c3 = new float4(c3.x - offset.x, c3.y - offset.y, c3.z - offset.z, c3.w);
-                _bodyPoses[slotIndex] = pose;
+                buffers.BodyPoses[slotIndex] = pose;
             }
         }
 
@@ -1430,24 +1427,24 @@ namespace Hecton8.AI
             return new quaternion(value.value * math.rsqrt(lengthSq));
         }
 
-        private void SeedLegTargets(in ProceduralCrabLegEntityState entity)
+        private void SeedLegTargets(in ProceduralCrabLegEntityState entity, CrabLegVaultBuffers buffers)
         {
             for (int localLegIndex = 0; localLegIndex < MaxLegsPerEntity; localLegIndex++)
             {
                 int legIndex = entity.LegStartIndex + localLegIndex;
                 if (localLegIndex >= entity.LegCount)
                 {
-                    _footPositions[legIndex] = default;
-                    _targetFootPositions[legIndex] = default;
-                    _stepStates[legIndex] = default;
+                    buffers.FootPositions[legIndex] = default;
+                    buffers.TargetFootPositions[legIndex] = default;
+                    buffers.StepStates[legIndex] = default;
                     continue;
                 }
 
                 float3 homeLocal = ResolveLegHomeLocal(localLegIndex, entity.LegCount) * entity.Scale;
                 float3 world = entity.RootPosition + math.rotate(entity.RootRotation, homeLocal);
-                _footPositions[legIndex] = world;
-                _targetFootPositions[legIndex] = world;
-                _stepStates[legIndex] = new ProceduralCrabLegStepState
+                buffers.FootPositions[legIndex] = world;
+                buffers.TargetFootPositions[legIndex] = world;
+                buffers.StepStates[legIndex] = new ProceduralCrabLegStepState
                 {
                     StepFrom = world,
                     StepTo = world,
@@ -1459,16 +1456,15 @@ namespace Hecton8.AI
             }
         }
 
-        private void ClearLegRange(in ProceduralCrabLegEntityState entity)
+        private void ClearLegRange(in ProceduralCrabLegEntityState entity, CrabLegVaultBuffers buffers)
         {
             for (int localLegIndex = 0; localLegIndex < MaxLegsPerEntity; localLegIndex++)
             {
                 int legIndex = entity.LegStartIndex + localLegIndex;
-                _footPositions[legIndex] = default;
-                _targetFootPositions[legIndex] = default;
-                _stepStates[legIndex] = default;
-                if (_solvedJointMatrices.IsCreated)
-                    _solvedJointMatrices[legIndex] = default;
+                buffers.FootPositions[legIndex] = default;
+                buffers.TargetFootPositions[legIndex] = default;
+                buffers.StepStates[legIndex] = default;
+                buffers.SolvedJointMatrices[legIndex] = default;
             }
         }
 

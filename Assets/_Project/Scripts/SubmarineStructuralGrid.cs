@@ -1523,7 +1523,7 @@ namespace Hecton8.Physics
                 lightProbeUsage = LightProbeUsage.Off,
                 camera = viewCamera
             };
-            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, instanceCount);
+            UnityEngine.Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, instanceCount);
         }
 
         private Bounds ResolveLeakPlumeRenderBounds(Transform cachedTransform)

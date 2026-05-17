@@ -48,6 +48,7 @@
 
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Atmosphere;
 using Hecton8.Audio;
@@ -1768,6 +1769,7 @@ namespace Hecton8.Environment
         {
             EnsureRuntimeVisualOwners();
             EnsureGameplayCameraStackInitializedOnTick();
+            ConsumePlayerExhaleSignals();
             DecayExternalBottomSiltBurst(deltaTime);
             UpdateFlowSynchronyState(deltaTime);
 
@@ -5782,9 +5784,9 @@ namespace Hecton8.Environment
                 return;
 
             RenderTexture previous = RenderTexture.active;
-            Graphics.SetRenderTarget(texture);
+            UnityEngine.Graphics.SetRenderTarget(texture);
             GL.Clear(false, true, Color.white);
-            Graphics.SetRenderTarget(previous);
+            UnityEngine.Graphics.SetRenderTarget(previous);
         }
 
         private void ReleasePhotophobiaFieldResources()
@@ -6062,6 +6064,13 @@ namespace Hecton8.Environment
 #if UNITY_EDITOR
             _debugExhaleBubbleBurstCount = 0;
 #endif
+        }
+
+        private void ConsumePlayerExhaleSignals()
+        {
+            ReadOnlySpan<PlayerExhaleSignal> signals = SignalBus<PlayerExhaleSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+                HandlePlayerExhale();
         }
 
         private void HandlePlayerExhale()
@@ -6967,7 +6976,6 @@ namespace Hecton8.Environment
             if (movement == null)
                 return;
 
-            movement.OnExhale += HandlePlayerExhale;
             _subscribedPlayerMovement = movement;
         }
 
@@ -6976,7 +6984,6 @@ namespace Hecton8.Environment
             if (movement == null)
                 return;
 
-            movement.OnExhale -= HandlePlayerExhale;
             if (ReferenceEquals(_subscribedPlayerMovement, movement))
                 _subscribedPlayerMovement = null;
         }

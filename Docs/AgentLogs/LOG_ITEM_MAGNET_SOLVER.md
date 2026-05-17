@@ -557,3 +557,154 @@ Validation:
 - Pickup prefab trigger scan: clean.
 - Scoped `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`: blocked outside item magnet after three attempts. Failures moved from `HeavyTowWinch.cs` to `LockstepStateValidator.cs` to `EcosystemDirector.cs`; no item-magnet compile errors were emitted.
+
+## Pass 22 - Registry Commit-State Tightening / External Dependency Wall
+
+What was wrong:
+- `PickupItem` and duplicate `HectonItem` used void `GlobalRegistry.Register*` calls, then checked `GlobalRegistry.*Tickables.Contains(this)` to infer whether dispatcher registration actually stuck.
+- That creates a cold-path collection walk and can misstate registration if the dispatcher rejects after registry acceptance.
+
+What was done:
+- `PickupItem.TryRegisterSlowTick` now records `GlobalRegistry.TryRegisterSlowTickable`.
+- `PickupItem.TryRegisterFixedTick` now records `GlobalRegistry.TryRegisterFixedTickable`.
+- `HectonItem.StartTicking` now records `GlobalRegistry.TryRegisterUpdatable`.
+
+Cinematic cheats used:
+- No visual downgrade. Low tier keeps the 10 Hz movement fake. High/Ultra keep wake, fluid impulse, debris spark, and motion-vector presentation lanes.
+
+Exact microseconds saved:
+- 0 hot-frame us claimed. This is cold registration correctness, not a benchmarked runtime pass.
+
+Validation:
+- Scoped item-domain forbidden scan: clean.
+- Scoped `$"` interpolation scan: clean.
+- Loot magnet local NativeArray ownership scan: clean.
+- Item-domain registration-poll scan: clean.
+- Scoped `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`: first attempt timed out after 364.22 seconds and spawned dotnet workers were stopped; retry failed outside item magnet with 40 errors in `SubmarineFluidDynamics.cs` for missing exterior thermal anomaly/hazard fields. No item-magnet compile errors were emitted.
+
+## Pass 23 - FixedTick NaN Vaccination / External Dependency Wall
+
+What was wrong:
+- `PickupItem.FixedTick` could write `_lastSpatialPosition` from a non-finite `transform.position` after applying current forces.
+- `ResolveSubmergedState` read `transform.position.y` without a finite gate, so a poisoned pickup transform could create a NaN depth decision.
+
+What was done:
+- Added finite transform gating before fixed-tick spatial refresh and `_lastSpatialPosition` writeback.
+- Added finite transform gating before submerged-depth calculation; bad transforms fail closed through the existing damping restore path.
+
+Cinematic cheats used:
+- No visual downgrade. Low tier keeps the 10 Hz movement fake. High/Ultra keep wake, fluid impulse, debris spark, and motion-vector presentation lanes.
+
+Exact microseconds saved:
+- 0 hot-frame us claimed. This is NaN containment, not a measured speed pass.
+
+Validation:
+- Scoped item-domain forbidden scan: clean.
+- Scoped `$"` interpolation scan: clean.
+- Scoped `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
+- Captured `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal`: failed outside item magnet with 4 errors in `SystemDispatcher.cs` and `GlobalDataVault.cs` for missing `Hecton8.Core.Memory.Defrag` / `MemoryDefragPhase`. No item-magnet compile errors were emitted.
+
+## Pass 24 - Cold-Path Transform Vaccination / External Dependency Wall
+
+What was wrong:
+- `PickupItem.RegisterSpatialHandle` could register and cache a non-finite transform position.
+- `PickupItem.ResolveWorldStateIdentity` could build persistent identity from a poisoned transform.
+- Manual overflow scatter in both `PickupItem` and duplicate `HectonItem` could derive force direction from non-finite pickup/interactor transforms.
+
+What was done:
+- Added finite transform gate before pickup spatial registration and `_lastSpatialPosition` writeback.
+- Added finite transform gate before world-state identity anchoring.
+- Cached and finite-checked interactor positions before AUP conversion.
+- Finite-checked pickup/interactor positions and fallback forward vectors before overflow scatter force/torque derivation.
+
+Cinematic cheats used:
+- No visual downgrade. Low tier keeps the 10 Hz movement fake. High/Ultra keep wake, fluid impulse, debris spark, and motion-vector presentation lanes.
+
+Exact microseconds saved:
+- 0 hot-frame us claimed. This is cold-path NaN containment and downstream-state protection.
+
+Validation:
+- Scoped item-domain forbidden scan: clean.
+- Scoped `$"` interpolation scan: clean.
+- Loot magnet local NativeArray ownership scan: clean.
+- Item-domain registration-poll scan: clean.
+- Scoped `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
+- Captured `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal`: failed outside item magnet with 3 errors in `SubmarineFluidDynamics.cs` for missing `_exteriorBuoyancySampleLocalPoints`. No item-magnet compile errors were emitted.
+
+## Pass 25 - AUP Conversion Vaccination / Build Contention
+
+What was wrong:
+- The item-domain finite checks validated runtime `Vector3` values before conversion, but manual pickup signals, player fallback pose, and DataVault ingest still trusted the `AbsoluteUniversePosition.FromRuntimePosition` result.
+- That left one narrow path for converted AUP locals to become poisoned authority even when the caller rejected NaN/Inf transforms.
+
+What was done:
+- Added finite AUP conversion helpers in `PickupItem`, duplicate `HectonItem`, and `LootMagnetSystem`.
+- `LootMagnetSystem` now writes pickup AUPs into `GlobalDataVault` only after post-conversion finite validation.
+- Player fallback transform resolution now fails closed if converted AUP locals are non-finite.
+- Manual `ItemAcquiredSignal` publication now requires a finite converted AUP, not only a finite transform.
+
+Cinematic cheats used:
+- No visual downgrade. Low tier keeps the 10 Hz movement fake. High/Ultra keep wake, fluid impulse, debris spark, and motion-vector presentation lanes.
+
+Exact microseconds saved:
+- 0 hot-frame us claimed. This is authority poisoning prevention, not a measured speed pass.
+
+Validation:
+- Direct `FromRuntimePosition` scan: only the three finite-guard helper bodies remain in the item-magnet surface.
+- Scoped item-domain forbidden scan: clean.
+- Scoped `$"` interpolation scan: clean.
+- Loot magnet local NativeArray ownership scan: clean.
+- Scoped `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal`: returned `-1` with an empty log after 194.09 seconds.
+- Retry with node reuse disabled and analyzers off: timed out after 608.05 seconds while external dotnet build processes were active. No compiler diagnostics were emitted, so no item-magnet compile error can be claimed or denied from this pass.
+- Final non-contended retry: failed outside item magnet with `SubmarineFluidDynamics.cs(1439,41)` missing `InventoryEventPayload`. No item-magnet compiler diagnostics were emitted.
+- Multiplatform ABI scan: item-magnet packet structs and emitted signal structs are explicit `Pack=1`; no item-domain compute shader/thread-group path exists. `LootMagnetJob` and `LootMagnetVaultViews` are intentionally not packed because they contain `NativeArray<T>` handles and need native pointer alignment on ARM64.
+
+## Pass 26 - Inventory SPSC ABI Hardening / Deferred Build Gate
+
+What was wrong:
+- The adjacent inventory queue payload structs were still implicit sequential layout.
+- `InventoryEventPayload` and `InventoryPhysicalDropRequestPayload` sit on the item/inventory signal boundary, so the ARM64/Quest ABI review needed explicit source-level size and packing instead of inferred field math.
+
+What was done:
+- `InventoryEventPayload` now declares `StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)`.
+- `InventoryPhysicalDropRequestPayload` now declares `StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)`.
+- No field order, public method signature, or item magnet behavior changed.
+
+Cinematic cheats used:
+- No visual downgrade. Low tier keeps the 10 Hz magnet fake. High/Ultra keep wake, fluid impulse, debris spark, acoustic, and motion-vector presentation lanes.
+
+Exact microseconds saved:
+- 0 hot-frame us claimed. This is ABI hardening at the item/inventory boundary, not a measured runtime optimization.
+
+Validation:
+- Inventory payload layout scan confirms explicit `Pack=1` sizes.
+- Scoped item-magnet forbidden scan: clean.
+- Scoped item-magnet local NativeArray ownership scan: clean.
+- Scoped `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
+- `dotnet build` was not run for this ABI-only pass because the user explicitly ordered not to rebuild every time. Last captured compile gate before this patch failed outside item magnet at `SubmarineFluidDynamics.cs(1439,41)` missing `InventoryEventPayload`.
+
+## Pass 27 - Blackbox Fault I/O Buffering / Deferred Build Gate
+
+What was wrong:
+- The item-magnet blackbox dump had exact 128-byte records, but the writer still relied on the default `FileStream` buffer.
+- The dump is fault-path only, but on Steam Deck/MicroSD-class storage there is no reason to emit a ~38 KiB blackbox through a tiny default stream buffer.
+
+What was done:
+- Added `TelemetryDumpFileBufferBytes = 64 * 1024`.
+- Passed that buffer size to the `FileStream` used by `Dump_ITEM_MAGNET_SOLVER.bin`.
+- Dump magic, version, entry size, ring order, and telemetry payload fields stayed unchanged.
+
+Cinematic cheats used:
+- No visual downgrade. Low tier keeps the 10 Hz magnet fake. High/Ultra keep wake, fluid impulse, debris spark, acoustic, and motion-vector presentation lanes.
+
+Exact microseconds saved:
+- 0 hot-frame us claimed. This is fault-path I/O pressure reduction, not a measured gameplay optimization.
+
+Validation:
+- Dump-buffer source scan confirms `TelemetryDumpFileBufferBytes` is used by the blackbox `FileStream`.
+- Scoped item-magnet forbidden scan: clean.
+- Scoped item-magnet local NativeArray ownership scan: clean.
+- Scoped `git diff --check`: no whitespace errors; LF-to-CRLF warnings only.
+- `dotnet build` was not run for this small I/O pass because the user explicitly ordered not to rebuild every time.

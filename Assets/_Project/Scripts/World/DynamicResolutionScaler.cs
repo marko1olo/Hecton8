@@ -57,7 +57,7 @@ namespace Hecton8.World
         private const string RecoveringPressureStateLabel = "Recovering";
         private const string PressuredPressureStateLabel = "Pressured";
         private const string CriticalPressureStateLabel = "Critical";
-        private const float SystemOverrideMinimumRenderScale = 0.5f;
+        private const float SystemOverrideMinimumRenderScale = 0.25f;
         private const byte SystemOverrideThermalFlag = 1 << 0;
 
         // ══════════════════════════════════════════════════════════

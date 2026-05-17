@@ -46,7 +46,8 @@ namespace Hecton8.Core.Content.Editor
             ValidateNoCyclicRegistryDependencies(maps);
             ValidateTierGroups(maps);
             ValidateBinaryLayouts();
-            ValidateObjectBatchPayloads();
+            ValidateSaveTopologyWriters();
+            ValidateObjectBatchPayloads(maps);
             ValidateLoreBlockIoBudgets();
             ValidateRuntimePrefabBindings();
             ValidateComputeShaderThreadGroups();
@@ -113,6 +114,7 @@ namespace Hecton8.Core.Content.Editor
                         Fail("ContentAssetHashMap contains zero hash: " + mapName + " index=" + j);
 
                     ValidateEntryShape(in entry, mapName, j);
+                    ValidateBinaryRecordExport(in entry, mapName, j);
 
                     if (ownersByHash.TryGetValue(entry.Hash, out string existingOwner))
                     {
@@ -185,6 +187,28 @@ namespace Hecton8.Core.Content.Editor
                      mapName + " index=" + index + " hash=0x" + entry.Hash.ToString("X8"));
             }
 
+            bool hasMeshPrefab = entry.MeshPrefab != null;
+            bool hasMesh = entry.Mesh != null;
+            bool hasAnyVisualBinding = hasMeshPrefab || hasMesh;
+            if (hasAnyVisualBinding && !entry.IsVisual3DKind())
+            {
+                Fail("Content entry has 3D binding on non-visual kind: " +
+                     mapName + " index=" + index + " kind=" + entry.Kind +
+                     " hash=0x" + entry.Hash.ToString("X8"));
+            }
+
+            if (entry.Kind == ContentAssetKind.Mesh && !hasMesh)
+            {
+                Fail("Mesh content entry has no Mesh binding: " +
+                     mapName + " index=" + index + " hash=0x" + entry.Hash.ToString("X8"));
+            }
+
+            if (entry.Kind == ContentAssetKind.Prefab && !hasAnyVisualBinding)
+            {
+                Fail("Prefab content entry has no 3D prefab/mesh binding: " +
+                     mapName + " index=" + index + " hash=0x" + entry.Hash.ToString("X8"));
+            }
+
             if (entry.LodLevel > 2)
             {
                 Fail("Content entry has unsupported LOD level: " +
@@ -224,6 +248,54 @@ namespace Hecton8.Core.Content.Editor
                          " dependency=0x" + dependency.ToString("X8"));
                 }
             }
+        }
+
+        private static void ValidateBinaryRecordExport(in ContentAssetEntry entry, string mapName, int index)
+        {
+            ContentAssetBinaryRecord record;
+            try
+            {
+                record = entry.ToBinaryRecord(0u);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Fail("Content entry failed binary export: " +
+                     mapName + " index=" + index + " hash=0x" + entry.Hash.ToString("X8") +
+                     " reason=" + exception.Message);
+                return;
+            }
+
+            if (record.Hash != entry.Hash)
+                Fail("Content binary record hash drift: " + mapName + " index=" + index);
+            if (record.EstimatedVramBytes != entry.EstimatedVramBytes)
+                Fail("Content binary record VRAM drift: " + mapName + " index=" + index);
+            if (record.DependencyOffset != 0u)
+                Fail("Content binary record dependency offset drift: " + mapName + " index=" + index);
+
+            int expectedDependencyCount = entry.DependencyHashes != null ? entry.DependencyHashes.Length : 0;
+            if (record.DependencyCount != expectedDependencyCount)
+                Fail("Content binary record dependency count drift: " + mapName + " index=" + index);
+            if (record.Kind != entry.Kind)
+                Fail("Content binary record kind drift: " + mapName + " index=" + index);
+            if (record.Tier != entry.Tier)
+                Fail("Content binary record tier drift: " + mapName + " index=" + index);
+            if (record.BiomeId != entry.BiomeId)
+                Fail("Content binary record biome drift: " + mapName + " index=" + index);
+            if (record.LodLevel != entry.LodLevel)
+                Fail("Content binary record LOD drift: " + mapName + " index=" + index);
+
+            byte expectedFlags = 0;
+            if (entry.RequiredInBuild)
+                expectedFlags |= 1;
+            if (entry.IsBiomeCache)
+                expectedFlags |= 2;
+            if (entry.HasVisual3D())
+                expectedFlags |= 4;
+
+            if (record.Flags != expectedFlags)
+                Fail("Content binary record flag drift: " + mapName + " index=" + index);
+            if (record.Reserved0 != 0 || record.Reserved1 != 0u)
+                Fail("Content binary record reserved fields are dirty: " + mapName + " index=" + index);
         }
 
         private static bool HasAddressableBinding(in ContentAssetEntry entry)
@@ -476,6 +548,51 @@ namespace Hecton8.Core.Content.Editor
             AssertSize<ContentLoreBlockIndex>(16, nameof(ContentLoreBlockIndex));
         }
 
+        private static void ValidateSaveTopologyWriters()
+        {
+            Span<char> buffer = stackalloc char[ContentSaveSlotTopology.MaxSavePathChars];
+
+            bool wrote = ContentSaveSlotTopology.TryWriteSaveSlotDirectory(0, buffer, out int written);
+            ValidateTopologyWrite(wrote, buffer, written, "Saves/slot_0", "save slot directory");
+
+            wrote = ContentSaveSlotTopology.TryWritePlayerDeltaFile(1, buffer, out written);
+            ValidateTopologyWrite(wrote, buffer, written, "slot_1.sav", "player delta file");
+
+            wrote = ContentSaveSlotTopology.TryWritePlayerDeltaBackupFile(2, buffer, out written);
+            ValidateTopologyWrite(wrote, buffer, written, "slot_2.bak", "player delta backup file");
+
+            wrote = ContentSaveSlotTopology.TryWritePlayerDeltaTempFile(0, buffer, out written);
+            ValidateTopologyWrite(wrote, buffer, written, "slot_0.tmp", "player delta temp file");
+
+            wrote = ContentSaveSlotTopology.TryWriteMacroDatabaseSectorFile(0x0123456789ABCDEFUL, buffer, out written);
+            ValidateTopologyWrite(wrote, buffer, written, "sector_0123456789ABCDEF.h8page", "macro database sector file");
+
+            if (ContentSaveSlotTopology.TryWriteSaveSlotDirectory(-1, buffer, out written) ||
+                ContentSaveSlotTopology.TryWriteSaveSlotDirectory(3, buffer, out written))
+            {
+                Fail("Save topology accepted a slot outside slot_0..slot_2.");
+            }
+        }
+
+        private static void ValidateTopologyWrite(
+            bool wrote,
+            Span<char> buffer,
+            int written,
+            string expected,
+            string label)
+        {
+            if (!wrote)
+                Fail("Save topology writer failed: " + label);
+            if (written != expected.Length)
+                Fail("Save topology writer length drift: " + label);
+
+            for (int i = 0; i < expected.Length; i++)
+            {
+                if (buffer[i] != expected[i])
+                    Fail("Save topology writer output drift: " + label);
+            }
+        }
+
         private static void ValidateLoreBlockIoBudgets()
         {
             string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project" });
@@ -568,8 +685,9 @@ namespace Hecton8.Core.Content.Editor
             }
         }
 
-        private static void ValidateObjectBatchPayloads()
+        private static void ValidateObjectBatchPayloads(ContentAssetHashMap[] maps)
         {
+            HashSet<uint> registeredVisualHashes = BuildRegisteredVisualHashSet(maps);
             string[] guids = AssetDatabase.FindAssets("t:ScriptableObject", new[] { "Assets/_Project" });
             for (int i = 0; i < guids.Length; i++)
             {
@@ -594,6 +712,7 @@ namespace Hecton8.Core.Content.Editor
                 if (chunkCount == 0)
                     Fail("Object batch has no chunks: " + path);
 
+                byte[] chunkCoverage = new byte[instanceCount];
                 for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
                 {
                     if (batch.GetMesh(meshIndex) == null)
@@ -611,6 +730,12 @@ namespace Hecton8.Core.Content.Editor
                     ObjectBatchInstance instance = batch.GetInstance(instanceIndex);
                     if (instance.AssetHash == 0u)
                         Fail("Object batch instance has zero asset hash: " + path + " instanceIndex=" + instanceIndex);
+                    if (!registeredVisualHashes.Contains(instance.AssetHash))
+                    {
+                        Fail("Object batch instance hash has no registered 3D content binding: " +
+                             path + " instanceIndex=" + instanceIndex + " hash=0x" + instance.AssetHash.ToString("X8"));
+                    }
+
                     if (instance.MeshIndex < 0 || instance.MeshIndex >= meshCount)
                         Fail("Object batch instance has invalid mesh index: " + path + " instanceIndex=" + instanceIndex);
                     if (instance.MaterialIndex < 0 || instance.MaterialIndex >= materialCount)
@@ -626,14 +751,57 @@ namespace Hecton8.Core.Content.Editor
                         Fail("Object batch chunk has zero chunk hash: " + path + " chunkIndex=" + chunkIndex);
                     if (chunk.Count <= 0)
                         Fail("Object batch chunk has empty range: " + path + " chunkIndex=" + chunkIndex);
-                    if (chunk.StartIndex < 0 || chunk.StartIndex > instanceCount - chunk.Count)
+                    if (chunk.StartIndex < 0 || chunk.Count > instanceCount || chunk.StartIndex > instanceCount - chunk.Count)
                         Fail("Object batch chunk range exceeds instance payload: " + path + " chunkIndex=" + chunkIndex);
                     if (chunk.LodLevel > 2)
                         Fail("Object batch chunk uses unsupported LOD level: " + path + " chunkIndex=" + chunkIndex);
                     if (!IsFinite(chunk.Bounds))
                         Fail("Object batch chunk has non-finite bounds: " + path + " chunkIndex=" + chunkIndex);
+
+                    int endIndex = chunk.StartIndex + chunk.Count;
+                    for (int instanceIndex = chunk.StartIndex; instanceIndex < endIndex; instanceIndex++)
+                    {
+                        if (chunkCoverage[instanceIndex] != 0)
+                        {
+                            Fail("Object batch instance is covered by multiple chunks: " +
+                                 path + " instanceIndex=" + instanceIndex);
+                        }
+
+                        chunkCoverage[instanceIndex] = 1;
+                    }
+                }
+
+                for (int instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
+                {
+                    if (chunkCoverage[instanceIndex] == 0)
+                    {
+                        Fail("Object batch instance is not covered by any chunk: " +
+                             path + " instanceIndex=" + instanceIndex);
+                    }
                 }
             }
+        }
+
+        private static HashSet<uint> BuildRegisteredVisualHashSet(ContentAssetHashMap[] maps)
+        {
+            HashSet<uint> hashes = new HashSet<uint>(512);
+            int mapCount = maps != null ? maps.Length : 0;
+            for (int mapIndex = 0; mapIndex < mapCount; mapIndex++)
+            {
+                ContentAssetHashMap map = maps[mapIndex];
+                if (map == null)
+                    continue;
+
+                int entryCount = map.EntryCount;
+                for (int entryIndex = 0; entryIndex < entryCount; entryIndex++)
+                {
+                    ContentAssetEntry entry = map.GetEntryAt(entryIndex);
+                    if (entry.Hash != 0u && entry.HasVisual3D())
+                        hashes.Add(entry.Hash);
+                }
+            }
+
+            return hashes;
         }
 
         private static void ValidateRuntimePrefabBindings()
@@ -712,6 +880,18 @@ namespace Hecton8.Core.Content.Editor
                         Fail("VFX prewarm manifest has invalid particle Addressable reference: " +
                              path + " index=" + particleIndex);
                     }
+
+                    if (!IsValidParticlePrewarmAsset(particleReference.editorAsset))
+                    {
+                        Fail("VFX prewarm manifest particle reference is not a ParticleSystem or prefab containing one: " +
+                             path + " index=" + particleIndex);
+                    }
+
+                    if (!IsParticlePrewarmHierarchyWithinBudget(particleReference.editorAsset))
+                    {
+                        Fail("VFX prewarm manifest particle prefab exceeds hierarchy traversal budget: " +
+                             path + " index=" + particleIndex);
+                    }
                 }
 
                 for (int computeIndex = 0; computeIndex < manifest.ComputeShaderCount; computeIndex++)
@@ -722,9 +902,71 @@ namespace Hecton8.Core.Content.Editor
                         Fail("VFX prewarm manifest has invalid compute Addressable reference: " +
                              path + " index=" + computeIndex);
                     }
+
+                    if (!(computeReference.editorAsset is ComputeShader))
+                    {
+                        Fail("VFX prewarm manifest compute reference is not a ComputeShader: " +
+                             path + " index=" + computeIndex);
+                    }
                 }
 #endif
             }
+        }
+
+        private static bool IsValidParticlePrewarmAsset(UnityEngine.Object asset)
+        {
+            if (asset is ParticleSystem)
+                return true;
+
+            GameObject gameObject = asset as GameObject;
+            return gameObject != null && ContainsParticleSystem(gameObject.transform);
+        }
+
+        private static bool ContainsParticleSystem(Transform root)
+        {
+            if (root == null)
+                return false;
+
+            if (root.TryGetComponent(out ParticleSystem _))
+                return true;
+
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                if (ContainsParticleSystem(root.GetChild(i)))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsParticlePrewarmHierarchyWithinBudget(UnityEngine.Object asset)
+        {
+            if (!(asset is GameObject gameObject))
+                return true;
+
+            int visitedNodes = 0;
+            return ValidateParticlePrewarmHierarchyBudget(gameObject.transform, 0, ref visitedNodes);
+        }
+
+        private static bool ValidateParticlePrewarmHierarchyBudget(Transform root, int depth, ref int visitedNodes)
+        {
+            if (root == null)
+                return true;
+            if (depth > ContentVfxPrewarmManifest.MaxParticlePrefabDepth)
+                return false;
+            if (visitedNodes >= ContentVfxPrewarmManifest.MaxParticlePrefabNodes)
+                return false;
+
+            visitedNodes++;
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                if (!ValidateParticlePrewarmHierarchyBudget(root.GetChild(i), depth + 1, ref visitedNodes))
+                    return false;
+            }
+
+            return true;
         }
 
         private static void AssertSize<T>(int expectedBytes, string typeName) where T : struct

@@ -11,51 +11,6 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace Hecton8.Core.Contracts.Signals
-{
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
-    public struct SystemHealthSignal : ISignal
-    {
-        public uint Frame;
-        public float SystemHealthIndex01;
-        public float FpsEwma;
-        public float JitterSigmaMs;
-        public float CpuTempC;
-        public float GpuUtil01;
-        public float BatteryLife01;
-        public ulong KillSwitchMask;
-        public byte PressureLevel;
-        public byte FoveatedPressureTier;
-        public ushort Flags;
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
-    public struct FrameTimeSignal : ISignal
-    {
-        public uint Frame;
-        public float CurrentFrameTimeMs;
-        public float FrameTimeEwmaMs;
-        public float TargetFrameTimeMs;
-        public float JitterSigmaMs;
-        public byte PressureLevel;
-        public byte Flags;
-        public ushort Reserved;
-        public uint Sequence;
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
-    public struct KillSwitchSignal : ISignal
-    {
-        public uint Frame;
-        public ulong PreviousMask;
-        public ulong CurrentMask;
-        public float SystemHealthIndex01;
-        public byte PreviousLevel;
-        public byte CurrentLevel;
-        public ushort Flags;
-    }
-}
-
 namespace Hecton8.Core
 {
     public enum HardwareMetricSlot : int
@@ -199,10 +154,16 @@ namespace Hecton8.Core
         private static VaultBufferHandle<float> _frameTimeMsHandle;
         private static VaultBufferHandle<HomeostasisBlackBoxEntry> _blackBoxHandle;
         private static FunctionPointer<ComputeSystemHealthIndexDelegate> _computeShi;
+        // COLD ALLOC: ScalabilityListener[1] - cached scalability-tier bridge for PreSimulationTick - owner: HomeostasisBrain
+        private static readonly ScalabilityListener s_scalabilityListener = new ScalabilityListener();
+        // COLD ALLOC: DependencyHotSwapBridge[1] - cached registry dependency bridge - owner: HomeostasisBrain
+        private static readonly DependencyHotSwapBridge s_dependencyHotSwapBridge = new DependencyHotSwapBridge();
 
         private static bool _initialized;
         private static bool _blackBoxDumped;
         private static bool _shiEwmaSeeded;
+        private static bool _scalabilityListenerRegistered;
+        private static bool _hotSwapRegistered;
         private static int _frameTimeCursor;
         private static int _frameTimeSampleCount;
         private static int _blackBoxCursor;
@@ -217,6 +178,8 @@ namespace Hecton8.Core
         private static float _fallbackHardwareBias;
         private static float _cachedBatteryLife01 = 1f;
         private static bool _usingHardwareSnapshot;
+        private static HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
+        private static IHardwareThermalService _hardwareThermalService;
         private static ulong _currentKillSwitchMask;
         private static byte _currentPressureLevel;
         private static uint _lastThermalAction;
@@ -288,6 +251,9 @@ namespace Hecton8.Core
             GlobalSignals.InitializeAllQueues();
 
             _computeShi = BurstCompiler.CompileFunctionPointer<ComputeSystemHealthIndexDelegate>(ComputeSystemHealthIndexBurst);
+            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
+            _hardwareThermalService = GlobalRegistry.HardwareThermal;
+            RegisterDependencyListeners();
             _fpsEwma = ResolveTargetFrameRate();
             hardwareMetrics[(int)HardwareMetricSlot.FpsEwma] = _fpsEwma;
             hardwareMetrics[(int)HardwareMetricSlot.CpuTempC] = 45f;
@@ -317,6 +283,7 @@ namespace Hecton8.Core
 #if UNITY_OSX && !UNITY_EDITOR
             DisposeMacThermalBridge();
 #endif
+            UnregisterDependencyListeners();
             MemoryBudgetTracker.Unregister(OwnerName);
             _computeShi = default;
             _dataVault = null;
@@ -340,6 +307,8 @@ namespace Hecton8.Core
             _fallbackHardwareBias = 0f;
             _cachedBatteryLife01 = 1f;
             _usingHardwareSnapshot = false;
+            _cachedScalabilityTier = HectonQualityTier.Unknown;
+            _hardwareThermalService = null;
             _currentKillSwitchMask = 0UL;
             _currentPressureLevel = 0;
             _lastThermalAction = 0u;
@@ -360,7 +329,7 @@ namespace Hecton8.Core
             float frameMs = SampleFrameMetrics(unscaledDeltaTime, targetFps, hardwareMetrics, frameTimes);
             SamplePlatformMetrics(targetFps, hardwareMetrics);
 
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier tier = _cachedScalabilityTier;
             bool lowTier = IsLowTier(tier);
             float rawShi = _computeShi.IsCreated
                 ? _computeShi.Invoke(
@@ -461,7 +430,7 @@ namespace Hecton8.Core
 
         private static bool TrySampleHardwareThermalSnapshot(float targetFps, NativeArray<float> hardwareMetrics)
         {
-            IHardwareThermalService hardwareThermal = GlobalRegistry.HardwareThermal;
+            IHardwareThermalService hardwareThermal = _hardwareThermalService;
             if (hardwareThermal == null || !hardwareThermal.TryGetSnapshot(out HardwareThermalSnapshot snapshot))
                 return false;
 
@@ -1065,6 +1034,76 @@ namespace Hecton8.Core
 
             metrics = _globalHardwareMetricsHandle.Resolve(vault);
             return metrics.IsCreated && metrics.Length >= (int)HardwareMetricSlot.Count;
+        }
+
+        private static void RegisterDependencyListeners()
+        {
+            if (!_scalabilityListenerRegistered)
+            {
+                ScalabilityEvents.Register(s_scalabilityListener);
+                _scalabilityListenerRegistered = true;
+            }
+
+            if (!_hotSwapRegistered)
+                _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(s_dependencyHotSwapBridge);
+        }
+
+        private static void UnregisterDependencyListeners()
+        {
+            if (_scalabilityListenerRegistered)
+            {
+                ScalabilityEvents.Unregister(s_scalabilityListener);
+                _scalabilityListenerRegistered = false;
+            }
+
+            if (_hotSwapRegistered)
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(s_dependencyHotSwapBridge);
+                _hotSwapRegistered = false;
+            }
+        }
+
+        private static void RebindRegistryDependency(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.HardwareThermalService)
+            {
+                _hardwareThermalService = currentService as IHardwareThermalService;
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            _dataVault = currentService as IDataVault;
+            _globalHardwareMetricsHandle = default;
+            _frameTimeMsHandle = default;
+            _blackBoxHandle = default;
+        }
+
+        private sealed class ScalabilityListener : IScalabilityChangedEventListener
+        {
+            public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+            {
+                _cachedScalabilityTier = payload.CurrentQualityTier;
+            }
+        }
+
+        private sealed class DependencyHotSwapBridge : IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+        {
+            public void OnGlobalRegistryServiceRebound(
+                GlobalRegistryServiceSlot serviceSlot,
+                ref object currentService)
+            {
+                RebindRegistryDependency(serviceSlot, currentService);
+            }
+
+            public void OnGlobalRegistryServiceReplaced(
+                GlobalRegistryServiceSlot serviceSlot,
+                object previousService,
+                object currentService)
+            {
+                RebindRegistryDependency(serviceSlot, currentService);
+            }
         }
 
         private static uint FoldMaskToUInt(ulong mask)

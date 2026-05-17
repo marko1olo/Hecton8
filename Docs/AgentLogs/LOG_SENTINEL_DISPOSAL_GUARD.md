@@ -532,3 +532,160 @@ Verification:
 - `git diff --check` on touched Sentinel files reported line-ending warnings only and no whitespace errors.
 - `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:03:23.66 and succeeded with 0 warnings and 0 errors after transient external Tether/World compile drift settled without Sentinel edits.
 - Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-16 - Continuation Inquisition / Vault Survivor Gate and Compile Green
+
+What was wrong:
+- H8Memory could prove top-level arena bytes while missing scene-owned GlobalDataVault suballocations that survived inside the reusable `CoreDataVault` arena.
+- `SceneRuntimeService` could release the loading pause after H8Memory verification even if locked/corrupt scene-owned vault buffers remained.
+- Local dotnet validation referenced the Core/Memory defrag phase contract without compiling `MemoryDefragContracts.cs`.
+
+What was done:
+- Added the expanded `IDataVault.ReleaseSceneOwnedBuffers(out releasedBytes, out remainingCount, out remainingBytes, out lockedCount)` proof path.
+- Added `IDataVault.CountSceneOwnedBuffers(out bytes, out lockedCount)` and wired `GlobalDataVault` to count locked/corrupt survivors after release.
+- Changed `SceneRuntimeService.CompleteMemoryLifecycleTransition()` to require both vault survivor verification and H8Memory verification before publishing unpause.
+- Added vault-blocked and vault-locked pause failure flags, and included remaining vault bytes in the memory breach MB signal.
+- Added `Assets/_Project/Scripts/Core/Memory/Defrag/MemoryDefragContracts.cs` to the existing `Directory.Build.targets` bridge so the local build compiles the existing defrag phase contract.
+
+Cinematic Cheats used:
+- No visual-domain edit was made.
+- Toaster mode: transition proof is cold-path only; no per-frame polling, no per-frame disk writes, no managed queue fallback.
+- God-mode: legitimate post-cutoff Ocean/VFX allocations remain legal, but old-scene vault survivors block the ready signal until memory is actually evicted.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Sentinel hot path remains 0 B/frame by static inspection.
+- Added work is a cold scene-transition scan over vault keys and project metadata for local validation; exact CPU cost is unmeasured.
+
+Verification:
+- Re-extracted the exact `SENTINEL_DISPOSAL_GUARD` XML from `Docs/Tasks/CURRENT_BATCH.md` by CLI.
+- CORE/MEMORY static scan found no `StructLayout` without `Pack = 1`.
+- CORE/MEMORY static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>`.
+- `.Complete()` scan found only intentional H8Memory owner teardown/shutdown fences.
+- `git diff --check` on touched files reported line-ending warnings only and no whitespace errors.
+- Isolated restore/build completed in 00:03:39.81 with 0 warnings and 0 errors.
+- Normal `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:01:56.04 and succeeded with 0 warnings and 0 errors.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-17 - Continuation Inquisition / Load-Cancel Guard and Compile Green
+
+What was wrong:
+- `SceneRuntimeService.LoadSceneAsync` could enter `finally` after a null/canceled load before Unity unloaded the old scene, then complete H8Memory transition verification against a cutoff captured before the load attempt.
+- That path risked treating still-active old-scene allocations as releasable transition leaks.
+- Fresh compile validation also exposed external typed-lane/interface drift outside CORE/MEMORY.
+
+What was done:
+- Added `H8Memory.CancelSceneTransitionPurge()` for abandoned transition cutoffs.
+- Added `_memoryLifecycleSceneUnloadObserved` to `SceneRuntimeService`; memory lifecycle verification now completes only after `HandleSceneUnloaded` observes Unity unload. Failed/null/canceled loads cancel the purge boundary instead of freeing active scene-owned memory.
+- Preserved the vault survivor gate: `SceneRuntimeService` still requires both GlobalDataVault scene-owned survivor proof and H8Memory verification before publishing unpause.
+- Narrow external compile bridges restored typed acoustic-zone SignalBus usage, PlayerMotor hot-swap/scalability contracts, vault-backed PlayerMotor native sweep storage, Tether call-shape parity, and a finite Submarine thermal anomaly accessor.
+
+Cinematic Cheats used:
+- No visual-domain edit was made.
+- Toaster mode: no per-frame polling, no per-frame disk writes, no private NativeArray fallback, and no scene memory free before Unity unload proof.
+- God-mode: legitimate post-cutoff Ocean/VFX allocations remain legal while old-scene H8Memory/vault survivors still block the ready signal.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Sentinel hot path remains 0 B/frame by static inspection.
+- Added Sentinel work is cold scene-transition/load-failure bookkeeping; exact CPU microseconds are unmeasured.
+
+Verification:
+- Re-extracted the exact `SENTINEL_DISPOSAL_GUARD` XML from `Docs/Tasks/CURRENT_BATCH.md` by CLI.
+- CORE/MEMORY and touched bridge static scans found no `StructLayout` without `Pack = 1`.
+- CORE/MEMORY scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, `Func<>`, coroutine, or LINQ debt.
+- `.Complete()` scan found only intentional H8Memory owner teardown/shutdown fences.
+- `git diff --check` on touched files reported line-ending warnings only and no whitespace errors.
+- `dotnet build Hecton8.Core.csproj --nologo /v:minimal` completed in 00:00:05.57 with 0 warnings and 0 errors.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-17 - Continuation Inquisition / Owner Pointer Lane Hygiene and Compile Green
+
+What was wrong:
+- H8Memory could retain empty per-owner `NativeList<IntPtr>` lanes after `ReleaseAll(SystemID)` or pointer unregister.
+- The retained lanes were not scene payload bytes, but they were persistent native owner metadata surviving past an owner with no tracked pointers.
+
+What was done:
+- `H8Memory.ReleaseAll(SystemID)` now disposes and removes the owner pointer lane when the last pointer is removed.
+- `RemoveOwnerPointer` now applies the same empty-lane cleanup and removes the owner key from `_ownerPointerKeys`.
+- Re-read the Sentinel XML and mandate files before the pass; Unity MCP editor resources remain unavailable.
+
+Cinematic Cheats used:
+- No visual-domain edit was made.
+- Toaster mode: no per-frame polling, no per-frame disk writes, no managed container fallback.
+- God-mode: the deterministic release boundary stays intact so Ocean/VFX domains can spend recovered memory after transition proof.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Sentinel hot path remains 0 B/frame by static inspection.
+- Added work is cold release/unregister cleanup; exact CPU microseconds are unmeasured.
+
+Verification:
+- Re-extracted the exact `SENTINEL_DISPOSAL_GUARD` XML from `Docs/Tasks/CURRENT_BATCH.md` by CLI.
+- CORE/MEMORY and `SceneRuntimeService` scan found no `StructLayout` without `Pack = 1`.
+- CORE/MEMORY scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, `Func<>`, coroutine, or LINQ debt.
+- `.Complete()` scan found only intentional H8Memory owner teardown/shutdown fences.
+- `git diff --check` on `H8Memory.cs` reported line-ending warnings only and no whitespace errors.
+- `dotnet build Hecton8.Core.csproj --nologo /v:minimal` completed in 00:01:53.54 with 0 warnings and 0 errors.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-17 - Continuation Inquisition / Empty Lane Early-Exit and No-Restore Compile Green
+
+What was wrong:
+- `H8Memory.ReleaseAll(SystemID)` still returned before cleanup when a stale owner lane was already zero-length at method entry.
+- No-restore compile validation then exposed two external compile drifts: a `SubmarineFluidDynamics` scalability listener mismatch and a half-finished `SargassumMicroFaunaBoids` staging-array removal.
+
+What was done:
+- Added `RemoveOwnerPointerLane` and used it from both `ReleaseAll` and `RemoveOwnerPointer`.
+- Fixed the pre-existing empty-lane early exit in `ReleaseAll`.
+- Restored the Submarine cached LOD frame field and fully qualified the scalability payload.
+- Restored Sargassum's four bounded CPU staging arrays and cold allocation guards so existing GPU upload call sites compile.
+
+Cinematic Cheats used:
+- No visual-domain feature edit was made.
+- Toaster mode: no per-frame polling, no per-frame disk writes, no new native private arrays in Sentinel.
+- God-mode: deterministic memory cleanup remains intact so recovered budget can be spent by visual domains after runtime proof.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Sentinel hot path remains 0 B/frame by static inspection.
+- Added Sentinel work is cold release/unregister cleanup; exact CPU microseconds are unmeasured.
+
+Verification:
+- Re-extracted the exact `SENTINEL_DISPOSAL_GUARD` XML from `Docs/Tasks/CURRENT_BATCH.md` by CLI.
+- CORE/MEMORY and `SceneRuntimeService` scan found no `StructLayout` without `Pack = 1`.
+- CORE/MEMORY scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, `Func<>`, coroutine, or LINQ debt.
+- `git diff --check` on touched files reported line-ending warnings only and no whitespace errors.
+- `dotnet build Hecton8.Core.csproj --no-restore --nologo /clp:ErrorsOnly` completed in 00:01:06.63 with 0 warnings and 0 errors.
+- No `dotnet rebuild` command was run.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-17 - Continuation Inquisition / Owner Key Dedupe and No-Restore Compile Green
+
+What was wrong:
+- H8Memory could still carry duplicate stale owner keys if map/key state had already diverged before lane cleanup.
+- `RemoveOwnerPointerKey` and `RemoveOwnerJobKey` stopped after one removal, so a duplicate could keep transition/shutdown iteration metadata alive after the real owner lane or job fence was gone.
+
+What was done:
+- Added `AddOwnerPointerKey` and `AddOwnerJobKey` to dedupe cold owner-key insertion.
+- Hardened `RemoveOwnerPointerKey` and `RemoveOwnerJobKey` to remove every duplicate key entry.
+- Re-read AGENTS, the actual domain map, relevant memory/GC/reset/signal/blackbox/streaming mandates, and the exact Sentinel XML before the patch.
+
+Cinematic Cheats used:
+- No visual-domain edit was made.
+- Toaster mode: no per-frame polling, no per-frame disk writes, no managed fallback registry.
+- God-mode: deterministic old-scene owner teardown stays clean so high-tier Ocean/VFX memory can be spent after runtime proof.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Sentinel hot path remains 0 B/frame by static inspection.
+- Added work is cold owner lane/job key creation and teardown only; exact CPU microseconds are unmeasured.
+
+Verification:
+- Re-extracted the exact `SENTINEL_DISPOSAL_GUARD` XML from `Docs/Tasks/CURRENT_BATCH.md` by CLI.
+- Unity MCP resources/templates are empty in this session; runtime scene-transition verification remains pending.
+- CORE/MEMORY and `SceneRuntimeService` scan found no `StructLayout` without `Pack = 1`.
+- CORE/MEMORY scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, `Func<>`, coroutine, or LINQ debt.
+- `git diff --check` on touched files reported line-ending warnings only and no whitespace errors.
+- `dotnet build Hecton8.Core.csproj --no-restore --nologo /clp:ErrorsOnly` completed in 00:01:15.89 with 0 warnings and 0 errors.
+- No `dotnet rebuild` command was run.

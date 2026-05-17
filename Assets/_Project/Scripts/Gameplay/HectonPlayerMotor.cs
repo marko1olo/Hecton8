@@ -24,7 +24,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player/Hecton Player Motor")]
-    public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces, IPostFixedTickable, ILateFrameTickable, IInventoryEventListener
+    public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces, IPostFixedTickable, ILateFrameTickable, IInventoryEventListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
         private struct ScheduledSweepState
@@ -112,6 +112,11 @@ namespace Hecton8.Gameplay
         private bool _registeredLateFrameTick;
         private bool _registeredPostFixedTick;
         private bool _registeredMotorService;
+        private bool _registeredHotSwap;
+        private bool _registeredScalability;
+        private IDataVault _dataVault;
+        private AbyssalFluidDecalManager _fluidDecals;
+        private byte _scalabilityTierProfileByte;
         private float _encumbranceMovementMultiplier = 1f;
         private float _wakeSiltEmissionCooldown;
         private Vector3 _lastWallSlideNormal;
@@ -411,6 +416,8 @@ namespace Hecton8.Gameplay
             TryRegisterLateFrameTick();
             TryRegisterPostFixedTick();
             TryRegisterMotorService();
+            TryRegisterHotSwap();
+            TryRegisterScalability();
         }
 
         private void OnDisable()
@@ -419,6 +426,8 @@ namespace Hecton8.Gameplay
             TryUnregisterLateFrameTick();
             TryUnregisterPostFixedTick();
             TryUnregisterMotorService();
+            TryUnregisterHotSwap();
+            TryUnregisterScalability();
             ResetWallSlideContactState();
             DisposeScheduledSweepState();
         }
@@ -429,6 +438,8 @@ namespace Hecton8.Gameplay
             TryUnregisterLateFrameTick();
             TryUnregisterPostFixedTick();
             TryUnregisterMotorService();
+            TryUnregisterHotSwap();
+            TryUnregisterScalability();
             ResetWallSlideContactState();
             DisposeScheduledSweepState();
         }
@@ -464,6 +475,37 @@ namespace Hecton8.Gameplay
 
             float load01 = math.saturate(payload.Load01);
             SetEncumbranceMovementMultiplier(math.lerp(1f, InventoryLoadMinimumMovementMultiplier, load01));
+        }
+
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object newService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                DisposeScheduledSweepState();
+                _dataVault = newService as IDataVault;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime)
+                _fluidDecals = newService as AbyssalFluidDecalManager;
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            OnGlobalRegistryServiceReplaced(serviceSlot, previousService, currentService);
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _scalabilityTierProfileByte = payload.CurrentTier;
+        }
+
+        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            OnScalabilityChanged(in payload);
         }
 
         /// <inheritdoc />
@@ -1243,7 +1285,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(emitPosition3)))
                 return;
 
-            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            AbyssalFluidDecalManager fluidDecals = _fluidDecals;
             if (fluidDecals == null)
                 return;
 
@@ -1592,9 +1634,9 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static NativeArray<byte> ResolveSdfTraversalPayload(NativeArray<byte> publishedSdf, int expectedLength)
+        private NativeArray<byte> ResolveSdfTraversalPayload(NativeArray<byte> publishedSdf, int expectedLength)
         {
-            var dataVault = GlobalRegistry.DataVault;
+            var dataVault = _dataVault;
             if (dataVault != null &&
                 dataVault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> vaultSdf) &&
                 vaultSdf.IsCreated &&
@@ -1727,14 +1769,15 @@ namespace Hecton8.Gameplay
 
         private void EnsureScheduledSweepState()
         {
-            _nativeState.EnsureScheduledSweepState(ScheduledSweepCommandCount, ScheduledSweepMaxHits);
+            _nativeState.EnsureScheduledSweepState(ScheduledSweepCommandCount, ScheduledSweepMaxHits, _dataVault);
         }
 
         private void EnsureKinematicRepairTargetState()
         {
             _nativeState.EnsureKinematicRepairTargetState(
                 KinematicRepairTargetCommandCount,
-                KinematicRepairTargetResultCount);
+                KinematicRepairTargetResultCount,
+                _dataVault);
         }
 
         private void DisposeScheduledSweepState()
@@ -1813,6 +1856,45 @@ namespace Hecton8.Gameplay
             _registeredMotorService = false;
         }
 
+        private void TryRegisterHotSwap()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _registeredHotSwap = true;
+            _dataVault = GlobalRegistry.DataVault;
+            _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.UnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        private void TryRegisterScalability()
+        {
+            if (_registeredScalability || !Application.isPlaying)
+                return;
+
+            _scalabilityTierProfileByte = GlobalRegistry.ScalabilityTierProfileByte;
+            ScalabilityEvents.Register(this);
+            _registeredScalability = true;
+        }
+
+        private void TryUnregisterScalability()
+        {
+            if (!_registeredScalability)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalability = false;
+        }
+
         private void CompleteScheduledSweepInLateFrameSwapWindow()
         {
             if (!_scheduledSweepPending)
@@ -1880,7 +1962,7 @@ namespace Hecton8.Gameplay
             _scheduledSweepWasBlocked = true;
             _scheduledSweepBlockingHit = _nativeState.ScheduledSweepResults[nearestIndex];
             Vector3 safeNormal = SafeNormal(_scheduledSweepBlockingHit.normal, Vector3.up);
-            bool lowTierStop = KinematicCcdMath.IsLowTier(GlobalRegistry.ScalabilityTierProfileByte);
+            bool lowTierStop = KinematicCcdMath.IsLowTier(_scalabilityTierProfileByte);
             bool cornerCandidate = HasScheduledSweepCornerHit(
                 nearestIndex,
                 safeNormal,

@@ -1466,7 +1466,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable AUP-backed chest socket pose.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct VRSomaticChestSocketPose
     {
         public readonly AbsoluteUniversePosition SocketAup;
@@ -1487,10 +1487,13 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable near-field head contact state emitted by the VR somatic provider.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct VRSomaticCollisionState
     {
         public readonly byte HasContactFlag;
+        private readonly byte _reserved0;
+        private readonly byte _reserved1;
+        private readonly byte _reserved2;
         public readonly AbsoluteUniversePosition ContactAup;
         public readonly Vector3 RuntimePoint;
         public readonly Vector3 RuntimeNormal;
@@ -1508,6 +1511,9 @@ namespace Hecton8.Core
             float impactSpeedMetersPerSecond)
         {
             HasContactFlag = hasContact ? (byte)1 : (byte)0;
+            _reserved0 = 0;
+            _reserved1 = 0;
+            _reserved2 = 0;
             ContactAup = contactAup;
             RuntimePoint = runtimePoint;
             RuntimeNormal = runtimeNormal;
@@ -1522,10 +1528,13 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable frame snapshot for VR somatic suit systems.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct VRSomaticSnapshot
     {
         public readonly byte IsActiveFlag;
+        private readonly byte _reserved0;
+        private readonly byte _reserved1;
+        private readonly byte _reserved2;
         public readonly AbsoluteUniversePosition HeadAup;
         public readonly Vector3 HeadRuntimePosition;
         public readonly Quaternion HeadRuntimeRotation;
@@ -1549,6 +1558,9 @@ namespace Hecton8.Core
             float condensation01)
         {
             IsActiveFlag = isActive ? (byte)1 : (byte)0;
+            _reserved0 = 0;
+            _reserved1 = 0;
+            _reserved2 = 0;
             HeadAup = headAup;
             HeadRuntimePosition = headRuntimePosition;
             HeadRuntimeRotation = headRuntimeRotation;
@@ -1578,7 +1590,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable hand pose pair for VR hand renderers: controller target versus spring-driven physical hand.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct VRSomaticHandPose
     {
         public readonly byte HandIndex;
@@ -1747,7 +1759,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Cold-path authoring payload copied from scene POI components into the native spatial registry.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct NarrativeSpatialTriggerAuthoring
     {
         public AbsoluteUniversePosition PositionAup;
@@ -1760,6 +1772,9 @@ namespace Hecton8.Core
         public uint LoreHash;
         public int BitIndex;
         public NarrativeSpatialTriggerFlags Flags;
+        private byte _reserved0;
+        private byte _reserved1;
+        private byte _reserved2;
     }
 
     /// <summary>
@@ -2187,7 +2202,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable flood readback for one habitat room, expressed in runtime-space meters.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct HabitatRoomWaterlineSnapshot
     {
         public const byte FlagBreached = 1 << 0;
@@ -2213,6 +2228,9 @@ namespace Hecton8.Core
             WaterVolumeM3 = waterVolumeM3;
             Sequence = sequence;
             Flags = flags;
+            _reserved0 = 0;
+            _reserved1 = 0;
+            _reserved2 = 0;
         }
 
         public int RoomId { get; }
@@ -2223,6 +2241,9 @@ namespace Hecton8.Core
         public float WaterVolumeM3 { get; }
         public uint Sequence { get; }
         public byte Flags { get; }
+        private readonly byte _reserved0;
+        private readonly byte _reserved1;
+        private readonly byte _reserved2;
 
         public bool IsValid =>
             RoomId >= 0 &&

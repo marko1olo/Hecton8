@@ -259,3 +259,57 @@ Solution: Rechecked the external contexts and reran the compile gate. The third 
 Rejected Alternatives: Rejected editing `TetherInstance` or `EcosystemDirector` from the Sentinel memory domain once source inspection showed the compile drift was external and unstable.
 Scalability potential: Compile green reopens Unity scene-transition profiling across MX350, Quest/Android, Steam Deck, and high-end PC, but does not replace runtime capture.
 Hardware Impact: None measured; build validation is a compile gate, not runtime profiling.
+
+Problem: `H8Memory.TotalAllocatedBytes` alone cannot prove GlobalDataVault scene eviction, because scene-owned buffers can survive as suballocations inside the reusable `CoreDataVault` arena while the top-level arena allocation remains legal.
+Solution: Expanded `IDataVault.ReleaseSceneOwnedBuffers` to report released bytes, remaining scene-owned buffer count, remaining scene-owned bytes, and locked survivor count. Added `CountSceneOwnedBuffers` and made `SceneRuntimeService` keep `SystemPauseSignal` asserted unless both vault survivor proof and H8Memory transition proof pass.
+Rejected Alternatives: Rejected relying only on H8Memory's arena-level total. Rejected force-freeing locked vault blocks because active jobs may still own aliases. Rejected per-frame polling; the check remains transition-driven.
+Scalability potential: Low/MX350/Quest get deterministic old-scene vault eviction with no per-frame disk writes. Steam Deck avoids MicroSD churn because only cold fatal/PhiVOD dumps touch disk. High/Ultra keep legitimate post-cutoff Ocean/VFX allocations while blocked vault survivors still prevent a false "ready" signal.
+Hardware Impact: 0 B/frame. Added work is a cold scene-transition scan over vault keys and a few scalar fields in the pause failure path. Exact CPU microseconds are unmeasured and not claimed.
+
+Problem: Local dotnet validation referenced `Hecton8.Core.Memory.Defrag` and `MemoryDefragPhase`, but the existing bridge included `H8Memory` and `GlobalDataVault` without the `MemoryDefragContracts.cs` source that defines the phase enum.
+Solution: Added `Assets/_Project/Scripts/Core/Memory/Defrag/MemoryDefragContracts.cs` to the existing `Directory.Build.targets` compile bridge.
+Rejected Alternatives: Rejected duplicating `MemoryDefragPhase`, deleting the defrag phase contract, or editing dispatcher behavior to hide the missing contract. The correct fix is to compile the existing Core/Memory contract source.
+Scalability potential: Low/Middle/High/Ultra keep the same defrag phase contract and Burst lock mask flow; this only restores validation parity with the Unity asmdef boundary.
+Hardware Impact: 0.0 us runtime; project metadata only.
+
+Problem: Validation briefly reported an external UI `NativeSlice.IsCreated` compile error from `DiegeticGyroCompassRuntime`, but the working source had already changed and no longer contained that invalid call.
+Solution: Reran an isolated build on a fresh obj/bin path, then reran the normal project build after the external drift settled. Final `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` succeeds with 0 warnings and 0 errors in 00:01:56.04.
+Rejected Alternatives: Rejected editing UI navigation from the Sentinel memory domain after source inspection showed no live patch was required. Rejected preserving a stale red validation line after objective green output.
+Scalability potential: Compile green reopens Unity scene-transition profiling across MX350, Quest/Android, Steam Deck, and high-end PC, but it still does not replace runtime capture.
+Hardware Impact: None measured; build validation is a compile gate. Sentinel hot-path allocation impact remains 0 B/frame by static inspection.
+
+Problem: `SceneRuntimeService.LoadSceneAsync` captured a transition purge cutoff before `SceneManager.LoadSceneAsync`, but the `finally` path could complete memory verification even when Unity never unloaded the old scene. That could convert a canceled or null scene load into an active-scene force-release.
+Solution: Added an observed-unload gate in `SceneRuntimeService`. Its `sceneUnloaded` callback marks `_memoryLifecycleSceneUnloadObserved`; finalization completes verification only when that flag is true. Otherwise it calls `H8Memory.CancelSceneTransitionPurge()`, clears the transient cutoff, and publishes an unpaused failure signal without releasing old-scene pointers.
+Rejected Alternatives: Rejected completing H8Memory verification from `finally` without scene-unload proof. Rejected pre-unload force free because old-scene scripts/renderers can still touch scene-owned NativeArrays until Unity actually unloads them. Rejected per-frame polling of transition handles.
+Scalability potential: Low/MX350/Quest avoid catastrophic invalid frees during canceled loads with no Tick cost. Steam Deck avoids extra I/O because only cold fatal dumps write to disk. High/Ultra keep the same deterministic memory gate before Ocean/VFX spends recovered memory.
+Hardware Impact: 0 B/frame. Added work is cold scene-load bookkeeping and one cold cancel call on failed load attempts; exact CPU microseconds are unmeasured.
+
+Problem: Fresh build validation exposed external drift in typed acoustic-zone signals, PlayerMotor registry/scalability interfaces, GlobalDataVault-backed motor native state, Tether call shapes, and Submarine thermal anomaly accessors while Sentinel memory code was already compiling.
+Solution: Kept bridges narrow: acoustic zone now uses the existing typed `SignalBus<AcousticZoneChangedEvent>` lane and `ReadOnlySpan<T>` snapshots; PlayerMotor satisfies hot-swap/scalability contracts and passes `IDataVault` into native sweep storage; Tether manager/instance calls are back in parity; Submarine thermal anomaly center access is finite-guarded. No new signal duplicates or managed EventBus/delegate lanes were introduced.
+Rejected Alternatives: Rejected reintroducing listener queues, private NativeArray fallbacks, broad gameplay refactors, or suppressing interface compile errors. Rejected claiming runtime performance wins from compile-only bridges.
+Scalability potential: Low/Quest/Steam Deck keep typed lanes and vault ownership without private native state leaks. High/Ultra retain the same signal flow and data sovereignty while the compile gate stays green for runtime scene-transition profiling.
+Hardware Impact: No Sentinel gameplay hot-path change. External bridge costs are either cold registration/compile metadata or existing gameplay paths; exact CPU microseconds are unmeasured.
+
+Problem: H8Memory's owner pointer registry could retain empty per-owner `NativeList<IntPtr>` lanes after explicit owner release or pointer unregister. That is not a payload byte leak, but it is stale persistent allocator metadata across scene transitions and weakens the zero-leak claim.
+Solution: `ReleaseAll(SystemID)` and `RemoveOwnerPointer` now dispose the owner lane, remove the `_ownerPointers` entry, and remove the owner key from `_ownerPointerKeys` when the last pointer is gone.
+Rejected Alternatives: Rejected retaining empty lanes forever as a harmless cache because scene-owned owners churn during transitions. Rejected rebuilding `_ownerPointerKeys` by scanning the hash map because that adds broader cold-path complexity and risks iterator differences across Unity collections.
+Scalability potential: Low/MX350, Quest/Android, and Steam Deck avoid owner-lane creep without per-frame polling or disk writes. High/Ultra keep the same deterministic owner registry so recovered memory can be spent by Ocean/VFX domains after verified transition cleanup.
+Hardware Impact: 0 B/frame. Added work is only on explicit release/unregister cold paths. Exact CPU microseconds are unmeasured and not claimed.
+
+Problem: The first owner-lane hygiene patch still left a stale lane when `ReleaseAll(SystemID)` found a pre-existing owner entry with zero pointers before entering the purge loop.
+Solution: Added an early empty-lane branch and centralized owner pointer lane removal through `RemoveOwnerPointerLane`, shared by `ReleaseAll` and `RemoveOwnerPointer`.
+Rejected Alternatives: Rejected treating zero-length lanes as a cache because scene-owned systems can churn through many owners over long sessions. Rejected a global key rebuild because deterministic point removal is simpler and keeps the transition path bounded.
+Scalability potential: Low/MX350, Quest/Android, and Steam Deck avoid persistent owner metadata creep without per-frame work. High/Ultra keep deterministic release proof before VFX/Ocean domains spend recovered memory.
+Hardware Impact: 0 B/frame. Added work is cold owner release/unregister only. Exact CPU microseconds are unmeasured.
+
+Problem: No-restore build validation exposed external compile drift after the Sentinel patch: `SubmarineFluidDynamics` had a scalability listener signature mismatch and a removed frame-cache field, and `SargassumMicroFaunaBoids` had four removed CPU staging arrays still referenced by bounded GPU upload and bookkeeping paths.
+Solution: Kept bridges minimal: restored the Submarine frame-cache field, fully qualified the scalability payload type, and restored the Sargassum bounded staging arrays plus cold allocation guards. The Sentinel memory domain was not broadened into a World/VFX refactor.
+Rejected Alternatives: Rejected changing the core scalability interface, removing listener registration, or rewriting Sargassum's GPU upload pipeline under a memory-agent task. Rejected running `dotnet rebuild`; validation used `dotnet build --no-restore`.
+Scalability potential: External bridges restore compile validation for MX350/Quest/Steam Deck/high-end profiles without changing Sentinel runtime behavior. Sargassum's restored arrays remain bounded staging data, not unbounded native allocations.
+Hardware Impact: No Sentinel hot-path change. External bridge costs are existing bounded cold allocations or existing gameplay upload paths; exact CPU microseconds are unmeasured.
+
+Problem: H8Memory's owner-key side lists could still accumulate duplicate stale keys after map/key divergence. The owner pointer lane cleanup removed current keys, but a pre-existing duplicate key could survive because removal stopped after the first match; a later `RegisterOwnerPointer` or `RegisterActiveJob` could add another key if the hash map entry was already gone.
+Solution: Added bounded cold-path key insertion helpers for pointer lanes and job-fence lanes. `AddOwnerPointerKey` and `AddOwnerJobKey` dedupe before appending, while `RemoveOwnerPointerKey` and `RemoveOwnerJobKey` now scrub every duplicate match.
+Rejected Alternatives: Rejected treating duplicate keys as harmless because transition/shutdown loops use those key arrays as deterministic owner iteration surfaces. Rejected rebuilding key lists from hash maps at every transition because the point cleanup is simpler and keeps work attached to owner creation/removal.
+Scalability potential: Low/MX350, Quest/Android, and Steam Deck avoid persistent metadata creep without per-frame polling or disk writes. High/Ultra keep deterministic teardown surfaces so legitimate Ocean/VFX allocations can proceed after old-scene owner proof.
+Hardware Impact: 0 B/frame. Added work is only on cold lane creation and owner teardown paths; exact CPU microseconds are unmeasured. Validation used `dotnet build --no-restore`; no `dotnet rebuild` was run.

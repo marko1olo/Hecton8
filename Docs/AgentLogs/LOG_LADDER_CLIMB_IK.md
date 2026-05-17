@@ -343,3 +343,119 @@ Validation:
 - `git diff --check` reports only existing LF-to-CRLF warnings on touched files.
 - Latest `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` returned `CORE_BUILD_EXIT:0`.
 - Unity editor, Play Mode, profiler, GC monitor, and platform builds were not run.
+## Loop 18 - Player State AUP Truth
+What was wrong:
+- `PlayerStateSignal.PositionAup` published the ladder base AUP, not the current player climb AUP.
+- Downstream HUD, physiology, diagnostics, or haptic consumers could anchor effects at the ladder entry while `Intensity01` advanced up the rungs.
+
+What was done:
+- Added `ResolveCurrentClimbAup(in ladderAup)` in `ProceduralLadderClimbRuntime`.
+- `PublishClimbState` now derives current climb AUP from the vault ladder base plus normalized ladder-up progress using `double3` and `AbsoluteUniversePosition.OffsetMeters`.
+- Re-ran focused debt, layout, NativeArray, and Core build validation after the patch.
+
+Cinematic Cheats used:
+- Low/toaster path remains the camera-slide and midpoint elbow Dear Lie; no new expensive simulation was added.
+- High/VR path keeps real grip-pull progress and exact rung signal truth without adding a duplicate lane.
+
+Exact Microseconds saved:
+- No savings claimed. The fix adds one `double3` multiply and one AUP offset conversion per climb-state publish, estimated below 1 us/event. No profiler capture was run.
+
+Validation:
+- Forbidden ladder-domain scan clean: no `Update`, coroutine, managed delegate/event, `Debug.Log`, teleport marker, transform-position increment, or local runtime NativeArray owner pattern in the checked ladder path.
+- Missing `[StructLayout(Pack=1)]` scan clean for ladder-owned structs.
+- Runtime NativeArray scan clean: `ProceduralLadderClimbRuntime` has zero `NativeArray<T>` declarations; view/job fields remain in `LadderClimbIkJobs.cs`.
+- `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` returned `CORE_BUILD_EXIT:0`.
+- `git diff --check` reported LF-to-CRLF warnings only.
+- Unity editor, Play Mode, profiler, Quest/Android, Metal/Mac, and Steam Deck runtime validation were not run in this shell session.
+
+## Loop 19 - Burst Job Layout Closure
+What was wrong:
+- The ARM64 layout audit showed `LadderClimbIkInput`, `LadderClimbIkOutput`, `LadderClimbTelemetryEntry`, and `LadderClimbIkVaultViews` were packed, but `LadderClimbIkSolveJob` itself still had implicit struct layout.
+- That is a static compliance gap for the Quest/Android instruction, even though the job wrapper is not a persisted save/network packet.
+
+What was done:
+- Added `[StructLayout(LayoutKind.Sequential, Pack = 1)]` to `LadderClimbIkSolveJob`.
+- Re-ran the focused debt scan against the actual `Assets/_Project/Scripts/Gameplay/ClimbableLadder.cs` path instead of the stale traversal path.
+
+Cinematic Cheats used:
+- None added. Low-tier midpoint IK and camera-slide Dear Lie remain unchanged.
+
+Exact Microseconds saved:
+- 0 us claimed. This is explicit layout metadata only; no hot-path math or allocation behavior changed.
+
+Validation:
+- Forbidden ladder-domain scan returned no matches against `Assets/_Project/Scripts/Animation/Locomotion` and `Assets/_Project/Scripts/Gameplay/ClimbableLadder.cs`.
+- `LadderClimbIkSolveJob` now has explicit `StructLayout(LayoutKind.Sequential, Pack = 1)`.
+- `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` returned `CORE_BUILD_EXIT:0`.
+- Unity editor, Play Mode, profiler, Quest/Android, Metal/Mac, and Steam Deck runtime validation were not run in this shell session.
+
+## Loop 20 - Non-Blocking Ladder Job Drain
+What was wrong:
+- `LateFrameTick()` called `_solveHandle.Complete()` immediately whenever a solve was scheduled.
+- If the worker job was not finished yet, the player lane could block on a same-frame drain. That is a hitch vector on i3/MX350 and Steam Deck under worker-thread pressure.
+
+What was done:
+- Added `_solveHandle.IsCompleted` gating before `Complete()`.
+- Finished solves are still drained and applied in late frame; unfinished solves stay scheduled and are sampled on the next late-frame pass.
+- Cold teardown and new climb setup still force completion because those are ownership-boundary synchronization points.
+
+Cinematic Cheats used:
+- None added. The change preserves the existing low-tier camera-slide/midpoint-elbow Dear Lie and the high-tier VR grip-pull exact rung solve.
+
+Exact Microseconds saved:
+- No measured microseconds claimed. Steady-state cost is 0 us when the job is already complete; under load this avoids waiting for the remaining worker time, but no profiler capture was run.
+
+Validation:
+- Forbidden ladder-domain scan returned no matches against `Assets/_Project/Scripts/Animation/Locomotion` and `Assets/_Project/Scripts/Gameplay/ClimbableLadder.cs`.
+- Layout scan still shows packed ladder structs and packed `LadderClimbIkSolveJob`.
+- `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` returned `CORE_BUILD_EXIT:1` because dirty external `Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` does not implement dirty external `IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent)`.
+- Filtered build output contains no ladder symbols.
+- Unity editor, Play Mode, profiler, Quest/Android, Metal/Mac, and Steam Deck runtime validation were not run in this shell session.
+
+## Loop 21 - Signal and Haptic Coalescing
+What was wrong:
+- `PlayerStateSignal` could be published twice in the same frame with identical climb state, flags, and progress.
+- When both hands locked to new rung indices in one solve, the runtime emitted two haptic packets in the same frame.
+
+What was done:
+- Added `_hasPublishedClimbState`, `_lastPublishedClimbFrame`, `_lastPublishedClimbState`, `_lastPublishedClimbFlags`, and `_lastPublishedClimbProgressMillimeters`.
+- `PublishClimbState` now coalesces identical same-frame packets while still allowing slip, finish, flag, and progress changes through.
+- `EmitRungContactHaptics` now emits one coalesced `HapticRequest`, with a stronger pulse when both hands lock simultaneously.
+
+Cinematic Cheats used:
+- No new simulation. This preserves the low-tier camera-slide/midpoint-elbow Dear Lie and spends less signal bandwidth on repeated presentation packets.
+
+Exact Microseconds saved:
+- No profiler-backed microseconds claimed. Static reduction can avoid one duplicate player-state publish on same-frame solve drain and one duplicate haptic publish when both hands lock in the same output.
+
+Validation:
+- Forbidden ladder-domain scan returned no matches against `Assets/_Project/Scripts/Animation/Locomotion` and `Assets/_Project/Scripts/Gameplay/ClimbableLadder.cs`.
+- Layout scan still shows packed ladder structs and packed `LadderClimbIkSolveJob`.
+- `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` returned `CORE_BUILD_EXIT:1` because external `HectonPlayerMotor` call sites need `IDataVault`, `EquipmentInteractionContracts` has a uint-to-ushort mismatch, and Tether call sites no longer match Verlet APIs.
+- Filtered build output contains no ladder symbols.
+- Unity editor, Play Mode, profiler, Quest/Android, Metal/Mac, and Steam Deck runtime validation were not run in this shell session.
+
+## Loop 22 - Cold Blackbox Span Writer
+What was wrong:
+- `DumpBlackBox()` still built a project-root path and wrapped the crash dump stream with `BinaryWriter`.
+- A NaN/crash dump should preserve evidence with minimal extra managed work and must not throw back into the ladder runtime while the system is already degraded.
+
+What was done:
+- Added `BlackBoxDumpDirectory`, `BlackBoxDumpPath`, and `BlackBoxDumpEntryBytes` constants.
+- Pre-created `Docs/AgentLogs` during `OnEnable` through `PrepareBlackBoxDumpDirectoryCold`.
+- Replaced `BinaryWriter` with `BinaryPrimitives` plus a fixed 8-byte header and 85-byte stackalloc telemetry record.
+- Preserved the existing payload order: capacity, retained count, then retained entries oldest-to-newest.
+- Wrapped the dump write in a cold catch block so export failure does not become a second runtime fault.
+
+Cinematic Cheats used:
+- No new visual simulation. Low tier still uses camera slide and midpoint elbow Dear Lie; high/VR keeps exact rung targets, grip-pull embodiment, and haptic rung locks.
+
+Exact Microseconds saved:
+- No measured microseconds claimed. Hot path remains unchanged. Cold fault-path pressure is reduced by removing `BinaryWriter`, project-root `DirectoryInfo`, and per-dump `Path.Combine`.
+
+Validation:
+- `<POLISH_MANDATE>` tag scan returned no batch-level tag.
+- `BinaryWriter` / `File.Open` / `ResolveProjectRoot` scan now has no ladder-runtime matches; only the constant dump path remains.
+- Forbidden ladder-domain scan returned no matches against `Assets/_Project/Scripts/Animation/Locomotion` and `Assets/_Project/Scripts/Gameplay/ClimbableLadder.cs`.
+- `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` returned `CORE_BUILD_EXIT:0`.
+- Unity editor, Play Mode, profiler, Quest/Android, Metal/Mac, and Steam Deck runtime validation were not run in this shell session.

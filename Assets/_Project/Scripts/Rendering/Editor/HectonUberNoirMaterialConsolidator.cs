@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Hecton8.Rendering.Editor
 {
@@ -21,6 +22,17 @@ namespace Hecton8.Rendering.Editor
         private const string ReportPath = "Docs/AgentLogs/UberNoirMaterialConsolidationReport.md";
 
         private static readonly string[] SearchRoots = { ConstructionSearchRoot, ToolsSearchRoot };
+        private static readonly string[] LegacySourceKeywords =
+        {
+            "_ALPHABLEND_ON",
+            "_ALPHATEST_ON",
+            "_SURFACE_TYPE_TRANSPARENT",
+            "_NORMALMAP",
+            "_DETAIL_MULX2",
+            "_METALLICSPECGLOSSMAP",
+            "_EMISSION"
+        };
+
         private static readonly SourceShaderSpec[] SourceShaders =
         {
             new SourceShaderSpec(DryZoneShaderName, ProjectionKind.DryZoneHardSurface),
@@ -289,8 +301,10 @@ namespace Hecton8.Rendering.Editor
                 SetVector(material, "_UberNoirDitherParams", ResolveDitherParams());
                 SetVector(material, "_UberNoirLightingParams", ResolveLightingParams());
                 SetVector(material, "_UberNoirRefractionParams", ResolveRefractionParams());
+                DisableLegacySourceKeywords(material);
                 SetKeyword(material, CausticsKeyword, Kind != ProjectionKind.WetGlassSheen);
                 SetKeyword(material, RefractionKeyword, RefractionStrength > 0.0001f);
+                ApplyRenderState(material);
                 material.enableInstancing = true;
             }
 
@@ -299,8 +313,20 @@ namespace Hecton8.Rendering.Editor
                 float pom = Kind == ProjectionKind.WetGlassSheen ? 0f : 1f;
                 float caustics = 1f;
                 float bending = Kind == ProjectionKind.DryZoneHardSurface || Kind == ProjectionKind.WetGlassSheen ? 1f : 0f;
-                float dither = BaseColor.a < 0.995f || Kind == ProjectionKind.RuinSeepSheen || Kind == ProjectionKind.WetGlassSheen ? 1f : 0f;
+                float dither = RequiresDitheredCutout() ? 1f : 0f;
                 return new Vector4(pom, caustics, bending, dither);
+            }
+
+            private bool RequiresDitheredCutout()
+            {
+                return BaseColor.a < 0.995f || Kind == ProjectionKind.RuinSeepSheen || Kind == ProjectionKind.WetGlassSheen;
+            }
+
+            private void ApplyRenderState(Material material)
+            {
+                bool ditheredCutout = RequiresDitheredCutout();
+                material.renderQueue = ditheredCutout ? (int)RenderQueue.AlphaTest : (int)RenderQueue.Geometry;
+                material.SetOverrideTag("RenderType", ditheredCutout ? "TransparentCutout" : "Opaque");
             }
 
             private Vector4 ResolveRustParams()
@@ -428,6 +454,12 @@ namespace Hecton8.Rendering.Editor
                 material.EnableKeyword(keyword);
             else
                 material.DisableKeyword(keyword);
+        }
+
+        private static void DisableLegacySourceKeywords(Material material)
+        {
+            for (int i = 0; i < LegacySourceKeywords.Length; i++)
+                material.DisableKeyword(LegacySourceKeywords[i]);
         }
     }
 }

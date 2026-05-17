@@ -10,6 +10,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.XR;
 
 namespace Hecton8.Graphics.VR
@@ -22,6 +23,8 @@ namespace Hecton8.Graphics.VR
         private const int TelemetryCapacity = 300;
         private const int TelemetryRecordSizeBytes = 64;
         private const int DefaultSampleIntervalFrames = 30;
+        private const int MinSampleIntervalFrames = 1;
+        private const int MaxSampleIntervalFrames = 240;
         private const int DefaultUiLayerIndex = 5;
         private const float LevelLow = 0.35f;
         private const float LevelMedium = 0.62f;
@@ -30,7 +33,9 @@ namespace Hecton8.Graphics.VR
         private const float StressHighThreshold = 0.70f;
         private const float GpuPressureHighThreshold = 0.78f;
         private const float GpuTimeHighPressureMs = 10.75f;
+        private const float SecondsToMilliseconds = 1000f;
         private const float LevelDowngradeHoldSeconds = 2.5f;
+        private const float GazeLossHoldSeconds = 0.75f;
         private const float MaxHysteresisDeltaSeconds = 0.25f;
         private const float ApplyEpsilon = 0.0001f;
         private const uint BlackBoxMagic = 0x46565243u; // FVRC
@@ -49,6 +54,8 @@ namespace Hecton8.Graphics.VR
         private const ushort FlagNonFinite = 1 << 9;
         private const ushort FlagHighEndFixedDisabled = 1 << 10;
         private const ushort FlagHysteresisHold = 1 << 11;
+        private const ushort FlagGazeGraceHold = 1 << 12;
+        private const ushort FlagQuestClassificationPending = 1 << 13;
         private const string RuntimeObjectName = "[FoveatedRenderCommander]";
         private const string DumpFileName = "Dump_FOVEATED_RENDER_COMMANDER.bin";
 
@@ -61,7 +68,7 @@ namespace Hecton8.Graphics.VR
         private static bool s_telemetryLayoutValid;
 
         [Header("Policy")]
-        [SerializeField, Range(1, 240)]
+        [SerializeField, Range(MinSampleIntervalFrames, MaxSampleIntervalFrames)]
         [Tooltip("Frames between hardware foveation policy commits. Signal consumption remains per dispatcher tick.")]
         private int sampleIntervalFrames = DefaultSampleIntervalFrames;
 
@@ -99,6 +106,7 @@ namespace Hecton8.Graphics.VR
         private float _gpuUtil01;
         private float _latestGpuTimeMs;
         private float _downgradeHoldSecondsRemaining;
+        private float _gazeLossHoldSecondsRemaining;
         private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private float _targetLevel01;
         private float _appliedLevel01 = -1f;
@@ -264,8 +272,7 @@ namespace Hecton8.Graphics.VR
             _framesUntilSample--;
             if (_framesUntilSample <= 0)
             {
-                int interval = sampleIntervalFrames > 0 ? sampleIntervalFrames : DefaultSampleIntervalFrames;
-                _framesUntilSample = interval;
+                _framesUntilSample = ClampSampleIntervalFrames(sampleIntervalFrames);
                 ApplyPolicy(force: false);
             }
 
@@ -439,7 +446,7 @@ namespace Hecton8.Graphics.VR
             bool xrActive = XRSettings.enabled && XRSettings.isDeviceActive;
             FoveatedRenderingCaps caps = SystemInfo.foveatedRenderingCaps;
             bool capsSupported = caps != FoveatedRenderingCaps.None;
-            bool quest2Runtime = IsQuest2Runtime();
+            bool quest2Runtime = IsQuest2Runtime(out bool questClassificationPending);
             HectonQualityTier qualityTier = _qualityTier;
             bool thermalPressure =
                 _thermalSeverity >= (byte)HardwareThermalSeverity.Throttling ||
@@ -454,6 +461,8 @@ namespace Hecton8.Graphics.VR
                 flags |= FlagCapsSupported;
             if (quest2Runtime && lockQuest2HighFoveation)
                 flags |= FlagQuest2LockedHigh;
+            if (questClassificationPending)
+                flags |= FlagQuestClassificationPending;
             if (thermalPressure)
                 flags |= FlagThermalPressure;
             if (systemPressure)
@@ -463,8 +472,8 @@ namespace Hecton8.Graphics.VR
             {
                 flags |= FlagFlatScreenFallback;
                 ResolveDisabledTarget();
-                ApplyDisplayState(0f, XRDisplaySubsystem.FoveatedRenderingFlags.None, FoveatedRenderMode.Disabled, force, out _, out int displayCount);
-                _lastDisplayCount = displayCount;
+                ApplyDisplayState(0f, XRDisplaySubsystem.FoveatedRenderingFlags.None, FoveatedRenderMode.Disabled, force, out _, out int flatDisplayCount);
+                _lastDisplayCount = flatDisplayCount;
                 ReportHardwareState(false, 0f, eyeDescriptor);
                 _lastFlags = flags;
                 _lastCaps = caps;
@@ -476,8 +485,8 @@ namespace Hecton8.Graphics.VR
             if (!capsSupported)
             {
                 ResolveDisabledTarget();
-                ApplyDisplayState(0f, XRDisplaySubsystem.FoveatedRenderingFlags.None, FoveatedRenderMode.Disabled, force, out _, out int displayCount);
-                _lastDisplayCount = displayCount;
+                ApplyDisplayState(0f, XRDisplaySubsystem.FoveatedRenderingFlags.None, FoveatedRenderMode.Disabled, force, out _, out int capsDisplayCount);
+                _lastDisplayCount = capsDisplayCount;
                 ReportHardwareState(false, 0f, eyeDescriptor);
                 _lastFlags = flags;
                 _lastCaps = caps;
@@ -499,13 +508,15 @@ namespace Hecton8.Graphics.VR
             if (hysteresisHeld)
                 flags |= FlagHysteresisHold;
             float targetLevel = ResolveLevel01(levelCode);
-            bool gazeTracked = ShouldUseGazeTrackedVrs(xrActive, caps, quest2Runtime);
+            bool gazeTracked = ShouldUseGazeTrackedVrs(xrActive, caps, quest2Runtime, out bool gazeGraceHeld);
             XRDisplaySubsystem.FoveatedRenderingFlags targetFlags = gazeTracked
                 ? XRDisplaySubsystem.FoveatedRenderingFlags.GazeAllowed
                 : XRDisplaySubsystem.FoveatedRenderingFlags.None;
             FoveatedRenderMode mode = gazeTracked ? FoveatedRenderMode.GazeTracked : FoveatedRenderMode.Fixed;
             if (gazeTracked)
                 flags |= FlagGazeTracked;
+            if (gazeGraceHeld)
+                flags |= FlagGazeGraceHold;
 
             if (!quest2Runtime &&
                 !gazeTracked &&
@@ -517,7 +528,9 @@ namespace Hecton8.Graphics.VR
                 targetLevel = 0f;
                 mode = FoveatedRenderMode.Disabled;
                 _downgradeHoldSecondsRemaining = 0f;
+                _gazeLossHoldSecondsRemaining = 0f;
                 flags = (ushort)(flags & ~FlagHysteresisHold);
+                flags = (ushort)(flags & ~FlagGazeGraceHold);
                 flags |= FlagHighEndFixedDisabled;
             }
 
@@ -601,10 +614,14 @@ namespace Hecton8.Graphics.VR
                     displayLevel = 0f;
 
                 appliedLevel = math.max(appliedLevel, displayLevel);
-                if (display.TryGetAppGPUTimeLastFrame(out float gpuMs) && math.isfinite(gpuMs))
+                if (display.TryGetAppGPUTimeLastFrame(out float gpuSeconds) && math.isfinite(gpuSeconds) && gpuSeconds >= 0f)
                 {
-                    sampledGpuTimeMs = math.max(sampledGpuTimeMs, gpuMs);
-                    gpuTimeSampled = true;
+                    float gpuMs = gpuSeconds * SecondsToMilliseconds;
+                    if (math.isfinite(gpuMs))
+                    {
+                        sampledGpuTimeMs = math.max(sampledGpuTimeMs, gpuMs);
+                        gpuTimeSampled = true;
+                    }
                 }
 
                 displayCount++;
@@ -634,18 +651,22 @@ namespace Hecton8.Graphics.VR
             _targetMode = FoveatedRenderMode.Disabled;
             _targetFlags = XRDisplaySubsystem.FoveatedRenderingFlags.None;
             _downgradeHoldSecondsRemaining = 0f;
+            _gazeLossHoldSecondsRemaining = 0f;
         }
 
         private void DecayFoveationHysteresis(float deltaTime)
         {
-            if (_downgradeHoldSecondsRemaining <= 0f)
+            if (_downgradeHoldSecondsRemaining <= 0f && _gazeLossHoldSecondsRemaining <= 0f)
                 return;
 
             if (!math.isfinite(deltaTime) || deltaTime <= 0f)
                 return;
 
             float cappedDelta = math.min(deltaTime, MaxHysteresisDeltaSeconds);
-            _downgradeHoldSecondsRemaining = math.max(0f, _downgradeHoldSecondsRemaining - cappedDelta);
+            if (_downgradeHoldSecondsRemaining > 0f)
+                _downgradeHoldSecondsRemaining = math.max(0f, _downgradeHoldSecondsRemaining - cappedDelta);
+            if (_gazeLossHoldSecondsRemaining > 0f)
+                _gazeLossHoldSecondsRemaining = math.max(0f, _gazeLossHoldSecondsRemaining - cappedDelta);
         }
 
         private byte ApplyTargetLevelHysteresis(byte requestedLevelCode, bool pressureActive, out bool held)
@@ -1108,18 +1129,44 @@ namespace Hecton8.Graphics.VR
             return eyes.TryGetFixationPoint(out Vector3 fixationPoint) && IsFiniteVector(fixationPoint);
         }
 
-        private bool ShouldUseGazeTrackedVrs(bool xrActive, FoveatedRenderingCaps caps, bool questRuntime)
+        private bool ShouldUseGazeTrackedVrs(bool xrActive, FoveatedRenderingCaps caps, bool questRuntime, out bool graceHeld)
         {
-            return allowPcVrGazeTrackedVrs && HasEyeTrackedGaze(xrActive, caps, questRuntime);
+            graceHeld = false;
+            bool gazeEligible =
+                xrActive &&
+                IsStandaloneLikeRuntime() &&
+                (HasCap(caps, FoveatedRenderingCaps.FoveationImage) ||
+                 HasCap(caps, FoveatedRenderingCaps.NonUniformRaster));
+            if (!allowPcVrGazeTrackedVrs || questRuntime || !gazeEligible)
+            {
+                _gazeLossHoldSecondsRemaining = 0f;
+                return false;
+            }
+
+            if (HasEyeTrackedGaze(xrActive, caps, questRuntime))
+            {
+                _gazeLossHoldSecondsRemaining = GazeLossHoldSeconds;
+                return true;
+            }
+
+            if (_targetMode == FoveatedRenderMode.GazeTracked && _gazeLossHoldSecondsRemaining > 0f)
+            {
+                graceHeld = true;
+                return true;
+            }
+
+            return false;
         }
 
-        private static bool IsQuest2Runtime()
+        private static bool IsQuest2Runtime(out bool classificationPending)
         {
+            classificationPending = false;
             bool xrActive = HectonXRRuntimeState.IsXRActive || XRSettings.enabled || XRSettings.isDeviceActive;
             if (!xrActive || Application.platform != RuntimePlatform.Android)
                 return false;
 
             EnsureQuestRuntimeClassification();
+            classificationPending = !s_questRuntimeClassified;
             return s_quest2ClassRuntime;
         }
 
@@ -1143,13 +1190,32 @@ namespace Hecton8.Graphics.VR
                 ContainsToken(XRSettings.loadedDeviceName, "Quest 2") ||
                 ContainsToken(SystemInfo.deviceModel, "Oculus Quest") ||
                 ContainsToken(XRSettings.loadedDeviceName, "Oculus Quest");
+            bool questFamilyDevice = IsQuestFamilyDevice();
             bool questMemoryGate =
                 QuestVulkanRuntimePolicy.SystemMemoryMegabytes > 0 &&
                 QuestVulkanRuntimePolicy.SystemMemoryMegabytes < QuestVulkanRuntimePolicy.QuestMemoryGateMegabytes &&
-                IsQuestFamilyDevice();
+                questFamilyDevice;
+            bool hasLoadedDeviceName = !string.IsNullOrEmpty(XRSettings.loadedDeviceName);
 
-            s_quest2ClassRuntime = !quest3OrPro && (quest2Token || questMemoryGate);
-            s_questRuntimeClassified = true;
+            if (quest3OrPro)
+            {
+                s_quest2ClassRuntime = false;
+                s_questRuntimeClassified = true;
+                return;
+            }
+
+            if (quest2Token || questMemoryGate)
+            {
+                s_quest2ClassRuntime = true;
+                s_questRuntimeClassified = true;
+                return;
+            }
+
+            if (hasLoadedDeviceName && !questFamilyDevice)
+            {
+                s_quest2ClassRuntime = false;
+                s_questRuntimeClassified = true;
+            }
         }
 
         private static bool IsQuestFamilyDevice()
@@ -1203,6 +1269,15 @@ namespace Hecton8.Graphics.VR
         private static byte MaxByte(byte a, byte b)
         {
             return a > b ? a : b;
+        }
+
+        private static int ClampSampleIntervalFrames(int value)
+        {
+            if (value < MinSampleIntervalFrames)
+                return DefaultSampleIntervalFrames;
+            if (value > MaxSampleIntervalFrames)
+                return MaxSampleIntervalFrames;
+            return value;
         }
 
         private static bool IsFiniteVector(Vector3 value)

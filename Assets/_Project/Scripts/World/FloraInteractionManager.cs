@@ -38,7 +38,7 @@ namespace Hecton8.World
 
         private static FloraInteractionManager s_ActiveRuntimeInstance;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
         private struct FloraInteractionPointGpuData
         {
             public Vector4 PositionRadius;
@@ -67,7 +67,7 @@ namespace Hecton8.World
             public int ParasiteCount;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
         private struct ParasiteNode
         {
             public float3 PositionWS;
@@ -106,7 +106,7 @@ namespace Hecton8.World
             public float CriticalityWeight { get; }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
         private struct FloraCascadeEventPayload
         {
             public float3 Center;
@@ -117,7 +117,7 @@ namespace Hecton8.World
             public float Padding2;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
         private struct DefensiveSporeBurstState
         {
             public Vector3 PositionWS;
@@ -2252,7 +2252,7 @@ namespace Hecton8.World
                 Velocity = new float3(velocity.x, velocity.y, velocity.z),
                 SourceFlags = sourceKind
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<WakeGeneratedSignal>.Push(in signal);
         }
 
         private void DrainWakeGeneratedSignals()
@@ -2652,7 +2652,7 @@ namespace Hecton8.World
                 SourceHash = WakeFluidImpulseSourceHash,
                 Flags = signal.SourceFlags
             };
-            GlobalSignals.Publish(in impulse);
+            SignalBus<FluidImpulseSignal>.Push(in impulse);
         }
 
         private void RecordWakeBlackBox(

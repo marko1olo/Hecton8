@@ -229,3 +229,45 @@ Solution: Logged `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish16.txt`; it
 Rejected Alternatives: Editing `ArchitectEyeVisualizer` was rejected as cross-domain diagnostics work. Claiming a green compile after shader edits was rejected because the current project build is blocked.
 Scalability potential: No runtime scaling impact; validation accounting only.
 Hardware Impact: 0 us/frame; build-only blocker.
+
+Problem: The high-tier curtain-parting shader still trusted `_PlayerDirectionWS` scale/finite state and several frame constants after the sensory buffer itself had already been sanitized. A NaN or unnormalized direction could distort the facing proxy or poison force math; bad panic/camera/density constants could leak through later gates.
+Solution: Normalized `_PlayerDirectionWS` with `CheapNormalizeL1`, added finite checks for direction length, speed square, forward dot, facing proxy, side dot, and final strength, and routed the main flock block through safe local frame constants for player position, field center, camera avoid data, panic thresholds/weights, density/window thresholds, player speed/radius, and headlight panic. Replaced touched direct divisions with guarded reciprocal multiplication.
+Rejected Alternatives: Removing the high-tier curtain fake was rejected because the prompt requires beam-parting visual overkill. CPU-only validation was rejected because shader frame constants can be stale, externally rebound, or malformed after CPU threat-slot sanitation. Widening buffers or adding another signal lane was rejected because the fixed 16-slot threat contract is already sufficient.
+Scalability potential: Low/Middle keep the endpoint-sphere and simple panic lie. High/Ultra keep capsule/curtain behavior while reducing mobile/Metal NaN propagation risk; saved stability budget can remain in the visible beam split and albedo flash instead of falling back to flat scatter.
+Hardware Impact: Adds scalar finite checks and reciprocal multiplies in the touched high-tier paths, estimated under 1 us/frame on i3/MX350 when active. No profiler proof is claimed. The avoided cost is GPU pipeline corruption/recovery from non-finite values, not a measured steady-state speedup.
+
+Problem: Polish17 validation could not produce a fresh green compile or a source diagnostic after shader edits.
+Solution: Logged three probes: `Build_BOID_SENSORY_INPUT_PUMP_Polish17.txt`, `Build_BOID_SENSORY_INPUT_PUMP_Polish17_Strike2.txt`, and `Build_BOID_SENSORY_INPUT_PUMP_Polish17_Strike3.txt`. All returned exit `-1` with zero-byte logs. Static debt scans and log scans found no diagnostics in `SargassumMicroFaunaBoids.cs`, `SargassumMicroFaunaBoids.compute`, `BoidFishInstanced.shader`, or `H8Memory.cs`; `dxc`, `fxc`, and `glslangValidator` were unavailable in the shell.
+Rejected Alternatives: Editing external build infrastructure or unrelated diagnostics/determinism files was rejected under the domain boundary rule. Reporting a green build was rejected because the current build command did not complete successfully.
+Scalability potential: No runtime scaling impact; validation accounting only.
+Hardware Impact: 0 us/frame; build-only blocker.
+
+Problem: The compute shader still trusted several frame-data counts and payloads after the fixed sensory slots had been sanitized. A corrupted count could overrun a StructuredBuffer on Quest/Metal, and malformed massive threat, formation, sonar, parasite, or leviathan data could still poison high-tier visual behavior.
+Solution: Added shader-side capacity constants matching the C# clamps, routed structured-buffer loops through clamped resolver helpers, and clamped signed raw counts before converting grazing/massive counts to uint. Added finite guards for massive threat records, formation beacons, grazing anchors, obstacles, leviathan nodes, sonar constants, player velocity, parasite constants, field extents, and leviathan wave/threat/surround parameters.
+Rejected Alternatives: Trusting C# upload clamps was rejected because shader frame constants can be stale, corrupted, or rebound. Widening buffers was rejected because the current capacities already match serialized C# limits. Removing the high-tier leviathan/formation/parasite visuals was rejected because the correct fix is validation around the visual fake, not visual downgrade.
+Scalability potential: Low/Middle keep the endpoint sphere, bounded pings, and cheap dot-product/triangle-noise behavior. High/Ultra keep capsule SDF, curtain parting, formation rings, parasite latch, and leviathan body motion with bounded reads and finite payloads.
+Hardware Impact: Count clamps and finite checks add scalar ALU in capped paths, estimated under 1 us/frame on i3/MX350 when those systems are active; no profiler number is claimed. The concrete gain is prevention of mobile/Metal GPU fault propagation and undefined StructuredBuffer reads.
+
+Problem: Polish18 needed to replace the earlier zero-byte Polish17 validation probes with a current compile proof after the shader count-bound pass.
+Solution: Logged `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish18.txt` from `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /maxcpucount:1 -nr:false`; build succeeded with 0 warnings and 0 errors.
+Rejected Alternatives: Reusing Polish14 or treating the Polish17 process failures as source validation was rejected because source changed after both.
+Scalability potential: No runtime scaling impact; this is validation evidence.
+Hardware Impact: 0 us/frame; build-only proof.
+
+Problem: The boid surface still owned four managed GPU staging arrays for grazing anchors, massive threats, formation beacons, and formation obstacles after the sensory buffer itself had been moved into the GlobalDataVault.
+Solution: Added dedicated `BufferID` entries and replaced those arrays with `VaultBufferHandle<T>` fields. Build, upload, compaction, and origin-shift code now resolve vault views, cap writes to the vault view length, and upload through `GraphicsBufferUploadUtility.UploadNativeArray`.
+Rejected Alternatives: Leaving the managed arrays as "cold staging" was rejected because they duplicate GPU-facing state outside the vault. Creating local persistent `NativeArray<T>` owners was rejected because that violates the H-PHI data sovereignty rule. Expanding SignalBus contracts was rejected because this is state storage, not event flow.
+Scalability potential: Low keeps the same cheap endpoint-sphere and capped formation behavior without extra allocations. Middle/High/Ultra keep the richer massive-threat, formation-ring, and grazing-anchor visual behaviors while sharing one vault-backed storage contract.
+Hardware Impact: Removes four persistent managed staging owners and fixed-array upload pins from this subsystem. Vault handle resolution is estimated under 1 us/frame on i3/MX350; no profiler proof is claimed.
+
+Problem: The render path still used a one-element managed `GraphicsBuffer.IndirectDrawIndexedArgs[]` cache and `UploadArray` for indirect draw arguments.
+Solution: Removed the managed cache and writes the indirect args directly into the `LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>` mapped buffer before `RenderMeshIndirect`.
+Rejected Alternatives: Keeping the array was rejected because it is a private upload cache with no gameplay authority. Moving a one-element indirect args payload into another persistent vault buffer was rejected because the GPU mapping is already the upload destination and avoids an extra CPU copy.
+Scalability potential: Low/Middle/High/Ultra all keep the same indirect draw behavior. High/Ultra still get the full instanced boid draw path; low devices avoid another private staging object.
+Hardware Impact: Saves one managed array field and one managed-array pin/copy on indirect-args changes. Expected frame impact is 0 us on steady frames because the path is already dirty-gated by mesh and instance count; no profiler proof is claimed.
+
+Problem: The operator explicitly requested not to run `dotnet rebuild` every time after the last green `Polish18` compile proof.
+Solution: This pass used static verification only: targeted `rg` debt scans, handle/BufferID scans, indirect upload scans, and `git diff --check`.
+Rejected Alternatives: Running another broad build was rejected because it violated the latest operator instruction and would not add proportionate evidence for this narrow edit. Claiming a new compile proof was rejected because no build was run in this pass.
+Scalability potential: No runtime scaling impact; this is validation discipline.
+Hardware Impact: 0 us/frame; validation-only decision.

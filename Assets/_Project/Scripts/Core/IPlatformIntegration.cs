@@ -1,6 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Collections;
 using UnityEngine;
 
@@ -34,34 +34,6 @@ namespace Hecton8.Core
     }
 
     /// <summary>
-    /// Queue payload raised when the platform scalability profile changes.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 2)]
-    public readonly struct ScalabilityChangedEvent
-    {
-        public ScalabilityChangedEvent(byte previousTier, byte currentTier)
-        {
-            _previousTier = ScalabilityTierProfiles.Normalize(previousTier);
-            _currentTier = ScalabilityTierProfiles.Normalize(currentTier);
-        }
-
-        /// <summary>Previous profile byte: 0 = Low/MX350, 1 = High/RTX.</summary>
-        public byte PreviousTier => _previousTier;
-
-        /// <summary>Current profile byte: 0 = Low/MX350, 1 = High/RTX.</summary>
-        public byte CurrentTier => _currentTier;
-
-        /// <summary>Previous rich quality tier.</summary>
-        public HectonQualityTier PreviousQualityTier => ScalabilityTierRuntime.ToQualityTier(_previousTier);
-
-        /// <summary>Current rich quality tier.</summary>
-        public HectonQualityTier CurrentQualityTier => ScalabilityTierRuntime.ToQualityTier(_currentTier);
-
-        private readonly byte _previousTier;
-        private readonly byte _currentTier;
-    }
-
-    /// <summary>
     /// Listener contract for platform scalability profile changes.
     /// </summary>
     public interface IScalabilityChangedEventListener
@@ -76,16 +48,16 @@ namespace Hecton8.Core
     /// </summary>
     public static class ScalabilityEvents
     {
-        private const int ListenerCapacity = 16;
+        private const int ListenerCapacity = 32;
         private const int PendingEventCapacity = 4;
 
-        // COLD ALLOC: RegistryBucket<IScalabilityChangedEventListener>[16] - platform scalability listeners drained by SystemDispatcher - owner: ScalabilityEvents
+        // COLD ALLOC: RegistryBucket<IScalabilityChangedEventListener>[32] - platform scalability listeners drained by SystemDispatcher - owner: ScalabilityEvents
         private static readonly RegistryBucket<IScalabilityChangedEventListener> _listeners =
             new RegistryBucket<IScalabilityChangedEventListener>(ListenerCapacity);
-        // COLD ALLOC: IScalabilityChangedEventListener[16] - listener additions deferred during scalability dispatch - owner: ScalabilityEvents
+        // COLD ALLOC: IScalabilityChangedEventListener[32] - listener additions deferred during scalability dispatch - owner: ScalabilityEvents
         private static readonly IScalabilityChangedEventListener[] _deferredRegisterListeners =
             new IScalabilityChangedEventListener[ListenerCapacity];
-        // COLD ALLOC: IScalabilityChangedEventListener[16] - listener removals deferred during scalability dispatch - owner: ScalabilityEvents
+        // COLD ALLOC: IScalabilityChangedEventListener[32] - listener removals deferred during scalability dispatch - owner: ScalabilityEvents
         private static readonly IScalabilityChangedEventListener[] _deferredUnregisterListeners =
             new IScalabilityChangedEventListener[ListenerCapacity];
 
@@ -97,6 +69,7 @@ namespace Hecton8.Core
         private static int _deferredUnregisterCount;
         private static int _droppedEventCount;
         private static bool _isDispatching;
+        private static bool _typedSignalLaneConfigured;
 
         /// <summary>Number of queued scalability events waiting for dispatcher flush.</summary>
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
@@ -129,6 +102,7 @@ namespace Hecton8.Core
             _deferredUnregisterCount = 0;
             _droppedEventCount = 0;
             _isDispatching = false;
+            _typedSignalLaneConfigured = false;
         }
 
         /// <summary>Registers a listener for dispatcher-flushed scalability events.</summary>
@@ -170,6 +144,9 @@ namespace Hecton8.Core
         /// <param name="payload">Profile transition payload.</param>
         public static void Raise(in ScalabilityChangedEvent payload)
         {
+            EnsureTypedSignalLaneConfigured();
+            SignalBus<ScalabilityChangedEvent>.Push(in payload);
+
             if (_listeners.Count <= 0)
                 return;
 
@@ -246,6 +223,8 @@ namespace Hecton8.Core
 
         private static void EnsureInitialized()
         {
+            EnsureTypedSignalLaneConfigured();
+
             if (!_pendingEvents.IsCreated)
             {
                 _pendingEvents = new NativeQueue<ScalabilityChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ScalabilityChangedEvent>[4] - deferred scalability lane - owner: ScalabilityEvents
@@ -269,6 +248,16 @@ namespace Hecton8.Core
                     NativeAllocationLifetime.Session);
                 PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
             }
+        }
+
+        private static void EnsureTypedSignalLaneConfigured()
+        {
+            if (_typedSignalLaneConfigured)
+                return;
+
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<ScalabilityChangedEvent>.EnsureInitialized();
+            _typedSignalLaneConfigured = true;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)

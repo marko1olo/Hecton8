@@ -243,3 +243,75 @@ Rejected Alternatives: Creating a second GPU wake buffer in the debris renderer 
 Scalability potential: Low/MX350 still caps the compute path to 4 wake slots through `_GlobalWakeParams.y` and uses cheap dot/radial/triangle fakes. Middle/High/Ultra now use the same 16-slot wake signal across flora, boids, silt, bubbles, and carve debris, so saved CPU cycles buy visible wake wash instead of disappearing into an empty compute binding.
 
 Hardware Impact: 0 us/frame low-tier cost change because the cap and loop budget remain unchanged. High/ultra restores the previously budgeted 2-6 us/frame GPU spend to actual silt/debris motion. External compile status moved during shared-workspace churn from `TetherInstance`/`PhysicsApplySystem` to UI/diagnostics owners (`DiegeticGyroCompassRuntime`, `GlobalSignals`, `ArchitectEyeVisualizer`); no current build error names the wake files changed here.
+
+## Decision 21 - MarineSnow Global Wake Authority
+
+Problem: `Hecton_MarineSnow.compute` still owned a parallel 8-slot `_DynamicWakes`/`_DynamicWakeVectors`/`_DynamicWakeParams` path through `HectonMarineSnowRenderer.TryGetDynamicWakeGpuPayload`. That created a second wake authority and could make MarineSnow ignore global wake slots 8-15 even while flora, boids, and fluid advection used the 16-slot `_GlobalWakeBuffer`.
+
+Solution: Switched MarineSnow advection to `_GlobalWakeBuffer`, `_GlobalWakeVectors`, and `_GlobalWakeParams` directly. The compute path enforces the 4-slot low-tier cap from `_GlobalWakeParams.y`, full tiers can read up to 16 slots, and the renderer now only mirrors `_GlobalWakeParams` into the compute dispatch for debug/telemetry. Dynamic wake names were removed from the MarineSnow shader and renderer.
+
+Rejected Alternatives: Keeping the fluid-engine dynamic wake payload was rejected because it is a private side-channel. Copying the global wake arrays into a MarineSnow-owned GPU buffer was rejected because the XML mandates raw shader globals. Unity particle force modules were rejected because `forceOverLifetime` is banned for this domain.
+
+Scalability potential: Low/MX350 remains a 4-slot visual fake and pays no extra loop budget. Middle can use shared global wake advection for silt. High/Ultra get the full 16-slot wake wash so dense MarineSnow, bubbles, and debris react to the same submarine mass signal as flora and boids.
+
+Hardware Impact: 0 us/frame low-tier cost change because the shader cap remains 4. High/Ultra use the previously budgeted 2-6 us/frame GPU wake-silt spend on real MarineSnow advection instead of a stale private buffer path. Latest controlled Core build is green: 0 warnings, 0 errors, elapsed 00:01:47.60.
+
+## Decision 22 - Low-Tier Reactive Silt Param Gate
+
+Problem: `CarveDebrisComputeRenderer.ResolveGlobalWakeParamsForCompute` returned zero active wake parameters on low tier. The compute shader already had a 4-slot low-tier wake fake, but the renderer gate made low-tier reactive silt and debris inert.
+
+Solution: Mirror the authoritative `_GlobalWakeParams` into compute dispatch for all tiers, clamp low-tier slot limit to 4, preserve active count inside that cap, and make `_lastWakeActive` reflect capped low-tier wake activity. This keeps the DataVault/global shader array authority intact.
+
+Rejected Alternatives: Keeping low-tier wakes disabled was rejected because it turns the MX350 path into a static ocean. Running all 16 wake slots on low tier was rejected because the toaster path must stay capped. Creating a debris-owned wake buffer was rejected because the XML mandates global shader arrays, not private VFX wake state.
+
+Scalability potential: Low/MX350 uses the 4-slot compute lie with dot/radial/triangle math. Middle/High/Ultra keep the 16-slot global wake budget for denser silt wash and wake debris response.
+
+Hardware Impact: 0 us/frame when wakes are inactive. Low-tier active scenes spend a capped estimated 0-2 us GPU for visible response instead of saving the work by showing nothing. High/Ultra remain on the existing estimated 2-6 us/frame wake-silt overkill budget.
+
+## Decision 23 - Compile Wall Mechanical Signature Repair
+
+Problem: The shared workspace drifted after the last green wake pass. Controlled Core validation failed on mechanical contract mismatches outside the wake slice: explicit signal interface bindings, DataVault argument pass-through, a missing `System.Type` import, a `ushort` padding literal, a tether simulation signature update, helper conversion binding in player movement code, and a dispatcher scalability listener binding.
+
+Solution: Applied narrow compile-wall repairs only: explicit interface wrappers forward to existing public handlers including `SystemDispatcher`, player motor native-state helpers receive the current DataVault, `System` was imported where `Type` is used, the packed interaction DTO uses a valid `ushort` zero literal, `TetherInstance.Simulate` receives the existing quality tier, and unresolved vector helper calls were replaced with direct `float3` construction. No wake behavior, runtime policy, or private wake data ownership changed.
+
+Rejected Alternatives: Broad gameplay refactors were rejected as outside `INTERACTIVE_WAKE_VFX`. Reverting concurrent edits was rejected under the shared-worktree rule. Leaving the build broken was rejected because task 18 requires current `dotnet build` exit 0 when the repair is mechanical.
+
+Scalability potential: No visual tier change. The wake slice remains Low/MX350 4-slot capped, Middle/High/Ultra 16-slot global, with high tiers spending the budget on vortex curvature, normal shimmer, MarineSnow turbulence, and boid scatter.
+
+Hardware Impact: 0 us/frame. These repairs restore compile validity only. Latest controlled Core build: 0 warnings, 0 errors, elapsed 00:01:47.88.
+
+## Decision 24 - ARM64 Wake Bridge Packing and Wake-Trail Divide Guard
+
+Problem: The wake-adjacent flora bridge still contained fixed-size sequential structs declared with `Pack = 4`, and the wake-trail stamp shaders used raw divisions by stamped radius/length. The values were clamped before division, but the shader still left explicit divide sites in a mobile-sensitive wake path.
+
+Solution: Converted the wake-adjacent `FloraInteractionPointGpuData`, `ParasiteNode`, `FloraCascadeEventPayload`, and `DefensiveSporeBurstState` layouts to `Pack = 1` while preserving their explicit `Size` contracts. Replaced wake-trail `dot(...) / halfLength` and `dot(...) / radius` with clamped reciprocal multipliers in both the stamp shader and compute simulation.
+
+Rejected Alternatives: Leaving `Pack = 4` was rejected because the Quest/Android pass demands no implicit padding surprises in this domain scan. Rewriting unrelated flora parasite behavior was rejected because it is outside the wake XML. Leaving raw shader divisions was rejected because the same math can be expressed as guarded reciprocal multiply with no visual cost.
+
+Scalability potential: Low/MX350 keeps the same cheap wake-trail texture lie. Middle/High/Ultra keep the existing dense wake-trail and global wake wash; the saved risk budget remains spent on vortex curvature, MarineSnow turbulence, and boid scatter, not CPU simulation.
+
+Hardware Impact: 0 us/frame measured/runtime intent. The packing change reduces ARM64 layout risk. The reciprocal multiply form has no supported frame-time savings claim; it is a NaN survival guard for degenerate stamp input. Latest final Core validation after audit-file update: 0 warnings, 0 errors, elapsed 00:00:06.26.
+
+## Decision 25 - Direct Typed-Lane Wake Publish
+
+Problem: The wake bridge still published `WakeGeneratedSignal` and `FluidImpulseSignal` through the `GlobalSignals.Publish` facade. That facade currently forwards into `SignalBus<T>`, but the XML and current inquisition require explicit typed lanes and `ReadOnlySpan<T>` snapshots in this domain.
+
+Solution: Replaced the two wake-facing publish calls in `FloraInteractionManager` with direct `SignalBus<WakeGeneratedSignal>.Push` and `SignalBus<FluidImpulseSignal>.Push`. The consumer side already uses `ReadOnlySpan<WakeGeneratedSignal> signals = SignalBus<WakeGeneratedSignal>.GetFrameSnapshot()`.
+
+Rejected Alternatives: Leaving the facade was rejected because it obscures the typed-lane contract in the wake bridge. Inventing a new wake signal was rejected because `WakeGeneratedSignal` and `FluidImpulseSignal` already exist and match the needed semantics. Broad conversion of unrelated project-wide `GlobalSignals.Publish` sites was rejected as outside the wake domain.
+
+Scalability potential: No visual tier change. Low/MX350 keeps capped 4-slot wake injection and cheap radial/triangle wake math. Middle/High/Ultra keep 16-slot global wake wash and spend GPU budget on silt, MarineSnow, normal shimmer, and boid scatter.
+
+Hardware Impact: 0 us/frame. This is an ownership and clarity correction, not a timing claim. Per user request, no `dotnet build` was run for this pass; validation used targeted static scans and `git diff --check`.
+
+## Decision 26 - MarineSnow Dynamic Wake Side-Channel Purge Correction
+
+Problem: The audit log claimed MarineSnow had no dynamic wake remnants, but the live files still contained `_DynamicWakes`, `_DynamicWakeVectors`, `_DynamicWakeParams`, `RefreshDynamicWakeBinding`, and `TryGetDynamicWakeGpuPayload`. That meant MarineSnow still had a private fluid-engine wake side-channel while the rest of the wake system used the global DataVault-backed shader arrays.
+
+Solution: Removed the MarineSnow dynamic wake identifiers from the shader and renderer. `Hecton_MarineSnow.compute` now declares `_GlobalWakeBuffer[HECTON_GLOBAL_WAKE_CAPACITY]`, `_GlobalWakeVectors[HECTON_GLOBAL_WAKE_CAPACITY]`, and `_GlobalWakeParams`; `ResolveGlobalWakeFlow` enforces the 16-slot full tier and 4-slot low tier caps. `HectonMarineSnowRenderer` mirrors only sanitized `_GlobalWakeParams` into the compute dispatch and records `GlobalWakeCount` in telemetry.
+
+Rejected Alternatives: Keeping `TryGetDynamicWakeGpuPayload` was rejected because it is a second wake owner. Binding empty dynamic buffers was rejected because it can silently disable wake-silt response. Copying global wake arrays into MarineSnow-owned GPU buffers was rejected because the XML mandates raw shader globals. Running another `dotnet build` was rejected for this pass because the user explicitly instructed not to rebuild every time; validation used targeted scans and `git diff --check`.
+
+Scalability potential: Low/MX350 remains a 4-slot visual fake with dot/radial flow and no private GPU wake buffer. Middle/High/Ultra use the same 16-slot wake wash as flora, boids, silt, bubbles, and debris, so high-tier cycles buy denser MarineSnow turbulence instead of maintaining a duplicate side-channel.
+
+Hardware Impact: 0 us/frame low-tier cost change because the loop cap remains 4. High/Ultra restore the existing estimated 2-6 us/frame GPU wake-silt budget to the authoritative global wake source. No build timing is reported for this pass because no build was run.

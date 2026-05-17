@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Audio.Virtualization",
     "references": [
         "Hecton8.Audio.Propagation",
+        "Hecton8.Core.Contracts",
         "Hecton8.Audio.Virtualization.Contracts",
         "Unity.Burst",
         "Unity.Collections",

@@ -1812,7 +1812,7 @@ namespace Hecton8.UI
             Quaternion rotation = playerCamera.transform.rotation * s_hologramYawLut[yawIndex];
 
             _hologramMatrices[0] = Matrix4x4.TRS(worldPosition, rotation, Vector3.one * hologramScale);
-            Graphics.DrawMeshInstanced(mesh, 0, _runtimeHologramMaterial, _hologramMatrices, 1, null, UnityEngine.Rendering.ShadowCastingMode.Off, false, gameObject.layer);
+            UnityEngine.Graphics.DrawMeshInstanced(mesh, 0, _runtimeHologramMaterial, _hologramMatrices, 1, null, UnityEngine.Rendering.ShadowCastingMode.Off, false, gameObject.layer);
         }
 
         private static float EvaluateCheapWaveSigned(float phaseRadians)

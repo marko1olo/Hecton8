@@ -1,0 +1,46 @@
+{
+    "name": "Hecton8.Project.Editor",
+    "rootNamespace": "Hecton8.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Plugins",
+        "Hecton8.Dev.SpaceEngine098",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.Collections",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "Unity.Addressables.Editor",
+        "Unity.InputSystem",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "GPUInstancer",
+        "Den.Tools",
+        "MapMagic",
+        "Crest",
+        "WaveHarmonic.Crest",
+        "WaveHarmonic.Crest.Shared",
+        "ShapesRuntime",
+        "EasySave3"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.addressables",
+            "expression": "2.7.6",
+            "define": "UNITY_ADDRESSABLES_EXIST"
+        }
+    ],
+    "noEngineReferences": false
+}

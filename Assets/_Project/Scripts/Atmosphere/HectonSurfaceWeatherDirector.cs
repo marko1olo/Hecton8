@@ -9,6 +9,8 @@ using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Modding;
@@ -338,7 +340,7 @@ namespace Hecton8.Atmosphere
         private bool _isLocallySheltered;
         private float _stormEquipmentPulseTimer;
         private SurfaceWeatherBindingSnapshot _computedBindings;
-        private NativeArray<SurfaceWeatherJobOutput> _weatherJobOutput;
+        private VaultBufferHandle<SurfaceWeatherJobOutput> _weatherJobOutputHandle;
         private JobHandle _weatherJobHandle;
         private bool _weatherJobScheduled;
         private bool _weatherJobPrimed;
@@ -436,6 +438,7 @@ namespace Hecton8.Atmosphere
             if (!_runtimeStateInitialized)
                 return;
 
+            ConsumePlayerWaterSplashSignals();
             UpdateExecutionMode(deltaTime);
             UpdateWeatherSelection(deltaTime);
             ApplyWeatherBindings(deltaTime);
@@ -641,17 +644,11 @@ namespace Hecton8.Atmosphere
             if (_subscribedPlayerMovement == target)
                 return;
 
-            if (_subscribedPlayerMovement != null)
-                _subscribedPlayerMovement.OnWaterSplash -= HandlePlayerWaterSplash;
-
             _subscribedPlayerMovement = target;
             _playerTransform = _subscribedPlayerMovement != null ? _subscribedPlayerMovement.transform : null;
             _playerBuoyancy = null;
             if (_playerTransform != null)
                 _playerTransform.TryGetComponent(out _playerBuoyancy);
-
-            if (_subscribedPlayerMovement != null)
-                _subscribedPlayerMovement.OnWaterSplash += HandlePlayerWaterSplash;
         }
 
         private void CacheOceanDefaults()
@@ -672,7 +669,8 @@ namespace Hecton8.Atmosphere
             if (_runtimeStateInitialized)
                 return;
 
-            EnsureWeatherMathBuffers();
+            if (!EnsureWeatherMathBuffers())
+                return;
             RuntimeWeatherProfile initialProfile;
             if (!TrySelectInitialProfile(out initialProfile))
                 return;
@@ -688,31 +686,29 @@ namespace Hecton8.Atmosphere
             RunWeatherMathJobCold();
         }
 
-        private void EnsureWeatherMathBuffers()
+        private bool EnsureWeatherMathBuffers()
         {
-            if (_weatherJobOutput.IsCreated)
-                return;
+            if (_weatherJobOutputHandle.IsCreated)
+                return true;
 
-            _weatherJobOutput = new NativeArray<SurfaceWeatherJobOutput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SurfaceWeatherJobOutput>[1] - persistent Burst weather output buffer - owner: HectonSurfaceWeatherDirector
-            NativeMemorySentinel.RegisterNativeArray(
-                _weatherJobOutput,
-                nameof(HectonSurfaceWeatherDirector),
-                nameof(_weatherJobOutput),
-                NativeAllocationLifetime.Scene);
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            _weatherJobOutputHandle = vault.GetBufferHandle<SurfaceWeatherJobOutput>(
+                BufferID.SurfaceWeatherJobOutput,
+                1,
+                SystemID.HabitatAtmosphere,
+                NativeArrayOptions.ClearMemory);
+            return _weatherJobOutputHandle.IsCreated;
         }
 
         private void DisposeWeatherMathBuffers()
         {
-            if (!_weatherJobOutput.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(_weatherJobOutput);
             if (_weatherJobScheduled)
-                _weatherJobOutput.Dispose(_weatherJobHandle);
-            else
-                _weatherJobOutput.Dispose();
+                DispatcherJobSwap.TryComplete(ref _weatherJobHandle, forceComplete: true);
 
-            _weatherJobOutput = default;
+            _weatherJobOutputHandle = default;
             _weatherJobScheduled = false;
             _weatherJobPrimed = false;
         }
@@ -722,15 +718,17 @@ namespace Hecton8.Atmosphere
             if (!_runtimeStateInitialized)
                 return;
 
-            EnsureWeatherMathBuffers();
+            if (!TryResolveWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
+                return;
+
             SurfaceWeatherMathJob job = new SurfaceWeatherMathJob
             {
                 input = BuildWeatherJobInput(0f),
-                output = _weatherJobOutput
+                output = new NativeSlice<SurfaceWeatherJobOutput>(weatherJobOutput)
             };
 
             job.Execute(); // COLD SYNC JOB: direct seed avoids Burst JIT/plugin resolution during Awake.
-            CommitWeatherMathOutput(_weatherJobOutput[0]);
+            CommitWeatherMathOutput(weatherJobOutput[0]);
             _weatherJobPrimed = true;
         }
 
@@ -743,7 +741,10 @@ namespace Hecton8.Atmosphere
                 return;
 
             _weatherJobScheduled = false;
-            CommitWeatherMathOutput(_weatherJobOutput[0]);
+            if (!TryResolveWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
+                return;
+
+            CommitWeatherMathOutput(weatherJobOutput[0]);
             _weatherJobPrimed = true;
         }
 
@@ -752,15 +753,28 @@ namespace Hecton8.Atmosphere
             if (!_runtimeStateInitialized || _weatherJobScheduled)
                 return;
 
-            EnsureWeatherMathBuffers();
+            if (!TryResolveWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
+                return;
+
             SurfaceWeatherMathJob job = new SurfaceWeatherMathJob
             {
                 input = BuildWeatherJobInput(deltaTime),
-                output = _weatherJobOutput
+                output = new NativeSlice<SurfaceWeatherJobOutput>(weatherJobOutput)
             };
 
             _weatherJobHandle = job.Schedule();
             _weatherJobScheduled = true;
+        }
+
+        private bool TryResolveWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput)
+        {
+            weatherJobOutput = default;
+            if (!EnsureWeatherMathBuffers())
+                return false;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            weatherJobOutput = _weatherJobOutputHandle.Resolve(vault);
+            return weatherJobOutput.IsCreated && weatherJobOutput.Length > 0;
         }
 
         private SurfaceWeatherJobInput BuildWeatherJobInput(float deltaTime)
@@ -1003,6 +1017,13 @@ namespace Hecton8.Atmosphere
                 return 0f;
 
             return math.max(0f, playerMovement.CurrentDepth);
+        }
+
+        private void ConsumePlayerWaterSplashSignals()
+        {
+            ReadOnlySpan<PlayerWaterSplashSignal> signals = SignalBus<PlayerWaterSplashSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+                HandlePlayerWaterSplash(signals[i].Intensity01);
         }
 
         private void HandlePlayerWaterSplash(float intensity)

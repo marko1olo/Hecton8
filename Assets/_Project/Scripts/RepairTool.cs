@@ -7,11 +7,11 @@
 //
 // LOGIKA:
 //   • UsePrimary(dt):
-//       1. Puskaet Raycast vpered.
-//       2. Esli popal v BaseModule — vyzyvaet Repair(repairSpeed * dt).
-//       3. Vklyuchaet vizual svarki / iskry / Bloom-friendly light.
+//       1. Reads the queued interaction RaycastCommand result.
+//       2. Converts submarine hits through AUP double3 into local hull space.
+//       3. Erases GlobalDataVault.HullDents and emits typed repair signals.
 //   • ToolTick(dt):
-//       Otklyuchaet vizual, esli v kadre instrument ne ispolzovalsya.
+//       Records the 300-frame blackbox heartbeat and gates idle visuals.
 //
 // VIZUAL:
 //   • sparksVFX         — iskry.
@@ -21,7 +21,7 @@
 // ZERO GC:
 //   • RaycastHit — struct.
 //   • TryGetComponent — zero GC.
-//   • Net Update().
+//   • SystemDispatcher tick only.
 // ============================================================================
 
 using System;
@@ -62,6 +62,7 @@ namespace Hecton8.Gameplay
         private const uint RepairSparksSignalHash = 0x44525350u;
         private const uint HullRepairSourceHash = 0x574C4452u; // WLDR
         private const uint HullRepairTelemetryHash = 0x48445250u; // HDRP
+        private const uint RepairBlackBoxDumpFaultHash = 0x574C4446u; // WLDF
         private const byte RepairSparkDebrisKind = DebrisSpawnSignal.DebrisKindSparks;
         private const int HullDentVaultCapacity = 16;
         private const int HullDentRadiusQuantizationStepsPerMeter = 16;
@@ -1083,7 +1084,7 @@ namespace Hecton8.Gameplay
             if (repairDelta <= 0f || !math.isfinite(repairDelta))
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.HullDents))
+            if (!vault.TryLockBuffer(BufferID.HullDents, SystemID.GameplayTools))
                 return false;
 
             bool changed = false;
@@ -1150,7 +1151,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.HullDents);
+                vault.TryUnlockBuffer(BufferID.HullDents, SystemID.GameplayTools);
             }
 
             if (repairedDentMask != 0)
@@ -1251,7 +1252,7 @@ namespace Hecton8.Gameplay
             if (invalid)
                 flags |= RepairBlackBoxFlagInvalidMath;
 
-            if (!vault.TryLockBuffer(BufferID.RepairToolBlackBox))
+            if (!vault.TryLockBuffer(BufferID.RepairToolBlackBox, SystemID.GameplayTools))
                 return;
 
             try
@@ -1283,7 +1284,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.RepairToolBlackBox);
+                vault.TryUnlockBuffer(BufferID.RepairToolBlackBox, SystemID.GameplayTools);
             }
 
             if ((flags & RepairBlackBoxFlagInvalidMath) == 0)
@@ -1303,7 +1304,7 @@ namespace Hecton8.Gameplay
         {
             if (vault == null || !EnsureRepairBlackBoxHandle(vault))
                 return;
-            if (!vault.TryLockBuffer(BufferID.RepairToolBlackBox))
+            if (!vault.TryLockBuffer(BufferID.RepairToolBlackBox, SystemID.GameplayTools))
                 return;
 
             try
@@ -1351,9 +1352,13 @@ namespace Hecton8.Gameplay
                     }
                 }
             }
+            catch (Exception)
+            {
+                GlobalTelemetryBus.PublishUnityLogFault(RepairBlackBoxDumpFaultHash, 0u, 1u);
+            }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.RepairToolBlackBox);
+                vault.TryUnlockBuffer(BufferID.RepairToolBlackBox, SystemID.GameplayTools);
             }
         }
 
@@ -1446,7 +1451,13 @@ namespace Hecton8.Gameplay
 
         private static void PublishHullRepairedSignal(Vector3 worldPoint, int roomId, int dentIndex, int repairedDentCount)
         {
+            if (!IsFiniteVector(worldPoint))
+                return;
+
             double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
+            if (!math.all(math.isfinite(absolute)))
+                return;
+
             byte flags = HullRepairedSignal.CompletedFlag;
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
             if (tier == HectonQualityTier.Unknown || tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350)
@@ -1468,7 +1479,7 @@ namespace Hecton8.Gameplay
 
         private static void PublishHullRepairedSignals(Vector3 worldPoint, int roomId, ushort repairedDentMask)
         {
-            if (repairedDentMask == 0)
+            if (repairedDentMask == 0 || !IsFiniteVector(worldPoint))
                 return;
 
             int repairedCount = 0;

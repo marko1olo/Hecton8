@@ -1,6 +1,6 @@
 # Rationale_ARCHITECT_SPATIAL_PROBE
 
-Status: VERIFIED MASTER GRADE - VISION CLEAR / GLOBAL COMPILE BLOCKED BY EXTERNAL WORLD-ECOSYSTEM DEPENDENCY
+Status: VERIFIED MASTER GRADE - VISION CLEAR
 
 ## Decision Record
 
@@ -106,8 +106,62 @@ Rejected Alternatives: Keeping suffixes because DXC accepts them, or changing th
 Scalability potential: Low/Mid/High/Ultra visuals are unchanged; shader source compatibility risk is reduced.
 Hardware Impact: Runtime impact is 0 us; compile portability risk reduced.
 
-Problem: Latest global Core build no longer exits 0 after another external domain changed `World/EcosystemDirector.cs`.
-Solution: Stopped fixing outside-domain compile debt after the mechanical `SystemDispatcher` unblock and recorded the failure as [BLOCKED BY DEPENDENCY]. The diagnostics domain audit still has no banned hot-path patterns.
-Rejected Alternatives: Inventing ecosystem index fields from diagnostics, reverting another agent's work, or claiming the stale passing build as current truth.
-Scalability potential: No diagnostics runtime change. The blocker must be resolved in the World/Ecosystem domain.
-Hardware Impact: Runtime impact from this documentation decision is 0 us; compile status remains blocked until the external index implementation is restored.
+Problem: Latest global Core build had temporarily stopped at an external `World/EcosystemDirector.cs` index subsystem dependency.
+Solution: Re-read the live file before editing and found the dependency already recovered on disk with `_sectorIndexEntries`, `_biomassIndexEntries`, `ClearIndexEntries`, `TryUpsertIndexEntry`, `TryFindIndexEntry`, and `ResolveVaultIndexCapacity`. No diagnostics-side edit was needed; reran Core build and restored current compile proof.
+Rejected Alternatives: Inventing ecosystem index fields from diagnostics, reverting another agent's work, or leaving the status blocked after the filesystem changed.
+Scalability potential: No diagnostics runtime change. Compile proof is current again.
+Hardware Impact: Runtime impact is 0 us; integration status restored to PASS.
+
+Problem: The diagnostic bus initialization path still called `GlobalSignals.InitializeAllQueues`, which initialized gameplay lanes just to guarantee the visualizer lane, while a parallel signal-authority pass required `DebugSignal` lane policy to remain centralized.
+Solution: Added `GlobalSignals.EnsureDebugSignalLaneInitialized()`, a narrow central entrypoint that configures only `SignalBus<DebugSignal>` with 64 expected capacity, 64 max frame signals, 8 low-tier frame signals, and the shared FNV lane hash. `ArchitectEyeDebugBus` now calls that method. Editor preview is play-mode gated and routed through the bus. The blackbox writer/viewer use `Dump_ARCHITECT_SPATIAL_PROBE.bin`, and F12 is checked in the render-dispatch callback rather than Unity `Update()`.
+Rejected Alternatives: Private diagnostics-side `SignalBus<DebugSignal>.Configure`, broad `GlobalSignals.InitializeAllQueues`, direct editor `SignalBus<DebugSignal>.Push`, Unity `Update()`, or a Canvas/menu-only toggle. The chosen path preserves central signal policy and avoids waking unrelated gameplay queues.
+Scalability potential: Low initializes only the debug lane and caps debug payloads at 8 visible frame entries under low-tier mode. Middle/High/Ultra keep the same ABI and can publish denser overlays without changing the lane contract.
+Hardware Impact: Runtime impact is 0 us in steady state; cold-start memory and queue prewarm pressure are reduced by not initializing unrelated gameplay lanes from diagnostics. No microsecond claim is made for the cold path because it was not benchmarked.
+
+Problem: Forced Core reverification hit active external edits in `SubmarineFluidDynamics.cs` and `HectonPlayerMovement.cs`.
+Solution: Applied the minimum compile unblocks only: convert the new float3-backed exterior buoyancy sample to `Vector3` before subtracting in `SubmarineFluidDynamics.cs`, and keep a single `System.Runtime.CompilerServices` import for a new `MethodImpl` helper in `HectonPlayerMovement.cs`.
+Rejected Alternatives: Reverting parallel agent work, taking ownership of vehicle/player systems, or marking diagnostics blocked while the compile fixes were one-line mechanical corrections.
+Scalability potential: No diagnostics runtime behavior change. The unblocks preserve the external agents' GlobalDataVault migration direction.
+Hardware Impact: Runtime impact from the compile unblocks is 0 us for diagnostics; build integrity restored.
+
+Problem: `ArchitectEyeSdfVolume.shader` still carried a private hardcoded blue glow vector in the fragment path, which undercuts material/tier control and makes the visual language harder to tune across toaster and god-mode tiers.
+Solution: Derived the SDF glow from material `_Color`, density, and the existing tier scalar using cheap swizzled ALU. The shader keeps the tiered Dear Lie shell march and does not add texture fetches, compute kernels, or thread-group risk.
+Rejected Alternatives: Keeping the RGB constant because it looked acceptable, adding a palette texture, or introducing a heavier noise pass. A hardcoded palette is brittle; a texture would add bandwidth and authoring state for a diagnostic pass.
+Scalability potential: Low/MX350 still uses the cheapest shell path and material-driven color. Middle/High/Ultra can push stronger density/tier visuals from the same material contract without new CPU upload paths.
+Hardware Impact: Estimated steady-state runtime savings are 0 us; this is palette sovereignty and shader portability cleanup with the same ALU class and no extra memory traffic.
+
+Problem: The NaN warning path counted invalid samples but could still carry a non-finite `lastFaultPosition` from malformed debug signals or AUP conversion failures into GPU quad emission and blackbox storage.
+Solution: Added a `SanitizeFaultPosition` boundary and applied it before NaN warning emission, pillar emission, `DebugSignal` fault adoption, bad AUP/velocity adoption, and blackbox recording. Invalid coordinates fall back to the last finite probe or zero.
+Rejected Alternatives: Trusting SignalBus finite guards alone, dropping the warning entirely, or writing NaN coordinates into the overlay for forensic purity. GPU pipelines, especially mobile, require finite draw payloads.
+Scalability potential: Low/MX350 avoids catastrophic invalid-vertex behavior. Middle/High/Ultra keep the same red-pillar forensic marker but never spend high-tier visual density on poisoned coordinates.
+Hardware Impact: Estimated steady-state runtime savings are 0 us; this is a stability guard. Cost is a few finite checks only on fault/adoption paths and no extra allocations.
+
+Problem: Scalar telemetry fields could still carry non-finite frame time, pressure, health, gas, or STP values into blackbox history and overlay graphs if an upstream signal was poisoned.
+Solution: Added finite-only scalar helpers and applied them to runtime state writes, blackbox writes, waterfall history reads, heartbeat bars, gas/STP panels, lane saturation, and VRAM slices.
+Rejected Alternatives: Relying on `math.saturate` or `math.max` as a NaN sanitizer. Those are not a documented cross-platform survival boundary for every Burst/IL2CPP/GPU-adjacent path.
+Scalability potential: Low/MX350 avoids cascading invalid visual state. Middle/High/Ultra keep richer overlays while blackbox telemetry remains finite and replayable.
+Hardware Impact: Estimated steady-state runtime savings are 0 us; the cost is a small number of scalar finite checks inside existing diagnostic passes.
+
+Problem: `VaultProbeUtility` still exposed an unused mutable `Span<byte>` over Vault buffers through a method named as a read probe.
+Solution: Removed the write-capable raw-byte probe and kept only `TryReadOnlyBufferBytes<T>`, which uses `GetUnsafeReadOnlyPtr`.
+Rejected Alternatives: Leaving the API unused but dangerous, or adding a second write-probe name. Diagnostics should observe Vault data unless an explicit write contract exists.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; the data boundary is stricter on every tier.
+Hardware Impact: Runtime savings are 0 us; data-sovereignty risk is reduced without adding allocations.
+
+Problem: Runtime blackbox writer and editor timeline reader had drifted to `Dump_ARCHITECT_EYE_VISUALIZER.bin`, while this agent's mandated ID and logs require `Dump_ARCHITECT_SPATIAL_PROBE.bin`.
+Solution: Restored both paths to `Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin`.
+Rejected Alternatives: Supporting both paths or silently documenting the drift. The crash artifact must be deterministic for postmortem automation.
+Scalability potential: No tier-specific visual change; all platforms write/read the same fixed 300-frame artifact.
+Hardware Impact: Runtime savings are 0 us; postmortem lookup correctness restored.
+
+Problem: Static regression audit found the mandated `F12` toggle had disappeared from the live `Render()` path after concurrent edits, so a disabled visualizer could not be re-enabled by the global key.
+Solution: Reinserted the `KeyCode.F12` toggle before the `_enabled` render early return. It clears `_frontCount` when disabling and does not require `IUpdatable` or any standard Unity `Update()`.
+Rejected Alternatives: Restoring an `IUpdatable.Tick` input path or relying on PDA commands only. The mandate is a single global key and the domain forbids standard tick debt.
+Scalability potential: Low/MX350 pays one key-state check in diagnostics render dispatch only. Middle/High/Ultra keep the same input path and indirect draw path.
+Hardware Impact: Estimated steady-state runtime savings are 0 us; this restores operator control without adding allocations.
+
+Problem: The blackbox dump path drifted again between runtime writer and editor reader, and the editor dump loader counted requested bytes instead of actual bytes read.
+Solution: Added `ArchitectEyeVisualizer.BlackBoxDumpRelativePath`, routed runtime and editor through it, and made the editor loader derive frame count from the actual read count.
+Rejected Alternatives: Keeping duplicate string constants, accepting short-read zero padding, or scanning both old and new dump names. Deterministic crash artifact paths matter more than convenience.
+Scalability potential: All tiers use the same 300-frame postmortem artifact; Steam Deck/MicroSD reads remain capped and sequential.
+Hardware Impact: Runtime savings are 0 us; editor IO correctness improved without increasing read budget.

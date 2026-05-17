@@ -65,6 +65,17 @@ Shader "Hidden/Hecton8/NoirDepthFog"
         #endif
         }
 
+        float HectonNoirDepthFogFinite(float value, float fallbackValue)
+        {
+            return isfinite(value) ? value : fallbackValue;
+        }
+
+        float HectonNoirDepthFogSafePositiveRcp(float value, float fallbackValue, float minimumValue)
+        {
+            float safeValue = max(HectonNoirDepthFogFinite(value, fallbackValue), minimumValue);
+            return rcp(safeValue);
+        }
+
         float ResolveTaaDitherPhaseNoise(float2 screenUV)
         {
             float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
@@ -76,6 +87,7 @@ Shader "Hidden/Hecton8/NoirDepthFog"
 
         float SampleMarineSnowFogDensity(float2 screenUV)
         {
+            [branch]
             if (_HectonMarineSnowFogDensityParams.w <= 0.5 ||
                 _HectonMarineSnowFogDensityParams.x <= 0.0001 ||
                 _HectonMarineSnowFogDensityTexelSize.z < 1.0 ||
@@ -88,15 +100,15 @@ Shader "Hidden/Hecton8/NoirDepthFog"
                 saturate(screenUV.x) * (_HectonMarineSnowFogDensityTexelSize.z - 1.0) + 0.5,
                 saturate(screenUV.y) * (_HectonMarineSnowFogDensityTexelSize.w - 1.0) + 0.5);
             int rawDensity = _HectonMarineSnowFogDensityTex.Load(int3(pixel, 0)).r;
-            float decodedDensity = saturate(rawDensity * rcp(max(_HectonMarineSnowFogDensityParams.y, 1.0)));
-            return saturate(decodedDensity * _HectonMarineSnowFogDensityParams.x);
+            float decodedDensity = saturate(rawDensity * HectonNoirDepthFogSafePositiveRcp(_HectonMarineSnowFogDensityParams.y, 1.0, 1.0));
+            return saturate(decodedDensity * max(HectonNoirDepthFogFinite(_HectonMarineSnowFogDensityParams.x, 0.0), 0.0));
         }
 
         float FastNegativeExp(float value)
         {
-            value = max(value, 0.0);
+            value = max(HectonNoirDepthFogFinite(value, 0.0), 0.0);
             float valueSq = value * value;
-            return rcp(1.0 + value + 0.48 * valueSq + 0.235 * valueSq * value);
+            return HectonNoirDepthFogSafePositiveRcp(1.0 + value + 0.48 * valueSq + 0.235 * valueSq * value, 1.0, 0.000001);
         }
 
         half4 Frag(Varyings input) : SV_Target
@@ -104,18 +116,20 @@ Shader "Hidden/Hecton8/NoirDepthFog"
             half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
             float rawDepth = SampleSceneDepth(input.screenUV);
             float depthValid = ResolveRawDepthValidity(rawDepth);
+            [branch]
             if (depthValid <= 0.5)
                 return sourceColor;
 
             float linearEyeDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
-            float fogStartMeters = max(_HectonNoirDepthFogParamsA.y, 0.0);
-            float invDepthRange = rcp(max(_HectonNoirDepthFogParamsA.z - fogStartMeters, 1.0));
+            float fogStartMeters = max(HectonNoirDepthFogFinite(_HectonNoirDepthFogParamsA.y, 0.0), 0.0);
+            float invDepthRange = HectonNoirDepthFogSafePositiveRcp(_HectonNoirDepthFogParamsA.z - fogStartMeters, 1.0, 1.0);
             half depth01 = (half)saturate((linearEyeDepth - fogStartMeters) * invDepthRange);
+            [branch]
             if (depth01 <= 0.0001h)
                 return sourceColor;
 
             float fogDepthMeters = max(0.0, linearEyeDepth - fogStartMeters);
-            float visualDensity = max(_HectonNoirDepthFogParamsA.x, 0.000001);
+            float visualDensity = max(HectonNoirDepthFogFinite(_HectonNoirDepthFogParamsA.x, 0.0), 0.000001);
             half fogRaw = (half)(1.0 - FastNegativeExp(fogDepthMeters * visualDensity));
             half fogFactor = fogRaw * fogRaw * (0.82h + fogRaw * 0.18h);
             half depthSq = depth01 * depth01;
@@ -132,7 +146,9 @@ Shader "Hidden/Hecton8/NoirDepthFog"
                 saturate(depthSq + depth01 * 0.18h));
             half3 extinctionColor = H8WaterExtinctionResolveRgbByDepthMeters(linearEyeDepth, (half)_ExtinctionLUTRuntime.y);
             half extinctionBlend = H8WaterExtinctionFogBlend();
-            fogColor = H8WaterExtinctionApplyFogTint(fogColor, extinctionColor, extinctionBlend);
+            half3 abyssColor = max((half3)_HectonNoirDepthFogAbyssColor.rgb, half3(0.0h, 0.0h, 0.0h));
+            half3 extinctionFloor = max((half3)_HectonNoirDepthFogShallowColor.rgb, abyssColor);
+            fogColor = H8WaterExtinctionApplyFogTint(fogColor, extinctionColor, extinctionBlend, extinctionFloor, abyssColor);
             sourceColor.rgb = lerp(sourceColor.rgb, sourceColor.rgb * extinctionColor, fogFactor * extinctionBlend * 0.35h);
             sourceColor.rgb = lerp(sourceColor.rgb, fogColor, (half)fogFactor);
             return sourceColor;

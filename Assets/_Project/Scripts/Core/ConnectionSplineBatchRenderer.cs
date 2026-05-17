@@ -701,7 +701,7 @@ namespace Hecton8.Core
                 receiveShadows = false,
                 layer = gameObject.layer
             };
-            Graphics.RenderMeshPrimitives(renderParams, batch.Mesh, 0, batch.InstanceCount);
+            UnityEngine.Graphics.RenderMeshPrimitives(renderParams, batch.Mesh, 0, batch.InstanceCount);
         }
 
         private static Mesh ResolveStaticCylinderMesh()

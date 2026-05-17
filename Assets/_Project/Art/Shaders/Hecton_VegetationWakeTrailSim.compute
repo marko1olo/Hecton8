@@ -107,9 +107,11 @@ float4 ApplyWakeTrailStamps(float2 uv, float4 currentValue)
         float2 delta = uv - stamp.UvEllipse.xy;
         float radius = max(stamp.UvEllipse.z, 0.0001);
         float halfLength = max(stamp.UvEllipse.w, 0.0001);
+        float invRadius = rcp(radius);
+        float invHalfLength = rcp(halfLength);
         float verticalImpulse = saturate(stamp.DirectionStrengthVertical.w);
-        float along = dot(delta, stampDirection) / halfLength;
-        float across = dot(delta, stampBitangent) / radius;
+        float along = dot(delta, stampDirection) * invHalfLength;
+        float across = dot(delta, stampBitangent) * invRadius;
         float shape = saturate(1.0 - (along * along + across * across));
         float stampIntensity = shape * shape * saturate(stamp.DirectionStrengthVertical.z) * lerp(1.0, 1.55, verticalImpulse);
         if (stampIntensity <= 0.000001)

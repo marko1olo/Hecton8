@@ -287,3 +287,63 @@ Rejected Alternatives: Claiming completion from stale static scans was rejected.
 Scalability potential: No docking runtime change. Low/Middle/High/Ultra docking behavior remains the existing split: 10 Hz low-tier fake, fixed Bezier mid-tier, high-tier zero-jerk progress under stress gate, and wake/fluid visual overkill delegated through typed lanes.
 
 Hardware Impact: 0 us/frame. This decision records validation state only; no measured microseconds are claimed.
+
+## Decision 25 - Angular Inertia Reaudit
+
+Problem: The spline docking path had current-compensated translational velocity, but active rigidbody docking still wrote `angularVelocity = Vector3.zero` every fixed tick. That left the angular channel as a dead snap while `MoveRotation` advanced the pose, which is inconsistent with the requested heavy inertial navigation.
+
+Solution: Add `_lastDockingSplineRotation` and derive a bounded angular velocity from the evaluated spline rotation delta. The solve normalizes both quaternions with finite guards, flips to the shortest arc, extracts angle-axis, uses `math.rcp` for inverse delta time, uses `math.rsqrt` for axis and magnitude clamps, and caps speed from sanitized docking rotation spring/damping. A concurrent `SubmarineFluidDynamics` compile wall caused by `float3` vault centers mixed with `Vector3` arithmetic was fixed with explicit conversions only.
+
+Rejected Alternatives: Keeping angular velocity zero during active docking was rejected because it preserves the old snap feel. `Quaternion.Slerp`, `AnimationCurve`, or reintroducing lerp-style orientation blending were rejected by the spline prompt. Broad UI, defrag, or diagnostics rewrites were rejected; compile triage stayed to explicit type conversion and focused build isolation.
+
+Scalability potential: Low/MX350 keeps the same 10 Hz spline sample cadence and pays only scalar angle-axis math while actively docking. Middle uses continuous Bezier rotation with finite velocity presentation. High/Ultra keep zero-jerk progress and can spend saved physics simplicity downstream through wake/fluid visual lanes.
+
+Hardware Impact: 0 B/frame. No measured profiler microseconds are claimed. Static cost is a few scalar quaternion/vector operations per active dock; latest focused build with project references disabled for isolation reports 0 warnings and 0 errors.
+
+## Decision 26 - Explicit Docking Telemetry Layout
+
+Problem: The docking blackbox entry still used `LayoutKind.Sequential, Pack = 1, Size = 128`. That was stable under managed layout rules, but the ARM64/Quest mandate explicitly rejects implicit padding assumptions for crash evidence packets.
+
+Solution: Convert `DockTelemetryEntry` to `LayoutKind.Explicit, Pack = 1, Size = 128` and pin every field offset: frame/state bytes, scalar diagnostics, `float3` vectors, `float4` rotation, int64 AUP grid, owner/request hashes, runtime flags, and reserved tail. A concurrent validation wall in `FaunaBrain.Compatibility` was a removed `using System;` for `[Flags]`; restoring that import was compile-surface triage only.
+
+Rejected Alternatives: Leaving sequential telemetry was rejected because it forces the Quest/IL2CPP audit to trust field ordering. Enlarging the telemetry packet was rejected because the 300-frame blackbox already has a fixed 128-byte ring contract. Broad fauna behavior edits were rejected; the compile repair was one missing import.
+
+Scalability potential: Low/MX350, Quest, Steam Deck, High, and Ultra now read identical 128-byte docking heartbeat packets. Toaster mode keeps fixed abort-only disk I/O; high-tier visual overkill still consumes wake/fluid/completion lanes rather than physics-owned particles.
+
+Hardware Impact: 0 B/frame and no measured microseconds claimed. Runtime behavior is unchanged; the value is deterministic binary layout and a focused build that exits 0 with 0 warnings and 0 errors.
+
+## Decision 27 - Hot-Path DataVault Lookup Eviction
+
+Problem: `RecordDockTelemetry` and `DumpDockTelemetry` were vault-backed, but their shared resolver still called `EnsureDockTelemetry`. That helper can read `GlobalRegistry.DataVault`, so a missing or invalid telemetry handle could trigger a registry lookup from `Tick` or `FixedTick`.
+
+Solution: Make `VehicleDockingModule` an `IGlobalRegistryHotSwapListener`, register it on enable/spawn, unregister it on despawn/disable/destroy, and rebuild telemetry handles only from cold lifecycle or DataVault replacement callbacks. `TryResolveDockTelemetry` now uses only cached vault handles and never calls `EnsureDockTelemetry`.
+
+Rejected Alternatives: Keeping hot-path registry recovery was rejected because the vehicle kinematics mandate forbids registry polling in tick chains. Per-frame retry cadence was rejected because it would still hide service lookup inside telemetry. Editing the external Biolum build wall was rejected because it is outside the docking prompt.
+
+Scalability potential: Low/MX350 and Quest avoid registry lookup spikes in the telemetry heartbeat. Middle/High/Ultra preserve the same blackbox cadence and can still consume wake/fluid/completion lanes for visual overkill.
+
+Hardware Impact: 0 B/frame. No measured profiler microseconds are claimed. Static impact is removal of a possible hot-path registry read; one focused build attempt is currently blocked by external `World/Biolum/HectonBiolumManager` telemetry field errors, with no docking compile errors in the captured log.
+
+## Decision 28 - Blackbox Dump I/O Guard
+
+Problem: The blackbox ring was vault-backed and disk output was abort/NaN-only, but repeated invalid telemetry could still call the dump path in consecutive frames. On Steam Deck or MicroSD storage, repeated binary rewrites during a failure cascade are avoidable I/O pressure.
+
+Solution: Add a fixed 30-frame dump cooldown to `DumpDockTelemetry` and stamp each dump with magic, format version, and explicit 128-byte entry size before writing the telemetry length/cursor and entries. The ring heartbeat remains unchanged; only failure-path file output is gated.
+
+Rejected Alternatives: Per-frame dump writes were rejected because the last-300-frame ring already preserves the state window. Removing disk dumps was rejected because the blackbox mandate requires postmortem evidence. Re-running `dotnet rebuild` after a narrow static patch was rejected because the user explicitly instructed not to rebuild every time and the previous compile wall is external Biolum.
+
+Scalability potential: Low/MX350 and Steam Deck avoid repeated failure-path storage writes. Middle keeps the same blackbox fidelity. High/Ultra get deterministic dump metadata for richer postmortem tooling while visual overkill remains downstream through typed wake/fluid/completion lanes.
+
+Hardware Impact: 0 B/frame. No measured profiler microseconds are claimed. Static cost is one integer frame gate only when the dump path is invoked.
+
+## Decision 29 - Cached-Only Spline Read Path
+
+Problem: `DockingAutopilotService.TryEvaluateActiveSpline` read from `TryReadActiveSpline`, and `VehicleDockingModule` also wrote `_activeDockingSpline` back through `TryWriteActiveSpline` during evaluation and release. Those routes could reach `EnsureSplineBufferAvailable`, and that helper can read `GlobalRegistry.DataVault` if the service has lost its vault reference. A missing handle could therefore turn a FixedTick spline evaluation or completion/abort release into a registry-backed repair path.
+
+Solution: Add an `allowEnsure` gate to `TryResolveActiveSplines`. Acquire/write setup paths keep `allowEnsure = true` so cold docking setup can create or repair the vault buffer. `TryEvaluateActiveSpline` now resolves cached handles directly, stamps `Progress01` into the vault slot from that cached path, and evaluates the spline without a module-side per-tick write. `TryReadActiveSpline` and `TryReleaseSplineSlot` also pass `allowEnsure: false`, and release no longer performs a redundant final-state write before freeing the slot.
+
+Rejected Alternatives: Keeping one resolver for all call sites was rejected because hot reads and cold setup have different cadence requirements. Disabling repair everywhere was rejected because bootstrap/acquire still needs a deterministic path to create `VehicleDockingActiveSplines`. Rebuilding after every small edit was rejected by user instruction; one focused build was run only after the consolidated Phase 13 code path. Editing the external Player signal or Biolum build walls remains rejected as outside the docking prompt.
+
+Scalability potential: Low/MX350 and Quest avoid hidden registry repair during active spline evaluation. Middle/High/Ultra keep the same Bezier/Hermite behavior and still feed visual overkill through typed wake/fluid/completion lanes.
+
+Hardware Impact: 0 B/frame. No measured profiler microseconds are claimed. Static impact is removal of possible registry-backed repair branches from active spline reads and the module evaluation tick. Focused build remains blocked externally with no docking file errors in the captured log.

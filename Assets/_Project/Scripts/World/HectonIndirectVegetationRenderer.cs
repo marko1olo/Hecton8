@@ -1647,7 +1647,7 @@ namespace Hecton8.World
                 motionVectorMode = motionVectorMode,
                 camera = _cameraOverride != null ? _cameraOverride : cullCamera
             };
-            Graphics.RenderMeshIndirect(renderParams, mesh, argsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, argsBuffer, 1, 0);
         }
 
         private void DispatchGpuCulling(

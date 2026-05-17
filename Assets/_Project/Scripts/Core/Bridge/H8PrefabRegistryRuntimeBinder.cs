@@ -4,6 +4,7 @@ using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Core.Bridge
 {
@@ -19,6 +20,8 @@ namespace Hecton8.Core.Bridge
             {
                 ClearExistingBuffers(vault);
                 VRAMBudgetTracker.Unregister(registry.RegistryHash);
+                PublishRegistryUpdateSignal(registry.RegistryHash, BufferID.BridgePrefabMapping, 0);
+                PublishRegistryUpdateSignal(registry.RegistryHash, BufferID.BridgePrefabLoreLinks, 0);
                 return true;
             }
 
@@ -48,6 +51,7 @@ namespace Hecton8.Core.Bridge
             long totalVramBytes = 0L;
             PrefabRegistry runtimeRegistry = GlobalRegistry.PrefabRegistryRuntime;
             uint frame = unchecked((uint)Time.frameCount);
+            bool publishRuntimeSignals = Application.isPlaying;
 
             for (int i = 0; i < count; i++)
             {
@@ -62,6 +66,9 @@ namespace Hecton8.Core.Bridge
                 mappingPtr[i] = entry.ToMappingEntry(runtimePrefabId);
                 loreLinkPtr[i] = entry.ToLoreLinkEntry();
                 totalVramBytes += entry.EstimatedVramBytes > 0L ? entry.EstimatedVramBytes : 0L;
+
+                if (!publishRuntimeSignals)
+                    continue;
 
                 PrefabAcousticSignatureSignal acoustic = new PrefabAcousticSignatureSignal
                 {
@@ -88,6 +95,8 @@ namespace Hecton8.Core.Bridge
             }
 
             Thread.MemoryBarrier();
+            PublishRegistryUpdateSignal(registry.RegistryHash, BufferID.BridgePrefabMapping, count);
+            PublishRegistryUpdateSignal(registry.RegistryHash, BufferID.BridgePrefabLoreLinks, count);
             VRAMBudgetTracker.RegisterOrUpdate(registry.RegistryHash, totalVramBytes);
             GlobalTelemetryBus.PublishModTelemetry(H8BridgeHashes.PrefabRegistry, registry.RegistryHash, count);
             return true;
@@ -119,20 +128,43 @@ namespace Hecton8.Core.Bridge
             if (ptr == null || length <= 0)
                 return;
 
-            UnsafeUtility.MemClear(ptr, length * UnsafeUtility.SizeOf<T>());
+            long byteCount = (long)length * UnsafeUtility.SizeOf<T>();
+            Thread.MemoryBarrier();
+            UnsafeUtility.MemClear(ptr, byteCount);
+            Thread.MemoryBarrier();
+        }
+
+        private static void PublishRegistryUpdateSignal(uint registryHash, BufferID bufferId, int entryCount)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            DataVaultUpdateSignal signal = new DataVaultUpdateSignal
+            {
+                SourceHash = registryHash,
+                FieldHash = H8BridgeHashes.PrefabRegistry,
+                OffsetBytes = -1,
+                OldValue = 0f,
+                NewValue = entryCount > 0 ? entryCount : 0f,
+                Frame = unchecked((uint)Time.frameCount),
+                BufferId = (ushort)bufferId,
+                Flags = 0
+            };
+            SignalBus<DataVaultUpdateSignal>.Push(in signal);
         }
     }
 
     public sealed class H8PrefabRegistryBootBinder : MonoBehaviour
     {
         [SerializeField] private H8PrefabRegistry registry;
-        [SerializeField] private bool bindOnAwake = true;
+        [FormerlySerializedAs("bindOnAwake")]
+        [SerializeField] private bool bindOnStart = true;
 
         public H8PrefabRegistry Registry => registry;
 
         private void Start()
         {
-            if (bindOnAwake)
+            if (bindOnStart)
                 BindNow();
         }
 

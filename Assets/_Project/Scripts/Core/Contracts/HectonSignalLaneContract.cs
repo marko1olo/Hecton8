@@ -112,5 +112,6 @@ namespace Hecton8.Core.Contracts
         public const byte WfcOutpostDoorPowerSignal = 108;
         public const byte WfcOutpostGeneratedSignal = 109;
         public const byte WfcOutpostStateChangedSignal = 110;
+        public const uint SignalLaneRegistryHash = 0x13CABE35u;
     }
 }

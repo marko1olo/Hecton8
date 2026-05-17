@@ -23,7 +23,6 @@ namespace Hecton8.Gameplay
     {
         private const string DefaultInteractText = "Break Rock";
         private const float MinimumToolPower = 0.05f;
-        private const byte OutcropShardDebrisKind = 10;
         private const uint OutcropShardSpeciesHash = 0xC0DEFACEu;
 
         [Header("Health")]
@@ -239,7 +238,7 @@ namespace Hecton8.Gameplay
                 SpeciesHash = OutcropShardSpeciesHash,
                 SourceEntityId = seed == 0u ? 1u : seed,
                 Intensity01 = power01,
-                DebrisKind = OutcropShardDebrisKind,
+                DebrisKind = DebrisSpawnSignal.DebrisKindRockShard,
                 Flags = DebrisSpawnSignal.FlagComputeShard,
                 Quantity = (ushort)math.clamp(8 + (int)(power01 * 48f), 8, 64)
             };

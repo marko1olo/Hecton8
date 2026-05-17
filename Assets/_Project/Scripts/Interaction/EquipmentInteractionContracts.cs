@@ -95,7 +95,7 @@ namespace Hecton8.Interaction
     /// Immutable tool dispatch payload captured before routing into the interaction queue.
     /// All positions are absolute-universe coordinates.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
     public struct InteractionPacket
     {
         public InteractionPacket(
@@ -116,25 +116,34 @@ namespace Hecton8.Interaction
             Mode = mode;
             ToolStateFlags = toolStateFlags;
             FrameIndex = frameIndex;
-            _padding0 = 0u;
+            _padding0 = (ushort)0;
         }
 
+        [FieldOffset(0)]
         public uint ToolID;
+        [FieldOffset(4)]
         public float3 Origin;
+        [FieldOffset(16)]
         public float3 Direction;
+        [FieldOffset(28)]
         public float Power;
+        [FieldOffset(32)]
         public float Range;
+        [FieldOffset(36)]
         public byte Mode;
+        [FieldOffset(37)]
         public byte ToolStateFlags;
+        [FieldOffset(40)]
         public uint FrameIndex;
+        [FieldOffset(44)]
         private uint _padding0;
     }
 
     /// <summary>
-    /// Queued interaction event consumed by the authoritative dispatch owner in LateUpdate.
+    /// Queued interaction event consumed by the authoritative late-frame dispatch owner.
     /// All positions are absolute-universe coordinates.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 88)]
     public struct InteractionSignal
     {
         public InteractionSignal(
@@ -153,15 +162,28 @@ namespace Hecton8.Interaction
             PowerDelivered = powerDelivered;
             EffectType = effectType;
             PenetrationOccurred = penetrationOccurred;
+            _padding0 = 0;
+            _padding1 = 0u;
         }
 
+        [FieldOffset(0)]
         public InteractionPacket Source;
+        [FieldOffset(48)]
         public int TargetInstanceID;
+        [FieldOffset(52)]
         public float3 HitPoint;
+        [FieldOffset(64)]
         public float3 HitNormal;
+        [FieldOffset(76)]
         public float PowerDelivered;
+        [FieldOffset(80)]
         public byte EffectType;
+        [FieldOffset(81)]
         public byte PenetrationOccurred;
+        [FieldOffset(82)]
+        private ushort _padding0;
+        [FieldOffset(84)]
+        private uint _padding1;
     }
 
     /// <summary>

@@ -60,7 +60,7 @@ namespace Hecton8.Physics
 
             if (PinnedMask.IsCreated && index < PinnedMask.Length && (PinnedMask[index] & PinnedNodeMask) != 0)
             {
-                float3 pinned = PinnedPositions[index];
+                float3 pinned = SanitizeFloat3(PinnedPositions[index], float3.zero);
                 Positions[index] = pinned;
                 PreviousPositions[index] = pinned;
                 if (Velocities.IsCreated && index < Velocities.Length)
@@ -83,8 +83,15 @@ namespace Hecton8.Physics
             }
 
             float3 velocity = (position - previous) * VelocityDamping;
-            float maxVelocity = math.max(0f, MaxCableVelocity);
+            float maxVelocity = math.isfinite(MaxCableVelocity) ? math.max(0f, MaxCableVelocity) : 0f;
             float velocityLengthSq = math.lengthsq(velocity);
+            if (!math.isfinite(velocityLengthSq))
+            {
+                velocity = float3.zero;
+                if (NodeFaultFlags.IsCreated && index < NodeFaultFlags.Length)
+                    NodeFaultFlags[index] = (byte)TetherVerletFaultFlags.NonFiniteNode;
+            }
+
             float maxVelocitySq = maxVelocity * maxVelocity;
             if (maxVelocity > 0f && velocityLengthSq > maxVelocitySq)
                 velocity *= maxVelocity * math.rsqrt(math.max(velocityLengthSq, 0.000001f));
@@ -99,13 +106,27 @@ namespace Hecton8.Physics
             if (Velocities.IsCreated && index < Velocities.Length)
                 Velocities[index] = velocity;
 
-            float3 next = position + velocity + (Acceleration * DeltaTimeSq);
+            float3 acceleration = SanitizeFloat3(Acceleration, float3.zero);
+            float safeDeltaTimeSq = math.isfinite(DeltaTimeSq) && DeltaTimeSq >= 0f ? DeltaTimeSq : 0f;
+            float3 next = position + velocity + (acceleration * safeDeltaTimeSq);
             float floor = FloorY + math.max(0f, NodeRadius);
             if (next.y < floor)
                 next.y = floor;
 
+            if (!math.all(math.isfinite(next)))
+            {
+                next = position;
+                if (NodeFaultFlags.IsCreated && index < NodeFaultFlags.Length)
+                    NodeFaultFlags[index] = (byte)TetherVerletFaultFlags.NonFiniteNode;
+            }
+
             PreviousPositions[index] = position;
             Positions[index] = next;
+        }
+
+        private static float3 SanitizeFloat3(float3 value, float3 fallback)
+        {
+            return math.all(math.isfinite(value)) ? value : fallback;
         }
     }
 
@@ -157,7 +178,7 @@ namespace Hecton8.Physics
 
                     if (IsPinned(nodeIndex))
                     {
-                        Positions[nodeIndex] = PinnedPositions[nodeIndex];
+                        Positions[nodeIndex] = SanitizeFloat3(PinnedPositions[nodeIndex], float3.zero, ref faultFlags);
                         continue;
                     }
 
@@ -175,10 +196,31 @@ namespace Hecton8.Physics
                     float3 p1 = Positions[a];
                     float3 p2 = Positions[b];
                     float3 dir = p1 - p2;
-                    float lenSq = math.max(math.lengthsq(dir), MinLengthSq);
-                    float invLength = math.rsqrt(math.max(lenSq, MinLengthSq));
+                    float lenSq = math.lengthsq(dir);
+                    if (!math.isfinite(lenSq))
+                    {
+                        SegmentTensions[segmentIndex] = 0f;
+                        faultFlags |= TetherVerletFaultFlags.ConstraintNonFinite;
+                        continue;
+                    }
+
+                    if (lenSq <= MinLengthSq)
+                    {
+                        SegmentTensions[segmentIndex] = 0f;
+                        continue;
+                    }
+
+                    float invLength = math.rsqrt(lenSq);
                     float distance = lenSq * invLength;
-                    float restLength = math.max(0.0001f, SegmentRestLengths[segmentIndex]);
+                    if (!math.isfinite(distance))
+                    {
+                        SegmentTensions[segmentIndex] = 0f;
+                        faultFlags |= TetherVerletFaultFlags.ConstraintNonFinite;
+                        continue;
+                    }
+
+                    float rawRestLength = SegmentRestLengths[segmentIndex];
+                    float restLength = math.isfinite(rawRestLength) ? math.max(0.0001f, rawRestLength) : 0.0001f;
                     float delta = distance - restLength;
                     float stretch = math.max(0f, delta);
                     peakDelta = math.max(peakDelta, stretch);
@@ -215,7 +257,7 @@ namespace Hecton8.Physics
                 {
                     if (IsPinned(nodeIndex))
                     {
-                        Positions[nodeIndex] = PinnedPositions[nodeIndex];
+                        Positions[nodeIndex] = SanitizeFloat3(PinnedPositions[nodeIndex], float3.zero, ref faultFlags);
                         continue;
                     }
 
@@ -249,10 +291,19 @@ namespace Hecton8.Physics
         private void WriteStats(float peakDelta, int faultFlags)
         {
             if (SolverStats.IsCreated && SolverStats.Length > 0)
-                SolverStats[0] = peakDelta;
+                SolverStats[0] = math.isfinite(peakDelta) ? math.max(0f, peakDelta) : 0f;
 
             if (SolverFlags.IsCreated && SolverFlags.Length > 0)
                 SolverFlags[0] = faultFlags;
+        }
+
+        private static float3 SanitizeFloat3(float3 value, float3 fallback, ref int faultFlags)
+        {
+            if (math.all(math.isfinite(value)))
+                return value;
+
+            faultFlags |= TetherVerletFaultFlags.ConstraintNonFinite;
+            return fallback;
         }
     }
 
@@ -269,13 +320,19 @@ namespace Hecton8.Physics
             if ((uint)index >= (uint)Positions.Length)
                 return;
 
-            Positions[index] -= ShiftOffset;
+            float3 safeShiftOffset = math.all(math.isfinite(ShiftOffset)) ? ShiftOffset : float3.zero;
+            Positions[index] = SanitizeFloat3(Positions[index] - safeShiftOffset);
 
             if (index < PreviousPositions.Length)
-                PreviousPositions[index] -= ShiftOffset;
+                PreviousPositions[index] = SanitizeFloat3(PreviousPositions[index] - safeShiftOffset);
 
             if (PinnedPositions.IsCreated && index < PinnedPositions.Length)
-                PinnedPositions[index] -= ShiftOffset;
+                PinnedPositions[index] = SanitizeFloat3(PinnedPositions[index] - safeShiftOffset);
+        }
+
+        private static float3 SanitizeFloat3(float3 value)
+        {
+            return math.all(math.isfinite(value)) ? value : float3.zero;
         }
     }
 
@@ -322,11 +379,11 @@ namespace Hecton8.Physics
                 FrameIndex = FrameIndex,
                 NodeCount = NodeCount,
                 IterationCount = IterationCount,
-                PeakConstraintDelta = SolverStats.IsCreated && SolverStats.Length > 0 ? SolverStats[0] : 0f,
+                PeakConstraintDelta = SanitizeNonNegative(SolverStats.IsCreated && SolverStats.Length > 0 ? SolverStats[0] : 0f),
                 PeakCableTension = math.isfinite(PeakCableTension) ? math.max(0f, PeakCableTension) : 0f,
-                AnchorPosition = AnchorPosition,
-                PayloadPosition = PayloadPosition,
-                Flags = Flags | solverFlags,
+                AnchorPosition = SanitizeFloat3(AnchorPosition),
+                PayloadPosition = SanitizeFloat3(PayloadPosition),
+                Flags = Flags | solverFlags | ResolveTelemetryFaultFlags(AnchorPosition, PayloadPosition, PeakCableTension),
                 Pad0 = 0u,
                 Pad1 = 0u,
                 Pad2 = 0u,
@@ -334,6 +391,24 @@ namespace Hecton8.Physics
             };
 
             TelemetryHead[TelemetryHeadOffset] = (localIndex + 1) % capacity;
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float3 SanitizeFloat3(float3 value)
+        {
+            return math.all(math.isfinite(value)) ? value : float3.zero;
+        }
+
+        private static uint ResolveTelemetryFaultFlags(float3 anchorPosition, float3 payloadPosition, float peakCableTension)
+        {
+            bool nonFinite = !math.all(math.isfinite(anchorPosition)) ||
+                             !math.all(math.isfinite(payloadPosition)) ||
+                             !math.isfinite(peakCableTension);
+            return nonFinite ? (uint)TetherVerletFaultFlags.NonFiniteNode : 0u;
         }
     }
 }

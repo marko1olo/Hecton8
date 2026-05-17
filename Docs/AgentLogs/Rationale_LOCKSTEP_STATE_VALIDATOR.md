@@ -383,3 +383,111 @@ Rejected Alternatives: Editing `HectonFloatingOrigin.cs` from this role, because
 Scalability potential: No runtime behavior change inside lockstep. The validator remains bounded for Low/MX350 and retains 60-frame High/Ultra validation. Floating-origin repair belongs to the AUP/core owner because it controls world rebasing semantics.
 
 Hardware Impact: 0us runtime. The final build log reports 0 `LockstepStateValidator` and 0 `Hecton8.Core.Determinism` diagnostics; the compile wall is external.
+
+## Post-AUP Compile Revalidation
+
+Problem: The previously recorded compile wall became stale after the active `HectonFloatingOrigin.cs` source changed from under the shared worktree. The status had to be revalidated against disk truth.
+
+Solution: Re-read the XML block, inspect the current AUP method, verify the lockstep typed lanes are still present, and rerun `dotnet build Hecton8.Core.csproj` into `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260516_rerun_after_aup_dotnet.log`.
+
+Rejected Alternatives: Reporting stale blocked status, editing another agent's AUP file without necessity, or skipping the compiler slot after source drift.
+
+Scalability potential: No runtime behavior change. The value is integration proof that the lockstep validator now sits behind a green Core compiler pass while preserving Low/MX350 skip, High/Ultra 60-frame cadence, and 300-frame blackbox behavior.
+
+Hardware Impact: 0us runtime. `dotnet build` returned `EXIT=0`; this is compiler evidence only, not profiler timing.
+
+## Typed Lane Constants Repair And Defrag Build Wall
+
+Problem: The active source drifted again: `ConfigureSignalLanes()` had reverted to `GlobalSignals.InitializeAllQueues()` and the local lockstep typed-lane constants were absent. That left the status file claiming typed lanes while disk truth used broad global initialization. After repair, the current `dotnet build Hecton8.Core.csproj` no longer reports lockstep errors, but it now stops before determinism on `Hecton8.Core.Memory.Defrag` / `MemoryDefragPhase` symbols referenced by `SystemDispatcher.cs` and `GlobalDataVault.cs`.
+
+Solution: Restore one authoritative set of `LockstepSnapshotSignalCapacity`, `SystemGlitchSignalCapacity`, `LockstepSnapshotLaneHash`, and `SystemGlitchLaneHash` constants in `LockstepStateValidator.cs`. Restore `ConfigureSignalLanes()` to configure and ensure only `SignalBus<LockstepSnapshotSignal>` and `SignalBus<SystemGlitchSignal>`. Re-scan the determinism folder and run `dotnet build Hecton8.Core.csproj` into `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260516_typed_lane_repair_dotnet.log`.
+
+Rejected Alternatives: Broad `GlobalSignals.InitializeAllQueues()` was rejected because the validator owns two typed lanes, not the global queue registry. Duplicate constants were rejected because they caused compile churn in the shared worktree. Editing generated `Hecton8.Core.csproj` or core-memory defrag files was rejected because those files are outside `CORE/DETERMINISM`, active Unity/dotnet workers are already running, and the build failure is a cross-domain assembly wiring issue rather than a lockstep source diagnostic.
+
+Scalability potential: Low/MX350 keeps bounded snapshot/glitch lane capacities and avoids broad cold signal setup from this validator. High/Ultra keep the 60-frame debug hash cadence and replay glitch path without hidden global queue traffic.
+
+Hardware Impact: 0us hot-path runtime. This is cold `OnEnable` lane configuration and compiler validation. No profiler microseconds are claimed. The current build wall has 4 external core-memory defrag errors and 0 `LockstepStateValidator` / 0 `Hecton8.Core.Determinism` diagnostics.
+
+## 2026-05-17 Typed Lane Drift Repair And Green Core Build
+
+Problem: The active file drifted back again: `ConfigureSignalLanes()` called `GlobalSignals.InitializeAllQueues()` and the lockstep lane constants were missing from `LockstepStateValidator.cs`. That violates signal lane segregation and makes the status log false. The previous external defrag compile wall also needed fresh evidence because Unity had regenerated the script assembly references overnight.
+
+Solution: Re-read status/rationale, the XML prompt, `AGENTS.md`, the domain map, and the relevant mandates. Restore one set of `LockstepSnapshotSignalCapacity`, `SystemGlitchSignalCapacity`, `LockstepSnapshotLaneHash`, and `SystemGlitchLaneHash`. Restore narrow typed `SignalBus<LockstepSnapshotSignal>` and `SignalBus<SystemGlitchSignal>` configuration. Re-run static debt scans and `dotnet build Hecton8.Core.csproj` into `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260517_default_obj_dotnet.log`.
+
+Rejected Alternatives: Broad `GlobalSignals.InitializeAllQueues()` was rejected because this validator owns two lanes, not every global queue. Deleting the conditional `Debug.LogError` helper was rejected because it is guarded by `UNITY_EDITOR`/`DEVELOPMENT_BUILD` and is not a hot path. Treating `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260517_typed_lane_repair_dotnet.log` as source failure was rejected because that isolated-object `--no-restore` run only lacked `project.assets.json`.
+
+Scalability potential: Low/MX350 keeps bounded lockstep signal capacity and skips normal-play hashing unless replay is active. High/Ultra keep 60-frame hash snapshots and replay glitch evidence through typed lanes without broad global queue initialization.
+
+Hardware Impact: 0us hot-path runtime. The repair is cold `OnEnable` lane setup. Static scans show no hot-path allocation/string/update debt in `Core/Determinism`; `dotnet build Hecton8.Core.csproj` returned `EXIT=0`, 0 warnings, 0 errors. No profiler microseconds are claimed.
+
+## 2026-05-17 Post-Green Drift Repair And External Submarine Wall
+
+Problem: A post-documentation validation scan caught the same source drift after the green Core build: `ConfigureSignalLanes()` had again reverted to `GlobalSignals.InitializeAllQueues()` and the lane constants were absent. That means the green log was valid for the previous file state but not sufficient as final source truth. After repairing the drift again, the current build no longer stays green because another domain introduced `SubmarineFluidDynamics.cs(5095,49)` CS9342.
+
+Solution: Re-apply the typed-lane constants and narrow `SignalBus<LockstepSnapshotSignal>` / `SignalBus<SystemGlitchSignal>` configuration. Re-run static scans over `Core/Determinism`, then rerun `dotnet build Hecton8.Core.csproj` into `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260517_post_scan_drift_dotnet.log`.
+
+Rejected Alternatives: Leaving status and source inconsistent was rejected. Editing `SubmarineFluidDynamics.cs` was rejected because it is outside `CORE/DETERMINISM` and the compiler diagnostic is a submarine/fluid vector type ambiguity, not a lockstep source error. Treating the earlier green build as final was rejected because the source had drifted after it.
+
+Scalability potential: Low/MX350 keeps bounded typed lockstep lanes and avoids broad signal queue cold setup. High/Ultra keep high-cadence snapshot evidence without extra global queue churn.
+
+Hardware Impact: 0us hot-path runtime. The repair remains cold signal configuration. Current static scans pass for lockstep; current build wall is external and reports 0 `LockstepStateValidator` / 0 `Hecton8.Core.Determinism` diagnostics.
+
+## 2026-05-17 Final Drift Repair And Gameplay Compile Wall
+
+Problem: The final source scan after compaction caught the same concurrent drift again: `ConfigureSignalLanes()` had reverted to `GlobalSignals.InitializeAllQueues()` and the local typed-lane constants were absent. That made the status file false and reintroduced broad queue initialization into the lockstep validator.
+
+Solution: Restore the four typed-lane constants and narrow `SignalBus<LockstepSnapshotSignal>` / `SignalBus<SystemGlitchSignal>` configuration. Re-run static debt scans, Pack=1 layout scan, and `dotnet build Hecton8.Core.csproj` into `Docs/AgentLogs/Build_LOCKSTEP_STATE_VALIDATOR_20260517_final_drift_repair_dotnet.log`.
+
+Rejected Alternatives: Broad `GlobalSignals.InitializeAllQueues()` was rejected because this system owns two typed lanes, not the global queue registry. Editing `Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs` was rejected because the current compiler wall is a gameplay interface implementation issue outside `CORE/DETERMINISM`. Reporting the earlier green Core build as final was rejected because source drift occurred after that log.
+
+Scalability potential: Low/MX350 keeps bounded snapshot/glitch lane capacity and avoids broad cold signal setup. High/Ultra keep 60-frame hash snapshots and replay glitch evidence through typed lanes without hidden global queue traffic.
+
+Hardware Impact: 0us hot-path runtime. This is cold `OnEnable` lane setup plus compiler validation. No profiler microseconds are claimed. Current static scans pass for lockstep; current build wall is external `HectonPlayerMotor.cs` CS0535 and reports 0 `LockstepStateValidator` / 0 `Hecton8.Core.Determinism` diagnostics.
+
+## 2026-05-17 Desync Blackbox Evidence Pass
+
+Problem: Replay desync reporting called `DumpBlackBox()` inside `ReportDesync()` before the current desync frame was written into the 300-frame telemetry ring. The ghost input mismatch path could also report a desync and then let the tick continue, which risked stale or duplicate evidence and a replay block write after replay mode had been stopped.
+
+Solution: Convert `ValidateReplayHash()` and `ApplyGhostReplayInput()` into fault-returning gates. On replay hash mismatch, frame mismatch, poisoned replay cursor, or undersized replay buffer, `PostFixedTick()` now marks `TelemetryFlagDesync`, writes the current frame heartbeat to the DataVault-owned telemetry ring, dumps `Docs/AgentLogs/Dump_LOCKSTEP_STATE_VALIDATOR.bin`, and returns before staging a replay write. `ReportDesync()` now publishes typed desync/glitch signals and pauses/stops replay only; dumping is owned by the caller after telemetry is current.
+
+Rejected Alternatives: Keeping the dump inside `ReportDesync()` was rejected because it serialized stale pre-fault telemetry. Adding a second local NativeArray or managed queue was rejected because DataVault already owns the 300-frame ring. Throwing exceptions on ordinary replay mismatch was rejected because the XML reserves fatal throw for non-finite state and replay mismatch needs binary evidence plus a controlled pause.
+
+Scalability potential: Low/MX350 gets the same cheap replay skip during normal play and only pays O(1) fault gates in replay mode. High/Ultra keep 60-frame hash validation and now get fault-frame evidence before the expensive dump, making replay debugging tighter without extra steady-state broadcast volume.
+
+Hardware Impact: No profiler microseconds are claimed. Added work is one boolean return and O(1) branch checks at replay/hash cadence. Hot-path heap remains 0 B. `dotnet build Hecton8.Core.csproj` is green in `Build_LOCKSTEP_STATE_VALIDATOR_20260517_desync_blackbox_dotnet.log` with 0 warnings and 0 errors.
+
+## 2026-05-17 Final Post-Doc Lane Repair And Restore-State Build
+
+Problem: A final validation scan after the desync blackbox documentation caught concurrent drift again: `ConfigureSignalLanes()` had reverted to `GlobalSignals.InitializeAllQueues()` and the typed lane constants were absent. The first post-repair build attempt then timed out and left `Temp/obj/Hecton8.Core/project.assets.json` missing, making the next `--no-restore` build fail before source compilation.
+
+Solution: Restore the same four typed-lane constants and narrow snapshot/glitch `SignalBus.Configure` calls. Stop the orphaned `dotnet` children from the timed-out validation, run `dotnet restore Hecton8.Core.csproj`, then rerun `dotnet build Hecton8.Core.csproj --no-restore`.
+
+Rejected Alternatives: Treating the restore-state `NETSDK1004` as a source failure was rejected because it was caused by the killed build environment. Leaving broad global signal initialization in the validator was rejected because it violates signal lane segregation. Editing unrelated domains was rejected because the final compiler pass is green.
+
+Scalability potential: Low/MX350 keeps bounded cold signal setup for two lanes only. High/Ultra keep 60-frame replay/hash evidence and typed glitch pulses without monolithic queue initialization.
+
+Hardware Impact: 0us hot-path runtime. The final build log `Build_LOCKSTEP_STATE_VALIDATOR_20260517_final_desync_lane_repair_dotnet.log` returns `EXIT=0`, 0 warnings, 0 errors. No profiler microseconds are claimed.
+
+## 2026-05-17 Raw Hash Source NaN Preservation
+
+Problem: `GlobalDataVault.TryGetBuffer<T>` calls `SanitizeFinitePayload<T>` before returning float/vector views. The lockstep hash jobs were designed to mark non-finite `RigidbodyAUPs`, `EntityAUPs`, and room water payloads, but the normal vault read path could zero those NaNs before the Burst jobs inspected them. That weakens task 12 because a corrupted vault lane can become a clean zero in the master hash instead of a fatal non-finite proof.
+
+Solution: Leave GlobalDataVault ownership untouched and change only lockstep hash-source acquisition. `ExecuteHashJobs()` now resolves the four source lanes with `TryGetBufferHandle` and creates raw native views after a local `UnsafeUtility.AlignOf<T>()` pointer-alignment check. This bypasses vault finite sanitization for the validator's read path while preserving DataVault storage ownership and ARM64-safe alignment validation. Existing room-water mirroring still records its own non-finite source flag before writing sanitized water levels.
+
+Rejected Alternatives: Changing `GlobalDataVault.TryGetBuffer<T>` was rejected because it is shared core-memory behavior outside the determinism domain. Leaving sanitized reads was rejected because it can hide NaN evidence. Copying source lanes into local NativeArrays was rejected because the XML requires DataVault-owned state and zero hot-path allocation. A broad rebuild loop was rejected per the explicit user instruction; only one targeted `dotnet build --no-restore` was run after the code edit.
+
+Scalability potential: Low/MX350 still skips normal-play hashing and pays nothing outside replay/hash cadence. High/Ultra keep 60-frame validation, but the evidence is now stricter: high-end replay debugging sees actual vault corruption instead of sanitized clean hashes. Ultra gets better blackbox truth without adding per-frame simulation cost.
+
+Hardware Impact: No profiler microseconds are claimed. Runtime cost is four handle resolves plus four pointer-alignment checks only when a hash fence runs; hot-path heap remains 0 B. Static scans pass for lockstep. `Build_LOCKSTEP_STATE_VALIDATOR_20260517_raw_hash_source_dotnet.log` exits 1 on external `World/Biolum/HectonBiolumManager.cs` missing methods/fields with 0 `LockstepStateValidator` and 0 `Hecton8.Core.Determinism` diagnostics.
+
+## 2026-05-17 Telemetry Cursor Restore And Writer Fence
+
+Problem: The 300-frame telemetry ring is DataVault-owned and persists across component churn, but `_telemetryWriteIndex` and `_postSimulationFrame` were private scalars reset on re-enable. That could make a crash dump serialize old and new heartbeat slots out of chronological intent after validator recreation. The replay writer also disposed its `AutoResetEvent` and `FileStream` after a 250 ms join timeout even if the background writer thread was still alive, which is a Steam Deck / MicroSD race.
+
+Solution: Restore the telemetry cursor on `OnEnable()` by scanning the vault-owned 300-entry ring, selecting the newest non-zero frame with wrap-safe unsigned comparison, restoring `_postSimulationFrame`, and placing `_telemetryWriteIndex` on the next slot. Repaired the recurring typed-lane drift again by restoring the snapshot/glitch capacity/hash constants and local `SignalBus.Configure` calls. Hardened `StopReplayWriter()` so a timed-out writer is marked faulted and left stopped instead of disposing stream/event resources under a live thread.
+
+Rejected Alternatives: Clearing the DataVault telemetry ring on enable was rejected because it destroys blackbox evidence. Adding a second local NativeArray cursor/ring was rejected because the XML requires vault-owned state. Blocking indefinitely on replay writer join was rejected because shutdown should not hang the main thread on bad removable storage. Disposing the stream under a live writer was rejected because it converts I/O slowness into an avoidable race.
+
+Scalability potential: Low/MX350 keeps normal-play hash skips and pays only a cold O(300) scan when the validator is created. Steam Deck gets safer replay shutdown under slow MicroSD flushes. High/Ultra retain 60-frame hash evidence and typed glitch lanes without global signal queue setup. Ultra keeps stricter crash evidence continuity after component churn.
+
+Hardware Impact: No profiler microseconds are claimed. Normal fixed-tick cost is unchanged and hot-path heap remains 0 B. The cursor restore is one cold 300-slot DataVault scan; the writer fence is cold shutdown-only. Static scans pass; no rebuild was rerun per the explicit instruction to avoid rebuild loops.

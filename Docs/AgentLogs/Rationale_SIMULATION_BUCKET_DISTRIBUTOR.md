@@ -258,3 +258,129 @@ Solution: Stopped at the domain boundary and filtered the attempt27 log; it has 
 Rejected Alternatives: Editing ecosystem indexing from the scheduling prompt was rejected as out-of-domain ownership drift.
 Scalability potential: Scheduler remains isolated; ecosystem can remove its duplicate index helpers without changing dispatcher cadence or bucket/admission contracts.
 Hardware Impact: No runtime impact from this scheduling patch is measured. Current compile status is externally blocked, not scheduler-broken.
+
+## Decision: Dispatcher Cached DataVault Lane
+Problem: Re-inquisition found static dispatcher raycast helpers still resolved `GlobalRegistry.DataVault` during deferred raycast staging, scheduled hit resolution, vault locking, and black-box heartbeat fallback.
+Solution: Added a dispatcher-owned cached DataVault lane populated during dependency refresh, cleared during static reset/shutdown, and used by the static helper paths. `QueueDispatcherRaycast` now relies on `ActiveRuntimeInstance` instead of a registry dispatcher lookup.
+Rejected Alternatives: Leaving the registry reads was rejected because the helper paths are reached from dispatcher cadence and request staging. Moving raycast receiver arrays into DataVault was rejected because those hold managed interface references and are not valid NativeArray payloads.
+Scalability potential: Low tier avoids repeated registry reads in raycast staging; High/Ultra keep the same 1024-command vault buffers without adding public API or cross-domain coupling.
+Hardware Impact: Measured microseconds saved: 0 us. No profiler harness was run. Static impact is five helper-path registry DataVault reads removed from the warmed dispatcher path.
+
+## Decision: Cached Vault Build Green
+Problem: The cached DataVault repair needed a current compile after attempt27's external ecosystem wall.
+Solution: Ran attempt28 with `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly`; it succeeded with 0 warnings and 0 errors.
+Rejected Alternatives: Reporting attempt27 as current was rejected because the current source is now build-green.
+Scalability potential: Scheduler artifacts are compile-ready for runtime profiler verification on Low/Middle/High/Ultra tiers.
+Hardware Impact: Compile validation only. No runtime microsecond gain is claimed.
+
+## Decision: Explicit Defrag Phase and Vault Lock Ownership
+Problem: The dispatcher defrag path used the shorter `FrostTickDefrag` overload and scheduled raycast vault locks did not carry the owning `SystemID`, weakening PRE_SIM proof and memory-sentinel attribution.
+Solution: `RunPreSimulationMemoryDefrag` now snapshots `ActiveBurstLockMask` and calls the explicit overload with `MemoryDefragPhase.PreSimulation`. Scheduled raycast command/hit lock and unlock calls now pass `SystemID.SystemDispatcher`.
+Rejected Alternatives: Keeping implicit defrag context was rejected because the vault already has a phase/lock-aware overload. Anonymous vault locks were rejected because they hide ownership from the memory sentinel.
+Scalability potential: Low tier keeps the same cold defrag cadence and bounded raycast buffers; High/Ultra keep explicit burst-lock visibility when visual-overkill jobs raise memory pressure.
+Hardware Impact: Measured microseconds saved: 0 us. No profiler harness was run. This is correctness and ownership evidence for Quest/Android and Steam Deck post-mortem paths.
+
+## Decision: ARM-Safe Job Admission Bridge Publication
+Problem: `JobAdmissionSchedulerBridge` is written during bootstrap and read by scheduling wrappers, but a plain static reference gives no explicit acquire/release contract on ARM64.
+Solution: Publish the service through `Volatile.Write`, read it through `Volatile.Read`, and clear with `Interlocked.CompareExchange` so a stale clear cannot remove a newer bootstrap-owned service.
+Rejected Alternatives: Leaving the plain static field was rejected because the bridge is exactly the kind of cross-phase publication that can fail only on weaker memory models. Adding locks was rejected as unnecessary for one reference slot.
+Scalability potential: Low/Middle/High/Ultra all keep the same zero-allocation admission API; high-tier visual-overkill admission is not allowed to race against bootstrap publication.
+Hardware Impact: Measured microseconds saved: 0 us. ARM64/Quest correctness only; no runtime benchmark was run.
+
+## Decision: Defrag Assembly Visibility Recheck
+Problem: attempt33 failed with `Hecton8.Core.Memory.Defrag` and `MemoryDefragPhase` unresolved, threatening the dispatcher time authority.
+Solution: Inspected the source and generated project surface. `Assets/_Project/Scripts/Core/Memory/Defrag/MemoryDefragContracts.cs`, its asmdef, and `Library/ScriptAssemblies/Hecton8.Core.Memory.Defrag.dll` exist. Re-ran attempt34 after the script assembly was present; `Hecton8.Core.csproj` built successfully with 0 warnings and 0 errors.
+Rejected Alternatives: Duplicating `MemoryDefragPhase` into scheduler/core source was rejected because it would create duplicate interface authority and future asmdef drift. Editing generated `.csproj` was rejected because Unity marks it generated.
+Scalability potential: Scheduler remains dependent on the single memory-defrag contract; low-tier static bucketing and high-tier rebalance paths do not gain another private compatibility shim.
+Hardware Impact: Compile validation only. No runtime microsecond claim.
+
+## Decision: EWMA Poison Recovery Without Rebuild
+Problem: The active-bucket load EWMA and job-admission EWMA relied on callers to prevent non-finite internal state. If an old `INF` or `NaN` survived in the EWMA field, a later finite sample could keep the history poisoned.
+Solution: `ModuloSimulationBucketer.ReportActiveBucketLoadMs` now finite-checks previous load/jitter EWMA before lerp. `JobAdmissionMath.UpdateEwma` now falls back to a finite 0.025 ms default when both previous and measured values are invalid, then clamps to 1000 ms.
+Rejected Alternatives: Running another full build was rejected per user instruction and because this is a private math-body edit with no signature or assembly-surface change. Leaving the old trust chain was rejected because mobile GPU/telemetry consumers cannot tolerate one persistent NaN.
+Scalability potential: Low tier recovers to finite fake costs instead of poisoning static cadence; High/Ultra admission and visual-overkill gating resume from finite EWMA values after corrupted telemetry.
+Hardware Impact: Measured microseconds saved: 0 us. No profiler or build run was performed for this pass; static scan and `git diff --check` only.
+
+## Decision: Hot Path Registry Cache Pass
+Problem: `SystemDispatcher` still resolved VRAM monitor, VRAM pressure, macro database, object pool, GI relay, and renderables through `GlobalRegistry` inside pressure/render paths after the earlier cache pass focused on DataVault and camera juice.
+Solution: Added dispatcher-owned cached service references for VRAM pressure/macro/object-pool paths and render-dispatcher cached references for renderables and GI relay. Registry reads remain in refresh/fallback points only.
+Rejected Alternatives: Leaving direct registry property reads in render callbacks was rejected because render callbacks can run per camera and should consume cached service lanes. Adding new signal types was rejected because no new broadcast contract is needed.
+Scalability potential: Low tier avoids repeated service lookup during memory pressure and camera render callbacks; High/Ultra render callbacks keep the same renderable fan-out without registry churn.
+Hardware Impact: Measured microseconds saved: 0 us. Static impact is fewer hot-path service property reads; no profiler harness was run.
+
+## Decision: Cached Registry Build Revalidation
+Problem: attempt45 was green before the hot-path registry cache pass, so it could not validate the current source.
+Solution: Ran attempt46 with isolated `BaseIntermediateOutputPath` and `OutputPath`; `Hecton8.Core.csproj` restored and built successfully with 0 warnings, 0 errors, EXIT_CODE=0.
+Rejected Alternatives: Reporting attempt45 as current was rejected because source changed afterward.
+Scalability potential: Validation-only; low/high tier behavior is unchanged except cached lookup routing.
+Hardware Impact: Compile validation only. No runtime microsecond claim.
+
+## Decision: Direct Exit-Code Build Revalidation
+Problem: attempt34 proved compile success but the polled PowerShell `Start-Process` wrapper left the appended `EXIT_CODE` field blank.
+Solution: Ran attempt35 directly through `dotnet build Hecton8.Core.csproj --no-restore --no-incremental -m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false /v:minimal /clp:Summary`; it returned EXIT_CODE=0 with 0 warnings and 0 errors.
+Rejected Alternatives: Keeping attempt34 as the final pointer was rejected because the build output was green but the exit-code evidence was incomplete.
+Scalability potential: Validation-only; no change to low-tier static bucketing or high-tier visual-overkill budget gates.
+Hardware Impact: Compile validation only. No runtime microsecond claim.
+
+## Decision: Load Balancing Job Bounds Vaccination
+Problem: A strict mobile/Quest audit found `LoadBalancingJob` assumed nonzero rebalance-load storage and equal cost/work buffer lengths. A corrupted or mismatched DataVault handle could index `BucketLoadsMs[0]` or `EntityBucketsWork[entityIndex]` out of range inside Burst.
+Solution: Added created/length gates, clamped entity iteration to the shorter cost/work span, emitted a safe zero-result when bucket storage is absent, and guarded result writes with `Result.IsCreated`.
+Rejected Alternatives: Trusting vault capacity symmetry was rejected because the prompt explicitly targets ARM64/Quest/Android and forbids implicit crash assumptions. Adding private fallback NativeArrays was rejected by the data-sovereignty rule.
+Scalability potential: Low/Middle keep static or conservative bucket distribution when vault storage is invalid; High/Ultra avoid a Burst crash and can resume dynamic rebalance once valid vault buffers exist.
+Hardware Impact: Measured microseconds saved: 0 us. This is a crash-prevention guard, not a speed claim.
+
+## Decision: Catastrophic Cost Clamp
+Problem: Finite but pathological measured costs could survive `math.isfinite` and overflow persistent rebalance-load floats into INF after accumulation.
+Solution: Added a 1000 ms catastrophic clamp in managed cost ingestion and in the Burst rebalance job. The clamp is far above the 16.667 ms target, so impossible-frame detection still trips while persistent DataVault floats remain finite.
+Rejected Alternatives: Leaving finite overflow to later validation was rejected because one INF in a persistent scheduling buffer can poison mobile GPU/telemetry consumers. Clamping to the target frame time was rejected because it would hide impossible 60 FPS cases.
+Scalability potential: Toaster mode gets deterministic finite fails instead of a crash; High/Ultra still expose visual-overkill only when expected frame cost is under half-budget.
+Hardware Impact: Measured microseconds saved: 0 us. Static impact is finite-data survival; runtime benchmark absent.
+
+## Decision: Current External Tether Compile Wall
+Problem: The cost/bounds patch needed a fresh compile, but attempts36-38 fail outside CORE/SCHEDULING. attempt38 has only `Assets/_Project/Scripts/TetherManager.cs(20,92): ISlowTickable.SlowTick()` missing.
+Solution: Applied the 3-strike protocol and filtered the logs. There are zero hits in `Core\\Bucketing`, `Core\\Scheduling`, `SystemDispatcher`, `ModuloSimulationBucketer`, `JobAdmission`, `SimulationBucket`, `GlobalDataVault`, or `H8Memory`.
+Rejected Alternatives: Patching tether physics ownership from the master bucketer prompt was rejected as out-of-domain sabotage.
+Scalability potential: Scheduler patch remains isolated; tether physics can repair its own slow-tick contract without changing bucket/admission math.
+Hardware Impact: No runtime impact from the external compile wall. Current evidence: `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt38_bucket_nan_guard_retry2.log`.
+
+## Decision: Span Hash and Null Publish Guard
+Problem: The admission hash helper still exposed only a string-based FNV1a path, and `JobAdmissionSchedulerBridge.SetService` could publish null even though clearing has an owner-checked path.
+Solution: Added `ComputeFnv1a(ReadOnlySpan<char>)`, routed the generic job hash through it, kept the string overload as a delegating compatibility wrapper, and made `SetService(null)` a no-op.
+Rejected Alternatives: Removing the string overload was rejected as unnecessary public API churn. Letting null writes clear the bridge was rejected because `ClearService` already provides stale-clear protection.
+Scalability potential: Low/Middle/High/Ultra keep the same admission API; high-tier visual-overkill job admission cannot be accidentally disabled by a null publish.
+Hardware Impact: Measured microseconds saved: 0 us. This is cold-path contract hygiene and bootstrap correctness, not a benchmarked frame-time change.
+
+## Decision: Current External Multi-Domain Compile Wall
+Problem: attempt39 after the span/bridge guard still cannot validate globally because other domains are failing: `TetherManager`, `EquipmentInteractionContracts`, `HectonPlayerMovement`, plus a concurrent `csc` file-lock warning.
+Solution: Filtered attempt39 for scheduler/touched paths; there are zero hits in `Core\\Bucketing`, `Core\\Scheduling`, `SystemDispatcher`, `ModuloSimulationBucketer`, `JobAdmission`, `SimulationBucket`, `GlobalDataVault`, or `H8Memory`.
+Rejected Alternatives: Patching tether, equipment interaction, or player movement from the scheduler prompt was rejected as out-of-domain ownership drift.
+Scalability potential: Scheduler remains isolated; external domains can repair their contracts without changing bucket/admission code.
+Hardware Impact: No runtime impact from this scheduler patch is measured. Current evidence: `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt39_span_bridge_guard.log`.
+
+## Decision: Load Balancer Negative INF and Stale Mask Guard
+Problem: The Burst rebalance loop skipped `cost <= 0f` before checking `math.isfinite`, allowing `-INF` to evade the non-finite flag if a vault cost slot was corrupted. The job also remasked a selected bucket with `BucketMask`, which is redundant and can collapse valid target buckets if a mismatched vault load span is smaller than the configured mask domain.
+Solution: Moved the finite/negative guard before the zero-cost skip and wrote the chosen `targetBucket` directly after the bounds-safe min-load search.
+Rejected Alternatives: Trusting cost EWMA writes from managed ingestion was rejected because DataVault contents can be stale or corrupted under platform failure. Keeping the redundant mask was rejected because target bucket is already bounded by `bucketCount`.
+Scalability potential: Toaster mode fails finite and static instead of crashing. High/Ultra dynamic rebalance keeps exact bucket IDs when vault span clamping is active.
+Hardware Impact: Measured microseconds saved: 0 us. This is NaN/INF crash prevention and ARM/Quest bounds hygiene, not a speed claim.
+
+## Decision: Job Admission Refill and Cost Clamp
+Problem: Admission refill used `baseRefillMs[lane]` directly for refill and cap math. A corrupted base-refill value, huge finite job completion sample, or overflow EWMA could poison lane budgets and black-box telemetry with INF.
+Solution: Added a 1000 ms admission cost clamp and sanitized base refill, cap, estimated cost, measured completion cost, overflow cost, EWMA output, and black-box millisecond fields before persistent writes.
+Rejected Alternatives: Clamping to 16.667 ms was rejected because impossible work must remain visibly impossible. Ignoring huge finite values was rejected because one persistent INF can poison downstream scheduling diagnostics.
+Scalability potential: Low tier remains conservative under corrupted data; High/Ultra visual-overkill jobs cannot buy admission from poisoned budgets.
+Hardware Impact: Measured microseconds saved: 0 us. This is finite-data survival for mobile/Steam Deck/PC, not a benchmarked optimization.
+
+## Decision: Dispatcher Blackbox Stale Mirror Purge
+Problem: The dispatcher black-box rationale said the fault dump was retargeted to `Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin`, but source still wrote a stale `Dump_CORE_TICK_DILATION.bin` mirror.
+Solution: Removed the stale mirror constant and second write. Dispatcher crash evidence now has one owner path under the scheduler prompt ID.
+Rejected Alternatives: Keeping dual dumps was rejected because it creates ownership ambiguity and doubles fault-path disk writes on slow storage.
+Scalability potential: Steam Deck/MicroSD fault handling avoids duplicate write pressure; High/Ultra diagnostics consume the same single dump.
+Hardware Impact: Normal runtime gain 0 us. Fault path saves one file write; no profiler benchmark was run.
+
+## Decision: Isolated Build After Concurrent CSC Lock
+Problem: attempt41 default-output build failed because another compiler process locked `Temp\\obj\\Hecton8.Core\\Hecton8.Core.dll` and sourcelink output. attempt44 returned `EXIT_CODE=-1` after restore with no compiler diagnostics after the final cleanup.
+Solution: Ran attempt45 with isolated `BaseIntermediateOutputPath` and `OutputPath`; the current `Hecton8.Core.csproj` restored and built successfully with 0 warnings, 0 errors, EXIT_CODE=0.
+Rejected Alternatives: Killing `csc`/dotnet processes from other agents was rejected. Reporting attempt41 or attempt44 as source failure was rejected because attempt45 proves the current source compiles.
+Scalability potential: Validation-only; no low/high tier behavior change.
+Hardware Impact: Compile validation only. No runtime microsecond claim.

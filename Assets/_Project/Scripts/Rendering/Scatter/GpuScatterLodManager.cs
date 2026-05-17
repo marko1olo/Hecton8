@@ -1302,7 +1302,7 @@ namespace Hecton8.Rendering.Scatter
                 matProps = properties
             };
 
-            Graphics.RenderMeshIndirect(renderParams, mesh, _argsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _argsBuffer, 1, 0);
             return true;
         }
 

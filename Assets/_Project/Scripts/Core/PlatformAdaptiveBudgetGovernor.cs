@@ -29,6 +29,7 @@ namespace Hecton8.Core
         private static readonly AdaptiveBudgetTickable s_tickable = new AdaptiveBudgetTickable();
 
         private static bool _registered;
+        private static bool _hotSwapRegistered;
         private static bool _lowTierApplied;
         private static bool _platformRenderScaleApplied;
         private static uint _pressureFlags;
@@ -38,6 +39,8 @@ namespace Hecton8.Core
         private static float _frameTimeTrendMs = DefaultTargetFrameTimeMs;
         private static int _sustainedFramePressureSamples;
         private static bool _hasFrameTimeSample;
+        private static IHardwareThermalService _hardwareThermalService;
+        private static DynamicResolutionScaler _dynamicResolutionScaler;
 
         /// <summary>Current platform pressure flags packed for zero-allocation diagnostics.</summary>
         public static PlatformAdaptivePressureFlags PressureFlags =>
@@ -58,6 +61,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            TryUnregisterHotSwap();
             _registered = false;
             _lowTierApplied = false;
             _platformRenderScaleApplied = false;
@@ -68,12 +72,19 @@ namespace Hecton8.Core
             _frameTimeTrendMs = DefaultTargetFrameTimeMs;
             _sustainedFramePressureSamples = 0;
             _hasFrameTimeSample = false;
+            _hardwareThermalService = null;
+            _dynamicResolutionScaler = null;
+            GlobalRegistry.SetTransientLowScalabilityOverride(
+                GlobalRegistry.TransientScalabilityPlatformPressureMask,
+                false);
             s_tickable.Reset();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void InitializeAfterSceneLoad()
         {
+            RebindServicesCold();
+            TryRegisterHotSwap();
             SampleAndApply(0f);
             TryRegister();
         }
@@ -113,10 +124,12 @@ namespace Hecton8.Core
             _frostTickIntervalFrames = critical ? CriticalFrostTickFrames : pressured ? PressuredFrostTickFrames : StableFrostTickFrames;
             _secondaryHudEffectsAllowed = !critical;
 
-            if (pressured && !_lowTierApplied)
+            if (pressured != _lowTierApplied)
             {
-                GlobalRegistry.RegisterScalabilityTierOverride(ScalabilityTierProfiles.LowMx350);
-                _lowTierApplied = true;
+                GlobalRegistry.SetTransientLowScalabilityOverride(
+                    GlobalRegistry.TransientScalabilityPlatformPressureMask,
+                    pressured);
+                _lowTierApplied = pressured;
             }
 
             ApplyDynamicResolutionPressure(pressured);
@@ -145,7 +158,7 @@ namespace Hecton8.Core
 
         private static bool IsCriticalBattery()
         {
-            IHardwareThermalService hardware = GlobalRegistry.HardwareThermal;
+            IHardwareThermalService hardware = _hardwareThermalService;
             if (hardware == null)
                 return false;
 
@@ -155,7 +168,7 @@ namespace Hecton8.Core
 
         private static bool IsThermalThrottling(out bool critical)
         {
-            IHardwareThermalService hardware = GlobalRegistry.HardwareThermal;
+            IHardwareThermalService hardware = _hardwareThermalService;
             if (hardware == null)
             {
                 critical = false;
@@ -235,7 +248,7 @@ namespace Hecton8.Core
 
         private static void ApplyDynamicResolutionPressure(bool pressured)
         {
-            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
+            DynamicResolutionScaler scaler = _dynamicResolutionScaler;
             if (scaler == null)
                 return;
 
@@ -254,7 +267,42 @@ namespace Hecton8.Core
             _platformRenderScaleApplied = false;
         }
 
-        private sealed class AdaptiveBudgetTickable : IUpdatable
+        private static void RebindServicesCold()
+        {
+            _hardwareThermalService = GlobalRegistry.HardwareThermal;
+            _dynamicResolutionScaler = GlobalRegistry.DynamicResolution;
+        }
+
+        private static void TryRegisterHotSwap()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(s_tickable);
+        }
+
+        private static void TryUnregisterHotSwap()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(s_tickable);
+            _hotSwapRegistered = false;
+        }
+
+        private static void RebindService(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.HardwareThermalService)
+            {
+                _hardwareThermalService = currentService as IHardwareThermalService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DynamicResolutionRuntime)
+                _dynamicResolutionScaler = currentService as DynamicResolutionScaler;
+        }
+
+        private sealed class AdaptiveBudgetTickable : IUpdatable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
         {
             private int _nextSampleFrame;
 
@@ -271,6 +319,21 @@ namespace Hecton8.Core
 
                 _nextSampleFrame = frame + SampleIntervalFrames;
                 PlatformAdaptiveBudgetGovernor.SampleAndApply(deltaTime);
+            }
+
+            public void OnGlobalRegistryServiceRebound(
+                GlobalRegistryServiceSlot serviceSlot,
+                ref object currentService)
+            {
+                RebindService(serviceSlot, currentService);
+            }
+
+            public void OnGlobalRegistryServiceReplaced(
+                GlobalRegistryServiceSlot serviceSlot,
+                object previousService,
+                object currentService)
+            {
+                RebindService(serviceSlot, currentService);
             }
         }
     }

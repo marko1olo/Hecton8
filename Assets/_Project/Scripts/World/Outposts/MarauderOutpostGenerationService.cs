@@ -334,7 +334,7 @@ namespace Hecton8.World.Outposts
                 motionVectorMode = MotionVectorGenerationMode.ForceNoMotion,
                 matProps = renderProperties
             };
-            Graphics.RenderMeshIndirect(renderParams, mesh, _argsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _argsBuffer, 1, 0);
         }
 
         public bool TryRequestGeneration(ulong sectorHash, float3 originMeters, uint worldSeed)

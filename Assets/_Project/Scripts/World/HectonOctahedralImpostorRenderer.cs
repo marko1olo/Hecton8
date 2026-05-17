@@ -138,7 +138,7 @@ namespace Hecton8.World
                 camera = _cameraOverride
             };
             GraphicsBuffer argsBuffer = useMatrixStream ? _instanceCullingService.IndirectArgsBuffer : _argsBuffer;
-            Graphics.RenderMeshIndirect(renderParams, mesh, argsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, argsBuffer, 1, 0);
             ReportTelemetryIfDue();
         }
 

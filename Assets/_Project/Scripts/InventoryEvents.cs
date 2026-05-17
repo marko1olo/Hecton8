@@ -48,7 +48,7 @@ namespace Hecton8.Inventory
     /// Unmanaged inventory payload carried by the native event queue.
     /// Managed references are resolved through the sidecar slot table during LateUpdate dispatch.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
     public struct InventoryEventPayload
     {
         public float TotalMassKg;
@@ -64,7 +64,7 @@ namespace Hecton8.Inventory
     /// Unmanaged physical-drop request emitted by inventory owners after persistence accepts the drop.
     /// World/presentation layers own hydration and prefab visuals.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     public struct InventoryPhysicalDropRequestPayload
     {
         public Vector3 RuntimePosition;

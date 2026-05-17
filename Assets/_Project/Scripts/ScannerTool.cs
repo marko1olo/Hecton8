@@ -4229,7 +4229,7 @@ namespace Hecton8.Gameplay
                 visibleCount++;
             }
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 _runtimePulseMesh,
                 0,
                 _runtimePulseMaterial,

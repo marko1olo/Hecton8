@@ -294,3 +294,99 @@ Scalability potential: Low/Quest/Steam Deck get deterministic postmortem orderin
 
 Hardware Impact: Runtime microseconds remain unmeasured. Added work is fault-only binary dump metadata and bounded index arithmetic after invalid math detection. First compile attempt timed out before log creation under concurrent workspace builds; retry succeeded with 0 warnings and 0 errors, command wrapper wall-clock `164,498,586 us`, `dotnet` elapsed `146,390,000 us`.
 
+## Loop 17 - Telemetry Cursor Rollover Guard
+
+Problem: Telemetry writes still incremented `_telemetryCursor` as a raw `int`. At 1 Hz this is a very long-session edge case, but `int.MaxValue` rollover would turn the cursor negative, which could break chronological blackbox ordering and partially hide the most recent ecology state.
+
+Solution: Route all telemetry slot reservations through `ReserveTelemetryIndex`. The helper uses positive modulo for the DataVault ring slot and, at `int.MaxValue`, folds the cursor back to `telemetryLength + nextIndex` so the ring remains marked full and the next write index remains deterministic.
+
+Rejected Alternatives: Rejected widening the cursor to `long` because dump metadata and existing counters are `int`-based and the simpler bounded fold avoids ABI churn. Rejected resetting to zero because that would make a full long-running ring look partially empty to the dump path.
+
+Scalability potential: Low/Quest/Steam Deck get deterministic crash evidence even in pathological long sessions without extra storage. Middle/High/Ultra keep identical telemetry payloads and chronological dump parsing.
+
+Hardware Impact: Runtime microseconds remain unmeasured. Added work is one helper call and one rare overflow branch per telemetry write at 1 Hz. First build attempt failed on transient missing Unity editor metadata in `Temp/bin/Debug`; retry succeeded with 0 warnings and 0 errors, command wrapper wall-clock `18,547,608 us`, `dotnet` elapsed `16,160,000 us`.
+
+## Loop 18 - Stale Free-Slot Guard
+
+Problem: The free ring is rebuilt from authoritative entity flags before the job, but a corrupted or cross-system-mutated slot could still point at an active entity, a non-prey entity, an entity without `Flag_FreeList`, or an entity whose AUP moved out of the slot sector before reactivation. The previous spawn path cleared active stale slots, but it did not validate the full prey/free-list/AUP contract.
+
+Solution: Add `TelemetryStaleFreeSlotFlag` and make `ReactivateFreePreyInSector` validate slot index bounds, active state, `Flag_IsPrey | Flag_FreeList`, finite AUP, and matching sector hash before reusing the entity index. Invalid valid-slots are cleared through `ClearStaleFreeSlot`, decrement free-count, and set telemetry evidence.
+
+Rejected Alternatives: Rejected trusting the ring entry alone because the authoritative state is `EntityFlags` plus `EntityAUPs`. Rejected a managed duplicate-detection set because the existing DataVault SoA scan and fixed ring already provide deterministic rebuild without allocation. Rejected repairing unrelated `SubmarineFluidDynamics.cs` compile errors from this AI/Ecology pass.
+
+Scalability potential: Low/Quest/Steam Deck get safer index reuse without object spawning or managed allocation. Middle/High/Ultra keep the same data-only cull/spawn behavior and can consume stale-slot telemetry for richer diagnostics.
+
+Hardware Impact: Runtime microseconds remain unmeasured. Added work is spawn-path-only scalar validation and AUP sector hash check, not per-frame rendering work. `dotnet build` attempt 1 was `[BLOCKED BY DEPENDENCY]` in unrelated `SubmarineFluidDynamics.cs` with 40 missing-field errors after `331,933,296 us` wrapper wall-clock and `324,570,000 us` dotnet elapsed. Retry 1 exited `-1` after `49,606,445 us`; Retry 2 exited `-1` after `10,125,233 us`; no owned AI/Ecosystem compiler error was emitted.
+
+## Loop 19 - Prey-Only Free Ring
+
+Problem: Stress culling could target predators and other Tier 2 ecology-owned non-prey. The previous cull helper allowed those non-prey entries into `EcosystemPopulationFreeRing`, but the only implemented reactivation path consumes prey slots. Under ring pressure, non-prey entries could evict reusable prey indices before the next ColdTick rebuild.
+
+Solution: Make the free ring explicitly prey-only. `CullTier2EntitiesInSector` now sets `Flag_FreeList` and writes a ring slot only when the culled entity carries `Flag_IsPrey`; non-prey stress culls still clear active state and publish `EntityDeathSignal`, but they do not consume prey reuse capacity.
+
+Rejected Alternatives: Rejected adding a predator spawn/reuse path because the current assignment's active spawn enforcement is prey-focused and no predator reactivation consumer exists. Rejected leaving non-prey slots in the prey ring because that turns stress relief into future spawn starvation. Rejected a second ring because that would expand the DataVault contract without a proven consumer.
+
+Scalability potential: Low/Quest/Steam Deck preserve fixed prey reuse capacity and avoid object churn. Middle/High/Ultra keep the same data-only cull flow; visual overkill still uses existing loaded-prey flee-down flags.
+
+Hardware Impact: Runtime microseconds remain unmeasured. The change removes non-prey ring writes on stress culls and keeps spawn scans prey-focused. First build attempt was `[BLOCKED BY DEPENDENCY]` in unrelated `SubmarineFluidDynamics.cs(5095)` ambiguous `Vector3`/`float3` subtraction after `65,675,626 us` wrapper wall-clock and `63,170,000 us` dotnet elapsed. Retry succeeded with 0 warnings and 0 errors, wrapper wall-clock `106,841,284 us`, dotnet elapsed `105,410,000 us`.
+
+## Loop 20 - Player Build Coefficient Read
+
+Problem: `TryReadCoefficientJson` was wrapped in `#if UNITY_EDITOR`. That meant PC, Steam Deck, Mac, Quest, and Android player builds would never attempt to read shipped `Data/Precomputed/ecosystem_coefficients.json`; they would silently use default Lotka-Volterra constants even when OSHINO's baked data was available beside the build.
+
+Solution: Remove the editor-only preprocessor gate while preserving the existing bounded file length check, sequential read hint, JSON validation, and exception-safe fallback to sanitized defaults.
+
+Rejected Alternatives: Rejected keeping editor-only behavior because it contradicts the multiplatform mandate and the original "read baked coefficients" task. Rejected inventing a new binary coefficient artifact because the existing bake contract is JSON. Rejected changing packaging paths in this pass because asset/build packaging is outside the AI/Ecology domain.
+
+Scalability potential: Low/Steam Deck can use the same bounded 16 KiB cold read when the file is shipped as loose data. Quest/Android/Mac safely fall back if the platform path is unavailable. Middle/High/Ultra preserve the same LV kernel with baked tuning instead of defaults when available.
+
+Hardware Impact: Runtime microseconds remain unmeasured. This is cold boot I/O only; steady-state 1 Hz ecology cost is unchanged. Build attempt 1 was `[BLOCKED BY DEPENDENCY]` in unrelated `HectonPlayerMovement.cs`, `EquipmentInteractionContracts.cs`, and `TetherManager.cs` after `67,908,428 us` wrapper wall-clock and `61,490,000 us` dotnet elapsed. Retry 1 was blocked in unrelated `HectonPlayerMovement.cs` after `35,300,501 us` wrapper wall-clock and `33,040,000 us` dotnet elapsed. Retry 2 was blocked in unrelated `AcousticZoneController.cs` and `TetherManager.cs` after `65,473,487 us` wrapper wall-clock and `58,740,000 us` dotnet elapsed. No owned AI/Ecosystem compiler error was emitted.
+
+## Loop 21 - ABI, Player Coefficients, Blackbox Path
+
+Problem: The code and reports drifted from disk truth. `BinaryLayoutManifest` still asserted old ecology struct sizes after explicit Pack=1 tail fields were added; `TryReadCoefficientJson` still contained `UNITY_EDITOR` gating; and invalid-math blackbox dumps targeted `Dump_ECOSYSTEM_MIGRATION_LINK.bin` instead of the population balancer dump file.
+
+Solution: Update the manifest to assert the actual 64 byte coefficient, 96 byte cull event, and 32 byte free-slot layouts with every reserved tail offset named. Remove the editor-only guard from coefficient loading while keeping bounded cold I/O and fallback behavior. Retarget the blackbox dump to `Dump_ECOSYSTEM_POPULATION_BALANCER.bin` and write only telemetry entries that have actually been reserved in the 300-frame ring.
+
+Rejected Alternatives: Rejected leaving the manifest stale because runtime binary sentinels would fail even when compilation passes. Rejected editor-only coefficient reads because shipped PC, Steam Deck, Mac, Quest, and Android builds must use baked LV data when it exists. Rejected writing unwritten default telemetry slots because that pollutes postmortem chronology.
+
+Scalability potential: Low/Quest/Steam Deck gain ABI sentinel correctness and safe fallback if loose JSON is unavailable. Middle/High/Ultra keep the same LV kernel and can rely on the same dump parser and coefficient contract.
+
+Hardware Impact: Runtime microseconds remain unmeasured. Manifest checks and coefficient file reads are boot/fault-path work; steady-state 1 Hz Burst job cost is unchanged. First build attempt exited `-1` after `191,013,723 us` without diagnostics; retry 1 timed out under concurrent workspace builds after `611,209,000 us`; retry 2 succeeded with 0 warnings and 0 errors, wrapper wall-clock `37,701,855 us`, dotnet elapsed `18,630,000 us`.
+
+## Loop 22 - Shared Entity Buffer Ownership
+
+Problem: The balancer could create `BufferID.EntityAUPs` and `BufferID.EntityFlags` when they were missing. That makes the ecology limiter a hidden owner of the shared entity universe, masks missing migration/loot/entity bootstrap ownership, and weakens data sovereignty.
+
+Solution: Replace shared-buffer creation with handle-only resolution through `TryGetBufferHandle`. Missing entity handles now clear the cached handles, set `TelemetryEntityBuffersMissingFlag`, and let the existing empty-heartbeat path write blackbox telemetry into the balancer-owned ring.
+
+Rejected Alternatives: Rejected continuing to allocate shared entity buffers from `SystemID.AIEcology` because this system should limit populations, not author the global entity table. Rejected failing before telemetry allocation because that would hide missing entity-universe faults from the 300-frame blackbox. Rejected another full dotnet rebuild because the user explicitly told this agent not to rebuild every pass; this loop used targeted `rg` scans and `git diff --check`.
+
+Scalability potential: Low/Quest/Steam Deck avoid silent allocation of a fake entity universe and keep deterministic fault telemetry. Middle/High/Ultra preserve the same LV job when the proper shared buffers exist and get clearer diagnostics when another owner fails to provide them.
+
+Hardware Impact: Runtime microseconds remain unmeasured. The hot path loses potential cold allocations for shared entity buffers; steady-state work is one handle-resolution result branch during setup. No runtime savings are claimed without profiler capture.
+
+## Loop 23 - Missing-Buffer Heartbeat Continuity
+
+Problem: Loop 22 made shared entity buffers handle-only, but `ColdTick` still returned immediately when `TryBuildSectorState` failed. That meant `TelemetryEntityBuffersMissingFlag` could be set without a heartbeat entry proving it in the 300-frame blackbox.
+
+Solution: Route the `TryBuildSectorState` failure path through `RecordEmptyTelemetry` before returning. The telemetry ring and counters are owned by this balancer, so missing shared entity handles now produce a deterministic empty heartbeat with the setup fault flags.
+
+Rejected Alternatives: Rejected reintroducing shared entity buffer allocation because that hides bootstrap faults. Rejected managed logging because the fixed telemetry ring is the required crash evidence. Rejected another full dotnet rebuild because the user explicitly asked not to rebuild every pass; this was a one-branch behavioral correction verified by targeted source read, `rg`, and `git diff --check`.
+
+Scalability potential: Low/Quest/Steam Deck keep fault evidence without allocating fake shared entity buffers. Middle/High/Ultra preserve the normal LV job path when the proper shared buffers exist and gain cleaner postmortem evidence when they do not.
+
+Hardware Impact: Runtime microseconds remain unmeasured. The added work is only on setup-failure/no-entity paths and writes one telemetry entry; no steady-state LV job cost is added.
+
+## Loop 24 - DataVault Job Locks and H8Memory Fence
+
+Problem: The Burst job resolved DataVault `NativeArray` views and scheduled work over them without first locking the underlying buffers. That left the ecology limiter dependent on handle validity alone during a scheduled job, while the memory sentinel/DataVault relocation path expects explicit buffer locks and active-job fences.
+
+Solution: Add `TryLockJobBuffers` and `UnlockJobBuffers` around the scheduled job. The lock set covers coefficients, sector state, cull events, telemetry ring, free ring, counters, shared `EntityAUPs`, and shared `EntityFlags`. Register the scheduled handle with `H8Memory.RegisterActiveJob(SystemID.AIEcology, _balancerHandle)`. Unlock on resolve failure, schedule rejection, late-frame publish completion, forced completion, and disable cleanup. During review, remove a bad draft assignment that set `_jobLocksHeld` at the end of `TryBuildSectorState`; that assignment would have prevented the job from scheduling before any buffer lock was acquired.
+
+Rejected Alternatives: Rejected relying on `VaultBufferHandle<T>` alone because resolved `NativeArray` views still need relocation/defrag protection while a job owns them. Rejected private copied arrays because that violates DataVault sovereignty and doubles memory traffic. Rejected another full dotnet rebuild because the user explicitly told this agent not to rebuild every pass; this loop used targeted source read, `rg`, and `git diff --check`.
+
+Scalability potential: Low/Quest/Steam Deck avoid relocation/teardown races while the 1 Hz ecology job owns shared SoA buffers. Middle/High/Ultra keep the same Lotka-Volterra math and visual-overkill hooks; the change protects the data lane rather than changing presentation.
+
+Hardware Impact: Runtime microseconds remain unmeasured. Added work is fixed lock/unlock scalar bookkeeping around a 1 Hz scheduled job, not per-frame entity math. No runtime savings or costs are claimed without Unity Profiler/Burst evidence.
+

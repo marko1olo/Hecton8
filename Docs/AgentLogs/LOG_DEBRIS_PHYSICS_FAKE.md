@@ -388,3 +388,215 @@ Verification:
 Status:
 - VERIFIED MASTER GRADE - SHARDS ACTIVE by debris source/static validation.
 - Final C#/Unity import/player/shader validation remains `[BLOCKED BY DEPENDENCY]` outside DEBRIS/VFX ownership.
+
+## 2026-05-16 - Rich Tier Recovery And Low-Memory Refresh
+
+What was wrong:
+- The debris tier resolver let the two-tier platform byte classify rich `Mid` hardware as `LowMx350`, which collapsed the intended 4096-shard middle tier into the 1024-shard toaster path.
+- `H8_LOW_MEMORY_PROFILE` was not resampled on scalability events, so fallback low-memory state could become stale after a profile change.
+
+What was done:
+- Added `RefreshScalabilityTierCandidate()` in `CarveDebrisComputeRenderer.cs`.
+- The refresh now samples `GlobalRegistry.H8_LOW_MEMORY_PROFILE`, `GlobalRegistry.ScalabilityTierProfileByte`, and rich `GlobalRegistry.ScalabilityTier` together during seed and scalability-event paths.
+- Changed `IsLowTierPayload()` so the profile byte is only a fallback when the rich tier is `Unknown`; explicit `Low`/`Mx350` remain toaster mode, `Mid` uses the 4096-shard path, and `High`/`Ultra` use the 16,384-shard path.
+
+Cinematic Cheats used:
+- The low tier remains the Dear Lie: 1024 active shards, no wake/SDF, cheap material.
+- The recovered middle tier spends moderate GPU budget on 4096 shards without forcing high-tier material overkill.
+- High/Ultra keep the dense indirect shard field, wake/SDF reaction, tumble, motion vectors, and crystal/strata shader response.
+
+Exact Microseconds saved:
+- Measured: none. No Unity profiler or GPU capture was possible in the current import state.
+- Static: mid hardware no longer loses 3072 active shard slots to a two-tier alias; low-memory devices still force the cheaper 1024-shard path from boot seed or the next scalability event sample.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` passed: 0 warnings, 0 errors, elapsed 00:02:48.08. This is core-only evidence and does not prove the debris Unity assembly import.
+- Targeted debris/shader forbidden-pattern scan returned no matches for instantiation, `GraphicsBuffer.SetData`, `ComputeBuffer`, GPU readback, `ForceNoMotion`, standard `Update()`, `string.Format`, legacy `EventBus`, managed delegate lanes, or private native allocation patterns.
+- `git diff --check` on debris/shader targets returned no whitespace errors; only existing LF-to-CRLF warnings.
+- `Assembly-CSharp.csproj` validation timed out at 240s and the spawned build process was terminated; prior Assembly-CSharp evidence remains an external RealtimeCSG source blocker before debris validation.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by debris source/static validation plus core-only compile.
+- Unity debris assembly import, shader import, player builds, and platform/profiler timings remain `[BLOCKED BY DEPENDENCY]` outside DEBRIS/VFX ownership.
+
+## 2026-05-17 - Low-Tier Triangle Tumble And High-Tier Relief
+
+What was wrong:
+- The log/status claimed per-tick scalability refresh, which would violate the signal-lane mandate against polling `GlobalRegistry` every frame for state-change detection.
+- Low-tier debris tumble still paid `sincos` in the vertex and motion-vector passes.
+- High-tier debris had crystal tinting, but not a clear 16-tap relief/POM-style overkill path.
+
+What was done:
+- Corrected `CarveDebrisComputeRenderer.cs`: rich-tier and low-memory sampling now occurs on initial seed and scalability events, not every tick.
+- Fixed `IsLowTierPayload()` so `Mid` hardware is not collapsed to `LowMx350`; the profile byte is only a fallback when rich tier is `Unknown`.
+- Added a low-tier normalized triangle-wave tumble fake in both the forward and motion-vector debris shader passes.
+- Added high-tier-only 16-tap procedural relief/parallax, salt-crystal masking, relief occlusion, and normal perturbation to `Hecton_CarveDebrisIndirect.shader`.
+
+Cinematic Cheats used:
+- Low tier: triangle-wave spin instead of trig, no texture lookups, no extra branches beyond the uniform tier path.
+- High tier: procedural relief and salt crystal response from ALU-only triangle bands; no texture asset, no CPU material randomization, no particle GameObjects.
+
+Exact Microseconds saved:
+- Measured: none. Unity import/player/profiler validation is still externally blocked.
+- Static: low-tier debris draw and motion-vector passes avoid per-vertex `sincos`; high-tier intentionally spends ALU only when `_CarveDebrisMaterialParams.w > 0.5`.
+
+Verification:
+- Targeted forbidden-pattern scan returned no matches for `Instantiate`, `GraphicsBuffer.SetData`, `ComputeBuffer`, GPU readback, `ForceNoMotion`, standard `Update()`, `string.Format`, legacy `EventBus`, managed delegate lanes, or private native allocation patterns in the debris target set.
+- Shader portability scan found no wave intrinsics, groupshared memory, append/consume buffers, derivatives, discard, or texture-MS usage in the debris shader path. The only `RWByteAddressBuffer` match is the existing indirect-args buffer in `Hecton_FluidAdvection.compute`.
+- Brace-balance audit: `Hecton_CarveDebrisIndirect.shader` open=42 close=42; `Hecton_FluidAdvection.compute` open=27 close=27.
+- `git diff --check` returned no whitespace errors; only existing LF-to-CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` failed outside debris in `SubmarineFluidDynamics.cs` on missing `_exteriorBuoyancySampleLocalPoints` at lines 4152, 5084, and 5095.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by debris source/static validation.
+- Current core compile, Unity debris assembly import, shader import, player builds, and platform/profiler timings remain `[BLOCKED BY DEPENDENCY]` outside DEBRIS/VFX ownership.
+
+## 2026-05-17 - Producer Legacy Service Purge
+
+What was wrong:
+- `DestructibleOrganicManager` still routed organic harvest chips through `GlobalRegistry.Debris` and `IDebrisService.SpawnBurst`.
+- `WorldGenerativeGeologyVoxelBridgeDirector` still routed seismic trench chips through the same legacy CPU debris service.
+- `HectonSeismicTideDirector` still published rockfall debris through the old global debris queue with a literal kind ID and non-compute flag.
+- Those files are cross-domain, but they are direct mining/impact debris producers and were inside Phase 1 purge scope.
+
+What was done:
+- Added typed `DebrisSpawnSignal` publishing to both producers.
+- Organic harvest debris now emits `DebrisSpawnSignal.DebrisKindOrganicScrap` with finite hit-point fallback and existing AUP conversion.
+- Seismic trench debris now emits `DebrisSpawnSignal.DebrisKindRockShard` from finite runtime trench positions.
+- Seismic rockfall debris now emits `DebrisSpawnSignal.DebrisKindRockShard` through `SignalBus<DebrisSpawnSignal>` with `FlagComputeShard`.
+- Outcrop shard debris now uses `DebrisSpawnSignal.DebrisKindRockShard`.
+- `DebrisSpawnSignal` now owns shared kind constants for organic scrap, water splash, and rock shards; existing organic biota and water splash producers were switched to those constants.
+- Drill debris now uses `DebrisSpawnSignal.FlagToolSparks` instead of a literal `1` alongside `FlagComputeShard`.
+- The serialized debris profiles remain as authoring validity gates; producer-side dependency on `IDebrisService` is gone.
+
+Cinematic Cheats used:
+- Producer signals only describe intensity, source, species, kind, and AUP. The GPU renderer still fakes shard spread, tumble, lifetime, dust fade, high-tier relief, salt, and SSS without CPU chunk meshes.
+
+Exact Microseconds saved:
+- Measured: none. `dotnet build` was deliberately not run for this pass per user instruction.
+- Static: no new runtime timing claim; this removes two producer-side routes into the legacy CPU debris service.
+
+Verification:
+- `rg "\bIDebrisService\b|GlobalRegistry\.Debris\b|SpawnBurst\(|DebrisManager\.Instance" Assets/_Project/Scripts -g "*.cs"` now reports only `DebrisManager` and `GlobalRegistry` contract/implementation references.
+- Debris-filtered instantiation scan over first-party scripts returned no hits.
+- Targeted scan confirms the organic and seismic producers publish `SignalBus<DebrisSpawnSignal>` and no longer call `SpawnBurst`.
+- Rockfall scan confirms `HectonSeismicTideDirector` uses `DebrisSpawnSignal.DebrisKindRockShard` and `DebrisSpawnSignal.FlagComputeShard`.
+- Debris-kind scan now resolves organic scrap, water splash, and rock shards through `DebrisSpawnSignal` constants instead of private duplicate constants in patched producers.
+- Drill flag scan confirms the compute/tool-spark mask uses named `DebrisSpawnSignal` flags.
+- Shader portability scan returned no DirectX-only wave/quad/groupshared/append/consume/derivative/discard/texture-MS/RWTexture markers.
+- Brace balance remains `Hecton_CarveDebrisIndirect.shader` open=44 close=44 and `Hecton_FluidAdvection.compute` open=27 close=27.
+- `git diff --check` returned no whitespace errors; only existing LF-to-CRLF warnings.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by source/static validation.
+- Compile, Unity import, player build, and profiler timings remain unclaimed in this pass.
+
+## 2026-05-17 - High-Tier Salt Subsurface Fake
+
+What was wrong:
+- High-tier debris had 16-tap relief and salt masking, but no explicit salt/translucency cue. The top tier still needed another visual spend without adding asset or CPU bandwidth.
+
+What was done:
+- Added `ResolveSaltSubsurfaceFake` to `Hecton_CarveDebrisIndirect.shader`.
+- The fake uses procedural shard-height bands, view grazing, salt mask, and crystal mask to inject a small cyan-green internal scatter term.
+- The path is only evaluated inside the high-tier material branch.
+
+Cinematic Cheats used:
+- ALU-only fake SSS/translucency. No texture, no ray tracing, no new material property, no CPU randomization.
+
+Exact Microseconds saved:
+- Measured: none. Unity import/player/profiler validation is still externally blocked.
+- Static: no savings claimed; this intentionally spends high-tier fragment ALU only when `_CarveDebrisMaterialParams.w > 0.5`.
+
+Verification:
+- Shader brace balance after edit: `Hecton_CarveDebrisIndirect.shader` open=43 close=43.
+- Shader portability scan returned no matches for wave intrinsics, quad reads, groupshared memory, append/consume buffers, globally coherent buffers, derivative calls, discard/clip, texture-MS, or RWTexture usage.
+- `git diff --check` returned no whitespace errors; only existing LF-to-CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` failed outside debris in `HectonSurvivalSystem.cs` on missing `EnsurePhysiologyScalarBuffer`. No debris-domain compiler error was reported.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by debris source/static validation.
+- Shader import/player/profiler timings remain `[BLOCKED BY DEPENDENCY]` outside DEBRIS/VFX ownership.
+
+## 2026-05-17 - High-Tier Relief Tangent Guard
+
+What was wrong:
+- The high-tier 16-tap relief path projected the view vector onto the normal plane. When view direction approached the shard normal, the tangent frame could collapse into the shared fallback.
+
+What was done:
+- Added `ResolveReliefTangent` to build a deterministic normal-derived tangent first.
+- The view-projected tangent is selected only when its length is valid.
+- Relief, salt masking, occlusion, and fake SSS now use the safer frame.
+
+Cinematic Cheats used:
+- Deterministic tangent-frame fake. No tangent buffer, no texture-space basis, no CPU upload.
+
+Exact Microseconds saved:
+- Measured: none. No rebuild/profiler run per instruction.
+- Static: no savings claimed; this is a high-tier-only stability guard.
+
+Verification:
+- Shader brace balance after edit: `Hecton_CarveDebrisIndirect.shader` open=44 close=44.
+- Shader portability scan returned no matches for wave intrinsics, quad reads, groupshared memory, append/consume buffers, globally coherent buffers, derivative calls, discard/clip, texture-MS, or RWTexture usage.
+- `git diff --check` returned no whitespace errors; only existing LF-to-CRLF warnings.
+- `dotnet build` was deliberately not run for this shader-only patch.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by debris source/static validation.
+
+## 2026-05-17 - ARM64 Layout And Blackbox Dump Hygiene
+
+What was wrong:
+- Two Burst job structs in the debris renderer were not explicitly layout-stamped, leaving weak ARM64/Quest evidence even though the 64-byte native payload structs were already Pack=1.
+- `DumpBlackBoxOnce` copied the fixed 300-entry native telemetry ring into a managed `byte[]` before writing the dump file.
+
+What was done:
+- Added `[StructLayout(LayoutKind.Sequential, Pack = 1)]` to `AgeCarveDebrisMirrorJob` and `CarveDebrisInjectBatchJob`.
+- Kept `CarveDebrisRequest` and `CarveDebrisTelemetryEntry` as explicit Pack=1, Size=64 payloads.
+- Replaced `File.WriteAllBytes` and the managed byte array with a stack 4-byte reason header plus direct `FileStream.Write(ReadOnlySpan<byte>)` over the native blackbox ring.
+
+Cinematic Cheats used:
+- No new simulation truth. This patch preserves the same low-tier Dear Lie and high-tier overkill paths while hardening crash evidence and ARM64 layout.
+
+Exact Microseconds saved:
+- Measured: none. Unity import/player/profiler validation is still externally blocked.
+- Static: removes one managed dump allocation of `entrySize * 300 + 4` bytes on invalid-state export; no hot-frame runtime gain is claimed.
+
+Verification:
+- Targeted scan confirms all four debris C# structs have `[StructLayout(LayoutKind.Sequential, Pack = 1)]`; request and telemetry payloads remain `Size = 64`.
+- Targeted scan finds no `File.WriteAllBytes`, managed `byte[]`, `Instantiate`, `GraphicsBuffer.SetData`, `ComputeBuffer`, GPU readback, `ForceNoMotion`, standard `Update()`, `string.Format`, legacy `EventBus`, managed delegate lanes, `UnityEvent`, local `new NativeArray`, or allocator patterns in the debris target file.
+- `git diff --check` returned no whitespace errors; only existing LF-to-CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` failed outside debris in `FaunaBrain.Compatibility.cs` on unresolved `FlagsAttribute`/`Flags`. No debris-domain compiler error was reported.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by debris source/static validation.
+- Current core compile, Unity debris assembly import, shader import, player builds, and platform/profiler timings remain `[BLOCKED BY DEPENDENCY]` outside DEBRIS/VFX ownership.
+
+## 2026-05-17 - Wake Telemetry Guard And Final Static Recheck
+
+What was wrong:
+- `_lastWakeActive` briefly relied on low-tier zero wake params instead of an explicit `!lowTier` telemetry guard. Runtime behavior was safe, but the source did not show the blackbox tier contract directly.
+
+What was done:
+- Restored the explicit low-tier guard in `CarveDebrisComputeRenderer.cs`: wake-active telemetry is only true when the active tier is not low and the mirrored global wake params report active wake slots.
+- Re-extracted the `DEBRIS_PHYSICS_FAKE` XML block from `Docs/Tasks/CURRENT_BATCH.md`.
+- Re-ran targeted debris forbidden-pattern scans, shader portability scans, brace balance, whitespace checks, and the current `Hecton8.Core.csproj` build gate.
+
+Cinematic Cheats used:
+- Low tier keeps the Dear Lie path: 1024 shards, no wake/SDF, triangle-wave tumble, cheap material.
+- High/Ultra keep wake reaction, SDF bounce, motion vectors, and the 16-tap procedural relief/salt-crystal material path.
+
+Exact Microseconds saved:
+- Measured: none. Unity import/player/profiler validation is still externally blocked.
+- Static: telemetry correctness only in this patch; no claimed runtime gain.
+
+Verification:
+- Forbidden-pattern scan returned no matches for instantiation, `GraphicsBuffer.SetData`, `ComputeBuffer`, GPU readback, `ForceNoMotion`, standard `Update()`, `string.Format`, legacy `EventBus`, managed delegate lanes, `UnityEvent`, local `new NativeArray`, or allocator patterns in the debris target set.
+- Shader portability scan returned no matches for wave intrinsics, quad reads, groupshared memory, append/consume buffers, globally coherent buffers, derivative calls, discard/clip, or texture-MS usage in the debris shader target set.
+- Brace-balance audit: `Hecton_CarveDebrisIndirect.shader` open=42 close=42; `Hecton_FluidAdvection.compute` open=27 close=27.
+- `git diff --check` returned no whitespace errors; only existing LF-to-CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` failed outside debris with 11 errors in UI Navigation, Tether, Equipment, and PlayerMotor code. No debris-domain compiler error was reported.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE by debris source/static validation.
+- Current core compile, Unity debris assembly import, shader import, player builds, and platform/profiler timings remain `[BLOCKED BY DEPENDENCY]` outside DEBRIS/VFX ownership.

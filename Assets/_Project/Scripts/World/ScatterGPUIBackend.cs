@@ -102,7 +102,7 @@ namespace Hecton8.World
                 receiveShadows = true,
                 motionVectorMode = MotionVectorGenerationMode.Camera
             };
-            Graphics.RenderMeshIndirect(renderParams, mesh, _argsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _argsBuffer, 1, 0);
             return true;
         }
 

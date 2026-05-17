@@ -12,6 +12,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Physics;
 using System.Collections.Generic;
 using Hecton8.Visor;
@@ -40,6 +41,7 @@ namespace Hecton8.Biolum
         private static readonly int _FloraFloorBiolumColorId = Shader.PropertyToID("_HectonFloorBiolumColor");
         private static readonly int _FloraFloorBiolumStrengthId = Shader.PropertyToID("_HectonFloorBiolumStrength");
         private static readonly int _BiolumIntensityId = Shader.PropertyToID("_BiolumIntensity");
+        private static readonly int _GlobalBiolumParamsId = Shader.PropertyToID("_GlobalBiolumParams");
         private static readonly int _BiolumTouchRipplesId = Shader.PropertyToID("_BiolumTouchRipples");
         private static readonly int _BiolumTouchRippleParamsId = Shader.PropertyToID("_BiolumTouchRippleParams");
 
@@ -54,17 +56,28 @@ namespace Hecton8.Biolum
             public byte Active;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
         private struct BiolumTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
-            public float3 CameraPosition;
+            [FieldOffset(4)]
+            public float CameraPositionX;
+            [FieldOffset(8)]
+            public float CameraPositionY;
+            [FieldOffset(12)]
+            public float CameraPositionZ;
+            [FieldOffset(16)]
             public float Intensity;
+            [FieldOffset(20)]
             public float Phase;
+            [FieldOffset(24)]
             public float PredatorDim;
-            public float DaylightMask;
+            [FieldOffset(28)]
             public ushort PredatorHits;
+            [FieldOffset(30)]
             public byte ActiveRipples;
+            [FieldOffset(31)]
             public byte Flags;
         }
 
@@ -174,6 +187,7 @@ namespace Hecton8.Biolum
         private const string BiolumDumpRelativePath = "Docs/AgentLogs/Dump_BIOLUMINESCENCE_DIRECTOR.bin";
         private const uint ActiveBiolumRipplesHash = 0xB105A11Fu;
         private const uint BiolumDirectorContextHash = 0xB101D1ECu;
+        private const SystemID VaultOwnerSystem = SystemID.Vfx;
 
         // COLD ALLOC: List<HectonBiolumZone>[32] - active cave-zone registry - owner: HectonBiolumManager
         private readonly List<HectonBiolumZone> _activeCaveZones = new List<HectonBiolumZone>(ActiveZoneListCapacity);
@@ -208,6 +222,7 @@ namespace Hecton8.Biolum
         private float _lastPublishedOceanBiolumStrength = 0f;
         private float _lastPublishedFloorBiolumStrength = 0f;
         private bool _floraShaderGlobalsPublished = false;
+        private bool _biolumIntensitySuppressedByPulseSync = false;
         private float _masterPulse01 = 0.5f;
         private float _masterIntensity = 1f;
         private float _daylightMask = 1f;
@@ -243,19 +258,22 @@ namespace Hecton8.Biolum
         private GraphicsBuffer _publishedTouchRippleBuffer;
         private int _lastPublishedTouchRippleCount = -1;
         private HectonQualityTier _lastPublishedTouchRippleTier = HectonQualityTier.Unknown;
-        private NativeArray<float3> _predatorJobPositions;
-        private NativeArray<float> _predatorJobScores;
+        private VaultBufferHandle<float3> _predatorJobPositionsHandle;
+        private VaultBufferHandle<float> _predatorJobScoresHandle;
         private JobHandle _predatorJobHandle;
         private bool _predatorJobScheduled = false;
+        private bool _predatorJobBuffersLocked = false;
         private int _scheduledPredatorCount = 0;
-        private NativeArray<float3> _rippleJobPositions;
-        private NativeArray<float> _rippleJobDistances;
+        private VaultBufferHandle<float3> _rippleJobPositionsHandle;
+        private VaultBufferHandle<float> _rippleJobDistancesHandle;
         private JobHandle _rippleJobHandle;
         private bool _rippleJobScheduled = false;
+        private bool _rippleJobBuffersLocked = false;
         private int _scheduledRippleCount = 0;
         private int _sortedTouchRippleCount = 0;
         private bool _rippleSortReady = false;
-        private NativeArray<BiolumTelemetryEntry> _telemetryRing;
+        private VaultBufferHandle<BiolumTelemetryEntry> _telemetryRingHandle;
+        private uint _vaultGenerationId = 0u;
         private bool _disposed = false;
 
         #if UNITY_EDITOR
@@ -458,8 +476,8 @@ namespace Hecton8.Biolum
         public void Tick(float deltaTime)
         {
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
-            EnsureRuntimeResources();
             CompleteRuntimeJobs(false);
+            EnsureRuntimeResources();
             DrainMovementAcousticSignals();
             UpdateTouchRipples(safeDeltaTime);
             UpdatePredatorBlackout(safeDeltaTime);
@@ -600,11 +618,26 @@ namespace Hecton8.Biolum
                 _lastPublishedGlobalBiolumPhase = _globalBiolumPhase;
             }
 
-            if (VectorDeltaExceeds(_lastPublishedBiolumIntensity, intensityVector, GlobalBiolumPhasePublishEpsilon))
+            if (_biolumIntensitySuppressedByPulseSync ||
+                VectorDeltaExceeds(_lastPublishedBiolumIntensity, intensityVector, GlobalBiolumPhasePublishEpsilon))
             {
+                if (IsGlobalPulseSyncOwningLegacyIntensity())
+                {
+                    _biolumIntensitySuppressedByPulseSync = true;
+                    _lastPublishedBiolumIntensity = intensityVector;
+                    return;
+                }
+
                 Shader.SetGlobalVector(_BiolumIntensityId, intensityVector);
                 _lastPublishedBiolumIntensity = intensityVector;
+                _biolumIntensitySuppressedByPulseSync = false;
             }
+        }
+
+        private static bool IsGlobalPulseSyncOwningLegacyIntensity()
+        {
+            Vector4 syncParams = Shader.GetGlobalVector(_GlobalBiolumParamsId);
+            return syncParams.x > 0.5f;
         }
 
         private void ResolveCelestialBiolumState(out double celestialTime)
@@ -744,13 +777,16 @@ namespace Hecton8.Biolum
 
         private void ScheduleRippleDistanceJob(Vector3 observerPosition)
         {
-            if (_rippleJobScheduled || !_rippleJobPositions.IsCreated || !_rippleJobDistances.IsCreated)
+            if (_rippleJobScheduled ||
+                !TryLockRippleJobBuffers(out NativeArray<float3> rippleJobPositions, out NativeArray<float> rippleJobDistances))
                 return;
 
             float3 observer = new float3(observerPosition.x, observerPosition.y, observerPosition.z);
             if (!math.all(math.isfinite(observer)))
             {
                 _rippleSortReady = false;
+                _scheduledRippleCount = 0;
+                UnlockRippleJobBuffers();
                 DumpBiolumTelemetry(4);
                 return;
             }
@@ -769,19 +805,23 @@ namespace Hecton8.Biolum
                 }
 
                 _rippleJobSlotIndices[count] = i;
-                _rippleJobPositions[count++] = _touchRipples[i].RuntimePosition;
+                rippleJobPositions[count++] = _touchRipples[i].RuntimePosition;
             }
 
             _scheduledRippleCount = count;
             if (count <= 0)
+            {
+                UnlockRippleJobBuffers();
                 return;
+            }
 
             _rippleJobHandle = new RippleDistanceJob
             {
-                RipplePositions = _rippleJobPositions,
+                RipplePositions = rippleJobPositions,
                 ObserverPosition = observer,
-                DistanceSq = _rippleJobDistances
+                DistanceSq = rippleJobDistances
             }.Schedule(count, 4);
+            H8Memory.RegisterActiveJob(VaultOwnerSystem, _rippleJobHandle);
             _rippleJobScheduled = true;
         }
 
@@ -866,10 +906,22 @@ namespace Hecton8.Biolum
             float step = (math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f) * PredatorBlackoutFadeRate;
             _predatorCurrentIntensity = Mathf.MoveTowards(_predatorCurrentIntensity, _predatorTargetIntensity, step);
 
-            if (_predatorJobScheduled || !_predatorJobPositions.IsCreated || !_predatorJobScores.IsCreated)
+            if (_predatorJobScheduled ||
+                !TryLockPredatorJobBuffers(out NativeArray<float3> predatorJobPositions, out NativeArray<float> predatorJobScores))
                 return;
 
             Vector3 cameraPosition = GetCameraPosition();
+            float3 observer = new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+            if (!math.all(math.isfinite(observer)))
+            {
+                _predatorCandidateCount = 0;
+                _scheduledPredatorCount = 0;
+                _predatorTargetIntensity = 1f;
+                UnlockPredatorJobBuffers();
+                DumpBiolumTelemetry(7);
+                return;
+            }
+
             int contactCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
                 cameraPosition,
                 PredatorBlackoutRadiusMeters,
@@ -890,23 +942,25 @@ namespace Hecton8.Biolum
                     continue;
                 }
 
-                _predatorJobPositions[_predatorCandidateCount++] = new float3(predatorPosition.x, predatorPosition.y, predatorPosition.z);
+                predatorJobPositions[_predatorCandidateCount++] = new float3(predatorPosition.x, predatorPosition.y, predatorPosition.z);
             }
 
             _scheduledPredatorCount = _predatorCandidateCount;
             if (_scheduledPredatorCount <= 0)
             {
                 _predatorTargetIntensity = 1f;
+                UnlockPredatorJobBuffers();
                 return;
             }
 
             _predatorJobHandle = new PredatorBlackoutJob
             {
-                PredatorPositions = _predatorJobPositions,
-                ObserverPosition = new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z),
+                PredatorPositions = predatorJobPositions,
+                ObserverPosition = observer,
                 RadiusSq = PredatorBlackoutRadiusSq,
-                Scores = _predatorJobScores
+                Scores = predatorJobScores
             }.Schedule(_scheduledPredatorCount, 4);
+            H8Memory.RegisterActiveJob(VaultOwnerSystem, _predatorJobHandle);
             _predatorJobScheduled = true;
         }
 
@@ -916,18 +970,24 @@ namespace Hecton8.Biolum
             {
                 _predatorJobScheduled = false;
                 float maxScore = 0f;
-                for (int i = 0; i < _scheduledPredatorCount; i++)
-                    maxScore = math.max(maxScore, _predatorJobScores[i]);
+                if (TryResolvePredatorScores(out NativeArray<float> predatorJobScores))
+                {
+                    for (int i = 0; i < _scheduledPredatorCount; i++)
+                        maxScore = math.max(maxScore, predatorJobScores[i]);
+                }
 
                 _predatorTargetIntensity = math.lerp(1f, PredatorBlackoutMinimumIntensity, math.saturate(maxScore));
                 _scheduledPredatorCount = 0;
+                UnlockPredatorJobBuffers();
             }
 
             if (_rippleJobScheduled && TryFinalizeRuntimeJob(ref _rippleJobHandle, forceComplete))
             {
                 _rippleJobScheduled = false;
-                FinalizeRippleDistanceOrder();
+                if (TryResolveRippleDistances(out NativeArray<float> rippleJobDistances))
+                    FinalizeRippleDistanceOrder(rippleJobDistances);
                 _scheduledRippleCount = 0;
+                UnlockRippleJobBuffers();
             }
         }
 
@@ -938,13 +998,13 @@ namespace Hecton8.Biolum
                 : DispatcherJobSwap.TryFinalizeCompleted(ref handle);
         }
 
-        private void FinalizeRippleDistanceOrder()
+        private void FinalizeRippleDistanceOrder(NativeArray<float> rippleJobDistances)
         {
             _sortedTouchRippleCount = 0;
             _rippleSortReady = false;
             for (int i = 0; i < _scheduledRippleCount && i < MaxTouchRipples; i++)
             {
-                float distanceSq = _rippleJobDistances[i];
+                float distanceSq = rippleJobDistances[i];
                 int slot = _rippleJobSlotIndices[i];
                 if (slot < 0 || slot >= MaxTouchRipples || _touchRipples[slot].Active == 0 || !math.isfinite(distanceSq))
                     continue;
@@ -989,16 +1049,7 @@ namespace Hecton8.Biolum
                 Shader.SetGlobalBuffer(_BiolumTouchRipplesId, _publishedTouchRippleBuffer);
             }
 
-            if (!_predatorJobPositions.IsCreated)
-                _predatorJobPositions = new NativeArray<float3>(MaxPredatorContacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            if (!_predatorJobScores.IsCreated)
-                _predatorJobScores = new NativeArray<float>(MaxPredatorContacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            if (!_rippleJobPositions.IsCreated)
-                _rippleJobPositions = new NativeArray<float3>(MaxTouchRipples, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            if (!_rippleJobDistances.IsCreated)
-                _rippleJobDistances = new NativeArray<float>(MaxTouchRipples, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            if (!_telemetryRing.IsCreated)
-                _telemetryRing = new NativeArray<BiolumTelemetryEntry>(BiolumTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            EnsureVaultBuffers();
         }
 
         private void ReleaseRuntimeResources()
@@ -1007,11 +1058,7 @@ namespace Hecton8.Biolum
             ReleaseGraphicsBuffer(ref _touchRippleBufferB);
             _publishedTouchRippleBuffer = null;
 
-            DisposeNativeArray(ref _predatorJobPositions);
-            DisposeNativeArray(ref _predatorJobScores);
-            DisposeNativeArray(ref _rippleJobPositions);
-            DisposeNativeArray(ref _rippleJobDistances);
-            DisposeNativeArray(ref _telemetryRing);
+            ReleaseVaultHandlesOnly();
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
@@ -1023,13 +1070,245 @@ namespace Hecton8.Biolum
             buffer = null;
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        private bool EnsureVaultBuffers()
         {
-            if (!array.IsCreated)
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (_vaultGenerationId != 0u && _vaultGenerationId != vault.VaultGenerationID)
+            {
+                if (_predatorJobScheduled || _rippleJobScheduled)
+                    return false;
+
+                ReleaseVaultHandlesOnly();
+            }
+
+            if (!_predatorJobPositionsHandle.IsCreated ||
+                _predatorJobPositionsHandle.BufferId != BufferID.BiolumLegacyPredatorPositions ||
+                _predatorJobPositionsHandle.Length < MaxPredatorContacts)
+            {
+                _predatorJobPositionsHandle = vault.GetBufferHandle<float3>(
+                    BufferID.BiolumLegacyPredatorPositions,
+                    MaxPredatorContacts,
+                    VaultOwnerSystem,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_predatorJobScoresHandle.IsCreated ||
+                _predatorJobScoresHandle.BufferId != BufferID.BiolumLegacyPredatorScores ||
+                _predatorJobScoresHandle.Length < MaxPredatorContacts)
+            {
+                _predatorJobScoresHandle = vault.GetBufferHandle<float>(
+                    BufferID.BiolumLegacyPredatorScores,
+                    MaxPredatorContacts,
+                    VaultOwnerSystem,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_rippleJobPositionsHandle.IsCreated ||
+                _rippleJobPositionsHandle.BufferId != BufferID.BiolumLegacyRipplePositions ||
+                _rippleJobPositionsHandle.Length < MaxTouchRipples)
+            {
+                _rippleJobPositionsHandle = vault.GetBufferHandle<float3>(
+                    BufferID.BiolumLegacyRipplePositions,
+                    MaxTouchRipples,
+                    VaultOwnerSystem,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_rippleJobDistancesHandle.IsCreated ||
+                _rippleJobDistancesHandle.BufferId != BufferID.BiolumLegacyRippleDistances ||
+                _rippleJobDistancesHandle.Length < MaxTouchRipples)
+            {
+                _rippleJobDistancesHandle = vault.GetBufferHandle<float>(
+                    BufferID.BiolumLegacyRippleDistances,
+                    MaxTouchRipples,
+                    VaultOwnerSystem,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_telemetryRingHandle.IsCreated ||
+                _telemetryRingHandle.BufferId != BufferID.BiolumLegacyTelemetryRing ||
+                _telemetryRingHandle.Length < BiolumTelemetryCapacity)
+            {
+                _telemetryRingHandle = vault.GetBufferHandle<BiolumTelemetryEntry>(
+                    BufferID.BiolumLegacyTelemetryRing,
+                    BiolumTelemetryCapacity,
+                    VaultOwnerSystem,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            bool ready =
+                _predatorJobPositionsHandle.IsCreated &&
+                _predatorJobScoresHandle.IsCreated &&
+                _rippleJobPositionsHandle.IsCreated &&
+                _rippleJobDistancesHandle.IsCreated &&
+                _telemetryRingHandle.IsCreated;
+
+            if (ready)
+                _vaultGenerationId = vault.VaultGenerationID;
+
+            return ready;
+        }
+
+        private void ReleaseVaultHandlesOnly()
+        {
+            UnlockPredatorJobBuffers();
+            UnlockRippleJobBuffers();
+            _predatorJobPositionsHandle = default;
+            _predatorJobScoresHandle = default;
+            _rippleJobPositionsHandle = default;
+            _rippleJobDistancesHandle = default;
+            _telemetryRingHandle = default;
+            _vaultGenerationId = 0u;
+        }
+
+        private bool TryLockPredatorJobBuffers(out NativeArray<float3> positions, out NativeArray<float> scores)
+        {
+            positions = default;
+            scores = default;
+            if (!EnsureVaultBuffers())
+                return false;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null ||
+                !vault.TryLockBuffer(BufferID.BiolumLegacyPredatorPositions, VaultOwnerSystem))
+            {
+                return false;
+            }
+
+            if (!vault.TryLockBuffer(BufferID.BiolumLegacyPredatorScores, VaultOwnerSystem))
+            {
+                vault.TryUnlockBuffer(BufferID.BiolumLegacyPredatorPositions, VaultOwnerSystem);
+                return false;
+            }
+
+            positions = _predatorJobPositionsHandle.Resolve(vault);
+            scores = _predatorJobScoresHandle.Resolve(vault);
+            if (positions.IsCreated && scores.IsCreated)
+            {
+                _predatorJobBuffersLocked = true;
+                return true;
+            }
+
+            vault.TryUnlockBuffer(BufferID.BiolumLegacyPredatorScores, VaultOwnerSystem);
+            vault.TryUnlockBuffer(BufferID.BiolumLegacyPredatorPositions, VaultOwnerSystem);
+            return false;
+        }
+
+        private bool TryLockRippleJobBuffers(out NativeArray<float3> positions, out NativeArray<float> distances)
+        {
+            positions = default;
+            distances = default;
+            if (!EnsureVaultBuffers())
+                return false;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null ||
+                !vault.TryLockBuffer(BufferID.BiolumLegacyRipplePositions, VaultOwnerSystem))
+            {
+                return false;
+            }
+
+            if (!vault.TryLockBuffer(BufferID.BiolumLegacyRippleDistances, VaultOwnerSystem))
+            {
+                vault.TryUnlockBuffer(BufferID.BiolumLegacyRipplePositions, VaultOwnerSystem);
+                return false;
+            }
+
+            positions = _rippleJobPositionsHandle.Resolve(vault);
+            distances = _rippleJobDistancesHandle.Resolve(vault);
+            if (positions.IsCreated && distances.IsCreated)
+            {
+                _rippleJobBuffersLocked = true;
+                return true;
+            }
+
+            vault.TryUnlockBuffer(BufferID.BiolumLegacyRippleDistances, VaultOwnerSystem);
+            vault.TryUnlockBuffer(BufferID.BiolumLegacyRipplePositions, VaultOwnerSystem);
+            return false;
+        }
+
+        private bool TryResolvePredatorScores(out NativeArray<float> scores)
+        {
+            scores = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            scores = _predatorJobScoresHandle.Resolve(vault);
+            return scores.IsCreated;
+        }
+
+        private bool TryResolveRippleDistances(out NativeArray<float> distances)
+        {
+            distances = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            distances = _rippleJobDistancesHandle.Resolve(vault);
+            return distances.IsCreated;
+        }
+
+        private bool TryLockTelemetryRing(out IDataVault vault, out NativeArray<BiolumTelemetryEntry> telemetryRing)
+        {
+            vault = null;
+            telemetryRing = default;
+            if (!EnsureVaultBuffers())
+                return false;
+
+            vault = GlobalRegistry.DataVault;
+            if (vault == null ||
+                !vault.TryLockBuffer(BufferID.BiolumLegacyTelemetryRing, VaultOwnerSystem))
+            {
+                vault = null;
+                return false;
+            }
+
+            telemetryRing = _telemetryRingHandle.Resolve(vault);
+            if (telemetryRing.IsCreated)
+                return true;
+
+            vault.TryUnlockBuffer(BufferID.BiolumLegacyTelemetryRing, VaultOwnerSystem);
+            vault = null;
+            return false;
+        }
+
+        private static void UnlockTelemetryRing(IDataVault vault)
+        {
+            vault?.TryUnlockBuffer(BufferID.BiolumLegacyTelemetryRing, VaultOwnerSystem);
+        }
+
+        private void UnlockPredatorJobBuffers()
+        {
+            if (!_predatorJobBuffersLocked)
                 return;
 
-            array.Dispose();
-            array = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault != null)
+            {
+                vault.TryUnlockBuffer(BufferID.BiolumLegacyPredatorScores, VaultOwnerSystem);
+                vault.TryUnlockBuffer(BufferID.BiolumLegacyPredatorPositions, VaultOwnerSystem);
+            }
+
+            _predatorJobBuffersLocked = false;
+        }
+
+        private void UnlockRippleJobBuffers()
+        {
+            if (!_rippleJobBuffersLocked)
+                return;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault != null)
+            {
+                vault.TryUnlockBuffer(BufferID.BiolumLegacyRippleDistances, VaultOwnerSystem);
+                vault.TryUnlockBuffer(BufferID.BiolumLegacyRipplePositions, VaultOwnerSystem);
+            }
+
+            _rippleJobBuffersLocked = false;
         }
 
         private GraphicsBuffer ResolveTouchRippleWriteBuffer()
@@ -1061,12 +1340,10 @@ namespace Hecton8.Biolum
 
         private void RecordBiolumTelemetry()
         {
-            if (!_telemetryRing.IsCreated)
-                return;
-
             Vector3 cameraPosition = GetCameraPosition();
             float3 cameraPosition3 = new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z);
             byte flags = 0;
+            byte dumpReason = 0;
             if (_daylightMask <= 0.001f)
                 flags |= 1;
             if (_predatorCurrentIntensity < 0.999f)
@@ -1077,28 +1354,38 @@ namespace Hecton8.Biolum
             {
                 flags |= 8;
                 cameraPosition3 = float3.zero;
-                DumpBiolumTelemetry(8);
+                dumpReason |= 8;
             }
 
             float safeIntensity = math.isfinite(_masterIntensity) ? _masterIntensity : 0f;
             float safePhase = math.isfinite(_globalBiolumPhase) ? _globalBiolumPhase : 0f;
             float safePredatorDim = math.isfinite(_predatorCurrentIntensity) ? _predatorCurrentIntensity : 1f;
-            float safeDaylightMask = math.isfinite(_daylightMask) ? _daylightMask : 1f;
 
-            _telemetryRing[_telemetryWriteIndex] = new BiolumTelemetryEntry
+            if (!TryLockTelemetryRing(out IDataVault telemetryVault, out NativeArray<BiolumTelemetryEntry> telemetryRing))
+                return;
+
+            try
             {
-                Frame = (uint)Time.frameCount,
-                CameraPosition = cameraPosition3,
-                Intensity = safeIntensity,
-                Phase = safePhase,
-                PredatorDim = safePredatorDim,
-                DaylightMask = safeDaylightMask,
-                PredatorHits = (ushort)math.min(_predatorCandidateCount, ushort.MaxValue),
-                ActiveRipples = (byte)math.min(_activeTouchRippleCount, byte.MaxValue),
-                Flags = flags
-            };
-            _telemetryWriteIndex = (_telemetryWriteIndex + 1) % BiolumTelemetryCapacity;
-            _telemetrySequence++;
+                telemetryRing[_telemetryWriteIndex] = new BiolumTelemetryEntry
+                {
+                    Frame = (uint)Time.frameCount,
+                    CameraPositionX = cameraPosition3.x,
+                    CameraPositionY = cameraPosition3.y,
+                    CameraPositionZ = cameraPosition3.z,
+                    Intensity = safeIntensity,
+                    Phase = safePhase,
+                    PredatorDim = safePredatorDim,
+                    PredatorHits = (ushort)math.min(_predatorCandidateCount, ushort.MaxValue),
+                    ActiveRipples = (byte)math.min(_activeTouchRippleCount, byte.MaxValue),
+                    Flags = flags
+                };
+                _telemetryWriteIndex = (_telemetryWriteIndex + 1) % BiolumTelemetryCapacity;
+                _telemetrySequence++;
+            }
+            finally
+            {
+                UnlockTelemetryRing(telemetryVault);
+            }
 
             if (_activeTouchRippleCount != _lastRippleTelemetryCount || Time.frameCount - _lastRippleTelemetryFrame >= 30)
             {
@@ -1111,47 +1398,56 @@ namespace Hecton8.Biolum
             }
 
             if (!math.isfinite(_masterIntensity) || !math.isfinite(_globalBiolumPhase))
-                DumpBiolumTelemetry(2);
+                dumpReason |= 2;
+
+            if (dumpReason != 0)
+                DumpBiolumTelemetry(dumpReason);
         }
 
         private void DumpBiolumTelemetry(byte reasonFlags)
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryLockTelemetryRing(out IDataVault telemetryVault, out NativeArray<BiolumTelemetryEntry> telemetryRing))
                 return;
 
-            int frame = Time.frameCount;
-            if (frame - _lastBiolumDumpFrame < BiolumDumpCooldownFrames)
-                return;
-
-            _lastBiolumDumpFrame = frame;
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string dumpPath = Path.Combine(projectRoot, BiolumDumpRelativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            try
             {
-                writer.Write(0x42494F4Cu);
-                writer.Write(_telemetrySequence);
-                writer.Write(reasonFlags);
-                writer.Write(BiolumTelemetryCapacity);
-                for (int i = 0; i < BiolumTelemetryCapacity; i++)
+                int frame = Time.frameCount;
+                if (frame - _lastBiolumDumpFrame < BiolumDumpCooldownFrames)
+                    return;
+
+                _lastBiolumDumpFrame = frame;
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string dumpPath = Path.Combine(projectRoot, BiolumDumpRelativePath);
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    BiolumTelemetryEntry entry = _telemetryRing[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.CameraPosition.x);
-                    writer.Write(entry.CameraPosition.y);
-                    writer.Write(entry.CameraPosition.z);
-                    writer.Write(entry.Intensity);
-                    writer.Write(entry.Phase);
-                    writer.Write(entry.PredatorDim);
-                    writer.Write(entry.DaylightMask);
-                    writer.Write(entry.PredatorHits);
-                    writer.Write(entry.ActiveRipples);
-                    writer.Write(entry.Flags);
+                    writer.Write(0x42494F4Cu);
+                    writer.Write(_telemetrySequence);
+                    writer.Write(reasonFlags);
+                    writer.Write(BiolumTelemetryCapacity);
+                    for (int i = 0; i < BiolumTelemetryCapacity; i++)
+                    {
+                        BiolumTelemetryEntry entry = telemetryRing[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.CameraPositionX);
+                        writer.Write(entry.CameraPositionY);
+                        writer.Write(entry.CameraPositionZ);
+                        writer.Write(entry.Intensity);
+                        writer.Write(entry.Phase);
+                        writer.Write(entry.PredatorDim);
+                        writer.Write(entry.PredatorHits);
+                        writer.Write(entry.ActiveRipples);
+                        writer.Write(entry.Flags);
+                    }
                 }
+            }
+            finally
+            {
+                UnlockTelemetryRing(telemetryVault);
             }
         }
 
@@ -1335,7 +1631,15 @@ namespace Hecton8.Biolum
             _lastPublishedMasterPhase = resetPhase;
             _lastPublishedBiolumIntensity = resetIntensity;
             HectonShaderGlobalDataVaultBridge.PublishBiolumMasterPhase(resetPhase);
-            Shader.SetGlobalVector(_BiolumIntensityId, resetIntensity);
+            if (IsGlobalPulseSyncOwningLegacyIntensity())
+            {
+                _biolumIntensitySuppressedByPulseSync = true;
+            }
+            else
+            {
+                Shader.SetGlobalVector(_BiolumIntensityId, resetIntensity);
+                _biolumIntensitySuppressedByPulseSync = false;
+            }
             Shader.SetGlobalVector(_BiolumTouchRippleParamsId, Vector4.zero);
             _lastPublishedTouchRippleCount = 0;
             _lastPublishedTouchRippleTier = HectonQualityTier.Unknown;

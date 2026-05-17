@@ -40,6 +40,7 @@ namespace Hecton8.Gameplay.Loot
         private const uint TelemetryDumpVersion = 7u;
         private const uint TelemetryHashOffset = 2166136261u;
         private const uint TelemetryHashPrime = 16777619u;
+        private const int TelemetryDumpFileBufferBytes = 64 * 1024;
 
         private static LootMagnetSystem _bootstrapRuntime;
         private static bool _sceneLoadedHooked;
@@ -548,7 +549,8 @@ namespace Hecton8.Gameplay.Loot
 
                 Transform pickupTransform = pickup.transform;
                 Vector3 pickupPosition = pickupTransform.position;
-                if (!IsFiniteRuntimePosition(pickupPosition))
+                if (!IsFiniteRuntimePosition(pickupPosition) ||
+                    !TryBuildFiniteAup(pickupPosition, out AbsoluteUniversePosition pickupAup))
                 {
                     _registryTelemetryFlags |= TelemetryPickupPoseNonFiniteFlag;
                     continue;
@@ -568,7 +570,7 @@ namespace Hecton8.Gameplay.Loot
 
                 _pickupRefs[activeCount] = pickup;
                 _pickupEntityIds[activeCount] = entityId;
-                views.EntityAups[activeCount] = AbsoluteUniversePosition.FromRuntimePosition(pickupPosition);
+                views.EntityAups[activeCount] = pickupAup;
                 views.EntityItemHashes[activeCount] = itemHash;
                 views.EntityQuantities[activeCount] = (ushort)math.clamp(pickup.Quantity, 1, (int)ushort.MaxValue);
                 views.EntityFlags[activeCount] = slotFlags;
@@ -627,7 +629,13 @@ namespace Hecton8.Gameplay.Loot
                     return false;
                 }
 
-                playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+                if (!TryBuildFiniteAup(playerPosition, out playerAup))
+                {
+                    _dependencyTelemetryFlags |= TelemetryPlayerPoseNonFiniteFlag;
+                    _dependencyTelemetryFlags |= TelemetryPlayerPoseMissingFlag;
+                    return false;
+                }
+
                 _lastPlayerAup = playerAup;
                 _dependencyTelemetryFlags &= ~TelemetryPlayerPoseMissingFlag;
                 return true;
@@ -740,12 +748,12 @@ namespace Hecton8.Gameplay.Loot
             bool lockedHashes = false;
             bool lockedQuantities = false;
             bool lockedSignals = false;
-            lockedAups = vault.TryLockBuffer(BufferID.EntityAUPs);
-            lockedFlags = lockedAups && vault.TryLockBuffer(BufferID.EntityFlags);
-            lockedVelocities = lockedFlags && vault.TryLockBuffer(BufferID.EntityVelocities);
-            lockedHashes = lockedVelocities && vault.TryLockBuffer(BufferID.EntityItemHashes);
-            lockedQuantities = lockedHashes && vault.TryLockBuffer(BufferID.EntityQuantities);
-            lockedSignals = lockedQuantities && vault.TryLockBuffer(BufferID.EntityLootMagnetSignalEvents);
+            lockedAups = vault.TryLockBuffer(BufferID.EntityAUPs, SystemID.GameplayLoot);
+            lockedFlags = lockedAups && vault.TryLockBuffer(BufferID.EntityFlags, SystemID.GameplayLoot);
+            lockedVelocities = lockedFlags && vault.TryLockBuffer(BufferID.EntityVelocities, SystemID.GameplayLoot);
+            lockedHashes = lockedVelocities && vault.TryLockBuffer(BufferID.EntityItemHashes, SystemID.GameplayLoot);
+            lockedQuantities = lockedHashes && vault.TryLockBuffer(BufferID.EntityQuantities, SystemID.GameplayLoot);
+            lockedSignals = lockedQuantities && vault.TryLockBuffer(BufferID.EntityLootMagnetSignalEvents, SystemID.GameplayLoot);
             if (lockedSignals)
             {
                 _vaultBuffersLocked = true;
@@ -753,15 +761,15 @@ namespace Hecton8.Gameplay.Loot
             }
 
             if (lockedQuantities)
-                vault.TryUnlockBuffer(BufferID.EntityQuantities);
+                vault.TryUnlockBuffer(BufferID.EntityQuantities, SystemID.GameplayLoot);
             if (lockedHashes)
-                vault.TryUnlockBuffer(BufferID.EntityItemHashes);
+                vault.TryUnlockBuffer(BufferID.EntityItemHashes, SystemID.GameplayLoot);
             if (lockedVelocities)
-                vault.TryUnlockBuffer(BufferID.EntityVelocities);
+                vault.TryUnlockBuffer(BufferID.EntityVelocities, SystemID.GameplayLoot);
             if (lockedFlags)
-                vault.TryUnlockBuffer(BufferID.EntityFlags);
+                vault.TryUnlockBuffer(BufferID.EntityFlags, SystemID.GameplayLoot);
             if (lockedAups)
-                vault.TryUnlockBuffer(BufferID.EntityAUPs);
+                vault.TryUnlockBuffer(BufferID.EntityAUPs, SystemID.GameplayLoot);
 
             _dependencyTelemetryFlags |= TelemetryVaultUnavailableFlag;
             return false;
@@ -775,12 +783,12 @@ namespace Hecton8.Gameplay.Loot
             IDataVault vault = _vault ?? GlobalRegistry.DataVault;
             if (vault != null)
             {
-                vault.TryUnlockBuffer(BufferID.EntityLootMagnetSignalEvents);
-                vault.TryUnlockBuffer(BufferID.EntityQuantities);
-                vault.TryUnlockBuffer(BufferID.EntityItemHashes);
-                vault.TryUnlockBuffer(BufferID.EntityVelocities);
-                vault.TryUnlockBuffer(BufferID.EntityFlags);
-                vault.TryUnlockBuffer(BufferID.EntityAUPs);
+                vault.TryUnlockBuffer(BufferID.EntityLootMagnetSignalEvents, SystemID.GameplayLoot);
+                vault.TryUnlockBuffer(BufferID.EntityQuantities, SystemID.GameplayLoot);
+                vault.TryUnlockBuffer(BufferID.EntityItemHashes, SystemID.GameplayLoot);
+                vault.TryUnlockBuffer(BufferID.EntityVelocities, SystemID.GameplayLoot);
+                vault.TryUnlockBuffer(BufferID.EntityFlags, SystemID.GameplayLoot);
+                vault.TryUnlockBuffer(BufferID.EntityAUPs, SystemID.GameplayLoot);
             }
 
             _vaultBuffersLocked = false;
@@ -1087,6 +1095,12 @@ namespace Hecton8.Gameplay.Loot
         private static uint FoldTelemetryHash(uint hash, uint value)
         {
             return (hash ^ value) * TelemetryHashPrime;
+        }
+
+        private static bool TryBuildFiniteAup(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            return IsFiniteAup(in aup);
         }
 
         private static bool IsFiniteAup(in AbsoluteUniversePosition aup)
@@ -1439,7 +1453,12 @@ namespace Hecton8.Gameplay.Loot
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             string dumpPath = Path.Combine(projectRoot, DumpRelativePath);
             Directory.CreateDirectory(Path.GetDirectoryName(dumpPath));
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (FileStream stream = new FileStream(
+                       dumpPath,
+                       FileMode.Create,
+                       FileAccess.Write,
+                       FileShare.Read,
+                       TelemetryDumpFileBufferBytes))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
                 writer.Write(TelemetryDumpMagic);

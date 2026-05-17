@@ -266,7 +266,7 @@ namespace Hecton8.Construction
                 _baseColorApplied = true;
             }
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 previewMesh,
                 0,
                 previewMaterial,

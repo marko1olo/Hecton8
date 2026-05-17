@@ -200,3 +200,276 @@ Exact Microseconds saved -> No profiler-backed microseconds claimed. Determinist
 Verification -> Post-patch `rg` scans found no content-domain `foreach`, local `NativeArray`, runtime Resources loads/sweeps, Unity Update hooks, coroutine calls, scene search, `Camera.main`, `string.Format`, managed delegate/event markers, or renderer material allocation markers. First-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` scan is clean. `git diff --check` reported only line-ending warnings. After stopping orphaned timed-out MSBuild workers, `dotnet build Hecton8.Editor.csproj -v:minimal /m:1 /nr:false` exited 0 with 0 warnings and 0 errors, and `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 0 warnings and 0 errors. Latest rechecks fail outside CORE/ASSETS in `VFX/Bioluminescence/BiolumPulseSyncRuntime.cs` missing `ResolveDataVault` and vendor `Temp/obj` restore assets; no CORE/ASSETS compile errors appeared.
 
 Status -> CORE/ASSETS Phase 15 pass complete. VERIFIED MASTER GRADE for content code with green core/editor checkpoints. Latest PLATINUM_COMPILE is BLOCKED BY EXTERNAL VFX/VENDOR RESTORE. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 16 Report - Save Topology and Lore Root Hardening
+What was wrong -> Save topology still exposed only `string.Format`-style templates for slot and macro database paths. That was not an immediate allocation site, but it left future save/content callers pointed at managed formatting. Lore dictionary root resolution also still trusted `Path.GetFullPath` and `Path.Combine` to succeed for every Unity root.
+
+What was done -> Added zero-GC `Span<char>` path writers to `ContentSaveSlotTopology` for `Saves/slot_N`, `slot_N.sav`, `slot_N.bak`, `slot_N.tmp`, and `sector_XXXXXXXXXXXXXXXX.h8page`. Writers validate explicit slot bounds `0..2` and write directly into caller-owned buffers. Hardened `ContentLoreBinaryProvider.TryResolveFileUnder()` so recoverable full-path/combine failures return false and flow into the existing controlled missing-dictionary path.
+
+Cinematic Cheats used -> No physical simulation added. This pass removes path-formatting pressure from the save/content pipeline so low hardware keeps deterministic IO behavior. High/Ultra keeps the same asset/lore topology while spending visual budget through the already-defined Overkill feature flags.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic facts: no normal-frame work was added; save writers avoid managed format-string allocation for callers that use the span API; lore root handling is cold open only.
+
+Verification -> Static content scans found no `foreach`, local `NativeArray`, runtime Resources loads/sweeps, Unity Update hooks, coroutine calls, scene search, `Camera.main`, `string.Format`, managed delegate/event markers, or renderer material allocation markers. First-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` scan is clean. `git diff --check` reported only line-ending warnings. After waiting for a separate workspace build/restore to clear, `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 0 warnings and 0 errors, and `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 0 warnings and 0 errors.
+
+Status -> CORE/ASSETS Phase 16 pass complete. VERIFIED MASTER GRADE for content code. PLATINUM_COMPILE GREEN by CLI. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 17 Report - Save Topology Build Gate Proof
+What was wrong -> The span-based save topology writers existed, but the build validator did not exercise their exact outputs. That left a quiet drift path: `slot_0..slot_2`, `.sav/.bak/.tmp`, or `sector_XXXXXXXXXXXXXXXX.h8page` could change without a build failure, and future callers could slide back to managed formatting.
+
+What was done -> Added `ValidateSaveTopologyWriters()` to `ContentAuthorityBuildValidators`. It writes every canonical save/content path into a fixed editor stack span, compares the emitted characters to the exact expected contract, and fails if out-of-range save slots are accepted.
+
+Cinematic Cheats used -> No physical simulation added. This protects deterministic save/content IO on low hardware and keeps the high-tier visual budget reserved for Overkill content rather than path-format churn.
+
+Exact Microseconds saved -> Build-time only, 0 runtime us. No profiler-backed runtime claim. Deterministic fact: no gameplay Tick or asset streaming Tick path changed; the validator uses fixed loops and stack spans in editor/build code.
+
+Verification -> Static content scans found no `foreach`, local `NativeArray`, runtime Resources loads/sweeps, Unity Update hooks, coroutine calls, scene search, `Camera.main`, `string.Format`, managed delegate/event markers, or renderer material allocation markers. First-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` scan is clean. `git diff --check` reported only line-ending warnings. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 0 warnings and 0 errors. `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 0 warnings and 0 errors.
+
+Status -> CORE/ASSETS Phase 17 pass complete. VERIFIED MASTER GRADE for content code. PLATINUM_COMPILE GREEN by CLI. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 18 Report - Binary Export Strictness
+What was wrong -> `ContentAssetEntry` was marked with `[StructLayout(Pack = 1)]` despite holding managed strings, Unity object references, Addressables references, and managed dependency arrays. That is not a native payload and gives false ARM64/Quest safety. `ToBinaryRecord()` also silently clamped dependency overflow and negative VRAM estimates instead of failing the export.
+
+What was done -> Removed native layout metadata from the managed authoring row and documented it as authoring-only. The packed 32-byte `ContentAssetBinaryRecord` remains the binary bridge. `ToBinaryRecord()` now rejects invalid export state: zero hash, invalid kind/tier/LOD, negative VRAM, dependency overflow, zero dependency, self-dependency, and duplicate dependency.
+
+Cinematic Cheats used -> No simulation added. This protects the hash-to-asset bridge that feeds Dear Lie low-tier and Overkill high-tier content. Low hardware avoids malformed registry loads; high-tier visual budget remains tied to valid content metadata.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic fact: no gameplay Tick path changed. The validation runs only when exporting a binary record; valid runtime lookup behavior is unchanged.
+
+Verification -> Static content scans found no `foreach`, local `NativeArray`, runtime Resources loads/sweeps, Unity Update hooks, coroutine calls, scene search, `Camera.main`, `string.Format`, managed delegate/event markers, or renderer material allocation markers. First-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` scan is clean. `git diff --check` reported only line-ending warnings. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` reached one green checkpoint with 0 warnings and 0 errors after the content patch. Current latest core/editor builds are blocked outside CORE/ASSETS in Gameplay/Audio/Tether/AcousticZone/PlayerMovement churn; no content errors appeared.
+
+Status -> CORE/ASSETS Phase 18 content patch complete. VERIFIED MASTER GRADE for content code by static audit and a green core checkpoint. Latest PLATINUM_COMPILE is BLOCKED BY EXTERNAL GAMEPLAY/AUDIO/TETHER CHURN. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 19 Report - Binary Export Validator Proof
+What was wrong -> The binary export API was hardened, but the build validator still only validated authoring shape. That left a gap where `ToBinaryRecord()` could drift later and emit wrong flags, dependency counts, reserved bytes, or tier metadata while the registry shape gate still passed.
+
+What was done -> Added `ValidateBinaryRecordExport()` to `ContentAuthorityBuildValidators`. Every `ContentAssetHashMap` row now executes `ToBinaryRecord(0)` during validation and the packed output is checked against authoring data: hash, VRAM, dependency offset/count, kind, tier, biome, LOD, flags, and reserved fields.
+
+Cinematic Cheats used -> No physical simulation added. This protects the content bridge that feeds low-tier Dear Lie assets and high-tier Overkill visuals. The cheap hardware path avoids malformed loads; the high hardware path keeps raymarch/POM/silt/salt/dent features tied to exact content metadata.
+
+Exact Microseconds saved -> Build-time only, 0 runtime us. No profiler-backed runtime claim. Deterministic fact: no gameplay Tick, asset streaming Tick, Addressables handle state, or GlobalDataVault state changed.
+
+Verification -> Static content scans found no `foreach`, local `NativeArray`, runtime Resources loads/sweeps, Unity Update hooks, coroutine calls, scene search, `Camera.main`, `string.Format`, managed delegate/event markers, or renderer material allocation markers. First-party `Resources.Load`/`Resources.LoadAll`/`Resources.LoadAsync` scan is clean. `git diff --check` reported only line-ending warnings. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 0 warnings and 0 errors. `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` failed outside CORE/ASSETS because third-party `Temp/obj/MapMagic/MapMagic.dll` was locked by another process.
+
+Status -> CORE/ASSETS Phase 19 content patch complete. VERIFIED MASTER GRADE for content code by static audit and green core compile. Latest editor PLATINUM_COMPILE is BLOCKED BY THIRD-PARTY MAPMAGIC DLL LOCK. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 20 Report - Fixed VFX Handle Ledger
+What was wrong -> Runtime VFX prewarm used managed `List<AsyncOperationHandle>` ledgers for pending and resident Addressables handles. The lists were pre-sized, but this content authority is supposed to be a fixed-capacity runtime surface. A managed collection ledger is weaker than an explicit 64-slot ownership table.
+
+What was done -> Replaced both VFX lists with fixed `AsyncOperationHandle[64]` arrays and explicit counts. VFX dispatch queues only into fixed slots, releases untracked handles immediately, moves successful prewarm handles into a fixed resident release ledger, and releases every pending/resident handle through bounded cleanup on destroy.
+
+Cinematic Cheats used -> The VFX prewarm remains the loading-screen cheat: pay particle/compute warmup before combat instead of spawning mid-fight. Low/XR/MX350 keep a hard 64-handle ceiling. High/Ultra keep heavy Overkill particles/compute warmed without hidden managed ledger growth.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic facts: no new Tick allocation path; the VFX prewarm scan is bounded by 64 handles; failed tracking releases Addressables ownership instead of leaking.
+
+Verification -> Static content scan found no `foreach`, local `NativeArray`, runtime Resources loads/sweeps, Unity Update hooks, coroutine calls, scene search, `Camera.main`, `string.Format`, managed delegate/event markers, renderer material allocation markers, TODO/FIXME, or `NotImplementedException` markers. `ContentRuntimeServices.cs` has no managed `List<T>` usage. `git diff --check` reported only line-ending warnings. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 0 warnings and 0 errors. `dotnet restore Hecton8.Editor.csproj -v:normal` exited 0 with 0 warnings and 0 errors. `dotnet build Hecton8.Editor.csproj --no-restore -v:normal /m:1 /nr:false` exited 0 with 0 warnings and 0 errors.
+
+Status -> CORE/ASSETS Phase 20 pass complete. VERIFIED MASTER GRADE for content code. PLATINUM_COMPILE GREEN by CLI. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 21 Report - Prefab-Aware VFX Prewarm Gate
+What was wrong -> Particle VFX prewarm assumed particle entries load directly as `ParticleSystem`. Addressables VFX content is commonly prefab-backed, so a valid prefab with child particle systems could bypass proper loading-screen warmup and push the cost back toward combat.
+
+What was done -> Particle prewarm now loads references as `UnityEngine.Object` and warms direct `ParticleSystem` assets or prefab `GameObject` assets containing a child `ParticleSystem`. The editor validator now fails particle prewarm entries that are not one of those two shapes and fails compute prewarm entries that are not `ComputeShader`.
+
+Cinematic Cheats used -> The loading-screen VFX prewarm remains the cheat: spend bounded work before combat so low hardware avoids hitching, while High/Ultra keeps Overkill particle/compute content ready for heavier visuals.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic facts: no combat Tick path was added; VFX prewarm remains bounded by 64 handles; type validation is build-time only.
+
+Verification -> Static content scan found no `foreach`, local `NativeArray`, runtime Resources loads/sweeps, Unity Update hooks, coroutine calls, scene search, `Camera.main`, `string.Format`, managed delegate/event markers, renderer material allocation markers, TODO/FIXME, or `NotImplementedException` markers. First-party `Resources.Load*` scan is clean. `ContentRuntimeServices.cs` has no managed `List<T>` usage. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 0 warnings and 0 errors. `dotnet restore Hecton8.Editor.csproj -v:q` exited 0. Final `dotnet build Hecton8.Editor.csproj --no-restore -v:q /m:1 /nr:false` exited 0 with 0 warnings and 0 errors.
+
+Status -> CORE/ASSETS Phase 21 pass complete. VERIFIED MASTER GRADE for content code. PLATINUM_COMPILE GREEN by CLI. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 22 Report - VFX Hierarchy Traversal Budget
+What was wrong -> Prefab-backed VFX prewarm only warmed the first child `ParticleSystem`. Multi-emitter VFX prefabs could still enter combat with cold emitters. A naive full traversal would create an unbounded recursion risk on malformed prefabs.
+
+What was done -> Runtime prefab VFX prewarm now walks the transform hierarchy and simulates every child `ParticleSystem`, bounded to 32 levels and 256 transform nodes. The editor validator rejects particle VFX prefabs that exceed the same traversal budget.
+
+Cinematic Cheats used -> The loading-screen prewarm remains the cheat: pay bounded VFX warmup before combat. Low/XR/MX350 get predictable work limits; High/Ultra can use multi-emitter Overkill particle prefabs without leaving hidden cold emitters.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic facts: no combat Tick work was added; loading-screen traversal is hard-capped at 256 nodes and depth 32; build validation is editor-time only.
+
+Verification -> Static content scan found no `foreach`, local `NativeArray`, runtime Resources loads/sweeps, Unity Update hooks, coroutine calls, scene search, `Camera.main`, `string.Format`, managed delegate/event markers, renderer material allocation markers, TODO/FIXME, or `NotImplementedException` markers. First-party `Resources.Load*` scan is clean. `ContentRuntimeServices.cs` has no managed `List<T>` usage. `git diff --check` reported only line-ending warnings. Latest core compile attempts 74 and 75 fail outside CORE/ASSETS in `World/SargassumMicroFaunaBoids.cs` missing `_grazingAnchors`, `_massiveThreats`, `_formationBeacons`, and `_formationObstacles`; no content compile errors appeared.
+
+Status -> CORE/ASSETS Phase 22 content patch complete. VERIFIED MASTER GRADE by static audit. Latest PLATINUM_COMPILE is BLOCKED BY EXTERNAL WORLD/SARGASSUM. Prior phase 21 core/editor CLI builds were green before the external World drift. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 23 Report - LOD Contract Correction
+What was wrong -> The environment LOD automator generated LOD0 at `0.60f`, not the prompt's required 100% LOD0. LOD1 and LOD2 were also raw literals, so the importer did not make the contract obvious.
+
+What was done -> Added named LOD threshold constants and changed generated LODs to LOD0 `1.00f`, LOD1 `0.30f`, and LOD2 impostor/cull placeholder `0.05f`.
+
+Cinematic Cheats used -> LOD remains the cheap visual lie: lower hardware drops environment mesh cost deterministically; high hardware keeps full-detail meshes when the object dominates the screen and spends saved budget through Overkill feature routing.
+
+Exact Microseconds saved -> Import-time only. No gameplay Tick path changed and no profiler-backed runtime number is claimed.
+
+Verification -> Static content scan found no `foreach`, local `NativeArray`, runtime Resources loads/sweeps, Unity Update hooks, coroutine calls, scene search, `Camera.main`, `string.Format`, managed delegate/event markers, renderer material allocation markers, TODO/FIXME, or `NotImplementedException` markers. `git diff --check` reported only line-ending warnings. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 0 warnings and 0 errors. `dotnet build Hecton8.Editor.csproj -v:q /m:1 /nr:false` exited 0 with 48 warnings and 0 errors; warnings are external Unity package/third-party warnings, not CORE/ASSETS.
+
+Status -> CORE/ASSETS Phase 23 pass complete. VERIFIED MASTER GRADE for content code. PLATINUM_COMPILE exits 0 by CLI. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 24 Report - Hologram Pool Runtime Clamp
+What was wrong -> The prefab validator capped `ContentAuthorityRuntime` hologram pools at `MaxPendingLoadCount`, but runtime `Awake()` still trusted the serialized value. A manually placed or bypassed object could allocate an oversized proxy pool before validation caught it.
+
+What was done -> Runtime `Awake()` now clamps `hologramPoolCapacity` to `1..MaxPendingLoadCount` before allocating proxy arrays.
+
+Cinematic Cheats used -> The hologram proxy remains the asset-loading cheat: visible stand-ins after 100 ms without invisible blockers. The clamp keeps that cheat bounded on Quest/MX350 while preserving the same cap for high-tier hardware.
+
+Exact Microseconds saved -> No profiler-backed number claimed. Deterministic fact: cold allocation is capped; no gameplay Tick path changed.
+
+Verification -> Static content scan found no `foreach`, local `NativeArray`, runtime Resources loads/sweeps, Unity Update hooks, coroutine calls, scene search, `Camera.main`, `string.Format`, managed delegate/event markers, renderer material allocation markers, TODO/FIXME, or `NotImplementedException` markers. First-party `Resources.Load*` scan is clean. `git diff --check` reported only line-ending warnings. Latest core build attempt 78 fails outside CORE/ASSETS in `World/Biolum/HectonBiolumManager.cs` and `VFX/HectonMarineSnowRenderer.cs`; no content compile errors appeared.
+
+Status -> CORE/ASSETS Phase 24 content patch complete. VERIFIED MASTER GRADE by static audit. Latest PLATINUM_COMPILE is BLOCKED BY EXTERNAL WORLD/BIOLUM/VFX. Prior phase 23 core/editor CLI builds were green before the external drift. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 25 Report - Runtime Fail-Loud Diagnostics
+What was wrong -> Runtime authority APIs still had silent `false` exits for missing registries, unknown hashes, invalid pending-load tracking, full pending-load ledgers, unmatched async completion, invalid VFX prewarm references, VFX ledger exhaustion, failed handles, and hologram proxy exhaustion.
+
+What was done -> Added editor/development-only diagnostics for those paths. Calls are guarded with `Conditional("UNITY_EDITOR")` and `Conditional("DEVELOPMENT_BUILD")`, so release builds do not evaluate the diagnostic string construction.
+
+Cinematic Cheats used -> No new visual effect added. This protects the existing hologram proxy and VFX prewarm cheats by making failed proxy/warmup paths visible during development instead of silently hiding missing assets.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic fact: release builds compile out the diagnostic calls; no normal release Tick work was added.
+
+Verification -> Static content scan found no `foreach`, local `NativeArray`, runtime Resources loads/sweeps, Unity Update hooks, coroutine calls, scene search, `Camera.main`, `string.Format`, managed delegate/event markers, renderer material allocation markers, TODO/FIXME, or `NotImplementedException` markers. First-party `Resources.Load*` scan is clean. Focused symbol scan confirms `targetRenderer` is only used in valid async-load methods and the new diagnostic call. `git diff --check` on the touched runtime file reported only line-ending warnings. Dotnet compile was intentionally not run for this single diagnostics pass because the user directed not to rebuild every time.
+
+Status -> CORE/ASSETS Phase 25 content patch complete by static audit. Latest compile status remains the recorded Phase 24 external World/Biolum/VFX block until the next meaningful batch compile. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 26 Report - Bundle Refcount Ownership Guard
+What was wrong -> The bundle reference counter could remove a vault row even if that bundle still had a positive ref count. Acquire also accepted malformed metadata such as negative byte estimates or invalid tiers, which weakens VRAM accounting.
+
+What was done -> `Acquire()` now rejects zero hashes, negative bytes, and invalid tiers before touching the ledger. `Remove()` now rejects zero hashes and refuses to remove active rows, logging the hash and live ref count in editor/development builds.
+
+Cinematic Cheats used -> No new visual cheat. This protects the VRAM budget intercept that decides which biome/Overkill content must release first.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic fact: only scalar guards were added on acquire/remove paths; no Tick work was added.
+
+Verification -> Static content scan found no banned runtime/content patterns. Focused symbol scan verified the new guard methods and call sites. `git diff --check` on `ContentRuntimeServices.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time.
+
+Status -> CORE/ASSETS Phase 26 content patch complete by static audit. Latest compile status remains the recorded external World/Biolum/VFX block until the next meaningful batch compile. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 27 Report - Addressables Handle Acquire Rollback
+What was wrong -> `RegisterBundleAcquire(uint hash, AsyncOperationHandle handle)` could increment the residency refcount and then return success for an invalid handle. That creates phantom residency: the vault thinks a bundle is resident, but there is no valid handle to release.
+
+What was done -> Added a centralized rollback helper for handle-acquire failures. Invalid handles and handle-table tracking failures now release the acquired refcount, remove the row if unused, update VRAM accounting, and fail loud in editor/development.
+
+Cinematic Cheats used -> No new visual cheat. This protects the VRAM eviction policy that decides when low-tier hardware must drop biome content and when high-tier Overkill content can stay resident.
+
+Exact Microseconds saved -> Failure path only. No profiler-backed microseconds claimed and no Tick work was added.
+
+Verification -> Static content scan found no banned runtime/content patterns. Focused symbol scan verified rollback and invalid-handle paths. `git diff --check` on `ContentRuntimeServices.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time.
+
+Status -> CORE/ASSETS Phase 27 content patch complete by static audit. Latest compile status remains the recorded external World/Biolum/VFX block until the next meaningful batch compile. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 29 Report - Lore Read Fail-Loud Diagnostics
+What was wrong -> `ContentLoreBinaryProvider.TryReadBlock` could still fail silently for zero hashes, missing hashes, invalid byte ranges, undersized caller spans, unavailable fallback streams, or partial reads.
+
+What was done -> Added editor/development-only diagnostics for each failure path. Partial file reads now return failure without reporting partial byte counts as usable lore content.
+
+Cinematic Cheats used -> No new visual cheat. This protects the existing memory-mapped/streamed Babel bridge so UI text requests use the same strict hash authority as textures and meshes.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic fact: diagnostics are compiled out of release builds and successful reads still use caller-owned `Span<byte>` with no new Tick work.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused lore symbol scan verified the new diagnostic methods and call sites. `git diff --check` on `ContentLoreBinaryProvider.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time.
+
+Status -> CORE/ASSETS Phase 29 content patch complete by static audit. Latest compile status remains the recorded external World/Biolum/VFX block until the next meaningful batch compile. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 30 Report - Object Batch Registry Coverage Gate
+What was wrong -> Object-batch validation did not prove that every instance hash had a registered 3D content binding, and it did not prove that chunk ranges covered every instance exactly once.
+
+What was done -> `ValidateObjectBatchPayloads` now receives the active hash maps, builds a registered visual-hash set, fails unregistered/non-visual instance hashes, and uses a coverage map to fail overlapping or missing chunk ownership.
+
+Cinematic Cheats used -> Chunked BRG debris remains the visual cheat: thousands of wreck/debris pieces render as batch payloads instead of GameObjects. The new gate prevents that cheat from hiding broken hash links or holes.
+
+Exact Microseconds saved -> Build-time only, 0 runtime us. No gameplay Tick, BRG bind, Addressables, or GlobalDataVault code path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused validator symbol scan verified the hash and coverage gates. `dotnet build Hecton8.Editor.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false` exited 0 with 48 warnings and 0 errors; warnings are external Unity package/third-party warnings, not CORE/ASSETS errors.
+
+Status -> CORE/ASSETS Phase 30 content patch complete by static audit and batched editor compile. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 31 Report - Tier Policy Invalid-Value Guard
+What was wrong -> Invalid `ContentTier` enum values could pass through `CanDownload` and visual-budget resolution as ordinary content, which weakens Overkill denial on Quest/MX350 and corrupts visual budget routing.
+
+What was done -> Added tier validation, editor/development diagnostics, invalid-tier download denial, and a low/XR Dear Lie visual-budget fallback for malformed tier values.
+
+Cinematic Cheats used -> The Dear Lie budget is now the fallback for corrupt tier metadata: 1D LUT, triangle noise, and dot-product vision instead of premium raymarch/POM/particle features.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic fact: this is a scalar guard on tier policy calls; no Tick, Addressables handle, BRG, or GlobalDataVault path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused tier-policy symbol scan verified `IsValidTier`, `ResolveLowVisualBudget`, and `LogInvalidContentTier`. `git diff --check` on `ContentRuntimeServices.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred after the phase 30 batched editor-green checkpoint.
+
+Status -> CORE/ASSETS Phase 31 content patch complete by static audit. Latest compile checkpoint remains phase 30 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 32 Report - Save Topology Format-String Purge
+What was wrong -> `ContentSaveSlotTopology` still exposed unused `{0}` format-pattern constants even though the real API is span-based.
+
+What was done -> Replaced those public format patterns with literal prefix/suffix constants. The existing span writers remain the only path builders for save slot directories, player delta files, backups, temps, and macro database sector files.
+
+Cinematic Cheats used -> None. This is anti-bloat and zero-GC topology hygiene.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic fact: no runtime Tick or IO read path changed; this removes a future `string.Format` misuse vector.
+
+Verification -> Focused scan found no remaining `{0}` topology constants. Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. `git diff --check` on `ContentSaveSlotTopology.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred after the phase 30 batched editor-green checkpoint.
+
+Status -> CORE/ASSETS Phase 32 content patch complete by static audit. Latest compile checkpoint remains phase 30 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 33 Report - Hologram Capacity Truthfulness
+What was wrong -> Runtime allocation clamped the hologram proxy pool, but `HologramPoolCapacity` could still report the original invalid serialized value.
+
+What was done -> `Awake()` now stores the clamped capacity back into the runtime field before allocating proxy arrays.
+
+Cinematic Cheats used -> The hologram proxy remains the loading cheat: visible stand-in after 100 ms. This pass makes its capacity reporting match the real pool.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic fact: cold `Awake` scalar assignment only; no Tick path changed.
+
+Verification -> Focused scan verified the clamp/property path. Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. `git diff --check` on `ContentRuntimeServices.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred after the phase 30 batched editor-green checkpoint.
+
+Status -> CORE/ASSETS Phase 33 content patch complete by static audit. Latest compile checkpoint remains phase 30 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 34 Report - Registry Visual Kind Authority
+What was wrong -> Registry visual proof was too loose. `HasVisual3D()` only checked prefab/mesh references, so a non-visual row could accidentally satisfy economy mesh or object-batch coverage gates.
+
+What was done -> Made visual proof kind-aware through `IsVisual3DKind()`. Editor validation now rejects 3D bindings on non-visual kinds, Mesh rows without Mesh bindings, and Prefab rows without prefab/mesh bindings.
+
+Cinematic Cheats used -> Object-batch debris remains the cheat: dense wreckage uses chunked static payloads instead of thousands of GameObjects. This patch prevents that cheat from hiding a wrong registry kind behind a stray mesh field.
+
+Exact Microseconds saved -> Build-time gate plus scalar predicate only. No profiler-backed microseconds claimed; no Tick, Addressables handle, BRG bind, or GlobalDataVault path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused visual-kind scan verified `IsVisual3DKind`, strict `HasVisual3D`, and new validator failure messages. `git diff --check` on touched files reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time.
+
+Status -> CORE/ASSETS Phase 34 content patch complete by static audit. Latest compile checkpoint remains phase 30 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 35 Report - Async Hologram Registry Proof
+What was wrong -> `TrackAsyncLoad` could put any nonzero hash into the pending-load vault, even when the asset hash did not exist in the content registry.
+
+What was done -> Added a registry proof before pending-load write: missing `ContentAssetHashMap` and unknown hashes now fail loud and return false before the hologram path can reserve a slot.
+
+Cinematic Cheats used -> The hologram proxy remains the load-delay cheat. It now only covers registry-authorized content instead of masking unknown hash requests.
+
+Exact Microseconds saved -> One hash lookup on load-start only; no profiler-backed microseconds claimed. No Tick, VRAM intercept, BRG bind, Addressables handle, or telemetry path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused tracker scan verified the new map/hash checks in `TrackAsyncLoad`. `git diff --check` on `ContentRuntimeServices.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time.
+
+Status -> CORE/ASSETS Phase 35 content patch complete by static audit. Latest compile checkpoint remains phase 30 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 36 Report - Required Hash Copy Exactness
+What was wrong -> `CopyRequiredHashes` could silently truncate the required-hash list when the caller supplied a destination array that was too small.
+
+What was done -> Added `CountRequiredBuildHashes()` and made `CopyRequiredHashes` exact: it returns `-1` and logs in editor/development if the buffer cannot hold every required hash.
+
+Cinematic Cheats used -> None. This is registry authority hygiene so required content cannot disappear from an export through partial copying.
+
+Exact Microseconds saved -> Cold registry copy/export path only. No profiler-backed microseconds claimed; no Tick, Addressables handle, BRG bind, VRAM, or GlobalDataVault path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused required-hash scan verified `CopyRequiredHashes`, `CountRequiredBuildHashes`, and the undersized-buffer diagnostic. `git diff --check` on `ContentAssetHashMap.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time.
+
+Status -> CORE/ASSETS Phase 36 content patch complete by static audit. Latest compile checkpoint remains phase 30 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.
+
+## Phase 37 Report - Telemetry Bundle Count Coalescing
+What was wrong -> The content blackbox heartbeat resolved bundle resident bytes and then queried bundle count twice more in the same Tick.
+
+What was done -> Added `EstimateResidentBytes(out int residentCount)` and reused the returned count for both the heartbeat state hash and telemetry row.
+
+Cinematic Cheats used -> None. This protects the blackbox budget so content telemetry stays cheap enough for low-tier hardware while Overkill content grows.
+
+Exact Microseconds saved -> No profiler-backed microseconds claimed. Deterministic fact: two redundant bundle count lookups were removed from `WriteTelemetry`; no Addressables, BRG, VFX, or VRAM eviction path changed.
+
+Verification -> Static content banned-pattern scan is clean. First-party `Resources.Load*` scan is clean. Focused coalescing scan verified the out-count overload and blackbox count reuse. `git diff --check` on `ContentRuntimeServices.cs` reported only line-ending warnings. Dotnet compile was intentionally deferred per user instruction not to rebuild every time.
+
+Status -> CORE/ASSETS Phase 37 content patch complete by static audit. Latest compile checkpoint remains phase 30 editor build exit 0 with 48 external warnings and 0 errors. Unity import, Play Mode, profiler, GCMonitor, player build, and platform-device validation remain pending external verification.

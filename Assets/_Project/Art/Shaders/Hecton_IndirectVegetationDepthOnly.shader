@@ -385,6 +385,9 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 {
                     FloraInteractionPointGpuData interactionPoint = _HectonFloraInteractionPoints[i];
                     float3 velocity = interactionPoint.velocitySpeed.xyz;
+                    if (!all(isfinite(velocity)) || !all(isfinite(interactionPoint.positionRadius.xyz)))
+                        continue;
+
                     float speedFactor = saturate(SanitizeNonNegativeFinite(interactionPoint.velocitySpeed.w) * 0.18);
                     float3 delta = evaluationPositionWS - interactionPoint.positionRadius.xyz;
                     delta.y *= 0.22;
@@ -410,7 +413,10 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                     return float3(0.0, 0.0, 0.0);
                 }
 
-                float playerRuntimePosition = _HectonPlayerRuntimePosition.xyz;
+                float3 playerRuntimePosition = _HectonPlayerRuntimePosition.xyz;
+                if (!all(isfinite(playerRuntimePosition)))
+                    return float3(0.0, 0.0, 0.0);
+
                 float playerSpeed = SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.x);
                 float playerPush = SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.y);
                 if (playerSpeed <= 0.0001 || playerPush <= 0.0001)
@@ -442,6 +448,9 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 for (int i = 0; i < impactCount; i++)
                 {
                     float4 impactSphere = _HectonImpactSpheres[i];
+                    if (!all(isfinite(impactSphere.xyz)))
+                        continue;
+
                     float radius = SanitizePositiveFinite(impactSphere.w, 0.05);
                     float3 delta = evaluationPositionWS - impactSphere.xyz;
                     float proximity = saturate(1.0 - dot(delta, delta) / (radius * radius));
@@ -494,7 +503,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 if (encodedGrowth01 < 0.0)
                     return -1.0;
 
-                return encodedGrowth01 > 0.0001 ? saturate(encodedGrowth01) : 1.0;
+                return encodedGrowth01 > 0.0001 ? saturate(SanitizeNonNegativeFinite(encodedGrowth01)) : 1.0;
             }
 
             float ResolveGrowth01(uint sourceInstanceIndex, float encodedGrowth01)
@@ -507,7 +516,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                     return -1.0;
 
                 if (soaAge01 > 0.0001 || encodedGrowth01 <= 0.0001)
-                    return saturate(soaAge01);
+                    return saturate(SanitizeNonNegativeFinite(soaAge01));
 
                 return ResolveMetadataGrowth01(encodedGrowth01);
             }
@@ -585,7 +594,9 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                     animatedPositionWS += flowSynchronyOffset * 0.85;
                 }
 
-                float seasonalDecayWeight = saturate(_HectonFloraLifecycleParams.y) * saturate(_HectonFloraLifecycleParams.w);
+                float seasonalDecayWeight =
+                    saturate(SanitizeNonNegativeFinite(_HectonFloraLifecycleParams.y)) *
+                    saturate(SanitizeNonNegativeFinite(_HectonFloraLifecycleParams.w));
                 if (seasonalDecayWeight > 0.0001)
                 {
                     float seasonalWiltWeight = seasonalDecayWeight *

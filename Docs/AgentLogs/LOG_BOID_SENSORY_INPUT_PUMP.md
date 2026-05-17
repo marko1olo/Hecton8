@@ -415,3 +415,105 @@ Validation:
 - `git diff --check` on touched code/docs produced no whitespace errors; only repository LF-to-CRLF warnings.
 - `Build_BOID_SENSORY_INPUT_PUMP_Polish16.txt`: blocked by external `ArchitectEyeVisualizer.DebugSignal`.
 - No diagnostics referenced `SargassumMicroFaunaBoids.cs`, `SargassumMicroFaunaBoids.compute`, `BoidFishInstanced.shader`, or `H8Memory.cs`.
+
+## 2026-05-17 BOID_SENSORY_INPUT_PUMP Curtain Direction and Frame-Constant Inquisition
+
+What was wrong:
+
+- High-tier curtain-parting still used raw `_PlayerDirectionWS`, so malformed direction scale or non-finite payload could corrupt facing math after the fixed threat slots were sanitized.
+- The main shader flock block still used raw player/field/camera/panic/density frame constants in several gates.
+- Several touched gates used direct division where reciprocal discipline was already required elsewhere.
+
+What was done:
+
+- Normalized `_PlayerDirectionWS` through `CheapNormalizeL1` and added finite checks for direction length, speed square, forward dot, facing proxy, side dot, and final strength.
+- Added safe local frame constants for field center, player position, camera avoid position/radius/weight, panic threshold, panic weight, massive threat weight, density threshold, window threshold, player panic radius/scale, player speed threshold, and headlight panic.
+- Routed headlight response, capsule sensory start, panic weights, density/window gates, and camera pushback through safe locals.
+- Replaced touched direct divisions with guarded `rcp` multiplication where those divisions fed stimulus or panic gates.
+
+Cinematic Cheats used:
+
+- Preserved the low-tier endpoint sphere lie and high-tier capsule/curtain beam split.
+- Rejected visual downgrade; the fix protects the fake instead of flattening the behavior.
+
+Exact Microseconds saved:
+
+- No profiler number is claimed.
+- Added finite checks are estimated under 1 us/frame on i3/MX350 when high-tier light/curtain paths are active.
+- Avoided cost is GPU NaN propagation and mobile/Metal recovery failure, not measured steady-state frame-time reduction.
+
+Validation:
+
+- Static debt scan found no `void Update`, `string.Format`, local `NativeArray`, `NativeQueue`, `GlobalSignals.Publish`, managed delegates, `Allocator.Temp`, legacy `ComputeBuffer`, `SetData`, or `GetData` in the boid/shader surface.
+- `git diff --check` on touched code files produced no whitespace errors; only repository LF-to-CRLF warnings.
+- `dxc`, `fxc`, and `glslangValidator` were unavailable in the shell.
+- `Build_BOID_SENSORY_INPUT_PUMP_Polish17.txt`, `Build_BOID_SENSORY_INPUT_PUMP_Polish17_Strike2.txt`, and `Build_BOID_SENSORY_INPUT_PUMP_Polish17_Strike3.txt` all exited `-1` with zero-byte logs.
+- Log scans found no diagnostics referencing `SargassumMicroFaunaBoids.cs`, `SargassumMicroFaunaBoids.compute`, `BoidFishInstanced.shader`, or `H8Memory.cs`.
+
+## 2026-05-17 BOID_SENSORY_INPUT_PUMP Shader Count Bounds and Final Compile
+
+What was wrong:
+
+- The main compute kernel still trusted raw frame counts for several StructuredBuffer loops.
+- Massive threat, formation, sonar, parasite, and leviathan paths could still see malformed frame payloads after the fixed sensory slot sanitizer.
+- Polish17 build probes were process failures, not a valid compile proof.
+
+What was done:
+
+- Added shader capacity caps matching C# clamps: 96 grazing anchors, 8 massive threats, 8 beacons, 16 obstacles, 64 leviathan nodes.
+- Routed loops through clamped resolver helpers and clamped signed counts before uint conversion.
+- Added finite guards around massive threats, beacons, obstacles, grazing anchors, leviathan nodes, sonar payloads, field extents, player velocity, parasite constants, and leviathan visual parameters.
+- Preserved low-tier endpoint sphere, high-tier capsule SDF, curtain parting, formation rings, parasite latch behavior, and leviathan motion.
+
+Cinematic Cheats used:
+
+- Low tier still uses the endpoint-sphere Dear Lie for flashlight stimulus.
+- High tier still spends cycles on capsule/curtain/formation/leviathan visual overkill; the pass fences data instead of flattening visuals.
+
+Exact Microseconds saved:
+
+- No profiler number is claimed.
+- Added scalar guards are estimated under 1 us/frame on i3/MX350 when those capped paths are active.
+- Shader direct-division scan now leaves only reciprocal constants and integer indexing; backend-sensitive gates use `rcp` multiplication.
+
+Validation:
+
+- Debt scan found no `void Update`, `string.Format`, `Transform.position`, local `new NativeArray`, `NativeQueue`, `GlobalSignals.Publish`, `EventBus`, managed delegates, legacy `ComputeBuffer`, `SetData`, or `GetData` in the boid/shader surface.
+- `git diff --check` on touched code files produced no whitespace errors; only repository LF-to-CRLF warnings.
+- Struct audit confirmed non-GPU native/job telemetry uses `Pack = 1`; GPU/HLSL interop structs remain documented `Pack = 4` and gated by `ValidateGpuStructLayouts`.
+- `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish18.txt`: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /maxcpucount:1 -nr:false` succeeded with 0 warnings and 0 errors.
+
+## 2026-05-17 BOID_SENSORY_INPUT_PUMP Vault GPU Staging Eviction
+
+What was wrong:
+
+- Grazing anchors, massive threats, formation beacons, and formation obstacles still lived in private managed staging arrays even though they are GPU-facing boid state.
+- Those four datasets uploaded through managed-array `UploadArray`, which kept a second owner outside the GlobalDataVault.
+- Indirect draw args still used a one-element managed upload cache.
+
+What was done:
+
+- Added `BufferID.SargassumGrazingAnchors`, `BufferID.SargassumMassiveThreats`, `BufferID.SargassumFormationBeacons`, and `BufferID.SargassumFormationObstacles`.
+- Replaced the four managed staging arrays with `VaultBufferHandle<T>` fields and vault-resolved NativeArray views.
+- Converted grazing/massive/formation uploads to `GraphicsBufferUploadUtility.UploadNativeArray`.
+- Capped build, compaction, upload, and origin-shift writes to the resolved vault view length.
+- Removed `_boidIndirectArgsUpload` and writes `GraphicsBuffer.IndirectDrawIndexedArgs` directly through `LockBufferForWrite`.
+
+Cinematic Cheats used:
+
+- Low tier still uses the endpoint-sphere flashlight lie and bounded ping slots.
+- High tier still keeps capsule SDF, formation rings, massive threat panic, and instanced render overkill; this pass evicts duplicated state instead of downgrading visuals.
+
+Exact Microseconds saved:
+
+- No profiler number is claimed.
+- Vault handle resolution for the four datasets is estimated under 1 us/frame on i3/MX350.
+- Removed four managed staging owners and one managed indirect-args cache; indirect-args savings are effectively 0 us on steady frames because upload was already mesh/count dirty-gated.
+
+Validation:
+
+- Static scan found no private managed arrays for the four evicted GPU staging datasets.
+- Static scan found no `UploadArray` use for grazing, massive-threat, formation-beacon, formation-obstacle, or indirect-args uploads; remaining `UploadArray` calls are pre-existing spawn-data double-buffer uploads.
+- Static debt scan found no `void Update`, `string.Format`, `GlobalSignals.Publish`, `EventBus`, `new NativeArray`, `Allocator.Persistent`, `Allocator.Temp`, `NativeQueue`, `SetData`, `GetData`, or `Transform.position` in the boid/shader surface.
+- `git diff --check` on touched code files produced no whitespace errors; only repository LF-to-CRLF warnings.
+- Compile was not rerun in this pass because the operator explicitly instructed: `do not run dotnet rebuild every time`.

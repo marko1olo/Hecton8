@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Dev;
 using Hecton8.Gameplay;
 using Unity.Collections;
@@ -497,7 +498,12 @@ namespace Hecton8.World
             float trenchDepth,
             long trenchId)
         {
-            if (displacedVolumeCubicMeters < 10f ||
+            if (!math.isfinite(displacedVolumeCubicMeters) ||
+                !math.isfinite(trenchDepth) ||
+                !IsFinite(epicenterAbsolute) ||
+                !IsFinite(absoluteStart) ||
+                !IsFinite(absoluteEnd) ||
+                displacedVolumeCubicMeters < 10f ||
                 appliedStampCount <= 0 ||
                 seismicRockDebrisProfile == null ||
                 !seismicRockDebrisProfile.IsValid ||
@@ -505,10 +511,6 @@ namespace Hecton8.World
             {
                 return;
             }
-
-            IDebrisService debris = GlobalRegistry.Debris;
-            if (debris == null || !debris.IsInitialized)
-                return;
 
             int burstCount = Mathf.Clamp(Mathf.FloorToInt(displacedVolumeCubicMeters / 10f), 0, seismicMaxDebrisBursts);
             if (burstCount <= 0)
@@ -529,20 +531,21 @@ namespace Hecton8.World
                 if (lateral.sqrMagnitude <= 0.0001f)
                     lateral = Vector3.right;
                 absoluteAnchor += lateral.normalized * radialJitter;
-                Vector3 runtimeOrigin = HectonFloatingOrigin.ToRuntimePosition(absoluteAnchor + Vector3.up * ceilingOffset);
-                Vector3 runtimeHitPoint = runtimeOrigin + Vector3.down * Mathf.Max(0.5f, ceilingOffset * 0.35f);
-                Quaternion runtimeRotation = Quaternion.Euler(
-                    0f,
-                    HashToFloat01(seed, (uint)(i + 17), 0xD1B54A35u) * 360f,
-                    0f);
-                debris.SpawnBurst(
-                    seismicRockDebrisProfile,
-                    runtimeOrigin,
-                    runtimeRotation,
-                    runtimeHitPoint,
-                    Vector3.down,
-                    power01,
-                    seed);
+                Vector3 runtimeDebrisPosition = HectonFloatingOrigin.ToRuntimePosition(absoluteAnchor + Vector3.up * Mathf.Max(0.5f, ceilingOffset * 0.65f));
+                if (!IsFinite(runtimeDebrisPosition))
+                    continue;
+
+                DebrisSpawnSignal signal = new DebrisSpawnSignal
+                {
+                    PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeDebrisPosition),
+                    SpeciesHash = 0x53454953u,
+                    SourceEntityId = seed,
+                    Intensity01 = power01,
+                    DebrisKind = DebrisSpawnSignal.DebrisKindRockShard,
+                    Flags = DebrisSpawnSignal.FlagComputeShard,
+                    Quantity = 0
+                };
+                SignalBus<DebrisSpawnSignal>.Push(in signal);
             }
 
             AbyssalFluidDecalManager fluidDecalManager = GlobalRegistry.AbyssalFluidDecals;
@@ -602,6 +605,11 @@ namespace Hecton8.World
             return value >= 0d
                 ? (long)(value + 0.5d)
                 : (long)(value - 0.5d);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
         }
 
         private static float HashToFloat01(uint a, uint b, uint salt)

@@ -302,3 +302,51 @@ Solution: Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -
 Rejected Alternatives: Leaving the status as dependency-blocked was rejected after objective green build evidence.
 Scalability potential: Green compile restores integration confidence for low-tier and high-tier AUP paths.
 Hardware Impact: 0.0 us runtime; compile hygiene only.
+
+### Phase 13: Floating-Origin And KCC Vault Handle Closure
+
+Problem: Post-green broad scans still found `HectonFloatingOrigin` owning three persistent drift-probe native buffers and `PlayerKinematicsRuntime` caching KCC scratch/state lanes as private `NativeArray<T>` fields. KCC storage was already DataVault-first, but the cached field type still looked like system-owned native state.
+Solution: Moved floating-origin drift runtime positions, absolute positions, and invalid masks to `GlobalDataVault` handles under `BufferID.FloatingOriginDriftRuntimePositions`, `FloatingOriginDriftAbsolutePositions`, and `FloatingOriginDriftInvalidMask`. Replaced KCC cached arrays with `VaultBufferBinding<T>` handle bindings that resolve native views only for Burst job scheduling, reads, and writes. Removed the KCC local allocation/disposal helper path.
+Rejected Alternatives: Keeping cached `NativeArray<T>` fields was rejected because the audit target is persistent private native ownership. Replacing job inputs with managed containers was rejected because Burst jobs need native views. Releasing every `SystemID.CoreDeterminism` vault buffer on floating-origin shutdown was rejected because that owner can contain unrelated core determinism buffers.
+Scalability potential: Low/MX350 keeps compact fixed-capacity drift/KCC lanes with central memory accounting. Middle/High/Ultra can raise buffer capacity or telemetry density by BufferID without changing physics authority or job contracts.
+Hardware Impact: 0.0 us measured direct frame-time gain. Static CPU cost is neutral; the gain is memory ownership consolidation and fewer invisible native lifetime paths on low-memory hardware.
+
+Problem: Floating-origin still had two scanned `rsqrt` paths that were branch-only or not in clamp form.
+Solution: Clamped drift-error and radial-origin normalization through `math.rsqrt(math.max(...))` with existing finite checks.
+Rejected Alternatives: Relying on previous `distSq > epsilon` branches was rejected because malformed mobile/Quest data can still propagate non-finite state.
+Scalability potential: All tiers retain identical authority; high-tier visual overkill can spend budget outside the authority path.
+Hardware Impact: Below measurable frame impact; primary value is NaN fault containment.
+
+Problem: Attempt 15 green build used normal shared project output, but concurrent editor/agent builds can lock `Temp\obj\Hecton8.Core\Hecton8.Core.dll`.
+Solution: Re-ran the compile gate as attempt 16 with isolated `IntermediateOutputPath=Temp\obj\Hecton8.Core.AUP16\` and `OutputPath=Temp\bin\AUP16\`; it passes with 0 warnings and 0 errors.
+Rejected Alternatives: Killing unrelated build processes was rejected under the multi-agent workspace rule. Reporting a file-lock failure as a compile wall was rejected because isolated outputs prove the AUP code compiles.
+Scalability potential: No runtime effect; isolated output is validation hygiene for parallel agent work.
+Hardware Impact: 0.0 us runtime; compile hygiene only.
+
+### Phase 14: Explicit Downcast And Normalize Inquisition
+
+Problem: The post-reopen scan still found explicit `(float3)` downcasts in physics/AUP glue and two `math.normalizesafe` camera-forward paths in the rigidbody culling job/context path.
+Solution: Replaced the downcasts with explicit component construction at final Unity/PhysX handoff points. Replaced `math.normalizesafe` with a local guarded normalizer that rejects non-finite inputs and uses `math.rsqrt(math.max(lengthSq, 0.0001f))`.
+Rejected Alternatives: Leaving `(float3)` casts was rejected because the prompt explicitly targets float truncation audits. Rewriting the systems to avoid Unity `Vector3` at PhysX contact boundaries was rejected because those APIs are Unity-defined final handoff surfaces, not AUP authority.
+Scalability potential: Low/MX350 and Quest keep deterministic, finite final-handoff conversions. Middle/High/Ultra keep the same authority path and can spend visual budget outside physics.
+Hardware Impact: 0.0 us measured direct gain. The value is NaN/precision audit closure and reduced ambiguity in static scans.
+
+Problem: Attempt 17 failed outside AUP because `AcousticZoneController` referenced `Type` without a resolvable namespace in the current project compile.
+Solution: Changed the editor-only reflection line to `global::System.Type` and removed the duplicate `using System` warning source. Attempt 20 passes with 0 warnings and 0 errors.
+Rejected Alternatives: Marking a compile wall after one trivial namespace error was rejected. Broad acoustic behavior edits were rejected as cross-domain.
+Scalability potential: No runtime effect; this is compile hygiene for the shared assembly.
+Hardware Impact: 0.0 us runtime; compile hygiene only.
+
+### Phase 15: Player Presentation Typed-Lane Purge
+
+Problem: `HectonPlayerMovement` still exposed managed `System.Action` presentation broadcasts for footsteps, water splashes, exhale bubbles, sprint FOV, wet-lens pulses, transport bailout, and fatal-pressure ramp. That left a hot player movement surface outside typed signal lanes.
+Solution: Added packed unmanaged player presentation signals and routed them through `SignalBus<T>`. Converted the direct consumers to `ReadOnlySpan<T>` snapshot drains: `PlayerFootstepAudio`, `HectonSurfaceWeatherDirector`, `HectonUnderwaterVisuals`, `InternalFloodWaterlineRuntime`, `CameraJuiceSystem`, and `HectonOSBootManager`.
+Rejected Alternatives: Keeping delegates as "already cached" was rejected because the mandate bans managed gameplay broadcasts. Creating a duplicate submerge signal was rejected because `WaterTransitionEvent` already carries that state. Creating a wet-lens-only lane was rejected because `VisorDropletSignal` already exists for visor-local external droplet requests.
+Scalability potential: Low/MX350 consumes bounded snapshot lanes and can drop noncritical presentation pulses under SignalBus low-tier caps. Middle/High/Ultra can attach richer presentation consumers to the same typed lanes without touching player movement authority.
+Hardware Impact: 0.0 us measured direct frame-time gain. Static estimate: neutral-to-sub-microsecond overhead shift; value is removal of delegate subscription surfaces, central lane telemetry, and deterministic low-tier load shedding.
+
+Problem: The presentation lane migration had to prove it did not reopen the compile wall.
+Solution: Ran one isolated `dotnet build --no-restore` after completing the patch. Attempt 21 passes with 0 warnings and 0 errors.
+Rejected Alternatives: Running repeated rebuild loops was rejected per user instruction. Reporting scan-only success was rejected because public API removal across consumers needs compile evidence.
+Scalability potential: Green compile preserves the current low/high AUP path while enabling future presentation overkill on High/Ultra through typed consumers.
+Hardware Impact: 0.0 us runtime; validation hygiene only.

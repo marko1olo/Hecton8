@@ -449,3 +449,155 @@ Validation:
 - Shader scans found no groupshared memory, wave intrinsics, or group-memory barriers.
 - Forbidden scatter-domain C# scan stayed clean.
 - `git diff --check` reported only LF-to-CRLF warnings for touched files.
+
+## 2026-05-16 Continued Pass: Frustum and DataVault Poison Containment
+
+What was wrong:
+- A non-finite camera/frustum plane could fail open in GPU culling and draw too much flora.
+- Metadata, age/phase, visual-payload, AUP, lifecycle, predator, flash, and cascade lanes still had paths where NaN could reach shader clamp/division logic.
+- Compute instance count did not have an explicit capacity clamp in the constant buffer.
+
+What was done:
+- Added C# finite validation for DataVault metadata, age, phase, and visual-payload lanes before GPU upload.
+- Added AUP double-to-float range checks and blackbox dump reasons for metadata, auxiliary lane, and AUP poison.
+- Validated uploaded camera/frustum planes before cull dispatch.
+- Added `_HectonScatterParams4.w` as a compute-side capacity guard and capped resolved instance count.
+- Added compute-side finite guards for AUP, camera, bounds, and frustum planes.
+- Sanitized vegetation age/growth/runtime/lifecycle/predator/flash/cascade lanes in lit, depth, shadow, and motion-vector passes.
+
+Cinematic cheats used:
+- Low tier keeps cheap interaction/current/growth fakes, but poisoned lanes collapse to zero/fallback instead of breaking depth, shadow, or motion output.
+- High/Ultra retain visual payload, biolum, SSS, caustic, and cascade effects with fail-closed scalar inputs.
+
+Exact Microseconds saved:
+- No measured microseconds claimed.
+- CPU upload validation runs only when DataVault generations are uploaded; exact cost is PENDING PROFILER.
+- GPU finite checks are scalar guards in existing branches; exact cost is PENDING PROFILER.
+- Prevented failure mode: bad frustum/metadata no longer turns into full-population cull leakage or NaN propagation.
+
+Validation:
+- Targeted raw-NaN shader scan is clean for growth, age, runtime, lifecycle, predator, flash, and cascade patterns.
+- Forbidden scatter-domain scan found no `EnableKeyword`, `DisableKeyword`, `enableInstancing`, `renderer.material`, `.materials`, shared `material.Set*`, `SetVectorArray`, `Debug.Log`, local private `NativeArray`, `H8Memory.Allocate/Release`, `Allocator.Persistent`, legacy `EventBus`, scene search, Unity `Update` methods, or `string.Format`.
+- `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false -m:1 -v:minimal -clp:ErrorsOnly` is blocked outside scatter by `SubmarineFluidDynamics.cs(1853,60)` and `(4582,68)` ambiguous `float3`/`Vector3` subtraction.
+- `dotnet build Assembly-CSharp.csproj --no-dependencies --disable-build-servers -p:UseSharedCompilation=false -m:1 -v:minimal -clp:ErrorsOnly` is blocked before scatter by 53 missing generated/plugin metadata DLLs under `Temp/bin/Debug`.
+- Lingering `dotnet` build-server processes from timed-out parallel probes were cleared with `dotnet build-server shutdown`; no `dotnet` processes remained afterward.
+
+## 2026-05-17 Continued Pass: Compile Wall Repair and Final Metadata Probe
+
+What was wrong:
+- The scatter domain could not be honestly validated while `Hecton8.Core` was broken by moving cross-domain compile contracts.
+- `SubmarineFluidDynamics` had partial float3/DataVault migration damage in exterior thermal/buoyancy state.
+- `HectonPlayerMotor` was calling the new vault-backed native sweep allocation path without resolving the current `IDataVault`.
+- `EquipmentInteractionContracts.InteractionSignal` had a `uint` literal assigned into explicit-layout `ushort` padding.
+
+What was done:
+- Completed the minimal submarine float3/vault conversion needed for compilation: thermal centers, buoyancy sample points, finite `ToVector3` conversion, vault allocation/disposal/refresh, and safe slot guards.
+- Added `HectonPlayerMotor.ResolveDataVault()` and passed it into scheduled sweep and kinematic repair target native-state allocation.
+- Corrected `InteractionSignal` padding assignment width.
+- Re-ran the core build; `Hecton8.Core.csproj` now succeeds with 0 warnings/0 errors.
+
+Cinematic cheats used:
+- None added in cross-domain compile glue.
+- Scatter visual strategy remains intact: low-tier 100m cull and cheap deformation fakes, high/ultra 500m residency, crossfade, SSS/caustic/biolum visual payloads, and fail-closed shader lanes.
+
+Exact Microseconds saved:
+- 0us runtime claimed for compile repairs.
+- Existing scatter savings remain unprofiled estimates: CPU manager/transform avoidance is still estimated at 900-1800us at 100k on i3/MX350, but no new microsecond claim was fabricated.
+- Final Assembly validation is not runtime work.
+
+Validation:
+- `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false -m:1 -v:minimal -clp:ErrorsOnly` succeeded with 0 warnings/0 errors.
+- `dotnet build Assembly-CSharp.csproj --no-dependencies --disable-build-servers -p:UseSharedCompilation=false -m:1 -v:minimal -clp:ErrorsOnly` failed before scatter on 52 missing generated/plugin metadata DLLs under `Temp/bin/Debug`, including `Assembly-CSharp-firstpass.dll`, `RealtimeCSG.dll`, `AmplifyImpostors.*`, `AstarPathfindingProject*`, `Bakery*`, `Crest*`, `GPUInstancer*`, `Hecton8.Editor.dll`, `Hecton8.Input.dll`, `Hecton8.World.Dots.dll`, `MapMagic*`, `MoreMountains.*`, and `Unity.RenderPipelines.Universal.Editor.dll`.
+- Targeted scatter-domain forbidden scan found no private local `NativeArray`, persistent allocator use, direct `H8Memory.Allocate`, legacy `EventBus`, managed delegates, Unity `Update` methods, scene search, `Debug.Log`, `string.Format`, `Instantiate`, or `DrawMeshInstancedIndirect`.
+- Precise shader scan found no wave intrinsics, `groupshared`, or memory barriers; only the expected 64-thread `numthreads` declaration remains.
+- Touched-file `git diff --check -- <paths>` reports only LF-to-CRLF warnings. Repository-wide `git diff --check` is not clean because unrelated `Docs/AgentLogs/Dump_COMPILE_ERROR.txt` has trailing whitespace.
+
+## 2026-05-17 Continued Pass: Compute Cast Overflow and Biolum Poison Hardening
+
+What was wrong:
+- `GpuScatterLodCull.compute` sanitized NaN/Inf, but finite oversized constants could still reach `uint` casts for instance count and frame index.
+- A stale or corrupt constant buffer could make backend-specific float-to-uint behavior decide how much flora gets appended.
+- `ResolveIndirectVegetationGlobalBiolum` used global params, AUP offset, clock, and state arrays without finite guards.
+
+What was done:
+- Added a finite range sanitizer before compute `uint` casts.
+- Clamped resolved instance count against capacity before conversion.
+- Clamped frame index to a 24-bit float-exact range before conversion.
+- Capped max cull distance squared at `250000.0`, matching the 500m high-tier contract.
+- Capped motion strength to `2.0` before writing motion vectors.
+- Sanitized global biolum params, offset, clock, state, secondary state, RGB, and intensity before high-tier spark/haze/overdrive emission.
+
+Cinematic cheats used:
+- Kept high-tier global biolum spark/haze overdrive as a visual fake.
+- Low/MX350 still gets cheap culling and deformation; corrupt constants now fail closed instead of drawing or smearing a bad population.
+
+Exact Microseconds saved:
+- No measured microseconds claimed.
+- Added scalar guards; exact GPU cost is PENDING PROFILER.
+- Prevented failure mode: oversized finite constants no longer cast directly into dispatch-visible counts.
+
+Validation:
+- Forbidden scatter-domain scan clean.
+- Precise shader scan found no wave intrinsics, `groupshared`, or memory barriers; only the expected 64-thread `numthreads` remains.
+- Cast-overflow scan found no remaining `(uint)SanitizeNonNegative` or direct `_Hecton` uint casts.
+- `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false -m:1 -v:minimal -clp:ErrorsOnly` succeeded with 0 warnings/0 errors.
+- `dotnet build Assembly-CSharp.csproj --no-dependencies --disable-build-servers -p:UseSharedCompilation=false -m:1 -v:minimal -clp:ErrorsOnly` remains blocked before scatter on missing `Temp/bin/Debug/Assembly-CSharp-firstpass.dll` and `Temp/bin/Debug/RealtimeCSG.dll`.
+- Touched-file `git diff --check -- <paths>` reports only LF-to-CRLF warnings.
+
+## 2026-05-17 Continued Pass: External Position Poison and Shader Import Hardening
+
+What was wrong:
+- External producer positions still entered several shader deformation/emission paths directly after radius/speed sanitation.
+- A poisoned interaction, impact, player, wake, wash, predator, or flash position could still produce NaN motion/depth/shadow/lit output.
+- Static scan found depth and shadow shader import defects: `float` variables were assigned `float3` player positions.
+
+What was done:
+- Lit pass now sanitizes wake/wash centers and wash velocity, skips poisoned interaction velocities/positions, skips poisoned impact/predator positions, disables poisoned flash positions, and fails player bend closed on poisoned player position.
+- Depth, shadow, and motion-vector passes now skip poisoned interaction lanes and fail player bend closed on poisoned player position.
+- Depth pass also skips poisoned impact positions.
+- Fixed the depth/shadow scalar/vector player-position assignments.
+
+Cinematic cheats used:
+- Low/MX350 keeps cheap bend/deformation fakes and collapses poisoned producers to zero/skipped influence.
+- High/Ultra keeps wake/wash, predator dimming, flash boost, global biolum, SSS, caustics, and visual payloads without letting external producer poison spread through the frame.
+
+Exact Microseconds saved:
+- No measured microseconds claimed.
+- Added finite guards have exact GPU cost PENDING PROFILER.
+- Avoided failure mode: malformed external positions no longer corrupt lit, depth, shadow, or motion-vector output.
+
+Validation:
+- No dotnet rebuild was run for this incremental shader polish per direction.
+- Scalar/vector shader mismatch scan returned no matches.
+- Position-lane scan shows player positions paired with finite guards and interaction/impact/flash lanes guarded or skipped.
+- Forbidden scatter-domain scan clean.
+- Precise shader scan found no wave intrinsics, `groupshared`, or memory barriers; only expected 64-thread `numthreads` remains.
+- Touched-file `git diff --check -- <paths>` reports only LF-to-CRLF warnings.
+
+## 2026-05-17 Continued Pass: Legacy Scatter Compute Hardening
+
+What was wrong:
+- `Hecton_GpuScatter.compute` was an adjacent scatter compute asset with unchecked count casts into uint-visible paths.
+- The compact kernel had `DeviceMemoryBarrierWithGroupSync()` without groupshared state, which adds synchronization noise and does not synchronize across dispatches.
+- Height, biome, frustum, depth, terrain, cave, and compaction lanes did not consistently fail closed on non-finite input.
+
+What was done:
+- Added finite and count-sanitizer helpers to `Hecton_GpuScatter.compute`.
+- Clamped grid resolution, candidate count, density bin count, dither frame, biome ID, foveated cadence, and density writes before uint use.
+- Sanitized height map samples, biome heatmap samples, frustum planes, clip/depth inputs, terrain/camera vectors, scale/radius, cave SDF inputs, and compaction distance.
+- Removed the unused device memory barrier from compaction.
+
+Cinematic cheats used:
+- Low/MX350 keeps cheap foveated/dither scatter generation and density bins.
+- High/Ultra can spend on denser scatter while poison constants fail closed instead of backend-specific uint overflow.
+
+Exact Microseconds saved:
+- No measured microseconds claimed.
+- Removed one group-sync barrier from the compact kernel; exact GPU impact is PENDING PROFILER.
+- Added scalar finite guards; exact GPU cost is PENDING PROFILER.
+
+Validation:
+- No dotnet rebuild was run for this incremental shader polish.
+- Legacy compute scan found no wave intrinsics, no `groupshared`, and no memory barriers.
+- Thread-group scan reports only three `numthreads(HECTON_SCATTER_THREADS, 1, 1)` declarations with `HECTON_SCATTER_THREADS = 64`.
+- Touched-file `git diff --check -- <paths>` reports only LF-to-CRLF warnings.

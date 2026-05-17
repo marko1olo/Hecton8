@@ -121,14 +121,13 @@ half3 H8WaterExtinctionSampleRgbActive(float depth01, half turbidityMultiplier, 
 
 half3 H8WaterExtinctionResolveRgbByWorld(float3 positionWS, half turbidityMultiplier)
 {
-    half3 analytical = H8WaterExtinctionAnalyticalRgbByWorld(positionWS, turbidityMultiplier);
 #if !defined(H8_WATER_EXTINCTION_LUT_ENABLED)
-    return analytical;
+    return H8WaterExtinctionAnalyticalRgbByWorld(positionWS, turbidityMultiplier);
 #else
     float active = H8WaterExtinctionActive();
     [branch]
     if (active <= 0.0)
-        return analytical;
+        return H8WaterExtinctionAnalyticalRgbByWorld(positionWS, turbidityMultiplier);
 
     return max(H8WaterExtinctionSampleRgbActive(H8WaterExtinctionDepth01FromWorld(positionWS), turbidityMultiplier, active), half3(0.0h, 0.0h, 0.0h));
 #endif
@@ -136,14 +135,13 @@ half3 H8WaterExtinctionResolveRgbByWorld(float3 positionWS, half turbidityMultip
 
 half3 H8WaterExtinctionResolveRgbByDepthMeters(float depthMeters, half turbidityMultiplier)
 {
-    half3 analytical = H8WaterExtinctionAnalyticalRgbByDepthMeters(depthMeters, turbidityMultiplier);
 #if !defined(H8_WATER_EXTINCTION_LUT_ENABLED)
-    return analytical;
+    return H8WaterExtinctionAnalyticalRgbByDepthMeters(depthMeters, turbidityMultiplier);
 #else
     float active = H8WaterExtinctionActive();
     [branch]
     if (active <= 0.0)
-        return analytical;
+        return H8WaterExtinctionAnalyticalRgbByDepthMeters(depthMeters, turbidityMultiplier);
 
     return max(H8WaterExtinctionSampleRgbActive(H8WaterExtinctionDepth01FromMeters(depthMeters), turbidityMultiplier, active), half3(0.0h, 0.0h, 0.0h));
 #endif
@@ -154,10 +152,17 @@ float H8WaterExtinctionInterleavedGradientNoise(float2 pixel)
     return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
 }
 
-half3 H8WaterExtinctionApplyFogTint(half3 fogColor, half3 extinctionColor, half blend01)
+half3 H8WaterExtinctionApplyFogTint(
+    half3 fogColor,
+    half3 extinctionColor,
+    half blend01,
+    half3 extinctionFloor,
+    half3 abyssFloor)
 {
-    half3 tintedFog = fogColor * max(extinctionColor, half3(0.04h, 0.08h, 0.16h));
-    return lerp(fogColor, max(tintedFog, half3(0.0015h, 0.0023h, 0.0031h)), saturate(blend01));
+    half3 safeAbyssFloor = max(abyssFloor, half3(0.0h, 0.0h, 0.0h));
+    half3 safeExtinctionFloor = max(extinctionFloor, safeAbyssFloor);
+    half3 tintedFog = fogColor * max(extinctionColor, safeExtinctionFloor);
+    return lerp(fogColor, max(tintedFog, safeAbyssFloor), saturate(blend01));
 }
 
 #endif

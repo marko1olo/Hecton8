@@ -1568,7 +1568,7 @@ namespace Hecton8.UI
                 receiveShadows = false,
                 motionVectorMode = MotionVectorGenerationMode.ForceNoMotion
             };
-            Graphics.RenderMeshIndirect(renderParams, mesh, _radarArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _radarArgsBuffer, 1, 0);
         }
 
         private void RenderDamageHologram()
@@ -1608,7 +1608,7 @@ namespace Hecton8.UI
             Vector4 anchorColumn = hologramLocalToWorld.GetColumn(3);
             Vector3 anchorPosition = new Vector3(anchorColumn.x, anchorColumn.y, anchorColumn.z);
             Bounds bounds = new Bounds(anchorPosition, Vector3.one * ResolveDamageHologramBoundsSize());
-            Graphics.DrawMeshInstancedIndirect(
+            UnityEngine.Graphics.DrawMeshInstancedIndirect(
                 mesh,
                 0,
                 _damageRuntimeMaterial,

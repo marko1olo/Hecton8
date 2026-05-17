@@ -52,14 +52,22 @@ namespace Hecton8.UI.Navigation
 
     public static class DiegeticCompassSignals
     {
-        private const uint CompassCalibrationSourceHash = 0xC06A5511u;
-        private const uint CompassAnomalySourceHash = 0xC06A5512u;
+        private const uint CompassCalibrationLaneHash = 0xC06A5511u;
+        private const uint CompassAnomalyLaneHash = 0xC06A5512u;
+
+        public static void ConfigureOwnedLanes()
+        {
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<AnomalyProximitySignal>.EnsureInitialized();
+            SignalBus<CompassCalibratedSignal>.EnsureInitialized();
+        }
 
         public static void PublishCalibration(uint frame, float quality01)
         {
+            ConfigureOwnedLanes();
             CompassCalibratedSignal signal = new CompassCalibratedSignal
             {
-                SourceHash = CompassCalibrationSourceHash,
+                SourceHash = CompassCalibrationLaneHash,
                 Frame = frame,
                 CalibrationQuality01 = math.saturate(quality01),
                 Flags = 1
@@ -69,12 +77,13 @@ namespace Hecton8.UI.Navigation
 
         public static void PublishAnomalyProximity(in AbsoluteUniversePosition sourceAup, uint frame, float proximity01, float interference01)
         {
+            ConfigureOwnedLanes();
             AnomalyProximitySignal signal = new AnomalyProximitySignal
             {
                 SourceAup = sourceAup,
                 Proximity01 = math.saturate(proximity01),
                 Interference01 = math.saturate(interference01),
-                SourceHash = CompassAnomalySourceHash,
+                SourceHash = CompassAnomalyLaneHash,
                 Frame = frame,
                 Flags = 1
             };
@@ -220,7 +229,6 @@ namespace Hecton8.UI.Navigation
 
         private void OnDisable()
         {
-            CompletePendingJob();
             TryUnregisterTickables();
             TryUnregisterService();
             ClearCompassShaderGlobals();
@@ -228,7 +236,6 @@ namespace Hecton8.UI.Navigation
 
         private void OnDestroy()
         {
-            CompletePendingJob();
             ReleaseIndirectBuffers();
         }
 
@@ -379,9 +386,7 @@ namespace Hecton8.UI.Navigation
 
         private void ConfigureSignalLanes()
         {
-            GlobalSignals.InitializeAllQueues();
-            SignalBus<AnomalyProximitySignal>.EnsureInitialized();
-            SignalBus<CompassCalibratedSignal>.EnsureInitialized();
+            DiegeticCompassSignals.ConfigureOwnedLanes();
 
             SignalBus<SurvivalVitalsChangedSignal>.EnsureInitialized();
             SignalBus<SystemHealthSignal>.EnsureInitialized();
@@ -415,40 +420,55 @@ namespace Hecton8.UI.Navigation
             return true;
         }
 
-        private bool TryGetExistingStateBuffer(out NativeArray<CompassStateDTO> stateBuffer)
+        private bool TryGetExistingStateBuffer(out NativeSlice<CompassStateDTO> stateBuffer)
         {
             stateBuffer = default;
             IDataVault vault = _vault;
-            return vault != null &&
-                   vault.TryGetBuffer(BufferID.CompassState, out stateBuffer) &&
-                   stateBuffer.IsCreated &&
-                   stateBuffer.Length >= StateLength;
+            if (vault == null ||
+                !vault.TryGetBuffer<CompassStateDTO>(BufferID.CompassState, out var buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < StateLength)
+            {
+                return false;
+            }
+
+            stateBuffer = new NativeSlice<CompassStateDTO>(buffer);
+            return true;
         }
 
-        private bool TryGetExistingPresentationBuffer(out NativeArray<CompassPresentationStateDTO> presentationBuffer)
+        private bool TryGetExistingPresentationBuffer(out NativeSlice<CompassPresentationStateDTO> presentationBuffer)
         {
             presentationBuffer = default;
             IDataVault vault = _vault;
-            return vault != null &&
-                   vault.TryGetBuffer(BufferID.CompassPresentationState, out presentationBuffer) &&
-                   presentationBuffer.IsCreated &&
-                   presentationBuffer.Length >= StateLength;
+            if (vault == null ||
+                !vault.TryGetBuffer<CompassPresentationStateDTO>(BufferID.CompassPresentationState, out var buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < StateLength)
+            {
+                return false;
+            }
+
+            presentationBuffer = new NativeSlice<CompassPresentationStateDTO>(buffer);
+            return true;
         }
 
-        private bool TryGetPresentationBuffer(out NativeArray<CompassPresentationStateDTO> presentationBuffer)
+        private bool TryGetPresentationBuffer(out NativeSlice<CompassPresentationStateDTO> presentationBuffer)
         {
             presentationBuffer = default;
             IDataVault vault = _vault;
             if (vault == null)
                 return false;
 
-            presentationBuffer = vault.GetBuffer<CompassPresentationStateDTO>(
+            var buffer = vault.GetBuffer<CompassPresentationStateDTO>(
                 BufferID.CompassPresentationState,
                 StateLength,
-                SystemID.UI,
-                NativeArrayOptions.ClearMemory);
+                SystemID.UI);
 
-            return presentationBuffer.IsCreated && presentationBuffer.Length >= StateLength;
+            if (!buffer.IsCreated || buffer.Length < StateLength)
+                return false;
+
+            presentationBuffer = new NativeSlice<CompassPresentationStateDTO>(buffer);
+            return true;
         }
 
         private void ResetPresentationState(bool resetDialMatrix)
@@ -523,9 +543,9 @@ namespace Hecton8.UI.Navigation
         }
 
         private bool TryGetCompassBuffers(
-            out NativeArray<CompassStateDTO> stateBuffer,
-            out NativeArray<float> outputBuffer,
-            out NativeArray<CompassBlackBoxEntry> blackBox)
+            out NativeSlice<CompassStateDTO> stateBuffer,
+            out NativeSlice<float> outputBuffer,
+            out NativeSlice<CompassBlackBoxEntry> blackBox)
         {
             stateBuffer = default;
             outputBuffer = default;
@@ -535,30 +555,35 @@ namespace Hecton8.UI.Navigation
             if (vault == null)
                 return false;
 
-            stateBuffer = vault.GetBuffer<CompassStateDTO>(
+            var state = vault.GetBuffer<CompassStateDTO>(
                 BufferID.CompassState,
                 StateLength,
-                SystemID.UI,
-                NativeArrayOptions.ClearMemory);
+                SystemID.UI);
 
-            outputBuffer = vault.GetBuffer<float>(
+            var output = vault.GetBuffer<float>(
                 BufferID.CompassHeadingOutput,
                 (int)CompassOutputSlot.Count,
-                SystemID.UI,
-                NativeArrayOptions.ClearMemory);
+                SystemID.UI);
 
-            blackBox = vault.GetBuffer<CompassBlackBoxEntry>(
+            var telemetry = vault.GetBuffer<CompassBlackBoxEntry>(
                 BufferID.CompassBlackBox,
                 BlackBoxCapacity,
-                SystemID.UI,
-                NativeArrayOptions.ClearMemory);
+                SystemID.UI);
 
-            return stateBuffer.IsCreated &&
-                   stateBuffer.Length >= StateLength &&
-                   outputBuffer.IsCreated &&
-                   outputBuffer.Length >= (int)CompassOutputSlot.Count &&
-                   blackBox.IsCreated &&
-                   blackBox.Length >= BlackBoxCapacity;
+            if (!state.IsCreated ||
+                state.Length < StateLength ||
+                !output.IsCreated ||
+                output.Length < (int)CompassOutputSlot.Count ||
+                !telemetry.IsCreated ||
+                telemetry.Length < BlackBoxCapacity)
+            {
+                return false;
+            }
+
+            stateBuffer = new NativeSlice<CompassStateDTO>(state);
+            outputBuffer = new NativeSlice<float>(output);
+            blackBox = new NativeSlice<CompassBlackBoxEntry>(telemetry);
+            return true;
         }
 
         private void TryRegisterService()
@@ -737,6 +762,7 @@ namespace Hecton8.UI.Navigation
             {
                 State = stateBuffer,
                 Output = outputBuffer,
+                BlackBox = blackBox,
                 DeltaSeconds = deltaTime,
                 NoiseTime = state.NoiseClockSeconds,
                 HeadingCatchupRate = headingCatchupRate,
@@ -789,7 +815,6 @@ namespace Hecton8.UI.Navigation
                 DumpBlackBoxOnce(state.BlackBoxCursor, blackBox);
             }
 
-            WriteBlackBox(ref state, blackBox);
             stateBuffer[0] = state;
         }
 
@@ -909,7 +934,7 @@ namespace Hecton8.UI.Navigation
 
             Bounds bounds = indirectDrawBounds;
             bounds.center = position;
-            Graphics.DrawMeshInstancedIndirect(
+            UnityEngine.Graphics.DrawMeshInstancedIndirect(
                 dialMesh,
                 0,
                 dialIndirectMaterial,
@@ -949,7 +974,7 @@ namespace Hecton8.UI.Navigation
 
             Matrix4x4 matrix = Matrix4x4.TRS(position, rotation, scale);
             var mapped = writeBuffer.LockBufferForWrite<Matrix4x4>(0, 1);
-            UnsafeUtility.MemCpy(NativeArrayUnsafeUtility.GetUnsafePtr(mapped), UnsafeUtility.AddressOf(ref matrix), DialMatrixStrideBytes);
+            UnsafeUtility.MemCpy(mapped.GetUnsafePtr(), UnsafeUtility.AddressOf(ref matrix), DialMatrixStrideBytes);
             writeBuffer.UnlockBufferAfterWrite<Matrix4x4>(1);
 
             presentation.DialMatrixWriteIndex = writeIndex ^ 1;
@@ -1148,7 +1173,7 @@ namespace Hecton8.UI.Navigation
             var mapped = _indirectArgsBuffer.LockBufferForWrite<uint>(0, _indirectArgs.Length);
             fixed (uint* source = _indirectArgs)
             {
-                UnsafeUtility.MemCpy(NativeArrayUnsafeUtility.GetUnsafePtr(mapped), source, sizeof(uint) * _indirectArgs.Length);
+                UnsafeUtility.MemCpy(mapped.GetUnsafePtr(), source, sizeof(uint) * _indirectArgs.Length);
             }
 
             _indirectArgsBuffer.UnlockBufferAfterWrite<uint>(_indirectArgs.Length);
@@ -1196,9 +1221,9 @@ namespace Hecton8.UI.Navigation
             return new float3((float)velocity.x, (float)velocity.y, (float)velocity.z);
         }
 
-        private static void WriteBlackBox(ref CompassStateDTO state, NativeArray<CompassBlackBoxEntry> blackBox)
+        private static void WriteBlackBox(ref CompassStateDTO state, NativeSlice<CompassBlackBoxEntry> blackBox)
         {
-            if (!blackBox.IsCreated || blackBox.Length < BlackBoxCapacity)
+            if (blackBox.Length < BlackBoxCapacity)
                 return;
 
             int cursor = state.BlackBoxCursor;
@@ -1226,9 +1251,9 @@ namespace Hecton8.UI.Navigation
             state.BlackBoxCursor = cursor;
         }
 
-        private void DumpBlackBoxOnce(int blackBoxCursor, NativeArray<CompassBlackBoxEntry> blackBox)
+        private void DumpBlackBoxOnce(int blackBoxCursor, NativeSlice<CompassBlackBoxEntry> blackBox)
         {
-            if (_blackBoxDumped || !blackBox.IsCreated)
+            if (_blackBoxDumped || blackBox.Length < BlackBoxCapacity)
                 return;
 
             _blackBoxDumped = true;
@@ -1378,8 +1403,9 @@ namespace Hecton8.UI.Navigation
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct GyroDriftJob : IJob
         {
-            public NativeArray<CompassStateDTO> State;
-            public NativeArray<float> Output;
+            public NativeSlice<CompassStateDTO> State;
+            public NativeSlice<float> Output;
+            public NativeSlice<CompassBlackBoxEntry> BlackBox;
             public float DeltaSeconds;
             public float NoiseTime;
             public float HeadingCatchupRate;
@@ -1451,6 +1477,7 @@ namespace Hecton8.UI.Navigation
                 state.MaxGyroDriftDegrees = maxDrift;
                 state.CalibrationCount = CalibrationCount;
                 state.Flags = flags;
+                WriteBlackBox(ref state, BlackBox);
                 State[0] = state;
 
                 Output[(int)CompassOutputSlot.CurrentHeadingDegrees] = currentHeading;

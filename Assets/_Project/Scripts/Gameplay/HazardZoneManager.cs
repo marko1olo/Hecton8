@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -10,7 +11,7 @@ using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 56)]
     internal struct HazardVolumeData
     {
         public double3 AbsoluteUniversePosition;
@@ -26,7 +27,7 @@ namespace Hecton8.Gameplay
         public byte VehicleToxicMudBroadphase;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 68)]
     internal struct HazardExposureJobResult
     {
         public float PlayerRadiation;
@@ -62,7 +63,7 @@ namespace Hecton8.Gameplay
         public float3 PlayerHalfExtents;
         public double3 VehicleCenter;
         public float3 VehicleHalfExtents;
-        public NativeArray<HazardExposureJobResult> Result;
+        public NativeSlice<HazardExposureJobResult> Result;
 
         public void Execute()
         {
@@ -270,7 +271,7 @@ namespace Hecton8.Gameplay
         private NativeArray<int> _volumeSpatialHandles;
         private NativeArray<float> _volumeCurveLutSamples;
         private NativeArray<HazardVolumeData> _jobVolumes;
-        private NativeArray<HazardExposureJobResult> _jobResult;
+        private VaultBufferHandle<HazardExposureJobResult> _jobResultHandle;
         private NativeArray<byte> _candidateVolumeFlags;
         private JobHandle _jobHandle;
         private HectonSpatialHash _spatialHash;
@@ -665,8 +666,8 @@ namespace Hecton8.Gameplay
             _volumeSpatialHandles = new NativeArray<int>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _volumeCurveLutSamples = new NativeArray<float>(safeCapacity * HazardZoneProfile.IntensityLutSampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _jobVolumes = new NativeArray<HazardVolumeData>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _jobResult = new NativeArray<HazardExposureJobResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _candidateVolumeFlags = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _ = TryResolveHazardExposureResultBuffer(out _);
             _spatialHash = new HectonSpatialHash(
                 safeCapacity,
                 safeCapacity * 6,
@@ -678,7 +679,6 @@ namespace Hecton8.Gameplay
             NativeMemorySentinel.RegisterNativeArray(_volumeSpatialHandles, nameof(HazardZoneManager), nameof(_volumeSpatialHandles), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_volumeCurveLutSamples, nameof(HazardZoneManager), nameof(_volumeCurveLutSamples), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_jobVolumes, nameof(HazardZoneManager), nameof(_jobVolumes), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_jobResult, nameof(HazardZoneManager), nameof(_jobResult), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_candidateVolumeFlags, nameof(HazardZoneManager), nameof(_candidateVolumeFlags), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeList(_spatialQueryHandles, nameof(HazardZoneManager), nameof(_spatialQueryHandles), NativeAllocationLifetime.Session);
         }
@@ -724,12 +724,7 @@ namespace Hecton8.Gameplay
                 _jobVolumes = default;
             }
 
-            if (_jobResult.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_jobResult);
-                _jobResult.Dispose(disposeHandle);
-                _jobResult = default;
-            }
+            _jobResultHandle = default;
 
             if (_candidateVolumeFlags.IsCreated)
             {
@@ -841,7 +836,13 @@ namespace Hecton8.Gameplay
 
             _jobRunning = false;
 
-            HazardExposureJobResult result = _jobResult[0];
+            if (!TryResolveHazardExposureResultBuffer(out NativeArray<HazardExposureJobResult> jobResult))
+            {
+                ClearExposureState();
+                return true;
+            }
+
+            HazardExposureJobResult result = jobResult[0];
             _playerHazardIntensity[(int)HazardType.Radiation] = ClampExposure(result.PlayerRadiation);
             _playerHazardIntensity[(int)HazardType.Heat] = ClampExposure(result.PlayerHeat);
             _playerHazardIntensity[(int)HazardType.Toxicity] = ClampExposure(result.PlayerToxicity);
@@ -974,7 +975,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _jobResult[0] = default;
+            if (!TryResolveHazardExposureResultBuffer(out NativeArray<HazardExposureJobResult> jobResult))
+            {
+                ClearExposureState();
+                return;
+            }
+
+            jobResult[0] = default;
             EvaluateHazardExposureJob job = new EvaluateHazardExposureJob
             {
                 Volumes = _jobVolumes,
@@ -987,11 +994,34 @@ namespace Hecton8.Gameplay
                 PlayerHalfExtents = playerHalfExtents,
                 VehicleCenter = vehicleCenterAup.ToAbsoluteDouble3(),
                 VehicleHalfExtents = vehicleHalfExtents,
-                Result = _jobResult
+                Result = new NativeSlice<HazardExposureJobResult>(jobResult)
             };
 
             _jobHandle = job.Schedule();
             _jobRunning = true;
+        }
+
+        private bool TryResolveHazardExposureResultBuffer(out NativeArray<HazardExposureJobResult> jobResult)
+        {
+            jobResult = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            if (!_jobResultHandle.IsCreated)
+            {
+                _jobResultHandle = vault.GetBufferHandle<HazardExposureJobResult>(
+                    BufferID.HazardExposureJobResult,
+                    1,
+                    SystemID.GameplayPlayer,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_jobResultHandle.IsCreated)
+                return false;
+
+            jobResult = _jobResultHandle.Resolve(vault);
+            return jobResult.IsCreated && jobResult.Length >= 1;
         }
 
         private bool TryBuildVehicleQueryBounds(out float3 halfExtents, out AbsoluteUniversePosition centerAup)

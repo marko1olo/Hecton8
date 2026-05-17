@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using Hecton8.Core;
 using Hecton8.Core.Data;
 using Hecton8.Core.Memory;
@@ -33,9 +34,13 @@ namespace Hecton8.Tests.PlayMode
 
             try
             {
+                uint expectedBabelCrc32;
                 using (StaticDataStore store = new StaticDataStore(activeVault))
                 {
                     Assert.IsTrue(store.Open(bake.StaticDataPath));
+                    expectedBabelCrc32 = store.BabelCrc32;
+                    Assert.AreEqual(bake.BabelCrc32, expectedBabelCrc32);
+
                     H8StaticDataSanityReport report = H8StaticDataSanity.ScanForNaNs(store);
                     Assert.IsTrue(report.IsClean, report.Message);
 
@@ -43,6 +48,31 @@ namespace Hecton8.Tests.PlayMode
                     ref readonly H8ItemStaticRecord scrap = ref store.GetRecord<H8ItemStaticRecord>(scrapHash);
                     Assert.AreEqual(scrapHash, scrap.Hash);
                     Assert.AreEqual(12, scrap.Cost);
+
+                    ref readonly H8PhysicsStaticRecord wrongType = ref store.GetRecord<H8PhysicsStaticRecord>(scrapHash);
+                    Assert.AreEqual(0u, wrongType.Hash);
+                    Assert.IsTrue(store.TryReload(bake.StaticDataPath));
+                    Assert.AreEqual(expectedBabelCrc32, store.BabelCrc32);
+                    store.Shutdown();
+                    store.Shutdown();
+                }
+
+                using (BabelDictionaryStore babel = new BabelDictionaryStore(activeVault))
+                {
+                    Assert.IsTrue(babel.Open(bake.BabelPath, expectedBabelCrc32));
+                    Assert.AreEqual(expectedBabelCrc32, babel.PayloadCrc32);
+
+                    uint nameHash = H8DataHashTool.ComputeFnv1a32("Scrap Metal".AsSpan());
+                    ReadOnlySpan<byte> utf8 = babel.GetUtf8(nameHash);
+                    Assert.Greater(utf8.Length, 0);
+                    Assert.AreEqual("Scrap Metal", Encoding.UTF8.GetString(utf8));
+
+                    ReadOnlySpan<byte> missing = babel.GetUtf8(0xDEADBEEFu);
+                    Assert.AreEqual(0, missing.Length);
+                    Assert.IsTrue(babel.TryReload(bake.BabelPath, expectedBabelCrc32));
+                    Assert.AreEqual(expectedBabelCrc32, babel.PayloadCrc32);
+                    babel.Shutdown();
+                    babel.Shutdown();
                 }
             }
             finally
@@ -53,6 +83,92 @@ namespace Hecton8.Tests.PlayMode
                     ownedVault.Dispose();
                 }
             }
+        }
+
+        [Test]
+        public void Bake_RejectsIdentityColumnNotFirst()
+        {
+            string source = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Data", "Balance"));
+            string root = Path.Combine(Path.GetTempPath(), "h8_static_data_bad_identity");
+            ResetDirectory(root);
+            CopyBalanceCsvs(source, root);
+
+            string itemsPath = Path.Combine(root, "Items.csv");
+            string text = File.ReadAllText(itemsPath);
+            File.WriteAllText(itemsPath, text.Replace("Id,version_id", "version_id,Id"));
+
+            H8DataBakeResult bake = H8DataBaker.Bake(root, Path.Combine(root, "Baked"));
+            Assert.IsFalse(bake.Success);
+            StringAssert.Contains("[CRITICAL_DATA_SCHEMA]", bake.Message);
+        }
+
+        [Test]
+        public void Bake_RejectsNonCanonicalIdentityKey()
+        {
+            string source = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Data", "Balance"));
+            string root = Path.Combine(Path.GetTempPath(), "h8_static_data_bad_key");
+            ResetDirectory(root);
+            CopyBalanceCsvs(source, root);
+
+            string itemsPath = Path.Combine(root, "Items.csv");
+            string text = File.ReadAllText(itemsPath);
+            File.WriteAllText(itemsPath, text.Replace("scrap_metal", "Scrap Metal"));
+
+            H8DataBakeResult bake = H8DataBaker.Bake(root, Path.Combine(root, "Baked"));
+            Assert.IsFalse(bake.Success);
+            StringAssert.Contains("[CRITICAL_DATA_KEY]", bake.Message);
+        }
+
+        [Test]
+        public void Bake_RejectsUnclosedQuotedField()
+        {
+            string source = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Data", "Balance"));
+            string root = Path.Combine(Path.GetTempPath(), "h8_static_data_bad_quote");
+            ResetDirectory(root);
+            CopyBalanceCsvs(source, root);
+
+            string itemsPath = Path.Combine(root, "Items.csv");
+            string[] lines = File.ReadAllLines(itemsPath);
+            lines[1] = lines[1].Replace("Scrap Metal", "\"Scrap Metal");
+            File.WriteAllLines(itemsPath, lines);
+
+            H8DataBakeResult bake = H8DataBaker.Bake(root, Path.Combine(root, "Baked"));
+            Assert.IsFalse(bake.Success);
+            StringAssert.Contains("Unclosed quoted field", bake.Message);
+        }
+
+        [Test]
+        public void Bake_RejectsRowWidthDrift()
+        {
+            string source = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Data", "Balance"));
+            string root = Path.Combine(Path.GetTempPath(), "h8_static_data_bad_width");
+            ResetDirectory(root);
+            CopyBalanceCsvs(source, root);
+
+            string itemsPath = Path.Combine(root, "Items.csv");
+            string[] lines = File.ReadAllLines(itemsPath);
+            lines[1] = lines[1] + ",orphan_cell";
+            File.WriteAllLines(itemsPath, lines);
+
+            H8DataBakeResult bake = H8DataBaker.Bake(root, Path.Combine(root, "Baked"));
+            Assert.IsFalse(bake.Success);
+            StringAssert.Contains("cells; expected", bake.Message);
+        }
+
+        private static void CopyBalanceCsvs(string source, string destination)
+        {
+            Directory.CreateDirectory(destination);
+            string[] files = Directory.GetFiles(source, "*.csv");
+            for (int i = 0; i < files.Length; i++)
+                File.Copy(files[i], Path.Combine(destination, Path.GetFileName(files[i])), true);
+        }
+
+        private static void ResetDirectory(string path)
+        {
+            if (Directory.Exists(path))
+                Directory.Delete(path, true);
+
+            Directory.CreateDirectory(path);
         }
     }
 }

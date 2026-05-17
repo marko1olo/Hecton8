@@ -72,10 +72,13 @@ namespace Hecton8.AI.Cognition
         public static bool TryResolve(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultBuffers buffers)
         {
             buffers = default;
-            if (vault == null || vault.IsAllocationLocked)
+            if (vault == null)
                 return false;
 
             int capacity = math.clamp(requiredSlots, 1, AlphaLeviathanStalkConstants.MaxLeviathanSlots);
+            if (vault.IsAllocationLocked)
+                return TryResolveExisting(vault, capacity, out buffers);
+
             buffers.States = vault.GetBuffer<AlphaLeviathanCognitionState>(
                 BufferID.AlphaLeviathanCognitionState,
                 capacity,
@@ -114,10 +117,13 @@ namespace Hecton8.AI.Cognition
         public static bool TryResolveHandles(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultHandles handles)
         {
             handles = default;
-            if (vault == null || vault.IsAllocationLocked)
+            if (vault == null)
                 return false;
 
             int capacity = math.clamp(requiredSlots, 1, AlphaLeviathanStalkConstants.MaxLeviathanSlots);
+            if (vault.IsAllocationLocked)
+                return TryResolveExistingHandles(vault, capacity, out handles);
+
             handles.States = vault.GetBufferHandle<AlphaLeviathanCognitionState>(
                 BufferID.AlphaLeviathanCognitionState,
                 capacity,
@@ -144,6 +150,63 @@ namespace Hecton8.AI.Cognition
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
             return handles.IsCreated;
+        }
+
+        private static bool TryResolveExisting(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultBuffers buffers)
+        {
+            buffers = default;
+            if (!vault.TryGetBuffer(BufferID.AlphaLeviathanCognitionState, out buffers.States) ||
+                !vault.TryGetBuffer(BufferID.AlphaLeviathanSensoryStimulus, out buffers.SensoryStimuli) ||
+                !vault.TryGetBuffer(BufferID.AlphaLeviathanSteeringOutput, out buffers.SteeringOutputs) ||
+                !vault.TryGetBuffer(BufferID.AlphaLeviathanTelemetryRing, out buffers.TelemetryRing) ||
+                !vault.TryGetBuffer(BufferID.AlphaLeviathanTelemetryCursor, out buffers.TelemetryCursor))
+            {
+                buffers = default;
+                return false;
+            }
+
+            if (!HasRequiredCapacity(in buffers, requiredSlots))
+            {
+                buffers = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryResolveExistingHandles(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultHandles handles)
+        {
+            handles = default;
+            if (!vault.TryGetBufferHandle(BufferID.AlphaLeviathanCognitionState, out handles.States) ||
+                !vault.TryGetBufferHandle(BufferID.AlphaLeviathanSensoryStimulus, out handles.SensoryStimuli) ||
+                !vault.TryGetBufferHandle(BufferID.AlphaLeviathanSteeringOutput, out handles.SteeringOutputs) ||
+                !vault.TryGetBufferHandle(BufferID.AlphaLeviathanTelemetryRing, out handles.TelemetryRing) ||
+                !vault.TryGetBufferHandle(BufferID.AlphaLeviathanTelemetryCursor, out handles.TelemetryCursor))
+            {
+                handles = default;
+                return false;
+            }
+
+            AlphaLeviathanVaultHandles resolved = handles;
+            if (!TryResolveViews(vault, ref resolved, out AlphaLeviathanVaultBuffers buffers) ||
+                !HasRequiredCapacity(in buffers, requiredSlots))
+            {
+                handles = default;
+                return false;
+            }
+
+            handles = resolved;
+            return true;
+        }
+
+        private static bool HasRequiredCapacity(in AlphaLeviathanVaultBuffers buffers, int requiredSlots)
+        {
+            return buffers.IsCreated &&
+                   buffers.States.Length >= requiredSlots &&
+                   buffers.SensoryStimuli.Length >= requiredSlots &&
+                   buffers.SteeringOutputs.Length >= requiredSlots &&
+                   buffers.TelemetryRing.Length >= AlphaLeviathanStalkConstants.TelemetryCapacity &&
+                   buffers.TelemetryCursor.Length > 0;
         }
 
         /// <summary>
@@ -404,6 +467,24 @@ namespace Hecton8.AI.Cognition
         }
 
         /// <summary>
+        /// Cold crash-path dump using generation-checked DataVault handles instead of cached raw views.
+        /// </summary>
+        /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
+        /// <param name="handles">Cached handles. Generations are refreshed on success.</param>
+        /// <param name="projectRoot">Project root path. Pass `C:\hades\Hecton8` from the owner.</param>
+        /// <returns>True when a binary dump was written.</returns>
+        public static bool TryDumpBlackBox(
+            IDataVault vault,
+            ref AlphaLeviathanVaultHandles handles,
+            string projectRoot)
+        {
+            if (!TryResolveViews(vault, ref handles, out AlphaLeviathanVaultBuffers buffers))
+                return false;
+
+            return TryDumpBlackBox(in buffers, projectRoot);
+        }
+
+        /// <summary>
         /// Cold fault path used by the owner after the Burst job has written telemetry flags.
         /// </summary>
         /// <param name="buffers">Resolved DataVault buffer views.</param>
@@ -497,17 +578,24 @@ namespace Hecton8.AI.Cognition
                 cursor = math.clamp(buffers.TelemetryCursor[0], 0, AlphaLeviathanStalkConstants.TelemetryFrames - 1);
 
             uint latestFrame = 0u;
+            bool hasLatestFrame = false;
             for (int i = 0; i < buffers.TelemetryRing.Length; i++)
             {
                 AlphaLeviathanTelemetryEntry entry = buffers.TelemetryRing[i];
-                if (entry.Frame >= latestFrame)
+                if (entry.StateHash != 0u && (!hasLatestFrame || IsFrameNewerOrEqual(entry.Frame, latestFrame)))
                 {
                     latestFrame = entry.Frame;
                     cursor = (int)(latestFrame % AlphaLeviathanStalkConstants.TelemetryFrames);
+                    hasLatestFrame = true;
                 }
             }
 
             return cursor;
+        }
+
+        private static bool IsFrameNewerOrEqual(uint candidateFrame, uint currentFrame)
+        {
+            return candidateFrame == currentFrame || unchecked(candidateFrame - currentFrame) < 0x80000000u;
         }
 
         private static bool TryPromoteDump(string tempPath, string path)

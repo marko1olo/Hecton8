@@ -1,0 +1,12 @@
+START_UTC=2026-05-16T21:26:34.5364079Z
+C:\hades\Hecton8\Assets\_Project\Scripts\SubmarineFluidDynamics.cs(5095,49): error CS9342: Operator resolution is ambiguous between the following members: 'Vector3.operator -(Vector3, Vector3)' and 'float3.operator -(float3, float3)' [C:\hades\Hecton8\Hecton8.Core.csproj]
+
+Build FAILED.
+
+C:\hades\Hecton8\Assets\_Project\Scripts\SubmarineFluidDynamics.cs(5095,49): error CS9342: Operator resolution is ambiguous between the following members: 'Vector3.operator -(Vector3, Vector3)' and 'float3.operator -(float3, float3)' [C:\hades\Hecton8\Hecton8.Core.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:01:03.17
+WRAPPER_EXIT_CODE=1
+WRAPPER_WALL_CLOCK_US=65675626

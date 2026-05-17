@@ -3,6 +3,7 @@ using Hecton8.Core.Memory;
 using System.IO;
 using System.Collections.Generic;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -16,7 +17,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Physics/Tether Manager")]
-    public sealed class TetherManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IOriginShiftListener
+    public sealed class TetherManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, ISlowTickable, IOriginShiftListener
     {
         private const string RuntimeShaderName = "Hecton8/Physics/TetherLineStrip";
         private static readonly int _TetherPositionsId = Shader.PropertyToID("_TetherPositions");
@@ -100,14 +101,24 @@ namespace Hecton8.Physics
         private IDataVault _dataVault;
         private bool _registeredFixedTick;
         private bool _registeredLateFrameTick;
+        private bool _registeredSlowTick;
         private bool _registeredOriginShiftListener;
         private NativeArray<TetherManagerTelemetryEntry> _telemetryRing;
         private NativeArray<int> _telemetryHead;
         private float _fixedStepClockSeconds;
         private int _fixedFrameIndex;
         private bool _telemetryDumped;
+        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
+        private HectonMapMagicVegetationBridge _cachedVegetationBridge;
+        private HectonFluidEngine _cachedFluidEngine;
+        private IWeatherService _cachedWeatherService;
 
         internal uint CurrentFixedFrameIndex => unchecked((uint)math.max(0, _fixedFrameIndex));
+        internal HectonQualityTier CachedQualityTier => _cachedQualityTier;
+        internal IDataVault CachedDataVault => _dataVault;
+        internal HectonMapMagicVegetationBridge CachedVegetationBridge => _cachedVegetationBridge;
+        internal HectonFluidEngine CachedFluidEngine => _cachedFluidEngine;
+        internal IWeatherService CachedWeatherService => _cachedWeatherService;
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 1, Size = 16)]
         private struct TetherManagerTelemetryEntry
@@ -130,11 +141,14 @@ namespace Hecton8.Physics
             }
 
             _renderPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — procedural tether render binding payload — owner: TetherManager
+            RefreshColdDependencyCache();
             EnsureTelemetry();
         }
 
         private void OnEnable()
         {
+            RefreshColdDependencyCache();
+            TryRegisterSlowTickable();
             TryRegisterFixedTickable();
             TryRegisterLateFrameTickable();
 
@@ -149,6 +163,7 @@ namespace Hecton8.Physics
         {
             TryUnregisterFixedTickable();
             TryUnregisterLateFrameTickable();
+            TryUnregisterSlowTickable();
 
             if (_registeredOriginShiftListener)
             {
@@ -202,9 +217,28 @@ namespace Hecton8.Physics
             _registeredLateFrameTick = false;
         }
 
+        private void TryRegisterSlowTickable()
+        {
+            if (_registeredSlowTick || !Application.isPlaying)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredSlowTick = false;
+        }
+
         private void OnDestroy()
         {
             TryUnregisterLateFrameTickable();
+            TryUnregisterFixedTickable();
+            TryUnregisterSlowTickable();
 
             if (_registeredOriginShiftListener)
             {
@@ -236,6 +270,9 @@ namespace Hecton8.Physics
             _telemetryRing = default;
             _telemetryHead = default;
             _dataVault = null;
+            _cachedVegetationBridge = null;
+            _cachedFluidEngine = null;
+            _cachedWeatherService = null;
         }
 
         /// <summary>
@@ -256,7 +293,8 @@ namespace Hecton8.Physics
             if (instance == null)
                 return null;
 
-            instance.Configure(owner, playerMotor, playerBody, payloadBody, payloadCollider, initialDistance);
+            RefreshColdDependencyCache();
+            instance.Configure(owner, playerMotor, playerBody, payloadBody, payloadCollider, initialDistance, _cachedQualityTier);
             if (!_activeInstances.Contains(instance))
                 _activeInstances.Add(instance);
 
@@ -363,6 +401,7 @@ namespace Hecton8.Physics
             _fixedStepClockSeconds = AdvanceFixedStepClock(_fixedStepClockSeconds, fixedDeltaTime);
             int fixedFrameIndex = AdvanceFixedFrameIndex();
             int activeCount = _activeInstances.Count;
+            HectonQualityTier qualityTier = _cachedQualityTier;
             for (int i = activeCount - 1; i >= 0; i--)
             {
                 TetherInstance instance = _activeInstances[i];
@@ -372,7 +411,7 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                TetherLifecycleState state = instance.Simulate(fixedDeltaTime, _fixedStepClockSeconds, fixedFrameIndex, activeCount, maxVisualizedTethers);
+                TetherLifecycleState state = instance.Simulate(fixedDeltaTime, _fixedStepClockSeconds, fixedFrameIndex, activeCount, maxVisualizedTethers, qualityTier);
                 if (state == TetherLifecycleState.Alive)
                     continue;
 
@@ -434,7 +473,7 @@ namespace Hecton8.Physics
             };
 
             float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
-            HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier qualityTier = _cachedQualityTier;
             int visualTier = ResolveTetherVisualTier(qualityTier);
             float crystalDensity = visualTier >= 3 ? 1f : (visualTier >= 2 ? 0.62f : 0f);
             float siltIntensity = visualTier >= 3 ? 0.55f : (visualTier >= 2 ? 0.28f : 0f);
@@ -445,7 +484,7 @@ namespace Hecton8.Physics
                 if (instance == null || !instance.IsActive)
                     continue;
 
-                instance.UpdateVisuals(deltaTime);
+                instance.UpdateVisuals(deltaTime, qualityTier);
                 if (!instance.IsVisualReady)
                     continue;
 
@@ -473,7 +512,7 @@ namespace Hecton8.Physics
                     continue;
 
                 _renderPropertyBlock.SetInt(_TetherIndirectModeId, 0);
-                Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, segmentCount * 6, 1);
+                UnityEngine.Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, segmentCount * 6, 1);
             }
         }
 
@@ -509,7 +548,7 @@ namespace Hecton8.Physics
                 return false;
 
             UploadIndirectTetherArgs(mesh, segmentCount);
-            Graphics.RenderMeshIndirect(renderParams, mesh, _indirectTetherArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _indirectTetherArgsBuffer, 1, 0);
             return true;
         }
 
@@ -612,6 +651,37 @@ namespace Hecton8.Physics
             return instance;
         }
 
+        /// <inheritdoc />
+        public void SlowTick()
+        {
+            RefreshColdDependencyCache();
+        }
+
+        private void RefreshColdDependencyCache()
+        {
+            _cachedQualityTier = SanitizeQualityTier(GlobalRegistry.ScalabilityTier);
+            _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
+            _cachedFluidEngine = GlobalRegistry.Fluid;
+            _cachedWeatherService = GlobalRegistry.Weather;
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+        }
+
+        internal static HectonQualityTier SanitizeQualityTier(HectonQualityTier tier)
+        {
+            switch (tier)
+            {
+                case HectonQualityTier.Low:
+                case HectonQualityTier.Mx350:
+                case HectonQualityTier.Mid:
+                case HectonQualityTier.High:
+                case HectonQualityTier.Ultra:
+                    return tier;
+                default:
+                    return HectonQualityTier.Unknown;
+            }
+        }
+
         private Material ResolveRenderMaterial()
         {
             if (tetherRenderMaterial != null)
@@ -640,7 +710,7 @@ namespace Hecton8.Physics
         internal float ResolveTowSpringStiffness(HeavyTowWinch owner)
         {
             if (towCableProfile != null)
-                return math.max(0f, towCableProfile.SpringStiffness);
+                return SanitizeProfileScalar(towCableProfile.SpringStiffness, 0f, 0f);
 
             return owner != null ? owner.ResolveTowSpringStiffness() : 0f;
         }
@@ -648,7 +718,7 @@ namespace Hecton8.Physics
         internal float ResolveTowOverDampingMultiplier(HeavyTowWinch owner)
         {
             if (towCableProfile != null)
-                return math.max(1f, towCableProfile.OverDampingMultiplier);
+                return SanitizeProfileScalar(towCableProfile.OverDampingMultiplier, 1f, 1f);
 
             return owner != null ? owner.ResolveTowOverDampingMultiplier() : 1f;
         }
@@ -656,9 +726,14 @@ namespace Hecton8.Physics
         internal float ResolveTowSnapTensionThreshold(HeavyTowWinch owner)
         {
             if (towCableProfile != null)
-                return math.max(1f, towCableProfile.SnapTensionThreshold);
+                return SanitizeProfileScalar(towCableProfile.SnapTensionThreshold, 1f, 1f);
 
             return owner != null ? owner.ResolveSnapTensionThreshold() : 1f;
+        }
+
+        private static float SanitizeProfileScalar(float value, float minimum, float fallback)
+        {
+            return math.isfinite(value) ? math.max(minimum, value) : fallback;
         }
 
         private float ResolvePeakTension()
@@ -681,7 +756,6 @@ namespace Hecton8.Physics
             if (_telemetryRing.IsCreated && _telemetryHead.IsCreated)
                 return;
 
-            _dataVault = GlobalRegistry.DataVault;
             if (_dataVault == null)
                 return;
 
@@ -753,7 +827,7 @@ namespace Hecton8.Physics
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Append, FileAccess.Write, FileShare.Read))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(TetherBlackBoxMagic);

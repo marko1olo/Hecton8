@@ -36,7 +36,7 @@ Shader "Hidden/Hecton8/Diagnostics/ArchitectEyeIndirectQuads"
             float3 SafeNormalizeAxis(float3 value, float3 fallback)
             {
                 float lenSq = dot(value, value);
-                if (!(lenSq > 1.0e-6f))
+                if (!(lenSq > 1.0e-6f) || lenSq > 1.0e12f)
                     return fallback;
 
                 return value * rsqrt(lenSq);

@@ -151,7 +151,7 @@ namespace Hecton8.UI
             if (_interpolationEnabled && _hasPreviousSample)
                 UploadInterpolatedVertices();
 
-            Graphics.DrawMesh(
+            UnityEngine.Graphics.DrawMesh(
                 _runtimeMesh,
                 matrix,
                 _runtimeMaterial,

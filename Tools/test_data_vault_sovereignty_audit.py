@@ -74,6 +74,25 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["forbiddenNativeArrayDeclarations"], 2)
             self.assertEqual(payload["declarationFileCount"], 1)
 
+    def test_combined_scan_matches_individual_nativearray_scans(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_vault_combined_audit_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            gameplay = source / "Gameplay" / "StatefulSystem.cs"
+            gameplay.parent.mkdir(parents=True)
+            gameplay.write_text(
+                "private NativeArray<int> _localState;\n"
+                "public void Allocate() { _localState = new NativeArray<int>(4, Allocator.Persistent); }\n",
+                encoding="utf-8",
+            )
+
+            constructor_findings = audit.scan_source_tree(source, root)
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            combined_constructors, combined_declarations = audit.scan_source_tree_with_declarations(source, root)
+
+            self.assertEqual(combined_constructors, constructor_findings)
+            self.assertEqual(combined_declarations, declaration_findings)
+
     def test_no_regression_gate_fails_when_file_count_increases(self) -> None:
         payload = {
             "findings": [

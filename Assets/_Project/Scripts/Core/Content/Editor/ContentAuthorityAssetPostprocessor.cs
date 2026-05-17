@@ -9,6 +9,9 @@ namespace Hecton8.Core.Content.Editor
     public sealed class ContentAuthorityAssetPostprocessor : AssetPostprocessor
     {
         private const float SmallShadowScaleMeters = 0.2f;
+        private const float Lod0ScreenRatio = 1.00f;
+        private const float Lod1ScreenRatio = 0.30f;
+        private const float Lod2ImpostorScreenRatio = 0.05f;
 
         private void OnPostprocessModel(GameObject root)
         {
@@ -67,9 +70,9 @@ namespace Hecton8.Core.Content.Editor
             Renderer[] lod2 = Array.Empty<Renderer>();
             LOD[] lods =
             {
-                new LOD(0.60f, lod0),
-                new LOD(0.30f, lod1),
-                new LOD(0.05f, lod2)
+                new LOD(Lod0ScreenRatio, lod0),
+                new LOD(Lod1ScreenRatio, lod1),
+                new LOD(Lod2ImpostorScreenRatio, lod2)
             };
 
             lodGroup.SetLODs(lods);

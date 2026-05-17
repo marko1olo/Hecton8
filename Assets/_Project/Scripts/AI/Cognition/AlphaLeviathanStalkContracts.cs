@@ -40,6 +40,7 @@ namespace Hecton8.AI.Cognition
         public const double AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble;
         public const float MinimumFogRingMeters = 8f;
         public const float FogEdgeOffsetMeters = 5f;
+        public const float MaxFogDistanceMeters = 2048f;
         public const float DirectionEpsilon = 0.0001f;
         public const double DoubleDirectionEpsilon = 0.0001d;
         public const float NoiseAggressionGainPerSecond = 0.1f;
@@ -47,6 +48,7 @@ namespace Hecton8.AI.Cognition
         public const float LightRetreatDot = 0.9f;
         public const float PlayerGazeBreakDot = 0.75f;
         public const float SonarLureHoldSeconds = 10f;
+        public const float MaxDeltaTimeSeconds = 0.25f;
         public const float LowTierSteeringBlend = 0.2f;
         public const float HighTierSteeringBlend = 0.55f;
         public const float LowTierCadenceSeconds = 0.2f;

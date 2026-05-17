@@ -142,7 +142,7 @@ namespace Hecton8.Optimization.Editor
             try
             {
                 // Copy content from original RT to temp RT
-                Graphics.Blit(rt, tempRT);
+                UnityEngine.Graphics.Blit(rt, tempRT);
                 
                 // Read pixels from both RTs
                 var originalPixels = ReadPixelsFromRT(rt);
@@ -197,13 +197,13 @@ namespace Hecton8.Optimization.Editor
             // Apply format change (create new RT with new format, copy content)
             var oldFormat = rt.format;
             var tempRT = RenderTexture.GetTemporary(rt.width, rt.height, 0, newFormat);
-            Graphics.Blit(rt, tempRT);
+            UnityEngine.Graphics.Blit(rt, tempRT);
             
             // Release old RT and replace reference
             rt.Release();
             rt.format = newFormat;
             rt.Create();
-            Graphics.Blit(tempRT, rt);
+            UnityEngine.Graphics.Blit(tempRT, rt);
             RenderTexture.ReleaseTemporary(tempRT);
             
             // Capture AFTER VRAM

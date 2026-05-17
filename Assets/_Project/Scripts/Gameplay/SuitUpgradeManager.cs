@@ -25,6 +25,7 @@ using System.Threading;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
@@ -105,7 +106,7 @@ namespace Hecton8.Gameplay
         private ulong _effectiveUpgradeMask;
         private SuitStats _baseSuitStats;
         private SuitStats _resolvedSuitStats;
-        private NativeArray<SuitStats> _resolverResult;
+        private VaultBufferHandle<SuitStats> _resolverResultHandle;
         private NativeArray<SuitUpgradeTelemetryEntry> _telemetryRing;
         private uint _meshSignalSequence;
         private uint _telemetrySequence;
@@ -219,15 +220,7 @@ namespace Hecton8.Gameplay
             _runtimeStats = Instantiate(baseStats);
             _baseSuitStats = BuildBaselineSuitStats();
             _resolvedSuitStats = _baseSuitStats;
-            _resolverResult = new NativeArray<SuitStats>(
-                ResolverResultLength,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<SuitStats>[1] - resolver output - owner: SuitUpgradeManager
-            NativeMemorySentinel.RegisterNativeArray(
-                _resolverResult,
-                nameof(SuitUpgradeManager),
-                nameof(_resolverResult),
-                NativeAllocationLifetime.Scene);
+            _ = TryResolveResolverResultBuffer(out _);
             _telemetryRing = new NativeArray<SuitUpgradeTelemetryEntry>(
                 TelemetryCapacity,
                 Allocator.Persistent,
@@ -273,12 +266,7 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterHotSwapListener();
             TryUnregisterService();
-            if (_resolverResult.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_resolverResult);
-                _resolverResult.Dispose();
-                _resolverResult = default;
-            }
+            _resolverResultHandle = default;
 
             if (_telemetryRing.IsCreated)
             {
@@ -988,16 +976,16 @@ namespace Hecton8.Gameplay
             ulong previousEffectiveMask = _effectiveUpgradeMask;
             _upgradeMask = sanitized;
 
-            if (_resolverResult.IsCreated)
+            if (TryResolveResolverResultBuffer(out NativeArray<SuitStats> resolverResult))
             {
                 SuitUpgradeResolverJob job = new SuitUpgradeResolverJob
                 {
                     Upgrades = sanitized,
                     Baseline = _baseSuitStats,
-                    Result = _resolverResult
+                    Result = new NativeSlice<SuitStats>(resolverResult)
                 };
                 job.Run();
-                _resolvedSuitStats = _resolverResult[0];
+                _resolvedSuitStats = resolverResult[0];
             }
             else
             {
@@ -1017,6 +1005,29 @@ namespace Hecton8.Gameplay
             RecordTelemetry(telemetryFlags);
             ApplyResolvedSuitStatsToRuntimeStats(in _resolvedSuitStats);
             RaiseSuitMeshSignalIfChanged(previousEffectiveMask);
+        }
+
+        private bool TryResolveResolverResultBuffer(out NativeArray<SuitStats> resolverResult)
+        {
+            resolverResult = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            if (!_resolverResultHandle.IsCreated)
+            {
+                _resolverResultHandle = vault.GetBufferHandle<SuitStats>(
+                    BufferID.SuitUpgradeResolverResult,
+                    ResolverResultLength,
+                    SystemID.GameplayPlayer,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (!_resolverResultHandle.IsCreated)
+                return false;
+
+            resolverResult = _resolverResultHandle.Resolve(vault);
+            return resolverResult.IsCreated && resolverResult.Length >= ResolverResultLength;
         }
 
         private void ApplyResolvedSuitStatsToRuntimeStats(in SuitStats resolvedStats)

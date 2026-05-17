@@ -432,6 +432,8 @@ namespace Hecton8.Environment
                 : AbsoluteUniversePosition.FromAbsolutePosition(new double3(0d, -250d, 0d));
             double3 origin = originAup.ToAbsoluteDouble3();
             float intensity = _snapshot.SeismicIntensity01;
+            if (!math.isfinite(intensity) || intensity <= 0.001f)
+                return;
 
             for (int i = 0; i < 3; i++)
             {
@@ -447,10 +449,10 @@ namespace Hecton8.Environment
                     SpeciesHash = RockfallSpeciesHash,
                     SourceEntityId = debrisSeed,
                     Intensity01 = intensity,
-                    DebrisKind = 2,
-                    Flags = 1
+                    DebrisKind = DebrisSpawnSignal.DebrisKindRockShard,
+                    Flags = DebrisSpawnSignal.FlagComputeShard
                 };
-                GlobalSignals.Publish(in debris);
+                SignalBus<DebrisSpawnSignal>.Push(in debris);
             }
         }
 

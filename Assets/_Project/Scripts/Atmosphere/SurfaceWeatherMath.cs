@@ -198,7 +198,7 @@ namespace Hecton8.Atmosphere
         private const float SpeedOfSoundMetersPerSecond = HectonPhysicsContract.SoundSpeedAirMetersPerSecondConst;
 
         public SurfaceWeatherJobInput input;
-        public NativeArray<SurfaceWeatherJobOutput> output;
+        public NativeSlice<SurfaceWeatherJobOutput> output;
 
         public void Execute()
         {

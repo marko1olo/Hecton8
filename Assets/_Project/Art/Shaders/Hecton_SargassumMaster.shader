@@ -412,7 +412,8 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half globalBiolumMask = step(0.001h, globalBiolumState.w);
                 biolumColor = lerp(biolumColor, globalBiolumState.rgb, globalBiolumMask);
                 half masterBiolum = max(max((half)_BiolumIntensity.x, 0.0h), globalBiolumState.w);
-                half3 biolum = biolumColor * (_BiolumStrength * masterBiolum * (1.0h + oceanBiolumInfluence * 0.7h) * bubbleBiolumMask * biolumPulse * timeBand * nightFactor);
+                half biolumEnergy = clamp(_BiolumStrength * masterBiolum * (1.0h + oceanBiolumInfluence * 0.7h) * bubbleBiolumMask * biolumPulse * timeBand * nightFactor, 0.0h, 10.0h);
+                half3 biolum = biolumColor * biolumEnergy;
                 half signalPhase = dot(input.positionWS.xz, half2(_NoirSignalFlickerScale, _NoirSignalFlickerScale * 1.37h)) + _Time.y * 2.1h + input.color.b * 3.3h;
                 half signalWave = 1.0h - abs(frac(signalPhase * 0.15915494h) * 2.0h - 1.0h);
                 half signalFlicker = smoothstep(0.18h, 0.92h, signalWave) * saturate(_NoirSignalFlickerStrength);

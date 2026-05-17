@@ -54,6 +54,9 @@ namespace Hecton8.AI.Pathfinding
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
             _dataVault = GlobalRegistry.DataVault;
             EnsureVaultBuffers();
             _registeredFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Environment);
@@ -133,14 +136,17 @@ namespace Hecton8.AI.Pathfinding
                 runtimeState.TelemetryFlags = (ushort)(runtimeState.TelemetryFlags & ~PathFunnelTelemetryFlags.BlackBoxDumpFailed);
             }
 
+            ushort writtenTelemetryFlags = runtimeState.TelemetryFlags;
             int telemetryCursor = WriteTelemetry(telemetry, ref runtimeState);
             runtimeState.DumpRequested = 0;
+            runtimeState.TelemetryFlags = (ushort)(runtimeState.TelemetryFlags & ~PathFunnelTelemetryFlags.TransientFrameMask);
             runtimeStateBuffer[0] = runtimeState;
 
             if (dumpRequested && !TryDumpBlackBox(telemetry))
             {
                 runtimeState.TelemetryFlags = (ushort)(runtimeState.TelemetryFlags | PathFunnelTelemetryFlags.BlackBoxDumpFailed);
-                PatchTelemetryFlags(telemetry, telemetryCursor, runtimeState.TelemetryFlags);
+                ushort patchedTelemetryFlags = (ushort)(writtenTelemetryFlags | PathFunnelTelemetryFlags.BlackBoxDumpFailed);
+                PatchTelemetryFlags(telemetry, telemetryCursor, patchedTelemetryFlags);
                 runtimeStateBuffer[0] = runtimeState;
             }
         }
@@ -207,14 +213,18 @@ namespace Hecton8.AI.Pathfinding
 
             ClearPathCellMask(activePathCellMasks, pathIndex);
             int safeCellCount = math.min(corridorCellCount, PathFunnelConstants.WfcOutpostCellCount);
+            int validCellCount = 0;
             for (int i = 0; i < safeCellCount; i++)
-                SetPathCell(activePathCellMasks, pathIndex, corridorCells[i]);
+            {
+                if (SetPathCell(activePathCellMasks, pathIndex, corridorCells[i]))
+                    validCellCount++;
+            }
 
             PathFunnelActivePath path = default;
             path.SectorHash = sectorHash;
             path.PathId = pathId;
             path.CorridorHash = corridorHash;
-            path.CellCount = (ushort)math.min(safeCellCount, ushort.MaxValue);
+            path.CellCount = (ushort)math.min(validCellCount, ushort.MaxValue);
             path.Flags = PathFunnelActivePathFlags.InUse;
             path.LastTouchedFrame = (uint)Time.frameCount;
             activePaths[pathIndex] = path;
@@ -486,7 +496,7 @@ namespace Hecton8.AI.Pathfinding
                 return false;
             }
 
-            InitializeRuntimeState(runtimeStateBuffer, telemetry.Length);
+            InitializeRuntimeState(runtimeStateBuffer, ResolveTelemetryRingLength(telemetry));
             return true;
         }
 
@@ -561,8 +571,9 @@ namespace Hecton8.AI.Pathfinding
             if (signal.SectorHash == 0UL || signal.CellIndex >= PathFunnelConstants.WfcOutpostCellCount)
                 return;
 
-            byte currentFlags = ResolveCurrentCellFlags(in signal, wfcGridBitmasks);
-            bool wasOpen = (signal.PreviousFlags & PathFunnelConstants.WfcDoorOpenFlag) != 0;
+            byte previousFlags = (byte)(signal.PreviousFlags & PathFunnelConstants.WfcMutableFlagMask);
+            byte currentFlags = ResolveCurrentCellFlags(in signal, wfcGridBitmasks, ref runtimeState);
+            bool wasOpen = (previousFlags & PathFunnelConstants.WfcDoorOpenFlag) != 0;
             bool isOpen = (currentFlags & PathFunnelConstants.WfcDoorOpenFlag) != 0;
             if (!wasOpen || isOpen)
                 return;
@@ -570,7 +581,7 @@ namespace Hecton8.AI.Pathfinding
             InvalidatePathsThroughCell(
                 signal.SectorHash,
                 signal.CellIndex,
-                signal.PreviousFlags,
+                previousFlags,
                 currentFlags,
                 signal.Frame,
                 activePaths,
@@ -579,12 +590,24 @@ namespace Hecton8.AI.Pathfinding
                 ref runtimeState);
         }
 
-        private static byte ResolveCurrentCellFlags(in WfcOutpostStateChangedSignal signal, NativeArray<byte> wfcGridBitmasks)
+        private static byte ResolveCurrentCellFlags(
+            in WfcOutpostStateChangedSignal signal,
+            NativeArray<byte> wfcGridBitmasks,
+            ref PathFunnelRuntimeState runtimeState)
         {
+            byte signalFlags = (byte)(signal.CurrentFlags & PathFunnelConstants.WfcMutableFlagMask);
             if (wfcGridBitmasks.IsCreated && signal.CellIndex < wfcGridBitmasks.Length)
-                return wfcGridBitmasks[signal.CellIndex];
+            {
+                byte vaultFlags = (byte)(wfcGridBitmasks[signal.CellIndex] & PathFunnelConstants.WfcMutableFlagMask);
+                if (vaultFlags != signalFlags)
+                {
+                    runtimeState.TelemetryFlags = (ushort)(
+                        runtimeState.TelemetryFlags |
+                        PathFunnelTelemetryFlags.WfcVaultSignalMismatch);
+                }
+            }
 
-            return signal.CurrentFlags;
+            return signalFlags;
         }
 
         private static void InvalidatePathsThroughCell(
@@ -680,17 +703,23 @@ namespace Hecton8.AI.Pathfinding
             return -1;
         }
 
-        private static void SetPathCell(NativeArray<ulong> activePathCellMasks, int pathIndex, ushort cellIndex)
+        private static bool SetPathCell(NativeArray<ulong> activePathCellMasks, int pathIndex, ushort cellIndex)
         {
             if (cellIndex >= PathFunnelConstants.WfcOutpostCellCount)
-                return;
+                return false;
 
             int word = cellIndex >> 6;
             int wordIndex = PathMaskWordIndex(pathIndex, word);
             if (wordIndex < 0 || wordIndex >= activePathCellMasks.Length)
-                return;
+                return false;
 
-            activePathCellMasks[wordIndex] = activePathCellMasks[wordIndex] | (1UL << (cellIndex & 63));
+            ulong bit = 1UL << (cellIndex & 63);
+            ulong wordValue = activePathCellMasks[wordIndex];
+            if ((wordValue & bit) != 0UL)
+                return false;
+
+            activePathCellMasks[wordIndex] = wordValue | bit;
+            return true;
         }
 
         private static void ClearPathCellMask(NativeArray<ulong> activePathCellMasks, int pathIndex)
@@ -765,7 +794,8 @@ namespace Hecton8.AI.Pathfinding
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return -1;
 
-            int telemetryCursor = ClampRingCursor(runtimeState.TelemetryCursor, telemetry.Length);
+            int telemetryLength = ResolveTelemetryRingLength(telemetry);
+            int telemetryCursor = ClampRingCursor(runtimeState.TelemetryCursor, telemetryLength);
             telemetry[telemetryCursor] = new PathFunnelTelemetryEntry
             {
                 Frame = (uint)Time.frameCount,
@@ -779,7 +809,7 @@ namespace Hecton8.AI.Pathfinding
                 Flags = runtimeState.TelemetryFlags,
                 Stress01 = 0f
             };
-            runtimeState.TelemetryCursor = AdvanceRingCursor(telemetryCursor, telemetry.Length);
+            runtimeState.TelemetryCursor = AdvanceRingCursor(telemetryCursor, telemetryLength);
             return telemetryCursor;
         }
 
@@ -808,7 +838,7 @@ namespace Hecton8.AI.Pathfinding
 
                 Directory.CreateDirectory(directory);
 
-                int byteCount = UnsafeUtility.SizeOf<PathFunnelTelemetryEntry>() * telemetry.Length;
+                int byteCount = UnsafeUtility.SizeOf<PathFunnelTelemetryEntry>() * ResolveTelemetryRingLength(telemetry);
                 void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
                 ReadOnlySpan<byte> telemetryBytes = new ReadOnlySpan<byte>(source, byteCount);
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
@@ -819,10 +849,29 @@ namespace Hecton8.AI.Pathfinding
 
                 return true;
             }
-            catch (Exception)
+            catch (IOException)
             {
                 return false;
             }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+
+        private static int ResolveTelemetryRingLength(NativeArray<PathFunnelTelemetryEntry> telemetry)
+        {
+            return telemetry.IsCreated
+                ? math.min(telemetry.Length, PathFunnelConstants.TelemetryFrames)
+                : 0;
         }
     }
 }

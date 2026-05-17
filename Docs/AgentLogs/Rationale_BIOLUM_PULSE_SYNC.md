@@ -373,3 +373,123 @@ Rejected Alternatives: Leaving tasks 14 and 18 blocked, or claiming shader valid
 Scalability potential: No visual change. This validates the BIOLUM Low/Mid/High/Ultra C# integration in the current compile graph.
 
 Hardware Impact: 0 us claimed. This is build validation only.
+
+## Decision 31 - Forward Flora Shader Consumer Closure
+
+Problem: The prior global heartbeat covered procedural bio, sargassum, kelp GPUI, and leviathan camouflage, but the non-GPUI kelp, coral GPUI/non-GPUI, and indirect vegetation forward shaders still had independent per-material or per-instance biolum pulse paths. That left visible flora outside the `_GlobalBiolumStates` contract.
+
+Solution: Add global state resolvers to `Hecton_KelpMaster`, `Hecton_CoralMaster`, `Hecton_CoralMaster_GPUI`, and `Hecton_IndirectVegetation`. Each resolver uses the same 16-state array, AUP offset, strobe scalar, and high-tier-only ALU filament/haze fake. Indirect vegetation is gated by authored biolum alpha so non-emissive grass does not start glowing.
+
+Rejected Alternatives: Editing prefab YAML, adding MaterialPropertyBlocks, spawning per-flora pulse scripts, or forcing every vegetation instance to glow. Those options break batching, widen ownership, or violate the global shader-array directive.
+
+Scalability potential: Low/MX350 still sees one global synchronized color/intensity and skips high-tier overdrive. Mid uses reduced state count from the runtime. High/Ultra get 16-lane spatial selection, secondary-lane blending, strobe, and ALU-only coral/kelp/indirect vegetation sparkle without new buffers.
+
+Hardware Impact: CPU upload cost remains the same fixed `Shader.SetGlobalVectorArray`; no new per-renderer work. Low-end savings remain estimated at 12 us/frame per 100 flora versus per-material updates. High-end spends fragment ALU intentionally; no GPU microseconds saved are claimed.
+
+## Decision 32 - Visible Flora HDR Consumer Clamp
+
+Problem: `_GlobalBiolumStates.w` was clamped to `[0,10]`, but downstream shader consumers could multiply it by authored strength, seasonal bloom, cascade, touch flash, or growth masks and exceed the HDR energy contract.
+
+Solution: Clamp final biolum emission energy to `[0,10]` in procedural bio, sargassum, kelp GPUI/non-GPUI, coral GPUI/non-GPUI, and indirect vegetation. Spore sparkle in indirect vegetation now uses the synchronized global tint when the instance is authored as bioluminescent.
+
+Rejected Alternatives: Trusting the upstream state clamp only, reducing authored material ranges, or adding CPU-side validation. Upstream-only clamps do not control shader multipliers; material range edits would be content churn; CPU validation cannot protect fragment math.
+
+Scalability potential: Low/MX350 gets bounded glow with the same cheap one-state path. High/Ultra keep the visual overdrive but cannot blast unbounded radiance into fog/composite chains.
+
+Hardware Impact: Added clamp ALU is negligible and unmeasured. This is a NaN/HDR survival hardening pass, not a speed claim.
+
+## Decision 33 - Current External Compile Wall After Flora Sweep
+
+Problem: After the flora shader consumer sweep, `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly` fails with 7 errors outside BIOLUM: five missing `ToFloat3` references in `HectonPlayerMovement`, one missing `qualityTier` argument in `TetherManager`, and one `uint` to `ushort` conversion in `EquipmentInteractionContracts`.
+
+Solution: Record tasks 14 and 18 as blocked by dependency for the current worktree. Preserve BIOLUM shader/runtime changes because the reported failures are outside the VFX/SHADERS assignment.
+
+Rejected Alternatives: Editing player movement, tether simulation, or equipment contracts from BIOLUM; leaving the prior clean build as the current status; or hiding the build failure. All three violate the domain boundary or evidence protocol.
+
+Scalability potential: No BIOLUM visual change. Low/MX350 and High/Ultra shader paths remain implemented; global compile validation depends on the owning systems repairing their contracts.
+
+Hardware Impact: 0 us claimed. This is compile-wall tracking only.
+
+## Decision 34 - Legacy Biolum Intensity Ownership
+
+Problem: The new VFX pulse sync publishes `_GlobalBiolumStates`, but legacy culling and some old shader paths still read `_BiolumIntensity`. `BiolumPulseSyncRuntime` only mirrored the first state, and `HectonBiolumManager` also wrote `_BiolumIntensity`, creating a duplicate global writer that could desync culling from High/Ultra lanes.
+
+Solution: Make the VFX runtime publish `_BiolumIntensity.x` as the max active BIOLUM lane plus the acoustic strobe, clamped to `[0,10]`, and clear it on teardown. Add a minimal cross-domain bridge in `HectonBiolumManager`: it suppresses only `_BiolumIntensity` writes while `_GlobalBiolumParams.x > 0.5`, then republishes its own scalar after the VFX pulse sync clears the global params. This preserves legacy world color/phase/touch-ripple publishing.
+
+Rejected Alternatives: Editing `FloraCulling.compute`, reordering dispatcher layers, deleting the legacy manager, or leaving both systems racing the same shader global. Culling edits would widen shader ownership; dispatcher ordering hides the interface conflict; deleting the old manager would cross into world systems.
+
+Scalability potential: Low/MX350 still gets one cheap scalar for culling. Mid/High/Ultra no longer lose culling visibility when lane 0 is dark but another synchronized species lane is bright, and acoustic strobe keeps the scalar alive for the 0.1 s flash.
+
+Hardware Impact: Runtime max scan is bounded to 16 values once per BIOLUM tick, not per renderer. Legacy suppression adds a `Shader.GetGlobalVector` check only when the old scalar would be republished or after suppression. Exact microseconds saved: 0 us measured; the gain is correctness and avoided culling pop.
+
+## Decision 35 - Build Gate Restored After Legacy Bridge
+
+Problem: Decision 33 recorded the current external compile wall. After the legacy scalar bridge, the live worktree needed a fresh compile result.
+
+Solution: Re-run `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly`. Attempt 20 timed out at 185 s without compiler output; attempt 21 completed and succeeded with 0 warnings and 0 errors.
+
+Rejected Alternatives: Reporting the stale build wall, claiming success from older attempts, or stopping after static scans. Current truth is the latest completed build.
+
+Scalability potential: No visual change. This validates that Low/MX350, Mid, High, and Ultra BIOLUM paths compile with the cross-domain legacy scalar bridge in the current project graph.
+
+Hardware Impact: 0 us claimed. This is build validation only.
+
+## Decision 36 - Legacy Biolum DataVault Eviction
+
+Problem: The legacy biolum manager was the remaining writer on the same global biolum interface and still owned private persistent `NativeArray` scratch buffers for predator blackout, touch-ripple distance sorting, and telemetry. That violated the H-Phi/DataVault rule even though the VFX heartbeat itself was already DataVault-backed.
+
+Solution: Add explicit DataVault buffer IDs `BiolumLegacyPredatorPositions`, `BiolumLegacyPredatorScores`, `BiolumLegacyRipplePositions`, `BiolumLegacyRippleDistances`, and `BiolumLegacyTelemetryRing`. Replace the private persistent native fields with `VaultBufferHandle<T>` fields owned by `SystemID.Vfx`. Runtime jobs now receive resolved DataVault views only when the vault is available and not fenced. Handle refresh waits until scheduled jobs are complete before accepting a new vault generation.
+
+Rejected Alternatives: Leaving the old manager as a private native island, allocating through `new NativeArray`, or deleting the legacy manager. Private arrays violate data sovereignty; raw native allocation would bypass the vault; deleting the manager would break world biolum phase/color/touch-ripple behavior outside the assignment.
+
+Scalability potential: Low/MX350 still performs bounded 16-slot predator/ripple work and can skip high-tier touch-ripple upload. High/Ultra retain nearest-first ripple sorting and predator dimming without per-renderer state or extra material properties.
+
+Hardware Impact: Persistent private allocations removed from the legacy bridge path. Exact microseconds saved: 0 us measured. The practical win is no hidden native ownership and safer vault-generation recovery under AUP/compaction pressure.
+
+## Decision 37 - Legacy Telemetry ABI Compression
+
+Problem: `HectonBiolumManager.BiolumTelemetryEntry` used sequential layout and implicit padding, making its crash-ring ABI weak for ARM64/Quest. It also carried a 40-byte-ish record while the project blackbox convention is 32-byte fixed records.
+
+Solution: Convert the legacy telemetry entry to `[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]`. Keep frame, camera XYZ, intensity, phase, predator dimming, predator hit count, active ripple count, and flags. Daylight/eclipsed state remains encoded in flags instead of a separate float.
+
+Rejected Alternatives: Keeping sequential layout, keeping a wider record, or adding a second telemetry stream. Sequential layout risks platform padding differences; wider records increase dump size; a second stream complicates crash-path reads.
+
+Scalability potential: Low/MX350 and High/Ultra use the same fixed crash record. Higher visual tiers do not expand blackbox memory.
+
+Hardware Impact: Crash dump payload for the legacy 300-frame ring is 9600 bytes instead of a 40-byte record footprint. Hot-path microseconds saved: 0 us claimed.
+
+## Decision 38 - No Rebuild Static Validation Pass
+
+Problem: The operator explicitly requested not to run dotnet rebuild every pass. After DataVault eviction, validation still needed evidence without spending another full compile cycle.
+
+Solution: Run targeted static scans instead: no `new NativeArray`, no `Allocator.*`, no private `NativeArray`, no sequential StructLayout, no MPB/EventBus/`string.Format`/finder/coroutine debt in the BIOLUM runtime plus legacy bridge files; `git diff --check` reports only CRLF normalization warnings. Shader scan confirms BIOLUM compute thread groups remain 64 threads and no DirectX-only group/shared/interlocked constructs were added to touched BIOLUM shader paths.
+
+Rejected Alternatives: Running another full `dotnet build`, skipping validation, or claiming compile proof from stale build output. The latest compile proof remains attempt 21; this pass is explicitly static validation only.
+
+Scalability potential: No visual change. This confirms the Low/MX350 Dear Lie and High/Ultra overdrive code paths were not changed while the legacy scratch data ownership was repaired.
+
+Hardware Impact: 0 us claimed. This is validation discipline and operator-time conservation.
+
+## Decision 39 - Legacy Vault Job Locking
+
+Problem: After the legacy biolum scratch buffers were moved into the DataVault, predator blackout and touch-ripple distance jobs still resolved vault views without holding explicit buffer locks for the full scheduled-job lifetime. The ripple path also had an invalid-observer early return that could leave freshly locked buffers held if locking was added without a matching release.
+
+Solution: Lock the legacy predator position/score buffers and ripple position/distance buffers before scheduling Burst jobs, register those jobs through `H8Memory.RegisterActiveJob(SystemID.Vfx, handle)`, and unlock only after no-work exits, invalid-observer exits, job finalization, or runtime resource release. Reject non-finite observer coordinates before either job is scheduled.
+
+Rejected Alternatives: Trusting `IsCompactionFenceActive` checks alone, copying job scratch data back into private native arrays, or forcing synchronous completion to shorten the lock window. Fence checks do not protect against relocation once a job has a view; private arrays violate H-Phi; synchronous completion would spend frame time to hide the ownership bug.
+
+Scalability potential: Low/MX350 keeps bounded 16-slot work and avoids NaN-driven job output. High/Ultra retain predator dimming and nearest-first touch-ripple sorting while DataVault compaction cannot move their job buffers mid-flight.
+
+Hardware Impact: 0 us measured and 0 us claimed. The gain is survival: no use-after-relocation window and no leaked lock on invalid observer input.
+
+## Decision 40 - Legacy Telemetry Locking And No Rebuild
+
+Problem: The legacy blackbox ring now lives in `BiolumLegacyTelemetryRing`, but the record and dump paths still referenced the removed resolver helper. That was a direct compile break and also meant telemetry reads/writes lacked explicit DataVault lock ownership.
+
+Solution: Replace stale telemetry resolver calls with `TryLockTelemetryRing`, unlock through `finally`, and defer dump triggering until after the record write releases the telemetry lock. This prevents re-entrant lock attempts while keeping the 300-frame blackbox readable on NaN or invalid camera input.
+
+Rejected Alternatives: Reintroducing an unlocked resolver, keeping dump calls inside the record write lock, or running another full `dotnet build` after every small safety edit. The first two options weaken DataVault ownership; the third violates the operator instruction for this pass. The latest compile proof remains attempt 21, and this pass is explicitly static validation only.
+
+Scalability potential: Low/MX350 and High/Ultra share the same fixed 32-byte telemetry record and locked ring path. Visual tiers do not increase blackbox memory, and invalid data dumps do not poison the live heartbeat.
+
+Hardware Impact: 0 us claimed. Static validation found no stale `TryResolveTelemetryRing`, no `new NativeArray`/`Allocator.*`/private `NativeArray`, no sequential StructLayout, no MPB/EventBus/`string.Format`/finder/coroutine debt in the BIOLUM runtime plus legacy bridge, and BIOLUM compute kernels remain at 64 threads.

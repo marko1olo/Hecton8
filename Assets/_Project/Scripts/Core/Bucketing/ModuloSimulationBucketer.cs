@@ -20,6 +20,7 @@ namespace Hecton8.Core.Bucketing
         private const int BlackBoxFrameCount = 300;
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin";
         private const float DefaultEntityCostMs = 0.025f;
+        private const float CatastrophicCostClampMs = 1000f;
         private const float EwmaWeight = 0.10f;
 
         private VaultBufferHandle<int> _entityBucketsHandle;
@@ -232,9 +233,14 @@ namespace Hecton8.Core.Bucketing
         {
             float sanitized = SanitizeCost(milliseconds);
             _lastActiveBucketLoadMs = sanitized;
-            float previous = _activeBucketLoadEwmaMs > 0f ? _activeBucketLoadEwmaMs : sanitized;
+            float previous = _activeBucketLoadEwmaMs > 0f && math.isfinite(_activeBucketLoadEwmaMs)
+                ? _activeBucketLoadEwmaMs
+                : sanitized;
             _activeBucketLoadEwmaMs = math.lerp(previous, sanitized, EwmaWeight);
-            _jitterVarianceMs = math.lerp(_jitterVarianceMs, math.abs(sanitized - previous), EwmaWeight);
+            float previousJitter = math.isfinite(_jitterVarianceMs) && _jitterVarianceMs >= 0f
+                ? _jitterVarianceMs
+                : 0f;
+            _jitterVarianceMs = math.lerp(previousJitter, math.abs(sanitized - previous), EwmaWeight);
 
             NativeArray<float> bucketLoads = ResolveBucketLoadEwma();
             if (bucketLoads.IsCreated && (uint)_activeSlowBucket < (uint)bucketLoads.Length)
@@ -519,8 +525,8 @@ namespace Hecton8.Core.Bucketing
                 Result = result,
                 EntityCount = costs.Length,
                 BucketCount = _slowBucketCount,
-                BucketMask = _slowBucketMask,
                 DefaultCostMs = DefaultEntityCostMs,
+                CostClampMs = CatastrophicCostClampMs,
                 TargetFrameMs = SimulationBucketConstants.TargetFrameMilliseconds
             };
 
@@ -725,7 +731,7 @@ namespace Hecton8.Core.Bucketing
         private float SanitizeCost(float milliseconds)
         {
             if (math.isfinite(milliseconds) && milliseconds >= 0f)
-                return milliseconds;
+                return math.min(milliseconds, CatastrophicCostClampMs);
 
             _nonFiniteCostObserved = true;
             _pendingBlackBoxDump = true;
@@ -819,14 +825,36 @@ namespace Hecton8.Core.Bucketing
             public NativeArray<SimulationBucketRebalanceResult> Result;
             public int EntityCount;
             public int BucketCount;
-            public int BucketMask;
             public float DefaultCostMs;
+            public float CostClampMs;
             public float TargetFrameMs;
 
             public void Execute()
             {
-                int bucketCount = math.max(1, math.min(BucketCount, BucketLoadsMs.Length));
-                int entityCount = math.max(0, math.min(EntityCount, EntityCostsMs.Length));
+                uint flags = 0u;
+                if (!EntityCostsMs.IsCreated || !EntityBucketsWork.IsCreated || !BucketLoadsMs.IsCreated)
+                {
+                    WriteResult(0f, 0f, 0f, SimulationBucketPacingFlags.NonFiniteCost, 0);
+                    return;
+                }
+
+                int bucketCount = math.min(math.max(0, BucketCount), BucketLoadsMs.Length);
+                int entityCount = math.max(0, math.min(EntityCount, math.min(EntityCostsMs.Length, EntityBucketsWork.Length)));
+                if (bucketCount <= 0)
+                {
+                    for (int i = 0; i < EntityBucketsWork.Length; i++)
+                        EntityBucketsWork[i] = -1;
+
+                    WriteResult(0f, 0f, 0f, SimulationBucketPacingFlags.NonFiniteCost, 0);
+                    return;
+                }
+
+                float defaultCostMs = math.isfinite(DefaultCostMs) && DefaultCostMs > 0f ? DefaultCostMs : 0.025f;
+                float costClampMs = math.isfinite(CostClampMs) && CostClampMs > defaultCostMs ? CostClampMs : 1000f;
+                float targetFrameMs = math.isfinite(TargetFrameMs) && TargetFrameMs > 0f
+                    ? TargetFrameMs
+                    : SimulationBucketConstants.TargetFrameMilliseconds;
+
                 for (int bucket = 0; bucket < bucketCount; bucket++)
                     BucketLoadsMs[bucket] = 0f;
 
@@ -835,17 +863,17 @@ namespace Hecton8.Core.Bucketing
 
                 int activeEntityCount = 0;
                 float totalLoadMs = 0f;
-                uint flags = 0u;
                 for (int entityIndex = 0; entityIndex < entityCount; entityIndex++)
                 {
                     float cost = EntityCostsMs[entityIndex];
-                    if (cost <= 0f)
-                        continue;
-
-                    if (!math.isfinite(cost))
+                    if (!math.isfinite(cost) || cost < 0f)
                     {
                         flags |= SimulationBucketPacingFlags.NonFiniteCost;
-                        cost = DefaultCostMs;
+                        cost = defaultCostMs;
+                    }
+                    else if (cost <= 0f)
+                    {
+                        continue;
                     }
 
                     int targetBucket = 0;
@@ -860,10 +888,17 @@ namespace Hecton8.Core.Bucketing
                         targetBucket = bucket;
                     }
 
-                    float sanitizedCost = math.max(DefaultCostMs, cost);
-                    EntityBucketsWork[entityIndex] = targetBucket & BucketMask;
-                    BucketLoadsMs[targetBucket] = targetLoad + sanitizedCost;
-                    totalLoadMs += sanitizedCost;
+                    float sanitizedCost = math.min(math.max(defaultCostMs, cost), costClampMs);
+                    float nextLoad = targetLoad + sanitizedCost;
+                    if (!math.isfinite(nextLoad))
+                    {
+                        flags |= SimulationBucketPacingFlags.NonFiniteCost;
+                        nextLoad = costClampMs;
+                    }
+
+                    EntityBucketsWork[entityIndex] = targetBucket;
+                    BucketLoadsMs[targetBucket] = nextLoad;
+                    totalLoadMs = math.min(totalLoadMs + sanitizedCost, costClampMs * bucketCount);
                     activeEntityCount++;
                 }
 
@@ -881,11 +916,16 @@ namespace Hecton8.Core.Bucketing
                         maxLoadMs = load;
                 }
 
-                float meanLoadMs = totalLoadMs * math.rcp(math.max(1, bucketCount));
-                if (maxLoadMs > TargetFrameMs)
+                float meanLoadMs = totalLoadMs * math.rcp(bucketCount);
+                if (maxLoadMs > targetFrameMs)
                     flags |= SimulationBucketPacingFlags.Impossible60Fps;
 
-                if (Result.Length > 0)
+                WriteResult(maxLoadMs, meanLoadMs, totalLoadMs, flags, activeEntityCount);
+            }
+
+            private void WriteResult(float maxLoadMs, float meanLoadMs, float totalLoadMs, uint flags, int activeEntityCount)
+            {
+                if (Result.IsCreated && Result.Length > 0)
                 {
                     Result[0] = new SimulationBucketRebalanceResult
                     {

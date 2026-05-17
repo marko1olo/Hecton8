@@ -9,30 +9,9 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace Hecton8.Core.Contracts.Signals
-{
-    /// <summary>
-    /// Broadcast signal emitted when a shaft source resolves as a burst-grade bioluminescent flare.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
-    public struct VisualFlareSignal : ISignal
-    {
-        /// <summary>Stable source ID or component instance fallback.</summary>
-        public uint SourceId;
-        /// <summary>Resolved burst intensity after LOD and distance gates.</summary>
-        public float Intensity01;
-        /// <summary>Viewport-space source position.</summary>
-        public float2 ScreenUv;
-        /// <summary>Unity frame index at emission.</summary>
-        public uint Frame;
-        /// <summary>Bitfield reserved for source kind and debug state.</summary>
-        public byte Flags;
-    }
-}
-
 namespace Hecton8.Lighting.Shafts
 {
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     internal struct LightShaftTelemetryEntry
     {
         public uint Frame;
@@ -97,9 +76,10 @@ namespace Hecton8.Lighting.Shafts
         [Tooltip("Brownout recovery speed in units per second.")]
         [SerializeField, Min(0.1f)] private float brownoutRecoveryPerSecond = 2.4f;
 
-        private NativeArray<LightShaftContribution> _topContributions;
-        private NativeArray<LightShaftContribution> _historyContributions;
-        private NativeArray<LightShaftTelemetryEntry> _telemetry;
+        private IDataVault _dataVault;
+        private VaultBufferHandle<LightShaftContribution> _topContributionsHandle;
+        private VaultBufferHandle<LightShaftContribution> _historyContributionsHandle;
+        private VaultBufferHandle<LightShaftTelemetryEntry> _telemetryHandle;
         private Camera _renderCamera;
         private float _nextCameraResolveTime;
         private float _loadShedTimer;
@@ -117,46 +97,55 @@ namespace Hecton8.Lighting.Shafts
             if (!isActiveAndEnabled || !Application.isPlaying)
                 return;
 
-            EnsureBuffers();
-            if (!_topContributions.IsCreated || !_historyContributions.IsCreated || !_telemetry.IsCreated)
+            if (!EnsureBuffers() ||
+                !TryLockFrameBuffers(out NativeArray<LightShaftContribution> topContributions,
+                    out NativeArray<LightShaftContribution> historyContributions,
+                    out NativeArray<LightShaftTelemetryEntry> telemetry))
             {
                 ClearShaderGlobals();
                 return;
             }
 
-            UpdateLoadShedState();
-            UpdateSignalCoupling();
-
-            if (_renderCamera == null)
-                ResolveRenderCamera();
-
-            byte flags = _lowTier ? TelemetryFlagLowTier : (byte)0;
-            if (_loadShedTimer > 0f)
-                flags |= TelemetryFlagLoadShed;
-            if (_renderCamera == null)
-                flags |= TelemetryFlagNoCamera;
-
-            if (_loadShedTimer > 0f || _renderCamera == null)
+            try
             {
-                ClearShaderGlobals();
-                RecordTelemetry(0, flags);
-                return;
-            }
+                UpdateLoadShedState();
+                UpdateSignalCoupling();
 
-            int activeCount = SelectTopContributions(_renderCamera);
-            if (!ApplyHistoryAndValidate(ref activeCount))
+                if (_renderCamera == null)
+                    ResolveRenderCamera();
+
+                byte flags = _lowTier ? TelemetryFlagLowTier : (byte)0;
+                if (_loadShedTimer > 0f)
+                    flags |= TelemetryFlagLoadShed;
+                if (_renderCamera == null)
+                    flags |= TelemetryFlagNoCamera;
+
+                if (_loadShedTimer > 0f || _renderCamera == null)
+                {
+                    ClearShaderGlobals();
+                    RecordTelemetry(0, flags, topContributions, telemetry);
+                    return;
+                }
+
+                int activeCount = SelectTopContributions(_renderCamera, topContributions);
+                if (!ApplyHistoryAndValidate(ref activeCount, topContributions, historyContributions))
+                {
+                    flags |= TelemetryFlagNaN;
+                    ClearShaderGlobals();
+                    RecordTelemetry(0, flags, topContributions, telemetry);
+                    DumpBlackbox(telemetry);
+                    GlobalTelemetryBus.PublishPerformanceWarning(NaNFallbackWarningHash, RuntimeContextHash, 1f);
+                    return;
+                }
+
+                PushShaderGlobals(activeCount, topContributions);
+                EmitVisualFlareSignals(activeCount, topContributions);
+                RecordTelemetry(activeCount, flags, topContributions, telemetry);
+            }
+            finally
             {
-                flags |= TelemetryFlagNaN;
-                ClearShaderGlobals();
-                RecordTelemetry(0, flags);
-                DumpBlackbox();
-                GlobalTelemetryBus.PublishPerformanceWarning(NaNFallbackWarningHash, RuntimeContextHash, 1f);
-                return;
+                UnlockFrameBuffers();
             }
-
-            PushShaderGlobals(activeCount);
-            EmitVisualFlareSignals(activeCount);
-            RecordTelemetry(activeCount, flags);
         }
 
         /// <inheritdoc />
@@ -203,24 +192,145 @@ namespace Hecton8.Lighting.Shafts
                 Dispose();
         }
 
-        private void EnsureBuffers()
+        private bool EnsureBuffers()
         {
-            if (!_topContributions.IsCreated)
-                _topContributions = H8Memory.Allocate<LightShaftContribution>(MaxTrackedSources, SystemID.Vfx, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<LightShaftContribution>[3] - top shaft source SOA - owner: ScreenSpaceLightShaftRuntime
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+            {
+                ResetVaultHandles();
+                return false;
+            }
 
-            if (!_historyContributions.IsCreated)
-                _historyContributions = H8Memory.Allocate<LightShaftContribution>(MaxTrackedSources, SystemID.Vfx, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<LightShaftContribution>[3] - temporal shaft history - owner: ScreenSpaceLightShaftRuntime
+            if (!ReferenceEquals(_dataVault, vault))
+            {
+                _dataVault = vault;
+                _topContributionsHandle = default;
+                _historyContributionsHandle = default;
+                _telemetryHandle = default;
+            }
 
-            if (!_telemetry.IsCreated)
-                _telemetry = H8Memory.Allocate<LightShaftTelemetryEntry>(TelemetryCapacity, SystemID.Vfx, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<LightShaftTelemetryEntry>[300] - blackbox ring buffer - owner: ScreenSpaceLightShaftRuntime
+            return EnsureVaultHandle(
+                    ref _topContributionsHandle,
+                    BufferID.LightShaftTopContributions,
+                    MaxTrackedSources) &&
+                EnsureVaultHandle(
+                    ref _historyContributionsHandle,
+                    BufferID.LightShaftHistoryContributions,
+                    MaxTrackedSources) &&
+                EnsureVaultHandle(
+                    ref _telemetryHandle,
+                    BufferID.LightShaftTelemetryRing,
+                    TelemetryCapacity);
+        }
+
+        private bool EnsureVaultHandle<T>(
+            ref VaultBufferHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (handle.IsCreated &&
+                handle.BufferId == bufferId &&
+                handle.Length >= requiredLength &&
+                vault.ResolveBuffer(ref handle))
+            {
+                return true;
+            }
+
+            if (vault.TryGetBufferHandle(bufferId, out VaultBufferHandle<T> existing) &&
+                existing.IsCreated &&
+                existing.Length >= requiredLength)
+            {
+                handle = existing;
+                return true;
+            }
+
+            if (vault.IsAllocationLocked)
+                return false;
+
+            handle = vault.GetBufferHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.Vfx,
+                NativeArrayOptions.ClearMemory);
+            return handle.IsCreated && handle.Length >= requiredLength;
+        }
+
+        private bool TryLockFrameBuffers(
+            out NativeArray<LightShaftContribution> topContributions,
+            out NativeArray<LightShaftContribution> historyContributions,
+            out NativeArray<LightShaftTelemetryEntry> telemetry)
+        {
+            topContributions = default;
+            historyContributions = default;
+            telemetry = default;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            bool topLocked = vault.TryLockBuffer(BufferID.LightShaftTopContributions, SystemID.Vfx);
+            if (!topLocked)
+                return false;
+
+            bool historyLocked = vault.TryLockBuffer(BufferID.LightShaftHistoryContributions, SystemID.Vfx);
+            if (!historyLocked)
+            {
+                vault.TryUnlockBuffer(BufferID.LightShaftTopContributions, SystemID.Vfx);
+                return false;
+            }
+
+            bool telemetryLocked = vault.TryLockBuffer(BufferID.LightShaftTelemetryRing, SystemID.Vfx);
+            if (!telemetryLocked)
+            {
+                vault.TryUnlockBuffer(BufferID.LightShaftHistoryContributions, SystemID.Vfx);
+                vault.TryUnlockBuffer(BufferID.LightShaftTopContributions, SystemID.Vfx);
+                return false;
+            }
+
+            topContributions = _topContributionsHandle.Resolve(vault);
+            historyContributions = _historyContributionsHandle.Resolve(vault);
+            telemetry = _telemetryHandle.Resolve(vault);
+            if (topContributions.IsCreated &&
+                topContributions.Length >= MaxTrackedSources &&
+                historyContributions.IsCreated &&
+                historyContributions.Length >= MaxTrackedSources &&
+                telemetry.IsCreated &&
+                telemetry.Length >= TelemetryCapacity)
+            {
+                return true;
+            }
+
+            UnlockFrameBuffers();
+            return false;
+        }
+
+        private void UnlockFrameBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            vault.TryUnlockBuffer(BufferID.LightShaftTelemetryRing, SystemID.Vfx);
+            vault.TryUnlockBuffer(BufferID.LightShaftHistoryContributions, SystemID.Vfx);
+            vault.TryUnlockBuffer(BufferID.LightShaftTopContributions, SystemID.Vfx);
         }
 
         private void ReleaseBuffers()
         {
-            H8Memory.Release(ref _topContributions, SystemID.Vfx);
-            H8Memory.Release(ref _historyContributions, SystemID.Vfx);
-            H8Memory.Release(ref _telemetry, SystemID.Vfx);
+            ResetVaultHandles();
             _telemetryWriteIndex = 0;
+        }
+
+        private void ResetVaultHandles()
+        {
+            _dataVault = null;
+            _topContributionsHandle = default;
+            _historyContributionsHandle = default;
+            _telemetryHandle = default;
         }
 
         private void ResolveRenderCamera()
@@ -281,9 +391,9 @@ namespace Hecton8.Lighting.Shafts
             }
         }
 
-        private int SelectTopContributions(Camera renderCamera)
+        private int SelectTopContributions(Camera renderCamera, NativeArray<LightShaftContribution> topContributions)
         {
-            ClearTopContributions();
+            ClearTopContributions(topContributions);
 
             AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(renderCamera.transform.position);
             int sourceCount = ScreenSpaceLightShaftSource.RegisteredCount;
@@ -293,55 +403,58 @@ namespace Hecton8.Lighting.Shafts
                 if (source == null || !source.TryGetContribution(renderCamera, in cameraAup, out LightShaftContribution contribution))
                     continue;
 
-                InsertContribution(in contribution);
+                InsertContribution(in contribution, topContributions);
             }
 
             int activeCount = 0;
             for (int i = 0; i < MaxTrackedSources; i++)
             {
-                if (_topContributions[i].Score > 0.0001f)
+                if (topContributions[i].Score > 0.0001f)
                     activeCount++;
             }
 
             return activeCount;
         }
 
-        private void ClearTopContributions()
+        private void ClearTopContributions(NativeArray<LightShaftContribution> topContributions)
         {
             for (int i = 0; i < MaxTrackedSources; i++)
-                _topContributions[i] = default;
+                topContributions[i] = default;
         }
 
-        private void InsertContribution(in LightShaftContribution contribution)
+        private void InsertContribution(in LightShaftContribution contribution, NativeArray<LightShaftContribution> topContributions)
         {
             for (int slot = 0; slot < MaxTrackedSources; slot++)
             {
-                if (contribution.Score <= _topContributions[slot].Score)
+                if (contribution.Score <= topContributions[slot].Score)
                     continue;
 
                 for (int shift = MaxTrackedSources - 1; shift > slot; shift--)
-                    _topContributions[shift] = _topContributions[shift - 1];
+                    topContributions[shift] = topContributions[shift - 1];
 
-                _topContributions[slot] = contribution;
+                topContributions[slot] = contribution;
                 return;
             }
         }
 
-        private bool ApplyHistoryAndValidate(ref int activeCount)
+        private bool ApplyHistoryAndValidate(
+            ref int activeCount,
+            NativeArray<LightShaftContribution> topContributions,
+            NativeArray<LightShaftContribution> historyContributions)
         {
             float blend = math.saturate(historyBlendFactor);
             for (int i = 0; i < MaxTrackedSources; i++)
             {
-                LightShaftContribution contribution = _topContributions[i];
+                LightShaftContribution contribution = topContributions[i];
                 if (i >= activeCount)
                 {
-                    _historyContributions[i] = default;
+                    historyContributions[i] = default;
                     continue;
                 }
 
                 for (int h = 0; h < MaxTrackedSources; h++)
                 {
-                    LightShaftContribution previous = _historyContributions[h];
+                    LightShaftContribution previous = historyContributions[h];
                     if (previous.SourceId != 0u && previous.SourceId == contribution.SourceId)
                     {
                         contribution.ScreenUv = math.lerp(previous.ScreenUv, contribution.ScreenUv, blend);
@@ -356,16 +469,16 @@ namespace Hecton8.Lighting.Shafts
                     return false;
                 }
 
-                _topContributions[i] = contribution;
+                topContributions[i] = contribution;
             }
 
             for (int i = 0; i < MaxTrackedSources; i++)
-                _historyContributions[i] = i < activeCount ? _topContributions[i] : default;
+                historyContributions[i] = i < activeCount ? topContributions[i] : default;
 
             return true;
         }
 
-        private void PushShaderGlobals(int activeCount)
+        private void PushShaderGlobals(int activeCount, NativeArray<LightShaftContribution> topContributions)
         {
             activeCount = math.clamp(activeCount, 0, MaxTrackedSources);
             float sampleBudget = _lowTier ? math.min(8f, lowTierSampleCount) : math.min(16f, highTierSampleCount);
@@ -376,9 +489,9 @@ namespace Hecton8.Lighting.Shafts
             Shader.SetGlobalVector(_LightShaftQualityId, new Vector4(math.max(0.01f, emissionThreshold), sampleBudget, math.max(0.001f, depthBiasMeters), _lowTier ? 1f : 0f));
             Shader.SetGlobalFloat(_AtmosphereSootId, _soot01);
 
-            PushContributionGlobals(0, activeCount > 0 ? _topContributions[0] : default);
-            PushContributionGlobals(1, activeCount > 1 ? _topContributions[1] : default);
-            PushContributionGlobals(2, activeCount > 2 ? _topContributions[2] : default);
+            PushContributionGlobals(0, activeCount > 0 ? topContributions[0] : default);
+            PushContributionGlobals(1, activeCount > 1 ? topContributions[1] : default);
+            PushContributionGlobals(2, activeCount > 2 ? topContributions[2] : default);
         }
 
         private void PushContributionGlobals(int index, in LightShaftContribution contribution)
@@ -413,12 +526,12 @@ namespace Hecton8.Lighting.Shafts
             PushContributionGlobals(2, default);
         }
 
-        private void EmitVisualFlareSignals(int activeCount)
+        private void EmitVisualFlareSignals(int activeCount, NativeArray<LightShaftContribution> topContributions)
         {
             int frame = Time.frameCount;
             for (int i = 0; i < activeCount; i++)
             {
-                LightShaftContribution contribution = _topContributions[i];
+                LightShaftContribution contribution = topContributions[i];
                 if ((contribution.Flags & 1) == 0)
                     continue;
 
@@ -454,13 +567,17 @@ namespace Hecton8.Lighting.Shafts
             return null;
         }
 
-        private void RecordTelemetry(int activeCount, byte flags)
+        private void RecordTelemetry(
+            int activeCount,
+            byte flags,
+            NativeArray<LightShaftContribution> topContributions,
+            NativeArray<LightShaftTelemetryEntry> telemetry)
         {
-            if (!_telemetry.IsCreated)
+            if (!telemetry.IsCreated)
                 return;
 
-            LightShaftContribution primary = activeCount > 0 ? _topContributions[0] : default;
-            _telemetry[_telemetryWriteIndex] = new LightShaftTelemetryEntry
+            LightShaftContribution primary = activeCount > 0 ? topContributions[0] : default;
+            telemetry[_telemetryWriteIndex] = new LightShaftTelemetryEntry
             {
                 Frame = unchecked((uint)Time.frameCount),
                 PrimarySourceId = primary.SourceId,
@@ -477,9 +594,9 @@ namespace Hecton8.Lighting.Shafts
                 _telemetryWriteIndex = 0;
         }
 
-        private void DumpBlackbox()
+        private void DumpBlackbox(NativeArray<LightShaftTelemetryEntry> telemetry)
         {
-            if (!_telemetry.IsCreated)
+            if (!telemetry.IsCreated)
                 return;
 
             string path = Path.Combine(Application.dataPath, "../Docs/AgentLogs/Dump_ABYSSAL_LIGHTING_TECH.bin");
@@ -491,7 +608,7 @@ namespace Hecton8.Lighting.Shafts
                 writer.Write(_telemetryWriteIndex);
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
-                    LightShaftTelemetryEntry entry = _telemetry[i];
+                    LightShaftTelemetryEntry entry = telemetry[i];
                     writer.Write(entry.Frame);
                     writer.Write(entry.PrimarySourceId);
                     writer.Write(entry.PrimaryUv.x);

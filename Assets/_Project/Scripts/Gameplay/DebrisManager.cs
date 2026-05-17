@@ -620,7 +620,7 @@ namespace Hecton8.Gameplay
                     receiveShadows = _batchReceiveShadows[batchIndex],
                     renderingLayerMask = _batchLayerMasks[batchIndex]
                 };
-                Graphics.RenderMeshInstanced(
+                UnityEngine.Graphics.RenderMeshInstanced(
                     renderParams,
                     _batchMeshes[batchIndex],
                     0,

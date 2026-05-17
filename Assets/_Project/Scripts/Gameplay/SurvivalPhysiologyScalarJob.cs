@@ -39,7 +39,7 @@ namespace Hecton8.Gameplay
         public float MovementIntentLengthSq;
         public float MovementStaminaDrainPerSecond;
 
-        public NativeArray<SurvivalPhysiologyScalarResult> Result;
+        public NativeSlice<SurvivalPhysiologyScalarResult> Result;
 
         public void Execute()
         {

@@ -1548,7 +1548,7 @@ namespace Hecton8.World
                     layer = _cachedRenderLayer,
                     lightProbeUsage = LightProbeUsage.Off
                 };
-                Graphics.RenderMeshInstanced(renderParams, prototype.Mesh, 0, _nestedMatricesByPrototype[prototypeIndex], matrixCount);
+                UnityEngine.Graphics.RenderMeshInstanced(renderParams, prototype.Mesh, 0, _nestedMatricesByPrototype[prototypeIndex], matrixCount);
             }
 
             DrawScavengers();

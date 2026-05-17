@@ -1539,14 +1539,14 @@ namespace Hecton8.World
 
         private BoidData[] _spawnData;
         private BoidData[] _singleBoidUpload;
-        private GrazingAnchorData[] _grazingAnchors;
-        private MassiveThreatData[] _massiveThreats;
-        private FormationBeaconData[] _formationBeacons;
-        private FormationObstacleData[] _formationObstacles;
         private HectonBiolumZone[] _deepBiolumZones;
         private float[] _deepBiolumZoneScores;
         private BeaconNetworkSystem.BeaconSnapshot[] _formationBeaconSnapshots;
         private Collider[] _formationObstacleColliders;
+        private VaultBufferHandle<GrazingAnchorData> _grazingAnchorsHandle;
+        private VaultBufferHandle<MassiveThreatData> _massiveThreatsHandle;
+        private VaultBufferHandle<FormationBeaconData> _formationBeaconsHandle;
+        private VaultBufferHandle<FormationObstacleData> _formationObstaclesHandle;
         private VaultBufferHandle<StaticObstacleData> _staticObstacleCacheHandle;
         private VaultBufferHandle<BoidData> _boidStateHandle;
         private VaultBufferHandle<BoidKillSignal> _killSignalHandle;
@@ -1563,8 +1563,6 @@ namespace Hecton8.World
         private VaultBufferHandle<float4> _boidSensoryThreatsHandle;
         private VaultBufferHandle<BoidSensoryBlackBoxEntry> _boidSensoryBlackBoxHandle;
         private VaultBufferHandle<uint> _threatGridUploadHandle;
-        private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _boidIndirectArgsUpload =
-            new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] - VAT micro-fauna indirect draw upload cache - owner: SargassumMicroFaunaBoids
         private GraphicsBuffer _boidsBufferA;
         private GraphicsBuffer _boidsBufferB;
         private GraphicsBuffer _boidIndirectArgsBuffer;
@@ -2422,20 +2420,6 @@ namespace Hecton8.World
                 _singleBoidUpload = new BoidData[1];
             }
 
-            if (_grazingAnchors == null || _grazingAnchors.Length != grazingAnchorCount)
-            {
-                // COLD ALLOC: GrazingAnchorData[grazingAnchorCount] - CPU staging array for deterministic grazing anchors - owner: SargassumMicroFaunaBoids
-                _grazingAnchors = new GrazingAnchorData[grazingAnchorCount];
-            }
-
-            if (_massiveThreats == null || _massiveThreats.Length != maxMassiveThreatCount)
-            {
-                // COLD ALLOC: MassiveThreatData[maxMassiveThreatCount] - CPU staging array for leviathan panic threats - owner: SargassumMicroFaunaBoids
-                _massiveThreats = new MassiveThreatData[maxMassiveThreatCount];
-                _activeMassiveThreatCount = 0;
-                _debugMassiveThreatCount = 0;
-            }
-
             if (_deepBiolumZones == null || _deepBiolumZones.Length != deepBiolumAnchorCapacity)
             {
                 // COLD ALLOC: HectonBiolumZone[deepBiolumAnchorCapacity] - deep-sea biolum anchor cache for bait-ball rebuilds - owner: SargassumMicroFaunaBoids
@@ -2446,18 +2430,6 @@ namespace Hecton8.World
             {
                 // COLD ALLOC: float[deepBiolumAnchorCapacity] - deep-sea biolum anchor strength cache paired with zone refs - owner: SargassumMicroFaunaBoids
                 _deepBiolumZoneScores = new float[deepBiolumAnchorCapacity];
-            }
-
-            if (_formationBeacons == null || _formationBeacons.Length != formationBeaconCapacity)
-            {
-                // COLD ALLOC: FormationBeaconData[formationBeaconCapacity] - GPU formation anchor staging for abyss beacon rings - owner: SargassumMicroFaunaBoids
-                _formationBeacons = new FormationBeaconData[formationBeaconCapacity];
-            }
-
-            if (_formationObstacles == null || _formationObstacles.Length != formationObstacleCapacity)
-            {
-                // COLD ALLOC: FormationObstacleData[formationObstacleCapacity] - GPU rock obstacle proxy staging for formation deformation - owner: SargassumMicroFaunaBoids
-                _formationObstacles = new FormationObstacleData[formationObstacleCapacity];
             }
 
             if (_formationBeaconSnapshots == null || _formationBeaconSnapshots.Length != 24)
@@ -2499,6 +2471,10 @@ namespace Hecton8.World
                 _computeStaticBuffersBound = false;
             IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
             _dataVault = vault;
+            EnsureVaultBufferHandle(vault, ref _grazingAnchorsHandle, BufferID.SargassumGrazingAnchors, grazingAnchorCount);
+            EnsureVaultBufferHandle(vault, ref _massiveThreatsHandle, BufferID.SargassumMassiveThreats, maxMassiveThreatCount);
+            EnsureVaultBufferHandle(vault, ref _formationBeaconsHandle, BufferID.SargassumFormationBeacons, formationBeaconCapacity);
+            EnsureVaultBufferHandle(vault, ref _formationObstaclesHandle, BufferID.SargassumFormationObstacles, formationObstacleCapacity);
             EnsureVaultBufferHandle(vault, ref _staticObstacleCacheHandle, BufferID.SargassumStaticObstacleCache, math.max(formationObstacleCapacity * 8, formationObstacleCapacity));
             EnsureVaultBufferHandle(vault, ref _boidStateHandle, BufferID.SargassumBoidState, boidCount);
             EnsureVaultBufferHandle(vault, ref _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity);
@@ -2603,42 +2579,70 @@ namespace Hecton8.World
             return math.clamp(CeilDivPositive(safePopulation, TargetBoidsPerGrazingAnchor), 1, grazingAnchorCount);
         }
 
+        private NativeArray<GrazingAnchorData> ResolveGrazingAnchors()
+        {
+            return ResolveVaultBuffer(ref _grazingAnchorsHandle);
+        }
+
+        private NativeArray<MassiveThreatData> ResolveMassiveThreats()
+        {
+            return ResolveVaultBuffer(ref _massiveThreatsHandle);
+        }
+
+        private NativeArray<FormationBeaconData> ResolveFormationBeacons()
+        {
+            return ResolveVaultBuffer(ref _formationBeaconsHandle);
+        }
+
+        private NativeArray<FormationObstacleData> ResolveFormationObstacles()
+        {
+            return ResolveVaultBuffer(ref _formationObstaclesHandle);
+        }
+
         private void UploadGrazingAnchors()
         {
-            _activeGrazingAnchorCount = math.clamp(_activeGrazingAnchorCount, 0, grazingAnchorCount);
+            NativeArray<GrazingAnchorData> grazingAnchors = ResolveGrazingAnchors();
+            int capacity = grazingAnchors.IsCreated ? grazingAnchors.Length : 0;
+            _activeGrazingAnchorCount = math.clamp(_activeGrazingAnchorCount, 0, math.min(grazingAnchorCount, capacity));
             _debugGrazingAnchorCount = _activeGrazingAnchorCount;
-            if (_activeGrazingAnchorCount <= 0 || _grazingAnchorBuffer == null || _grazingAnchors == null)
+            if (_activeGrazingAnchorCount <= 0 || _grazingAnchorBuffer == null || !grazingAnchors.IsCreated)
                 return;
 
-            GraphicsBufferUploadUtility.UploadArray(_grazingAnchorBuffer, _grazingAnchors, _activeGrazingAnchorCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_grazingAnchorBuffer, grazingAnchors, _activeGrazingAnchorCount);
         }
 
         private void UploadFormationBeacons()
         {
-            _debugFormationBeaconCount = math.clamp(_debugFormationBeaconCount, 0, formationBeaconCapacity);
-            if (_debugFormationBeaconCount <= 0 || _formationBeaconBuffer == null || _formationBeacons == null)
+            NativeArray<FormationBeaconData> formationBeacons = ResolveFormationBeacons();
+            int capacity = formationBeacons.IsCreated ? formationBeacons.Length : 0;
+            _debugFormationBeaconCount = math.clamp(_debugFormationBeaconCount, 0, math.min(formationBeaconCapacity, capacity));
+            if (_debugFormationBeaconCount <= 0 || _formationBeaconBuffer == null || !formationBeacons.IsCreated)
                 return;
 
-            GraphicsBufferUploadUtility.UploadArray(_formationBeaconBuffer, _formationBeacons, _debugFormationBeaconCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_formationBeaconBuffer, formationBeacons, _debugFormationBeaconCount);
         }
 
         private void UploadFormationObstacles()
         {
-            _debugFormationObstacleCount = math.clamp(_debugFormationObstacleCount, 0, formationObstacleCapacity);
-            if (_debugFormationObstacleCount <= 0 || _formationObstacleBuffer == null || _formationObstacles == null)
+            NativeArray<FormationObstacleData> formationObstacles = ResolveFormationObstacles();
+            int capacity = formationObstacles.IsCreated ? formationObstacles.Length : 0;
+            _debugFormationObstacleCount = math.clamp(_debugFormationObstacleCount, 0, math.min(formationObstacleCapacity, capacity));
+            if (_debugFormationObstacleCount <= 0 || _formationObstacleBuffer == null || !formationObstacles.IsCreated)
                 return;
 
-            GraphicsBufferUploadUtility.UploadArray(_formationObstacleBuffer, _formationObstacles, _debugFormationObstacleCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_formationObstacleBuffer, formationObstacles, _debugFormationObstacleCount);
         }
 
         private void UploadMassiveThreats()
         {
-            _activeMassiveThreatCount = math.clamp(_activeMassiveThreatCount, 0, maxMassiveThreatCount);
+            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            int capacity = massiveThreats.IsCreated ? massiveThreats.Length : 0;
+            _activeMassiveThreatCount = math.clamp(_activeMassiveThreatCount, 0, math.min(maxMassiveThreatCount, capacity));
             _debugMassiveThreatCount = _activeMassiveThreatCount;
-            if (_activeMassiveThreatCount <= 0 || _massiveThreatBuffer == null || _massiveThreats == null)
+            if (_activeMassiveThreatCount <= 0 || _massiveThreatBuffer == null || !massiveThreats.IsCreated)
                 return;
 
-            GraphicsBufferUploadUtility.UploadArray(_massiveThreatBuffer, _massiveThreats, _activeMassiveThreatCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_massiveThreatBuffer, massiveThreats, _activeMassiveThreatCount);
         }
 
         private bool TryResolveEcosystemPopulationCount(out int ecosystemPopulationCount)
@@ -3182,12 +3186,20 @@ namespace Hecton8.World
 
         private void BuildStatisticalGrazingAnchors(Vector3 center, float radius, int rematerializedCount)
         {
-            _activeGrazingAnchorCount = math.min(ResolveTargetGrazingAnchorCount(rematerializedCount), 8);
+            NativeArray<GrazingAnchorData> grazingAnchors = ResolveGrazingAnchors();
+            if (!grazingAnchors.IsCreated || grazingAnchors.Length <= 0)
+            {
+                _activeGrazingAnchorCount = 0;
+                _debugGrazingAnchorCount = 0;
+                return;
+            }
+
+            _activeGrazingAnchorCount = math.min(math.min(ResolveTargetGrazingAnchorCount(rematerializedCount), 8), grazingAnchors.Length);
             float anchorRadius = math.max(grazingRadius, radius * 0.2f);
             for (int i = 0; i < _activeGrazingAnchorCount; i++)
             {
                 Vector3 offset = BuildSphericalFibonacciOffset(i, _activeGrazingAnchorCount, math.max(1f, radius * 0.35f), _statisticalPopulationPoint.CenterCellId ^ 0x6C8E9CF5);
-                _grazingAnchors[i] = new GrazingAnchorData
+                grazingAnchors[i] = new GrazingAnchorData
                 {
                     Position = center + offset,
                     Radius = anchorRadius,
@@ -3353,7 +3365,11 @@ namespace Hecton8.World
         {
             _debugFormationBeaconCount = 0;
             _debugFormationObstacleCount = 0;
-            if (_formationBeacons == null || _formationObstacles == null)
+            NativeArray<FormationBeaconData> formationBeacons = ResolveFormationBeacons();
+            NativeArray<FormationObstacleData> formationObstacles = ResolveFormationObstacles();
+            int formationBeaconLimit = formationBeacons.IsCreated ? math.min(formationBeaconCapacity, formationBeacons.Length) : 0;
+            int formationObstacleLimit = formationObstacles.IsCreated ? math.min(formationObstacleCapacity, formationObstacles.Length) : 0;
+            if (formationBeaconLimit <= 0 || formationObstacleLimit <= 0)
                 return;
 
             if (!_deepModeActive)
@@ -3374,7 +3390,7 @@ namespace Hecton8.World
             AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
             HectonFluidEngine fluidRuntime = _fluidEngine;
             int formationCount = 0;
-            for (int i = 0; i < snapshotCount && formationCount < _formationBeacons.Length; i++)
+            for (int i = 0; i < snapshotCount && formationCount < formationBeaconLimit; i++)
             {
                 BeaconNetworkSystem.BeaconSnapshot snapshot = _formationBeaconSnapshots[i];
                 Vector3 beaconPosition = snapshot.Position;
@@ -3390,7 +3406,7 @@ namespace Hecton8.World
                     leaderFlowXZ = new Vector2(resolvedLeaderFlow.x, resolvedLeaderFlow.z);
                 }
 
-                _formationBeacons[formationCount] = new FormationBeaconData
+                formationBeacons[formationCount] = new FormationBeaconData
                 {
                     Position = beaconPosition,
                     Radius = beaconRadius,
@@ -3458,13 +3474,15 @@ namespace Hecton8.World
         private void HarvestFormationObstacles(Vector3 origin)
         {
             NativeArray<StaticObstacleData> staticObstacleCache = ResolveVaultBuffer(ref _staticObstacleCacheHandle);
-            if (_formationObstacles == null || !staticObstacleCache.IsCreated)
+            NativeArray<FormationObstacleData> formationObstacles = ResolveFormationObstacles();
+            int formationObstacleLimit = formationObstacles.IsCreated ? math.min(formationObstacleCapacity, formationObstacles.Length) : 0;
+            if (formationObstacleLimit <= 0 || !staticObstacleCache.IsCreated)
                 return;
 
             int obstacleCount = 0;
             AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
             int staticObstacleCount = math.min(_staticObstacleCacheCount, staticObstacleCache.Length);
-            for (int i = 0; i < staticObstacleCount && obstacleCount < _formationObstacles.Length; i++)
+            for (int i = 0; i < staticObstacleCount && obstacleCount < formationObstacleLimit; i++)
             {
                 StaticObstacleData obstacle = staticObstacleCache[i];
                 float radius = math.max(0.1f, obstacle.Radius);
@@ -3474,7 +3492,7 @@ namespace Hecton8.World
                 if (AbsoluteUniversePosition.DistanceSq(in obstacleAup, in originAup) > (double)maxDistance * maxDistance)
                     continue;
 
-                _formationObstacles[obstacleCount] = new FormationObstacleData
+                formationObstacles[obstacleCount] = new FormationObstacleData
                 {
                     Position = obstaclePosition,
                     Radius = radius,
@@ -3796,15 +3814,23 @@ namespace Hecton8.World
 
         private void BuildDeepGrazingAnchors(int zoneCount)
         {
+            NativeArray<GrazingAnchorData> grazingAnchors = ResolveGrazingAnchors();
+            if (!grazingAnchors.IsCreated || grazingAnchors.Length <= 0)
+            {
+                _activeGrazingAnchorCount = 0;
+                _debugGrazingAnchorCount = 0;
+                return;
+            }
+
             _activeGrazingAnchorCount = 0;
-            int targetAnchorCount = math.min(zoneCount, ResolveTargetGrazingAnchorCount(ResolveActiveBoidUploadCount()));
+            int targetAnchorCount = math.min(math.min(zoneCount, ResolveTargetGrazingAnchorCount(ResolveActiveBoidUploadCount())), grazingAnchors.Length);
             for (int i = 0; i < zoneCount && _activeGrazingAnchorCount < targetAnchorCount; i++)
             {
                 HectonBiolumZone zone = _deepBiolumZones[i];
                 if (zone == null)
                     continue;
 
-                _grazingAnchors[_activeGrazingAnchorCount] = new GrazingAnchorData
+                grazingAnchors[_activeGrazingAnchorCount] = new GrazingAnchorData
                 {
                     Position = zone.GetZonePosition(),
                     Radius = deepBaitBallRadius,
@@ -3878,6 +3904,14 @@ namespace Hecton8.World
 
         private void BuildGrazingAnchors(Vector4 densityWorldRect, Vector3 driftOffset)
         {
+            NativeArray<GrazingAnchorData> grazingAnchors = ResolveGrazingAnchors();
+            if (!grazingAnchors.IsCreated || grazingAnchors.Length <= 0)
+            {
+                _activeGrazingAnchorCount = 0;
+                _debugGrazingAnchorCount = 0;
+                return;
+            }
+
             int targetAnchorCount = ResolveTargetGrazingAnchorCount(ResolveActiveBoidUploadCount());
             if (targetAnchorCount <= 0)
             {
@@ -3886,6 +3920,7 @@ namespace Hecton8.World
                 return;
             }
 
+            targetAnchorCount = math.min(targetAnchorCount, grazingAnchors.Length);
             float sizeX = 1f / math.max(densityWorldRect.z, 0.0001f);
             float sizeZ = 1f / math.max(densityWorldRect.w, 0.0001f);
             float minX = densityWorldRect.x;
@@ -3925,7 +3960,7 @@ namespace Hecton8.World
                 if (!found)
                     continue;
 
-                _grazingAnchors[_activeGrazingAnchorCount] = new GrazingAnchorData
+                grazingAnchors[_activeGrazingAnchorCount] = new GrazingAnchorData
                 {
                     Position = anchorPosition,
                     Radius = grazingRadius,
@@ -4944,8 +4979,10 @@ namespace Hecton8.World
 
         private void HandleMassiveDisplacement(in SargassumGlobalDragManager.MassiveDisplacementSignal signal)
         {
-            if (_massiveThreats == null ||
-                _massiveThreats.Length == 0 ||
+            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            int threatCapacity = massiveThreats.IsCreated ? math.min(maxMassiveThreatCount, massiveThreats.Length) : 0;
+            if (!massiveThreats.IsCreated ||
+                threatCapacity == 0 ||
                 !IsFiniteVector3(signal.PositionWS) ||
                 !float.IsFinite(signal.RadiusWS) ||
                 !float.IsFinite(signal.ExtremePanicRadiusWS) ||
@@ -4962,9 +4999,9 @@ namespace Hecton8.World
             float weakestEndTime = float.MaxValue;
             Vector3 inferredDirectionWS = Vector3.zero;
 
-            for (int i = 0; i < _massiveThreats.Length; i++)
+            for (int i = 0; i < threatCapacity; i++)
             {
-                MassiveThreatData threat = _massiveThreats[i];
+                MassiveThreatData threat = massiveThreats[i];
                 if (threat.EndTime <= absoluteSimulationTime)
                 {
                     targetIndex = i;
@@ -5008,7 +5045,7 @@ namespace Hecton8.World
                 }
             }
 
-            _massiveThreats[targetIndex] = new MassiveThreatData
+            massiveThreats[targetIndex] = new MassiveThreatData
             {
                 Position = signal.PositionWS,
                 InnerRadius = math.max(0.5f, signal.RadiusWS),
@@ -5042,15 +5079,17 @@ namespace Hecton8.World
             float panicRadiusWS,
             float durationSeconds)
         {
-            if (_massiveThreats == null || _massiveThreats.Length == 0)
+            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            int threatCapacity = massiveThreats.IsCreated ? math.min(maxMassiveThreatCount, massiveThreats.Length) : 0;
+            if (!massiveThreats.IsCreated || threatCapacity == 0)
                 return;
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
             int targetIndex = -1;
             float weakestEndTime = float.MaxValue;
-            for (int i = 0; i < _massiveThreats.Length; i++)
+            for (int i = 0; i < threatCapacity; i++)
             {
-                MassiveThreatData threat = _massiveThreats[i];
+                MassiveThreatData threat = massiveThreats[i];
                 if (threat.EndTime <= absoluteSimulationTime)
                 {
                     targetIndex = i;
@@ -5086,7 +5125,7 @@ namespace Hecton8.World
                 targetIndex = 0;
 
             Vector3 resolvedDirection = FastNormalizeVector3(directionWS, Vector3.forward);
-            _massiveThreats[targetIndex] = new MassiveThreatData
+            massiveThreats[targetIndex] = new MassiveThreatData
             {
                 Position = positionWS,
                 InnerRadius = math.max(0.5f, boidBodyRadius * 2f),
@@ -5108,8 +5147,10 @@ namespace Hecton8.World
             float durationSeconds,
             float strength01)
         {
-            if (_massiveThreats == null ||
-                _massiveThreats.Length == 0 ||
+            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            int threatCapacity = massiveThreats.IsCreated ? math.min(maxMassiveThreatCount, massiveThreats.Length) : 0;
+            if (!massiveThreats.IsCreated ||
+                threatCapacity == 0 ||
                 !IsFiniteVector3(positionWS) ||
                 !float.IsFinite(panicRadiusWS) ||
                 !float.IsFinite(durationSeconds) ||
@@ -5125,9 +5166,9 @@ namespace Hecton8.World
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
             int targetIndex = -1;
             float weakestEndTime = float.MaxValue;
-            for (int i = 0; i < _massiveThreats.Length; i++)
+            for (int i = 0; i < threatCapacity; i++)
             {
-                MassiveThreatData threat = _massiveThreats[i];
+                MassiveThreatData threat = massiveThreats[i];
                 if (threat.EndTime <= absoluteSimulationTime)
                 {
                     targetIndex = i;
@@ -5155,7 +5196,7 @@ namespace Hecton8.World
                 targetIndex = 0;
 
             Vector3 resolvedDirection = FastNormalizeVector3(directionWS, Vector3.forward);
-            _massiveThreats[targetIndex] = new MassiveThreatData
+            massiveThreats[targetIndex] = new MassiveThreatData
             {
                 Position = positionWS,
                 InnerRadius = math.max(0.5f, boidBodyRadius * 1.5f),
@@ -6349,7 +6390,8 @@ namespace Hecton8.World
 
         private void UpdateMassiveThreats()
         {
-            if (_massiveThreats == null)
+            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            if (!massiveThreats.IsCreated)
                 return;
 
             int previousActiveThreatCount = _activeMassiveThreatCount;
@@ -6595,7 +6637,9 @@ namespace Hecton8.World
         private void RecalculateMassiveThreatCount()
         {
             _activeMassiveThreatCount = 0;
-            if (_massiveThreats == null)
+            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            int threatCapacity = massiveThreats.IsCreated ? math.min(maxMassiveThreatCount, massiveThreats.Length) : 0;
+            if (threatCapacity <= 0)
             {
                 _debugMassiveThreatCount = 0;
                 return;
@@ -6603,19 +6647,19 @@ namespace Hecton8.World
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
             int writeIndex = 0;
-            for (int i = 0; i < _massiveThreats.Length; i++)
+            for (int i = 0; i < threatCapacity; i++)
             {
-                MassiveThreatData threat = _massiveThreats[i];
+                MassiveThreatData threat = massiveThreats[i];
                 if (threat.EndTime <= absoluteSimulationTime)
                     continue;
 
                 if (writeIndex != i)
-                    _massiveThreats[writeIndex] = threat;
+                    massiveThreats[writeIndex] = threat;
                 writeIndex++;
             }
 
-            for (int i = writeIndex; i < _massiveThreats.Length; i++)
-                _massiveThreats[i] = default;
+            for (int i = writeIndex; i < threatCapacity; i++)
+                massiveThreats[i] = default;
 
             _activeMassiveThreatCount = writeIndex;
             _debugMassiveThreatCount = _activeMassiveThreatCount;
@@ -6654,12 +6698,17 @@ namespace Hecton8.World
             if (_boidIndirectArgsMesh == mesh && _boidIndirectArgsInstanceCount == instanceCount)
                 return true;
 
-            _boidIndirectArgsUpload[0].indexCountPerInstance = mesh.GetIndexCount(0);
-            _boidIndirectArgsUpload[0].instanceCount = (uint)instanceCount;
-            _boidIndirectArgsUpload[0].startIndex = mesh.GetIndexStart(0);
-            _boidIndirectArgsUpload[0].baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0));
-            _boidIndirectArgsUpload[0].startInstance = 0u;
-            GraphicsBufferUploadUtility.UploadArray(_boidIndirectArgsBuffer, _boidIndirectArgsUpload, 1);
+            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> mappedArgs =
+                _boidIndirectArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+            mappedArgs[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            {
+                indexCountPerInstance = mesh.GetIndexCount(0),
+                instanceCount = (uint)instanceCount,
+                startIndex = mesh.GetIndexStart(0),
+                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                startInstance = 0u
+            };
+            _boidIndirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
             _boidIndirectArgsMesh = mesh;
             _boidIndirectArgsInstanceCount = instanceCount;
             return true;
@@ -6781,7 +6830,7 @@ namespace Hecton8.World
                 layer = targetLayer,
                 lightProbeUsage = LightProbeUsage.Off
             };
-            Graphics.RenderMeshIndirect(renderParams, boidMesh, _boidIndirectArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, boidMesh, _boidIndirectArgsBuffer, 1, 0);
         }
 
         private void TryRegister()
@@ -7618,34 +7667,42 @@ namespace Hecton8.World
 
             DispatchOriginShiftToLiveBoidBuffers(runtimeOffset);
 
-            if (_grazingAnchors != null)
+            NativeArray<GrazingAnchorData> grazingAnchors = ResolveGrazingAnchors();
+            if (grazingAnchors.IsCreated)
             {
-                for (int i = 0; i < _activeGrazingAnchorCount; i++)
-                    _grazingAnchors[i].Position += runtimeOffset;
+                int count = math.min(_activeGrazingAnchorCount, grazingAnchors.Length);
+                for (int i = 0; i < count; i++)
+                    grazingAnchors[i] = OffsetGrazingAnchor(grazingAnchors[i], runtimeOffset);
 
                 UploadGrazingAnchors();
             }
 
-            if (_massiveThreats != null)
+            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            if (massiveThreats.IsCreated)
             {
-                for (int i = 0; i < _activeMassiveThreatCount; i++)
-                    _massiveThreats[i].Position += runtimeOffset;
+                int count = math.min(_activeMassiveThreatCount, massiveThreats.Length);
+                for (int i = 0; i < count; i++)
+                    massiveThreats[i] = OffsetMassiveThreat(massiveThreats[i], runtimeOffset);
 
                 UploadMassiveThreats();
             }
 
-            if (_formationBeacons != null)
+            NativeArray<FormationBeaconData> formationBeacons = ResolveFormationBeacons();
+            if (formationBeacons.IsCreated)
             {
-                for (int i = 0; i < _debugFormationBeaconCount; i++)
-                    _formationBeacons[i].Position += runtimeOffset;
+                int count = math.min(_debugFormationBeaconCount, formationBeacons.Length);
+                for (int i = 0; i < count; i++)
+                    formationBeacons[i] = OffsetFormationBeacon(formationBeacons[i], runtimeOffset);
 
                 UploadFormationBeacons();
             }
 
-            if (_formationObstacles != null)
+            NativeArray<FormationObstacleData> formationObstacles = ResolveFormationObstacles();
+            if (formationObstacles.IsCreated)
             {
-                for (int i = 0; i < _debugFormationObstacleCount; i++)
-                    _formationObstacles[i].Position += runtimeOffset;
+                int count = math.min(_debugFormationObstacleCount, formationObstacles.Length);
+                for (int i = 0; i < count; i++)
+                    formationObstacles[i] = OffsetFormationObstacle(formationObstacles[i], runtimeOffset);
 
                 UploadFormationObstacles();
             }
@@ -7675,6 +7732,30 @@ namespace Hecton8.World
                     leviathanNodeBack[i] = node;
                 }
             }
+        }
+
+        private static GrazingAnchorData OffsetGrazingAnchor(GrazingAnchorData anchor, Vector3 runtimeOffset)
+        {
+            anchor.Position += runtimeOffset;
+            return anchor;
+        }
+
+        private static MassiveThreatData OffsetMassiveThreat(MassiveThreatData threat, Vector3 runtimeOffset)
+        {
+            threat.Position += runtimeOffset;
+            return threat;
+        }
+
+        private static FormationBeaconData OffsetFormationBeacon(FormationBeaconData beacon, Vector3 runtimeOffset)
+        {
+            beacon.Position += runtimeOffset;
+            return beacon;
+        }
+
+        private static FormationObstacleData OffsetFormationObstacle(FormationObstacleData obstacle, Vector3 runtimeOffset)
+        {
+            obstacle.Position += runtimeOffset;
+            return obstacle;
         }
 
         private static float ResolveDecayBlend(float speed, float deltaTime)

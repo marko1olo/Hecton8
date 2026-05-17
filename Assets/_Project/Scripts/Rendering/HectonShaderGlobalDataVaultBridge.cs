@@ -192,7 +192,7 @@ namespace Hecton8.Core
         private static float4 WriteReadSlot(int slot, float4 value, ref float4 fallback)
         {
             IDataVault vault = ResolveSlotsVault();
-            if (vault != null && vault.TryLockBuffer(BufferID.ShaderGlobalState))
+            if (vault != null && vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
             {
                 try
                 {
@@ -205,7 +205,7 @@ namespace Hecton8.Core
                 }
                 finally
                 {
-                    vault.TryUnlockBuffer(BufferID.ShaderGlobalState);
+                    vault.TryUnlockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability);
                 }
             }
 

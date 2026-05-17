@@ -209,3 +209,67 @@ Solution: Run `dotnet restore Hecton8.Core.csproj /p:UseSharedCompilation=false`
 Rejected Alternatives: Trust the earlier build wall, claim platform runtime validation without running it, or broaden edits outside the AI/ecology boundary after the build was already green.
 Scalability potential: Low/Middle/High/Ultra behavior unchanged from Decision 24; this is validation evidence.
 Hardware Impact: Build wall time was 75.17 s, or 75,170,000 us of compile validation only. Quest/Android, Metal/Mac, Steam Deck, PlayMode, profiler, GC monitor, and IL2CPP strip builds remain unexecuted.
+
+## Decision 26 - Player-Build Coefficient I/O Quarantine
+
+Problem: `EcosystemPopulationBalancer` still performed `File.Exists`, `FileInfo`, `FileStream`, `StreamReader.ReadToEnd`, and `JsonUtility.FromJson` for coefficient loading. Even though cold, that is managed allocation and disk I/O on a gameplay service, with direct Steam Deck/MicroSD hitch risk.
+Solution: Gate `TryReadCoefficientJson` behind `#if UNITY_EDITOR`. Player/non-editor builds return false and use the sanitized default coefficient already written into the DataVault coefficient lane. Required blackbox dump I/O remains only for fault export.
+Rejected Alternatives: Keep runtime JSON for convenience, move JSON parsing into cold tick, or add a managed cache that still allocates and reads disk in player builds.
+Scalability potential: Low = no coefficient disk read or managed JSON allocation on toaster/Steam Deck. Middle = default coefficient lane remains deterministic. High/Ultra = runtime visuals still scale through macro-swarm flags and downstream rendering, not JSON reads.
+Hardware Impact: Removes a cold-start/player-build I/O hitch class. Exact microseconds saved were not profiler-measured; build evidence only shows compile integrity.
+
+## Decision 27 - Current Build Green After I/O Pass
+
+Problem: Any preprocessor gate can silently break the non-Unity C# project if symbols or references are wrong.
+Solution: Re-run `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` after the I/O quarantine. Build succeeded with 0 warnings and 0 errors in 126.92 s. Static ecology scans stayed clean for local native ownership, update loops, prefab spawn, managed formatting, bad ABI pack, and active legacy bus/delegate usage.
+Rejected Alternatives: Record the edit without compiling, or claim Steam Deck runtime verification without running a Steam Deck build.
+Scalability potential: No behavior change beyond removing player-build JSON I/O; low/middle/high/ultra macro behavior remains as previously recorded.
+Hardware Impact: Build wall time was 126.92 s, or 126,920,000 us of compile validation only. Unity PlayMode, Quest/Android, Metal/Mac, Steam Deck, profiler, GC monitor, and IL2CPP strip builds remain unexecuted.
+
+## Decision 28 - ARM/Quest 16-Byte Vault Stride Padding
+
+Problem: `EcosystemPopulationCoefficient`, `EcosystemPopulationCullEvent`, and `EcosystemPopulationFreeSlot` were explicit Pack=1 records but had 52, 88, and 24-byte sizes. That is deterministic in C#, but it is still a bad vault stride for ARM/Quest and GPU-adjacent fixed lanes because adjacent records do not land on a 16-byte boundary.
+Solution: Pad the records to 64, 96, and 32 bytes with explicit reserved fields while keeping all existing field offsets stable.
+Rejected Alternatives: Leave the odd strides because desktop build accepts them, widen only one record, or reorder fields and risk producer/consumer ABI drift.
+Scalability potential: Low = same compact records with safer lane stride on Quest/Android. Middle = unchanged population-balancer math. High = the same ABI supports heavier visual residency without changing ecology data contracts. Ultra = downstream visual overkill can consume stable vault lanes while ecology records remain deterministic.
+Hardware Impact: Runtime microsecond savings were not measured; this is crash-class and cache-line discipline. Memory cost increased by 12 bytes per coefficient record, 8 bytes per cull event, and 8 bytes per free-slot record.
+
+## Decision 29 - Current Build Green After ABI Padding
+
+Problem: ABI padding can expose stale assumptions in serializers, vault sizing, or unsafe copies even when field offsets are preserved.
+Solution: Re-run `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` and focused ecology scans after the padding pass. Build succeeded with 0 warnings and 0 errors in 76.90 s. Static scans found no old 52/88/24 population record sizes, no sequential/Pack=4 ecology DTOs, no standard Unity update loop, no prefab spawn path, no managed formatting, no forced `Schedule().Complete`, and no local NativeArray/List/Queue/HashMap allocation or private owner fields in the bridge files. A follow-up domain-wide inventory found the assigned `Assets/_Project/Scripts/AI/Ecosystem/` domain contains one source file, and the same forbidden-pattern scans were clean there.
+Rejected Alternatives: Record ABI edits without compile proof, or claim Quest/Android/Metal/Steam Deck runtime validation from a desktop C# build.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; only the vault record stride was hardened.
+Hardware Impact: Build wall time was 76.90 s, or 76,900,000 us of compile validation only. Unity PlayMode, Quest/Android, Metal/Mac, Steam Deck, profiler, GC monitor, and IL2CPP strip builds remain unexecuted.
+
+## Decision 30 - Agent-ID Population Dump Path
+
+Problem: `EcosystemPopulationBalancer` used `Docs/AgentLogs/Dump_ECOSYSTEM_POPULATION_BALANCER.bin` while the batch and blackbox protocol require `Docs/AgentLogs/Dump_ECOSYSTEM_MIGRATION_LINK.bin` for this agent. Faults from the population bridge could be written under a private subsystem name and missed during post-mortem review.
+Solution: Change the population-balancer dump constant to `Docs/AgentLogs/Dump_ECOSYSTEM_MIGRATION_LINK.bin`, matching the macro-swarm bridge dump target.
+Rejected Alternatives: Keep two dump names for the same agent, add a second duplicate dump file, or rely on chat/report text to reconcile fault ownership.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; this is failure-analysis routing, not simulation math.
+Hardware Impact: 0 us runtime on non-fault frames. Fault-path file name resolution is unchanged except for the target string.
+
+## Decision 31 - Current-Disk Player I/O Guard Repair
+
+Problem: Current disk showed `TryReadCoefficientJson` no longer had the `#if UNITY_EDITOR` guard even though the status log said player-build coefficient I/O had been quarantined. That reopened `FileStream`, `StreamReader.ReadToEnd`, and `JsonUtility.FromJson` for player builds.
+Solution: Restore the `#if UNITY_EDITOR` / `#else return false` guard around the coefficient JSON path. Player/non-editor builds again use the sanitized default/vault coefficient lane and skip disk JSON reads.
+Rejected Alternatives: Trust stale documentation, keep player-build JSON for convenience, or add a managed cache that still allocates.
+Scalability potential: Low = no coefficient file read or JSON allocation on toaster/Steam Deck. Middle = deterministic default coefficient lane. High/Ultra = visual overkill remains driven through macro-swarm/SDF/signal flags, not runtime balance-file I/O.
+Hardware Impact: Removes a player-build I/O hitch class. Exact microseconds saved were not profiler-measured.
+
+## Decision 32 - Fixed-Capacity Blackbox Dump Export
+
+Problem: `DumpBlackBox` wrote `min(writtenCount, capacity)` records. If a fault happened before the ring had wrapped, the exported artifact could contain fewer than the mandated fixed 300-frame buffer.
+Solution: Bump the dump format to v3 and write `dumpCount = capacity` for every created telemetry ring. The ordering still starts at zero until the ring fills, then wraps from the current cursor.
+Rejected Alternatives: Keep shortened early-session dumps, write a second manifest-only count, or claim 300-frame blackbox compliance from an undersized file.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged; only fault export completeness changes.
+Hardware Impact: 0 us on non-fault frames. Fault-path binary output grows to the fixed ring capacity; with the 64-byte telemetry entry layout and 300-entry mandated capacity, the payload is about 19.2 KB plus header.
+
+## Decision 33 - Current Build Green After Dump/I/O Repairs
+
+Problem: After the dump-path repair and current-disk I/O guard repair, the first two build attempts were blocked by unrelated concurrent gameplay edits: player/tether/interaction errors after 60.12 s, then missing `MethodImpl` imports in `HectonPlayerMovement.cs` after 36.68 s. A later successful build emitted one copy-retry warning because a DLL was temporarily locked.
+Solution: Re-run `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` after the external wall moved. Final build succeeded with 0 warnings and 0 errors in 142.24 s. Focused scans confirmed the JSON coefficient read path is under `#if UNITY_EDITOR`, no private population-balancer dump target remains, the dump writes full capacity, and the assigned ecology domain plus bridge files remain clean for update loops, prefab spawns, managed formatting, forced `Schedule().Complete`, local native collection ownership, bad ABI sizes, and legacy bus/delegate patterns.
+Rejected Alternatives: Patch player movement/tether/interaction domains from the ecology agent, ignore the stale missing I/O guard, or leave the status as build-blocked after a clean rerun.
+Scalability potential: No ecology simulation behavior change beyond restored I/O quarantine, correct dump routing, and complete fixed-size fault evidence.
+Hardware Impact: Latest clean build wall time was 142.24 s, or 142,240,000 us of compile validation only. Unity PlayMode, Quest/Android, Metal/Mac, Steam Deck, profiler, GC monitor, and IL2CPP strip builds remain unexecuted.

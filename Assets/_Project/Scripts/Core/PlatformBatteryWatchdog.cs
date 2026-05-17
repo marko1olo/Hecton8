@@ -19,6 +19,9 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            GlobalRegistry.SetTransientLowScalabilityOverride(
+                GlobalRegistry.TransientScalabilityBatteryPressureMask,
+                false);
             _criticalQualityApplied = false;
         }
 
@@ -33,22 +36,19 @@ namespace Hecton8.Core
         /// </summary>
         public static void SampleAndApply()
         {
-            if (_criticalQualityApplied)
-                return;
-
             IHardwareThermalService hardware = GlobalRegistry.HardwareThermal;
             if (hardware == null)
                 return;
 
             byte batteryPercent = hardware.BatteryPercent;
-            if (batteryPercent == 0 || batteryPercent >= CriticalBatteryPercent)
+            bool criticalBattery = batteryPercent > 0 && batteryPercent < CriticalBatteryPercent;
+            if (criticalBattery == _criticalQualityApplied)
                 return;
 
-            if (QualitySettings.GetQualityLevel() != 0)
-                QualitySettings.SetQualityLevel(0, true);
-
-            GlobalRegistry.RegisterScalabilityTierOverride(ScalabilityTierProfiles.LowMx350);
-            _criticalQualityApplied = true;
+            GlobalRegistry.SetTransientLowScalabilityOverride(
+                GlobalRegistry.TransientScalabilityBatteryPressureMask,
+                criticalBattery);
+            _criticalQualityApplied = criticalBattery;
         }
     }
 }

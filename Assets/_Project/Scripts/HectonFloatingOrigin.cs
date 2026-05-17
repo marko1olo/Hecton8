@@ -368,10 +368,10 @@ namespace Hecton8.Core
                 runtimePosition3.x,
                 runtimePosition3.y,
                 runtimePosition3.z);
-            Vector3 linearVelocity = math.all(math.isfinite((float3)body.linearVelocity))
+            Vector3 linearVelocity = IsFiniteVector(body.linearVelocity)
                 ? body.linearVelocity
                 : Vector3.zero;
-            Vector3 angularVelocity = math.all(math.isfinite((float3)body.angularVelocity))
+            Vector3 angularVelocity = IsFiniteVector(body.angularVelocity)
                 ? body.angularVelocity
                 : Vector3.zero;
             bool wasSleeping = body.IsSleeping();

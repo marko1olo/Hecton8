@@ -552,6 +552,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                     half globalBiolumMask = step(0.001h, globalBiolumState.w);
                     half masterBiolum = max(max((half)_BiolumIntensity.x, 0.0h), globalBiolumState.w);
                     half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * masterBiolum * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField;
+                    authoredBiolumEnergy = clamp(authoredBiolumEnergy, 0.0h, 10.0h);
                     [branch]
                     if (authoredBiolumEnergy > 0.0001h)
                     {

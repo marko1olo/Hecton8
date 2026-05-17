@@ -159,6 +159,10 @@ Shader "Hecton8/Flora/KelpMaster"
             half _HectonFloorBiolumStrength;
             float4 _BiolumMasterPhase;
             float4 _BiolumIntensity;
+            float4 _GlobalBiolumStates[16];
+            float4 _GlobalBiolumParams;
+            float4 _GlobalBiolumClock;
+            float4 _GlobalBiolumAupOffset;
 
             float4 _HectonPropWashPosition; // xyz: position, w: radius
             half _HectonPropWashForce;
@@ -368,6 +372,40 @@ Shader "Hecton8/Flora/KelpMaster"
                 return lerp(low, high, step(2.0h, exponent));
             }
 
+            half4 ResolveKelpGlobalBiolum(float3 positionWS)
+            {
+                int activeCount = min(max((int)_GlobalBiolumParams.x, 0), 16);
+                if (activeCount <= 0)
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+                float selector = frac(abs(positionWS.x * 0.029 + positionWS.z * 0.047 + _GlobalBiolumAupOffset.x * 0.0011 + _GlobalBiolumAupOffset.z * 0.0019));
+                int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
+                float4 state = _GlobalBiolumStates[stateIndex];
+                half strobe = saturate((half)_GlobalBiolumParams.z);
+                half highTier = step(4.0h, (half)_GlobalBiolumParams.y);
+                int secondaryIndex = stateIndex + 1;
+                if (secondaryIndex >= activeCount)
+                    secondaryIndex = 0;
+                float4 secondaryState = _GlobalBiolumStates[secondaryIndex];
+                half overdrive = 0.0h;
+                half godSpark = 0.0h;
+                half godHaze = 0.0h;
+                if (highTier > 0.5h)
+                {
+                    half overPulse = (half)(1.0 - abs(frac(_GlobalBiolumClock.x * 0.07 + selector * 3.0) * 2.0 - 1.0));
+                    half filament = (half)(1.0 - abs(frac(positionWS.x * 0.149 + positionWS.y * 0.071 + positionWS.z * 0.181 + _GlobalBiolumClock.x * 0.19) * 2.0 - 1.0));
+                    godHaze = smoothstep(0.42h, 0.92h, overPulse) * (0.52h + filament * 0.48h);
+                    godSpark = smoothstep(0.80h, 0.97h, filament) * overPulse;
+                    overdrive = saturate(overPulse * 0.35h + godSpark * 0.22h);
+                }
+                half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
+                half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
+                color = lerp(color, (half3)secondaryState.rgb, overdrive);
+                color = saturate(color + godHaze * half3(0.05h, 0.18h, 0.20h));
+                intensity = clamp(intensity + (half)secondaryState.w * overdrive + godSpark * 0.55h + godHaze * 0.28h, 0.0h, 10.0h);
+                return half4(color, intensity);
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -498,6 +536,8 @@ Shader "Hecton8/Flora/KelpMaster"
                 [branch]
                 if (_BiolumStrength > 0.0001h)
                 {
+                    half4 globalBiolumState = ResolveKelpGlobalBiolum(samplePositionWS);
+                    half globalBiolumMask = step(0.001h, globalBiolumState.w);
                     half masterPhase = (half)saturate(_BiolumMasterPhase.x);
                     half fieldPhase = masterPhase + samplePositionWS.x * 0.08h + samplePositionWS.z * 0.05h + input.uv.y * 3.1h;
                     half pulse = 1.0h + ((half)HectonCoreLitTrianglePulse01(fieldPhase) * 2.0h - 1.0h) * 0.22h;
@@ -506,13 +546,15 @@ Shader "Hecton8/Flora/KelpMaster"
                     half biolumMask = saturate((edgeMask * 0.42h + thicknessMask * 0.38h + proceduralBiolumMask * 0.20h) * _BiolumMaskStrength);
                     half biolumField = lerp(1.0h, currentWave, saturate(_BiolumCurrentResponse));
                     half celestialBiolum = max((half)_HectonCelestialBiolumMultiplier, 1.0h);
-                    half masterBiolum = max((half)_BiolumIntensity.x, 0.0h);
+                    half masterBiolum = max(max((half)_BiolumIntensity.x, 0.0h), globalBiolumState.w);
                     half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * masterBiolum * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField;
+                    authoredBiolumEnergy = clamp(authoredBiolumEnergy, 0.0h, 10.0h);
                     [branch]
                     if (authoredBiolumEnergy > 0.0001h)
                     {
                         half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
                         zoneBiolumColor = lerp(zoneBiolumColor, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
+                        zoneBiolumColor = lerp(zoneBiolumColor, globalBiolumState.rgb, globalBiolumMask);
                         half3 authoredBiolum = zoneBiolumColor * authoredBiolumEnergy;
                         authoredBiolum *= HectonCoreLitResolveFlashlightPhotophobia(samplePositionWS);
                         biolum += authoredBiolum;

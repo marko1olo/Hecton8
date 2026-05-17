@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
 using Unity.Burst;
@@ -59,6 +61,138 @@ namespace Hecton8.Animation.IK
         [FieldOffset(84)] public float Padding6;
         [FieldOffset(88)] public float Padding7;
         [FieldOffset(92)] public float Padding8;
+    }
+
+    public static class LeviathanTerrainIkBlackBox
+    {
+        public const string DefaultDumpPath = "Docs/AgentLogs/Dump_GRAB_IK_PROJECTION_LeviathanTerrainIk.bin";
+
+        public static bool TryDumpTelemetry(
+            string path,
+            NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryCursor)
+        {
+            if (string.IsNullOrEmpty(path) ||
+                !LeviathanTerrainIkLayout.Validate() ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length < LeviathanTerrainIkConstants.TelemetryCapacity ||
+                !telemetryCursor.IsCreated ||
+                telemetryCursor.Length <= 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    int cursor = telemetryCursor[0];
+                    int ringLength = telemetryRing.Length;
+                    int dumpCount = LeviathanTerrainIkConstants.TelemetryCapacity;
+                    int startIndex = cursor >= dumpCount
+                        ? PositiveModulo(cursor - dumpCount, ringLength)
+                        : 0;
+
+                    writer.Write(0x4C54494Bu);
+                    writer.Write(1u);
+                    writer.Write(LeviathanTerrainIkLayout.TelemetryEntryBytes);
+                    writer.Write(dumpCount);
+                    writer.Write(cursor);
+                    for (int i = 0; i < dumpCount; i++)
+                    {
+                        int sourceIndex = PositiveModulo(startIndex + i, ringLength);
+                        WriteEntry(writer, telemetryRing[sourceIndex]);
+                    }
+                }
+
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+        }
+
+        public static bool TryDumpTelemetryOnFault(
+            string path,
+            NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryCursor)
+        {
+            if (!telemetryRing.IsCreated ||
+                !telemetryCursor.IsCreated ||
+                telemetryRing.Length < LeviathanTerrainIkConstants.TelemetryCapacity ||
+                telemetryCursor.Length <= 0)
+            {
+                return false;
+            }
+
+            int cursor = telemetryCursor[0];
+            if (cursor < 0)
+                return TryDumpTelemetry(path, telemetryRing, telemetryCursor);
+            if (cursor == 0)
+                return false;
+
+            int lastIndex = PositiveModulo(cursor - 1, telemetryRing.Length);
+            return (telemetryRing[lastIndex].Flags & LeviathanTerrainIkConstants.TelemetryFlagInvalid) != 0u &&
+                   TryDumpTelemetry(path, telemetryRing, telemetryCursor);
+        }
+
+        private static int PositiveModulo(int value, int length)
+        {
+            int safeLength = Math.Max(1, length);
+            int result = value % safeLength;
+            return result < 0 ? result + safeLength : result;
+        }
+
+        private static void WriteEntry(BinaryWriter writer, LeviathanTerrainIkTelemetryEntry entry)
+        {
+            writer.Write(entry.FrameIndex);
+            writer.Write(entry.ActiveSegmentCount);
+            writer.Write(entry.Flags);
+            writer.Write(entry.StateHash);
+            WriteFloat3(writer, entry.HeadPosition);
+            WriteFloat3(writer, entry.TailPosition);
+            WriteFloat3(writer, entry.IntendedVelocity);
+            writer.Write(entry.MaxTerrainPushMeters);
+            writer.Write(entry.TailWhipSecondsRemaining);
+            writer.Write(entry.Padding0);
+            writer.Write(entry.Padding1);
+            writer.Write(entry.Padding2);
+            writer.Write(entry.Padding3);
+            writer.Write(entry.Padding4);
+            writer.Write(entry.Padding5);
+            writer.Write(entry.Padding6);
+            writer.Write(entry.Padding7);
+            writer.Write(entry.Padding8);
+        }
+
+        private static void WriteFloat3(BinaryWriter writer, float3 value)
+        {
+            writer.Write(value.x);
+            writer.Write(value.y);
+            writer.Write(value.z);
+        }
     }
 
     public static class LeviathanTerrainIkVault
@@ -238,6 +372,7 @@ namespace Hecton8.Animation.IK
                              (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagSdfHugging) != 0u &&
                              VoxelSdfTexture3D.IsCreated &&
                              math.all(math.isfinite(VoxelSdfOrigin)) &&
+                             math.all(math.isfinite(sdfCellSize)) &&
                              TryResolveSdfVoxelCount(VoxelSdfDimensions, out int expectedSdfLength) &&
                              VoxelSdfTexture3D.Length >= expectedSdfLength &&
                              sdfRange > 0.0001f;
@@ -309,7 +444,7 @@ namespace Hecton8.Animation.IK
             float distanceSq = math.lengthsq(delta);
             float intendedSpeed = ResolveLength(intended);
             float maxStep = math.max(segmentLength * 0.25f, intendedSpeed * dt + segmentLength * 0.5f);
-            if (distanceSq > maxStep * maxStep && distanceSq > MinLengthSq)
+            if (math.isfinite(distanceSq) && distanceSq > maxStep * maxStep && distanceSq > MinLengthSq)
                 target = current + delta * math.rsqrt(distanceSq) * maxStep;
 
             SegmentPositions[0] = SanitizeFinite(target, current);
@@ -339,7 +474,7 @@ namespace Hecton8.Animation.IK
                 float3 child = SanitizeFinite(SegmentPositions[i], parent - ownerForward * segmentLength);
                 float3 delta = child - parent;
                 float lengthSq = math.lengthsq(delta);
-                float3 direction = lengthSq > MinLengthSq
+                float3 direction = math.isfinite(lengthSq) && lengthSq > MinLengthSq
                     ? delta * math.rsqrt(lengthSq)
                     : -ownerForward;
                 SegmentPositions[i] = SanitizeFinite(parent + direction * segmentLength, parent - ownerForward * segmentLength);
@@ -403,6 +538,9 @@ namespace Hecton8.Animation.IK
                 VoxelSdfDimensions.x <= 1 ||
                 VoxelSdfDimensions.y <= 1 ||
                 VoxelSdfDimensions.z <= 1 ||
+                !math.all(math.isfinite(worldPosition)) ||
+                !math.all(math.isfinite(invCellSize)) ||
+                !math.isfinite(sdfRange) ||
                 sdfRange <= 0.0001f)
             {
                 return false;
@@ -443,19 +581,64 @@ namespace Hecton8.Animation.IK
             return math.isfinite(density);
         }
 
+        private bool TrySampleSdfTrilinearClamped(float3 worldPosition, float3 invCellSize, float sdfRange, out float density)
+        {
+            density = 0f;
+            if (!VoxelSdfTexture3D.IsCreated ||
+                VoxelSdfDimensions.x <= 1 ||
+                VoxelSdfDimensions.y <= 1 ||
+                VoxelSdfDimensions.z <= 1 ||
+                !math.all(math.isfinite(worldPosition)) ||
+                !math.all(math.isfinite(invCellSize)) ||
+                !math.isfinite(sdfRange) ||
+                sdfRange <= 0.0001f)
+            {
+                return false;
+            }
+
+            float3 sample = math.clamp(
+                (worldPosition - VoxelSdfOrigin) * invCellSize,
+                float3.zero,
+                new float3(VoxelSdfDimensions.x - 1.001f, VoxelSdfDimensions.y - 1.001f, VoxelSdfDimensions.z - 1.001f));
+            int x0 = (int)math.floor(sample.x);
+            int y0 = (int)math.floor(sample.y);
+            int z0 = (int)math.floor(sample.z);
+            int x1 = math.min(x0 + 1, VoxelSdfDimensions.x - 1);
+            int y1 = math.min(y0 + 1, VoxelSdfDimensions.y - 1);
+            int z1 = math.min(z0 + 1, VoxelSdfDimensions.z - 1);
+            float3 f = sample - new float3(x0, y0, z0);
+            float c000 = DecodeSdf(SdfIndex(x0, y0, z0), sdfRange);
+            float c100 = DecodeSdf(SdfIndex(x1, y0, z0), sdfRange);
+            float c010 = DecodeSdf(SdfIndex(x0, y1, z0), sdfRange);
+            float c110 = DecodeSdf(SdfIndex(x1, y1, z0), sdfRange);
+            float c001 = DecodeSdf(SdfIndex(x0, y0, z1), sdfRange);
+            float c101 = DecodeSdf(SdfIndex(x1, y0, z1), sdfRange);
+            float c011 = DecodeSdf(SdfIndex(x0, y1, z1), sdfRange);
+            float c111 = DecodeSdf(SdfIndex(x1, y1, z1), sdfRange);
+            float c00 = math.lerp(c000, c100, f.x);
+            float c10 = math.lerp(c010, c110, f.x);
+            float c01 = math.lerp(c001, c101, f.x);
+            float c11 = math.lerp(c011, c111, f.x);
+            float c0 = math.lerp(c00, c10, f.y);
+            float c1 = math.lerp(c01, c11, f.y);
+            density = math.lerp(c0, c1, f.z);
+            return math.isfinite(density);
+        }
+
         private bool TryResolveSdfGradient(float3 worldPosition, float3 invCellSize, float sdfRange, float3 step, out float3 normal)
         {
             normal = new float3(0f, 1f, 0f);
-            bool x0 = TrySampleSdfTrilinear(worldPosition - new float3(step.x, 0f, 0f), invCellSize, sdfRange, out float dx0);
-            bool x1 = TrySampleSdfTrilinear(worldPosition + new float3(step.x, 0f, 0f), invCellSize, sdfRange, out float dx1);
-            bool y0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, step.y, 0f), invCellSize, sdfRange, out float dy0);
-            bool y1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, step.y, 0f), invCellSize, sdfRange, out float dy1);
-            bool z0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, 0f, step.z), invCellSize, sdfRange, out float dz0);
-            bool z1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, 0f, step.z), invCellSize, sdfRange, out float dz1);
+            float3 safeStep = SanitizePositiveFinite(step, new float3(0.05f), new float3(0.0001f));
+            bool x0 = TrySampleSdfTrilinearClamped(worldPosition - new float3(safeStep.x, 0f, 0f), invCellSize, sdfRange, out float dx0);
+            bool x1 = TrySampleSdfTrilinearClamped(worldPosition + new float3(safeStep.x, 0f, 0f), invCellSize, sdfRange, out float dx1);
+            bool y0 = TrySampleSdfTrilinearClamped(worldPosition - new float3(0f, safeStep.y, 0f), invCellSize, sdfRange, out float dy0);
+            bool y1 = TrySampleSdfTrilinearClamped(worldPosition + new float3(0f, safeStep.y, 0f), invCellSize, sdfRange, out float dy1);
+            bool z0 = TrySampleSdfTrilinearClamped(worldPosition - new float3(0f, 0f, safeStep.z), invCellSize, sdfRange, out float dz0);
+            bool z1 = TrySampleSdfTrilinearClamped(worldPosition + new float3(0f, 0f, safeStep.z), invCellSize, sdfRange, out float dz1);
             if (!x0 || !x1 || !y0 || !y1 || !z0 || !z1)
                 return false;
 
-            float3 invStep = math.rcp(math.max(step, new float3(0.0001f)));
+            float3 invStep = math.rcp(safeStep);
             float3 gradient = new float3((dx0 - dx1) * invStep.x, (dy0 - dy1) * invStep.y, (dz0 - dz1) * invStep.z);
             normal = NormalizeSafe(gradient, new float3(0f, 1f, 0f));
             return math.all(math.isfinite(normal));
@@ -597,7 +780,7 @@ namespace Hecton8.Animation.IK
         private static float ResolveLength(float3 value)
         {
             float lengthSq = math.lengthsq(value);
-            return lengthSq > MinLengthSq ? lengthSq * math.rsqrt(lengthSq) : 0f;
+            return lengthSq > MinLengthSq && math.isfinite(lengthSq) ? lengthSq * math.rsqrt(lengthSq) : 0f;
         }
 
         public static bool TryResolveSdfVoxelCount(int3 dimensions, out int voxelCount)

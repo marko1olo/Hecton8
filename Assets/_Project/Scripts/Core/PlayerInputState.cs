@@ -144,7 +144,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Zero-allocation player input snapshot captured once at the start of each frame.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct PlayerInputState
     {
         /// <summary>
@@ -219,7 +219,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable OpenXR controller state captured once per dispatcher frame.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct XRInputState
     {
         /// <summary>Frame that produced this snapshot.</summary>
@@ -230,6 +230,8 @@ namespace Hecton8.Core
 
         /// <summary>Non-zero when the OpenXR controller reports a tracked pose.</summary>
         public byte IsTracked;
+        private byte _reserved0;
+        private byte _reserved1;
 
         /// <summary>Trigger axis normalized to 0..1.</summary>
         public float Trigger;

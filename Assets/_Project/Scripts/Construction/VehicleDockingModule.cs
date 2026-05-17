@@ -23,7 +23,7 @@ namespace Hecton8.Construction
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Vehicle Docking Module")]
-    public sealed class VehicleDockingModule : MonoBehaviour, ITickable, IFixedTickable, IUpdatable, IPowerComponent, IPoolable, IOriginShiftListener
+    public sealed class VehicleDockingModule : MonoBehaviour, ITickable, IFixedTickable, IUpdatable, IPowerComponent, IPoolable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int TransportLookupCacheCapacity = 16;
         private const float MaxDockingFixedDeltaSeconds = 0.05f;
@@ -36,33 +36,59 @@ namespace Hecton8.Construction
         private const float DockingDeviationAbortMeters = 5f;
         private const float DockingWakeSignalIntervalSeconds = 0.1f;
         private const float DockingCompleteSignalProgress01 = 0.95f;
+        private const float MaxDockingAngularVelocityRadians = 8f;
         private const uint DockingWakeSourceHash = 0x44534C4Eu;
         private const uint DockingWakeSourceVehicleFlag = 2u;
         private const int DockTelemetryCapacity = 300;
+        private const uint DockTelemetryDumpMagic = 0x4453504Cu;
+        private const ushort DockTelemetryDumpVersion = 2;
+        private const ushort DockTelemetryEntrySizeBytes = 128;
+        private const int DockTelemetryDumpCooldownFrames = 30;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 128)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 128)]
         private struct DockTelemetryEntry
         {
+            [FieldOffset(0)]
             public int Frame;
+            [FieldOffset(4)]
             public byte State;
+            [FieldOffset(5)]
             public byte HasPower;
+            [FieldOffset(6)]
             public byte HasRelativeAup;
+            [FieldOffset(7)]
             public byte Reserved;
+            [FieldOffset(8)]
             public float DistanceSq;
+            [FieldOffset(12)]
             public float AlignmentDot;
+            [FieldOffset(16)]
             public float SplineDeviationError;
+            [FieldOffset(20)]
             public float FlowSpeed;
+            [FieldOffset(24)]
             public float3 Position;
+            [FieldOffset(36)]
             public float3 SplineTargetPosition;
+            [FieldOffset(48)]
             public float3 CommandVelocity;
+            [FieldOffset(60)]
             public float3 FlowVelocity;
+            [FieldOffset(72)]
             public float4 Rotation;
+            [FieldOffset(88)]
             public long GridX;
+            [FieldOffset(96)]
             public long GridY;
+            [FieldOffset(104)]
             public long GridZ;
+            [FieldOffset(112)]
             public uint OwnerHash;
+            [FieldOffset(116)]
             public uint RequestId;
+            [FieldOffset(120)]
             public uint RuntimeFlags;
+            [FieldOffset(124)]
             public uint ReservedTail;
         }
 
@@ -167,6 +193,7 @@ namespace Hecton8.Construction
         private Vector3 _lowTierSplineTargetPosition;
         private Quaternion _lowTierSplineTargetRotation = Quaternion.identity;
         private Vector3 _lastDockingSplineTargetPosition;
+        private Quaternion _lastDockingSplineRotation = Quaternion.identity;
         private Vector3 _lastDockingCommandVelocity;
         private float3 _lastDockingFlowVelocity;
         private float _lowTierSplineBlendSeconds;
@@ -181,6 +208,8 @@ namespace Hecton8.Construction
         private IDataVault _dataVault;
         private VaultBufferHandle<DockTelemetryEntry> _dockTelemetryHandle;
         private VaultBufferHandle<int> _dockTelemetryCursorHandle;
+        private int _lastDockTelemetryDumpFrame = -DockTelemetryDumpCooldownFrames;
+        private bool _hotSwapRegistered;
 
         /// <summary>Continuous draw while charge is actually transferred to a docked transport.</summary>
         public float PowerRating => _activelyCharging ? -chargingPowerDraw : 0f;
@@ -235,6 +264,7 @@ namespace Hecton8.Construction
         private void OnEnable()
         {
             EnsureDockTelemetry();
+            TryRegisterHotSwapListener();
             ClearTransportLookupCache();
             CacheDockingAutopilotService();
             CacheFluidRuntime();
@@ -248,6 +278,7 @@ namespace Hecton8.Construction
             ReleaseDockedTransport();
             ClearTransportLookupCache();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             DisposeDockTelemetry();
         }
 
@@ -257,6 +288,7 @@ namespace Hecton8.Construction
             ReleaseDockedTransport();
             ClearTransportLookupCache();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             DisposeDockTelemetry();
         }
 
@@ -273,6 +305,8 @@ namespace Hecton8.Construction
             ResetDockingRuntimeCaches();
             _lastRejectedDockColliderId = 0UL;
             ClearTransportLookupCache();
+            EnsureDockTelemetry();
+            TryRegisterHotSwapListener();
             CacheDockingAutopilotService();
             CacheFluidRuntime();
             _debugDockOccupied = false;
@@ -297,6 +331,8 @@ namespace Hecton8.Construction
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryUnregister();
+            TryUnregisterHotSwapListener();
+            DisposeDockTelemetry();
         }
 
         public void Tick(float deltaTime)
@@ -339,6 +375,23 @@ namespace Hecton8.Construction
 
             if (!hasPower)
                 _activelyCharging = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            if (ReferenceEquals(_dataVault, currentService))
+                return;
+
+            _dataVault = currentService as IDataVault;
+            _dockTelemetryHandle = default;
+            _dockTelemetryCursorHandle = default;
+            EnsureDockTelemetry();
         }
 
         private void OnTriggerEnter(Collider other)
@@ -410,6 +463,23 @@ namespace Hecton8.Construction
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.UnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private bool TryDockFromCollider(Collider other)
@@ -667,6 +737,7 @@ namespace Hecton8.Construction
             _lowTierSplineTargetPosition = startPosition;
             _lowTierSplineTargetRotation = startRotation;
             _lastDockingSplineTargetPosition = startPosition;
+            _lastDockingSplineRotation = startRotation;
             RefreshDockedRelativeAup(anchor != null ? anchor.position : startPosition);
         }
 
@@ -754,6 +825,9 @@ namespace Hecton8.Construction
                 evaluatedPosition,
                 flowVelocity,
                 safeFixedDeltaTime);
+            Vector3 commandAngularVelocity = ResolveDockingCommandAngularVelocity(
+                evaluatedRotation,
+                safeFixedDeltaTime);
             _lastDockingFlowVelocity = ToFloat3(flowVelocity);
             _lastDockingCommandVelocity = commandVelocity;
             QueueDockingWakeSignals(evaluatedPosition, commandVelocity, safeFixedDeltaTime);
@@ -762,7 +836,7 @@ namespace Hecton8.Construction
             if (_dockedBody != null)
             {
                 _dockedBody.linearVelocity = commandVelocity;
-                _dockedBody.angularVelocity = Vector3.zero;
+                _dockedBody.angularVelocity = commandAngularVelocity;
                 _dockedBody.MovePosition(evaluatedPosition);
                 _dockedBody.MoveRotation(evaluatedRotation);
             }
@@ -770,6 +844,8 @@ namespace Hecton8.Construction
             {
                 _dockedTransform.SetPositionAndRotation(evaluatedPosition, evaluatedRotation);
             }
+
+            _lastDockingSplineRotation = evaluatedRotation;
 
             bool durationElapsed = _dockingElapsedSeconds >= duration - 0.0001f;
             if (!durationElapsed)
@@ -1068,6 +1144,11 @@ namespace Hecton8.Construction
             if (!TryResolveDockTelemetry(out DockTelemetryEntry* telemetry, out int telemetryLength, out int* cursorPtr))
                 return;
 
+            int frame = Time.frameCount;
+            if (frame - _lastDockTelemetryDumpFrame < DockTelemetryDumpCooldownFrames)
+                return;
+            _lastDockTelemetryDumpFrame = frame;
+
             string projectRoot = Application.dataPath;
             if (!string.IsNullOrEmpty(projectRoot))
                 projectRoot = Directory.GetParent(projectRoot)?.FullName;
@@ -1082,7 +1163,9 @@ namespace Hecton8.Construction
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
-                writer.Write(0x4453504Cu);
+                writer.Write(DockTelemetryDumpMagic);
+                writer.Write(DockTelemetryDumpVersion);
+                writer.Write(DockTelemetryEntrySizeBytes);
                 writer.Write(telemetryLength);
                 writer.Write(cursor);
                 int index = cursor;
@@ -1133,7 +1216,6 @@ namespace Hecton8.Construction
             telemetry = null;
             telemetryLength = 0;
             cursor = null;
-            EnsureDockTelemetry();
             if (!_dockTelemetryHandle.IsCreated || !_dockTelemetryCursorHandle.IsCreated || _dataVault == null)
                 return false;
 
@@ -1299,7 +1381,6 @@ namespace Hecton8.Construction
             DockingSplineSample sample = default;
             if (_dockingAutopilotService != null && _activeDockingSplineSlot >= 0)
             {
-                _dockingAutopilotService.TryWriteActiveSpline(_activeDockingSplineSlot, in _activeDockingSpline);
                 evaluated = _dockingAutopilotService.TryEvaluateActiveSpline(_activeDockingSplineSlot, _activeDockingSpline.Progress01, out sample);
             }
 
@@ -1458,7 +1539,6 @@ namespace Hecton8.Construction
                 _activeDockingSpline.Progress01 = finalState == DockingSplineRuntimeState.Completed
                     ? 1f
                     : _activeDockingSpline.Progress01;
-                _dockingAutopilotService.TryWriteActiveSpline(_activeDockingSplineSlot, in _activeDockingSpline);
                 _dockingAutopilotService.TryReleaseSplineSlot(_activeDockingSplineSlot, _dockingSplineOwnerHash);
             }
 
@@ -1513,9 +1593,63 @@ namespace Hecton8.Construction
             _lastDockingFlowVelocity = float3.zero;
             _lastDockingCommandVelocity = Vector3.zero;
             _lastDockingSplineTargetPosition = Vector3.zero;
+            _lastDockingSplineRotation = Quaternion.identity;
             _lowTierSplineFromPosition = Vector3.zero;
             _lowTierSplineTargetPosition = Vector3.zero;
             _lowTierSplineTargetRotation = Quaternion.identity;
+        }
+
+        private Vector3 ResolveDockingCommandAngularVelocity(Quaternion evaluatedRotation, float fixedDeltaTime)
+        {
+            if (!IsFiniteQuaternion(evaluatedRotation))
+                return Vector3.zero;
+
+            Quaternion previousRotation = IsFiniteQuaternion(_lastDockingSplineRotation)
+                ? _lastDockingSplineRotation
+                : evaluatedRotation;
+            Quaternion currentRotation = NormalizeQuaternionOrFallback(evaluatedRotation, previousRotation);
+            previousRotation = NormalizeQuaternionOrFallback(previousRotation, currentRotation);
+            Quaternion deltaRotation = currentRotation * Quaternion.Inverse(previousRotation);
+            if (!IsFiniteQuaternion(deltaRotation))
+                return Vector3.zero;
+            if (deltaRotation.w < 0f)
+            {
+                deltaRotation.x = -deltaRotation.x;
+                deltaRotation.y = -deltaRotation.y;
+                deltaRotation.z = -deltaRotation.z;
+                deltaRotation.w = -deltaRotation.w;
+            }
+
+            deltaRotation.ToAngleAxis(out float angleDegrees, out Vector3 axis);
+            if (!math.isfinite(angleDegrees) || !IsFiniteVector(axis))
+                return Vector3.zero;
+            if (angleDegrees > 180f)
+                angleDegrees -= 360f;
+
+            float axisLengthSq = axis.sqrMagnitude;
+            if (!math.isfinite(axisLengthSq) || axisLengthSq <= 0.000001f)
+                return Vector3.zero;
+
+            float invAxisLength = math.rsqrt(math.max(axisLengthSq, 0.000001f));
+            float invDelta = math.rcp(math.max(0.0001f, fixedDeltaTime));
+            Vector3 angularVelocity = axis * (invAxisLength * math.radians(angleDegrees) * invDelta);
+            float magnitudeSq = angularVelocity.sqrMagnitude;
+            if (!math.isfinite(magnitudeSq))
+                return Vector3.zero;
+
+            float maxAngularVelocity = ResolveMaxDockingAngularVelocityRadians();
+            float maxMagnitudeSq = maxAngularVelocity * maxAngularVelocity;
+            if (magnitudeSq > maxMagnitudeSq)
+                angularVelocity *= math.rsqrt(math.max(magnitudeSq, 0.000001f)) * maxAngularVelocity;
+
+            return IsFiniteVector(angularVelocity) ? angularVelocity : Vector3.zero;
+        }
+
+        private float ResolveMaxDockingAngularVelocityRadians()
+        {
+            float spring = math.isfinite(dockingRotationSpring) ? math.max(0f, dockingRotationSpring) : 0f;
+            float damping = math.isfinite(dockingRotationDamping) ? math.max(0f, dockingRotationDamping) : 0f;
+            return math.clamp((spring + damping) * 0.25f, 0.5f, MaxDockingAngularVelocityRadians);
         }
 
         private static Vector3 LinearInterpolate(Vector3 from, Vector3 to, float alpha)
@@ -1573,6 +1707,21 @@ namespace Hecton8.Construction
         {
             float4 q = new float4(value.x, value.y, value.z, value.w);
             return math.all(math.isfinite(q)) && math.lengthsq(q) > 0.000001f;
+        }
+
+        private static Quaternion NormalizeQuaternionOrFallback(Quaternion value, Quaternion fallback)
+        {
+            float4 q = new float4(value.x, value.y, value.z, value.w);
+            float lengthSq = math.lengthsq(q);
+            if (!math.all(math.isfinite(q)) || !math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+                q = new float4(fallback.x, fallback.y, fallback.z, fallback.w);
+
+            lengthSq = math.lengthsq(q);
+            if (!math.all(math.isfinite(q)) || !math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+                return Quaternion.identity;
+
+            q *= math.rsqrt(math.max(lengthSq, 0.000001f));
+            return new Quaternion(q.x, q.y, q.z, q.w);
         }
 
         private void BeginDockingControlLock(MonoBehaviour transportBehaviour)

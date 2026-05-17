@@ -213,6 +213,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _PredatorAUPParams;
             float4 _BiolumFlashBangAUP;
             float4 _BiolumFlashBangParams;
+            float4 _GlobalBiolumStates[16];
+            float4 _GlobalBiolumParams;
+            float4 _GlobalBiolumClock;
+            float4 _GlobalBiolumAupOffset;
             float4 _HectonFloraLifecycleParams;
             float4 _HectonFloraCascadeParams;
             float4 _HectonSubmarineWashSphere;
@@ -679,9 +683,14 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return isfinite(value) && value > fallbackValue ? value : fallbackValue;
             }
 
+            float3 SanitizeFinite3(float3 value, float3 fallbackValue)
+            {
+                return all(isfinite(value)) ? value : fallbackValue;
+            }
+
             void DecodeProceduralWakePacked(float packedRadiusIntensity, out float radius, out float intensity)
             {
-                float packedValue = max(0.0, packedRadiusIntensity);
+                float packedValue = isfinite(packedRadiusIntensity) ? max(0.0, packedRadiusIntensity) : 0.0;
                 float radiusQuantized = floor(packedValue * 0.0009765625);
                 float intensityQuantized = packedValue - radiusQuantized * 1024.0;
                 radius = max(radiusQuantized * 0.0625, 0.001);
@@ -703,12 +712,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 for (int wakeIndex = 0; wakeIndex < wakeCount; wakeIndex++)
                 {
                     float4 wake = _HectonFloraWakeBuffer[wakeIndex];
+                    float3 wakePositionWS = SanitizeFinite3(wake.xyz, positionWS);
                     float radius;
                     float intensity;
                     DecodeProceduralWakePacked(wake.w, radius, intensity);
                     float3 worldPos = positionWS;
-                    float3 wakeDelta = worldPos - wake.xyz;
-                    float distanceSq = dot(worldPos - wake.xyz, worldPos - wake.xyz);
+                    float3 wakeDelta = worldPos - wakePositionWS;
+                    float distanceSq = dot(wakeDelta, wakeDelta);
                     float radiusSq = max(radius * radius, 0.001);
                     float influence = saturate(1.0 - distanceSq * rcp(radiusSq));
                     influence = influence * influence * (3.0 - 2.0 * influence);
@@ -846,7 +856,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             half3 ResolveSeasonalColorDrift(half3 color, half biomeLayer, float3 positionWS)
             {
-                half season01 = (half)frac(max(_HectonSeasonCycle, _SeasonCycle));
+                float safeSeasonCycle = isfinite(_SeasonCycle) ? _SeasonCycle : 0.0;
+                half season01 = (half)frac(max(SanitizeNonNegativeFinite(_HectonSeasonCycle), safeSeasonCycle));
                 half shelfMask = 1.0h - step(2.5h, biomeLayer);
                 half spatialBias = (half)Hash21(floor(positionWS.xz * 0.0025));
                 half bloom = 0.5h + 0.5h * (half)FastSinApprox((season01 + spatialBias * 0.035h) * 6.28318h);
@@ -974,7 +985,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 if (bendMask <= 0.0001 || washRadius <= 0.0001 || washSpeed <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
 
-                float3 delta = evaluationPositionWS - _HectonSubmarineWashSphere.xyz;
+                float3 washCenterWS = SanitizeFinite3(_HectonSubmarineWashSphere.xyz, evaluationPositionWS);
+                float3 washVelocityWS = SanitizeFinite3(_HectonSubmarineWashVelocity.xyz, float3(0.0, 0.0, 0.0));
+                float3 delta = evaluationPositionWS - washCenterWS;
                 float radius = SanitizePositiveFinite(washRadius, 0.05);
                 float radiusSq = radius * radius;
                 float distSq = dot(delta, delta);
@@ -984,7 +997,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float proximity = 1.0 - smoothstep(0.0, radiusSq, distSq);
                 proximity *= proximity;
                 float3 awayDirection = SafeNormalize3(float3(delta.x, 0.0, delta.z));
-                float3 velocityDirection = _HectonSubmarineWashVelocity.xyz - baseNormalWS * dot(_HectonSubmarineWashVelocity.xyz, baseNormalWS);
+                float3 velocityDirection = washVelocityWS - baseNormalWS * dot(washVelocityWS, baseNormalWS);
                 velocityDirection = SafeNormalize3(velocityDirection);
                 float3 bendDirection = SafeNormalize3(lerp(awayDirection, velocityDirection, 0.65));
                 float speedFactor = saturate(washSpeed * 0.045);
@@ -1007,7 +1020,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     return 0.0;
 
                 float radius = SanitizePositiveFinite(washRadius, 0.05);
-                float3 rootDelta = rootPositionWS - _HectonSubmarineWashSphere.xyz;
+                float3 washCenterWS = SanitizeFinite3(_HectonSubmarineWashSphere.xyz, rootPositionWS);
+                float3 washVelocityWS = SanitizeFinite3(_HectonSubmarineWashVelocity.xyz, float3(0.0, 0.0, 0.0));
+                float3 rootDelta = rootPositionWS - washCenterWS;
                 rootDelta.y *= 0.25;
                 float radiusSq = radius * radius;
                 float rootDeltaSq = dot(rootDelta, rootDelta);
@@ -1019,7 +1034,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 if (proximity <= 0.0001)
                     return 0.0;
 
-                float2 velocityDirection = ResolvePlanarOceanFlowDirection(_HectonSubmarineWashVelocity.xz);
+                float2 velocityDirection = ResolvePlanarOceanFlowDirection(washVelocityWS.xz);
                 float2 radialDirection = SafeNormalize2(rootDelta.xz + float2(0.001, -0.001));
                 float directionalGate = saturate(dot(velocityDirection, radialDirection) * 0.5 + 0.5);
                 float3 abyssalFlow = ResolveAbyssalFlowField(evaluationPositionWS);
@@ -1059,6 +1074,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 {
                     FloraInteractionPointGpuData interactionPoint = _HectonFloraInteractionPoints[i];
                     float3 velocity = interactionPoint.velocitySpeed.xyz;
+                    if (!all(isfinite(velocity)) || !all(isfinite(interactionPoint.positionRadius.xyz)))
+                        continue;
+
                     float speed = SanitizeNonNegativeFinite(interactionPoint.velocitySpeed.w);
                     float speedFactor = saturate(speed * 0.18);
                     if (speedFactor <= 0.0001)
@@ -1103,6 +1121,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 if (playerSpeed <= 0.0001 || playerPush <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
 
+                if (!all(isfinite(playerRuntimePosition)))
+                    return float3(0.0, 0.0, 0.0);
+
                 float3 delta = evaluationPositionWS - playerRuntimePosition;
                 delta.y *= 0.22;
                 float radiusSq = playerRadius * playerRadius;
@@ -1131,6 +1152,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 for (int i = 0; i < impactCount; i++)
                 {
                     float4 impactSphere = _HectonImpactSpheres[i];
+                    if (!all(isfinite(impactSphere.xyz)))
+                        continue;
+
                     float radius = SanitizePositiveFinite(impactSphere.w, 0.05);
                     float radiusSq = radius * radius;
                     float3 delta = evaluationPositionWS - impactSphere.xyz;
@@ -1280,7 +1304,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 if (encodedGrowth01 < 0.0)
                     return -1.0;
 
-                return encodedGrowth01 > 0.0001 ? saturate(encodedGrowth01) : 1.0;
+                return encodedGrowth01 > 0.0001 ? saturate(SanitizeNonNegativeFinite(encodedGrowth01)) : 1.0;
             }
 
             float ResolveGrowth01(uint sourceInstanceIndex, float encodedGrowth01)
@@ -1293,7 +1317,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     return -1.0;
 
                 if (soaAge01 > 0.0001 || encodedGrowth01 <= 0.0001)
-                    return saturate(soaAge01);
+                    return saturate(SanitizeNonNegativeFinite(soaAge01));
 
                 return ResolveMetadataGrowth01(encodedGrowth01);
             }
@@ -1310,6 +1334,50 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return float4(0.0, 0.0, 0.0, 0.0);
             }
 
+            half4 ResolveIndirectVegetationGlobalBiolum(float3 positionWS)
+            {
+                if (!all(isfinite(positionWS)))
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+                float4 safeParams = all(isfinite(_GlobalBiolumParams)) ? _GlobalBiolumParams : float4(0.0, 0.0, 0.0, 0.0);
+                float4 safeAupOffset = all(isfinite(_GlobalBiolumAupOffset)) ? _GlobalBiolumAupOffset : float4(0.0, 0.0, 0.0, 0.0);
+                float safeClock = isfinite(_GlobalBiolumClock.x) ? _GlobalBiolumClock.x : 0.0;
+                int activeCount = min(max((int)floor(SanitizeNonNegativeFinite(safeParams.x)), 0), 16);
+                if (activeCount <= 0)
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+                float selector = frac(abs(positionWS.x * 0.033 + positionWS.z * 0.051 + safeAupOffset.x * 0.0015 + safeAupOffset.z * 0.0014));
+                int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
+                float4 stateRaw = _GlobalBiolumStates[stateIndex];
+                float4 state = all(isfinite(stateRaw)) ? stateRaw : float4(0.0, 0.0, 0.0, 0.0);
+                half strobe = saturate((half)SanitizeNonNegativeFinite(safeParams.z));
+                half highTier = step(4.0h, (half)SanitizeNonNegativeFinite(safeParams.y));
+                int secondaryIndex = stateIndex + 1;
+                if (secondaryIndex >= activeCount)
+                    secondaryIndex = 0;
+
+                float4 secondaryStateRaw = _GlobalBiolumStates[secondaryIndex];
+                float4 secondaryState = all(isfinite(secondaryStateRaw)) ? secondaryStateRaw : float4(0.0, 0.0, 0.0, 0.0);
+                half overdrive = 0.0h;
+                half godSpark = 0.0h;
+                half godHaze = 0.0h;
+                if (highTier > 0.5h)
+                {
+                    half overPulse = (half)(1.0 - abs(frac(safeClock * 0.069 + selector * 3.2) * 2.0 - 1.0));
+                    half filament = (half)(1.0 - abs(frac(positionWS.x * 0.141 + positionWS.y * 0.079 + positionWS.z * 0.163 + safeClock * 0.214) * 2.0 - 1.0));
+                    godHaze = smoothstep(0.42h, 0.92h, overPulse) * (0.50h + filament * 0.50h);
+                    godSpark = smoothstep(0.81h, 0.98h, filament) * overPulse;
+                    overdrive = saturate(overPulse * 0.34h + godSpark * 0.20h);
+                }
+
+                half3 color = lerp(saturate((half3)state.rgb), half3(1.0h, 1.0h, 1.0h), strobe);
+                half intensity = clamp(max((half)SanitizeNonNegativeFinite(state.w), strobe * 10.0h), 0.0h, 10.0h);
+                color = lerp(color, saturate((half3)secondaryState.rgb), overdrive);
+                color = saturate(color + godHaze * half3(0.05h, 0.18h, 0.20h));
+                intensity = clamp(intensity + (half)SanitizeNonNegativeFinite(secondaryState.w) * overdrive + godSpark * 0.52h + godHaze * 0.27h, 0.0h, 10.0h);
+                return half4(color, intensity);
+            }
+
             half ResolveBiolumPredatorDim(float3 positionWS)
             {
                 half threatExposure = (half)saturate(SanitizeNonNegativeFinite(_HectonFloraPredatorThreatParams.x));
@@ -1322,7 +1390,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     float paramRadius = SanitizePositiveFinite(_HectonFloraPredatorThreatParams.y, 15.0);
                     float dimRadius = max(max(threatRadius, paramRadius), 15.0);
                     half predatorProximity = 1.0h;
-                    if (threatRadius > 0.001)
+                    if (threatRadius > 0.001 && all(isfinite(predatorThreat.xyz)))
                     {
                         float3 predatorDelta = positionWS - predatorThreat.xyz;
                         float dimRadiusSq = dimRadius * dimRadius;
@@ -1335,16 +1403,19 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 if (predatorCount <= 0)
                     return legacyDim;
 
-                half bufferDimStrength = saturate((half)_PredatorAUPParams.y);
+                half bufferDimStrength = (half)saturate(SanitizeNonNegativeFinite(_PredatorAUPParams.y));
                 if (bufferDimStrength <= 0.0001h)
                     return legacyDim;
 
-                float baseRadius = max(_PredatorAUPParams.x, 15.0);
+                float baseRadius = max(SanitizePositiveFinite(_PredatorAUPParams.x, 15.0), 15.0);
                 half predatorGate = 0.0h;
                 [loop]
                 for (int predatorIndex = 0; predatorIndex < predatorCount; predatorIndex++)
                 {
                     float4 predatorAup = _PredatorAUPBuffer[predatorIndex];
+                    if (!all(isfinite(predatorAup.xyz)))
+                        continue;
+
                     float dimRadius = max(SanitizePositiveFinite(predatorAup.w, baseRadius), 15.0);
                     float3 predatorDelta = positionWS - predatorAup.xyz;
                     float dimRadiusSq = dimRadius * dimRadius;
@@ -1365,6 +1436,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     return 1.0h;
 
                 float radius = SanitizePositiveFinite(_BiolumFlashBangAUP.w, 0.1);
+                if (!all(isfinite(_BiolumFlashBangAUP.xyz)))
+                    return 1.0h;
+
                 float3 flashDelta = positionWS - _BiolumFlashBangAUP.xyz;
                 float radiusSq = radius * radius;
                 half distanceGate = (half)(1.0 - LinearStep01(radiusSq * 0.4225, radiusSq, dot(flashDelta, flashDelta)));
@@ -1443,7 +1517,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return step((half)InterleavedGradientNoise(positionCS.xy), pixelCoverage);
             }
 
-            half3 ResolveBiolumSporeEmission(Varyings input, half sourceEnergy)
+            half3 ResolveBiolumSporeEmission(Varyings input, half3 emissionColor, half sourceEnergy)
             {
                 half energy = saturate(sourceEnergy * saturate(input.growth01) * saturate(input.health01));
                 if (energy <= 0.0001h)
@@ -1455,7 +1529,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half sparkleGate = step(0.965h, sporeSeed) * step(0.58h, screenSeed);
                 half pulse = 0.45h + 0.55h * (0.5h + 0.5h * (half)FastSinApprox(_Time.y * 4.7h + sporeSeed * 6.28318h));
                 half edgeLaunchMask = saturate(input.edgeMask * 1.35h + input.heightMask * 0.35h);
-                return input.biolumColor.rgb * (sparkleGate * pulse * edgeLaunchMask * energy * 0.42h);
+                return emissionColor * (sparkleGate * pulse * edgeLaunchMask * energy * 0.42h);
             }
 
             Varyings Vert(Attributes input)
@@ -1709,7 +1783,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 animatedPositionWS = lerp(animatedPositionWS, renderOriginWS, dyingWeight * bendMask * 0.18);
                 animatedPositionWS.y -= dyingWeight * instanceHeight * lerp(0.03, 0.16, heightMask);
 
-                float seasonalDecayWeight = saturate(_HectonFloraLifecycleParams.y) * saturate(_HectonFloraLifecycleParams.w);
+                float seasonalDecayWeight =
+                    saturate(SanitizeNonNegativeFinite(_HectonFloraLifecycleParams.y)) *
+                    saturate(SanitizeNonNegativeFinite(_HectonFloraLifecycleParams.w));
                 if (seasonalDecayWeight > 0.0001)
                 {
                     float seasonalWiltWeight = seasonalDecayWeight *
@@ -1963,20 +2039,30 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half distanceBiolumDimming = ResolveDistanceBiolumDimming(cameraDistanceSq);
                 half distanceBiolumPixelGate = ResolveDistanceBiolumPixelGate(cameraDistanceSq, input.positionCS);
                 half seasonalBloomScale = ResolveSeasonalBloomEmissionScale();
-                half decaySeasonPulse = 0.5h + 0.5h * (half)FastCosApprox((_SeasonCycle - 0.75h) * 6.28318h);
-                half decaySeasonWeight = saturate(_HectonFloraLifecycleParams.y) * lerp(0.55h, 1.0h, decaySeasonPulse);
-                half seasonalDecaySuppression = lerp(1.0h, 0.78h, saturate(decaySeasonWeight * _HectonFloraLifecycleParams.w));
+                float safePixelSeasonCycle = isfinite(_SeasonCycle) ? _SeasonCycle : 0.0;
+                half decaySeasonPulse = 0.5h + 0.5h * (half)FastCosApprox((safePixelSeasonCycle - 0.75h) * 6.28318h);
+                half decaySeasonWeight = (half)saturate(SanitizeNonNegativeFinite(_HectonFloraLifecycleParams.y)) *
+                    lerp(0.55h, 1.0h, decaySeasonPulse);
+                half seasonalDecaySuppression = lerp(
+                    1.0h,
+                    0.78h,
+                    saturate(decaySeasonWeight * (half)SanitizeNonNegativeFinite(_HectonFloraLifecycleParams.w)));
                 half cascadeEmissionScale = 1.0h + ResolveCascadeEmissionScale(input.cascadeSeed);
                 half flashBangScale = ResolveBiolumFlashBangBoost(input.positionWS);
                 half flashlightPhotophobia = HectonCoreLitResolveFlashlightPhotophobia(input.positionWS);
                 half emitsLightTrait = HasGeneticTrait(input.geneticTraits, 4.0h);
                 half geneticEmissionGate = lerp(1.0h, emitsLightTrait, traitBytePresent);
-                half3 biolumEmission = input.biolumColor.rgb *
-                    (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost * distanceBiolumDimming * distanceBiolumPixelGate * seasonalBloomScale * seasonalDecaySuppression * cascadeEmissionScale * flashBangScale * flashlightPhotophobia * geneticEmissionGate);
+                half4 globalBiolumState = ResolveIndirectVegetationGlobalBiolum(input.positionWS);
+                half authoredBiolumGate = step(0.001h, input.biolumColor.a);
+                half globalBiolumMask = step(0.001h, globalBiolumState.w) * authoredBiolumGate;
+                half3 biolumColor = lerp(input.biolumColor.rgb, globalBiolumState.rgb, globalBiolumMask);
+                half biolumIntensity = max(input.biolumColor.a, globalBiolumState.w * authoredBiolumGate);
+                half biolumEnergy = biolumIntensity * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost * distanceBiolumDimming * distanceBiolumPixelGate * seasonalBloomScale * seasonalDecaySuppression * cascadeEmissionScale * flashBangScale * flashlightPhotophobia * geneticEmissionGate;
                 half ageEmissionScale = lerp(0.35h, 1.18h, smoothstep(0.12h, 1.0h, growthVisible01));
-                biolumEmission *= ageEmissionScale * growthVisible01 * saturate(input.health01);
-                half sporeSourceEnergy = input.biolumColor.a * biolumVisibility * seasonalBloomScale * cascadeEmissionScale * flashlightPhotophobia * geneticEmissionGate;
-                half3 sporeEmission = ResolveBiolumSporeEmission(input, sporeSourceEnergy);
+                biolumEnergy = clamp(biolumEnergy * ageEmissionScale * growthVisible01 * saturate(input.health01), 0.0h, 10.0h);
+                half3 biolumEmission = biolumColor * biolumEnergy;
+                half sporeSourceEnergy = biolumIntensity * biolumVisibility * seasonalBloomScale * cascadeEmissionScale * flashlightPhotophobia * geneticEmissionGate;
+                half3 sporeEmission = ResolveBiolumSporeEmission(input, biolumColor, sporeSourceEnergy);
                 half3 decayTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(0.92h, 0.84h, 0.68h), decaySeasonWeight * 0.22h);
                 finalColor *= decayTint;
                 finalColor += biolumEmission;

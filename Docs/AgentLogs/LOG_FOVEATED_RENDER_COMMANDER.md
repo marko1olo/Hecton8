@@ -608,3 +608,108 @@ Exact microseconds saved:
 Validation:
 - Static forbidden-pattern scan found no `Update()`, `LateUpdate()`, `FixedUpdate()`, `foreach`, LINQ, `string.Format`, `VRSManager.Instance`, direct `RenderPipelineManager`, `new NativeArray`, `NativeArray<`, `Marshal.SizeOf`, legacy `EventBus`, managed delegate fields, object find calls, `Camera.main`, `Resources.Load`, or `StartCoroutine` in the VR commander or legacy foveation shim.
 - Full `dotnet build Hecton8.Core.csproj -m:1 /nr:false /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors.
+
+## 2026-05-17 - Escalation Polish / Gaze VRS Loss Grace
+
+What was wrong:
+- PC VR gaze-tracked VRS could drop to fixed/off on a single invalid XR eye-fixation sample.
+- That created visible edge-quality churn risk on High/Ultra hardware and wasted the precision advantage of eye tracking.
+
+What was done:
+- Added a 0.75-second gaze-loss grace hold in `FoveatedRenderCommander`.
+- The hold only applies when the previous target mode was gaze-tracked and XR runtime/capability gates still pass.
+- Quest 2-class fixed-high FFR, disabled/caps-missing states, and High/Ultra no-pressure fixed-disable paths clear the hold.
+- Telemetry marks the grace interval with `FlagGazeGraceHold`.
+- Kept the `UnityEngine.Rendering` import because `FoveatedRenderingCaps` is part of the Unity rendering API surface used by this commander.
+
+Cinematic Cheats used:
+- Gaze VRS remains the high-end cheat: spend full shading only where the eye is looking.
+- The grace window is a perceptual stability fake: one bad provider sample does not visibly downgrade the lens edge.
+
+Exact microseconds saved:
+- Exact measured GPU microseconds saved: 0. No Quest/PC VR headset profile capture was run.
+- Estimated CPU cost: below 1 us per policy sample; no allocations and no new native buffer.
+- Static hot-path GC: 0 B/frame by source audit.
+
+Validation:
+- Static forbidden-pattern scan found no `Update()`, `LateUpdate()`, `FixedUpdate()`, `foreach`, LINQ, `string.Format`, `VRSManager.Instance`, direct `RenderPipelineManager`, `new NativeArray`, `NativeArray<`, `Marshal.SizeOf`, legacy `EventBus`, managed delegate fields, object find calls, `Camera.main`, `Resources.Load`, or `StartCoroutine` in the VR commander or legacy foveation shim.
+- Filtered build scan after gaze-loss grace produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, `Graphics/VR`, `GazeLossHoldSeconds`, `FlagGazeGraceHold`, `ShouldUseGazeTrackedVrs`, `gazeGraceHeld`, or `_gazeLossHoldSecondsRemaining` diagnostics.
+- Latest full `dotnet build Hecton8.Core.csproj -m:1 /nr:false /clp:ErrorsOnly` is blocked outside domain by two `Assets/_Project/Scripts/SubmarineFluidDynamics.cs` errors for missing `ResolveExteriorThermalAnomalyCenter`; evidence is stored in `Docs/AgentLogs/BuildErrors_FOVEATED_RENDER_COMMANDER.latest.txt`.
+
+## 2026-05-17 - Escalation Polish / XR GPU Time Unit Repair
+
+What was wrong:
+- Unity XR display GPU timing was being treated as milliseconds.
+- `XRDisplaySubsystem.TryGetAppGPUTimeLastFrame` returns seconds, so the 10.75ms pressure gate was effectively comparing against 10.75 seconds.
+- That meant GPU-time thermal escalation could fail exactly when VR needed more aggressive foveation.
+
+What was done:
+- Added `SecondsToMilliseconds = 1000f`.
+- Converted XR GPU seconds to milliseconds before writing `_latestGpuTimeMs`.
+- Rejected negative, NaN, infinity, and overflowed timing samples before they can influence telemetry or pressure.
+
+Cinematic Cheats used:
+- Restored the intended hardware foveation pressure fake: increase edge-rate savings when GPU app time crosses the millisecond budget.
+- No new render target, shader, compute pass, or VFX coupling was introduced.
+
+Exact microseconds saved:
+- Exact measured GPU microseconds saved: 0. No Quest/PC VR headset profile capture was run.
+- Estimated CPU cost: one multiply and one finite guard per running XR display on policy samples.
+- Static hot-path GC: 0 B/frame by source audit.
+
+Validation:
+- Static forbidden-pattern scan found no `Update()`, `LateUpdate()`, `FixedUpdate()`, `foreach`, LINQ, `string.Format`, `VRSManager.Instance`, direct `RenderPipelineManager`, `new NativeArray`, `NativeArray<`, `Marshal.SizeOf`, legacy `EventBus`, managed delegate fields, object find calls, `Camera.main`, `Resources.Load`, `StartCoroutine`, `Time.deltaTime`, or `Time.fixedDeltaTime` in the VR commander or legacy foveation shim.
+- First filtered build scan timed out after 184 seconds and was rejected as evidence.
+- Filtered build scan with restore/analyzers/shared compilation disabled produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, `Graphics/VR`, `TryGetAppGPUTimeLastFrame`, `SecondsToMilliseconds`, `GpuTimeHighPressureMs`, `_latestGpuTimeMs`, or `GpuTimeMs` diagnostics.
+- Full `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false /p:RunAnalyzers=false /v:minimal /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors in 00:02:09.52.
+
+## 2026-05-17 - Escalation Polish / Quest Identity False-Latch Repair
+
+What was wrong:
+- Android XR Quest classification could cache `false` before `XRSettings.loadedDeviceName` or device tokens were available.
+- On Quest 2-class hardware, that could skip the fixed-high FFR fake for the entire session.
+
+What was done:
+- Changed Quest 2 classification to remain pending when Android XR identity is empty or inconclusive.
+- Classification now caches true on Quest 2 evidence or Quest-family memory gate, caches false on Quest 3/Pro or a loaded non-Quest XR device name, and otherwise retries on later policy samples.
+- Added `FlagQuestClassificationPending` so the blackbox records pending identity instead of hiding the state.
+
+Cinematic Cheats used:
+- Preserved the intended low-tier visual fake: constant high fixed foveation on Quest 2-class hardware.
+- No shader, render-target, compute, or VFX path was added.
+
+Exact microseconds saved:
+- Exact measured GPU microseconds saved: 0. No Quest/PC VR headset profile capture was run.
+- Estimated CPU cost while pending: a few string-token checks per policy sample; no allocation and no new native buffer.
+- Static hot-path GC: 0 B/frame by source audit.
+
+Validation:
+- Static forbidden-pattern scan found no `Update()`, `LateUpdate()`, `FixedUpdate()`, `foreach`, LINQ, `string.Format`, `VRSManager.Instance`, direct `RenderPipelineManager`, `new NativeArray`, `NativeArray<`, `Marshal.SizeOf`, legacy `EventBus`, managed delegate fields, object find calls, `Camera.main`, `Resources.Load`, `StartCoroutine`, `Time.deltaTime`, or `Time.fixedDeltaTime` in the VR commander or legacy foveation shim.
+- Filtered build scan after Quest identity false-latch repair produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, `Graphics/VR`, `IsQuest2Runtime`, `FlagQuestClassificationPending`, `questClassificationPending`, `EnsureQuestRuntimeClassification`, `questFamilyDevice`, `s_questRuntimeClassified`, or `s_quest2ClassRuntime` diagnostics.
+- Full `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false /p:BuildInParallel=false /p:RunAnalyzers=false /v:minimal /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors in 00:00:03.62.
+
+## 2026-05-17 - Escalation Polish / Runtime Sample Cadence Guard
+
+What was wrong:
+- `sampleIntervalFrames` trusted the inspector range for its upper bound.
+- Corrupted serialized data or a debug script could set a huge interval and delay foveation policy commits long enough to miss thermal/GPU pressure changes.
+
+What was done:
+- Added shared `MinSampleIntervalFrames` and `MaxSampleIntervalFrames` constants.
+- Changed the serialized `Range` attribute to use those constants.
+- Added `ClampSampleIntervalFrames()` and applied it at the dispatcher sample scheduling point.
+- Negative or zero values fall back to the 30-frame default; values above 240 clamp to 240.
+
+Cinematic Cheats used:
+- Preserved the pressure-reactive foveation fake. Low/Middle devices cannot silently stop increasing edge savings under thermal or GPU load because of a bad serialized value.
+- No shader, render target, compute pass, disk I/O, or new signal was introduced.
+
+Exact microseconds saved:
+- Exact measured GPU microseconds saved: 0. No Quest/PC VR headset profile capture was run.
+- Estimated CPU cost: two integer branches only when scheduling a policy sample.
+- Static hot-path GC: 0 B/frame by source audit.
+
+Validation:
+- No full `dotnet build` was run for this pass by explicit user instruction.
+- Targeted source scan confirmed `MinSampleIntervalFrames`, `MaxSampleIntervalFrames`, and `ClampSampleIntervalFrames` are present in `FoveatedRenderCommander.cs`.
+- Static forbidden-pattern scan found no `Update()`, `LateUpdate()`, `FixedUpdate()`, `foreach`, LINQ, `string.Format`, `VRSManager.Instance`, direct `RenderPipelineManager`, `new NativeArray`, `NativeArray<`, `Marshal.SizeOf`, legacy `EventBus`, managed delegate fields, object find calls, `Camera.main`, `Resources.Load`, `StartCoroutine`, `Time.deltaTime`, or `Time.fixedDeltaTime` in the VR commander or legacy foveation shim.

@@ -21,16 +21,20 @@
   </Target>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core'">
+    <Reference Remove="Hecton8.Core.Memory.Defrag" />
     <Compile Remove="Assets\_Project\Scripts\Core\JobAdmissionTelemetryBridge.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\BinaryLayoutManifest.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\HomeostasisBrain.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\Contracts\HectonContractValidator.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Contracts\HectonContractVersion.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\Contracts\HectonDataSovereigntyContract.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\Contracts\HectonPlatformContract.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\Contracts\HectonVisualOverkillContract.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Memory\Defrag\MemoryDefragContracts.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\Contracts\HectonSurvivalContract.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\MacroDatabaseSignalBridge.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\PlayerLookTargetPromptCache.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Signals\PlayerMovementPresentationSignals.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\Signals\PrologueReentrySignals.cs" />
     <Compile Remove="Assets\_Project\Scripts\Dev\SpaceEngine098TerrainSmokeTester.cs" />
     <Compile Remove="Assets\_Project\Scripts\Ecosystem\FaunaGenome64.cs" />
@@ -52,6 +56,10 @@
     <Compile Include="Assets\_Project\Scripts\Core\OculusFfrEnforcer.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\OculusFfrEnforcer.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\HardwareProfileCatalog.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\HardwareProfileCatalog.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonContractValidator.cs" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonContractVersion.cs" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonDataSovereigntyContract.cs" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonPlatformContract.cs" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonVisualOverkillContract.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonMmfPagingContract.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\HectonMmfPagingContract.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonSignalLaneContract.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\HectonSignalLaneContract.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonLoreContract.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\HectonLoreContract.cs'))" />
@@ -80,10 +88,12 @@
     <Compile Include="Assets\_Project\Scripts\AI\Ecology\Migration\MacroSwarm.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\AI\Ecology\Migration\MacroSwarm.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Audio\Propagation\AcousticPortalPropagation.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Audio\Propagation\AcousticPortalPropagation.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Memory\BinaryBlittableSafeAttribute.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\BinaryBlittableSafeAttribute.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\Defrag\MemoryDefragContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\Defrag\MemoryDefragContracts.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Memory\H8Memory.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\H8Memory.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\MacroDatabaseSignalBridge.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\MacroDatabaseSignalBridge.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\PlayerLookTargetPromptCache.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\PlayerLookTargetPromptCache.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Signals\PlayerMovementPresentationSignals.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Signals\PlayerMovementPresentationSignals.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Signals\PrologueReentrySignals.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Signals\PrologueReentrySignals.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Ecosystem\FaunaGenome64.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Ecosystem\FaunaGenome64.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Animation\Fauna\ProceduralBiteIkJobs.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Animation\Fauna\ProceduralBiteIkJobs.cs'))" />

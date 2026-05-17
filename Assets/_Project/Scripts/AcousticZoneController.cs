@@ -26,7 +26,7 @@
 //     -> Tick: AcousticZoneController detects edge
 //       -> snapshot.TransitionTo(transitionDuration)
 //       -> SpatialAudioManager.PlayStatic2D(transitionClip)
-//       -> Optional: event OnAcousticZoneChanged(isInterior)
+//       -> SignalBus<AcousticZoneChangedEvent>.Push(isInterior)
 //
 // ZERO GC:
 //   - Tick: one bool comparison plus edge detection. Zero allocation.
@@ -40,19 +40,18 @@
 //   Transition itself is handled by Unity AudioMixer internally.
 // ============================================================================
 
-using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Audio;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -62,104 +61,21 @@ using UnityEditor;
 namespace Hecton8.Audio
 {
     /// <summary>
-    /// Deferred acoustic-zone transition payload.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 1)]
-    public readonly struct AcousticZoneChangedEvent
-    {
-        /// <summary>Builds a new acoustic-zone transition payload.</summary>
-        /// <param name="isInterior">True when the player entered a dry/interior zone.</param>
-        public AcousticZoneChangedEvent(bool isInterior)
-        {
-            _isInterior = isInterior ? (byte)1 : (byte)0;
-        }
-
-        /// <summary>True when the player is in a dry/interior zone.</summary>
-        public bool IsInterior => _isInterior != 0;
-
-        private readonly byte _isInterior;
-    }
-
-    /// <summary>
-    /// Listener contract for deferred acoustic-zone transitions.
-    /// </summary>
-    public interface IAcousticZoneEventListener
-    {
-        /// <summary>Receives one acoustic-zone transition.</summary>
-        /// <param name="payload">Zone transition payload.</param>
-        void OnAcousticZoneChanged(in AcousticZoneChangedEvent payload);
-    }
-
-    /// <summary>
-    /// Queue-backed acoustic-zone event lane drained by <see cref="SystemDispatcher"/> in LateUpdate.
+    /// Typed SignalBus facade for acoustic-zone transitions.
     /// </summary>
     public static class AcousticZoneEvents
     {
-        private const int ListenerCapacity = 4;
-        private const int PendingZoneChangeCapacity = 4;
-        private static readonly uint _overflowWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents.Overflow"));
-        private static readonly uint _zoneChangeQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents.ZoneChange"));
-        private static readonly uint _listenerRejectedWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents.ListenerRejected"));
-        private static readonly uint _listenerExceptionWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents.ListenerException"));
-        private static readonly uint _listenerContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents.Listeners"));
+        /// <summary>Number of acoustic-zone payloads visible in the current typed-lane snapshot.</summary>
+        public static int PendingCount => SignalBus<AcousticZoneChangedEvent>.SnapshotCount;
 
-        // COLD ALLOC: RegistryBucket<IAcousticZoneEventListener>[4] - deferred acoustic-zone listeners - owner: AcousticZoneEvents
-        private static readonly RegistryBucket<IAcousticZoneEventListener> _listeners =
-            new RegistryBucket<IAcousticZoneEventListener>(ListenerCapacity);
-        // COLD ALLOC: IAcousticZoneEventListener[4] - listener additions deferred while dispatching acoustic-zone changes - owner: AcousticZoneEvents
-        private static readonly IAcousticZoneEventListener[] _deferredRegisterListeners = new IAcousticZoneEventListener[ListenerCapacity];
-        // COLD ALLOC: IAcousticZoneEventListener[4] - listener removals deferred while dispatching acoustic-zone changes - owner: AcousticZoneEvents
-        private static readonly IAcousticZoneEventListener[] _deferredUnregisterListeners = new IAcousticZoneEventListener[ListenerCapacity];
-        private static NativeQueue<AcousticZoneChangedEvent> _pendingZoneChanges;
-        private static NativeQueue<AcousticZoneChangedEvent> _nextFrameZoneChanges;
-        private static int _pendingZoneChangeCount;
-        private static int _nextFrameZoneChangeCount;
-        private static int _deferredRegisterCount;
-        private static int _deferredUnregisterCount;
-        private static int _droppedZoneChangeCount;
-        private static int _droppedListenerRegistrationCount;
-        private static int _listenerExceptionCount;
-        private static int _lastListenerRejectedTelemetryFrame = -1;
-        private static int _lastListenerExceptionTelemetryFrame = -1;
-        private static bool _isDispatching;
-
-        /// <summary>Number of acoustic-zone payloads waiting for LateUpdate dispatch.</summary>
-        public static int PendingCount => _pendingZoneChangeCount + _nextFrameZoneChangeCount;
-
-        internal static int DroppedZoneChangeCount => _droppedZoneChangeCount;
-        internal static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
-        internal static int ListenerExceptionCount => _listenerExceptionCount;
+        internal static int DroppedZoneChangeCount => SignalBus<AcousticZoneChangedEvent>.DroppedLastFlush;
+        internal static int DroppedListenerRegistrationCount => 0;
+        internal static int ListenerExceptionCount => 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
         {
-            if (_pendingZoneChanges.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(AcousticZoneEvents), nameof(_pendingZoneChanges));
-                _pendingZoneChanges.Dispose();
-                _pendingZoneChanges = default;
-            }
-
-            if (_nextFrameZoneChanges.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(AcousticZoneEvents), nameof(_nextFrameZoneChanges));
-                _nextFrameZoneChanges.Dispose();
-                _nextFrameZoneChanges = default;
-            }
-
-            _listeners.Clear();
-            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
-            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
-            _pendingZoneChangeCount = 0;
-            _nextFrameZoneChangeCount = 0;
-            _deferredRegisterCount = 0;
-            _deferredUnregisterCount = 0;
-            _droppedZoneChangeCount = 0;
-            _droppedListenerRegistrationCount = 0;
-            _listenerExceptionCount = 0;
-            _lastListenerRejectedTelemetryFrame = -1;
-            _lastListenerExceptionTelemetryFrame = -1;
-            _isDispatching = false;
+            EnsureInitialized();
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -169,377 +85,23 @@ namespace Hecton8.Audio
         }
 #endif
 
-        /// <summary>Registers one acoustic-zone listener.</summary>
-        /// <param name="listener">Listener instance.</param>
-        public static void Register(IAcousticZoneEventListener listener)
-        {
-            if (listener == null)
-                return;
-
-            EnsureInitialized();
-            if (_isDispatching)
-            {
-                QueueDeferredRegister(listener);
-                return;
-            }
-
-            RegisterImmediate(listener);
-        }
-
-        /// <summary>Unregisters one acoustic-zone listener.</summary>
-        /// <param name="listener">Listener instance.</param>
-        public static void Unregister(IAcousticZoneEventListener listener)
-        {
-            if (listener == null)
-                return;
-
-            if (_isDispatching)
-            {
-                QueueDeferredUnregister(listener);
-                return;
-            }
-
-            if (!_listeners.TryUnregister(listener))
-                return;
-
-            if (_listeners.Count <= 0)
-                DropQueuedZoneChanges();
-        }
-
         /// <summary>Queues one acoustic-zone transition.</summary>
         /// <param name="payload">Zone transition payload.</param>
         public static void Raise(in AcousticZoneChangedEvent payload)
         {
-            if (_listeners.Count <= 0)
-                return;
-
             EnsureInitialized();
-            if (_pendingZoneChangeCount + _nextFrameZoneChangeCount >= PendingZoneChangeCapacity)
-            {
-                ReportZoneChangeOverflow();
-                return;
-            }
-
-            if (_isDispatching)
-            {
-                _nextFrameZoneChanges.Enqueue(payload);
-                _nextFrameZoneChangeCount++;
-                return;
-            }
-
-            _pendingZoneChanges.Enqueue(payload);
-            _pendingZoneChangeCount++;
+            SignalBus<AcousticZoneChangedEvent>.Push(in payload);
         }
 
-        /// <summary>Flushes queued acoustic-zone transitions on the main thread.</summary>
+        /// <summary>Compatibility no-op; SignalBus snapshots are flushed by <see cref="GlobalSignals"/>.</summary>
         public static void FlushPending()
         {
-            if (!_pendingZoneChanges.IsCreated)
-                return;
-
-            if (_listeners.Count <= 0)
-            {
-                DropQueuedZoneChanges();
-                return;
-            }
-
-            PromoteNextFrameZoneChangesIfFrontEmpty();
-            int scanBudget = _pendingZoneChangeCount > 0 ? _pendingZoneChangeCount : PendingZoneChangeCapacity;
-            while (scanBudget-- > 0 && !_pendingZoneChanges.IsEmpty())
-            {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
-
-                if (!_pendingZoneChanges.TryDequeue(out AcousticZoneChangedEvent payload))
-                    break;
-
-                if (_pendingZoneChangeCount > 0)
-                    _pendingZoneChangeCount--;
-
-                IAcousticZoneEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
-                _isDispatching = true;
-                try
-                {
-                    for (int i = count - 1; i >= 0; i--)
-                    {
-                        IAcousticZoneEventListener listener = rawArray[i];
-                        if (listener == null || IsDeferredUnregisterPending(listener))
-                            continue;
-
-                        DispatchToListener(listener, in payload);
-                    }
-                }
-                finally
-                {
-                    _isDispatching = false;
-                    ApplyDeferredListenerMutations();
-                }
-            }
-
-            if (_pendingZoneChanges.IsEmpty())
-            {
-                _pendingZoneChangeCount = 0;
-                PromoteNextFrameZoneChangesIfFrontEmpty();
-            }
         }
 
-        private static void EnsureInitialized()
+        public static void EnsureInitialized()
         {
-            if (!_pendingZoneChanges.IsCreated)
-            {
-                _pendingZoneChanges = new NativeQueue<AcousticZoneChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticZoneChangedEvent>[4] - deferred acoustic-zone lane - owner: AcousticZoneEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingZoneChanges,
-                    PendingZoneChangeCapacity,
-                    nameof(AcousticZoneEvents),
-                    nameof(_pendingZoneChanges),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingZoneChanges, PendingZoneChangeCapacity);
-            }
-
-            if (!_nextFrameZoneChanges.IsCreated)
-            {
-                _nextFrameZoneChanges = new NativeQueue<AcousticZoneChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticZoneChangedEvent>[4] - next-frame acoustic-zone lane prevents same-frame reentrant dispatch - owner: AcousticZoneEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameZoneChanges,
-                    PendingZoneChangeCapacity,
-                    nameof(AcousticZoneEvents),
-                    nameof(_nextFrameZoneChanges),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameZoneChanges, PendingZoneChangeCapacity);
-            }
-        }
-
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
-        }
-
-        private static void PromoteNextFrameZoneChangesIfFrontEmpty()
-        {
-            if (!_pendingZoneChanges.IsCreated ||
-                !_nextFrameZoneChanges.IsCreated ||
-                !_pendingZoneChanges.IsEmpty() ||
-                _nextFrameZoneChangeCount <= 0)
-            {
-                return;
-            }
-
-            NativeQueue<AcousticZoneChangedEvent> swap = _pendingZoneChanges;
-            _pendingZoneChanges = _nextFrameZoneChanges;
-            _nextFrameZoneChanges = swap;
-            _pendingZoneChangeCount = _nextFrameZoneChangeCount;
-            _nextFrameZoneChangeCount = 0;
-        }
-
-        private static void DropQueuedZoneChanges()
-        {
-            if (_pendingZoneChanges.IsCreated)
-            {
-                while (_pendingZoneChanges.TryDequeue(out _))
-                {
-                }
-            }
-
-            if (_nextFrameZoneChanges.IsCreated)
-            {
-                while (_nextFrameZoneChanges.TryDequeue(out _))
-                {
-                }
-            }
-
-            _pendingZoneChangeCount = 0;
-            _nextFrameZoneChangeCount = 0;
-        }
-
-        private static void ReportZoneChangeOverflow()
-        {
-            _droppedZoneChangeCount++;
-            GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _zoneChangeQueueHash, PendingZoneChangeCapacity);
-        }
-
-        private static void DispatchToListener(IAcousticZoneEventListener listener, in AcousticZoneChangedEvent payload)
-        {
-            try
-            {
-                listener.OnAcousticZoneChanged(in payload);
-            }
-            catch (Exception exception)
-            {
-                ReportListenerDispatchException();
-                LogListenerDispatchException(exception);
-            }
-        }
-
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-        private static void LogListenerDispatchException(Exception exception)
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogException(exception);
-#endif
-        }
-
-        private static void QueueDeferredRegister(IAcousticZoneEventListener listener)
-        {
-            if (_listeners.Contains(listener))
-            {
-                CancelDeferredUnregister(listener);
-                return;
-            }
-
-            if (IsDeferredRegisterPending(listener))
-                return;
-
-            if (_deferredRegisterCount >= ListenerCapacity)
-            {
-                ReportListenerRegistrationRejected();
-                return;
-            }
-
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
-        }
-
-        private static void QueueDeferredUnregister(IAcousticZoneEventListener listener)
-        {
-            if (CancelDeferredRegister(listener))
-                return;
-
-            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
-                return;
-
-            if (_deferredUnregisterCount >= ListenerCapacity)
-            {
-                ReportListenerRegistrationRejected();
-                return;
-            }
-
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
-        }
-
-        private static bool CancelDeferredRegister(IAcousticZoneEventListener listener)
-        {
-            for (int i = 0; i < _deferredRegisterCount; i++)
-            {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
-                    continue;
-
-                _deferredRegisterCount--;
-                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
-                return true;
-            }
-
-            return false;
-        }
-
-        private static void CancelDeferredUnregister(IAcousticZoneEventListener listener)
-        {
-            for (int i = 0; i < _deferredUnregisterCount; i++)
-            {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
-                    continue;
-
-                _deferredUnregisterCount--;
-                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
-                return;
-            }
-        }
-
-        private static bool IsDeferredRegisterPending(IAcousticZoneEventListener listener)
-        {
-            for (int i = 0; i < _deferredRegisterCount; i++)
-            {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
-                    return true;
-            }
-
-            return false;
-        }
-
-        private static bool IsDeferredUnregisterPending(IAcousticZoneEventListener listener)
-        {
-            for (int i = 0; i < _deferredUnregisterCount; i++)
-            {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
-                    return true;
-            }
-
-            return false;
-        }
-
-        private static void ApplyDeferredListenerMutations()
-        {
-            for (int i = 0; i < _deferredUnregisterCount; i++)
-            {
-                IAcousticZoneEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
-                if (listener != null)
-                    _listeners.TryUnregister(listener);
-            }
-
-            _deferredUnregisterCount = 0;
-
-            for (int i = 0; i < _deferredRegisterCount; i++)
-            {
-                IAcousticZoneEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
-                if (listener != null)
-                    RegisterImmediate(listener);
-            }
-
-            _deferredRegisterCount = 0;
-
-            if (_listeners.Count <= 0)
-                DropQueuedZoneChanges();
-        }
-
-        private static void RegisterImmediate(IAcousticZoneEventListener listener)
-        {
-            if (_listeners.Contains(listener))
-                return;
-
-            if (!_listeners.TryRegister(listener))
-                ReportListenerRegistrationRejected();
-        }
-
-        private static void ReportListenerRegistrationRejected()
-        {
-            _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
-            if (_lastListenerRejectedTelemetryFrame == frame)
-                return;
-
-            _lastListenerRejectedTelemetryFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(
-                _listenerRejectedWarningHash,
-                _listenerContextHash,
-                Mathf.Max(1, _droppedListenerRegistrationCount));
-        }
-
-        private static void ReportListenerDispatchException()
-        {
-            _listenerExceptionCount++;
-            int frame = Time.frameCount;
-            if (_lastListenerExceptionTelemetryFrame == frame)
-                return;
-
-            _lastListenerExceptionTelemetryFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(
-                _listenerExceptionWarningHash,
-                _listenerContextHash,
-                Mathf.Max(1, _listenerExceptionCount));
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<AcousticZoneChangedEvent>.EnsureInitialized();
         }
     }
 
@@ -3580,7 +3142,7 @@ namespace Hecton8.Audio
                 if (subAsset == null)
                     continue;
 
-                Type subAssetType = subAsset.GetType();
+                global::System.Type subAssetType = subAsset.GetType();
                 if (subAssetType == null)
                     continue;
 

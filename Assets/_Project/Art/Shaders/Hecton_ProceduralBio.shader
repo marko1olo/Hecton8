@@ -302,7 +302,8 @@ Shader "Hecton8/Flora/ProceduralBio"
                 half seeded = (half)HectonProceduralBioHash13(positionWS * 0.03125 + height01);
                 half organicPulse = saturate(0.55h + seeded * 0.45h + pulse * 0.35h);
                 half3 emissionColor = lerp(_EmissionColor.rgb, globalState.rgb, hasGlobal);
-                return emissionColor * (_EmissionStrength * master * organicPulse * mask * height01);
+                half emissionEnergy = clamp(_EmissionStrength * master * organicPulse * mask * height01, 0.0h, 10.0h);
+                return emissionColor * emissionEnergy;
             }
 
             half3 ResolveProceduralBioEmissionLow(half height01, half mask)
@@ -314,7 +315,8 @@ Shader "Hecton8/Flora/ProceduralBio"
                 half pulse = lerp(phase, phase * phase, 0.25h);
                 half cheapPulse = saturate(0.62h + pulse * 0.38h);
                 half3 emissionColor = lerp(_EmissionColor.rgb, globalState.rgb, hasGlobal);
-                return emissionColor * (_EmissionStrength * master * cheapPulse * mask * height01);
+                half emissionEnergy = clamp(_EmissionStrength * master * cheapPulse * mask * height01, 0.0h, 10.0h);
+                return emissionColor * emissionEnergy;
             }
 
             Varyings Vert(Attributes input)

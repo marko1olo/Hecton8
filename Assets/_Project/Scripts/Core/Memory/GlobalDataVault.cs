@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core.Contracts;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -9,6 +10,16 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Memory
 {
+    /// <summary>
+    /// Dispatcher phase gate for vault compaction. Movement is legal only before jobs are scheduled.
+    /// </summary>
+    public enum MemoryDefragPhase : byte
+    {
+        Unspecified = 0,
+        PreSimulation = 1,
+        VisualSync = 2
+    }
+
     /// <summary>
     /// Registry-facing data-vault contract. Systems request buffers here instead of owning persistent arrays.
     /// </summary>
@@ -28,6 +39,9 @@ namespace Hecton8.Core.Memory
 
         /// <summary>True while vault aliases are fenced by a critical maintenance pass.</summary>
         bool IsCompactionFenceActive { get; }
+
+        /// <summary>Bitmask of vault buffers currently held by scheduled jobs.</summary>
+        uint ActiveBurstLockMask { get; }
 
         /// <summary>True when the most recent gap analysis crossed the fragmentation threshold.</summary>
         bool IsFragmented { get; }
@@ -58,6 +72,9 @@ namespace Hecton8.Core.Memory
 
         /// <summary>Total bytes moved by vault relocation since initialization.</summary>
         long TotalDefragMovedBytes { get; }
+
+        /// <summary>System that owned the most recent relocated block.</summary>
+        SystemID LastRelocatedSystemID { get; }
 
         /// <summary>Total number of relocation passes that breached the watchdog.</summary>
         int CompactionWatchdogBreachCount { get; }
@@ -98,11 +115,25 @@ namespace Hecton8.Core.Memory
         /// <summary>Releases scene-owned vault buffers before scene-transition baseline verification.</summary>
         int ReleaseSceneOwnedBuffers(out long releasedBytes);
 
+        /// <summary>Releases scene-owned vault buffers and reports any locked or corrupt survivors.</summary>
+        int ReleaseSceneOwnedBuffers(out long releasedBytes, out int remainingCount, out long remainingBytes, out int lockedCount);
+
+        /// <summary>Counts scene-owned vault buffers that still occupy the reusable arena.</summary>
+        int CountSceneOwnedBuffers(out long bytes, out int lockedCount);
+
         /// <summary>Locks a buffer while an external job owns its pointer.</summary>
+        [Obsolete("Use the owner-tagged overload so compaction telemetry records the scheduling system.", false)]
         bool TryLockBuffer(BufferID bufferId);
 
+        /// <summary>Locks a buffer while an external job owned by a specific system owns its pointer.</summary>
+        bool TryLockBuffer(BufferID bufferId, SystemID lockOwner);
+
         /// <summary>Unlocks a previously locked buffer.</summary>
+        [Obsolete("Use the owner-tagged overload so compaction telemetry records the scheduling system.", false)]
         bool TryUnlockBuffer(BufferID bufferId);
+
+        /// <summary>Unlocks a previously locked buffer owned by a specific system.</summary>
+        bool TryUnlockBuffer(BufferID bufferId, SystemID lockOwner);
 
         /// <summary>Attempts to read one relocation record from future offline relocation.</summary>
         bool TryGetLastRelocationRecord(int index, out VaultRelocationRecord record);
@@ -114,10 +145,15 @@ namespace Hecton8.Core.Memory
         void UnlockAllocationsAfterAupShift(uint shiftFrameId);
 
         /// <summary>Runs cold fragmentation maintenance.</summary>
+        [Obsolete("Use the explicit PRE_SIMULATION overload. Legacy overloads record blocked telemetry and never move memory.", false)]
         void FrostTickDefrag(float elapsedSeconds);
 
         /// <summary>Runs cold fragmentation maintenance with a caller-provided stress gate.</summary>
+        [Obsolete("Use the explicit PRE_SIMULATION overload. Legacy overloads record blocked telemetry and never move memory.", false)]
         void FrostTickDefrag(float elapsedSeconds, float systemStress01);
+
+        /// <summary>Runs cold fragmentation maintenance from a dispatcher phase with explicit job-lock state.</summary>
+        void FrostTickDefrag(float elapsedSeconds, float systemStress01, MemoryDefragPhase phase, uint activeBurstLockMask);
     }
 
     /// <summary>
@@ -231,10 +267,13 @@ namespace Hecton8.Core.Memory
         public uint Sequence;
         public uint Frame;
         public uint VaultGenerationID;
+        public uint ActiveBurstLockMask;
         public int BlockCount;
         public int ActiveBufferCount;
         public float HeapFragmentationRatio;
         public int WatchdogBreaches;
+        public ushort LastRelocatedSystemId;
+        public ushort Reserved16;
         public byte Flags;
         public byte IsFragmented;
         public byte WatchdogExceeded;
@@ -253,7 +292,8 @@ namespace Hecton8.Core.Memory
         private const long DefaultArenaBytes = 128L * 1024L * 1024L;
         public const long LowTierArenaLimitBytes = 512L * 1024L * 1024L;
         public const long HighTierArenaLimitBytes = 4L * 1024L * 1024L * 1024L;
-        private const float FragmentationRatioThreshold = 0.15f;
+        private const float LowTierFragmentationRatioThreshold = 0.15f;
+        private const float HighTierFragmentationRatioThreshold = 0.30f;
         private const float StressDefragHaltThreshold = 0.9f;
         private const long MassiveMoveThresholdBytes = 50L * 1024L * 1024L;
         private const long MaxLiveDefragMoveBytesPerSlice = 5L * 1024L * 1024L;
@@ -298,12 +338,14 @@ namespace Hecton8.Core.Memory
         private long _arenaCapacityLimitBytes;
         private int _allocationLock;
         private int _compactionFence;
+        private int _activeLocks;
         private bool _memMoveBlockedByStress;
         private uint _lockedShiftFrameId;
         private long _allocatedBytes;
         private long _macroDatabasePayloadBytes;
         private int _macroDatabasePayloadEvictions;
         private uint _macroDatabaseCacheAccessClock;
+        private long _lastPublishedPointerBits;
         private int _defragBlackBoxCursor;
         private int _defragBlackBoxRecordedCount;
         private int _lastRelocationRecordCount;
@@ -311,6 +353,7 @@ namespace Hecton8.Core.Memory
         private long _totalDefragMovedBytes;
         private uint _defragTickSequence;
         private uint _vaultGenerationId;
+        private SystemID _lastRelocatedSystemId;
         private bool _defragDumpWritten;
         private bool _phiVodDumpWritten;
         private bool _initialized;
@@ -331,6 +374,9 @@ namespace Hecton8.Core.Memory
 
         /// <inheritdoc />
         public bool IsCompactionFenceActive => _compactionFence != 0;
+
+        /// <inheritdoc />
+        public uint ActiveBurstLockMask => unchecked((uint)Volatile.Read(ref _activeLocks));
 
         /// <inheritdoc />
         public bool IsFragmented { get; private set; }
@@ -361,6 +407,9 @@ namespace Hecton8.Core.Memory
 
         /// <inheritdoc />
         public long TotalDefragMovedBytes => _totalDefragMovedBytes;
+
+        /// <inheritdoc />
+        public SystemID LastRelocatedSystemID => _lastRelocatedSystemId;
 
         /// <inheritdoc />
         public int CompactionWatchdogBreachCount => _compactionWatchdogBreachCount;
@@ -429,11 +478,13 @@ namespace Hecton8.Core.Memory
 
             _allocationLock = 0;
             _compactionFence = 0;
+            _activeLocks = 0;
             _lockedShiftFrameId = 0u;
             _allocatedBytes = 0L;
             _macroDatabasePayloadBytes = 0L;
             _macroDatabasePayloadEvictions = 0;
             _macroDatabaseCacheAccessClock = 0u;
+            _lastPublishedPointerBits = 0L;
             _defragBlackBoxCursor = 0;
             _defragBlackBoxRecordedCount = 0;
             _lastRelocationRecordCount = 0;
@@ -441,6 +492,7 @@ namespace Hecton8.Core.Memory
             _totalDefragMovedBytes = 0L;
             _defragTickSequence = 0u;
             _vaultGenerationId = 1u;
+            _lastRelocatedSystemId = SystemID.Unknown;
             _defragDumpWritten = false;
             _phiVodDumpWritten = false;
             ResetDefragTelemetry();
@@ -880,15 +932,74 @@ namespace Hecton8.Core.Memory
         /// <inheritdoc />
         public int ReleaseSceneOwnedBuffers(out long releasedBytes)
         {
-            releasedBytes = 0L;
-            if (!_initialized || !_keys.IsCreated)
-                return 0;
-
-            return ReleaseBuffersByOwner(SystemID.Unknown, sceneOwnedOnly: true, out releasedBytes);
+            int remainingCount;
+            long remainingBytes;
+            int lockedCount;
+            return ReleaseSceneOwnedBuffers(out releasedBytes, out remainingCount, out remainingBytes, out lockedCount);
         }
 
         /// <inheritdoc />
+        public int ReleaseSceneOwnedBuffers(out long releasedBytes, out int remainingCount, out long remainingBytes, out int lockedCount)
+        {
+            releasedBytes = 0L;
+            remainingCount = 0;
+            remainingBytes = 0L;
+            lockedCount = 0;
+            if (!_initialized || !_keys.IsCreated)
+                return 0;
+
+            int releasedCount = ReleaseBuffersByOwner(SystemID.Unknown, sceneOwnedOnly: true, out releasedBytes);
+            remainingCount = CountSceneOwnedBuffers(out remainingBytes, out lockedCount);
+            if (remainingCount > 0)
+                DumpPhiVodBlackBox();
+
+            return releasedCount;
+        }
+
+        /// <inheritdoc />
+        public int CountSceneOwnedBuffers(out long bytes, out int lockedCount)
+        {
+            bytes = 0L;
+            lockedCount = 0;
+            if (!_initialized || !_keys.IsCreated || !_metadata.IsCreated)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < _keys.Length; i++)
+            {
+                int key = _keys[i];
+                if (!_metadata.TryGetValue(key, out VaultBufferMeta meta) ||
+                    !IsSceneOwnedVaultOwner(meta.Owner))
+                {
+                    continue;
+                }
+
+                count++;
+                bytes += meta.Bytes;
+                if (!TryFindOccupiedBlockIndex(key, meta.OffsetBytes, out int blockIndex))
+                {
+                    lockedCount++;
+                    DumpPhiVodBlackBox();
+                    continue;
+                }
+
+                VaultArenaBlock block = _blocks[blockIndex];
+                if ((block.Reserved0 & BlockFlagLocked) != 0 || block.Reserved1 != 0)
+                    lockedCount++;
+            }
+
+            return count;
+        }
+
+        /// <inheritdoc />
+        [Obsolete("Use the owner-tagged overload so compaction telemetry records the scheduling system.", false)]
         public bool TryLockBuffer(BufferID bufferId)
+        {
+            return TryLockBuffer(bufferId, SystemID.Unknown);
+        }
+
+        /// <inheritdoc />
+        public bool TryLockBuffer(BufferID bufferId, SystemID lockOwner)
         {
             if (!_initialized || bufferId == BufferID.Unknown)
                 return false;
@@ -907,11 +1018,19 @@ namespace Hecton8.Core.Memory
             block.Reserved1++;
             block.Reserved0 |= BlockFlagLocked;
             _blocks[blockIndex] = block;
+            SetActiveLockBit(ResolveActiveLockBit(bufferId));
             return true;
         }
 
         /// <inheritdoc />
+        [Obsolete("Use the owner-tagged overload so compaction telemetry records the scheduling system.", false)]
         public bool TryUnlockBuffer(BufferID bufferId)
+        {
+            return TryUnlockBuffer(bufferId, SystemID.Unknown);
+        }
+
+        /// <inheritdoc />
+        public bool TryUnlockBuffer(BufferID bufferId, SystemID lockOwner)
         {
             if (!_initialized || bufferId == BufferID.Unknown)
                 return false;
@@ -932,7 +1051,72 @@ namespace Hecton8.Core.Memory
                 block.Reserved0 &= unchecked((byte)~BlockFlagLocked);
 
             _blocks[blockIndex] = block;
+            ClearActiveLockBitIfUnused(ResolveActiveLockBit(bufferId));
             return true;
+        }
+
+        private static int ResolveActiveLockBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 31u));
+            return 1 << bitIndex;
+        }
+
+        private void SetActiveLockBit(int bit)
+        {
+            int observed;
+            int updated;
+            do
+            {
+                observed = Volatile.Read(ref _activeLocks);
+                updated = observed | bit;
+                if (updated == observed)
+                    return;
+            }
+            while (Interlocked.CompareExchange(ref _activeLocks, updated, observed) != observed);
+        }
+
+        private void ClearActiveLockBitIfUnused(int bit)
+        {
+            if (HasLockedBlockForBit(bit))
+                return;
+
+            int observed;
+            int updated;
+            do
+            {
+                observed = Volatile.Read(ref _activeLocks);
+                updated = observed & ~bit;
+                if (updated == observed)
+                    return;
+            }
+            while (Interlocked.CompareExchange(ref _activeLocks, updated, observed) != observed);
+        }
+
+        private bool HasLockedBlockForBit(int bit)
+        {
+            if (!_blocks.IsCreated)
+                return false;
+
+            for (int i = 0; i < _blocks.Length; i++)
+            {
+                VaultArenaBlock block = _blocks[i];
+                if (block.State != BlockStateOccupied ||
+                    ((block.Reserved0 & BlockFlagLocked) == 0 && block.Reserved1 == 0))
+                {
+                    continue;
+                }
+
+                if (ResolveActiveLockBit((BufferID)block.BufferKey) == bit)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool HasActiveBurstLocks(uint externalLockMask)
+        {
+            uint localLockMask = unchecked((uint)Volatile.Read(ref _activeLocks));
+            return (localLockMask | externalLockMask) != 0u;
         }
 
         /// <inheritdoc />
@@ -981,13 +1165,21 @@ namespace Hecton8.Core.Memory
         }
 
         /// <inheritdoc />
+        [Obsolete("Use the explicit PRE_SIMULATION overload. Legacy overloads record blocked telemetry and never move memory.", false)]
         public void FrostTickDefrag(float elapsedSeconds)
         {
-            FrostTickDefrag(elapsedSeconds, 0f);
+            FrostTickDefrag(elapsedSeconds, 0f, MemoryDefragPhase.Unspecified, ActiveBurstLockMask);
         }
 
         /// <inheritdoc />
+        [Obsolete("Use the explicit PRE_SIMULATION overload. Legacy overloads record blocked telemetry and never move memory.", false)]
         public void FrostTickDefrag(float elapsedSeconds, float systemStress01)
+        {
+            FrostTickDefrag(elapsedSeconds, systemStress01, MemoryDefragPhase.Unspecified, ActiveBurstLockMask);
+        }
+
+        /// <inheritdoc />
+        public void FrostTickDefrag(float elapsedSeconds, float systemStress01, MemoryDefragPhase phase, uint activeBurstLockMask)
         {
             if (!_initialized || _arenaBase == null)
                 return;
@@ -1006,10 +1198,20 @@ namespace Hecton8.Core.Memory
                 return;
             }
 
+            if (phase != MemoryDefragPhase.PreSimulation)
+            {
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagAliasBlocked);
+                RecordDefragBlackBox(sequence);
+                return;
+            }
+
+            bool burstLocked = HasActiveBurstLocks(activeBurstLockMask);
             bool stressHalted = systemStress01 > StressDefragHaltThreshold;
-            _memMoveBlockedByStress = stressHalted;
+            _memMoveBlockedByStress = stressHalted || burstLocked;
             if (stressHalted)
                 LastDefragFlags = (byte)(LastDefragFlags | DefragFlagStressHalt);
+            if (burstLocked)
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagAliasBlocked);
 
             AnalyzeGaps();
             if (!ValidateDefragTelemetry() || !ValidateBlockMap())
@@ -1025,9 +1227,9 @@ namespace Hecton8.Core.Memory
                 if (PendingMassiveMoveBytes >= MassiveMoveThresholdBytes)
                     LastDefragFlags |= DefragFlagMassiveMovePending;
 
-                if (!stressHalted)
+                if (!stressHalted && !burstLocked)
                 {
-                    TryRunLiveCompactionSlice();
+                    TryRunLiveCompactionSlice(activeBurstLockMask);
                     AnalyzeGaps();
                     if (!ValidateDefragTelemetry() || !ValidateBlockMap())
                     {
@@ -1272,12 +1474,15 @@ namespace Hecton8.Core.Memory
             _arenaCapacityLimitBytes = 0L;
             _allocationLock = 0;
             _compactionFence = 0;
+            _activeLocks = 0;
             _defragBlackBoxCursor = 0;
             _defragBlackBoxRecordedCount = 0;
             _lastRelocationRecordCount = 0;
             _compactionWatchdogBreachCount = 0;
             _totalDefragMovedBytes = 0L;
             _defragTickSequence = 0u;
+            _lastPublishedPointerBits = 0L;
+            _lastRelocatedSystemId = SystemID.Unknown;
             _vaultGenerationId = 0u;
             _defragDumpWritten = false;
             _phiVodDumpWritten = false;
@@ -1495,6 +1700,7 @@ namespace Hecton8.Core.Memory
             LastDefragFlags = 0;
             UnalignedBufferCount = 0;
             _lastRelocationRecordCount = 0;
+            _lastRelocatedSystemId = SystemID.Unknown;
         }
 
         private void AnalyzeGaps()
@@ -1536,11 +1742,18 @@ namespace Hecton8.Core.Memory
             HeapFragmentationRatio = totalFreeBytes > 0L
                 ? math.saturate((float)((double)(totalFreeBytes - largestFreeBytes) / totalFreeBytes))
                 : 0f;
-            IsFragmented = HeapFragmentationRatio > FragmentationRatioThreshold;
+            IsFragmented = HeapFragmentationRatio > ResolveFragmentationRatioThreshold();
             if (IsFragmented)
                 LastDefragFlags |= DefragFlagFragmented;
             if (UnalignedBufferCount > 0)
                 LastDefragFlags |= DefragFlagUnaligned;
+        }
+
+        private float ResolveFragmentationRatioThreshold()
+        {
+            return _arenaCapacityLimitBytes >= HighTierArenaLimitBytes
+                ? HighTierFragmentationRatioThreshold
+                : LowTierFragmentationRatioThreshold;
         }
 
         private bool ValidateDefragTelemetry()
@@ -1615,11 +1828,12 @@ namespace Hecton8.Core.Memory
             return largest;
         }
 
-        private bool TryRunLiveCompactionSlice()
+        private bool TryRunLiveCompactionSlice(uint activeBurstLockMask)
         {
             if (_memMoveBlockedByStress ||
                 _allocationLock != 0 ||
-                _compactionFence != 0 ||
+                Volatile.Read(ref _compactionFence) != 0 ||
+                HasActiveBurstLocks(activeBurstLockMask) ||
                 !_blocks.IsCreated ||
                 _blocks.Length < 2 ||
                 _arenaBase == null)
@@ -1631,11 +1845,18 @@ namespace Hecton8.Core.Memory
             bool movedAny = false;
             bool faulted = false;
             ResetRelocationRecords();
-            _compactionFence = 1;
+            if (Interlocked.Exchange(ref _compactionFence, 1) != 0)
+                return false;
             try
             {
                 for (int i = 0; i + 1 < _blocks.Length && movedBytes < MaxLiveDefragMoveBytesPerSlice; i++)
                 {
+                    if (HasActiveBurstLocks(activeBurstLockMask))
+                    {
+                        LastDefragFlags = (byte)(LastDefragFlags | DefragFlagAliasBlocked);
+                        break;
+                    }
+
                     VaultArenaBlock freeBlock = _blocks[i];
                     if (freeBlock.State != BlockStateFree || freeBlock.Bytes <= 0L)
                         continue;
@@ -1678,7 +1899,7 @@ namespace Hecton8.Core.Memory
             }
             finally
             {
-                _compactionFence = 0;
+                Interlocked.Exchange(ref _compactionFence, 0);
             }
 
             if (movedAny)
@@ -1724,6 +1945,22 @@ namespace Hecton8.Core.Memory
                 return false;
             }
 
+            if ((freeBlock.OffsetBytes & (VaultBlockAlignment - 1L)) != 0L ||
+                (occupiedBlock.OffsetBytes & (VaultBlockAlignment - 1L)) != 0L ||
+                (occupiedBlock.Bytes & (VaultBlockAlignment - 1L)) != 0L)
+            {
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagUnaligned);
+                return false;
+            }
+
+            if ((ulong)freeBlock.OffsetBytes > uint.MaxValue ||
+                (ulong)occupiedBlock.OffsetBytes > uint.MaxValue ||
+                (ulong)occupiedBlock.Bytes > uint.MaxValue)
+            {
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagFault);
+                return false;
+            }
+
             int key = occupiedBlock.BufferKey;
             if (!_metadata.TryGetValue(key, out VaultBufferMeta meta) ||
                 !_buffers.TryGetValue(key, out IntPtr oldPointer) ||
@@ -1764,7 +2001,7 @@ namespace Hecton8.Core.Memory
             meta.OffsetBytes = movedBlock.OffsetBytes;
             meta.Version = movedBlock.Version;
             _metadata[key] = meta;
-            _buffers[key] = newPointer;
+            PublishMovedBufferPointer(key, newPointer);
             RecordRelocation(key, in meta, oldPointer, newPointer, occupiedBlock.Bytes, movedBlock.Version);
             movedBytes += occupiedBlock.Bytes;
 
@@ -1841,6 +2078,7 @@ namespace Hecton8.Core.Memory
             entry.Sequence = sequence;
             entry.Frame = unchecked((uint)UnityEngine.Time.frameCount);
             entry.VaultGenerationID = _vaultGenerationId;
+            entry.ActiveBurstLockMask = ActiveBurstLockMask;
             entry.BlockCount = _blocks.IsCreated ? _blocks.Length : 0;
             entry.ActiveBufferCount = _keys.IsCreated ? _keys.Length : 0;
             entry.TotalFreeSpaceBytes = TotalFreeSpaceBytes;
@@ -1850,6 +2088,7 @@ namespace Hecton8.Core.Memory
             entry.PendingMassiveMoveBytes = PendingMassiveMoveBytes;
             entry.HeapFragmentationRatio = HeapFragmentationRatio;
             entry.WatchdogBreaches = _compactionWatchdogBreachCount;
+            entry.LastRelocatedSystemId = (ushort)_lastRelocatedSystemId;
             entry.Flags = (byte)(LastDefragFlags | extraFlags);
             entry.IsFragmented = IsFragmented ? (byte)1 : (byte)0;
             entry.WatchdogExceeded = LastDefragWatchdogExceeded ? (byte)1 : (byte)0;
@@ -2170,7 +2409,7 @@ namespace Hecton8.Core.Memory
                         meta.OffsetBytes = block.OffsetBytes;
                         meta.Version = block.Version;
                         _metadata[block.BufferKey] = meta;
-                        _buffers[block.BufferKey] = newPointer;
+                        PublishMovedBufferPointer(block.BufferKey, newPointer);
                         RecordRelocation(block.BufferKey, in meta, oldPointer, newPointer, block.Bytes, block.Version);
                     }
                 }
@@ -2208,7 +2447,14 @@ namespace Hecton8.Core.Memory
                 : VaultRelocationRecord.FlagAddressChanged;
             int ownerId = (int)meta.Owner;
             record.SystemId = ownerId > byte.MaxValue ? byte.MaxValue : (byte)ownerId;
+            _lastRelocatedSystemId = meta.Owner;
             _lastRelocationRecords[_lastRelocationRecordCount++] = record;
+        }
+
+        private void PublishMovedBufferPointer(int key, IntPtr newPointer)
+        {
+            Interlocked.Exchange(ref _lastPublishedPointerBits, newPointer.ToInt64());
+            _buffers[key] = newPointer;
         }
 
         private void ResetRelocationRecords()

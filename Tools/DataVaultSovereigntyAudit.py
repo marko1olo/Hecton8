@@ -166,6 +166,61 @@ def scan_native_array_declaration_tree(
     return findings
 
 
+def scan_source_tree_with_declarations(
+    source_root: Path,
+    repo_root: Path = REPO_ROOT,
+    constructor_allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_PATH_SUFFIXES,
+    declaration_allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_DECLARATION_PATH_SUFFIXES,
+) -> tuple[list[FileFinding], list[FileFinding]]:
+    if not source_root.exists():
+        raise FileNotFoundError(f"source root not found: {source_root}")
+
+    constructor_findings: list[FileFinding] = []
+    declaration_findings: list[FileFinding] = []
+    for path in sorted(source_root.rglob("*.cs")):
+        relative_scan_path = path.relative_to(source_root)
+        if should_skip(relative_scan_path):
+            continue
+
+        constructor_lines: list[int] = []
+        declaration_lines: list[int] = []
+        try:
+            lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+        except OSError as exc:
+            raise OSError(f"failed to read {path}") from exc
+
+        for line_number, line in enumerate(lines, 1):
+            if NATIVE_ARRAY_CONSTRUCTOR_RE.search(line):
+                constructor_lines.append(line_number)
+            if NATIVE_ARRAY_DECLARATION_RE.search(strip_line_comment(line)):
+                declaration_lines.append(line_number)
+
+        if not constructor_lines and not declaration_lines:
+            continue
+
+        relative_path = normalize_path(path, repo_root)
+        if constructor_lines:
+            constructor_findings.append(
+                FileFinding(
+                    path=relative_path,
+                    count=len(constructor_lines),
+                    lines=tuple(constructor_lines),
+                    allowed=is_allowed_path(relative_path, constructor_allowed_suffixes),
+                )
+            )
+        if declaration_lines:
+            declaration_findings.append(
+                FileFinding(
+                    path=relative_path,
+                    count=len(declaration_lines),
+                    lines=tuple(declaration_lines),
+                    allowed=is_allowed_path(relative_path, declaration_allowed_suffixes),
+                )
+            )
+
+    return constructor_findings, declaration_findings
+
+
 def build_audit_payload(
     findings: Sequence[FileFinding],
     source_root: Path,
@@ -524,8 +579,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
-    findings = scan_source_tree(args.root)
-    declaration_findings = scan_native_array_declaration_tree(args.root)
+    findings, declaration_findings = scan_source_tree_with_declarations(args.root)
     payload = build_audit_payload(findings, args.root, declaration_findings=declaration_findings)
     baseline = load_json(args.baseline)
 

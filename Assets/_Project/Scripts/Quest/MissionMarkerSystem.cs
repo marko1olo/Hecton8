@@ -214,7 +214,7 @@ namespace Hecton8.Quest
             _runtimeMarkerMaterial.SetFloat(FlickerFrequencyId, flickerFrequency);
             _runtimeMarkerMaterial.SetFloat(FlickerIntensityId, flickerIntensity);
 
-            Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMeshInstanced(
                 _runtimeMarkerMesh,
                 0,
                 _runtimeMarkerMaterial,

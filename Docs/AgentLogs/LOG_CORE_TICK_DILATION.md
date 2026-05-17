@@ -99,3 +99,65 @@ Verification:
 
 Final status:
 - PENDING VERIFICATION. New adrenaline scheduler code is statically clean; full compile remains blocked by external contract files.
+
+## 2026-05-17 - Reinquisition Hot-Path / Blackbox Pass
+
+What was wrong:
+- Dispatcher blackbox export path had drifted to `Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin`, contradicting CORE_TICK_DILATION's required `Dump_[AgentID].bin`.
+- `RunDispatcherUpdate` still read `GlobalRegistry.InputDeterminism` and `GlobalRegistry.ScalabilityTierProfileByte`; late-frame pause DOF still read `GlobalRegistry.CameraJuice`.
+- `ScalabilityEvents` had only 16 listener slots while the source tree contains 27 files implementing `IScalabilityChangedEventListener`.
+
+What was done:
+- Primary dispatcher blackbox dump restored to `Docs/AgentLogs/Dump_CORE_TICK_DILATION.bin`; SIM_BUCKET mirror retained for neighboring scheduler evidence.
+- Added binary dump header: `HECTON8\0` magic, version, entry count, 64-byte entry size, cursor, then 300 entries.
+- Cached `IInputDeterminismService` and `ICameraJuiceSystem`; absent CameraJuice lookup retries once per 30 frames.
+- Dispatcher now seeds scalability tier once and receives later changes through existing `ScalabilityEvents`; frame loop reads `_scalabilityTierProfileByte`.
+- Widened `ScalabilityEvents` cold listener/deferred arrays from 16 to 32.
+
+Cinematic cheats used:
+- No new physical simulation. Scheduler remains cadence authority only.
+- Slow motion and adrenaline still sell through existing bullet-time visual signals; high-tier visual overkill remains in VISUAL/VFX systems.
+
+Exact microseconds saved:
+- Measured proof absent. Estimated savings are below profiler resolution: <0.002 us/frame per removed registry property read.
+- CameraJuice absent path drops from 60 registry reads/s to 2 reads/s.
+- Blackbox dump change costs 0 us normal frames; fault path writes fixed 19.2 KB ring plus 20-byte header.
+
+Verification:
+- `rg` scan on `SystemDispatcher.cs` and `ITickable.cs`: no raw `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, `.ToString(`, `foreach`, `Task.Delay`, `new NativeArray`, local `NativeQueue`/`NativeList`, `math.sqrt`, `math.normalize`, or `GlobalRegistry.Get`.
+- `git diff --check` on touched scheduler/core files reports only LF-to-CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore` timed out after 126s; no-reuse/shared-compilation-disabled retry timed out after 304s. Both logs were 0 bytes. Build servers were shut down and lingering dotnet processes were killed.
+
+STATUS: PENDING VERIFICATION - static scans pass; Core build command currently hangs before diagnostics in this workspace; Unity import/play/build proof absent.
+
+## 2026-05-17 - Typed Scalability SignalBus Bridge
+
+What was wrong:
+- Dispatcher scalability state was still updated through `IScalabilityChangedEventListener`. That is decoupled, but it is not the strict typed-lane/`ReadOnlySpan<T>` pattern requested for the scheduler.
+- The existing platform event payload was packed but was not an `ISignal`, so using it through `SignalBus<T>` was impossible.
+- The source still had a stale SIM-bucket-only blackbox dump path in the dispatcher constant.
+
+What was done:
+- `ScalabilityChangedEvent` now implements `ISignal` while keeping `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 2)]`.
+- `ScalabilityEvents.Raise` now pushes the same payload into `SignalBus<ScalabilityChangedEvent>` with a configured 4-event lane and `SCLT` lane hash.
+- `SystemDispatcher` no longer implements/registers/unregisters `IScalabilityChangedEventListener`.
+- Dispatcher drains `SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot()` after `GlobalSignals.FlushPreSimulation()` and uses the resulting cached tier for job admission and simulation bucketing.
+- `ScalabilityChangedEvent` flushes during simulation pause, so platform tier changes are not blocked by `TimeDilationScalar == 0`.
+- Dispatcher blackbox primary path is again `Docs/AgentLogs/Dump_CORE_TICK_DILATION.bin`, with the SIM bucket mirror retained.
+
+Cinematic cheats used:
+- No physical simulation added. Scheduler still only moves cadence, pause, and tier state.
+- Low-tier path keeps the bullet-time post override disabled; high/ultra presentation remains the place to spend saved cycles on heavier visuals.
+
+Exact microseconds saved:
+- No measured profiler proof. Expected idle overhead is below 0.002 us/frame for the empty `ReadOnlySpan` check.
+- Event path is rare and capped at 4 scalability payloads.
+- Blackbox mirror costs 0 us on normal frames; fault path writes the fixed binary ring twice.
+
+Verification:
+- No dotnet rebuild was run in this pass per user instruction.
+- `rg` confirmed `SystemDispatcher` no longer references `IScalabilityChangedEventListener` or `_scalabilityEventsRegistered`.
+- `rg` confirmed `ScalabilityChangedEvent : ISignal`, `SignalBus<ScalabilityChangedEvent>.Push`, `SignalBus<ScalabilityChangedEvent>.Configure`, and dispatcher `GetFrameSnapshot()` consumption.
+- `git diff --check` on touched files reports only LF-to-CRLF warnings.
+
+STATUS: PENDING VERIFICATION - static code evidence only; Unity import/play/build proof absent.

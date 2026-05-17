@@ -1,6 +1,6 @@
 # Rationale_LADDER_CLIMB_IK
 
-Runtime Status: PENDING UNITY/PROFILER VERIFICATION - LOOP 17 GRIP STATE + BLACKBOX COUNT HARDENED; CORE BUILD GREEN
+Runtime Status: PENDING UNITY/PROFILER VERIFICATION - LOOP 22 COLD BLACKBOX SPAN WRITER; CORE BUILD GREEN
 
 ## Initial Technical Direction
 Problem: Ladder traversal currently requested as embodiment-critical locomotion; teleport-style vertical movement would break VR body continuity and gives no hand contact truth.
@@ -298,3 +298,38 @@ Solution: Expanded the vault-owned telemetry cursor lane to two ints: next-write
 Rejected Alternatives: Keeping a private managed retained-count field, parsing zero hashes during dump, or trusting old one-int cursor handles after the layout change. A private field violates data sovereignty, zero-hash filtering is ambiguous post-crash, and stale handles can silently block solve capacity.
 Scalability potential: Low/Middle/High/Ultra all get a deterministic postmortem payload without extra hot-path allocations. The retained count improves crash evidence quality on short test sessions and still caps at exactly 300 frames.
 Hardware Impact: One additional int read/write in the Burst telemetry path, estimated below 1 us/frame. Static validation found no forbidden ladder-domain patterns, no missing `Pack = 1`, and no runtime `NativeArray<T>` declarations. Latest `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` returned `CORE_BUILD_EXIT:0`. Unity editor/profiler verification remains unrun.
+
+### Loop 18 - Player State AUP Truth
+Problem: `PlayerStateSignal.PositionAup` still published the ladder base AUP. That made the typed climb lane truthful about state and progress intensity, but false about position; HUD, physiology, or downstream consumers reading the latest player state could anchor effects or diagnostics at the ladder entry instead of the player's current rung position.
+Solution: Added `ResolveCurrentClimbAup(in ladderAup)` in `ProceduralLadderClimbRuntime`. The signal now computes current climb AUP by clamping sanitized progress, normalizing `_ladderUp`, converting the offset to `double3`, and calling `AbsoluteUniversePosition.OffsetMeters(in ladderAup, offsetMeters)`.
+Rejected Alternatives: Publishing `_playerRoot.position` with `FromRuntimePosition` or leaving `Intensity01` to imply position. Transform authority would contradict the AUP mandate, and intensity-only consumers cannot recover an absolute position without duplicating ladder state.
+Scalability potential: Low = PC camera-slide signal now reports the correct rung-space AUP; Middle/High/Ultra = VR grip, haptics, HUD, and physiology consumers can share one position truth without new lanes or transform reads.
+Hardware Impact: One double3 multiply plus one AUP offset conversion per climb-state publish, estimated below 1 us/event. Static validation found no forbidden ladder-domain patterns, no missing `Pack = 1`, and no runtime `NativeArray<T>` declarations. Latest `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` returned `CORE_BUILD_EXIT:0`. Unity editor/profiler verification remains unrun.
+
+### Loop 19 - Burst Job Layout Closure
+Problem: The ARM64 layout audit confirmed the ladder data packets were packed, but the Burst job wrapper `LadderClimbIkSolveJob` still relied on implicit struct layout. Even if the job is not persisted, the mandate requires explicit layout for structs in the ladder-owned path.
+Solution: Added `[StructLayout(LayoutKind.Sequential, Pack = 1)]` to `LadderClimbIkSolveJob` while leaving the vault-owned NativeArray views in `LadderClimbIkVaultViews`.
+Rejected Alternatives: Treating job wrappers as exempt from the layout rule. That leaves a static audit hole on Quest/Android and makes future field changes ambiguous.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; the explicit layout removes platform ambiguity without changing math LOD, VR grip, or low-tier Dear Lie paths.
+Hardware Impact: 0 us intended runtime change. Layout metadata only; latest `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` returned `CORE_BUILD_EXIT:0`. Unity editor/profiler verification remains unrun.
+
+### Loop 20 - Non-Blocking Ladder Job Drain
+Problem: `LateFrameTick()` forced `_solveHandle.Complete()` every time a ladder solve was scheduled. In the common case the tiny IK job should already be complete, but under worker-thread pressure this can serialize the main thread and create the exact Steam Deck/MX350 hitch the job system is meant to avoid.
+Solution: Added an `_solveHandle.IsCompleted` gate before `Complete()`. The runtime now drains finished solves only; if the job is still running, the climb holds the current frame state and waits for the next late-frame pass. Cold teardown and new-climb setup still force completion because they are ownership boundary points.
+Rejected Alternatives: Forcing same-frame freshness or adding a local double buffer outside the vault. Same-frame freshness risks stalls, and local native state would violate the DataVault ownership rule.
+Scalability potential: Low/MX350 and Steam Deck avoid an unbounded wait under worker pressure; Middle/High/Ultra retain the same exact rung solve, haptics, VR grip semantics, and telemetry once the job is ready.
+Hardware Impact: 0 us steady-state change when the job is already complete. Under load this avoids waiting for the remaining worker time, but no profiler capture was run and no microsecond saving is claimed. Latest `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` is blocked outside the ladder domain by dirty `PlayerKinematicsRuntime` missing `IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent)`; filtered output contains no ladder symbols.
+
+### Loop 21 - Signal and Haptic Coalescing
+Problem: The runtime could publish identical `PlayerStateSignal` packets twice in the same frame, once before scheduling and again after the IK solve drained. It could also emit two haptic packets in the same solve when both hands changed rung index.
+Solution: Added a same-frame climb-state publish cache keyed by frame, state, flags, and millimeter-quantized progress. Added one coalesced rung-lock haptic request per solve, using a stronger pulse when both hands lock in the same output.
+Rejected Alternatives: Leaving consumers to deduplicate latest-state packets or keeping one haptic packet per hand. Consumers should not pay for producer spam, and dual haptic packets in the same frame add lane pressure without materially improving feedback.
+Scalability potential: Low/MX350 and Steam Deck get fewer typed lane writes during active climb; Middle/High/Ultra keep the same exact rung truth, AUP truth, VR grip semantics, and blackbox telemetry.
+Hardware Impact: No measured microsecond claim. Static code path reduction can avoid up to one duplicate `PlayerStateSignal` publish on a no-change same-frame drain and one duplicate `HapticRequest` publish when both hands lock simultaneously. Latest `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` is blocked outside the ladder domain by Gameplay motor, Interaction contract, and Tether API drift; filtered output contains no ladder symbols.
+
+### Loop 22 - Cold Blackbox Span Writer
+Problem: `DumpBlackBox()` still performed project-root probing, path combining, and `BinaryWriter` wrapping inside the NaN/crash dump path. That work is cold, but it is still the worst moment to allocate extra managed helpers or let dump I/O throw back into the animation runtime.
+Solution: Pre-create the relative `Docs/AgentLogs` dump directory during `OnEnable`. The fault path now uses the constant `Docs/AgentLogs/Dump_LADDER_CLIMB_IK.bin`, writes the existing capacity/retained-count header with `BinaryPrimitives`, and serializes each telemetry sample into a fixed 85-byte `stackalloc` span before a single stream write per entry. The dump is wrapped in a catch block so postmortem export cannot become a second crash.
+Rejected Alternatives: Adding a new Core crash-dump service, switching to a memory-mapped writer from the Animation/IK prompt, or leaving `BinaryWriter` in place. Core service design is outside the ladder domain, memory-mapped dump ownership needs a shared diagnostics contract, and `BinaryWriter` keeps unnecessary managed wrapper work in the fault path.
+Scalability potential: Low/MX350 and Steam Deck keep normal climb hot paths unchanged and avoid directory/path/writer churn when a fault dump occurs. Middle/High/Ultra keep exact retained chronological telemetry with no change to rung solve, VR grip embodiment, or haptic signal truth.
+Hardware Impact: 0 us hot-path change. Cold fault-path allocation pressure is reduced by removing `BinaryWriter`, `File.Open`, project-root `DirectoryInfo`, and per-dump `Path.Combine`; no profiler or microsecond measurement is claimed. Latest `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` returned `CORE_BUILD_EXIT:0`. Unity editor/profiler/platform verification remains unrun.

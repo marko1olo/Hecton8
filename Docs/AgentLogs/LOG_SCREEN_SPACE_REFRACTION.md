@@ -164,3 +164,51 @@ Cinematic Cheats used: No physical simulation was added. This preserves the Dear
 Exact Microseconds saved: 0 us certified. CPU cost is 0.0 us/frame. GPU cost is small finite-check ALU; constant divides became compile-time multiply constants. Exact GPU microseconds still require Unity profiler.
 
 Build/validation: An initial normal build retry failed outside domain in `TetherInstance.cs` on missing `IsFrameCooldownActive`; no tether code was edited. After shader cleanup, targeted slash/raw-uniform scan reports only shader names, include paths, and comments. Forbidden-pattern scan remains clean for touched visor/refraction files. `git diff --check` reports no whitespace errors, only existing LF/CRLF warnings. SourceLink-disabled and normal build checkpoints briefly succeeded with 0 warnings and 0 errors, but latest retries are now blocked outside VFX/POST: normal build fails in `EcosystemDirector.cs(5970-6027)` on duplicate index helper members, and SourceLink-disabled build fails in `LockstepStateValidator.cs(408-417)` on missing lockstep/system-glitch lane constants. Unity runtime shader compilation, RenderGraph Frame Debugger order, platform shader compile, and profiler timings remain pending.
+
+## 2026-05-16 - Uber Post Tier Shed And Finite Boundary
+
+What was wrong: `HectonVisorUberPost.shader` was still target 4.5 despite no compute/UAV/group-memory path, accepted raw shader globals around visor physiology and waterline polish, let low-tier PC enter the non-mobile 16-tap shaft loop, and used `pow` inside that loop. `SuitVisor.shader` still had several raw material/global knobs near droplet density, chromatic split, sonar, hypoxia, HUD tint, smoothness, reflection, and screen-size static noise.
+
+What was done: Lowered Uber post to target 3.5, included the shared finite helper boundary, finite-guarded Uber screen params, waterline, brine, light shaft, comfort, dirt, crack, pressure, heat, hypoxia, bleeding, and UV offset math. Low-tier now returns zero for light shafts. The 16-tap path uses `FastRadialFalloff01` polynomial falloff instead of `pow`. SuitVisor now resolves the remaining raw knobs through finite aliases before use.
+
+Cinematic Cheats used: Light shafts remain a post-process fake. Low tier drops the shaft loop entirely. High/Ultra keep a 16-tap fake with polynomial falloff. No raymarching, no particles, no new textures, no material clones, no new buffers, and no disk reads were added.
+
+Exact Microseconds saved: Not certified. CPU cost is 0.0 us/frame. Low-tier GPU should skip the 16-tap shaft loop, and High/Ultra replace tap-loop `pow` with multiply/lerp ALU. Exact GPU microseconds require Unity profiler.
+
+Build/validation: `rg` confirms no `#pragma target 4.5`, `pow`, `tex2D`, compute thread-group tokens, RW resources, or `GrabPass` in Uber post. Targeted SuitVisor raw-uniform scan is clean except declarations and finite aliases. Broader shader risk scan reports only benign shader header text and target 3.5 declarations. `git diff --check` reports no whitespace errors, only LF/CRLF warnings. Normal build currently fails at shared SourceLink file lock. SourceLink-disabled build reaches C# and fails outside VFX/POST in `SubmarineFluidDynamics.cs(1853,60)` and `(4582,68)` on ambiguous `float3`/`Vector3` subtraction.
+
+## 2026-05-17 - Uber Fragment UV Closure
+
+What was wrong: The Uber post helpers still assumed the XR-transformed fragment UV and depth/world-position reconstruction would always be finite before screen texture sampling.
+
+What was done: Sanitized the stereo-transformed fragment UV once in `Frag`, then added local fail-closed UV/world-position fallbacks in internal water, droplet, comfort, lens dirt, light shaft, and brine fog helpers.
+
+Cinematic Cheats used: No simulation was added. The pass remains a screen-space fake stack: chromatic damage, waterline refraction, dirt, cracks, brine fog, and tier-gated light shafts.
+
+Exact Microseconds saved: Not certified. CPU cost is 0.0 us/frame. GPU cost is finite-check ALU only; exact GPU microseconds require Unity profiler.
+
+Build/validation: Uber post risk scan now reports only the `rawUv` finite-boundary assignment; no `#pragma target 4.5`, `pow`, raw `saturate(_...)`, direct arithmetic `/`, `tex2D`, compute tokens, RW resources, or `GrabPass`. Forbidden hot-path scan is clean for touched visor/refraction files. `git diff --check` reports no whitespace errors, only LF/CRLF warnings. SourceLink-disabled build reaches C# and currently fails outside VFX/POST with `TetherManager.cs(20,92) CS0535 TetherManager does not implement ISlowTickable.SlowTick()`. Unity runtime shader compile, platform shader compile, Frame Debugger order, and profiler timings remain pending.
+
+## 2026-05-17 - Screen Params Boundary Closure
+
+What was wrong: The last shader audit still found helper hash/static paths multiplying raw UVs by `_ScreenParams`. Those values are normally stable, but they are still direct GPU sampling/noise boundaries and fail the mobile NaN-vaccination standard.
+
+What was done: Added shared `HectonFinite2` to `Hecton_SnellRefractionCore.hlsl`. `Hecton_VisorFluidDistortion.shader` now sanitizes fullscreen stereo UVs, interleaved-gradient UVs, dust scratches, suspended-silt specks, and glitch static screen params. `SuitVisor.shader` now sanitizes frost/lens/grime/scratch/crack helper UVs, stereo `screenUV`, HUD-distorted UVs after glitch offsets, and all touched raw `_ScreenParams` / `_ScaledScreenParams` hash paths through finite aliases.
+
+Cinematic Cheats used: No simulation was added. Low tier keeps chromatic/depth/dirt fakes. High/Ultra keep the visual overkill stack: salt crystals, suspended silt, lens grime, pressure cracks, HUD glitch, VR comfort, and BIOS recovery polish, now behind finite screen-space inputs.
+
+Exact Microseconds saved: 0 us certified. CPU cost is 0.0 us/frame. GPU cost is finite-check ALU only; exact GPU microseconds require Unity profiler.
+
+Build/validation: Targeted `_ScreenParams` scan now reports only finite alias declarations; no raw `_ScreenParams.xy`, `_ScreenParams.yx`, `_ScreenParams.y`, or `_ScaledScreenParams.xy` use remains in touched visor/refraction shaders. Broader shader risk scan reports only the `SuitVisor.shader` file header comment. Forbidden hot-path scan is clean for touched files. `git diff --check` reports no whitespace errors, only LF/CRLF warnings. SourceLink-disabled build reaches C# and currently fails outside VFX/POST with `FaunaBrain.Compatibility.cs(109,6) CS0246 FlagsAttribute/Flags could not be found`; warning is duplicate `System.Runtime.CompilerServices` using in `HectonPlayerMovement.cs`. Unity runtime shader compile, platform shader compile, Frame Debugger order, and profiler timings remain pending.
+
+## 2026-05-17 - Shared Depth Boundary Closure
+
+What was wrong: Scene-depth reads still trusted raw `SampleSceneDepth`, `_ZBufferParams`, `LinearEyeDepth`, and reconstructed world positions before feeding refraction masks, sonar contour masks, brine fog, mobile waterline math, and the high-tier shaft fake.
+
+What was done: Added shared depth helpers in `Hecton_SnellRefractionCore.hlsl`: `HectonFinite3`, `HectonInvalidSceneRawDepth`, `HectonFiniteSceneRawDepth`, and `HectonSceneDepthValid01`. Fullscreen fluid, SuitVisor, and Uber post now sanitize raw depth, finite-guard `_ZBufferParams`, and fail reconstructed world positions to stable values before depth-dependent math.
+
+Cinematic Cheats used: No physical water, raytracing, particles, or new textures. Low tier still drops to cheap chromatic/depth/dirt fakes. High/Ultra keep fake shafts, brine fog, salt crystals, silt shimmer, HUD glitch, grime, and cracks behind finite depth gates.
+
+Exact Microseconds saved: 0 us certified. CPU cost is 0.0 us/frame. GPU cost is finite-check ALU only; exact GPU microseconds require Unity profiler.
+
+Build/validation: Depth scan shows `SampleSceneDepth` wrapped by `HectonFiniteSceneRawDepth`, `LinearEyeDepth` using finite `zBufferParams`, and depth-valid reversed-Z logic centralized in the shared helper. Broader risk scan reports only intentional shared helper depth checks plus the `SuitVisor.shader` file header comment. Forbidden hot-path scan is clean for touched files. `git diff --check` reports no whitespace errors, only LF/CRLF warnings. SourceLink-disabled build retry timed out after 184 seconds under shared `dotnet` contention; an unrelated `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /maxcpucount:1 -nr:false` remained active and was not killed. Unity runtime shader compile, platform shader compile, Frame Debugger order, and profiler timings remain pending.

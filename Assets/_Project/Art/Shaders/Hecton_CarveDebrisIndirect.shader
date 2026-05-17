@@ -86,6 +86,19 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 return abs(frac(value) * 2.0 - 1.0);
             }
 
+            float TriangleSigned(float value)
+            {
+                return Triangle01(value) * 2.0 - 1.0;
+            }
+
+            float ResolveShardHeight(float3 positionWS)
+            {
+                float ridge = Triangle01(dot(positionWS, float3(7.19, 13.37, 5.73)));
+                float crystal = Triangle01(dot(positionWS.yzx, float3(17.31, 3.91, 11.57)));
+                float strata = Triangle01(dot(positionWS.zxy, float3(4.73, 23.11, 2.97)));
+                return saturate(ridge * 0.46 + crystal * 0.36 + strata * 0.18);
+            }
+
             half ResolveCrystalMask(float3 positionWS, half edgeMask, half impactMask)
             {
                 float strataA = Triangle01(dot(positionWS, float3(3.17, 5.83, 7.41)));
@@ -105,7 +118,57 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 return (half3)HectonCoreLitSafeNormalize((float3)normalWS + grain * strength);
             }
 
-            void BuildDebrisBasis(uint particleIndex, float timeSeconds, out float3 rightWS, out float3 upWS, out float3 forwardWS, out float edgeJitter)
+            float3 ResolveReliefTangent(float3 normal, float3 viewDir)
+            {
+                float basisUpMask = 1.0 - step(0.92, abs(normal.y));
+                float3 basisAxis = lerp(float3(1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), basisUpMask);
+                float3 basisTangent = HectonCoreLitSafeNormalize(cross(basisAxis, normal));
+                float3 viewTangent = viewDir - normal * dot(viewDir, normal);
+                float viewTangentMask = step(0.0001, dot(viewTangent, viewTangent));
+                return HectonCoreLitSafeNormalize(lerp(basisTangent, viewTangent, viewTangentMask));
+            }
+
+            half3 ResolveHighTierReliefNormal(float3 positionWS, half3 normalWS, half3 viewDirWS, half crystalMask, out half saltMask, out half occlusion)
+            {
+                float3 normal = HectonCoreLitSafeNormalize((float3)normalWS);
+                float3 viewDir = HectonCoreLitSafeNormalize((float3)viewDirWS);
+                float3 tangent = ResolveReliefTangent(normal, viewDir);
+                float3 bitangent = HectonCoreLitSafeNormalize(cross(normal, tangent));
+                float viewGrazing = 1.0 - saturate(dot(normal, viewDir));
+                float parallaxScale = lerp(0.004, 0.021, viewGrazing);
+                float relief = 0.0;
+
+                [unroll]
+                for (int tap = 0; tap < 16; tap++)
+                {
+                    float layer = ((float)tap + 0.5) * 0.0625;
+                    float3 samplePosition = positionWS + tangent * (layer * parallaxScale) - normal * (layer * 0.006);
+                    float height = ResolveShardHeight(samplePosition);
+                    relief += step(layer, height);
+                }
+
+                relief *= 0.0625;
+                float offset = 0.018;
+                float center = ResolveShardHeight(positionWS);
+                float dx = ResolveShardHeight(positionWS + tangent * offset) - center;
+                float dy = ResolveShardHeight(positionWS + bitangent * offset) - center;
+                float salt = saturate(relief * 0.85 + (float)crystalMask * 0.45 + viewGrazing * 0.2);
+                saltMask = (half)step(0.64, salt);
+                occlusion = (half)lerp(1.0, 0.72, saturate(relief + center * 0.35));
+                float3 bumped = normal - tangent * dx * 2.8 - bitangent * dy * 2.8;
+                return (half3)HectonCoreLitSafeNormalize(bumped);
+            }
+
+            half3 ResolveSaltSubsurfaceFake(float3 positionWS, half3 normalWS, half3 viewDirWS, half saltMask, half crystalMask)
+            {
+                half grazing = 1.0h - saturate(abs(dot(normalWS, viewDirWS)));
+                half innerBand = (half)ResolveShardHeight(positionWS * 1.73 + (float3)normalWS * 0.19);
+                half scatter = saturate((saltMask * 0.78h + crystalMask * 0.42h) * grazing * (0.38h + innerBand * 0.62h));
+                scatter *= scatter;
+                return half3(0.10h, 0.21h, 0.19h) * scatter;
+            }
+
+            void BuildDebrisBasis(uint particleIndex, float timeSeconds, float lowTierMask, out float3 rightWS, out float3 upWS, out float3 forwardWS, out float edgeJitter)
             {
                 edgeJitter = Hash11(particleIndex ^ 0xC2B2AE35u);
                 float3 rawForward = float3(
@@ -121,7 +184,21 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 float spinPhase = Hash11(particleIndex ^ 0x165667B1u) * 6.28318530718 + timeSeconds * angularSpeed;
                 float spinS;
                 float spinC;
-                sincos(spinPhase, spinS, spinC);
+                [branch]
+                if (lowTierMask > 0.5)
+                {
+                    float lowPhase = spinPhase * 0.15915494309;
+                    spinS = TriangleSigned(lowPhase);
+                    spinC = TriangleSigned(lowPhase + 0.25);
+                    float spinInvLength = rsqrt(max(spinS * spinS + spinC * spinC, 0.0001));
+                    spinS *= spinInvLength;
+                    spinC *= spinInvLength;
+                }
+                else
+                {
+                    sincos(spinPhase, spinS, spinC);
+                }
+
                 float3 spunRight = rightWS * spinC + upWS * spinS;
                 upWS = upWS * spinC - rightWS * spinS;
                 rightWS = spunRight;
@@ -140,7 +217,7 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 float3 upWS;
                 float3 forwardWS;
                 float edgeJitter;
-                BuildDebrisBasis(particleIndex, _Time.y, rightWS, upWS, forwardWS, edgeJitter);
+                BuildDebrisBasis(particleIndex, _Time.y, _CarveDebrisMotionParams.z, rightWS, upWS, forwardWS, edgeJitter);
 
                 float3 localPosition = input.positionOS.xyz * scale;
                 float3 positionWS = particle.xyz +
@@ -208,11 +285,14 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 half3 viewDirWS = (half3)HectonCoreLitSafeNormalize(input.viewDirWS);
                 half edgeMask = saturate(input.edgeMask + input.impactMask * 0.35h);
                 half crystalMask = 0.0h;
+                half saltMask = 0.0h;
+                half reliefOcclusion = 1.0h;
                 [branch]
                 if (_CarveDebrisMaterialParams.w > 0.5)
                 {
                     crystalMask = ResolveCrystalMask(input.positionWS, edgeMask, input.impactMask);
                     normalWS = PerturbHighTierNormal(input.positionWS, normalWS, crystalMask);
+                    normalWS = ResolveHighTierReliefNormal(input.positionWS, normalWS, viewDirWS, crystalMask, saltMask, reliefOcclusion);
                     edgeMask = saturate(edgeMask + crystalMask * 0.45h);
                 }
 
@@ -224,6 +304,9 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                     half rim = 1.0h - saturate(dot(normalWS, viewDirWS));
                     rim *= rim * rim;
                     lit += half3(0.22h, 0.34h, 0.39h) * crystalMask * saturate(rim + input.impactMask * 0.5h);
+                    lit += ResolveSaltSubsurfaceFake(input.positionWS, normalWS, viewDirWS, saltMask, crystalMask);
+                    lit = lerp(lit, lit * half3(1.14h, 1.22h, 1.18h), saltMask);
+                    lit *= reliefOcclusion;
                 }
 
                 half3 finalColor = HectonCoreLitApplyNoirFog(lit, input.fogFactor, input.positionWS);
@@ -292,6 +375,16 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
+            float Triangle01(float value)
+            {
+                return abs(frac(value) * 2.0 - 1.0);
+            }
+
+            float TriangleSigned(float value)
+            {
+                return Triangle01(value) * 2.0 - 1.0;
+            }
+
             float3 DebrisSafeNormalize(float3 value, float3 fallback)
             {
                 float lengthSq = dot(value, value);
@@ -299,7 +392,7 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 return lerp(fallback, value * rsqrt(max(lengthSq, 0.000001)), validMask);
             }
 
-            void BuildDebrisBasis(uint particleIndex, float timeSeconds, out float3 rightWS, out float3 upWS, out float3 forwardWS)
+            void BuildDebrisBasis(uint particleIndex, float timeSeconds, float lowTierMask, out float3 rightWS, out float3 upWS, out float3 forwardWS)
             {
                 float edgeJitter = Hash11(particleIndex ^ 0xC2B2AE35u);
                 float3 rawForward = float3(
@@ -315,7 +408,21 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 float spinPhase = Hash11(particleIndex ^ 0x165667B1u) * 6.28318530718 + timeSeconds * angularSpeed;
                 float spinS;
                 float spinC;
-                sincos(spinPhase, spinS, spinC);
+                [branch]
+                if (lowTierMask > 0.5)
+                {
+                    float lowPhase = spinPhase * 0.15915494309;
+                    spinS = TriangleSigned(lowPhase);
+                    spinC = TriangleSigned(lowPhase + 0.25);
+                    float spinInvLength = rsqrt(max(spinS * spinS + spinC * spinC, 0.0001));
+                    spinS *= spinInvLength;
+                    spinC *= spinInvLength;
+                }
+                else
+                {
+                    sincos(spinPhase, spinS, spinC);
+                }
+
                 float3 spunRight = rightWS * spinC + upWS * spinS;
                 upWS = upWS * spinC - rightWS * spinS;
                 rightWS = spunRight;
@@ -326,7 +433,7 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 float3 rightWS;
                 float3 upWS;
                 float3 forwardWS;
-                BuildDebrisBasis(particleIndex, timeSeconds, rightWS, upWS, forwardWS);
+                BuildDebrisBasis(particleIndex, timeSeconds, _CarveDebrisMotionParams.z, rightWS, upWS, forwardWS);
                 float3 localPosition = localPositionOS * scale;
                 return particlePosition +
                     rightWS * localPosition.x +

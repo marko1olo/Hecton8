@@ -309,3 +309,178 @@ Validation:
 - Static scan: only one `GlobalRegistry.ScalabilityTierProfileByte` read remains in `SystemDispatcher`, at the PRE_SIMULATION frame snapshot.
 - Static scan: no `Update()`, `LateUpdate()`, `Debug.Log*`, `string.Format`, private raycast command `NativeQueue`/`NativeList`, or SystemDispatcher H8Memory fallback allocation in the scheduler sweep.
 - `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt27_tier_snapshot_dump_path.log`: Build failed outside scheduler in `Assets/_Project/Scripts/World/EcosystemDirector.cs` duplicate method definitions; scheduler/touched-path filter returned zero hits.
+
+## 2026-05-16 - Cached DataVault Lane and Build Green Pass
+What was wrong:
+- Static dispatcher raycast helpers still resolved `GlobalRegistry.DataVault` in helper paths used by deferred raycast staging, hit resolution, vault locking, and unlock.
+- `QueueDispatcherRaycast` still used a registry dispatcher lookup even though the dispatcher already owns `ActiveRuntimeInstance`.
+
+What was done:
+- Added `_cachedDispatcherDataVault`.
+- Populated the cache during `RefreshDataVaultDependency`.
+- Cleared the cache during static reset and service shutdown.
+- Routed raycast command/hit resolution and scheduled-buffer lock/unlock through the cached DataVault lane.
+- Routed dispatcher black-box heartbeat fallback through the cached DataVault lane.
+- Replaced the registry dispatcher lookup in `QueueDispatcherRaycast` with `ActiveRuntimeInstance`.
+
+Cinematic cheats used:
+- No new simulation or VFX work was added in this pass.
+- Low tier keeps bounded 1024-command raycast staging and fault-only disk writes.
+- High/Ultra keep the same command capacity and visual-overkill flags without increasing simulation authority cost.
+
+Exact microseconds saved / budget estimates:
+- Measured microseconds saved: 0 us. No benchmark harness was run.
+- Static impact: five helper-path DataVault registry reads removed after cache warm-up.
+- No new NativeArray ownership, no new managed allocations, no public API change.
+
+Validation:
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt28_cached_vault_lane.log`: Build succeeded, 0 Warning(s), 0 Error(s).
+- Static scan: no `Update()`, `LateUpdate()`, `FixedUpdate()`, `Debug.Log*`, `string.Format`, local native allocation, raycast command `NativeQueue`/`NativeList`, or SystemDispatcher H8Memory fallback allocation in the scheduler sweep.
+- Static scan: only one `GlobalRegistry.ScalabilityTierProfileByte` read remains in `SystemDispatcher`, at the PRE_SIMULATION frame snapshot.
+
+## 2026-05-16 - Volatile Admission Bridge and Defrag Visibility Recheck
+What was wrong:
+- `JobAdmissionSchedulerBridge` used a plain static reference for a bootstrap-written, scheduling-read service slot.
+- The dispatcher defrag path did not pass the explicit `MemoryDefragPhase`/burst-lock context into `GlobalDataVault.FrostTickDefrag`.
+- Scheduled raycast vault locks did not pass `SystemID.SystemDispatcher`.
+- attempt33 exposed a transient `Hecton8.Core.Memory.Defrag` visibility wall; reporting green without revalidation would be stale.
+
+What was done:
+- Changed the job-admission bridge to `Volatile.Write`, `Volatile.Read`, and `Interlocked.CompareExchange`.
+- Routed `RunPreSimulationMemoryDefrag` through the explicit `FrostTickDefrag(elapsedSeconds, stress, MemoryDefragPhase.PreSimulation, activeBurstLockMask)` overload.
+- Added `SystemID.SystemDispatcher` to scheduled raycast command/hit vault lock and unlock calls.
+- Verified the defrag contract source, asmdef, and `Library/ScriptAssemblies/Hecton8.Core.Memory.Defrag.dll` exist instead of duplicating the enum.
+- Re-ran the build as attempt34 after attempt33's visibility failure.
+
+Cinematic cheats used:
+- No new visual-domain mutation was added.
+- Low tier remains static bucket distribution, cold defrag cadence, bounded raycast staging, and fault-only disk writes.
+- High/Ultra keep dynamic bucket/admission control and explicit burst-lock visibility for memory pressure while visual-overkill remains downstream.
+
+Exact microseconds saved / budget estimates:
+- Measured microseconds saved: 0 us. No profiler harness was run.
+- ARM64/Quest impact: explicit volatile publication removes weak-memory ambiguity for the admission service slot.
+- Steam Deck I/O impact: unchanged normal path, 0 disk writes unless black-box fault dump is triggered.
+- Memory sentinel impact: scheduled raycast vault locks are now owner-attributed to `SystemID.SystemDispatcher`.
+
+Validation:
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt33_volatile_bridge_polled.log`: failed with unresolved `Hecton8.Core.Memory.Defrag` / `MemoryDefragPhase`.
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt34_defrag_visibility_recheck.log`: Build succeeded, 0 Warning(s), 0 Error(s).
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt35_final_direct.log`: Build succeeded, 0 Warning(s), 0 Error(s), EXIT_CODE=0.
+- Static scan: `SystemDispatcher` still has no `Update()`, `LateUpdate()`, `FixedUpdate()`, `Debug.Log*`, or `string.Format`.
+- Static scan: scheduler/bucketer/admission NativeArray hits are DataVault resolver views or Burst job parameters, not private persistent scheduler-owned arrays.
+
+## 2026-05-17 - Load-Balancer Bounds and INF Vaccination
+What was wrong:
+- `LoadBalancingJob` assumed `BucketLoadsMs.Length > 0`.
+- `LoadBalancingJob` used `EntityCostsMs.Length` for entity iteration without also clamping to `EntityBucketsWork.Length`.
+- Finite but catastrophic measured costs could pass `math.isfinite`, accumulate into INF, and leave poisoned floats in persistent rebalance-load storage.
+
+What was done:
+- Added created/length gates in the Burst rebalance job.
+- Clamped entity iteration to the shorter cost/work buffer length.
+- Added `Result.IsCreated` before writing rebalance results.
+- Added a 1000 ms catastrophic cost clamp in bucketer cost ingestion and rebalance job accumulation.
+- Preserved impossible-60-FPS detection because 1000 ms remains above the 16.667 ms target.
+
+Cinematic cheats used:
+- Low/MX350 path still uses static bucket distribution and bounded finite data instead of trying to rebalance through invalid vault state.
+- High/Ultra path still gets dynamic rebalance only when vault storage is valid; visual-overkill budget remains gated by finite expected frame cost.
+
+Exact microseconds saved / budget estimates:
+- Measured microseconds saved: 0 us. No profiler harness was run.
+- The change prevents Burst out-of-range writes and INF propagation; it is not reported as a speed optimization.
+
+Validation:
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt36_bucket_nan_guard.log`: failed outside scheduler in Audio/Acoustic/PlayerKinematics contracts.
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt37_bucket_nan_guard_retry.log`: failed outside scheduler in `TetherManager` and `AcousticZoneController`.
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt38_bucket_nan_guard_retry2.log`: failed outside scheduler only in `TetherManager.cs(20,92)` missing `ISlowTickable.SlowTick()`.
+- Touched-path filter for `Core\\Bucketing`, `Core\\Scheduling`, `SystemDispatcher`, `ModuloSimulationBucketer`, `JobAdmission`, `SimulationBucket`, `GlobalDataVault`, and `H8Memory` returned zero hits across attempts36-38.
+
+## 2026-05-17 - Admission Span Hash and Null Publish Guard
+What was wrong:
+- `JobAdmissionHash` had a string-only FNV1a API after the Signal/Span audit.
+- `JobAdmissionSchedulerBridge.SetService` could publish null, bypassing the owner-checked `ClearService` path.
+
+What was done:
+- Added `ComputeFnv1a(ReadOnlySpan<char>)`.
+- Routed generic job type hashing through the span overload.
+- Kept the string overload as a compatibility wrapper.
+- Made `SetService(null)` return without modifying the bridge slot.
+
+Cinematic cheats used:
+- No visual-domain mutation was added.
+- Low tier remains static bucketing and conservative admission.
+- High/Ultra keep admission-controlled visual-overkill job scheduling without null-publication fail-open.
+
+Exact microseconds saved / budget estimates:
+- Measured microseconds saved: 0 us. No profiler harness was run.
+- Cold-path hygiene only; no frame-time claim.
+
+Validation:
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt39_span_bridge_guard.log`: failed outside scheduler in `TetherManager`, `EquipmentInteractionContracts`, and `HectonPlayerMovement`; also reported a concurrent `csc` lock warning.
+- Touched-path filter for `Core\\Bucketing`, `Core\\Scheduling`, `SystemDispatcher`, `ModuloSimulationBucketer`, `JobAdmission`, `SimulationBucket`, `GlobalDataVault`, and `H8Memory` returned zero hits.
+
+## 2026-05-17 - NaN Path Reinforcement and Dump Ownership
+What was wrong:
+- `LoadBalancingJob` could skip `-INF` cost before the non-finite guard.
+- Admission refill/cost EWMA could persist poisoned finite or non-finite millisecond values.
+- Dispatcher black-box source still wrote the stale `Dump_CORE_TICK_DILATION.bin` mirror.
+
+What was done:
+- Reordered rebalance cost validation, removed stale remasking of selected buckets, and bounded admission refill/cost/telemetry values to finite ranges.
+- Removed the dispatcher stale mirror path; dispatcher fault dumps now use `Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin`.
+
+Cinematic cheats used:
+- Toaster path: finite clamps and static/debt gates preserve cadence without extra simulation truth.
+- High/Ultra path: poisoned admission budgets cannot unlock visual-overkill jobs; valid saved budget still flows through the existing pacing flag.
+
+Exact microseconds saved:
+- 0 us measured. Normal-path changes are correctness guards; no profiler harness was run.
+- Fault path removes one duplicate file write.
+
+Verification:
+- Static scan found no `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `Debug.Log*`, private `new NativeArray/List/Queue`, or `H8Memory.Allocate` in the scheduler/bucketer/SystemDispatcher sweep.
+- Attempt41 default-output build failed on a concurrent `csc` file lock only.
+- Attempt44 isolated-output build returned `EXIT_CODE=-1` after restore with no compiler diagnostics.
+- Attempt45 isolated-output build succeeded on current source: 0 warnings, 0 errors, EXIT_CODE=0.
+
+## 2026-05-17 - Hot Path Registry Cache Pass
+What was wrong:
+- Dispatcher pressure paths still resolved VRAM/macro/object-pool services through `GlobalRegistry`.
+- Render callbacks still resolved renderables and GI relay through `GlobalRegistry`.
+
+What was done:
+- Cached VRAM monitor, VRAM pressure monitor, macro database, and object pool references on `SystemDispatcher`.
+- Cached renderables and GI relay on `RenderDispatcher`; render settings restore now consumes the cached GI relay.
+
+Cinematic cheats used:
+- Low tier keeps static bucket distribution and now spends no extra service lookup work in pressure/render paths.
+- High/Ultra render fan-out remains available for visual overkill without per-camera registry lookup churn.
+
+Exact microseconds saved:
+- 0 us measured. This is static hot-path hygiene; no profiler harness was run.
+
+Verification:
+- Attempt46 isolated-output build succeeded: 0 warnings, 0 errors, EXIT_CODE=0.
+- Static scan found no stale dump mirror, no stale `BucketMask` rebalance field, and no standard `Update`/`LateUpdate`/`FixedUpdate`/`string.Format`/`Debug.Log*`/private native allocation markers in the scheduler sweep.
+
+## 2026-05-17 - EWMA Poison Recovery Static Pass
+What was wrong:
+- Previous EWMA state could stay non-finite if an internal field was already poisoned before a finite sample arrived.
+
+What was done:
+- Hardened active-bucket load/jitter EWMA reseeding.
+- Hardened job-admission EWMA fallback to a finite 0.025 ms default and 1000 ms clamp.
+
+Cinematic cheats used:
+- Toaster path: finite fake costs keep bucket cadence controllable instead of simulating more truth.
+- High/Ultra path: visual-overkill budget gates can recover from bad telemetry instead of staying poisoned.
+
+Exact microseconds saved:
+- 0 us measured. No profiler run.
+
+Verification:
+- No rebuild was run per user instruction.
+- Static scan found no `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `Debug.Log*`, private `new NativeArray/List/Queue`, `H8Memory.Allocate`, stale dump mirror, or stale rebalance `BucketMask`.
+- `git diff --check` passed for the two edited source files; line-ending warnings only.

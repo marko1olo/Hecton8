@@ -3,7 +3,7 @@
 Prompt: `RETINAL_ADAPTATION_AI`
 Domain: AI/COGNITION
 Source prompt task count: 18
-Current status: CODE BUILD VERIFIED - retinal/adjacent fauna ABI scope static-verified after DataVault/ABI/typed-lane/core-native-array/active-slot/hash-map eviction and Pack=1 descriptor polish. Unity runtime/profiler verification still not executed.
+Current status: CODE BUILD VERIFIED - retinal/adjacent fauna ABI scope static-verified after DataVault/ABI/typed-lane/core-native-array/active-slot/hash-map eviction, Pack=1 descriptor polish, blind-signal AUP authority closure, and cold dump-failure telemetry polish. Current `dotnet build` is green. Unity runtime/profiler verification still not executed.
 
 Relevant mandates read before coding:
 - AI_Creature_Cognition_States.txt
@@ -149,3 +149,33 @@ Verification after Loop 3:
 - [x] Re-ran `git diff --check` on touched retinal/code/doc files: no whitespace errors; CRLF normalization warnings only.
 - [x] Observed external build walls moving through `PhysicsApplySystem`, `TetherInstance`, `SargassumMicroFaunaBoids`, and `LockstepStateValidator` while parallel workspace edits landed. No source edits were made by this retinal pass in those files.
 - [x] Final current-state compile pass: `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:ErrorsOnly` returned `Build succeeded`, `0 Warning(s)`, `0 Error(s)`. Unity Editor import, Play Mode, GCMonitor, profiler, and player build verification remain unexecuted.
+
+## Loop 16 - Blind-Signal AUP / Helper ABI Closure
+- [x] Re-read status/rationale and original XML prompt before continuing. DOD practice: file-backed recovery before source validation. Estimate: 0 us/frame.
+- [x] Fixed blind-state signal AUP authority: `PublishFaunaBlindStateSignal` now resolves signal position from the slot input position plus committed `FloatingOriginOffset` and calls `AbsoluteUniversePosition.FromAbsolutePosition`. Alternative rejected: reconstructing AUP from runtime-relative `CognitionCore.Position`. Estimate: edge signal path only; no profiler microseconds measured.
+- [x] Hardened retinal telemetry publication: post-evaluation telemetry now checks `_retinalExposure.IsCreated` and `_lastPublishedBlindnessState.IsCreated` before indexing those vault aliases. Alternative rejected: assuming partial DataVault resolution cannot occur. Estimate: two branch checks per post-job telemetry pass; exact CPU delta not measured.
+- [x] Locked private helper payload ABI: `RetinalLightResult` is `Pack = 1, Size = 20`; `AlphaLeviathanDirective` is `Pack = 1, Size = 24`; directive booleans are byte flags. Alternative rejected: implicit nested-struct layout and marshaled bool ambiguity on ARM64/Quest. Estimate: 0 us/frame metadata/data-shape closure.
+- [x] Re-ran targeted debt/AUP audit: `NO_RETINAL_HOTPATH_DEBT_OR_RUNTIME_AUP_RECONSTRUCT_MATCHES`.
+- [x] Re-ran Pack audit across `PredatorCognitionDomain`, `AI/Perception`, and `FaunaDataTemplate`: `NO_NON_PACK1_STRUCTLAYOUT_IN_RETINAL_SCOPE`.
+- [x] Re-ran typed signal duplicate scan: `SubmarineLightsChangedSignal` and `FaunaStateChangedSignal` each have one struct definition; retinal consumes the typed headlight lane and publishes the existing fauna state lane.
+- [x] Re-ran `git diff --check` on retinal/fauna code and docs: no whitespace errors.
+- [x] Re-ran current-state compile pass with heartbeat logging after no-output build attempts were inconclusive: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildInParallel=false -v:minimal -clp:Summary` is [BLOCKED BY EXTERNAL DEPENDENCY]. The emitted compiler error is `DiegeticGyroCompassRuntime.cs(1199,27): CS1061 NativeSlice<CompassBlackBoxEntry> does not contain a definition for IsCreated`. No emitted error cites `PredatorCognitionDomain`, `RetinalExposureMath`, `RetinalAdaptationVault`, `FaunaDataTemplate`, `H8Memory`, or `GlobalDataVault`. Unity Editor import, Play Mode, GCMonitor, profiler, shader validation, and player builds remain unexecuted.
+
+## Loop 17 - Current Build Recovery / Domain Re-Audit
+- [x] Re-read status/rationale, original XML prompt, domain boundaries, and relevant mandates before continuing. DOD practice: disk-backed recovery, not chat memory. Estimate: 0 us/frame.
+- [x] Rechecked the previous external `DiegeticGyroCompassRuntime` build wall: line 1199 now uses `blackBox.Length`, so no retinal-agent UI/navigation edit was made. Alternative rejected: editing outside AI/COGNITION after another agent had already moved the external wall. Estimate: 0 us/frame.
+- [x] Re-ran current-state build with heartbeat output: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildInParallel=false -v:minimal -clp:Summary` returned `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `Time Elapsed 00:00:03.65`. Build output saved to `Docs/AgentLogs/Build_RETINAL_ADAPTATION_AI_loop17_current.out.txt`.
+- [x] Re-ran targeted retinal debt/AUP audit: `NO_RETINAL_HOTPATH_DEBT_OR_RUNTIME_AUP_RECONSTRUCT_MATCHES`.
+- [x] Re-ran Pack audit across retinal/fauna cognition scope: `NO_NON_PACK1_STRUCTLAYOUT_IN_RETINAL_SCOPE`.
+- [x] Re-ran typed signal definition scan: `SubmarineLightsChangedSignalStructCount=1`, `FaunaStateChangedSignalStructCount=1`, `TYPED_SIGNAL_DEFINITIONS_UNIQUE`.
+- [x] Re-ran `LightTrigger` purge audit: `NO_ACTIVE_LIGHTTRIGGER_MATCHES`.
+- [x] Reconfirmed 300-frame retinal black-box evidence: `RetinalTelemetryCapacity = 300`, `TotalBlindPredators`, and `Dump_FAUNA_RETINAL_ADAPTATION.bin` are present in `PredatorCognitionDomain`.
+- [x] Re-ran `git diff --check` on retinal/fauna code, retinal docs, and loop17 build log: no whitespace errors; CRLF normalization warnings only for touched docs.
+
+## Loop 18 - Dump-Failure Telemetry Polish
+- [x] Re-read all files in the explicit domain `Assets/_Project/Scripts/AI/Perception/`: `RetinalExposureMath.cs` and `RetinalAdaptationVault.cs`; adjacent runtime owner `PredatorCognitionDomain.cs` was re-scanned for retinal debt. DOD practice: domain-covering source audit. Estimate: 0 us/frame.
+- [x] Replaced cold `Debug.LogError` string reporting after retinal and Alpha black-box dump failures with hashed `GlobalTelemetryBus.PublishPerformanceWarning` calls: `RetinalDumpFailureTelemetryHash` and `AlphaLeviathanDumpFailureTelemetryHash`. Alternative rejected: managed string concatenation in failure reporting. Estimate: 0 steady-frame us; only catch-path telemetry on dump failure, exact CPU delta not measured.
+- [x] Re-ran polish debt audit: `NO_RETINAL_DOMAIN_POLISH_DEBT_MATCHES` for TODO/FIXME/HACK/throws/Debug.Log/Console/standard Update/LINQ/coroutines/local native containers/raycasts in `AI/Perception` and `PredatorCognitionDomain`.
+- [x] Re-ran targeted debt/AUP audit: `NO_RETINAL_HOTPATH_DEBT_OR_RUNTIME_AUP_RECONSTRUCT_MATCHES`.
+- [x] Re-ran Pack audit: `NO_NON_PACK1_STRUCTLAYOUT_IN_RETINAL_SCOPE`.
+- [x] Re-ran current-state build after runtime code edit: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildInParallel=false -v:minimal -clp:Summary` returned `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `Time Elapsed 00:00:54.12`. Build output saved to `Docs/AgentLogs/Build_RETINAL_ADAPTATION_AI_loop18_dump_failure_telemetry.out.txt`.

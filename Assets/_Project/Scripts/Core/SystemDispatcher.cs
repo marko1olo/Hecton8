@@ -83,7 +83,11 @@ namespace Hecton8.Core
         private const int DispatcherRaycastMinCommandsPerJob = 1;
         private const int DispatcherBlackBoxFrameCount = 300;
         private const int DispatcherBlackBoxEntrySizeBytes = 64;
-        private const string DispatcherBlackBoxDumpPath = "Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin";
+        private const string DispatcherBlackBoxDumpPath = "Docs/AgentLogs/Dump_CORE_TICK_DILATION.bin";
+        private const string DispatcherBlackBoxMirrorDumpPath = "Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin";
+        private const ulong DispatcherBlackBoxDumpMagic = 0x00384E4F54434548ul; // HECTON8\0
+        private const uint DispatcherBlackBoxDumpVersion = 1u;
+        private const int CameraJuiceResolveRetryFrames = 30;
         private const float AdrenalineHealthThreshold01 = 0.1f;
         private const float AdrenalineTargetTimeDilationScalar = 0.5f;
         private const float AdrenalineRampSeconds = 1.0f;
@@ -331,6 +335,11 @@ namespace Hecton8.Core
         private IDataVault _dataVault;
         private ISimulationBucketer _simulationBucketer;
         private IJobAdmissionService _jobAdmission;
+        private IInputDeterminismService _inputDeterminism;
+        private VRAMMonitor _vramMonitor;
+        private VRAMPressureMonitor _vramPressure;
+        private IMacroDatabaseService _macroDatabase;
+        private ObjectPoolManager _objectPool;
         private byte _scalabilityTierProfileByte;
         private float _timeDilationScalar = 1f;
         private float _prePauseTimeDilationScalar = 1f;
@@ -378,6 +387,8 @@ namespace Hecton8.Core
         private static int _streamingStorageDebtSequence;
         private static bool _dispatcherPlayerLoopInstalled;
         private static IDataVault _cachedDispatcherDataVault;
+        private static ICameraJuiceSystem _cachedCameraJuiceSystem;
+        private static int _nextCameraJuiceResolveFrame;
 
         internal static float CurrentFrameDeltaTime { get; private set; }
 
@@ -1595,8 +1606,15 @@ namespace Hecton8.Core
             ClearAdrenalineDilation();
             _dataVault = null;
             _cachedDispatcherDataVault = null;
+            _cachedCameraJuiceSystem = null;
+            _nextCameraJuiceResolveFrame = 0;
             _simulationBucketer = null;
             _jobAdmission = null;
+            _inputDeterminism = null;
+            _vramMonitor = null;
+            _vramPressure = null;
+            _macroDatabase = null;
+            _objectPool = null;
             _timeSnapshot = default;
             _dispatcherBlackBoxSequence = 0u;
             _dispatcherBlackBoxDumped = false;
@@ -1625,6 +1643,9 @@ namespace Hecton8.Core
             RefreshDataVaultDependency();
             RefreshSimulationBucketerDependency();
             RefreshJobAdmissionDependency();
+            RefreshInputDeterminismDependency();
+            RefreshPeripheralDependencies();
+            RefreshScalabilityTierProfile();
             EnsureDispatcherRaycastBuffers();
             EnsureH8TimeArray();
             EnsureDispatcherBlackBox();
@@ -1741,6 +1762,100 @@ namespace Hecton8.Core
                 _jobAdmission = jobAdmission;
         }
 
+        private void RefreshInputDeterminismDependency()
+        {
+            IInputDeterminismService inputDeterminism = GlobalRegistry.InputDeterminism;
+            if (inputDeterminism != null)
+                _inputDeterminism = inputDeterminism;
+        }
+
+        private void RefreshPeripheralDependencies()
+        {
+            VRAMMonitor vramMonitor = GlobalRegistry.VRAMMonitor;
+            if (vramMonitor != null)
+                _vramMonitor = vramMonitor;
+
+            VRAMPressureMonitor vramPressure = GlobalRegistry.VRAMPressure;
+            if (vramPressure != null)
+                _vramPressure = vramPressure;
+
+            IMacroDatabaseService macroDatabase = GlobalRegistry.MacroDatabase;
+            if (macroDatabase != null)
+                _macroDatabase = macroDatabase;
+
+            ObjectPoolManager objectPool = GlobalRegistry.ObjectPool;
+            if (objectPool != null)
+                _objectPool = objectPool;
+        }
+
+        private static VRAMMonitor ResolveCachedVramMonitor()
+        {
+            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return GlobalRegistry.VRAMMonitor;
+
+            VRAMMonitor monitor = dispatcher._vramMonitor;
+            if (monitor != null)
+                return monitor;
+
+            dispatcher.RefreshPeripheralDependencies();
+            return dispatcher._vramMonitor;
+        }
+
+        private static VRAMPressureMonitor ResolveCachedVramPressure()
+        {
+            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return GlobalRegistry.VRAMPressure;
+
+            VRAMPressureMonitor pressure = dispatcher._vramPressure;
+            if (pressure != null)
+                return pressure;
+
+            dispatcher.RefreshPeripheralDependencies();
+            return dispatcher._vramPressure;
+        }
+
+        private static IMacroDatabaseService ResolveCachedMacroDatabase()
+        {
+            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return GlobalRegistry.MacroDatabase;
+
+            IMacroDatabaseService macroDatabase = dispatcher._macroDatabase;
+            if (macroDatabase != null)
+                return macroDatabase;
+
+            dispatcher.RefreshPeripheralDependencies();
+            return dispatcher._macroDatabase;
+        }
+
+        private static ObjectPoolManager ResolveCachedObjectPool()
+        {
+            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return GlobalRegistry.ObjectPool;
+
+            ObjectPoolManager objectPool = dispatcher._objectPool;
+            if (objectPool != null)
+                return objectPool;
+
+            dispatcher.RefreshPeripheralDependencies();
+            return dispatcher._objectPool;
+        }
+
+        private void RefreshScalabilityTierProfile()
+        {
+            _scalabilityTierProfileByte = ScalabilityTierProfiles.Normalize(GlobalRegistry.ScalabilityTierProfileByte);
+        }
+
+        private void DrainScalabilityTierSignals()
+        {
+            System.ReadOnlySpan<ScalabilityChangedEvent> snapshot = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
+            for (int i = 0; i < snapshot.Length; i++)
+                _scalabilityTierProfileByte = snapshot[i].CurrentTier;
+        }
+
         private void RunPreSimulationMemoryDefrag(float unscaledDeltaTime)
         {
             IDataVault dataVault = _dataVault;
@@ -1764,10 +1879,15 @@ namespace Hecton8.Core
             float elapsedSeconds = (float)(_memoryDefragAccumulator > 0d ? _memoryDefragAccumulator : cadenceSeconds);
             _memoryDefragAccumulator = 0d;
             float compactionStress01 = ResolveMemoryCompactionStress01(unscaledDeltaTime);
+            uint activeBurstLockMask = dataVault.ActiveBurstLockMask;
             long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             using (_memoryDefragProfilerMarker.Auto())
             {
-                dataVault.FrostTickDefrag(elapsedSeconds, compactionStress01);
+                dataVault.FrostTickDefrag(
+                    elapsedSeconds,
+                    compactionStress01,
+                    MemoryDefragPhase.PreSimulation,
+                    activeBurstLockMask);
             }
 
             double elapsedMilliseconds =
@@ -1895,46 +2015,58 @@ namespace Hecton8.Core
             try
             {
                 System.IO.Directory.CreateDirectory("Docs/AgentLogs");
-                using (System.IO.FileStream stream = System.IO.File.Open(
-                    DispatcherBlackBoxDumpPath,
-                    System.IO.FileMode.Create,
-                    System.IO.FileAccess.Write,
-                    System.IO.FileShare.Read))
-                using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
-                {
-                    writer.Write(DispatcherBlackBoxFrameCount);
-                    writer.Write(cursor);
-                    for (int i = 0; i < DispatcherBlackBoxFrameCount; i++)
-                    {
-                        int index = cursor + i;
-                        if (index >= DispatcherBlackBoxFrameCount)
-                            index -= DispatcherBlackBoxFrameCount;
-
-                        DispatcherBlackBoxEntry entry = ring[index];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Sequence);
-                        writer.Write(entry.DilatedTime);
-                        writer.Write(entry.UnscaledTime);
-                        writer.Write(entry.DeltaTime);
-                        writer.Write(entry.UnscaledDeltaTime);
-                        writer.Write(entry.TimeDilationScalar);
-                        writer.Write(entry.TickOverheadMilliseconds);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.PendingRaycasts);
-                        writer.Write(entry.ScheduledRaycasts);
-                        writer.Write(entry.HomeostasisPressureLevel);
-                        writer.Write(entry.HomeostasisFoveatedTier);
-                        writer.Write(entry.AupPreShiftSequence);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.KillSwitchMask);
-                    }
-                }
+                WriteDispatcherBlackBoxDump(DispatcherBlackBoxDumpPath, ring, cursor);
+                WriteDispatcherBlackBoxDump(DispatcherBlackBoxMirrorDumpPath, ring, cursor);
             }
             catch (System.IO.IOException)
             {
             }
             catch (System.UnauthorizedAccessException)
             {
+            }
+        }
+
+        private static void WriteDispatcherBlackBoxDump(
+            string path,
+            NativeArray<DispatcherBlackBoxEntry> ring,
+            int cursor)
+        {
+            using (System.IO.FileStream stream = System.IO.File.Open(
+                path,
+                System.IO.FileMode.Create,
+                System.IO.FileAccess.Write,
+                System.IO.FileShare.Read))
+            using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
+            {
+                writer.Write(DispatcherBlackBoxDumpMagic);
+                writer.Write(DispatcherBlackBoxDumpVersion);
+                writer.Write(DispatcherBlackBoxFrameCount);
+                writer.Write(DispatcherBlackBoxEntrySizeBytes);
+                writer.Write(cursor);
+                for (int i = 0; i < DispatcherBlackBoxFrameCount; i++)
+                {
+                    int index = cursor + i;
+                    if (index >= DispatcherBlackBoxFrameCount)
+                        index -= DispatcherBlackBoxFrameCount;
+
+                    DispatcherBlackBoxEntry entry = ring[index];
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.Sequence);
+                    writer.Write(entry.DilatedTime);
+                    writer.Write(entry.UnscaledTime);
+                    writer.Write(entry.DeltaTime);
+                    writer.Write(entry.UnscaledDeltaTime);
+                    writer.Write(entry.TimeDilationScalar);
+                    writer.Write(entry.TickOverheadMilliseconds);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.PendingRaycasts);
+                    writer.Write(entry.ScheduledRaycasts);
+                    writer.Write(entry.HomeostasisPressureLevel);
+                    writer.Write(entry.HomeostasisFoveatedTier);
+                    writer.Write(entry.AupPreShiftSequence);
+                    writer.Write(entry.StateHash);
+                    writer.Write(entry.KillSwitchMask);
+                }
             }
         }
 
@@ -2024,7 +2156,7 @@ namespace Hecton8.Core
 
         private static void EmitVramPressureDefragSignalIfNeeded()
         {
-            VRAMMonitor monitor = GlobalRegistry.VRAMMonitor;
+            VRAMMonitor monitor = ResolveCachedVramMonitor();
             if (monitor == null || monitor.TotalVRAMBytes <= 1800L * 1024L * 1024L)
                 return;
 
@@ -2034,7 +2166,7 @@ namespace Hecton8.Core
                 _DataVaultDefragContextHash,
                 monitor.TotalVRAMBytes * GlobalTelemetryBus.BytesToMegabytes);
 
-            VRAMPressureMonitor pressureMonitor = GlobalRegistry.VRAMPressure;
+            VRAMPressureMonitor pressureMonitor = ResolveCachedVramPressure();
             if (pressureMonitor != null)
                 pressureMonitor.ForceImmediateSampleAndResponse();
         }
@@ -2304,8 +2436,6 @@ namespace Hecton8.Core
 
                 long dispatcherTickStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 long preSimulationStartTimestamp = dispatcherTickStartTimestamp;
-                byte scalabilityTierProfile = GlobalRegistry.ScalabilityTierProfileByte;
-                _scalabilityTierProfileByte = scalabilityTierProfile;
                 HectonXRRuntimeState.RefreshFrameState(Time.frameCount);
                 float measuredUnscaledDeltaTime = HectonXRRuntimeState.IsXRActive ? Time.smoothDeltaTime : Time.unscaledDeltaTime;
                 float unscaledDeltaTime = HectonXRRuntimeState.ResolveDispatcherDeltaTime(measuredUnscaledDeltaTime);
@@ -2314,8 +2444,17 @@ namespace Hecton8.Core
                 bool previousFrameMissedBudget = CurrentFrameUnscaledDeltaTime > JobAdmissionFrameBudgetMissThresholdSeconds;
                 CurrentFrameUnscaledDeltaTime = unscaledDeltaTime;
                 HomeostasisBrain.PreSimulationTick(unscaledDeltaTime);
-                GlobalRegistry.InputDeterminism?.PreSimulationInputTick(unscaledDeltaTime);
+                IInputDeterminismService inputDeterminism = _inputDeterminism;
+                if (inputDeterminism == null || !inputDeterminism.IsInitialized)
+                {
+                    RefreshInputDeterminismDependency();
+                    inputDeterminism = _inputDeterminism;
+                }
+
+                inputDeterminism?.PreSimulationInputTick(unscaledDeltaTime);
                 GlobalSignals.FlushPreSimulation();
+                DrainScalabilityTierSignals();
+                byte scalabilityTierProfile = _scalabilityTierProfileByte;
                 RecordMemoryBlackBoxHeartbeat();
                 RunPreSimulationMemoryDefrag(unscaledDeltaTime);
                 IJobAdmissionService jobAdmission = _jobAdmission;
@@ -2592,11 +2731,32 @@ namespace Hecton8.Core
             return math.lerp(_pauseDepthOfFieldBlendStartWeight, _pauseDepthOfFieldTargetWeight, normalized);
         }
 
+        private static ICameraJuiceSystem ResolveCameraJuiceSystem()
+        {
+            ICameraJuiceSystem cameraJuice = _cachedCameraJuiceSystem;
+            if (cameraJuice != null)
+                return cameraJuice;
+
+            int frame = Time.frameCount;
+            if (frame < _nextCameraJuiceResolveFrame)
+                return null;
+
+            _nextCameraJuiceResolveFrame = frame + CameraJuiceResolveRetryFrames;
+            cameraJuice = GlobalRegistry.CameraJuice;
+            if (cameraJuice != null)
+            {
+                _cachedCameraJuiceSystem = cameraJuice;
+                _nextCameraJuiceResolveFrame = 0;
+            }
+
+            return cameraJuice;
+        }
+
         private static void TickPauseDepthOfField(float unscaledTime)
         {
             _pauseDepthOfFieldWeight = ResolvePauseDepthOfFieldWeight(unscaledTime);
 
-            ICameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
+            ICameraJuiceSystem cameraJuice = ResolveCameraJuiceSystem();
             if (cameraJuice != null)
                 cameraJuice.ApplyPauseDepthOfFieldWeight(_pauseDepthOfFieldWeight);
         }
@@ -2963,7 +3123,7 @@ namespace Hecton8.Core
             pressureSignal.Severity = 2;
             pressureSignal.Flags = 1;
             GlobalSignals.Publish(in pressureSignal);
-            IMacroDatabaseService macroDatabase = GlobalRegistry.MacroDatabase;
+            IMacroDatabaseService macroDatabase = ResolveCachedMacroDatabase();
             macroDatabase?.NotifyCriticalMemoryPressure(
                 memoryPressureEvent.ReservedMemoryBytes,
                 memoryPressureEvent.PhysicalMemoryBytes,
@@ -2976,7 +3136,7 @@ namespace Hecton8.Core
                 memoryPressureEvent.PhysicalMemoryBytes,
                 memoryPressureEvent.UsageRatio);
 
-            ObjectPoolManager objectPool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager objectPool = ResolveCachedObjectPool();
             if (objectPool != null)
                 objectPool.FlushInactivePoolsForMemoryPressure();
 
@@ -3737,7 +3897,7 @@ namespace Hecton8.Core
             bool lockedCommandsHere = false;
             if (!_scheduledDispatcherRaycastCommandsVaultLocked)
             {
-                if (!dataVault.TryLockBuffer(BufferID.SystemDispatcherRaycastScheduledCommands))
+                if (!dataVault.TryLockBuffer(BufferID.SystemDispatcherRaycastScheduledCommands, SystemID.SystemDispatcher))
                     return false;
 
                 _scheduledDispatcherRaycastCommandsVaultLocked = true;
@@ -3745,11 +3905,11 @@ namespace Hecton8.Core
             }
 
             if (!_scheduledDispatcherRaycastHitsVaultLocked &&
-                !dataVault.TryLockBuffer(BufferID.DispatcherRaycastHits))
+                !dataVault.TryLockBuffer(BufferID.DispatcherRaycastHits, SystemID.SystemDispatcher))
             {
                 if (lockedCommandsHere)
                 {
-                    dataVault.TryUnlockBuffer(BufferID.SystemDispatcherRaycastScheduledCommands);
+                    dataVault.TryUnlockBuffer(BufferID.SystemDispatcherRaycastScheduledCommands, SystemID.SystemDispatcher);
                     _scheduledDispatcherRaycastCommandsVaultLocked = false;
                 }
 
@@ -3768,10 +3928,10 @@ namespace Hecton8.Core
             if (TryResolveCachedDataVault(out IDataVault dataVault))
             {
                 if (_scheduledDispatcherRaycastCommandsVaultLocked)
-                    dataVault.TryUnlockBuffer(BufferID.SystemDispatcherRaycastScheduledCommands);
+                    dataVault.TryUnlockBuffer(BufferID.SystemDispatcherRaycastScheduledCommands, SystemID.SystemDispatcher);
 
                 if (_scheduledDispatcherRaycastHitsVaultLocked)
-                    dataVault.TryUnlockBuffer(BufferID.DispatcherRaycastHits);
+                    dataVault.TryUnlockBuffer(BufferID.DispatcherRaycastHits, SystemID.SystemDispatcher);
             }
 
             _scheduledDispatcherRaycastCommandsVaultLocked = false;
@@ -4129,14 +4289,13 @@ namespace Hecton8.Core
                 };
             }
 
-            public void Restore()
+            public void Restore(IGIRelaySystem giRelay)
             {
                 RenderSettings.fog = Fog;
                 RenderSettings.fogMode = FogMode;
                 RenderSettings.fogColor = FogColor;
                 RenderSettings.fogDensity = FogDensity;
                 AtmosphereDirector.SetSkybox(Skybox);
-                IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
                 bool giRelayAmbientAuthority = giRelay != null && giRelay.IsAmbientProbeAuthorityActive;
                 if (!giRelayAmbientAuthority)
                 {
@@ -4154,6 +4313,8 @@ namespace Hecton8.Core
         private bool _hasPendingRenderSettingsRestore;
         private Camera _pendingRenderSettingsCamera;
         private RenderSettingsSnapshot _pendingRenderSettingsSnapshot;
+        private RegistryBucket<IRenderable> _renderables;
+        private IGIRelaySystem _giRelay;
         private bool _serviceRegistered;
 
         private void Awake()
@@ -4182,11 +4343,12 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterRenderDispatcher(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.RenderDispatcher, this);
-
+            RefreshRenderDependencies();
         }
 
         private void OnEnable()
         {
+            RefreshRenderDependencies();
             RenderPipelineManager.beginCameraRendering -= HandleBeginCameraRendering;
             RenderPipelineManager.beginCameraRendering += HandleBeginCameraRendering;
             RenderPipelineManager.endCameraRendering -= HandleEndCameraRendering;
@@ -4219,6 +4381,8 @@ namespace Hecton8.Core
             GlobalRenderContext.Clear();
             _pendingRenderSettingsCamera = null;
             _hasPendingRenderSettingsRestore = false;
+            _renderables = null;
+            _giRelay = null;
 
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.RenderDispatcher, this))
                 GlobalRegistry.UnregisterRenderDispatcher(this);
@@ -4226,12 +4390,29 @@ namespace Hecton8.Core
             _serviceRegistered = false;
         }
 
+        private void RefreshRenderDependencies()
+        {
+            _renderables = GlobalRegistry.Renderables;
+            IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
+            if (giRelay != null)
+                _giRelay = giRelay;
+        }
+
         private void HandleBeginCameraRendering(ScriptableRenderContext context, Camera camera)
         {
             HectonFloatingOrigin.PublishCurrentGlobalOffsetsForRenderLoop();
             RestorePendingRenderSettings();
 
-            RegistryBucket<IRenderable> renderables = GlobalRegistry.Renderables;
+            RegistryBucket<IRenderable> renderables = _renderables;
+            if (renderables == null)
+            {
+                RefreshRenderDependencies();
+                renderables = _renderables;
+            }
+
+            if (renderables == null)
+                return;
+
             int count = renderables.Count;
             if (count <= 0)
                 return;
@@ -4280,7 +4461,10 @@ namespace Hecton8.Core
             if (!_hasPendingRenderSettingsRestore)
                 return;
 
-            _pendingRenderSettingsSnapshot.Restore();
+            if (_giRelay == null)
+                RefreshRenderDependencies();
+
+            _pendingRenderSettingsSnapshot.Restore(_giRelay);
             _pendingRenderSettingsSnapshot = default;
             _pendingRenderSettingsCamera = null;
             _hasPendingRenderSettingsRestore = false;

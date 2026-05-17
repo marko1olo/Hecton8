@@ -38,7 +38,7 @@ namespace Hecton8.Visor
         private static readonly int InternalWaterlineRuntimeId = Shader.PropertyToID("_InternalWaterlineRuntime");
         private static readonly int InternalWaterlineDistortionId = Shader.PropertyToID("_InternalWaterlineDistortion");
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct WaterlineTelemetryEntry
         {
             public uint Frame;
@@ -157,6 +157,7 @@ namespace Hecton8.Visor
                 return;
 
             ConsumeExternalDropletSignals();
+            ConsumePlayerExhaleSignals();
             RefreshCachedDependencies(force: false);
             FlushPendingGasSubmergedFraction();
             if (_dropletSecondsRemaining > 0f)
@@ -333,8 +334,6 @@ namespace Hecton8.Visor
 
             UnsubscribeMovement();
             _subscribedMovement = movement;
-            if (_subscribedMovement != null)
-                _subscribedMovement.OnExhale += HandlePlayerExhale;
         }
 
         private void UnsubscribeMovement()
@@ -342,8 +341,14 @@ namespace Hecton8.Visor
             if (_subscribedMovement == null)
                 return;
 
-            _subscribedMovement.OnExhale -= HandlePlayerExhale;
             _subscribedMovement = null;
+        }
+
+        private void ConsumePlayerExhaleSignals()
+        {
+            ReadOnlySpan<PlayerExhaleSignal> signals = SignalBus<PlayerExhaleSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+                HandlePlayerExhale();
         }
 
         private void HandlePlayerExhale()
