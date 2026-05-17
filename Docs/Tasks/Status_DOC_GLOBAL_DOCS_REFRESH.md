@@ -2,7 +2,7 @@
 
 Agent: DOC_GLOBAL_DOCS_REFRESH
 Domain: Echelon 9.83 Chronicler / Project Documentation Currency
-Status: COMPLETE / STATIC DOC AUDIT R2 / LEDGER READY
+Status: COMPLETE / STATIC DOC AUDIT R2 / PUSHED
 Task Count: 12
 Evidence class: STATIC_DOC / STATIC_SOURCE / GIT_CLI
 
@@ -41,3 +41,8 @@ No Unity Editor, Play Mode, profiler, GCMonitor, Frame Debugger, or Player Build
 
 ## R2 Evidence Boundary
 The R2 ledger is a static documentation reconciliation artifact. It does not claim ownership of concurrent writers' dirty files and does not provide Unity runtime, compile, profiler, or player-build proof.
+
+## R2 Git Evidence
+- Ledger commit: `2d41e66dd docs: add concurrent delta ledger`.
+- Push verification: `git push origin main` succeeded, followed by `git fetch origin main` and `git rev-list --left-right --count origin/main...HEAD` = `0 0`.
+- R2 closeout modifies only this status file and `LOG_DOC_GLOBAL_DOCS_REFRESH.md`.

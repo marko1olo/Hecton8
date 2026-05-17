@@ -39,3 +39,13 @@ What was done: Wrote `Docs/Reports/2026-05-17_DOCUMENTATION_CONCURRENT_DELTA_LED
 Cinematic Cheats used: Not applicable. Static documentation reconciliation only.
 
 Exact Microseconds saved: 0 us runtime claimed.
+
+## 2026-05-17 R2 Git Push Closeout
+
+What was wrong: The second-pass ledger needed remote proof without absorbing the remaining dirty files from concurrent agents.
+
+What was done: Committed the narrow ledger evidence as `2d41e66dd docs: add concurrent delta ledger`, pushed it to `origin/main`, fetched remote state, and verified `origin/main...HEAD = 0 0`. Remaining dirty files are recorded in the ledger and intentionally left to their owners.
+
+Cinematic Cheats used: Not applicable. Git evidence only.
+
+Exact Microseconds saved: 0 us runtime claimed.
