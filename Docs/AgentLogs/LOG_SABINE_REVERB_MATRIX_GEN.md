@@ -225,3 +225,35 @@ PENDING UNITY PROFILER. This pass restored offline reproducibility and closed st
 
 Blocked:
 `dotnet build Hecton8.Core.csproj --no-restore -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` could not run because `dotnet` is not installed on PATH, and neither `C:\Program Files\dotnet\dotnet.exe` nor `C:\Program Files (x86)\dotnet\dotnet.exe` exists. Compile status is blocked by host toolchain absence, not claimed.
+
+## 2026-05-17 - Loop 17 Fresh Disk Reverification
+
+What was wrong:
+The user demanded another no-cache pass. Cached loop-16 evidence was not enough for the requested self-validation loop.
+
+What was done:
+Re-read `Status_SABINE_REVERB_MATRIX_GEN.md`, `Rationale_SABINE_REVERB_MATRIX_GEN.md`, and the archived SABINE XML. Recompiled the Python tools, rebaked the Sabine LUT, reran binary/endian/hash/lore/economy/data-truth/atlas checks, reran the full 35-command Metric Phi sweep, then reran post-sweep Metric Phi data truth and binary hygiene. A stale `VerifyMetricPhiDataTruth.py --root .` invocation failed at argument parsing only; it was rerun with the valid CLI and passed.
+
+Cinematic Cheats used:
+No new runtime cheat was added. The Sabine LUT remains the deterministic reverb-tail control fake. Toaster path remains nearest fixed-stride lookup. RTX-overkill metadata remains in `qualityTiers.extraData` for high-resolution gradients, harmonic noise, convolution tails, and dirty resonance layers.
+
+Verification:
+`python -B -m py_compile Tools\SabineBaker.py Tools\VerifySabineBaker.py Tools\Economy\DataTruthInquisition.py` exited 0.
+`python -B Tools\SabineBaker.py` exited 0 with `STATUS: ACOUSTICS BAKED`, `bytes=524288`, `format=<ff`, `fileAligned=True`, mock RT60 `3.35416667s`, damping `0.94167485`, and SHA256 `F0C1EFB278901AE7D1E29E9FCBFD82C82507DA853C8A3130ADBCCB626F7D90CB`.
+`python -B Tools\VerifySabineBaker.py` exited 0 with `STATUS: SABINE_LUT_VERIFIED`.
+`python -B Tools\VerifyBinaryHygiene.py --report Docs\Reports\SABINE_LOOP17_BINARY_HYGIENE.json` exited 0 with `binaryCount=46` and `misalignedCount=0`.
+`python -B Tools\VerifyH8HashCollisions.py --root .` exited 0 with `H8 hash records: 1046` and `HASH COLLISIONS: 0`.
+`python -B Tools\VerifyLore.py --check` exited 0 with `CHECK OK`.
+`python -B Tools\Economy\MonteCarloEconomySim.py --players 10000 --max-nodes 10000 --world-seed 1212498744` exited 0 with `STATUS: ECONOMY PROVEN`, `total_nodes_mined=1539943`, `failures=0`, and p99 `59.285`.
+`python -B Tools\Economy\DataTruthInquisition.py --root .` exited 0 with `status=PASS`, `monte_carlo_steps=1539943`, `fnv_collisions=0`, `recipe_cycles=0`, `binary_unaligned=0`, `binary_endian_unknown=0`, and `struct_format_failures=0`.
+`python -B Tools\VerifyDataInquisition.py --report Docs\Reports\SABINE_LOOP17_DATA_INQUISITION.json` exited 0 with `atlasDomains=85` and `DATA_INQUISITION_VERIFIED_STATIC_ONLY`.
+`python -B Tools\AtlasCheck.py --atlas Docs\PROJECT_ATLAS.md --root .` exited 0 with `ATLAS_CHECK_PASS`.
+`python -B Tools\RunMetricPhiVerifySweep.py --json-output Docs\Reports\SABINE_LOOP17_METRIC_PHI_VERIFY_SWEEP.json --markdown-output Docs\Reports\SABINE_LOOP17_METRIC_PHI_VERIFY_SWEEP.md` exited 0 with `VERIFY_SWEEP_PASS`, `commands=35`, and `required_failures=0`.
+`python -B Tools\VerifyMetricPhiDataTruth.py --sweep-input Docs\Reports\SABINE_LOOP17_METRIC_PHI_VERIFY_SWEEP.json --json-output Docs\Reports\SABINE_LOOP17_METRIC_PHI_DATA_TRUTH.json --markdown-output Docs\Reports\SABINE_LOOP17_METRIC_PHI_DATA_TRUTH.md` exited 0 with `DATA_TRUTH_VERIFIED`, `checks=37`, and `failed=0`.
+`python -B Tools\VerifyBinaryHygiene.py --report Docs\Reports\SABINE_LOOP17_BINARY_HYGIENE_POST_SWEEP.json` exited 0 with `binaryCount=46` and `misalignedCount=0`.
+
+Exact Microseconds saved:
+PENDING UNITY PROFILER. Loop 17 changed no runtime path. The acoustic runtime estimate remains `8-20us` saved per zone update by replacing Sabine, hydrostatic pressure, Thorp attenuation, and Beer-Lambert math with a fixed-stride binary lookup.
+
+Blocked:
+`dotnet build Hecton8.Core.csproj --no-restore -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` still cannot run because `dotnet` is not recognized, and `C:\Program Files\dotnet\dotnet.exe` plus `C:\Program Files (x86)\dotnet\dotnet.exe` are absent.

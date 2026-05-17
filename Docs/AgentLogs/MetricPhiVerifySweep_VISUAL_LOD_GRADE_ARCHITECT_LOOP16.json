@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-05-17T12:30:12",
+  "generatedAt": "2026-05-17T12:30:03",
   "python": "C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
-  "requestedXxhashPath": "C:\\Hecton8\\Temp\\h8_xxhash_ref",
+  "requestedXxhashPath": "C:\\Users\\User\\AppData\\Local\\Temp\\metric_phi_xxhash_ref",
   "residualRisk": [
     "CLI Python only; no Unity runtime, profiler, GCMonitor, frame-time, visual, or player-build proof.",
     "Some verifiers mutate report artifacts by design; this sweep records command evidence after mutation.",
@@ -16,7 +16,7 @@
         "-B",
         "Tools/VerifyAiNavigationTuning.py"
       ],
-      "elapsedSeconds": 25.096,
+      "elapsedSeconds": 29.955,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyAiNavigationTuning",
       "passed": true,
@@ -35,7 +35,7 @@
         "--write-report",
         "Docs/Reports/H8_Hash_Catalog_Audit.md"
       ],
-      "elapsedSeconds": 123.447,
+      "elapsedSeconds": 116.429,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyH8HashCollisionsCanonical",
       "passed": true,
@@ -50,7 +50,7 @@
         "-B",
         "Tools/VerifyCraftingCosts.py"
       ],
-      "elapsedSeconds": 2.601,
+      "elapsedSeconds": 4.652,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyCraftingCosts",
       "passed": true,
@@ -65,7 +65,7 @@
         "-B",
         "Tools/VerifyCraftingSourceContracts.py"
       ],
-      "elapsedSeconds": 4.477,
+      "elapsedSeconds": 4.525,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyCraftingSourceContracts",
       "passed": true,
@@ -80,7 +80,7 @@
         "-B",
         "Tools/VerifyDaltonGasToxicity.py"
       ],
-      "elapsedSeconds": 3.659,
+      "elapsedSeconds": 3.944,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyDaltonGasToxicity",
       "passed": true,
@@ -97,7 +97,7 @@
         "--report",
         "Docs/Reports/METRIC_PHI_DATA_INQUISITION_SWEEP.json"
       ],
-      "elapsedSeconds": 7.765,
+      "elapsedSeconds": 8.12,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyDataInquisition",
       "passed": true,
@@ -116,7 +116,7 @@
         "--write-report",
         "Docs/Reports/H8HashCollision_METRIC_PHI_ANALYST.md"
       ],
-      "elapsedSeconds": 119.014,
+      "elapsedSeconds": 119.219,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyH8HashCollisions",
       "passed": true,
@@ -131,7 +131,7 @@
         "-B",
         "Tools/VerifyHullStressBudget.py"
       ],
-      "elapsedSeconds": 4.028,
+      "elapsedSeconds": 4.568,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyHullStressBudget",
       "passed": true,
@@ -147,7 +147,7 @@
         "Tools/VerifyLore.py",
         "--check"
       ],
-      "elapsedSeconds": 3.422,
+      "elapsedSeconds": 3.777,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyLore",
       "passed": true,
@@ -162,7 +162,7 @@
         "-B",
         "Tools/VerifyQuestDagBinaryIndependent.py"
       ],
-      "elapsedSeconds": 4.017,
+      "elapsedSeconds": 4.82,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyQuestDagBinaryIndependent",
       "passed": true,
@@ -179,7 +179,7 @@
         "--report",
         "Docs/Reports/METRIC_PHI_OPTICS_VERIFY.json"
       ],
-      "elapsedSeconds": 5.105,
+      "elapsedSeconds": 6.866,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyOpticsBaker",
       "passed": true,
@@ -194,7 +194,7 @@
         "-B",
         "Tools/VerifyOreLcgBaker.py"
       ],
-      "elapsedSeconds": 3.397,
+      "elapsedSeconds": 4.339,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyOreLcgBaker",
       "passed": true,
@@ -209,7 +209,7 @@
         "-B",
         "Tools/VerifyOreLcgBinaryIndependent.py"
       ],
-      "elapsedSeconds": 2.92,
+      "elapsedSeconds": 3.685,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyOreLcgBinaryIndependent",
       "passed": true,
@@ -224,7 +224,7 @@
         "-B",
         "Tools/VerifyOrganicEntropy.py"
       ],
-      "elapsedSeconds": 3.157,
+      "elapsedSeconds": 3.246,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyOrganicEntropy",
       "passed": true,
@@ -239,7 +239,7 @@
         "-B",
         "Tools/VerifyPdaTechnicalLogs.py"
       ],
-      "elapsedSeconds": 4.154,
+      "elapsedSeconds": 4.744,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyPdaTechnicalLogs",
       "passed": true,
@@ -254,7 +254,7 @@
         "-B",
         "Tools/VerifyQuestDag.py"
       ],
-      "elapsedSeconds": 4.33,
+      "elapsedSeconds": 4.01,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyQuestDag",
       "passed": true,
@@ -269,7 +269,7 @@
         "-B",
         "Tools/VerifySabineBaker.py"
       ],
-      "elapsedSeconds": 6.363,
+      "elapsedSeconds": 5.946,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifySabineBaker",
       "passed": true,
@@ -284,7 +284,7 @@
         "-B",
         "Tools/VerifySnellRefractionLut.py"
       ],
-      "elapsedSeconds": 2.5,
+      "elapsedSeconds": 2.863,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifySnellRefractionLut",
       "passed": true,
@@ -301,7 +301,7 @@
         "--report",
         "Docs/Reports/METRIC_PHI_TIDE_VERIFY.json"
       ],
-      "elapsedSeconds": 3.53,
+      "elapsedSeconds": 4.447,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyTideBaker",
       "passed": true,
@@ -316,7 +316,7 @@
         "-B",
         "Tools/VerifyTideInquisition.py"
       ],
-      "elapsedSeconds": 3.267,
+      "elapsedSeconds": 3.319,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyTideInquisition",
       "passed": true,
@@ -331,7 +331,7 @@
         "-B",
         "Tools/VerifyUpgradeCurveBaker.py"
       ],
-      "elapsedSeconds": 5.6,
+      "elapsedSeconds": 4.645,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyUpgradeCurveBaker",
       "passed": true,
@@ -346,7 +346,7 @@
         "-B",
         "Tools/VerifyVisualLodMatrix.py"
       ],
-      "elapsedSeconds": 2.989,
+      "elapsedSeconds": 3.28,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyVisualLodMatrix",
       "passed": true,
@@ -361,7 +361,7 @@
         "-B",
         "Tools/VerifyVramBudgets.py"
       ],
-      "elapsedSeconds": 2.85,
+      "elapsedSeconds": 3.896,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyVramBudgets",
       "passed": true,
@@ -376,7 +376,7 @@
         "-B",
         "Tools/VerifyVrComfortData.py"
       ],
-      "elapsedSeconds": 2.861,
+      "elapsedSeconds": 2.898,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyVrComfortData",
       "passed": true,
@@ -391,7 +391,7 @@
         "-B",
         "Tools/Architecture/VerifyNetSyncMerkleProtocol.py"
       ],
-      "elapsedSeconds": 7.134,
+      "elapsedSeconds": 7.326,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyNetSyncMerkleProtocol",
       "passed": true,
@@ -406,7 +406,7 @@
         "-B",
         "Tools/NoiseBaker/VerifyBlueNoiseSpectrum.py"
       ],
-      "elapsedSeconds": 7.443,
+      "elapsedSeconds": 6.377,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyBlueNoiseSpectrum",
       "passed": true,
@@ -421,7 +421,7 @@
         "-B",
         "Tools/Taxonomy/verify_taxonomy.py"
       ],
-      "elapsedSeconds": 3.048,
+      "elapsedSeconds": 2.63,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyTaxonomy",
       "passed": true,
@@ -436,7 +436,7 @@
         "-B",
         "Tools/EconomyValidator.py"
       ],
-      "elapsedSeconds": 6.233,
+      "elapsedSeconds": 5.253,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "EconomyValidator",
       "passed": true,
@@ -451,7 +451,7 @@
         "-B",
         "Tools/BabelCompiler.py"
       ],
-      "elapsedSeconds": 2.962,
+      "elapsedSeconds": 2.412,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "BabelCompiler",
       "passed": true,
@@ -467,7 +467,7 @@
         "Tools/VerifyBabel.py",
         "--hash-audit"
       ],
-      "elapsedSeconds": 3.1,
+      "elapsedSeconds": 4.021,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyBabel",
       "passed": true,
@@ -482,7 +482,7 @@
         "-B",
         "Tools/VerifyBabelDictionary.py"
       ],
-      "elapsedSeconds": 3.071,
+      "elapsedSeconds": 1.743,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyBabelDictionary",
       "passed": true,
@@ -499,7 +499,7 @@
         "--report",
         "Docs/Reports/METRIC_PHI_BINARY_HYGIENE_SWEEP.json"
       ],
-      "elapsedSeconds": 15.64,
+      "elapsedSeconds": 18.666,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyBinaryHygiene",
       "passed": true,
@@ -520,7 +520,7 @@
         "Packages",
         "Tools"
       ],
-      "elapsedSeconds": 37.105,
+      "elapsedSeconds": 37.72,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "CalculateHPhi",
       "passed": true,
@@ -535,11 +535,11 @@
         "-B",
         "Tools/Security/VerifyReplayHasherReference.py",
         "--xxhash-path",
-        "C:\\Hecton8\\Temp\\h8_xxhash_ref",
+        "C:\\Users\\User\\AppData\\Local\\Temp\\metric_phi_xxhash_ref",
         "--fuzz-count",
         "256"
       ],
-      "elapsedSeconds": 9.515,
+      "elapsedSeconds": 10.086,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyReplayHasherReference",
       "passed": true,
@@ -554,9 +554,9 @@
         "-B",
         "Tools/VerifyMetricPhiDataTruth.py",
         "--sweep-input",
-        "C:\\Hecton8\\Docs\\Reports\\METRIC_PHI_VERIFY_SWEEP.selfcheck.13136.json"
+        "C:\\Hecton8\\Docs\\AgentLogs\\MetricPhiVerifySweep_VISUAL_LOD_GRADE_ARCHITECT_LOOP16.selfcheck.10376.json"
       ],
-      "elapsedSeconds": 8.155,
+      "elapsedSeconds": 10.022,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyMetricPhiDataTruth",
       "passed": true,
@@ -576,6 +576,6 @@
     "transientRetryPasses": []
   },
   "tool": "Tools/RunMetricPhiVerifySweep.py",
-  "xxhashPath": "C:\\Hecton8\\Temp\\h8_xxhash_ref",
+  "xxhashPath": "C:\\Users\\User\\AppData\\Local\\Temp\\metric_phi_xxhash_ref",
   "xxhashPathMode": "EXTERNAL_XXHASH_PATH_ACCEPTED"
 }

@@ -164,7 +164,7 @@ Verification:
 - Babel dictionary verified: 32604 records, 17 languages, 1525248 bytes, 12700 constants, endian `<`, 16-byte alignment, 0 collision resolutions.
 - PDA technical logs verified: 100 entries, 58880 bytes, endian `<`, 16-byte alignment, hash collisions 0, H-Phi data sovereignty 1.0.
 - Historical metric sweep evidence at that time: 28 commands, 0 required failures, shell exit 0, `VERIFY_SWEEP_PASS`; superseded by the later 34-command sweep.
-- Historical metric data-truth evidence at that time: 36 checks, 0 failed, 39 binary files, 0 unaligned, 160 struct format sites, 0 endian failures; superseded by the later 42-binary/167-struct-site pass.
+- Historical metric data-truth evidence at that time is superseded by the current 2026-05-17 pass: 46 binary files, 0 unaligned, 133 MetricPhi struct sites, and 273 DataInquisition struct formats.
 
 ## 2026-05-16 - Metric Audit Contract Repair
 
@@ -182,7 +182,7 @@ Exact microseconds saved:
 
 Verification:
 - Current `Docs\Reports\METRIC_PHI_VERIFY_SWEEP.json` reports `VERIFY_SWEEP_PASS`, 28 commands, and 0 required failures; the latest full sweep shell command exited 0.
-- Historical direct recheck `python Tools\VerifyMetricPhiDataTruth.py --root . --json-output Docs\AgentLogs\VerifyMetricPhiDataTruth_QUEST_LOGIC_DAG_BUILDER.json --markdown-output Docs\AgentLogs\VerifyMetricPhiDataTruth_QUEST_LOGIC_DAG_BUILDER.md` exited 0 with 36 checks, 0 failed, 39 binary files, 0 unaligned, 160 struct format sites, 0 endian failures; superseded by the current 42-binary/167-struct-site pass.
+- Historical direct recheck `python Tools\VerifyMetricPhiDataTruth.py --root . --json-output Docs\AgentLogs\VerifyMetricPhiDataTruth_QUEST_LOGIC_DAG_BUILDER.json --markdown-output Docs\AgentLogs\VerifyMetricPhiDataTruth_QUEST_LOGIC_DAG_BUILDER.md` exited 0 and is superseded by the current 2026-05-17 MetricPhi/DataInquisition evidence.
 
 ## 2026-05-16 - Fresh OSHINO Verification Rerun
 
@@ -210,7 +210,7 @@ Verification:
 - `python Tools\VerifyDataInquisition.py --report Docs\AgentLogs\VerifyDataInquisition_QUEST_LOGIC_DAG_BUILDER.json` exited 0: 85 atlas domains, 1,000,000 Monte Carlo evidence, 0 hash collisions.
 - Historical `python Tools\Economy\MonteCarloEconomySim.py --root .` exited 0 and is superseded. Current 2026-05-17 evidence is 1,539,943 mined nodes at the p99=59.285 min gate.
 - Earlier `python Tools\RunMetricPhiVerifySweep.py --xxhash-path %TEMP%\metric_phi_xxhash_ref` exited 0 on that rerun. Current sweep evidence is the later 35-command shell-exit pass report recorded below.
-- Historical `python Tools\VerifyMetricPhiDataTruth.py --root . ...` exited 0 after that sweep: 36 checks, 0 failed, 39 binary files, 0 unaligned, 160 struct format sites, 0 endian failures; superseded by the current 42-binary/167-struct-site pass.
+- Historical `python Tools\VerifyMetricPhiDataTruth.py --root . ...` exited 0 after that sweep and is superseded by the current 2026-05-17 MetricPhi/DataInquisition evidence.
 
 ## 2026-05-16 - Final Inquisition Rerun After Stale-Line Purge
 
@@ -244,7 +244,7 @@ Verification:
 - Historical `MonteCarloEconomySim` exited 0 and is superseded. Current 2026-05-17 evidence is 1,539,943 mined nodes, p99=59.285 min, 0 failures.
 - Quest negative tests exited 0: all six malformed/corrupt cases failed as expected.
 - Current `Docs\Reports\METRIC_PHI_VERIFY_SWEEP.json` reports `VERIFY_SWEEP_PASS`, 35 commands, 0 required failures. The sweep now includes `CalculateHPhi` before `VerifyMetricPhiDataTruth`; focused quest data-truth is a separate QUEST gate. The latest long wrapper exited 0.
-- Historical direct post-sweep `VerifyMetricPhiDataTruth.py` exited 0 and is superseded. Current 2026-05-17 evidence is 46 binary files, 0 unaligned, 274 struct format sites, 0 endian failures.
+- Historical direct post-sweep `VerifyMetricPhiDataTruth.py` exited 0 and is superseded. Current 2026-05-17 evidence is 46 binary files, 0 unaligned, 133 MetricPhi struct sites, 0 endian failures.
 
 ## OSHINO full sweep closure - 2026-05-16
 
@@ -256,7 +256,7 @@ Cinematic Cheats used -> Quest DAG remains bitmask-only; no physical simulation 
 
 Exact Microseconds saved -> Quest runtime remains 3-8 us saved per evaluation burst versus string/dictionary gates; Babel no-op writes save 0 runtime us but remove stale static-audit churn.
 
-Verification -> Full sweep: 35 commands, 0 required failures. Current 2026-05-17 `VerifyMetricPhiDataTruth`: 37 checks, 0 failed, 46 binary files, 0 unaligned, 274 struct sites, 0 endian failures. `VerifyQuestDagDataTruth`: 10 checks, 0 failed.
+Verification -> Full sweep: 35 commands, 0 required failures. Current 2026-05-17 `VerifyMetricPhiDataTruth`: 37 checks, 0 failed, 46 binary files, 0 unaligned, 133 struct sites, 0 endian failures. `VerifyQuestDagDataTruth`: 10 checks, 0 failed.
 
 ## Quest compiler no-op write closure - 2026-05-16
 
@@ -322,6 +322,6 @@ Verification:
 - Direct hard-science verifiers exited 0: `VerifyOpticsBaker`, `VerifyDaltonGasToxicity`, `VerifySabineBaker`, and `VerifySnellRefractionLut`.
 - Economy verifiers exited 0: `EconomyValidator`, `EconomyValidator --negative-tests`, `EconomyRecipeGraphAudit`, and `MonteCarloEconomySim` (1,539,943 nodes mined, p99=59.285 min, 0 failures).
 - `python -B Tools\RunMetricPhiVerifySweep.py --xxhash-path "$env:TEMP\metric_phi_xxhash_ref"` exited 0: 35 commands, 0 required failures.
-- `python Tools\VerifyMetricPhiDataTruth.py ...` exited 0: 37 checks, 0 failed, 46 binary files, 0 unaligned, 274 struct format sites, 0 endian failures.
+- `python Tools\VerifyMetricPhiDataTruth.py ...` exited 0: 37 checks, 0 failed, 46 binary files, 0 unaligned, 133 struct format sites, 0 endian failures.
 - `python Tools\VerifyQuestDagDataTruth.py` exited 0: 10 checks, 0 failed.
 - `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` could not run: `dotnet` is not available in PATH. Unity import, Play Mode, profiler, GCMonitor, frame-time, and player-build proof remain PENDING VERIFICATION.

@@ -1967,7 +1967,7 @@
   "domain_index_count": 85,
   "elapsed_seconds": 484.917,
   "evidence_class": "STATIC_SOURCE/STATIC_DOC/PY_TOOL",
-  "generated_at": "2026-05-17T12:26:05",
+  "generated_at": "2026-05-17T12:35:20",
   "graph": {
     "edges": 158,
     "engine": "networkx/matplotlib",

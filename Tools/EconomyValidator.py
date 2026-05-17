@@ -31,6 +31,25 @@ from typing import Any
 
 FNV_OFFSET = 2166136261
 FNV_PRIME = 16777619
+UINT32_MASK = 0xFFFFFFFF
+EXPECTED_RESOURCE_MATRIX_ROWS = 150
+EXPECTED_BIOME_COUNT = 10
+EXPECTED_RESOURCE_COUNT = 15
+EXPECTED_PRIMARY_RECIPE_COUNT = 40
+RESOURCE_TIER_MIN = 1
+RESOURCE_TIER_MAX = 3
+U16_MAX = 65535
+CSV_DATA_START_ROW = 2
+RATIO_ROUND_DIGITS = 3
+ECONOMY_FLOAT_TOLERANCE = 0.001
+ENERGY_TERM_TOLERANCE = 0.000001
+RARITY_DISTANCE_NORMALIZER_M = 1000.0
+FAST_SWIM_CALORIE_MULTIPLIER = 3.0
+FIRST_SUB_BATCH_MIN = 5
+FIRST_SUB_BATCH_MAX = 50
+FIRST_SUB_UNIQUE_RECIPE_MIN = 5
+NEGATIVE_MASS_DRIFT_KG = 0.25
+CRAFTING_MONTE_CARLO_MIN_STEPS = 1_000_000
 EXPECTED_RECIPE_CATEGORY_COUNTS = {
     "recipe.category.component": 12,
     "recipe.category.tool": 6,
@@ -90,7 +109,7 @@ def fnv1a32(value: str) -> int:
     hash_value = FNV_OFFSET
     for byte in value.encode("utf-16le"):
         hash_value ^= byte
-        hash_value = (hash_value * FNV_PRIME) & 0xFFFFFFFF
+        hash_value = (hash_value * FNV_PRIME) & UINT32_MASK
     return hash_value
 
 
@@ -145,7 +164,7 @@ def check_hash_pairs(node: Any, path: str) -> int:
 
 def check_csv_hashes(rows: list[dict[str, str]]) -> int:
     checked = 0
-    for row_index, row in enumerate(rows, start=2):
+    for row_index, row in enumerate(rows, start=CSV_DATA_START_ROW):
         for key, value in row.items():
             if not key.endswith("_id"):
                 continue
@@ -210,18 +229,18 @@ def validate_resource_matrix(path: Path) -> dict[str, int]:
         require(tuple(reader.fieldnames or ()) == EXPECTED_RESOURCE_MATRIX_HEADERS, "Resource_Distribution_Matrix.csv header mismatch")
         rows = list(reader)
 
-    require(len(rows) == 150, f"Resource_Distribution_Matrix.csv must have 150 data rows, got {len(rows)}")
+    require(len(rows) == EXPECTED_RESOURCE_MATRIX_ROWS, f"Resource_Distribution_Matrix.csv must have {EXPECTED_RESOURCE_MATRIX_ROWS} data rows, got {len(rows)}")
     hash_checks = check_csv_hashes(rows)
     collision_pairs: dict[int, tuple[str, str]] = {}
     collect_csv_id_hashes(rows, collision_pairs)
     biome_ids = {row["biome_id"] for row in rows}
     resource_ids = {row["resource_id"] for row in rows}
-    require(len(biome_ids) == 10, f"expected 10 biomes, got {len(biome_ids)}")
-    require(len(resource_ids) == 15, f"expected 15 resources, got {len(resource_ids)}")
+    require(len(biome_ids) == EXPECTED_BIOME_COUNT, f"expected {EXPECTED_BIOME_COUNT} biomes, got {len(biome_ids)}")
+    require(len(resource_ids) == EXPECTED_RESOURCE_COUNT, f"expected {EXPECTED_RESOURCE_COUNT} resources, got {len(resource_ids)}")
     pairs: set[tuple[str, str]] = set()
     per_biome_counts: dict[str, int] = {biome_id: 0 for biome_id in biome_ids}
 
-    for row_index, row in enumerate(rows, start=2):
+    for row_index, row in enumerate(rows, start=CSV_DATA_START_ROW):
         pair = (row["biome_id"], row["resource_id"])
         require(pair not in pairs, f"CSV row {row_index} duplicate biome/resource pair {pair}")
         pairs.add(pair)
@@ -230,11 +249,11 @@ def validate_resource_matrix(path: Path) -> dict[str, int]:
         depth_max = float(row["depth_max_m"])
         require(depth_max > depth_min >= 0.0, f"CSV row {row_index} invalid biome depth range")
         resource_tier = int(row["resource_tier"])
-        require(1 <= resource_tier <= 3, f"CSV row {row_index} invalid resource tier {resource_tier}")
+        require(RESOURCE_TIER_MIN <= resource_tier <= RESOURCE_TIER_MAX, f"CSV row {row_index} invalid resource tier {resource_tier}")
         base_value = float(row["base_value_units"])
         require(base_value > 0.0, f"CSV row {row_index} base_value_units must be positive")
         weight = int(row["lcg_spawn_weight_u16"])
-        require(1 <= weight <= 65535, f"CSV row {row_index} invalid LCG weight {weight}")
+        require(1 <= weight <= U16_MAX, f"CSV row {row_index} invalid LCG weight {weight}")
         h1 = int(row["laser_hits_tier1"])
         h2 = int(row["laser_hits_tier2"])
         h3 = int(row["laser_hits_tier3"])
@@ -243,11 +262,11 @@ def validate_resource_matrix(path: Path) -> dict[str, int]:
         depth_multiplier = float(row["depth_multiplier"])
         base_rarity = float(row["base_rarity"])
         depth_bias = float(row["resource_depth_bias"])
-        expected_rarity = round(base_rarity + (distance / 1000.0) * depth_multiplier * depth_bias, 3)
-        actual_rarity = round(float(row["rarity_score"]), 3)
+        expected_rarity = round(base_rarity + (distance / RARITY_DISTANCE_NORMALIZER_M) * depth_multiplier * depth_bias, RATIO_ROUND_DIGITS)
+        actual_rarity = round(float(row["rarity_score"]), RATIO_ROUND_DIGITS)
         require(actual_rarity == expected_rarity, f"CSV row {row_index} rarity mismatch: got {actual_rarity}, expected {expected_rarity}")
     for biome_id, row_count in per_biome_counts.items():
-        require(row_count == 15, f"{biome_id} must have 15 resource rows, got {row_count}")
+        require(row_count == EXPECTED_RESOURCE_COUNT, f"{biome_id} must have {EXPECTED_RESOURCE_COUNT} resource rows, got {row_count}")
 
     return {"rows": len(rows), "biomes": len(biome_ids), "resources": len(resource_ids), "hashes": hash_checks}
 
@@ -265,10 +284,10 @@ def validate_resource_value_alignment(matrix_path: Path, recipes_path: Path) -> 
         if previous_value is None:
             resource_values[resource_id] = matrix_value
         else:
-            require(abs(previous_value - matrix_value) <= 0.001, f"{resource_id} has inconsistent matrix base values")
+            require(abs(previous_value - matrix_value) <= ECONOMY_FLOAT_TOLERANCE, f"{resource_id} has inconsistent matrix base values")
     for resource_id, matrix_value in resource_values.items():
         require(resource_id in item_values, f"{resource_id} from matrix missing Recipes.item_values entry")
-        require(abs(item_values[resource_id] - matrix_value) <= 0.001, f"{resource_id} matrix value {matrix_value} differs from Recipes.item_values {item_values[resource_id]}")
+        require(abs(item_values[resource_id] - matrix_value) <= ECONOMY_FLOAT_TOLERANCE, f"{resource_id} matrix value {matrix_value} differs from Recipes.item_values {item_values[resource_id]}")
     return len(resource_values)
 
 
@@ -318,7 +337,7 @@ def validate_items_csv(path: Path, recipes_path: Path, matrix_path: Path) -> dic
         hash_checks += 1
 
         expected_value = float(item_values[item_id]["baseline_value_units"])
-        require(abs(float(row["baseline_value_units"]) - expected_value) <= 0.001, f"Items.csv row {row_index} baseline value mismatch")
+        require(abs(float(row["baseline_value_units"]) - expected_value) <= ECONOMY_FLOAT_TOLERANCE, f"Items.csv row {row_index} baseline value mismatch")
         source_recipe_id = row["source_recipe_id"]
         source_recipe_hash = row["source_recipe_hash32"]
         if source_recipe_id:
@@ -436,7 +455,7 @@ def validate_recipes(path: Path) -> dict[str, Any]:
     collision_pairs: dict[int, tuple[str, str]] = {}
     collect_json_id_hashes(data, "Recipes", collision_pairs)
     recipes = data.get("recipes", [])
-    require(len(recipes) == 40, f"Recipes.json must contain 40 recipes, got {len(recipes)}")
+    require(len(recipes) == EXPECTED_PRIMARY_RECIPE_COUNT, f"Recipes.json must contain {EXPECTED_PRIMARY_RECIPE_COUNT} recipes, got {len(recipes)}")
 
     item_values: dict[str, float] = {}
     for entry in data.get("item_values", []):
@@ -482,12 +501,12 @@ def validate_recipes(path: Path) -> dict[str, Any]:
             require(quantity > 0, f"{recipe_id} ingredient {item_id} quantity must be positive")
             require(item_id in item_values, f"{recipe_id} ingredient {item_id} missing item value")
             computed_cost += item_values[item_id] * quantity
-        actual_cost = round(float(recipe["baseline_value_units"]), 3)
-        require(abs(actual_cost - round(computed_cost, 3)) <= 0.001, f"{recipe_id} baseline cost mismatch")
-        result_value = round(item_values[result_id] * result_quantity, 3)
-        require(abs(result_value - actual_cost) <= 0.001, f"{recipe_id} result value mismatch: got {result_value}, expected {actual_cost}")
-        require(round(result_value * normal_reclaim_ratio, 3) < actual_cost, f"{recipe_id} normal deconstruction can profit or break even")
-        require(round(result_value * degraded_reclaim_ratio, 3) < actual_cost, f"{recipe_id} degraded deconstruction can profit or break even")
+        actual_cost = round(float(recipe["baseline_value_units"]), RATIO_ROUND_DIGITS)
+        require(abs(actual_cost - round(computed_cost, RATIO_ROUND_DIGITS)) <= ECONOMY_FLOAT_TOLERANCE, f"{recipe_id} baseline cost mismatch")
+        result_value = round(item_values[result_id] * result_quantity, RATIO_ROUND_DIGITS)
+        require(abs(result_value - actual_cost) <= ECONOMY_FLOAT_TOLERANCE, f"{recipe_id} result value mismatch: got {result_value}, expected {actual_cost}")
+        require(round(result_value * normal_reclaim_ratio, RATIO_ROUND_DIGITS) < actual_cost, f"{recipe_id} normal deconstruction can profit or break even")
+        require(round(result_value * degraded_reclaim_ratio, RATIO_ROUND_DIGITS) < actual_cost, f"{recipe_id} degraded deconstruction can profit or break even")
         tier_costs[tier].append(actual_cost)
 
     for category_id, expected_count in EXPECTED_RECIPE_CATEGORY_COUNTS.items():
@@ -507,8 +526,8 @@ def validate_recipes(path: Path) -> dict[str, Any]:
     tier1 = median(tier_costs[1])
     tier2 = median(tier_costs[2])
     tier3 = median(tier_costs[3])
-    ratio_2_to_1 = round(tier2 / tier1, 3)
-    ratio_3_to_2 = round(tier3 / tier2, 3)
+    ratio_2_to_1 = round(tier2 / tier1, RATIO_ROUND_DIGITS)
+    ratio_3_to_2 = round(tier3 / tier2, RATIO_ROUND_DIGITS)
     min_ratio = float(rule["accepted_ratio_min"])
     max_ratio = float(rule["accepted_ratio_max"])
     require(min_ratio <= ratio_2_to_1 <= max_ratio, f"tier2/tier1 ratio {ratio_2_to_1} outside [{min_ratio}, {max_ratio}]")
@@ -537,7 +556,7 @@ def validate_survival(path: Path) -> dict[str, Any]:
     by_id = {entry["band_id"]: entry for entry in velocity_bands}
     slow = float(by_id["survival.calories.velocity.slow_swim"]["calories_per_minute"])
     fast = float(by_id["survival.calories.velocity.fast_swim"]["calories_per_minute"])
-    require(abs(fast - slow * 3.0) <= 0.001, f"fast swim calories must be exactly 3x slow swim, got {fast}/{slow}")
+    require(abs(fast - slow * FAST_SWIM_CALORIE_MULTIPLIER) <= ECONOMY_FLOAT_TOLERANCE, f"fast swim calories must be exactly {FAST_SWIM_CALORIE_MULTIPLIER:g}x slow swim, got {fast}/{slow}")
     require(float(by_id["survival.calories.velocity.sprint_swim"]["calories_per_minute"]) > fast, "sprint swim must exceed fast swim calories")
     return {"hashes": hash_checks, "velocity_bands": len(velocity_bands)}
 
@@ -732,17 +751,17 @@ def validate_first_submarine_path(path: Path, recipes_path: Path) -> dict[str, A
     totals = data["totals"]
     total_recursive_batches = sum(recipe_batches.values())
     unique_recursive_recipes = len(recipe_batches)
-    require(abs(float(totals["top_level_target_only_fabrication_kwh"]) - round(top_level_kwh, 3)) <= 0.001, "first submarine top-level kWh mismatch")
-    require(abs(float(totals["top_level_target_only_craft_time_seconds"]) - round(top_level_seconds, 3)) <= 0.001, "first submarine top-level craft time mismatch")
-    require(abs(float(totals["top_level_energy_wait_minutes_at_30kw"]) - round(expected_top_wait, 3)) <= 0.001, "first submarine top-level energy wait mismatch")
+    require(abs(float(totals["top_level_target_only_fabrication_kwh"]) - round(top_level_kwh, RATIO_ROUND_DIGITS)) <= ECONOMY_FLOAT_TOLERANCE, "first submarine top-level kWh mismatch")
+    require(abs(float(totals["top_level_target_only_craft_time_seconds"]) - round(top_level_seconds, RATIO_ROUND_DIGITS)) <= ECONOMY_FLOAT_TOLERANCE, "first submarine top-level craft time mismatch")
+    require(abs(float(totals["top_level_energy_wait_minutes_at_30kw"]) - round(expected_top_wait, RATIO_ROUND_DIGITS)) <= ECONOMY_FLOAT_TOLERANCE, "first submarine top-level energy wait mismatch")
     require(int(totals["recursive_recipe_batches"]) == total_recursive_batches, "first submarine recursive batch count mismatch")
     require(int(totals["unique_recursive_recipes"]) == unique_recursive_recipes, "first submarine unique recipe count mismatch")
-    require(5 <= total_recursive_batches <= 50, f"first submarine total recipe batches {total_recursive_batches} outside [5, 50]")
-    require(unique_recursive_recipes >= 5, f"first submarine unique recipe count {unique_recursive_recipes} below 5")
-    require(abs(float(totals["recursive_fabrication_kwh"]) - round(recursive_kwh, 3)) <= 0.001, "first submarine recursive kWh mismatch")
-    require(abs(float(totals["recursive_craft_time_seconds"]) - round(recursive_seconds, 3)) <= 0.001, "first submarine recursive craft time mismatch")
-    require(abs(float(totals["recursive_energy_wait_minutes_at_30kw"]) - round(expected_recursive_wait, 3)) <= 0.001, "first submarine recursive energy wait mismatch")
-    require(abs(float(totals["literal_total_minutes_at_30kw"]) - round(expected_literal_total, 3)) <= 0.001, "first submarine literal total mismatch")
+    require(FIRST_SUB_BATCH_MIN <= total_recursive_batches <= FIRST_SUB_BATCH_MAX, f"first submarine total recipe batches {total_recursive_batches} outside [{FIRST_SUB_BATCH_MIN}, {FIRST_SUB_BATCH_MAX}]")
+    require(unique_recursive_recipes >= FIRST_SUB_UNIQUE_RECIPE_MIN, f"first submarine unique recipe count {unique_recursive_recipes} below {FIRST_SUB_UNIQUE_RECIPE_MIN}")
+    require(abs(float(totals["recursive_fabrication_kwh"]) - round(recursive_kwh, RATIO_ROUND_DIGITS)) <= ECONOMY_FLOAT_TOLERANCE, "first submarine recursive kWh mismatch")
+    require(abs(float(totals["recursive_craft_time_seconds"]) - round(recursive_seconds, RATIO_ROUND_DIGITS)) <= ECONOMY_FLOAT_TOLERANCE, "first submarine recursive craft time mismatch")
+    require(abs(float(totals["recursive_energy_wait_minutes_at_30kw"]) - round(expected_recursive_wait, RATIO_ROUND_DIGITS)) <= ECONOMY_FLOAT_TOLERANCE, "first submarine recursive energy wait mismatch")
+    require(abs(float(totals["literal_total_minutes_at_30kw"]) - round(expected_literal_total, RATIO_ROUND_DIGITS)) <= ECONOMY_FLOAT_TOLERANCE, "first submarine literal total mismatch")
     require(data["status_id"] == "economy.path.requires_literal_energy_rebalance", "first submarine status must flag literal kWh rebalance")
     return {"hashes": hash_checks, "recursive_kwh": round(recursive_kwh, 3), "literal_minutes": round(expected_literal_total, 3)}
 
@@ -757,7 +776,7 @@ def validate_numeric_bands(entries: list[dict[str, Any]], min_key: str, max_key:
         max_value = float(entry[max_key])
         require(max_value > min_value, f"{label} band {entry.get('band_id', '<unknown>')} has invalid range")
         if previous_max is not None:
-            require(abs(min_value - previous_max) <= 0.001, f"{label} band gap/overlap before {entry.get('band_id', '<unknown>')}")
+            require(abs(min_value - previous_max) <= ECONOMY_FLOAT_TOLERANCE, f"{label} band gap/overlap before {entry.get('band_id', '<unknown>')}")
         if value_key is not None:
             current_value = float(entry[value_key])
             require(current_value > 0.0, f"{label} band {entry.get('band_id', '<unknown>')} has non-positive {value_key}")

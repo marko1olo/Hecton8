@@ -148,3 +148,11 @@ Solution: Run the build command and then check the two default install paths. `d
 Rejected Alternatives: Claiming compile success from Python-only validation or mutating Unity/C# code from this DATA/AUDIO task.
 Scalability potential: No runtime scalability claim depends on compile proof. Offline data proof remains valid; Unity/runtime import remains pending local toolchain availability.
 Hardware Impact: No runtime change. Compile validation is blocked by host environment, not by the Sabine binary or Python baker.
+
+## Decision 18 - Loop 17 Fresh Disk Reverification
+
+Problem: The user requested another hard rerun after loop 16, so cached reports were insufficient evidence.
+Solution: Re-read the status, rationale, and archived XML; rerun the Sabine bake, Sabine verifier, binary hygiene, FNV collision check, lore check, million-step economy simulation, economy data truth inquisition, atlas validation, full Metric Phi verify sweep, post-sweep Metric Phi data truth, and post-sweep binary hygiene from current files.
+Rejected Alternatives: Reusing loop-16 outputs or stopping after selected checks was rejected because the requested phase explicitly demands another self-validation loop. Treating a stale `--root` CLI parse error from `VerifyMetricPhiDataTruth.py` as a verifier failure was rejected because it did not execute the verifier; the command was rerun with the valid CLI and passed.
+Scalability potential: The Sabine data contract remains stateless raw `<ff>` lookup for low hardware, with manifest `qualityTiers.extraData` retaining high/ultra resonance, harmonic, and convolution expansion metadata.
+Hardware Impact: No runtime code changed. Offline loop 17 reconfirmed `binary_unaligned=0`, `binary_endian_unknown=0`, `hashCollisions=0`, and Metric Phi `DATA_TRUTH_VERIFIED`; compile proof remains blocked by the missing local `dotnet` toolchain.

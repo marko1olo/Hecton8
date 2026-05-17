@@ -97,3 +97,9 @@ Solution: Resolve `Tools\__pycache__` under `C:\Hecton8`, delete only that direc
 Rejected Alternatives: Broad deletion; leave transient cache directories.
 Scalability potential: Cleaner SHINOBU/offline ingest surface.
 Hardware Impact: No runtime impact.
+
+Problem: Shared report path `Docs/Reports/METRIC_PHI_VERIFY_SWEEP.json` was overwritten back to a failed state by concurrent work after the green sweep.
+Solution: Re-run `Tools/RunMetricPhiVerifySweep.py` with agent-specific outputs under `Docs/AgentLogs/MetricPhiVerifySweep_ENCYCLOPEDIA_LORE_BAKER_RERUN.*`, then run `VerifyMetricPhiDataTruth.py` against that exact sweep input.
+Rejected Alternatives: Trust the racing shared report; stop after one pass; revert unrelated concurrent agent reports.
+Scalability potential: Agent-local evidence remains stable while shared reports continue to serve integrator-wide state.
+Hardware Impact: No runtime impact. Agent-local static evidence is 35/35 sweep PASS and 37/37 data-truth PASS.
