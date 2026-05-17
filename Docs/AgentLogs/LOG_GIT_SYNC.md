@@ -36,6 +36,45 @@ Evidence boundary:
 - Git/static/Python evidence only.
 - Unity import, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build remain PENDING VERIFICATION.
 
+## 2026-05-17 - Live Batch Commit And Targeted Gate Pass
+
+What was wrong:
+- `origin/main` fast-forwarded to `edc1f7149`, then pulled generated artifacts were stale: AI battle report and raw H8LR lore package failed owner checks before repair.
+- Parallel agents kept writing logs/reports during staging, producing short-read index failures and fresh dirty tails.
+
+What was done:
+- Fast-forward pulled `origin/main`.
+- Regenerated AI battle and lore artifacts with owner tools.
+- Committed stable live slices:
+  - `946f5595b chore: integrate validated pulled batch artifacts`
+  - `b73c8ec34 chore: capture live batch evidence tail`
+  - `8096669c4 chore: capture final live evidence tail`
+- Reran targeted pre-push gates and refreshed generated reports.
+
+Cinematic Cheats used:
+- None. Repository/tooling/data integration only.
+
+Exact Microseconds saved:
+- Runtime code changed by GIT_SYNC itself: none.
+- Immediate runtime CPU saving: 0us.
+
+Verification:
+- `git fetch origin main`: PASS, remote did not advance beyond `edc1f7149` before final evidence commit.
+- `git diff --check`: PASS before targeted gates.
+- `git ls-files -u`: empty.
+- AI battle artifact PASS: `ARTIFACT_CHECK_PASSED`, `knownBufferCount=523`, rerunVerified=True.
+- Lore check PASS: raw H8LR blob 41920 bytes, collisions=0.
+- Quest DAG PASS: nodes=4, hashes=31, binaryBytes=496.
+- PDA technical logs PASS: entries=100, binaryBytes=59120, toasterBytes=19120.
+- Net sync Merkle protocol PASS: `BINARY_PAYLOADS_ALIGNED=46`.
+- Net protocol gate PASS: `NETWORK PROTOCOL READY`, unit tests=8.
+- Metric Phi data truth PASS: checks=37, binary_files=46, unaligned=0.
+- Metric Phi verify sweep PASS: commands=35, required_failures=0.
+
+Evidence boundary:
+- Git/static/Python evidence only.
+- Unity import, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build remain PENDING VERIFICATION.
+
 ## 2026-05-17 - Fast-Forward Pull And Generated Repair
 
 What was wrong:

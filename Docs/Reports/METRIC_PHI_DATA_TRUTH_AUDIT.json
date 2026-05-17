@@ -179,8 +179,8 @@
   "tool": "Tools/VerifyMetricPhiDataTruth.py",
   "verifySweep": {
     "requiredFailures": 0,
-    "selfCheckPending": false,
+    "selfCheckPending": true,
     "status": "VERIFY_SWEEP_PASS",
-    "totalCommands": 35
+    "totalCommands": 34
   }
 }

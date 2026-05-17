@@ -119,3 +119,11 @@ Solution: Regenerated `Tools/AiBattleSim_Report.json` with `Tools/AiBattleSim.py
 Rejected Alternatives: Manual JSON/binary edits were rejected because deterministic owner tools exist. Pushing the fast-forwarded batch without repair was rejected because full unittest was red.
 Scalability potential: Committed generated data now tracks the current source and memory-buffer catalog, reducing repeated red gates for downstream agents.
 Hardware Impact: 0us runtime. Offline data/tooling only; Unity runtime remains PENDING VERIFICATION.
+
+## Decision 16: Stable Sliced Commits During Live Agent Churn
+
+Problem: Parallel agents kept appending logs and generated reports while staging, causing short-read index failures and new unstaged tails after each pass.
+Solution: Committed stable staged slices as `946f5595b`, `b73c8ec34`, and `8096669c4`, then reran owner gates that touch the generated reports before the final evidence commit and push.
+Rejected Alternatives: `git reset`, force-push, or broad destructive cleanup were rejected. Waiting indefinitely for every parallel writer to stop was rejected because the user requested commit/pull/push progress.
+Scalability potential: Sliced commits preserve live-agent work without blocking the shared branch forever on report churn.
+Hardware Impact: 0us runtime. Git/tooling evidence only; Unity runtime remains PENDING VERIFICATION.
