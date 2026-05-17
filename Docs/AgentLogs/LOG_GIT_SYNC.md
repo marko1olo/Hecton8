@@ -36,6 +36,55 @@ Evidence boundary:
 - Git/static/Python evidence only.
 - Unity import, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build remain PENDING VERIFICATION.
 
+## 2026-05-17 - Validated Batch Integration
+
+What was wrong:
+- Local `main` was clean against `origin/main` but the workspace contained a large uncommitted batch from parallel agents.
+- Initial targeted validation found red gates in H8 hash collisions, lore packaging, and AI navigation artifact consistency.
+- The lore `.h8bin` package was semantically valid but not 16-byte aligned at file length, which broke net-sync/data binary hygiene gates.
+- Staged text artifacts had trailing whitespace until cleaned.
+
+What was done:
+- Fetched `origin/main` and verified initial divergence `0 0`.
+- Restored the H8 hash verifier API contract used by its tests.
+- Rebuilt lore package from current `Docs/Lore` sources: 2 entries, 16096-byte aligned blob.
+- Cleaned only `git diff --cached --check` named whitespace offenders.
+- Staged exactly 37 tracked paths and 626 untracked paths from generated pathspec files.
+- Committed `cbbf969f6 feat: integrate validated batch artifacts`.
+
+Cinematic Cheats used:
+- None. Repository/tooling/data integration only.
+
+Exact Microseconds saved:
+- Runtime code changed by GIT_SYNC itself: none.
+- Immediate runtime CPU saving: 0us.
+
+Verification:
+- Full Tools unittest PASS: 299 tests, 151.432 seconds.
+- Hash/lore/economy focused unittest PASS: 61 tests, 12.551 seconds.
+- AI/economy sim focused unittest PASS: 27 tests, 48.963 seconds.
+- Net/submarine/upgrade/ore focused unittest PASS: 35 tests, 35.515 seconds.
+- Net protocol gate PASS: `NETWORK PROTOCOL READY`.
+- Net sync Merkle protocol PASS: `BINARY_PAYLOADS_ALIGNED=44`.
+- Replay hasher official vectors and 5000 shuffle fuzz PASS.
+- Replay reference verifier guard PASS: 20 checks.
+- Lore bake/check PASS: entries=2, blob=16096 bytes.
+- H8 hash catalog PASS: records=1018.
+- Economy validator PASS with negative tests: `ECONOMY BALANCED`.
+- Crafting cost verifier and crafting Monte Carlo PASS.
+- Babel verifier and dictionary verifier PASS.
+- Metric Phi data truth PASS: 37 checks.
+- Binary hygiene PASS: binaryCount=44, misalignedCount=0.
+- Data inquisition PASS.
+- Memory budget report validator PASS.
+- AtlasCheck PASS: references=5531.
+- `git diff --cached --check` PASS before commit.
+- Post-commit working tree clean and local branch ahead of `origin/main` by 1.
+
+Evidence boundary:
+- Git/static/Python evidence only.
+- Unity import, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build remain PENDING VERIFICATION.
+
 ## 2026-05-15 - Remote Push Verification
 
 What was wrong:

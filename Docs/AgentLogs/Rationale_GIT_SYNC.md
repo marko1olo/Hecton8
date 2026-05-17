@@ -55,3 +55,27 @@ Solution: Record the deterministic verification command sequence in the committe
 Rejected Alternatives: Amending forever to chase the file's own commit hash was rejected as process churn. Leaving an older exact hash in status was rejected as stale evidence.
 Scalability potential: Future GIT_SYNC runs can verify remote equality without creating a new evidence-only hash mismatch each time.
 Hardware Impact: 0us runtime. Git-only operation.
+
+## Decision 8: Validate Before Batch Commit
+
+Problem: The working tree contained 600+ local paths from parallel agents, and the first targeted test pass found red tooling gates.
+Solution: Fixed the blocking offline validator state before commit: the H8 hash verifier was returned to the established API contract, the lore package was regenerated from the current two Markdown sources, and the `.h8bin` payload was padded to a 16-byte file boundary required by binary and net-sync gates.
+Rejected Alternatives: Committing known-red tests or bypassing binary alignment checks was rejected. Force-pushing or rewriting remote history was rejected.
+Scalability potential: A single validated integration commit gives downstream agents a consistent data/tooling baseline instead of a dirty local batch.
+Hardware Impact: 0us runtime. Tooling/data packaging only; Unity runtime remains PENDING VERIFICATION.
+
+## Decision 9: Generated Pathspec Staging
+
+Problem: The batch mixed tracked edits and hundreds of untracked artifacts, including non-ASCII task filenames.
+Solution: Generated exact pathspec files from `git diff --name-only` and `git ls-files --others --exclude-standard`, staged `37` tracked paths and `626` untracked paths, then removed the temp pathspec files.
+Rejected Alternatives: `git add -A` was rejected because broad staging can capture unrelated concurrent writes. Manual shell glob staging was rejected because it is error-prone with non-ASCII and spaces.
+Scalability potential: Exact staged evidence makes future conflict analysis and audit easier.
+Hardware Impact: 0us runtime. Git-only operation.
+
+## Decision 10: Whitespace Gate Cleanup Before Commit
+
+Problem: `git diff --cached --check` rejected new `.meta`, Markdown, and log artifacts for trailing whitespace.
+Solution: Cleaned only paths named by `git diff --cached --check`, normalized the one progress-log `.out` carriage-return stream, re-staged those exact paths, and reran the check to PASS.
+Rejected Alternatives: Ignoring `diff --check` warnings was rejected because the requested push must be mechanically clean.
+Scalability potential: Cleaner text artifacts reduce avoidable review noise and future patch failures.
+Hardware Impact: 0us runtime. Repository hygiene only.
