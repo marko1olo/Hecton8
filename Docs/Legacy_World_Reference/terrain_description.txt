@@ -1,3 +1,6 @@
+Date: 2026-05-17
+Status: PENDING VERIFICATION
+
 DEPRECATED - DOC_VULCAN 2026-05-12
 This file is visual and lore reference only. It is not terrain, scatter, flora, fauna, navigation, atmosphere, voxel, or runtime authority.
 Current replacements: Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md, Docs/ARCHITECTURE/FLOW_FIELD_MATH.md, Docs/ARCHITECTURE/MIGRATORY_FLORA_SYSTEM.md, Docs/ARCHITECTURE/HEADLESS_ECOSYSTEM_SIMULATION.md, and active source-backed pipeline READMEs.

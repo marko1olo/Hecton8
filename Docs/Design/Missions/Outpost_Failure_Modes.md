@@ -1,5 +1,6 @@
 # Abandoned Outpost Failure Modes
 
+Date: 2026-05-17
 Status: PENDING VERIFICATION
 Owner: MISSION_FAIL_SAFE_ARCHITECT
 Domain: Documentation/Logic, Echelon 8 AUP Narrative Triggers

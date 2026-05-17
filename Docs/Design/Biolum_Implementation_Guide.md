@@ -1,5 +1,6 @@
 # Biolum Implementation Guide
 
+Date: 2026-05-17
 Status: RHYTHMS COMPOSED
 Owner prompt: BIOLUM_RHYTHM_COMPOSER
 Runtime target: shader-driven bioluminescence sync, no physical light simulation.

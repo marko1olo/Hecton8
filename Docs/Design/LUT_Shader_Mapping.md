@@ -1,5 +1,6 @@
 # LUT Shader Mapping
 
+Date: 2026-05-17
 Status: `PENDING UNITY VERIFICATION`
 Owner: `OPTICAL_EXTINCTION_LUT_BAKER`
 Payload: `Data/Visuals/Water_Extinction_Matrix.bin`

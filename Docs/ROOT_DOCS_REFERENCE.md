@@ -1,12 +1,36 @@
 # Root Docs Reference
 
-Date: 2026-05-15
+Date: 2026-05-17
 Status: PENDING VERIFICATION
 
 Purpose: explain what still remains in repository root versus `Docs/` after the current documentation cleanup.
 
 This file is navigation only.
 It is not runtime proof.
+
+## 2026-05-17 Check
+
+Current root text scan:
+
+| Class | Count | Handling |
+|---|---:|---|
+| root `.md` | 4 | three active anchors plus one compute-report drift file |
+| root `.log` | 0 | none in root text scope |
+| root `.json` | 0 | none in root text scope |
+| root `.txt` | 0 | none in root text scope |
+
+Current root markdown files:
+
+- `AGENTS.md` - active operating contract.
+- `MASTER_RELEASE_WORK_PLAN.md` - active production roadmap anchor.
+- `BUILD_PLAYTEST_ISSUES.md` - active validation/build observation ledger.
+- `COMPUTE_AUDIT_BRIEF.md` - root drift; not a fourth authority anchor. Route compute evidence through `Docs/Reports/2026-05-15_COMPUTE_AUDIT/` or `Docs/Reports/2026-05-16_COMPUTE_AUDIT/` until the compute owner reconciles the duplicate root surface.
+
+Latest broad documentation refresh:
+
+- `Docs/Reports/2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md`
+
+The May 15 three-anchor root state remains the target governance state, but it is no longer the current filesystem count.
 
 ## 2026-05-15 Check
 

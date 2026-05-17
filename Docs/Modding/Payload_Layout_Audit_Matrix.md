@@ -1,5 +1,6 @@
 # HECTON-8 Mod Payload Layout Audit Matrix
 
+Date: 2026-05-17
 Status: STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION  
 Owner prompt: MODDING_API_SCHEMA_BUILDER  
 Primary sources:

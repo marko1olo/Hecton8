@@ -1,5 +1,6 @@
 # Atmosphere Scattering LUT
 
+Date: 2026-05-17
 Status: PENDING VERIFICATION  
 Owner: ORBITAL_ATMOSPHERE_MATHEMATICIAN  
 Evidence class: STATIC_SOURCE / PY_CLI only until Unity import, shader binding, visual capture, profiler, and GCMonitor exist.

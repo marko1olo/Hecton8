@@ -4,6 +4,7 @@ Beklog istoriya izmeneniy
 TEHNIChESKIY OTChET SESSII (10.03.2026)
 Proekt: Submerge (ex. HECTON-8)
 Tselevoe zhelezo: NVIDIA MX350 (2GB VRAM) / Core i5
+Date: 2026-05-17
 Status: Smena arhitektury HUD i stabilizatsiya sredy.
 1. Globalnaya sreda i relef (Environment Sync)
 Sinhronizatsiya vysot: Uroven morya zafiksirovan na otmetke 5000 (soglasno grafu MapMagic). Znachenie propisano v inspektorah na obekte [MANAGERS] dlya skriptov: HectonAtmosphereManager, HectonFluidEngine, HectonSurvivalSystem.

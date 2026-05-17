@@ -1,5 +1,6 @@
 # Mod API Change Control Checklist
 
+Date: 2026-05-17
 Status: STATIC_CHANGE_GATE / RUNTIME_PENDING
 Owner prompt: MODDING_API_SCHEMA_BUILDER
 

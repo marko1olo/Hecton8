@@ -1,5 +1,6 @@
 # Sample Mod Spec - Infinite O2
 
+Date: 2026-05-17
 Status: SAMPLE_SPEC / NO_RUNTIME_AUTHORITY
 Owner prompt: MODDING_API_SCHEMA_BUILDER
 

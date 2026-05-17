@@ -1,15 +1,17 @@
 # Documentation Governance
 
-Date: 2026-05-15
+Date: 2026-05-17
 Status: PENDING VERIFICATION
 
 Purpose: prevent workspace documentation from collapsing back into root-level noise.
 
 Current-state boundary:
 
+- 2026-05-17 DOC_GLOBAL_DOCS_REFRESH override: read `Docs/Reports/2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md` before using May 13/May 15 documentation and source counters. Current static scan sees `2788` markdown/text files in the non-Library/Temp/Logs/obj/igra documentation surface, `149` stable docs, `257` dated reports, `2079` archive files, `123` deprecated files, and `144 / 144` tracked stable active `Docs` files with both `Date:` and `Status:` headers after this pass. These are static filesystem facts only, not runtime proof.
+- Current root text scan sees `4` root markdown files: `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md`, and `COMPUTE_AUDIT_BRIEF.md`. `COMPUTE_AUDIT_BRIEF.md` is root drift against the May 15 three-anchor rule and must be moved or deprecated by the compute-report owner, not treated as a fourth authority anchor.
 - 2026-05-14 DOC_AUDIT override: read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using May 11 counters or build-artifact links as current proof.
 - The May 11 `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.*` proof files cited by several docs are absent from the current filesystem. Treat those references as stale report text. Current May 14/R43 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist, not Unity runtime proof.
-- Current root text scan after the 2026-05-15 cleanup sees `3` root `.md`, `0` root `.log`, `0` root `.json`, and `0` root `.txt` files in the documentation/evidence scope. The only root markdown files are `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
+- 2026-05-15 root text scan after the cleanup saw `3` root `.md`, `0` root `.log`, `0` root `.json`, and `0` root `.txt` files in the documentation/evidence scope. The 2026-05-17 scan supersedes that count and records one root drift file: `COMPUTE_AUDIT_BRIEF.md`.
 - Former non-anchor root markdown files were moved: `BROKEN_PREFABS.md` to `Docs/Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md`, and root `PROJECT_ATLAS.md` / `TERRAIN_AND_BIOME_REALITY_MAP.md` to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`.
 - `Docs/PROJECT_ATLAS.md` is a static first-party asmdef graph snapshot only. It is not package/config/runtime authority.
 - Former root raw logs, JSON, XML, PNG, zip, and `clean_project.py` were moved to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Evidence_2026-05-15/`.
@@ -63,6 +65,8 @@ Only the smallest active anchors:
 - `BUILD_PLAYTEST_ISSUES.md`
 
 If a document is not one of those, it should have a strong reason to remain in root.
+
+Current exception / drift: `COMPUTE_AUDIT_BRIEF.md` is present in root as of 2026-05-17. It is a compute report surface, not a governance anchor. Do not cite it as root authority; route readers to the matching `Docs/Reports/2026-05-15_COMPUTE_AUDIT/` or `Docs/Reports/2026-05-16_COMPUTE_AUDIT/` bundle until the compute owner moves or reconciles it.
 
 ## What Belongs In Docs
 

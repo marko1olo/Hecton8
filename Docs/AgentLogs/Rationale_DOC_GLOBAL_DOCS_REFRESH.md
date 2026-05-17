@@ -1,0 +1,49 @@
+# Rationale_DOC_GLOBAL_DOCS_REFRESH
+
+Problem: The user requested a full documentation actuality pass across a large repository while other agents are concurrently editing docs and code.
+
+Solution: Treat stable authority documents as the editable current brain, dated reports and archives as historical evidence, and asset-local README files as code-adjacent references. Inventory first, then patch only evidence-backed current docs and write a separate currency report.
+
+Rejected Alternatives: Rewriting every historical report was rejected because it destroys evidence. Blind global find/replace was rejected because stale reports intentionally preserve past state. Staging unrelated concurrent changes was rejected because multiple agents are active.
+
+Scalability potential: Low keeps doc lookup cheap by preserving stable authority indexes. Middle keeps historical evidence searchable without making it current policy. High/Ultra can consume generated indexes and reports without losing provenance.
+
+Hardware Impact: Runtime impact is 0 us/frame. Documentation hygiene only.
+
+Evidence Class: STATIC_DOC / STATIC_SOURCE / GIT_CLI. Runtime verification remains PENDING VERIFICATION.
+
+## Decision 1: Stable Authority First
+
+Problem: "All documentation" includes active docs, dated reports, archive evidence, third-party docs, and asset-local README files with different authority levels.
+
+Solution: Update stable authority/index docs and create a current currency report; classify archives, deprecated bundles, third-party notices, and dated reports instead of overwriting their historical content.
+
+Rejected Alternatives: Editing archive evidence was rejected because it falsifies past records. Ignoring non-Docs README files was rejected because code-adjacent docs can mislead implementation work.
+
+Scalability potential: Low/Middle readers get current entry points. High/Ultra forensic review keeps historical deltas intact.
+
+Hardware Impact: Runtime 0 us/frame.
+
+## Decision 2: Header Normalization Scope
+
+Problem: Active stable docs had missing `Date:` and/or `Status:` metadata, but dated reports and archives are historical evidence.
+
+Solution: Normalize only tracked, clean, stable active `Docs` files outside reports, archives, deprecated folders, active AgentLogs/Tasks, and dated forensic bundles. Leave reports and archives intact and classify their status in the new currency report.
+
+Rejected Alternatives: Bulk-editing every old report was rejected because it mutates evidence snapshots. Touching dirty/untracked concurrent files was rejected because other agents own those edits.
+
+Scalability potential: Low/Middle agents can trust active stable docs as current entry points. High/Ultra review can still inspect historical reports without metadata churn.
+
+Hardware Impact: Runtime 0 us/frame.
+
+## Decision 3: Root Drift Classification
+
+Problem: May 15 governance says root has three markdown anchors, but current filesystem scan sees `COMPUTE_AUDIT_BRIEF.md` in root.
+
+Solution: Document `COMPUTE_AUDIT_BRIEF.md` as root drift in governance/reference/report files without moving it, because it was already modified by a concurrent worker.
+
+Rejected Alternatives: Moving or staging the dirty compute file was rejected as cross-agent ownership collision. Treating it as a fourth root authority anchor was rejected because root authority remains intentionally narrow.
+
+Scalability potential: Stable root governance remains simple while compute evidence remains findable through report bundles.
+
+Hardware Impact: Runtime 0 us/frame.

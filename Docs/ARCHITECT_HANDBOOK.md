@@ -1,4 +1,6 @@
-﻿# ARCHITECT HANDBOOK
+# ARCHITECT HANDBOOK
+Date: 2026-05-17
+Status: PENDING VERIFICATION
 
 Generated from Core/Contracts. Edit constants in C# contracts, then regenerate this file.
 

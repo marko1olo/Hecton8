@@ -1,11 +1,17 @@
 # Reports
 
-Date: 2026-05-15
+Date: 2026-05-17
 Status: PENDING VERIFICATION (DOC_AUDIT R29-R45 STATIC/CLI EVIDENCE + DOC_HONEST_ANALYSIS ROOT CLEANUP / RUNTIME PROOF ABSENT)
 
 Purpose: canonical drop zone for reports, audits, counters, and validation writeups.
 
 Dated reports are evidence snapshots. Durable project policy belongs in `AGENTS.md`, `.agents-skills/README.md`, task-relevant `.agents-skills/*`, and stable docs such as `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`.
+
+## 2026-05-17 Documentation Global Refresh
+
+`2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md` is the latest broad documentation currency report. It reruns static doc/source/package/root counts, records the current root drift file `COMPUTE_AUDIT_BRIEF.md`, normalizes tracked stable active `Docs` headers to `144 / 144` with `Date:` and `Status:`, and classifies dated reports/archives/deprecated folders as evidence rather than rewriting them.
+
+It is not Unity import, Unity Console, Play Mode, profiler, GCMonitor, player-build, scene-wiring, save/load, frame-time, memory, or visual proof.
 
 ## 2026-05-13 Evidence Override
 
@@ -67,6 +73,7 @@ DOC_AUDIT R39/R40/R41/R42/R43/R45 adds a generated-project/asmdef drift boundary
 
 ## Current Evidence Snapshots
 
+- `2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md`
 - `2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`
 - `2026-05-15_COMPUTE_AUDIT/README.md`
 - `2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md`

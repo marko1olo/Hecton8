@@ -1,5 +1,6 @@
 # Snell Refraction LUT Shader Mapping
 
+Date: 2026-05-17
 Status: `PENDING UNITY VERIFICATION`
 Owner: `SNELL_LENS_REFRACTION_LUT`
 Payload: `Data/Visuals/Refraction_LUT_RGBA16F.bin`

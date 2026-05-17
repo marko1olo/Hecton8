@@ -1,5 +1,6 @@
 # HECTON-8 Mod API Runtime Verification Playbook
 
+Date: 2026-05-17
 Status: RUNTIME PLAYBOOK / NOT EXECUTED IN THIS PASS  
 Owner prompt: MODDING_API_SCHEMA_BUILDER  
 Companion files:

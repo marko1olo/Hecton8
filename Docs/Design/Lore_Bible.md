@@ -1,5 +1,6 @@
 # Lore Bible Redirect
 
+Date: 2026-05-17
 Status: MOVED
 Canonical source: `Docs/Lore/Lore_Bible.md`
 

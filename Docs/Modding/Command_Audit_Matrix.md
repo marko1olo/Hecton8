@@ -1,5 +1,6 @@
 # HECTON-8 Mod Command Audit Matrix
 
+Date: 2026-05-17
 Status: STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION  
 Owner prompt: MODDING_API_SCHEMA_BUILDER  
 Source file: `Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs`  
