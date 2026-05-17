@@ -59,3 +59,13 @@ What was done: Moved the compute brief to `Docs/Reports/2026-05-16_COMPUTE_AUDIT
 Cinematic Cheats used: Not applicable. Static documentation integration only.
 
 Exact Microseconds saved: 0 us runtime claimed.
+
+## 2026-05-17 R3 Git Push Closeout
+
+What was wrong: The R3 integration needed remote proof while non-documentation source/shader files remained dirty.
+
+What was done: Committed the documentation integration as `44d19c38d docs: integrate documentation R3`, pushed it to `origin/main`, fetched remote state, and verified `origin/main...HEAD = 0 0`. The remaining dirty files are only `Assets/_Project` source/shader changes and are outside this documentation pass.
+
+Cinematic Cheats used: Not applicable. Git evidence only.
+
+Exact Microseconds saved: 0 us runtime claimed.

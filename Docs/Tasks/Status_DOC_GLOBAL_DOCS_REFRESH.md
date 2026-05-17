@@ -2,7 +2,7 @@
 
 Agent: DOC_GLOBAL_DOCS_REFRESH
 Domain: Echelon 9.83 Chronicler / Project Documentation Currency
-Status: COMPLETE / STATIC DOC AUDIT R3 / INTEGRATION READY
+Status: COMPLETE / STATIC DOC AUDIT R3 / PUSHED
 Task Count: 17
 Evidence class: STATIC_DOC / STATIC_SOURCE / GIT_CLI
 
@@ -56,3 +56,8 @@ The R2 ledger is a static documentation reconciliation artifact. It does not cla
 
 ## R3 Evidence Boundary
 R3 is STATIC_DOC / FILESYSTEM / GIT_CLI evidence only. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual route proof exists for this pass.
+
+## R3 Git Evidence
+- Integration commit: `44d19c38d docs: integrate documentation R3`.
+- Push verification: `git push origin main` succeeded, followed by `git fetch origin main` and `git rev-list --left-right --count origin/main...HEAD` = `0 0`.
+- Post-R3 worktree status: only source/shader files under `Assets/_Project` remain dirty; no unstaged documentation files remain.
