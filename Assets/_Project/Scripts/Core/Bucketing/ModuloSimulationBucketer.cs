@@ -68,7 +68,14 @@ namespace Hecton8.Core.Bucketing
         private bool _nonFiniteCostObserved;
         private bool _pendingBlackBoxDump;
 
-        public bool IsInitialized => ResolveEntityBuckets().IsCreated;
+        public bool IsInitialized
+        {
+            get
+            {
+                NativeArray<int> entityBuckets = ResolveEntityBuckets();
+                return _entityCapacity > 0 && entityBuckets.IsCreated && entityBuckets.Length >= _entityCapacity;
+            }
+        }
 
         public NativeArray<int>.ReadOnly EntityBuckets
         {
@@ -395,14 +402,34 @@ namespace Hecton8.Core.Bucketing
 
         private bool HasRequiredVaultBuffers()
         {
-            return ResolveEntityBuckets().IsCreated &&
-                   ResolveEntityBucketsWork().IsCreated &&
-                   ResolveEntityCostEwma().IsCreated &&
-                   ResolveBucketLoadEwma().IsCreated &&
-                   ResolveRebalanceBucketLoads().IsCreated &&
-                   ResolveRebalanceResult().IsCreated &&
-                   ResolveFrameStateBuffer().IsCreated &&
-                   ResolveBlackBoxBuffer().IsCreated;
+            if (_entityCapacity <= 0)
+                return false;
+
+            NativeArray<int> entityBuckets = ResolveEntityBuckets();
+            NativeArray<int> work = ResolveEntityBucketsWork();
+            NativeArray<float> costs = ResolveEntityCostEwma();
+            NativeArray<float> bucketLoads = ResolveBucketLoadEwma();
+            NativeArray<float> rebalanceLoads = ResolveRebalanceBucketLoads();
+            NativeArray<SimulationBucketRebalanceResult> result = ResolveRebalanceResult();
+            NativeArray<SimulationBucketFrameState> frameState = ResolveFrameStateBuffer();
+            NativeArray<SimulationBucketBlackBoxEntry> blackBox = ResolveBlackBoxBuffer();
+
+            return entityBuckets.IsCreated &&
+                   entityBuckets.Length >= _entityCapacity &&
+                   work.IsCreated &&
+                   work.Length >= _entityCapacity &&
+                   costs.IsCreated &&
+                   costs.Length >= _entityCapacity &&
+                   bucketLoads.IsCreated &&
+                   bucketLoads.Length >= SimulationBucketConstants.LowSlowBucketCount &&
+                   rebalanceLoads.IsCreated &&
+                   rebalanceLoads.Length >= SimulationBucketConstants.LowSlowBucketCount &&
+                   result.IsCreated &&
+                   result.Length >= RebalanceResultLength &&
+                   frameState.IsCreated &&
+                   frameState.Length >= FrameStateLength &&
+                   blackBox.IsCreated &&
+                   blackBox.Length >= BlackBoxFrameCount;
         }
 
         private NativeArray<int> ResolveEntityBuckets()
@@ -522,8 +549,17 @@ namespace Hecton8.Core.Bucketing
             NativeArray<int> work = ResolveEntityBucketsWork();
             NativeArray<float> bucketLoads = ResolveRebalanceBucketLoads();
             NativeArray<SimulationBucketRebalanceResult> result = ResolveRebalanceResult();
-            if (!costs.IsCreated || !work.IsCreated || !bucketLoads.IsCreated || !result.IsCreated)
+            if (!costs.IsCreated ||
+                costs.Length <= 0 ||
+                !work.IsCreated ||
+                work.Length <= 0 ||
+                !bucketLoads.IsCreated ||
+                bucketLoads.Length <= 0 ||
+                !result.IsCreated ||
+                result.Length < RebalanceResultLength)
+            {
                 return;
+            }
 
             _rebalanceCountdown = SimulationBucketConstants.RebalanceCadenceFrames;
             LoadBalancingJob job = new LoadBalancingJob
@@ -810,7 +846,7 @@ namespace Hecton8.Core.Bucketing
 
         private static byte ResolveActiveSlowBucketCount(bool lowTier, float unscaledDeltaTime, int criticalDebtFrames, bool aupBarrierActive)
         {
-            if (lowTier || aupBarrierActive || criticalDebtFrames > 0 || !math.isfinite(unscaledDeltaTime))
+            if (lowTier || aupBarrierActive || criticalDebtFrames > 0 || !math.isfinite(unscaledDeltaTime) || unscaledDeltaTime <= 0f)
                 return SimulationBucketConstants.MinimumActiveSlowBucketCount;
 
             return SimulationBucketConstants.HighTierActiveSlowBucketCount;

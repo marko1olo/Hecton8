@@ -69,7 +69,7 @@ namespace Hecton8.Core
             _criticalQualityApplied = criticalBattery;
         }
 
-        internal static void SampleAndApply(IHardwareThermalService hardware)
+        public static void SampleAndApply(IHardwareThermalService hardware)
         {
             if (hardware != null)
                 _hardwareThermalService = hardware;

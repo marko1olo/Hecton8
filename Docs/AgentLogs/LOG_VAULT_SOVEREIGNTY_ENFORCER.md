@@ -599,3 +599,41 @@ Verification:
 - `python -m unittest Tools.test_data_vault_sovereignty_audit` passes 6 tests.
 - `rg -n "new NativeArray<|private NativeArray<|public NativeArray<|protected NativeArray<|internal NativeArray<|NativeArray<ushort> Quantities|NativeArray<ushort> Capacities|NativeArray<uint> ItemHashes|NativeArray<uint> OreHashes" Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs Assets/_Project/Scripts/Gameplay/Mining/Contracts/DeployableSdfDrillContracts.cs` returns no matches.
 - `git diff --check -- Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs Assets/_Project/Scripts/Gameplay/Mining/Contracts/DeployableSdfDrillContracts.cs Assets/_Project/Scripts/Core/Memory/H8Memory.cs Docs/AgentLogs/DataVaultSovereigntyAudit_VAULT_SOVEREIGNTY_ENFORCER.md Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCER.json` exits 0 with only CRLF warnings.
+
+## 2026-05-17 - RTG Decay Vault Lane Eviction
+
+Status: DATAVAULT NO-REGRESSION V2 GATE GREEN; FOCUSED CORE BUILD BLOCKED BY ACTIVE CROSS-DOMAIN COMPILE WALL; ZERO-DEBT SOVEREIGNTY STILL PENDING.
+
+What was wrong:
+- `RadioisotopeThermalGenerator` retained static persistent NativeArray lanes for RTG start times, half-lives, base output, current output, normalized output, flags, and the 300-frame telemetry ring.
+- `RtgDecayJob` declared borrowed SOA buffers as `NativeArray<T>` fields.
+- RTG telemetry was sequential without explicit Pack/Size ABI evidence.
+- RTG blackbox dumps still used the previous domain-specific dump filename.
+
+What was done:
+- Added `SystemID.Power`.
+- Added `BufferID.RtgStartTimes`, `RtgHalfLives`, `RtgBaseOutput`, `RtgCurrentOutput`, `RtgOutputNormalized`, `RtgFlags`, and `RtgTelemetryRing`.
+- Replaced static RTG NativeArrays with `VaultBufferHandle<T>` fields and borrowed vault views.
+- Removed direct `new NativeArray<T>`, sentinel registration, raw unregister, and raw disposal from the RTG runtime.
+- Converted `RtgDecayJob` fields to `NativeSlice<T>`.
+- Packed `RtgTelemetryEntry` as Pack=1/Size=23.
+- Redirected RTG blackbox output to a `VAULT_SOVEREIGNTY_ENFORCER` dump path.
+- Refreshed the DataVault sovereignty v2 baseline and report.
+
+Cinematic Cheats used:
+- Low tier keeps the existing 10-second FrostTick cadence and Pade decay approximation.
+- High/Ultra keep the 1-second leader cadence and centralized telemetry room for richer RTG heat/radiation feedback.
+- No new VFX was added in this memory pass; the centralized ownership preserves budget for presentation work.
+
+Exact Microseconds saved:
+- Runtime hot path: 0 us claimed.
+- Cold allocator churn removed: seven persistent RTG NativeArray constructors.
+- Static sovereignty delta: direct constructors are 1091 total / 1085 forbidden; field-like declarations are 2649 total / 2643 forbidden.
+- No dotnet rebuild was rerun because the current focused build wall is already external and documented.
+
+Verification:
+- `python Tools\DataVaultSovereigntyAudit.py --fail-on-regression --no-report` exits 0 with 1091 direct constructors total, 1085 forbidden constructors, 2649 declarations total, and 2643 forbidden declarations.
+- `python Tools\DataVaultSovereigntyAudit.py --write-baseline` exits 0 and refreshes schema v2 report/baseline.
+- `python -m unittest Tools.test_data_vault_sovereignty_audit` passes 6 tests.
+- `rg -n "new NativeArray<|private NativeArray<|public NativeArray<|protected NativeArray<|internal NativeArray<|NativeArray<float> Rtg|NativeArray<byte> Rtg|NativeMemorySentinel|DisposeArray" Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs` returns no matches.
+- `git diff --check -- Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs Assets/_Project/Scripts/Core/Memory/H8Memory.cs Docs/AgentLogs/DataVaultSovereigntyAudit_VAULT_SOVEREIGNTY_ENFORCER.md Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCER.json` exits 0 with only CRLF warnings.

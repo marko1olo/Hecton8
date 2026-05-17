@@ -447,3 +447,38 @@ Solution: Added lane-aware budget clamping. Lane0 critical keeps the -4 ms debt 
 Rejected Alternatives: Keeping one lane-agnostic clamp was rejected because it lets non-critical lanes masquerade as debt-bearing lanes. Forcing all lanes to zero floor was rejected because critical lane borrowing is intentional.
 Scalability potential: Low tier avoids poisoned negative background lanes. High/Ultra preserve critical debt semantics without letting visual-overkill lanes borrow budget.
 Hardware Impact: Measured microseconds saved: 0 us. This is control correctness and telemetry hygiene.
+
+## Decision: Bucketer Vault Capacity Proof
+Problem: `ModuloSimulationBucketer` initialization proved DataVault buffers were created, but not that they had the required lengths for entity front/work/cost tables, load tables, result, frame state, and the 300-frame black-box ring. `IsInitialized` also returned true from front-buffer existence alone.
+Solution: `HasRequiredVaultBuffers` now resolves each vault view once and checks the concrete capacity requirement. `IsInitialized` now rejects zero capacity and undersized front-bucket storage.
+Rejected Alternatives: Treating `NativeArray.IsCreated` as capacity proof was rejected because DataVault storage can be relocated, resized, or invalidated under concurrent system pressure. Adding private fallback arrays was rejected by the data-sovereignty rule.
+Scalability potential: Low tier fails closed into static/no-work behavior if vault storage is invalid; High/Ultra keep dynamic rebalance only when the full SOA surface is actually present.
+Hardware Impact: Measured microseconds saved: 0 us. This is ARM64/Quest bounds survival and cold initialization correctness, not a benchmarked speed pass.
+
+## Decision: Bucketer Rebalance Storage Gate
+Problem: After initialization, runtime vault storage could still be invalidated or resized. `ScheduleRebalanceIfDue` checked creation but could schedule a rebalance with zero-length cost/work/load storage or without a writable result slot.
+Solution: Dynamic rebalance scheduling now requires positive cost, work, and rebalance-load spans plus `SimulationBucketRebalanceResult[0]` before creating the job.
+Rejected Alternatives: Letting the Burst job discover zero storage was rejected because a result-less rebalance silently leaves stale pacing telemetry. Allocating fallback result storage was rejected by the DataVault ownership rule.
+Scalability potential: Low tier is unchanged and static. High/Ultra skip one unsafe rebalance cadence when storage is invalid, then resume visual-overkill budget signaling once vault storage is valid again.
+Hardware Impact: Measured microseconds saved: 0 us. This is crash/telemetry correctness, not a speed claim.
+
+## Decision: Job Admission Cost Telemetry Nonnegative Clamp
+Problem: Lane budgets intentionally allow negative debt only for lane0 critical, but admission fault paths reused the same generic millisecond clamp for estimated-cost telemetry. A corrupted negative input could be recorded as negative "cost" in black-box and sink payloads.
+Solution: Split cost telemetry from lane-budget telemetry. Estimated cost, denied cost, non-finite value snapshots, and cost-state telemetry now clamp to finite 0..1000 ms; remaining-budget telemetry still uses lane-aware debt semantics.
+Rejected Alternatives: Keeping one clamp for every millisecond field was rejected because cost and budget have different invariants. Clamping all budgets to nonnegative was rejected because critical-lane debt is a deliberate control mechanism.
+Scalability potential: Toaster mode avoids corrupted negative costs feeding diagnostics or denial policy. High/Ultra preserve critical debt while preventing visual-overkill lanes from hiding invalid cost data.
+Hardware Impact: Measured microseconds saved: 0 us. This is telemetry/control correctness only.
+
+## Decision: Zero Delta Slow-Bucket Fallback
+Problem: `ResolveActiveSlowBucketCount` treated finite zero or negative unscaled delta as eligible for high-tier active slow-bucket widening.
+Solution: Zero and negative delta now force `MinimumActiveSlowBucketCount`, matching low-tier, AUP barrier, critical debt, and non-finite delta fallback.
+Rejected Alternatives: Allowing high-tier widening during paused/corrupt time input was rejected because scheduler widening should only spend cycles on valid forward time.
+Scalability potential: Low/Middle/High/Ultra all collapse to the cheapest slow-bucket footprint when time input is invalid or paused; valid high-tier frames still expose visual-overkill budget normally.
+Hardware Impact: Measured microseconds saved: 0 us. Control correctness only.
+
+## Decision: No Rebuild Capacity/Telemetry Pass
+Problem: The user explicitly directed not to run `dotnet rebuild` every time, and this pass touched private guard logic with an existing isolated green build baseline.
+Solution: Verified with `git diff --check`, forbidden-pattern scans, struct/math scans, and manual diff review. No `dotnet build` or rebuild was run.
+Rejected Alternatives: Running another full compile for private capacity/telemetry guards was rejected because it would add machine pressure while other agents are active and no compile-risk API shape changed.
+Scalability potential: Validation-only; runtime tier behavior changes only by safer invalid-state fallback.
+Hardware Impact: Runtime microseconds measured: 0 us. Developer-machine rebuild time saved is not a runtime performance claim.

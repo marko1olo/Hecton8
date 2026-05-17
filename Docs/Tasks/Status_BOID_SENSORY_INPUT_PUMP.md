@@ -3,7 +3,7 @@
 Prompt ID: BOID_SENSORY_INPUT_PUMP  
 Domain: AI/COMPUTE  
 Assigned surface: Assets/_Project/Scripts/AI/Boids/  
-Actual implementation surface: Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs, Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute, Assets/_Project/Scripts/BoidFishInstanced.shader
+Actual implementation surface: Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs, Assets/_Project/Scripts/HectonBoidController.cs, Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute, Assets/_Project/Scripts/BoidFishInstanced.shader
 
 ## Task Checklist
 
@@ -24,7 +24,7 @@ Actual implementation surface: Assets/_Project/Scripts/World/SargassumMicroFauna
 - [x] 15. Homeostasis N/A. DOD: no homeostasis loop is part of the sensory buffer directive. Rejected alternative: adding unrelated behavior state. Estimate: 0 us/frame.
 - [x] 16. Ping decay threats reduce w by `dt*decay`. DOD: slots 2-4 decay by `simulationDt * SensoryAcousticPingDecayMetersPerSecond`, read newest capped acoustic pings, clear below 0.1, use an unsigned ring cursor so long sessions cannot wrap into a negative slot, and secondary movement/acoustic panic consumers now read the newest capped SignalBus windows too. Rejected alternative: timestamped managed ping list or oldest-window signal sampling under burst pressure. Estimate: 0 GC, ~1 us/frame.
 - [x] 17. Thread sync upload completes before `VISUAL_SYNC` compute dispatch. DOD: `GraphicsBufferUploadUtility.UploadNativeArray` is called inside `BindSimulationUniforms` before `CSMain` dispatch buffers are rebound and dispatched; sensory threat upload now writes to a frame-parity ping-pong GraphicsBuffer, rebinds the read buffer before dispatch, and skips unchanged parity-buffer uploads by 16-slot hash. Rejected alternative: single sensory upload buffer or blind per-dispatch upload of unchanged 256 B payloads. Estimate: avoids driver-side lock contention; +256 B VRAM for the second 16-slot buffer; unchanged frames save one buffer lock/memcpy.
-- [x] 18. `dotnet build`. DOD: latest post-change compile probe `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish18.txt` succeeded with 0 warnings and 0 errors after the shader count-bound/finite-frame pass. Rejected alternative: claiming the earlier Polish17 zero-byte build probes as validation. Estimate: 0 us/frame; build-only proof.
+- [x] 18. `dotnet build`. DOD: last green compile probe remains `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish18.txt` with 0 warnings and 0 errors after the shader count-bound/finite-frame pass; current post-debt probe `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish22.txt` timed out with an empty log and no green compile is claimed for the latest edits. Rejected alternative: claiming the timed-out Polish22 probe as validation or running rebuild loops after the operator forbade them. Estimate: 0 us/frame; build-only proof/pending validation.
 
 ## Loop Log
 
@@ -284,3 +284,17 @@ Hardening evidence:
 - Static debt scan found no `void Update`, `string.Format`, `GlobalSignals.Publish`, `EventBus`, `new NativeArray`, `Allocator.Persistent`, `Allocator.Temp`, `NativeQueue`, `SetData`, `GetData`, or `Transform.position` in the boid/shader surface.
 - `git diff --check` on touched code files produced no whitespace errors; only repository LF-to-CRLF warnings.
 - Compile check was not rerun because the latest operator instruction was: `do not run dotnet rebuild every time`.
+
+### Loop 21: Adjacent Boid Debt Polish
+
+STATUS: PENDING COMPILE, STATIC CLEAN.
+
+Hardening evidence:
+
+- Re-read `Status_BOID_SENSORY_INPUT_PUMP.md`, `Rationale_BOID_SENSORY_INPUT_PUMP.md`, the original XML assignment, `AGENTS.md`, `Docs/Actual Domains of Project.txt`, and the relevant boid/GPU/zero-GC/signal mandates before editing.
+- Removed stale managed `BoidData[]` upload owners from `SargassumMicroFaunaBoids`; spawn and single-boid GPU patch paths already resolve vault state or mapped GPU write views.
+- In the clean adjacent legacy `HectonBoidController`, static verification confirms the target path resolves player runtime pose/AUP data and has no `_playerTransform.position` read.
+- The legacy boid spawn GPU upload helper now preserves the original minimum-speed fallback while keeping direct mapped GPU writes.
+- Static debt scan found no `_spawnData`, `_singleBoidUpload`, `new BoidData[]`, boid-buffer `UploadArray`, indirect-args `UploadArray`, `_playerTransform.position`, `Transform.position`, `void Update()`, `string.Format`, `GlobalSignals.Publish`, or `EventBus` matches in the touched boid surfaces.
+- `git diff --check` on touched boid files produced no whitespace errors; only repository line-ending warnings.
+- Compile probe `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish22.txt` timed out after 124 seconds with an empty log; the orphaned `dotnet` process was still running after an additional 180 seconds and was stopped. No green compile is claimed for this latest polish pass.

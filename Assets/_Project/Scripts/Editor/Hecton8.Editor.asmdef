@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Editor",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Contracts",
         "Hecton8.Plugins",
         "Hecton8.Dev.SpaceEngine098",
         "UnityEngine.TestRunner",

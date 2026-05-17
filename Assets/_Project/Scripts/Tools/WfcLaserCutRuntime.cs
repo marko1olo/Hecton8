@@ -83,13 +83,13 @@ namespace Hecton8.Tools
                 return false;
 
             uint frame = unchecked((uint)Time.frameCount);
-            float safePower = math.saturate(cutterPower01);
-            float safeHeat = math.saturate(heat01);
-            float safeDelta = math.max(0f, progressDelta01);
+            float safePower = Clamp01Finite(cutterPower01);
+            float safeHeat = Clamp01Finite(heat01);
+            float safeDelta = ClampFiniteNonNegative(progressDelta01);
             bool alreadyUnlocked = (currentFlags & (byte)WfcOutpostCellStateFlags.DoorUnlocked) != 0;
             int progressIndex = cellIndex;
-            float previousProgress = alreadyUnlocked ? 1f : math.saturate(cutProgress01[progressIndex]);
-            progress01 = alreadyUnlocked ? 1f : math.saturate(previousProgress + safeDelta);
+            float previousProgress = alreadyUnlocked ? 1f : Clamp01Finite(cutProgress01[progressIndex]);
+            progress01 = alreadyUnlocked ? 1f : Clamp01Finite(previousProgress + safeDelta);
             cutProgress01[progressIndex] = progress01;
             completed = progress01 >= 1f;
 
@@ -268,24 +268,29 @@ namespace Hecton8.Tools
             for (int i = 0; i < signals.Length; i++)
             {
                 SystemHealthIndexSignal signal = signals[i];
-                float pressure = math.saturate(signal.Pressure01);
-                float healthStress = 1f - math.saturate(signal.Health01);
+                float pressure = Clamp01Finite(signal.Pressure01);
+                float healthStress = 1f - Clamp01Finite(signal.Health01);
                 float stateStress = signal.State == SystemHealthIndexSignal.StateCritical ? 1f :
                     signal.State == SystemHealthIndexSignal.StateWarning ? 0.72f : 0f;
                 stress01 = math.max(stress01, math.max(pressure, math.max(healthStress, stateStress)));
             }
 
-            _latestSystemStress01 = math.saturate(stress01);
-            return math.saturate(_latestSystemStress01);
+            _latestSystemStress01 = Clamp01Finite(stress01);
+            return Clamp01Finite(_latestSystemStress01);
         }
 
         private static void PublishShaderClipGlobals(Vector3 runtimeHitPoint, float progress01, float heat01, float systemStress01)
         {
-            float radius = math.lerp(BaseClipRadiusMeters, MaxClipRadiusMeters, math.saturate(progress01));
+            if (!IsFinite(runtimeHitPoint))
+                return;
+
+            float safeProgress01 = Clamp01Finite(progress01);
+            float safeHeat01 = Clamp01Finite(heat01);
+            float radius = math.lerp(BaseClipRadiusMeters, MaxClipRadiusMeters, safeProgress01);
             Shader.SetGlobalVector(_CutSphereWsId, new Vector4(runtimeHitPoint.x, runtimeHitPoint.y, runtimeHitPoint.z, radius));
-            Shader.SetGlobalFloat(_CutProgressId, math.saturate(progress01));
-            Shader.SetGlobalFloat(_CutHeatId, math.saturate(heat01));
-            Shader.SetGlobalFloat(_CutMoltenId, math.saturate(heat01 * (0.35f + progress01)));
+            Shader.SetGlobalFloat(_CutProgressId, safeProgress01);
+            Shader.SetGlobalFloat(_CutHeatId, safeHeat01);
+            Shader.SetGlobalFloat(_CutMoltenId, Clamp01Finite(safeHeat01 * (0.35f + safeProgress01)));
             Shader.SetGlobalFloat(_CutOverkillId, ResolveVisualOverkill01(systemStress01));
         }
 
@@ -316,9 +321,16 @@ namespace Hecton8.Tools
             float systemStress01,
             uint frame)
         {
+            if (!IsFinite(hitAup))
+                return;
+
             uint targetHash = ComposeDoorTargetHash(sectorHash, cellIndex);
-            float stressScale = systemStress01 > StressSparkDropThreshold ? StressSparkScale : 1f;
-            float sparkIntensity = math.saturate((0.28f + cutterPower01 * 0.72f) * stressScale);
+            float safeProgress01 = Clamp01Finite(progress01);
+            float safePower01 = Clamp01Finite(cutterPower01);
+            float safeHeat01 = Clamp01Finite(heat01);
+            float safeStress01 = Clamp01Finite(systemStress01);
+            float stressScale = safeStress01 > StressSparkDropThreshold ? StressSparkScale : 1f;
+            float sparkIntensity = Clamp01Finite((0.28f + safePower01 * 0.72f) * stressScale);
             ushort sparkQuantity = (ushort)math.clamp((int)math.round(6f * stressScale), 1, 16);
 
             DebrisSpawnSignal debris = new DebrisSpawnSignal
@@ -331,32 +343,32 @@ namespace Hecton8.Tools
                 Flags = DebrisSpawnSignal.FlagToolSparks,
                 Quantity = sparkQuantity
             };
-            GlobalSignals.Publish(in debris);
+            SignalBus<DebrisSpawnSignal>.Push(in debris);
 
             ToolAcousticSignal acoustic = new ToolAcousticSignal
             {
                 ToolHash = toolHash != 0u ? toolHash : SourceHash,
                 TargetHash = targetHash,
-                Progress01 = math.saturate(progress01),
-                PitchScale = math.lerp(0.92f, 1.32f, heat01),
-                Intensity01 = math.saturate(cutterPower01),
+                Progress01 = safeProgress01,
+                PitchScale = math.lerp(0.92f, 1.32f, safeHeat01),
+                Intensity01 = safePower01,
                 Frame = frame,
                 State = ToolAcousticSignal.StateLaserLoop,
                 Flags = ToolAcousticSignal.FlagLooping
             };
-            GlobalSignals.Publish(in acoustic);
+            SignalBus<ToolAcousticSignal>.Push(in acoustic);
 
             HapticRequest haptic = new HapticRequest
             {
-                Intensity01 = math.saturate(cutterPower01 * (0.35f + heat01 * 0.65f)),
+                Intensity01 = Clamp01Finite(safePower01 * (0.35f + safeHeat01 * 0.65f)),
                 DurationSeconds = HapticPulseSeconds,
-                Frequency01 = math.saturate(0.62f + heat01 * 0.38f),
+                Frequency01 = Clamp01Finite(0.62f + safeHeat01 * 0.38f),
                 SourceHash = toolHash != 0u ? toolHash : SourceHash,
                 Frame = frame,
                 Channel = HapticRequest.ChannelMicroVibration,
                 Flags = HapticRequest.FlagMicroVibration
             };
-            GlobalSignals.Publish(in haptic);
+            SignalBus<HapticRequest>.Push(in haptic);
         }
 
         private static uint ComposeDoorTargetHash(ulong sectorHash, ushort cellIndex)
@@ -403,11 +415,11 @@ namespace Hecton8.Tools
                 SectorHash = sectorHash,
                 Frame = frame,
                 ToolHash = toolHash,
-                Progress01 = math.saturate(progress01),
-                ProgressDelta01 = math.max(0f, progressDelta01),
-                CutterPower01 = math.saturate(cutterPower01),
-                Heat01 = math.saturate(heat01),
-                SystemStress01 = math.saturate(systemStress01),
+                Progress01 = Clamp01Finite(progress01),
+                ProgressDelta01 = ClampFiniteNonNegative(progressDelta01),
+                CutterPower01 = Clamp01Finite(cutterPower01),
+                Heat01 = Clamp01Finite(heat01),
+                SystemStress01 = Clamp01Finite(systemStress01),
                 DoorsCutCount = _doorsCutCount,
                 CellIndex = cellIndex,
                 Flags = flags
@@ -426,6 +438,16 @@ namespace Hecton8.Tools
         private static bool IsFinite(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static float Clamp01Finite(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float ClampFiniteNonNegative(float value)
+        {
+            return math.isfinite(value) && value > 0f ? value : 0f;
         }
 
         private static void DumpBlackBox(WfcLaserCutTelemetryEntry* blackBox, int blackBoxLength)
@@ -476,12 +498,8 @@ namespace Hecton8.Tools
             }
             catch (Exception exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 _ = exception;
-                Debug.LogError("[WfcLaserCutRuntime] Failed to dump black-box telemetry.");
-#else
-                _ = exception;
-#endif
+                GlobalTelemetryBus.PublishUnityLogFault(SourceHash, 0u, 1u);
             }
         }
     }

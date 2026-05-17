@@ -32,6 +32,7 @@ namespace Hecton8.Core.Memory
         GameplayPlayer = 69,
         GameplayTools = 70,
         Construction = 71,
+        Power = 72,
         WorldStreaming = 128,
         TerrainSeams = 129,
         WorldSargassum = 130,
@@ -603,7 +604,14 @@ namespace Hecton8.Core.Memory
         DeployableSdfDrillInventoryOreHashes = 539,
         DeployableSdfDrillBlackBox = 540,
         DeployableSdfDrillSnapCommands = 541,
-        DeployableSdfDrillSnapHits = 542
+        DeployableSdfDrillSnapHits = 542,
+        RtgStartTimes = 543,
+        RtgHalfLives = 544,
+        RtgBaseOutput = 545,
+        RtgCurrentOutput = 546,
+        RtgOutputNormalized = 547,
+        RtgFlags = 548,
+        RtgTelemetryRing = 549
     }
 
     [Flags]
@@ -1090,6 +1098,7 @@ namespace Hecton8.Core.Memory
             if (_ownerJobHandles.TryGetValue(ownerKey, out JobHandle existingHandle))
             {
                 _ownerJobHandles[ownerKey] = JobHandle.CombineDependencies(existingHandle, handle);
+                AddOwnerJobKey(ownerKey);
                 return;
             }
 
@@ -1869,10 +1878,9 @@ namespace Hecton8.Core.Memory
                     pointers.Dispose();
                     return false;
                 }
-
-                AddOwnerPointerKey(ownerKey);
             }
 
+            AddOwnerPointerKey(ownerKey);
             pointers.Add(pointer);
             _ownerPointers[ownerKey] = pointers;
             return true;
@@ -1890,22 +1898,26 @@ namespace Hecton8.Core.Memory
                 return;
             }
 
+            bool removed = false;
             for (int i = pointers.Length - 1; i >= 0; i--)
             {
                 if (pointers[i] != pointer)
                     continue;
 
                 pointers.RemoveAtSwapBack(i);
-                if (pointers.Length == 0)
-                {
-                    RemoveOwnerPointerLane(ownerKey, ref pointers);
-                }
-                else
-                {
-                    _ownerPointers[ownerKey] = pointers;
-                }
+                removed = true;
+            }
 
+            if (!removed)
                 return;
+
+            if (pointers.Length == 0)
+            {
+                RemoveOwnerPointerLane(ownerKey, ref pointers);
+            }
+            else
+            {
+                _ownerPointers[ownerKey] = pointers;
             }
         }
 

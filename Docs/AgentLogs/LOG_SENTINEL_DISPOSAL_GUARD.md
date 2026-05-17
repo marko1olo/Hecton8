@@ -700,7 +700,7 @@ What was wrong:
 What was done:
 - Added `RestoreCoreTickAfterRuntimeStateClear()` and called it after runtime bucket clearing so H8Memory and GlobalDataVault heartbeat recording continues after scene-transition cleanup.
 - Added owner job completion before `ForceFreeRecordAt()` in the sentinel reap path for H8-tracked raw pointers.
-- Kept one compiled player presentation signal ABI in `GlobalSignals.cs` and reduced `Core/Signals/PlayerMovementPresentationSignals.cs` to an empty namespace shell to satisfy project metadata without duplicate structs.
+- Kept one compiled player presentation signal ABI in `Core/Signals/PlayerMovementPresentationSignals.cs`; `GlobalSignals.cs` remains the lane validation/configuration owner.
 
 Cinematic Cheats used:
 - No visual-domain edit was made.
@@ -719,5 +719,72 @@ Verification:
 - `.Complete()` scan found only intentional H8Memory owner teardown/shutdown fences.
 - `git diff --check` on touched files reported line-ending warnings only and no whitespace errors.
 - `dotnet build Hecton8.Core.csproj --no-restore --nologo /clp:ErrorsOnly` completed in 00:00:40.78 with 0 warnings and 0 errors.
+- No `dotnet rebuild` command was run.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-17 - Continuation Inquisition / Typed Lane ABI Restore and Compile Green
+
+What was wrong:
+- Parallel edits removed the compiled player presentation signal ABI while consumers and `GlobalSignals` still referenced those typed lanes.
+- `CameraJuiceSystem` contained a stale fully-qualified reference to `Hecton8.Core.CameraJuiceImpactSignal`, but the single compiled payload lives in `Hecton8.Core.Contracts.Signals`.
+- `HectonBoidController` had duplicate helper bodies after external compile repair.
+- `Temp/obj/Hecton8.Core/project.assets.json` was missing, so no-restore validation initially could not run.
+
+What was done:
+- Restored one packed compiled definition each for `PlayerFootstepSignal`, `PlayerWaterSplashSignal`, `WaterTransitionSignal`, `PlayerExhaleSignal`, `PlayerSprintStateSignal`, `PlayerFatalPressureSignal`, and `PlayerTransportBailoutSignal` in `Core/Signals/PlayerMovementPresentationSignals.cs`.
+- Redirected `CameraJuiceSystem` to `global::Hecton8.Core.Contracts.Signals.CameraJuiceImpactSignal`.
+- Removed duplicate Boid helper bodies and restored one bounded `UploadSpawnSetToBoidBuffers` helper.
+- Ran `dotnet restore Hecton8.Core.csproj --nologo` once only because the assets file was missing; final compile validation used no-restore.
+
+Cinematic Cheats used:
+- No visual-domain edit was made.
+- Toaster mode: typed lanes remain compact, bounded, and zero-GC; no EventBus or managed delegate fallback was introduced.
+- God-mode: the same typed-lane budget remains available for richer player presentation once Sentinel scene-transition memory proof is runtime-verified.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Sentinel hot path remains 0 B/frame by static inspection.
+- Changes are compile/ABI hygiene and external compile bridges; exact CPU microseconds are unmeasured.
+
+Verification:
+- Re-extracted the exact `SENTINEL_DISPOSAL_GUARD` XML from `Docs/Tasks/CURRENT_BATCH.md` by CLI.
+- CORE/MEMORY scan found no `StructLayout` without `Pack = 1`.
+- CORE/MEMORY scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, `Func<>`, coroutine, or LINQ debt.
+- Typed-lane scan found exactly one compiled definition for each restored player presentation signal and one `CameraJuiceImpactSignal`.
+- `git diff --check` reported line-ending warnings only and no whitespace errors.
+- `dotnet build Hecton8.Core.csproj --no-restore --nologo /clp:ErrorsOnly` completed in 00:01:02.39 with 0 warnings and 0 errors.
+- No `dotnet rebuild` command was run.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-17 - Continuation Inquisition / Side-Key Drift Hardening
+
+What was wrong:
+- H8Memory owner pointer/job maps were authoritative for lookup, but their deterministic side-key lists were not repaired when an existing map entry was touched.
+- `RemoveOwnerPointer` removed only the first matching pointer from an owner lane, so duplicate stale pointer metadata could survive a corrupted side list.
+- GlobalDataVault scene-owned eviction depends on `_keys`; macro payload eviction depends on `_macroDatabasePayloadKeys`. Existing map entries could proceed without repairing a missing side key, and key removal only removed the first duplicate.
+- `Temp/obj/Hecton8.Core/project.assets.json` was missing again, so no-restore build initially could not run.
+
+What was done:
+- `RegisterActiveJob` now calls `AddOwnerJobKey` in the existing-handle branch.
+- `RegisterOwnerPointer` now calls `AddOwnerPointerKey` for existing and new owner lanes.
+- `RemoveOwnerPointer` now scrubs every matching pointer from the lane, then disposes/removes the lane if empty.
+- Added bounded `EnsureBufferKeyRegistered` and `EnsureMacroDatabaseKeyRegistered` repairs to GlobalDataVault, and changed key removals to scrub all duplicates.
+- Ran `dotnet restore Hecton8.Core.csproj --nologo` only to regenerate the missing assets file; final validation used no-restore build.
+
+Cinematic Cheats used:
+- No visual-domain edit was made.
+- Toaster mode: no per-frame polling, disk I/O, or managed allocation was added; repairs run on cold registration/eviction paths only.
+- God-mode: deterministic old-scene owner/vault teardown keeps the memory proof intact before high-tier Ocean/VFX memory is spent.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Sentinel hot path remains 0 B/frame by static inspection.
+- Added work is cold bounded side-list scanning; exact CPU microseconds are unmeasured.
+
+Verification:
+- Re-extracted the exact `SENTINEL_DISPOSAL_GUARD` XML from `Docs/Tasks/CURRENT_BATCH.md` by CLI.
+- CORE/MEMORY scan found no `StructLayout` without `Pack = 1`.
+- CORE/MEMORY scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, `Func<>`, coroutine, or LINQ debt.
+- `dotnet build Hecton8.Core.csproj --no-restore --nologo /clp:ErrorsOnly` completed in 00:00:31.10 with 0 warnings and 0 errors.
 - No `dotnet rebuild` command was run.
 - Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.

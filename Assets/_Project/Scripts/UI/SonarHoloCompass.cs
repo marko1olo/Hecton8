@@ -4,9 +4,6 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Visor;
 using Hecton8.World;
-using Unity.Burst;
-using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
@@ -43,79 +40,20 @@ namespace Hecton8.UI
         private static readonly Color DotFrontColor = new Color(0.70f, 0.98f, 0.96f, 0.94f);
         private static readonly Color DotRearColor = new Color(0.62f, 0.78f, 0.82f, 0.34f);
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct AcousticRadarBlipInput
         {
             public float3 ListenerRelativePosition;
             public float Amplitude;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct AcousticRadarBlipOutput
         {
             public float2 AnchoredPosition;
             public float Energy;
             public float DepthBlend;
             public int Visible;
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
-        private struct ProjectImpactBlipsJob : IJobParallelFor
-        {
-            [ReadOnly] public NativeArray<AcousticRadarBlipInput> Inputs;
-            public NativeArray<AcousticRadarBlipOutput> Outputs;
-            public float3 CameraRight;
-            public float3 CameraUp;
-            public float3 CameraForward;
-            public float RingRadius;
-            public float VerticalRadius;
-            public float MaxDistanceMetersSq;
-
-            public void Execute(int index)
-            {
-                AcousticRadarBlipInput input = Inputs[index];
-                float amplitude = math.saturate(input.Amplitude);
-                if (amplitude <= 0f)
-                {
-                    Outputs[index] = default;
-                    return;
-                }
-
-                float3 delta = input.ListenerRelativePosition;
-                float distanceSqr = math.lengthsq(delta);
-                if (distanceSqr <= 0.0001f || distanceSqr > MaxDistanceMetersSq)
-                {
-                    Outputs[index] = default;
-                    return;
-                }
-
-                float distance = ApproximateMagnitude(delta);
-                float inverseDistance = math.rcp(math.max(distance, 0.0001f));
-                float3 direction = delta * inverseDistance;
-                float x = math.clamp(math.dot(CameraRight, direction) * RingRadius, -RingRadius, RingRadius);
-                float y = math.clamp(math.dot(CameraUp, direction) * VerticalRadius, -VerticalRadius, VerticalRadius);
-                float depthBlend = math.dot(CameraForward, direction) >= 0f ? 1f : 0.35f;
-                float distanceFade = 1f - math.saturate(distanceSqr * math.rcp(math.max(0.0001f, MaxDistanceMetersSq)));
-                float energy = amplitude * distanceFade;
-
-                Outputs[index] = new AcousticRadarBlipOutput
-                {
-                    AnchoredPosition = new float2(x, y),
-                    Energy = energy,
-                    DepthBlend = depthBlend,
-                    Visible = energy > MinimumBlipEnergy ? 1 : 0
-                };
-            }
-
-            private static float ApproximateMagnitude(float3 value)
-            {
-                float3 delta = math.abs(value);
-                float maxAxis = math.max(delta.x, math.max(delta.y, delta.z));
-                float minAxis = math.min(delta.x, math.min(delta.y, delta.z));
-                float midAxis = delta.x + delta.y + delta.z - maxAxis - minAxis;
-                return maxAxis + midAxis * 0.375f + minAxis * 0.125f;
-            }
         }
 
         private bool _registeredToTick;
@@ -140,11 +78,10 @@ namespace Hecton8.UI
         // COLD ALLOC: ActiveImpactEmitterSample[16] - impact-emitter copy buffer with cached AUP for acoustic radar projection - owner: SonarHoloCompass
         private readonly SpatialAudioManager.ActiveImpactEmitterSample[] _impactEmitterSamples =
             new SpatialAudioManager.ActiveImpactEmitterSample[MaxDots];
-        // COLD ALLOC: NativeArray<AcousticRadarBlipInput>[16] — persistent Burst input scratch for radar projection — owner: SonarHoloCompass
-        private NativeArray<AcousticRadarBlipInput> _projectionInputs;
-        // COLD ALLOC: NativeArray<AcousticRadarBlipOutput>[16] — persistent Burst output scratch for radar projection — owner: SonarHoloCompass
-        private NativeArray<AcousticRadarBlipOutput> _projectionOutputs;
-        private JobHandle _projectionHandle;
+        // COLD ALLOC: AcousticRadarBlipInput[16] - impact radar input scratch for deterministic projection - owner: SonarHoloCompass
+        private AcousticRadarBlipInput[] _projectionInputs;
+        // COLD ALLOC: AcousticRadarBlipOutput[16] - impact radar output scratch for deterministic projection - owner: SonarHoloCompass
+        private AcousticRadarBlipOutput[] _projectionOutputs;
 
         private void OnEnable()
         {
@@ -267,50 +204,16 @@ namespace Hecton8.UI
 
         private void EnsureProjectionBuffers()
         {
-            if (!_projectionInputs.IsCreated)
-            {
-                _projectionInputs = new NativeArray<AcousticRadarBlipInput>(
-                    MaxDots,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _projectionInputs,
-                    nameof(SonarHoloCompass),
-                    nameof(_projectionInputs),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_projectionOutputs.IsCreated)
-            {
-                _projectionOutputs = new NativeArray<AcousticRadarBlipOutput>(
-                    MaxDots,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _projectionOutputs,
-                    nameof(SonarHoloCompass),
-                    nameof(_projectionOutputs),
-                    NativeAllocationLifetime.Scene);
-            }
+            if (_projectionInputs == null)
+                _projectionInputs = new AcousticRadarBlipInput[MaxDots];
+            if (_projectionOutputs == null)
+                _projectionOutputs = new AcousticRadarBlipOutput[MaxDots];
         }
 
         private void DisposeProjectionBuffers()
         {
-            JobHandle dependency = _projectionScheduled ? _projectionHandle : default;
-            if (_projectionInputs.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_projectionInputs);
-                _projectionInputs.Dispose(dependency);
-            }
-
-            if (_projectionOutputs.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_projectionOutputs);
-                _projectionOutputs.Dispose(dependency);
-            }
-
-            _projectionInputs = default;
-            _projectionOutputs = default;
+            _projectionInputs = null;
+            _projectionOutputs = null;
             _projectionScheduled = false;
             _pendingProjectionCount = 0;
         }
@@ -422,10 +325,12 @@ namespace Hecton8.UI
 
         private void ScheduleProjection(int emitterCount)
         {
-            if (!_projectionInputs.IsCreated || !_projectionOutputs.IsCreated)
+            if (_projectionInputs == null || _projectionOutputs == null)
                 return;
 
             int safeCount = math.clamp(emitterCount, 0, math.min(MaxDots, _impactEmitterSamples.Length));
+            safeCount = math.min(safeCount, _projectionInputs.Length);
+            safeCount = math.min(safeCount, _projectionOutputs.Length);
             Transform viewTransform = _viewCamera.transform;
             Vector3 viewPosition = viewTransform.position;
             Quaternion viewRotation = viewTransform.rotation;
@@ -452,22 +357,64 @@ namespace Hecton8.UI
                 };
             }
 
-            ProjectImpactBlipsJob job = new ProjectImpactBlipsJob
+            for (int i = 0; i < safeCount; i++)
             {
-                Inputs = _projectionInputs,
-                Outputs = _projectionOutputs,
-                CameraRight = viewRight,
-                CameraUp = viewUp,
-                CameraForward = viewForward,
-                RingRadius = RingRadius,
-                VerticalRadius = VerticalRadius,
-                MaxDistanceMetersSq = ImpactRadarMaxDistanceMetersSq
-            };
+                _projectionOutputs[i] = ProjectImpactBlip(
+                    in _projectionInputs[i],
+                    viewRight,
+                    viewUp,
+                    viewForward);
+            }
 
             _pendingProjectionCount = safeCount;
-            _projectionHandle = job.Schedule(safeCount, ProjectionBatchSize);
-            _projectionScheduled = true;
+            _projectionScheduled = false;
+            ApplyProjectedDots(safeCount);
+            _pendingProjectionCount = 0;
             RefreshLateFrameRegistration();
+        }
+
+        private static AcousticRadarBlipOutput ProjectImpactBlip(
+            in AcousticRadarBlipInput input,
+            float3 cameraRight,
+            float3 cameraUp,
+            float3 cameraForward)
+        {
+            float amplitude = math.isfinite(input.Amplitude) ? math.saturate(input.Amplitude) : 0f;
+            if (amplitude <= 0f || !math.all(math.isfinite(input.ListenerRelativePosition)))
+                return default;
+
+            float3 delta = input.ListenerRelativePosition;
+            float distanceSqr = math.lengthsq(delta);
+            if (!math.isfinite(distanceSqr) || distanceSqr <= 0.0001f || distanceSqr > ImpactRadarMaxDistanceMetersSq)
+                return default;
+
+            float distance = ApproximateMagnitude(delta);
+            float inverseDistance = math.rcp(math.max(distance, 0.0001f));
+            float3 direction = delta * inverseDistance;
+            float x = math.clamp(math.dot(cameraRight, direction) * RingRadius, -RingRadius, RingRadius);
+            float y = math.clamp(math.dot(cameraUp, direction) * VerticalRadius, -VerticalRadius, VerticalRadius);
+            float depthBlend = math.dot(cameraForward, direction) >= 0f ? 1f : 0.35f;
+            float distanceFade = 1f - math.saturate(distanceSqr * math.rcp(math.max(0.0001f, ImpactRadarMaxDistanceMetersSq)));
+            float energy = amplitude * distanceFade;
+            if (!math.isfinite(x) || !math.isfinite(y) || !math.isfinite(energy))
+                return default;
+
+            return new AcousticRadarBlipOutput
+            {
+                AnchoredPosition = new float2(x, y),
+                Energy = energy,
+                DepthBlend = depthBlend,
+                Visible = energy > MinimumBlipEnergy ? 1 : 0
+            };
+        }
+
+        private static float ApproximateMagnitude(float3 value)
+        {
+            float3 delta = math.abs(value);
+            float maxAxis = math.max(delta.x, math.max(delta.y, delta.z));
+            float minAxis = math.min(delta.x, math.min(delta.y, delta.z));
+            float midAxis = delta.x + delta.y + delta.z - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
         }
 
         private static bool TryResolveViewAup(Vector3 viewPosition, out AbsoluteUniversePosition viewAup)
@@ -536,9 +483,6 @@ namespace Hecton8.UI
             if (!_projectionScheduled)
                 return true;
 
-            if (!DispatcherJobSwap.TryComplete(ref _projectionHandle, false))
-                return false;
-
             _projectionScheduled = false;
             ApplyProjectedDots(_pendingProjectionCount);
             _pendingProjectionCount = 0;
@@ -554,7 +498,7 @@ namespace Hecton8.UI
                 _lastDotSizes == null ||
                 _lastDotColors == null ||
                 _dotVisibleFlags == null ||
-                !_projectionOutputs.IsCreated)
+                _projectionOutputs == null)
             {
                 return;
             }

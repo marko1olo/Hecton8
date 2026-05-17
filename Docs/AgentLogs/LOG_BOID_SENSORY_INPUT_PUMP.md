@@ -517,3 +517,35 @@ Validation:
 - Static debt scan found no `void Update`, `string.Format`, `GlobalSignals.Publish`, `EventBus`, `new NativeArray`, `Allocator.Persistent`, `Allocator.Temp`, `NativeQueue`, `SetData`, `GetData`, or `Transform.position` in the boid/shader surface.
 - `git diff --check` on touched code files produced no whitespace errors; only repository LF-to-CRLF warnings.
 - Compile was not rerun in this pass because the operator explicitly instructed: `do not run dotnet rebuild every time`.
+
+## 2026-05-17 BOID_SENSORY_INPUT_PUMP Adjacent Boid Debt Polish
+
+What was wrong:
+
+- `SargassumMicroFaunaBoids` still declared stale managed `BoidData[]` fields after the actual spawn-state upload path had moved to the vault-resolved boid state view and mapped GPU writes.
+- Adjacent `HectonBoidController` still had a player target path that could read player `Transform.position`.
+- The legacy mapped spawn upload helper needed the minimum-speed fallback preserved after deterministic scatter writes.
+
+What was done:
+
+- Removed stale `_spawnData` and `_singleBoidUpload` owners and their cold-path allocation lines.
+- Routed `HectonBoidController` target position through `PlayerRuntimeContext` pose/AUP state with finite guards and an AUP fallback from player movement state.
+- Preserved direct mapped writes to `_boidsBufferA`/`_boidsBufferB`, with minimum-speed cardinal fallback when deterministic scatter is too small.
+- Recorded the current validation state honestly: last green compile remains Polish18; Polish22 timed out empty after these edits and no fresh green compile is claimed.
+
+Cinematic Cheats used:
+
+- Low tier keeps the endpoint-sphere flashlight lie and bounded acoustic slots.
+- High/Ultra keep capsule SDF, beam reaction, and instanced boid visual behavior; this pass only removed private ownership and scene-graph polling.
+
+Exact Microseconds saved:
+
+- No profiler number is claimed.
+- Removed `BoidData[boidCount]` plus `BoidData[1]` managed owners; expected steady hot-path gain is 0 us, with lower heap/GC risk.
+- Avoiding player scene-graph position polling is estimated under 1 us/frame; this is not measured.
+
+Validation:
+
+- Static scan found no `_spawnData`, `_singleBoidUpload`, `new BoidData[]`, `UploadArray(_boidsBuffer...)`, `UploadArray(_visibleIndirectArgsBuffer...)`, `_indirectArgsUpload`, `_fallbackFlowFieldData`, `Transform.position`, `_playerTransform.position`, `void Update`, `string.Format`, `GlobalSignals.Publish`, or `EventBus` in the boid/shader surface.
+- `git diff --check` on touched code/docs files produced no whitespace errors; only repository LF-to-CRLF warnings.
+- `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish22.txt` is empty because the focused `dotnet build --no-restore` probe timed out; the orphaned build process from that probe was stopped. No green compile is claimed for this latest pass.

@@ -1772,7 +1772,7 @@ namespace Hecton8.Physics
             if (!math.isfinite(distanceSq) || distanceSq <= MinVectorMagnitudeSq)
                 return;
 
-            Vector3 direction = separation * math.rsqrt(distanceSq);
+            Vector3 direction = separation * math.rsqrt(math.max(distanceSq, MinVectorMagnitudeSq));
             float rawPlayerMass = _playerRigidbody != null ? _playerRigidbody.mass : 1f;
             float rawPayloadMass = _payloadBody != null ? _payloadBody.mass : 1f;
             float playerMass = math.isfinite(rawPlayerMass) ? math.max(rawPlayerMass, 0.0001f) : 1f;
@@ -2007,7 +2007,7 @@ namespace Hecton8.Physics
             if (!math.isfinite(currentForceSq))
                 currentForce = Vector3.zero;
             else if (currentForceSq > maxPayloadCurrentForceSq)
-                currentForce *= maxPayloadCurrentForce * math.rsqrt(currentForceSq);
+                currentForce *= maxPayloadCurrentForce * math.rsqrt(math.max(currentForceSq, MinVectorMagnitudeSq));
 
             float maxCableAcceleration = math.isfinite(_maxCableAcceleration) ? math.max(1f, _maxCableAcceleration) : 1f;
             _payloadDrift01 = math.saturate(ResolveMagnitude(currentDeltaSq) * math.rcp(maxCableAcceleration));
@@ -2039,7 +2039,7 @@ namespace Hecton8.Physics
                 if (!math.isfinite(angularSpeedSq))
                     angularVelocity = Vector3.zero;
                 else if (angularSpeedSq > maxPayloadAngularSpeedSq)
-                    angularVelocity *= maxPayloadAngularSpeed * math.rsqrt(angularSpeedSq);
+                    angularVelocity *= maxPayloadAngularSpeed * math.rsqrt(math.max(angularSpeedSq, MinVectorMagnitudeSq));
 
                 _payloadBody.angularVelocity = IsFinite(angularVelocity) ? angularVelocity : Vector3.zero;
             }
@@ -2985,7 +2985,7 @@ namespace Hecton8.Physics
             if (sqrMagnitude <= maxMagnitudeSq)
                 return value;
 
-            return value * (safeMaxMagnitude * math.rsqrt(sqrMagnitude));
+            return value * (safeMaxMagnitude * math.rsqrt(math.max(sqrMagnitude, MinVectorMagnitudeSq)));
         }
 
         private static Vector3 ResolveSafeDirection(Vector3 value, Vector3 fallback)
@@ -2995,21 +2995,21 @@ namespace Hecton8.Physics
 
             float sqrMagnitude = value.sqrMagnitude;
             if (math.isfinite(sqrMagnitude) && sqrMagnitude > MinVectorMagnitudeSq)
-                return value * math.rsqrt(sqrMagnitude);
+                return value * math.rsqrt(math.max(sqrMagnitude, MinVectorMagnitudeSq));
 
             if (!IsFinite(fallback))
                 return Vector3.zero;
 
             float fallbackSqrMagnitude = fallback.sqrMagnitude;
             return math.isfinite(fallbackSqrMagnitude) && fallbackSqrMagnitude > MinVectorMagnitudeSq
-                ? fallback * math.rsqrt(fallbackSqrMagnitude)
+                ? fallback * math.rsqrt(math.max(fallbackSqrMagnitude, MinVectorMagnitudeSq))
                 : Vector3.zero;
         }
 
         private static float ResolveMagnitude(float sqrMagnitude)
         {
             return math.isfinite(sqrMagnitude) && sqrMagnitude > MinVectorMagnitudeSq
-                ? sqrMagnitude * math.rsqrt(sqrMagnitude)
+                ? sqrMagnitude * math.rsqrt(math.max(sqrMagnitude, MinVectorMagnitudeSq))
                 : 0f;
         }
 
@@ -3022,7 +3022,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            invLength = math.rsqrt(sqrMagnitude);
+            invLength = math.rsqrt(math.max(sqrMagnitude, MinVectorMagnitudeSq));
             length = sqrMagnitude * invLength;
             if (math.isfinite(length) && math.isfinite(invLength))
                 return;
@@ -3058,7 +3058,7 @@ namespace Hecton8.Physics
             if (!math.isfinite(maxVelocityError) || !math.isfinite(maxVelocityErrorSq) || errorMagnitudeSq <= maxVelocityErrorSq)
                 return currentVelocity;
 
-            return targetVelocity + velocityError * (maxVelocityError * math.rsqrt(errorMagnitudeSq));
+            return targetVelocity + velocityError * (maxVelocityError * math.rsqrt(math.max(errorMagnitudeSq, MinVectorMagnitudeSq)));
         }
 
         private static bool IsFinite(Vector3 value)

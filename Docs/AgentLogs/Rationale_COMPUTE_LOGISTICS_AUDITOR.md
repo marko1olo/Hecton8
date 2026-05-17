@@ -162,3 +162,21 @@ Rejected Alternatives: Renaming historical files; relying on one spelling only; 
 Scalability potential: Future agents can `rg "ash-fi|H-Phi|token-H-Phi-ROI"` and find the canonical compute audit trail.
 Hardware Impact: Documentation-only update.
 
+Problem: The 11:42 H-Phi artifact became stale after another large C# source movement.
+Solution: Gate the expensive H-Phi scan on post-11:42 source drift first, then rerun summary H-Phi after confirming 102 modified C# files and 8,481,368 touched bytes.
+Rejected Alternatives: Reusing the 11:42 score after a new 1,843 runtime-line movement; rerunning H-Phi on every prompt without source-drift evidence.
+Scalability potential: Drift-gated rebases keep cheap machines from wasting static-scan time while still exposing real architecture movement.
+Hardware Impact: H-Phi scan took 82,422 ms. JSONL/SQLite/source scans were read-only. No Unity runtime/import/build was touched.
+
+Problem: The 13:37 score improvement could be sold as clean integration progress even though managed debt grew.
+Solution: Report composite deltas beside raw counter deltas: +29 DataVault refs and -20 owner-blocked NativeArray refs, but also +21 GlobalRegistry surface and +6 PrimaryManagedRuntimeRisk.
+Rejected Alternatives: Calling the interval a clean H-Phi win; calling it waste without diff/value/validation joins.
+Scalability potential: H-Phi remains a triage metric instead of becoming metric theater. Future gates should keep raw debt counters visible.
+Hardware Impact: Static accounting only.
+
+Problem: User asked to add H-Phi / ash-fi keywords where the metric exists, but many occurrences are in other agents' active logs and archived evidence.
+Solution: Tag active compute audit docs and stable H-Phi authority docs, then create a coverage report explaining why other-agent logs were indexed rather than mass-edited.
+Rejected Alternatives: Blindly editing hundreds of unrelated agent logs and archives; leaving the metric unsearchable under Russian/ASCII aliases.
+Scalability potential: Central index plus stable aliases keeps future search cheap without cross-agent log churn.
+Hardware Impact: Documentation-only update.
+

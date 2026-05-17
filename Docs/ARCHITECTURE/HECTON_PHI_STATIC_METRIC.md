@@ -3,6 +3,7 @@
 Date: 2026-05-15
 Status: STATIC METRIC CONTRACT / RUNTIME PROOF REQUIRED
 Evidence Class: STATIC_SOURCE
+Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 ## Purpose
 

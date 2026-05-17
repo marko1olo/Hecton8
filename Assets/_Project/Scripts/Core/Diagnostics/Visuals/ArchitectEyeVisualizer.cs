@@ -92,7 +92,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private const int GlyphAtlasPixels = GlyphCellPixels * GlyphAtlasColumns * GlyphCellPixels * GlyphAtlasRows;
         private const int DefaultMaxQuads = 8192;
         private const string QuadShaderAssetPath = "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeIndirectQuads.shader";
-        public const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_ARCHITECT_EYE_VISUALIZER.bin";
+        public const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin";
         private const float ScreenDepth = 0.25f;
         private const float HashToUnit = 1f / 65535f;
         private const uint StateFlagRawStp = 1u << 0;
@@ -336,6 +336,13 @@ namespace Hecton8.Core.Diagnostics.Visuals
         {
             if (!IsDiagnosticsRuntimeAllowed())
                 return;
+
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F12))
+            {
+                _enabled = !_enabled;
+                if (!_enabled)
+                    _frontCount = 0;
+            }
 
             if (!_enabled || _frontCount <= 0 || _quadMesh == null || _material == null || _argsBuffer == null)
                 return;
@@ -774,7 +781,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                     ? new float4(0.35f, 0.37f, 0.39f, 0.58f)
                     : new float4(0.1f, 0.45f, 1f, 0.5f);
                 if (free && descriptor.Bytes < largest && fragmentation01 > 0.35f)
-                    color = new float4(1f, 0.92f, 0.08f, 0.72f);
+                    color = new float4(1f, 0.08f, 0.02f, 0.72f);
                 EmitScreenQuad(quads, ref count, capacity, new float2(x + w, -0.94f), new float2(w, 0.012f), color, 0f, new float4(0f, 0f, 1f, 1f));
                 x += w * 2f + 0.004f;
                 if (x > 0.95f)
@@ -782,7 +789,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             }
 
             EmitScreenQuad(quads, ref count, capacity, new float2(-0.95f + vault.CapacityPressure01 * 0.18f, -0.89f), new float2(math.max(0.004f, vault.CapacityPressure01 * 0.18f), 0.009f), new float4(0.15f, 0.8f, 1f, 0.55f), 0f, new float4(0f, 0f, 1f, 1f));
-            EmitScreenQuad(quads, ref count, capacity, new float2(-0.95f + fragmentation01 * 0.18f, -0.865f), new float2(math.max(0.004f, fragmentation01 * 0.18f), 0.009f), new float4(1f, 0.92f, 0.08f, 0.7f), 0f, new float4(0f, 0f, 1f, 1f));
+            EmitScreenQuad(quads, ref count, capacity, new float2(-0.95f + fragmentation01 * 0.18f, -0.865f), new float2(math.max(0.004f, fragmentation01 * 0.18f), 0.009f), new float4(1f, 0.08f, 0.02f, 0.7f), 0f, new float4(0f, 0f, 1f, 1f));
             return fragmentation01;
         }
 

@@ -28,6 +28,9 @@ namespace Hecton8.Core.Content.Editor
         private static readonly Regex _hashRegex = new Regex(
             "\"(?:itemHash|meshHash|prefabHash|assetHash|hash)\"\\s*:\\s*\"?(?<hash>0x[0-9A-Fa-f]{1,8}|[0-9]{1,10})\"?",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex _computeKernelPragmaRegex = new Regex(
+            "^\\s*#pragma\\s+kernel\\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
 
         [MenuItem("HECTON-8/Content/Validate Content Authority")]
         public static void ValidateFromMenu()
@@ -338,24 +341,26 @@ namespace Hecton8.Core.Content.Editor
                 if (group.entries == null)
                     Fail("Addressable group has no entry set: " + groupName);
 
-                HashSet<AddressableAssetEntry>.Enumerator enumerator = group.entries.GetEnumerator();
-                while (enumerator.MoveNext())
+                using (IEnumerator<AddressableAssetEntry> enumerator = group.entries.GetEnumerator())
                 {
-                    AddressableAssetEntry entry = enumerator.Current;
-                    if (entry == null)
-                        Fail("Addressable group contains a null entry: " + groupName);
-
-                    if (entry.parentGroup == null)
+                    while (enumerator.MoveNext())
                     {
-                        Fail("Addressable entry has no group: " + entry.address);
-                        continue;
-                    }
+                        AddressableAssetEntry entry = enumerator.Current;
+                        if (entry == null)
+                            Fail("Addressable group contains a null entry: " + groupName);
 
-                    if (!ReferenceEquals(entry.parentGroup, group))
-                    {
-                        Fail("Addressable entry parent group mismatch: " +
-                             entry.address + " listedIn=" + groupName +
-                             " parent=" + entry.parentGroup.Name);
+                        if (entry.parentGroup == null)
+                        {
+                            Fail("Addressable entry has no group: " + entry.address);
+                            continue;
+                        }
+
+                        if (!ReferenceEquals(entry.parentGroup, group))
+                        {
+                            Fail("Addressable entry parent group mismatch: " +
+                                 entry.address + " listedIn=" + groupName +
+                                 " parent=" + entry.parentGroup.Name);
+                        }
                     }
                 }
             }
@@ -494,18 +499,20 @@ namespace Hecton8.Core.Content.Editor
                     continue;
 
                 string groupName = group.Name;
-                HashSet<AddressableAssetEntry>.Enumerator enumerator = group.entries.GetEnumerator();
-                while (enumerator.MoveNext())
+                using (IEnumerator<AddressableAssetEntry> enumerator = group.entries.GetEnumerator())
                 {
-                    AddressableAssetEntry entry = enumerator.Current;
-                    if (entry == null)
-                        continue;
+                    while (enumerator.MoveNext())
+                    {
+                        AddressableAssetEntry entry = enumerator.Current;
+                        if (entry == null)
+                            continue;
 
-                    if (!string.IsNullOrEmpty(entry.address) && !groupByAddress.ContainsKey(entry.address))
-                        groupByAddress.Add(entry.address, groupName);
+                        if (!string.IsNullOrEmpty(entry.address) && !groupByAddress.ContainsKey(entry.address))
+                            groupByAddress.Add(entry.address, groupName);
 
-                    if (!string.IsNullOrEmpty(entry.guid) && !groupByGuid.ContainsKey(entry.guid))
-                        groupByGuid.Add(entry.guid, groupName);
+                        if (!string.IsNullOrEmpty(entry.guid) && !groupByGuid.ContainsKey(entry.guid))
+                            groupByGuid.Add(entry.guid, groupName);
+                    }
                 }
             }
         }
@@ -874,7 +881,7 @@ namespace Hecton8.Core.Content.Editor
                 if (map == null)
                     continue;
 
-                int entryCount = map.EntryCount;
+                int entryCount = map.Count;
                 for (int entryIndex = 0; entryIndex < entryCount; entryIndex++)
                 {
                     ContentAssetEntry entry = map.GetEntryAt(entryIndex);
@@ -923,8 +930,10 @@ namespace Hecton8.Core.Content.Editor
                 if (shader == null)
                     continue;
 
-                for (int kernel = 0; kernel < shader.kernelCount; kernel++)
+                int[] kernelIndices = ResolveComputeShaderKernelIndices(path, shader);
+                for (int kernelIndex = 0; kernelIndex < kernelIndices.Length; kernelIndex++)
                 {
+                    int kernel = kernelIndices[kernelIndex];
                     shader.GetKernelThreadGroupSizes(kernel, out uint x, out uint y, out uint z);
                     ulong total = (ulong)x * y * z;
                     if (total > 1024UL)
@@ -934,6 +943,69 @@ namespace Hecton8.Core.Content.Editor
                     }
                 }
             }
+        }
+
+        private static int[] ResolveComputeShaderKernelIndices(string path, ComputeShader shader)
+        {
+            if (shader == null || string.IsNullOrEmpty(path))
+                return Array.Empty<int>();
+
+            string source;
+            try
+            {
+                source = File.ReadAllText(path);
+            }
+            catch (IOException)
+            {
+                return Array.Empty<int>();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Array.Empty<int>();
+            }
+
+            MatchCollection matches = _computeKernelPragmaRegex.Matches(source);
+            if (matches.Count == 0)
+                return Array.Empty<int>();
+
+            int[] kernels = new int[matches.Count];
+            int count = 0;
+            for (int i = 0; i < matches.Count; i++)
+            {
+                string kernelName = matches[i].Groups["name"].Value;
+                if (string.IsNullOrEmpty(kernelName))
+                    continue;
+
+                int kernel;
+                try
+                {
+                    kernel = shader.FindKernel(kernelName);
+                }
+                catch (ArgumentException)
+                {
+                    continue;
+                }
+
+                bool duplicate = false;
+                for (int existing = 0; existing < count; existing++)
+                {
+                    if (kernels[existing] == kernel)
+                    {
+                        duplicate = true;
+                        break;
+                    }
+                }
+
+                if (!duplicate)
+                    kernels[count++] = kernel;
+            }
+
+            if (count == kernels.Length)
+                return kernels;
+
+            int[] compact = new int[count];
+            Array.Copy(kernels, compact, count);
+            return compact;
         }
 
         private static void ValidateVfxPrewarmManifests()

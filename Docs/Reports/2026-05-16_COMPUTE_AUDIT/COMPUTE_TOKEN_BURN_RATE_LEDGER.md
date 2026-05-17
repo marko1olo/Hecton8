@@ -454,3 +454,34 @@ This section adds the latest H-Phi/token window after the large post-04:12 sourc
 | Tokens per script byte | 1,104.56 |
 
 STATUS: AUDIT COMPLETE.
+
+## H-Phi Live Rebase - 2026-05-17T13:37+04:00
+
+This section adds the latest source-drift-gated H-Phi/token window after the 11:42 artifact.
+
+| Metric | Value |
+|---|---:|
+| C# files modified after 11:42 | 102 |
+| Changed bytes after 11:42 | 8,481,368 |
+| Current meaningful LOC | 856,940 |
+| Current script bytes | 46,331,767 |
+| Runtime H-Phi risk | 0.005525762 |
+| Runtime H-Phi narrow | 0.077385732 |
+| Data sovereignty | 0.144331092 |
+| Delta vs 11:42 Runtime risk | +0.000147098 |
+| Delta vs 11:42 Runtime narrow | +0.001504620 |
+| Token window total | 304,562,532 |
+| Token window cache-aware cost | USD 236.42 |
+| Token window no-cache equivalent | USD 1,546.69 |
+| Token window average | 43,904.07 tokens/sec |
+| Token window USD/min | USD 2.04 cache-aware; USD 13.38 no-cache |
+| 13:36 SQLite total | 51,372,184,781 |
+| 13:36 live pulse | 741,683 tokens in 30.069926 sec |
+| 13:36 live rate | 24,665.28 tokens/sec |
+| Current energy estimate | 2,568.61 MWh |
+| Tokens per meaningful LOC | 59,948.40 |
+| Tokens per script byte | 1,108.79 |
+
+Marginal H-Phi ROI vs 11:42: `2,070,473,643` tokens and `USD 1,607.26` per `+0.001` Runtime H-Phi risk. Cumulative tracked H-Phi ROI since 2026-05-15 22:46 is now `1,200,993,958` tokens and `USD 930.33` per `+0.001` Runtime risk.
+
+STATUS: AUDIT COMPLETE.

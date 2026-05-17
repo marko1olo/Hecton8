@@ -1,6 +1,6 @@
 # STP_QUALITY_ADAPTER Rationale
 
-Status: CORE COMPLETE - LOOP 18 STATIC POLISHED - DOTNET SOURCE GATE 21 PRE-LOOP14 PASSED 0 WARNINGS 0 ERRORS - POST-LOOPS14-18 DOTNET GATE DEFERRED BY OPERATOR - UNITY RUNTIME VALIDATION PENDING
+Status: CORE COMPLETE - LOOP 19 STATIC POLISHED - DOTNET SOURCE GATE 21 PRE-LOOP14 PASSED 0 WARNINGS 0 ERRORS - POST-LOOPS14-19 DOTNET GATE DEFERRED BY OPERATOR - UNITY RUNTIME VALIDATION PENDING
 
 ## Session Start
 
@@ -429,3 +429,11 @@ Solution: Added finite fallback helpers in `DynamicResolutionScaler`, routed def
 Rejected Alternatives: Rebuilding the world scaler wholesale, touching adjacent dirty render/VR/platform domains, or running another dotnet gate after every source-level polish pass. The bridge is a critical STP interface; unrelated render and platform files are left to their owning agents.
 Scalability potential: Low/i3/MX350/Quest no longer lose the emergency 0.35 path to NaN poisoning from inspector/debug harness values. Mid keeps its normal 0.82-style target path. High/Ultra keep full-scale visual-overkill policy for visor salt, volumetric silt, procedural hull dents, 16-tap POM, SSS, and raymarch consumers.
 Hardware Impact: Not measured. Source-level stability fix only; expected gain is crash/poison avoidance and preserving the intended pixel-count reduction under corrupt inputs, not a measured CPU microsecond win.
+
+## Loop 19 STP Commit-Boundary Clamp
+
+Problem: The bridge was guarded, but the STP adapter still had a few commit-boundary paths that trusted backing fields: `CommitRenderScale()` wrote the static dynamic-resolution percentage directly, `CommitRuntimeSnapshot()` passed raw current/target scale and raw frame-time into `IDynamicResolutionRuntime`, runtime rebinding duplicated that raw call, `ScaleToMilli()` could encode non-finite signal payloads, and `ScalabilityEvents.Register(this)` was not Play Mode gated.
+Solution: Clamp `_currentScale` and `_targetScale` before Unity dynamic-resolution percentage writes, sanitize frame-time before runtime snapshot calls, route runtime rebinding through `CommitRuntimeSnapshot()`, guard `ScaleToMilli()` with `ClampRenderScale()`, and require `Application.isPlaying` before registering the scalability listener.
+Rejected Alternatives: Adding a new signal lane or touching adjacent render/VR/platform systems. The existing typed lanes and runtime bridge are sufficient; this loop only hardens the STP-owned boundary.
+Scalability potential: Low/MX350/Quest keep the 0.35 emergency path without corrupted telemetry/signal milli values. High/Ultra keep full-scale visual-overkill flags and avoid accidental invalid scale publication during service rebinding.
+Hardware Impact: Not measured. Source-level correctness and GC/static-side-effect cleanup only; no profiler capture and no microsecond claim.

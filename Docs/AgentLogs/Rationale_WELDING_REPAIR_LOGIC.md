@@ -441,6 +441,62 @@ Rejected Alternatives: Reporting a nonzero build as clean would be false. Skippi
 Scalability potential: No gameplay contract changed; visual dent fade now rejects invalid scalar inputs before touching shader mirror state.
 Hardware Impact: No validation hardware gain; branch cost described above.
 
+## WFC Tool VFX Typed Signal / NaN Guard
+Problem: WfcLaserCutRuntime is a nearby tool VFX path. It still used GlobalSignals for debris/acoustic/haptic feedback, accepted NaN-prone cutter/progress/heat/stress scalars, and logged dump failures through Debug.LogError.
+Solution: Replaced feedback publishes with SignalBus<DebrisSpawnSignal>, SignalBus<ToolAcousticSignal>, and SignalBus<HapticRequest>. Added finite clamps for cutter feedback, shader globals, telemetry, and stored progress. Replaced dump-failure console logging with GlobalTelemetryBus.PublishUnityLogFault.
+Rejected Alternatives: Keeping the wrapper publish path would preserve legacy signal debt in the tools domain. Trusting saturate/max on raw cutter values would leave NaN paths in GPU-facing VFX and telemetry.
+Scalability potential: Low/MX350 keeps cheap scalar feedback and avoids invalid shader state. High/Ultra retain WFC spark/acoustic/haptic feedback without adding simulation.
+Hardware Impact: Estimated 0-1 microseconds per active WFC cut feedback tick and 0-1 microseconds saved per feedback burst by avoiding wrapper dispatch. Fault logging is fault path only.
+
+## Validation Wall Thirty-Fourth Pass
+Problem: WFC tool VFX hardening touched compile-relevant nearby tools code.
+Solution: Source grep confirmed direct SignalBus feedback publishes, finite scalar clamps, and telemetry dump fault reporting. Fixed-string bloat grep returned NO_REPAIR_WFC_TYPED_SIGNAL_BLOAT_MATCHES. Filtered dotnet build with BuildProjectReferences=false returned NO_REPAIR_WFC_TYPED_SIGNAL_BUILD_DIAGNOSTICS and DOTNET_EXIT_CODE=1.
+Rejected Alternatives: Reporting a nonzero build as clean would be false. Skipping compile after WFC tool changes would be weaker evidence.
+Scalability potential: No gameplay contract changed; invalid WFC tool feedback values are rejected before shader, signal, and telemetry mutation.
+Hardware Impact: No validation hardware gain; branch cost described above.
+
+## ToolDurability Typed Signal / Scalar Guard
+Problem: ToolDurabilitySystem is a repair-adjacent tool lifecycle system. It still published ItemDurabilityChangedSignal through GlobalSignals and used NaN-prone math.max clamps on max durability, current durability normalization, and template wear multipliers.
+Solution: Replaced the durability changed publish with direct SignalBus<ItemDurabilityChangedSignal>.Push. Routed durability reads, normalized durability, slot metadata, signal percent, and template wear multipliers through existing finite clamp helpers.
+Rejected Alternatives: Leaving the legacy wrapper would keep a duplicate signal path in the tool domain. Trusting authored max durability and template wear data would leave NaN paths in repair-adjacent tool durability.
+Scalability potential: Low/MX350 gets deterministic finite durability state with cheap scalar guards. High/Ultra tool visuals and repair sparks are unchanged.
+Hardware Impact: Estimated 0-1 microseconds per durability signal/query/update. No broad speed claim; this is signal hygiene and NaN containment.
+
+## Validation Wall Thirty-Third Pass
+Problem: ToolDurability near-domain hardening touched compile-relevant tool lifecycle code.
+Solution: Source grep confirmed SignalBus<ItemDurabilityChangedSignal>.Push and finite durability scalar guards. Fixed-string bloat grep returned NO_REPAIR_TOOLDURABILITY_DURABILITY_NAN_BLOAT_MATCHES. Filtered dotnet build with BuildProjectReferences=false returned NO_REPAIR_TOOLDURABILITY_TYPED_SIGNAL_BUILD_DIAGNOSTICS and DOTNET_EXIT_CODE=1.
+Rejected Alternatives: Reporting a nonzero build as clean would be false. Skipping compile after ToolDurability changes would be weaker evidence.
+Scalability potential: No gameplay contract changed; invalid durability scalars are rejected before signal publication and slot metadata updates.
+Hardware Impact: No validation hardware gain; branch cost described above.
+
+## PlayerTool Queued Raycast Packet Guard
+Problem: PlayerTool.TryResolveQueuedRaycast is the shared repair raycast dependency. It converted origin to AUP and built InteractionPacket with raw range and runtime power after only normalizing direction.
+Solution: Added finite origin/range/direction/AUP gates before packet creation and passed safePower/safeRange into InteractionPacket.
+Rejected Alternatives: Requiring every derived tool to sanitize before calling the shared queue would duplicate responsibility and leave RepairTool exposed through base-class changes.
+Scalability potential: Low/MX350 avoids invalid raycast packets with cheap branches. High/Ultra still feed the same queued RaycastCommand path for repair sparks and hull dent erasure.
+Hardware Impact: Estimated 0-1 microseconds branch cost per queued raycast request. No speed gain claimed; this is fault containment.
+
+## Validation Wall Thirty-Second Pass
+Problem: Shared raycast packet hardening touched compile-relevant PlayerTool code.
+Solution: Source grep confirmed finite origin/range/direction/AUP checks and safe scalar packet fields. Fixed-string bloat grep returned NO_REPAIR_PLAYERTOOL_RAYCAST_PACKET_HOTPATH_BLOAT_MATCHES. Filtered dotnet build with BuildProjectReferences=false returned NO_REPAIR_PLAYERTOOL_RAYCAST_PACKET_BUILD_DIAGNOSTICS and DOTNET_EXIT_CODE=1.
+Rejected Alternatives: Reporting a nonzero build as clean would be false. Skipping compile after PlayerTool changes would be weaker evidence.
+Scalability potential: No gameplay contract changed; invalid packet ingress is rejected before the interaction raycast queue sees it.
+Hardware Impact: No validation hardware gain; branch cost described above.
+
+## Repair Voxel / VFX Scar Guard
+Problem: RepairTool's voxel weld branch converted `_hit.point` to AUP and passed raw `_cachedTransform.forward` into voxel DDA repair. HullDentShaderController also used `math.max(0.01f, maxDentDepthMeters)` as an rcp denominator for scar/deformation intensity, which does not prove NaN rejection.
+Solution: Voxel repair now validates the hit point before AUP conversion, validates the converted AUP, and resolves a finite weld direction. VFX scar/deformation intensity now uses `FiniteAtLeast(maxDentDepthMeters, 0.01f)` before reciprocal math.
+Rejected Alternatives: Trusting raycast data and serialized depth limits would leave NaN paths into voxel repair and shader-facing VFX intensity. Clamping after DDA or signal creation would be too late.
+Scalability potential: Low/MX350 avoids invalid voxel repair and scar intensity work with cheap branches. High/Ultra retain the same dent recovery and compute spark visual paths.
+Hardware Impact: Estimated 0-1 microseconds on voxel repair targets and 0-1 microseconds on active scar/deformation evaluation. No speed gain claimed; this is fault containment.
+
+## Validation Wall Thirty-First Pass
+Problem: Voxel/VFX scar hardening touched compile-relevant RepairTool and HullDentShaderController code.
+Solution: Source grep confirmed finite AUP/direction guards and finite maxDentDepth denominator use. Fixed-string bloat grep returned NO_REPAIR_VOXEL_SCAR_GUARD_HOTPATH_BLOAT_MATCHES. Filtered dotnet build with BuildProjectReferences=false returned NO_REPAIR_VOXEL_SCAR_GUARD_BUILD_DIAGNOSTICS and DOTNET_EXIT_CODE=1.
+Rejected Alternatives: Reporting a nonzero build as clean would be false. Skipping compile after code changes would be weaker evidence.
+Scalability potential: No gameplay contract changed; invalid voxel/scar inputs are rejected before math authority changes.
+Hardware Impact: No validation hardware gain; branch cost described above.
+
 ## Repair Spark AUP Guard
 Problem: PublishRepairSparkSignal converted `worldPoint` into AUP and pushed `DebrisSpawnSignal` without proving the hit point and converted double3 were finite. That could poison the compute-shard spark lane with invalid position authority.
 Solution: Added early finite gates for the world hit point and converted AUP before constructing the signal.

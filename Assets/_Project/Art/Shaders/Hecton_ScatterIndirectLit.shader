@@ -83,6 +83,36 @@ Shader "Hecton8/World/ScatterIndirectLit"
             float _DepthBias;
         CBUFFER_END
 
+        float HectonScatterFiniteOr(float value, float fallbackValue)
+        {
+            return isfinite(value) ? value : fallbackValue;
+        }
+
+        float HectonScatterNonNegativeFinite(float value)
+        {
+            return isfinite(value) ? max(0.0, value) : 0.0;
+        }
+
+        float HectonScatterPositiveFinite(float value, float fallbackValue)
+        {
+            return isfinite(value) && value > 0.0001 ? value : fallbackValue;
+        }
+
+        float2 HectonScatterFinite2(float2 value, float2 fallbackValue)
+        {
+            return all(isfinite(value)) ? value : fallbackValue;
+        }
+
+        float3 HectonScatterFinite3(float3 value, float3 fallbackValue)
+        {
+            return all(isfinite(value)) ? value : fallbackValue;
+        }
+
+        float4 HectonScatterFinite4(float4 value, float4 fallbackValue)
+        {
+            return all(isfinite(value)) ? value : fallbackValue;
+        }
+
         struct Attributes
         {
             float4 positionOS : POSITION;
@@ -105,12 +135,19 @@ Shader "Hecton8/World/ScatterIndirectLit"
 
         ScatterInstanceGpuData ResolveScatterInstance(uint instanceID)
         {
-            return _HectonScatterInstances[_HectonVisibleScatterIndices[instanceID]];
+            ScatterInstanceGpuData instanceData = _HectonScatterInstances[_HectonVisibleScatterIndices[instanceID]];
+            instanceData.PositionScale.xyz = HectonScatterFinite3(instanceData.PositionScale.xyz, float3(0.0, 0.0, 0.0));
+            instanceData.PositionScale.w = clamp(HectonScatterPositiveFinite(instanceData.PositionScale.w, 1.0), 0.05, 16.0);
+            instanceData.NormalRotation.xyz = HectonCoreLitSafeNormalize(HectonScatterFinite3(instanceData.NormalRotation.xyz, float3(0.0, 1.0, 0.0)));
+            instanceData.NormalRotation.w = min(HectonScatterNonNegativeFinite(instanceData.NormalRotation.w), 16777215.0);
+            instanceData.AtlasFlow.xy = clamp(HectonScatterFinite2(instanceData.AtlasFlow.xy, float2(1.0, 1.0)), float2(-64.0, -64.0), float2(64.0, 64.0));
+            instanceData.AtlasFlow.zw = clamp(HectonScatterFinite2(instanceData.AtlasFlow.zw, float2(0.0, 0.0)), float2(-4096.0, -4096.0), float2(4096.0, 4096.0));
+            return instanceData;
         }
 
         float2 ResolveScatterYawOctant(float rotation)
         {
-            uint sector = (uint)rotation & 7u;
+            uint sector = (uint)floor(HectonScatterNonNegativeFinite(rotation)) & 7u;
             if (sector == 0u) return float2(1.0, 0.0);
             if (sector == 1u) return float2(0.70710677, 0.70710677);
             if (sector == 2u) return float2(0.0, 1.0);
@@ -123,36 +160,49 @@ Shader "Hecton8/World/ScatterIndirectLit"
 
         void BuildScatterBasis(float3 normalWS, float rotation, float scale, out float3 rightWS, out float3 upWS, out float3 forwardWS)
         {
+            float safeScale = HectonScatterPositiveFinite(scale, 1.0);
+            float3 safeNormalWS = HectonCoreLitSafeNormalize(HectonScatterFinite3(normalWS, float3(0.0, 1.0, 0.0)));
             float2 forwardXZ = ResolveScatterYawOctant(rotation);
-            upWS = normalWS.y < 0.0 ? float3(0.0, -1.0, 0.0) : float3(0.0, 1.0, 0.0);
-            rightWS = float3(forwardXZ.y, 0.0, -forwardXZ.x) * scale;
-            forwardWS = float3(forwardXZ.x, 0.0, forwardXZ.y) * scale;
-            upWS *= scale;
+            upWS = safeNormalWS.y < 0.0 ? float3(0.0, -1.0, 0.0) : float3(0.0, 1.0, 0.0);
+            rightWS = float3(forwardXZ.y, 0.0, -forwardXZ.x) * safeScale;
+            forwardWS = float3(forwardXZ.x, 0.0, forwardXZ.y) * safeScale;
+            upWS *= safeScale;
         }
 
         float3 ResolveScatterNormal(float3 normalOS, float3 rightWS, float3 upWS, float3 forwardWS, float invScale)
         {
-            float3 rightAxisWS = rightWS * invScale;
-            float3 upAxisWS = upWS * invScale;
-            float3 forwardAxisWS = forwardWS * invScale;
-            return rightAxisWS * normalOS.x + upAxisWS * normalOS.y + forwardAxisWS * normalOS.z;
+            float safeInvScale = HectonScatterPositiveFinite(abs(invScale), 1.0);
+            float3 safeNormalOS = HectonCoreLitSafeNormalize(normalOS);
+            float3 rightAxisWS = HectonScatterFinite3(rightWS * safeInvScale, float3(1.0, 0.0, 0.0));
+            float3 upAxisWS = HectonScatterFinite3(upWS * safeInvScale, float3(0.0, 1.0, 0.0));
+            float3 forwardAxisWS = HectonScatterFinite3(forwardWS * safeInvScale, float3(0.0, 0.0, 1.0));
+            return HectonCoreLitSafeNormalize(rightAxisWS * safeNormalOS.x + upAxisWS * safeNormalOS.y + forwardAxisWS * safeNormalOS.z);
         }
 
         float3 ResolveScatterSineParabolaSway(float3 rootWS, float3 localPosition, float3 forwardWS, float scale, float rotation)
         {
-            float heightMask = saturate(localPosition.y);
+            rootWS = HectonCoreLitSanitizePositionWS(rootWS);
+            localPosition = HectonCoreLitSanitizePositionOS(localPosition);
+            forwardWS = HectonScatterFinite3(forwardWS, float3(0.0, 0.0, 1.0));
+            float safeScale = HectonScatterPositiveFinite(scale, 1.0);
+            float heightMask = saturate(HectonScatterFiniteOr(localPosition.y, 0.0));
             float heightParabola = heightMask * heightMask;
-            float2 flowXZ = _AbyssalFlowWeatherCurrent.xz;
+            float2 flowXZ = HectonScatterFinite2(_AbyssalFlowWeatherCurrent.xz, float2(0.0, 0.0));
             float flowLenSq = dot(flowXZ, flowXZ);
+            flowLenSq = isfinite(flowLenSq) ? flowLenSq : 0.0;
             float2 forwardXZ = forwardWS.xz;
             float forwardLenSq = dot(forwardXZ, forwardXZ);
-            float2 fallbackDir = forwardXZ * rsqrt(max(forwardLenSq, 0.0001));
+            forwardLenSq = isfinite(forwardLenSq) ? forwardLenSq : 0.0;
+            float2 fallbackDir = forwardLenSq > 0.0001 ? forwardXZ * rsqrt(forwardLenSq) : float2(0.0, 1.0);
             float2 flowDir = flowLenSq > 0.0001 ? flowXZ * rsqrt(flowLenSq) : fallbackDir;
             float flowGain = saturate(flowLenSq * 0.0625);
-            float phase = _Time.y * _ScatterSwayFrequency + dot(rootWS.xz, float2(0.073, -0.051)) + rotation;
-            float sineWave = sin(phase);
-            float sineParabola = sineWave * abs(sineWave);
-            return float3(flowDir.x, 0.0, flowDir.y) * (sineParabola * heightParabola * _ScatterSwayAmplitude * scale * (0.25 + flowGain));
+            float safeFrequency = min(HectonScatterNonNegativeFinite(_ScatterSwayFrequency), 8.0);
+            float safeAmplitude = min(HectonScatterNonNegativeFinite(_ScatterSwayAmplitude), 0.35);
+            float phase = HectonScatterFiniteOr(_Time.y, 0.0) * safeFrequency + dot(rootWS.xz, float2(0.073, -0.051)) + rotation;
+            phase = HectonScatterFiniteOr(phase, 0.0);
+            float triangleWave = HectonCoreLitTrianglePulse01(phase) * 2.0 - 1.0;
+            float sineParabola = triangleWave * abs(triangleWave);
+            return HectonScatterFinite3(float3(flowDir.x, 0.0, flowDir.y) * (sineParabola * heightParabola * safeAmplitude * safeScale * (0.25 + flowGain)), float3(0.0, 0.0, 0.0));
         }
 
         float HectonScatterHash31(float3 value)
@@ -164,11 +214,17 @@ Shader "Hecton8/World/ScatterIndirectLit"
 
         float3 ResolveProceduralRockOffset(float3 rootWS, float3 localPosition, float3 normalOS, float scale)
         {
-            float3 stableRoot = rootWS + float3(_HectonScatterAupGridOffset.x, 0.0, _HectonScatterAupGridOffset.y);
+            rootWS = HectonCoreLitSanitizePositionWS(rootWS);
+            localPosition = HectonCoreLitSanitizePositionOS(localPosition);
+            float3 safeNormalOS = HectonCoreLitSafeNormalize(normalOS);
+            float safeScale = HectonScatterPositiveFinite(scale, 1.0);
+            float2 safeAupOffset = HectonScatterFinite2(_HectonScatterAupGridOffset.xy, float2(0.0, 0.0));
+            float3 stableRoot = rootWS + float3(safeAupOffset.x, 0.0, safeAupOffset.y);
             float rockHash = HectonScatterHash31(stableRoot * 0.173 + localPosition * 3.71);
             float ridge = rockHash * 2.0 - 1.0;
-            float verticalMask = saturate(localPosition.y + 0.55);
-            return normalOS * (ridge * _ProceduralRockDisplacement * scale * (0.25 + verticalMask * 0.75));
+            float verticalMask = saturate(HectonScatterFiniteOr(localPosition.y, 0.0) + 0.55);
+            float displacement = min(HectonScatterNonNegativeFinite(_ProceduralRockDisplacement), 0.35);
+            return HectonScatterFinite3(safeNormalOS * (ridge * displacement * safeScale * (0.25 + verticalMask * 0.75)), float3(0.0, 0.0, 0.0));
         }
 
         Varyings Vert(Attributes input)
@@ -183,8 +239,8 @@ Shader "Hecton8/World/ScatterIndirectLit"
         #endif
             ScatterInstanceGpuData instanceData = ResolveScatterInstance(instanceID);
             float3 positionWS = instanceData.PositionScale.xyz;
-            float scale = max(instanceData.PositionScale.w, 0.05);
-            float invScale = rcp(scale);
+            float scale = HectonScatterPositiveFinite(instanceData.PositionScale.w, 1.0);
+            float invScale = rcp(max(scale, 0.0001));
             float3 normalWS = instanceData.NormalRotation.xyz;
             float rotation = instanceData.NormalRotation.w;
 
@@ -193,19 +249,24 @@ Shader "Hecton8/World/ScatterIndirectLit"
             float3 forwardWS;
             BuildScatterBasis(normalWS, rotation, scale, rightWS, upWS, forwardWS);
 
-            float3 localPosition = input.positionOS.xyz;
-            localPosition += ResolveProceduralRockOffset(positionWS, localPosition, input.normalOS, scale);
+            float3 localPosition = HectonCoreLitSanitizePositionOS(input.positionOS.xyz);
+            float3 normalOS = HectonCoreLitSafeNormalize(input.normalOS);
+            localPosition += ResolveProceduralRockOffset(positionWS, localPosition, normalOS, scale);
             float3 swayOffsetWS = ResolveScatterSineParabolaSway(positionWS, localPosition, forwardWS, scale, rotation);
             float3 resolvedPositionWS = HectonCoreLitSanitizePositionWS(
                 positionWS + rightWS * localPosition.x + upWS * localPosition.y + forwardWS * localPosition.z + swayOffsetWS);
-            float3 resolvedNormalWS = ResolveScatterNormal(input.normalOS, rightWS, upWS, forwardWS, invScale);
+            float3 resolvedNormalWS = ResolveScatterNormal(normalOS, rightWS, upWS, forwardWS, invScale);
 
-            output.positionWS = HectonCoreLitApplyStormRainDripVertexRipple(resolvedPositionWS, resolvedNormalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
+            half dripAmplitude = (half)min(HectonScatterNonNegativeFinite(_StormRainDripAmplitude), 0.025);
+            half dripTiling = (half)clamp(HectonScatterFiniteOr(_StormRainDripTiling, 1.0), 0.5, 16.0);
+            half dripSpeed = (half)min(HectonScatterNonNegativeFinite(_StormRainDripSpeed), 8.0);
+            output.positionWS = HectonCoreLitApplyStormRainDripVertexRipple(resolvedPositionWS, resolvedNormalWS, dripAmplitude, dripTiling, dripSpeed);
             output.normalWS = resolvedNormalWS;
             output.positionCS = TransformWorldToHClip(output.positionWS);
-            output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(output.positionCS, _DepthBias, 1.0);
+            output.positionCS = HectonScatterFinite4(output.positionCS, float4(0.0, 0.0, UNITY_NEAR_CLIP_VALUE, 1.0));
+            output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(output.positionCS, min(HectonScatterNonNegativeFinite(_DepthBias), 0.01), 1.0);
             output.viewDirWS = HectonCoreLitSafeNormalize(GetWorldSpaceViewDir(output.positionWS));
-            float2 atlasUv = input.uv * instanceData.AtlasFlow.xy + instanceData.AtlasFlow.zw;
+            float2 atlasUv = HectonScatterFinite2(input.uv, float2(0.0, 0.0)) * instanceData.AtlasFlow.xy + instanceData.AtlasFlow.zw;
             output.uv = TRANSFORM_TEX(atlasUv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
             return output;
@@ -213,12 +274,17 @@ Shader "Hecton8/World/ScatterIndirectLit"
 
         half4 SampleSurface(float2 uv)
         {
-            return HectonCoreLitSampleStochastic2D(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), uv, uv * 0.031, (half)_StochasticTilingStrength) * _BaseColor;
+            float2 safeUv = HectonScatterFinite2(uv, float2(0.0, 0.0));
+            half stochasticStrength = (half)saturate(HectonScatterFiniteOr(_StochasticTilingStrength, 0.0));
+            half4 baseSample = HectonCoreLitSampleStochastic2D(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), safeUv, safeUv * 0.031, stochasticStrength);
+            return baseSample * (half4)HectonScatterFinite4(_BaseColor, float4(1.0, 1.0, 1.0, 1.0));
         }
 
         half4 SamplePackedMask(float2 uv)
         {
-            return HectonCoreLitSampleStochastic2D(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), uv, uv * 0.031, (half)_StochasticTilingStrength);
+            float2 safeUv = HectonScatterFinite2(uv, float2(0.0, 0.0));
+            half stochasticStrength = (half)saturate(HectonScatterFiniteOr(_StochasticTilingStrength, 0.0));
+            return HectonCoreLitSampleStochastic2D(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), safeUv, safeUv * 0.031, stochasticStrength);
         }
 
         half3 EvaluateLighting(
@@ -231,8 +297,18 @@ Shader "Hecton8/World/ScatterIndirectLit"
             half smoothness,
             half ambientOcclusion)
         {
+            positionWS = HectonCoreLitSanitizePositionWS(positionWS);
+            positionCS = HectonScatterFinite4(positionCS, float4(0.0, 0.0, UNITY_NEAR_CLIP_VALUE, 1.0));
+            normalWS = (half3)HectonCoreLitSafeNormalize(normalWS);
+            viewDirWS = (half3)HectonCoreLitSafeNormalize(viewDirWS);
+            albedo = all(isfinite(albedo)) ? albedo : half3(0.0h, 0.0h, 0.0h);
+            metallic = (half)saturate(HectonScatterFiniteOr(metallic, 0.0));
+            smoothness = (half)saturate(HectonScatterFiniteOr(smoothness, 0.0));
+            ambientOcclusion = (half)saturate(HectonScatterFiniteOr(ambientOcclusion, 1.0));
             half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
+            caveAmbientFactor = (half)saturate(HectonScatterFiniteOr(caveAmbientFactor, 1.0));
             half3 color = SampleSH(normalWS) * albedo * ambientOcclusion * caveAmbientFactor;
+            color = all(isfinite(color)) ? color : half3(0.0h, 0.0h, 0.0h);
             half specularStrength = lerp(0.04h, 0.18h, metallic);
 
             float4 shadowCoord = TransformWorldToShadowCoord(positionWS);
@@ -258,9 +334,13 @@ Shader "Hecton8/World/ScatterIndirectLit"
             }
             half contactShadow = (half)HectonCoreLitEvaluateMainLightContactShadowFromDirection(positionWS, normalWS, mainLight.direction);
             half mainShadow = HectonCoreLitResolveMx350ShadowDither((half)mainLight.shadowAttenuation, positionCS);
-            color += (albedo * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainShadow * contactShadow);
-            color += HectonCoreLitEvaluateProjectedCausticsScattering(positionWS, normalWS) * albedo;
-            return color;
+            half3 mainLightColor = all(isfinite(mainLight.color)) ? mainLight.color : half3(0.0h, 0.0h, 0.0h);
+            half distanceAttenuation = (half)saturate(HectonScatterFiniteOr(mainLight.distanceAttenuation, 0.0));
+            half shadowFactor = (half)saturate(HectonScatterFiniteOr(mainShadow * contactShadow, 0.0));
+            color += (albedo * nDotL + specular) * mainLightColor * (distanceAttenuation * shadowFactor);
+            half3 caustics = (half3)HectonScatterFinite3(HectonCoreLitEvaluateProjectedCausticsScattering(positionWS, normalWS), float3(0.0, 0.0, 0.0));
+            color += caustics * albedo;
+            return all(isfinite(color)) ? color : half3(0.0h, 0.0h, 0.0h);
         }
 
         half4 Frag(Varyings input) : SV_Target
@@ -269,16 +349,25 @@ Shader "Hecton8/World/ScatterIndirectLit"
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
             half4 surface = SampleSurface(input.uv);
             half4 packedMask = SamplePackedMask(input.uv);
-            HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
+            surface = all(isfinite(surface)) ? surface : half4(0.0h, 0.0h, 0.0h, 1.0h);
+            packedMask = all(isfinite(packedMask)) ? packedMask : half4(0.0h, 1.0h, 0.0h, 0.0h);
+            half metallicScale = (half)saturate(HectonScatterFiniteOr(_Metallic, 0.0));
+            half occlusionStrength = (half)saturate(HectonScatterFiniteOr(_OcclusionStrength, 1.0));
+            half smoothnessScale = (half)saturate(HectonScatterFiniteOr(_Smoothness, 0.35));
+            HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, metallicScale, occlusionStrength, smoothnessScale);
             half metallic = decodedMask.metallic;
             half ambientOcclusion = decodedMask.occlusion;
             half smoothness = decodedMask.smoothness;
             half emissionMask = decodedMask.emissionMask;
             half3 normalWS = HectonCoreLitSafeNormalize(input.normalWS);
-            normalWS = HectonCoreLitApplyTripleDetailMicroNormals(input.positionWS, normalWS, (half)_MicroNormalStrength, (half)_MicroNormalTiling, 2.0h);
+            half microNormalStrength = (half)saturate(HectonScatterFiniteOr(_MicroNormalStrength, 0.0));
+            half microNormalTiling = (half)clamp(HectonScatterFiniteOr(_MicroNormalTiling, 52.0), 4.0, 128.0);
+            normalWS = HectonCoreLitApplyTripleDetailMicroNormals(input.positionWS, normalWS, microNormalStrength, microNormalTiling, 2.0h);
             half3 viewDirWS = HectonCoreLitSafeNormalize(input.viewDirWS);
             half3 albedo = surface.rgb;
-            HectonCoreLitApplyEnvironmentalWear(input.positionWS, normalWS, (half)_EnvironmentalWear, (half3)_RustSaltColor.rgb, albedo, metallic, smoothness);
+            half environmentalWear = (half)saturate(HectonScatterFiniteOr(_EnvironmentalWear, 0.0));
+            half3 rustSaltColor = (half3)saturate(HectonScatterFinite3(_RustSaltColor.rgb, float3(0.62, 0.35, 0.16)));
+            HectonCoreLitApplyEnvironmentalWear(input.positionWS, normalWS, environmentalWear, rustSaltColor, albedo, metallic, smoothness);
 
             half3 litColor = EvaluateLighting(
                 input.positionWS,
@@ -289,10 +378,13 @@ Shader "Hecton8/World/ScatterIndirectLit"
                 metallic,
                 smoothness,
                 ambientOcclusion);
-            half3 biolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(input.positionWS) * emissionMask * 0.2h;
-            half3 emission = _EmissionColor.rgb * emissionMask + biolum;
-            emission += (half3)HectonCoreLitEvaluateActiveSonarGeoEmission(input.positionWS);
-            half3 finalColor = HectonCoreLitApplyNoirFog(litColor + emission, input.fogFactor, input.positionWS);
+            half3 biolum = (half3)HectonScatterFinite3(HectonCoreLitSampleBiolumVolumeRadiance(input.positionWS), float3(0.0, 0.0, 0.0)) * emissionMask * 0.2h;
+            half3 emissionColor = (half3)HectonScatterFinite3(_EmissionColor.rgb, float3(0.0, 0.0, 0.0));
+            half3 emission = emissionColor * emissionMask + biolum;
+            emission += (half3)HectonScatterFinite3(HectonCoreLitEvaluateActiveSonarGeoEmission(input.positionWS), float3(0.0, 0.0, 0.0));
+            half safeFogFactor = (half)saturate(HectonScatterFiniteOr(input.fogFactor, 0.0));
+            half3 finalColor = HectonCoreLitApplyNoirFog(litColor + emission, safeFogFactor, input.positionWS);
+            finalColor = all(isfinite(finalColor)) ? finalColor : half3(0.0h, 0.0h, 0.0h);
             return half4(finalColor, 1.0h);
         }
 
@@ -300,8 +392,8 @@ Shader "Hecton8/World/ScatterIndirectLit"
         {
             ScatterInstanceGpuData instanceData = ResolveScatterInstance(instanceID);
             float3 positionWS = instanceData.PositionScale.xyz;
-            float scale = max(instanceData.PositionScale.w, 0.05);
-            float invScale = rcp(scale);
+            float scale = HectonScatterPositiveFinite(instanceData.PositionScale.w, 1.0);
+            float invScale = rcp(max(scale, 0.0001));
             float3 normalWS = instanceData.NormalRotation.xyz;
             float rotation = instanceData.NormalRotation.w;
 
@@ -309,14 +401,21 @@ Shader "Hecton8/World/ScatterIndirectLit"
             float3 upWS;
             float3 forwardWS;
             BuildScatterBasis(normalWS, rotation, scale, rightWS, upWS, forwardWS);
-            float3 localPosition = input.positionOS.xyz;
+            float3 localPosition = HectonCoreLitSanitizePositionOS(input.positionOS.xyz);
+            float3 normalOS = HectonCoreLitSafeNormalize(input.normalOS);
+            localPosition += ResolveProceduralRockOffset(positionWS, localPosition, normalOS, scale);
             float3 swayOffsetWS = ResolveScatterSineParabolaSway(positionWS, localPosition, forwardWS, scale, rotation);
             float3 resolvedPositionWS = positionWS + rightWS * localPosition.x + upWS * localPosition.y + forwardWS * localPosition.z + swayOffsetWS;
-            float3 resolvedNormalWS = ResolveScatterNormal(input.normalOS, rightWS, upWS, forwardWS, invScale);
-            resolvedPositionWS = HectonCoreLitApplyStormRainDripVertexRipple(resolvedPositionWS, resolvedNormalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
+            resolvedPositionWS = HectonCoreLitSanitizePositionWS(resolvedPositionWS);
+            float3 resolvedNormalWS = ResolveScatterNormal(normalOS, rightWS, upWS, forwardWS, invScale);
+            half dripAmplitude = (half)min(HectonScatterNonNegativeFinite(_StormRainDripAmplitude), 0.025);
+            half dripTiling = (half)clamp(HectonScatterFiniteOr(_StormRainDripTiling, 1.0), 0.5, 16.0);
+            half dripSpeed = (half)min(HectonScatterNonNegativeFinite(_StormRainDripSpeed), 8.0);
+            resolvedPositionWS = HectonCoreLitApplyStormRainDripVertexRipple(resolvedPositionWS, resolvedNormalWS, dripAmplitude, dripTiling, dripSpeed);
 
-            float3 lightDirectionWS = _MainLightPosition.xyz;
+            float3 lightDirectionWS = HectonCoreLitSafeNormalize(_MainLightPosition.xyz);
             float4 positionCS = TransformWorldToHClip(ApplyShadowBias(resolvedPositionWS, resolvedNormalWS, lightDirectionWS));
+            positionCS = HectonScatterFinite4(positionCS, float4(0.0, 0.0, UNITY_NEAR_CLIP_VALUE, 1.0));
         #if UNITY_REVERSED_Z
             positionCS.z = min(positionCS.z, UNITY_NEAR_CLIP_VALUE);
         #else

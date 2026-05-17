@@ -320,6 +320,30 @@ Validation:
 - Path-limited `git diff --check` reports only CRLF normalization warnings.
 - Latest full compile proof remains build attempt 21 from the legacy scalar bridge pass: 0 warnings, 0 errors.
 
+## Legacy Zone Light NaN Vaccination
+
+What was wrong:
+- Cave/floor/ocean legacy pooled lights were still downstream NaN sinks: bad serialized mood, hazard, intensity, range, count, radius, depth, pulse, or transform data could enter `Light` properties or AUP conversion.
+- Inspector `Range` attributes do not protect runtime-loaded or corrupted serialized data.
+
+What was done:
+- `HectonBiolumZone` now clamps `_maxLights` and `_updateInterval`, sanitizes `GetZonePosition()` before AUP conversion, clamps pooled light position/color/range/intensity writes, and emits one invalid-input telemetry signal per frame.
+- `FloorBiolumZone` now sanitizes cluster count, cluster size, pulse frequency, and pulse intensity before procedural placement/drift.
+- `OceanBiolumZone` now sanitizes light count, scatter radius, and depth ratio before placement, tint, range, and intensity math.
+
+Cinematic Cheats used:
+- Preserved the cheap local-light illusion: finite triangle-wave drift and bounded pooled lights, no new particles, no MaterialPropertyBlocks, no per-renderer state.
+- Low tier stays cheap; High/Ultra keeps the richer local glow contribution without creating a new simulation.
+
+Exact Microseconds saved:
+- 0 us measured and 0 us claimed.
+- Bounded work remains at 16 pooled lights per zone and one invalid telemetry publish per bad-input frame.
+
+Validation:
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly` first failed before compilation because `Temp/obj/Hecton8.Core/project.assets.json` was missing.
+- `dotnet restore Hecton8.Core.csproj --disable-parallel` regenerated the project assets file.
+- Build attempt 22 with the same no-restore command succeeded with 0 warnings and 0 errors.
+
 ## Diffusion Volume And Zone Time Hardening
 
 What was wrong:

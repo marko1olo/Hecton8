@@ -259,35 +259,43 @@ Shader "Hecton8/Flora/ProceduralBio"
 
             half4 ResolveProceduralBioGlobalBiolum(float3 positionWS)
             {
-                int activeCount = min(max((int)_GlobalBiolumParams.x, 0), 16);
+                if (!all(isfinite(positionWS)))
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+                float4 safeParams = all(isfinite(_GlobalBiolumParams)) ? _GlobalBiolumParams : float4(0.0, 0.0, 0.0, 0.0);
+                float4 safeAupOffset = all(isfinite(_GlobalBiolumAupOffset)) ? _GlobalBiolumAupOffset : float4(0.0, 0.0, 0.0, 0.0);
+                float safeClock = isfinite(_GlobalBiolumClock.x) ? _GlobalBiolumClock.x : 0.0;
+                int activeCount = min(max((int)floor(max(safeParams.x, 0.0)), 0), 16);
                 if (activeCount <= 0)
                     return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
-                float selector = frac(abs(positionWS.x * 0.037 + positionWS.z * 0.053 + _GlobalBiolumAupOffset.x * 0.0013 + _GlobalBiolumAupOffset.z * 0.0017));
+                float selector = frac(abs(positionWS.x * 0.037 + positionWS.z * 0.053 + safeAupOffset.x * 0.0013 + safeAupOffset.z * 0.0017));
                 int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
-                float4 state = _GlobalBiolumStates[stateIndex];
-                half strobe = saturate((half)_GlobalBiolumParams.z);
-                half highTier = step(4.0h, (half)_GlobalBiolumParams.y);
+                float4 stateRaw = _GlobalBiolumStates[stateIndex];
+                float4 state = all(isfinite(stateRaw)) ? stateRaw : float4(0.0, 0.0, 0.0, 0.0);
+                half strobe = saturate((half)max(safeParams.z, 0.0));
+                half highTier = step(4.0h, (half)max(safeParams.y, 0.0));
                 int secondaryIndex = stateIndex + 1;
                 if (secondaryIndex >= activeCount)
                     secondaryIndex = 0;
-                float4 secondaryState = _GlobalBiolumStates[secondaryIndex];
+                float4 secondaryStateRaw = _GlobalBiolumStates[secondaryIndex];
+                float4 secondaryState = all(isfinite(secondaryStateRaw)) ? secondaryStateRaw : float4(0.0, 0.0, 0.0, 0.0);
                 half overdrive = 0.0h;
                 half godSpark = 0.0h;
                 half godHaze = 0.0h;
                 if (highTier > 0.5h)
                 {
-                    half overPulse = (half)(1.0 - abs(frac(_GlobalBiolumClock.x * 0.07 + selector * 3.0) * 2.0 - 1.0));
-                    half filament = (half)(1.0 - abs(frac(positionWS.x * 0.173 + positionWS.y * 0.097 + positionWS.z * 0.131 + _GlobalBiolumClock.x * 0.23) * 2.0 - 1.0));
+                    half overPulse = (half)(1.0 - abs(frac(safeClock * 0.07 + selector * 3.0) * 2.0 - 1.0));
+                    half filament = (half)(1.0 - abs(frac(positionWS.x * 0.173 + positionWS.y * 0.097 + positionWS.z * 0.131 + safeClock * 0.23) * 2.0 - 1.0));
                     godHaze = smoothstep(0.42h, 0.92h, overPulse) * (0.55h + filament * 0.45h);
                     godSpark = smoothstep(0.82h, 0.98h, filament) * overPulse;
                     overdrive = saturate(overPulse * 0.35h + godSpark * 0.22h);
                 }
-                half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
-                half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
-                color = lerp(color, (half3)secondaryState.rgb, overdrive);
+                half3 color = lerp(saturate((half3)state.rgb), half3(1.0h, 1.0h, 1.0h), strobe);
+                half intensity = clamp(max((half)max(state.w, 0.0), strobe * 10.0h), 0.0h, 10.0h);
+                color = lerp(color, saturate((half3)secondaryState.rgb), overdrive);
                 color = saturate(color + godHaze * half3(0.07h, 0.21h, 0.18h));
-                intensity = clamp(intensity + (half)secondaryState.w * overdrive + godSpark * 0.65h + godHaze * 0.32h, 0.0h, 10.0h);
+                intensity = clamp(intensity + (half)max(secondaryState.w, 0.0) * overdrive + godSpark * 0.65h + godHaze * 0.32h, 0.0h, 10.0h);
                 return half4(color, intensity);
             }
 

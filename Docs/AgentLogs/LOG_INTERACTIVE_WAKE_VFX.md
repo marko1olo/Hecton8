@@ -358,3 +358,32 @@ Verification:
 - Targeted scans found no `_DynamicWake`, `DynamicWake`, `TryGetDynamicWakeGpuPayload`, dynamic wake buffer bind, or dynamic wake sanitizer hits in fluid advection, MarineSnow, carve debris renderer, or MarineSnow renderer paths.
 - Global wake scans found `_GlobalWakeBuffer`, `_GlobalWakeVectors`, `_GlobalWakeParams`, `ApplyGlobalWakes`, `ResolveGlobalWakeParamsForCompute`, and `SanitizeGlobalWakeParamsForCompute`.
 - No rebuild was rerun because the active build wall is already recorded in dirty `CameraJuiceSystem.cs`.
+
+## 2026-05-17 - Fluid Engine and Vehicle Wake Data Eviction
+
+What was wrong:
+- `HectonFluidEngine` still owned a private dynamic wake subsystem: NativeArrays, GraphicsBuffers, decay/upload code, payload fields, and RenderGraph binds.
+- `VehicleMotor` wrote an unread `HydrodynamicWakeSample` ring through two local NativeArrays and a scheduled job.
+- Both duplicated the global wake lane.
+
+What was done:
+- Removed the fluid-engine dynamic wake API, staging arrays, buffers, buffer binds, RenderGraph imports, and compute payload fields.
+- Fluid advection now binds only `_GlobalWakeParams`; the compute shader reads `_GlobalWakeBuffer/_GlobalWakeVectors` directly.
+- Removed the VehicleMotor hydrodynamic wake ring and job.
+- VehicleMotor now pushes `WakeGeneratedSignal` directly into the typed global wake lane.
+- Converted touched fluid/vehicle sequential structs to `Pack = 1`.
+
+Cinematic Cheats used:
+- Low/MX350 keeps the same global 4-slot mathematical wake fake.
+- High/Ultra keep the 16-slot global wake wash across flora, silt, debris, MarineSnow, and boids.
+
+Exact Microseconds saved:
+- Fluid engine: removed four dynamic wake GraphicsBuffers, four dynamic wake NativeArrays, and one decay/upload path.
+- VehicleMotor: removed two wake NativeArrays and one scheduled wake write job.
+- Frame-time number is not claimed beyond deleted duplicate work; visual budget remains on the global wake system.
+
+Verification:
+- `rg` found no `_DynamicWake`, `DynamicWake`, `TryGetDynamicWakeGpuPayload`, `DynamicTurbulenceWake`, `WakeTurbulence`, `HydrodynamicWake`, or `hydrodynamicWake` hits in the touched wake/fluid/vehicle paths.
+- `rg` found no non-`Pack = 1` struct layout hits in the touched fluid/vehicle/wake-adjacent set.
+- Restore-enabled build after VehicleMotor purge failed only in dirty `SonarHoloCompass.cs`.
+- Latest no-restore build fails earlier in dirty `H8Memory.cs(1923,9)` with invalid token `}`; this blocks final Core validation outside the wake domain.

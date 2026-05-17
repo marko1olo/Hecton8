@@ -583,7 +583,7 @@ namespace Hecton8.Core.Scheduling
 
         private void ReportDenied(JobAdmissionLane lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs)
         {
-            float safeEstimatedCostMs = ClampTelemetryMilliseconds(estimatedCostMs);
+            float safeEstimatedCostMs = ClampCostTelemetryMilliseconds(estimatedCostMs);
             float safeRemainingBudgetMs = ClampLaneBudgetMilliseconds(lane, remainingBudgetMs);
             WriteBlackbox(lane, jobHash, safeEstimatedCostMs, safeRemainingBudgetMs, admitted: false);
             _telemetrySink?.ReportAdmissionDenied(lane, jobHash, safeEstimatedCostMs, safeRemainingBudgetMs, _criticalDebtFrameCount);
@@ -591,7 +591,7 @@ namespace Hecton8.Core.Scheduling
 
         private void ReportNonFinite(JobAdmissionLane lane, uint jobHash, float value)
         {
-            float safeValue = ClampTelemetryMilliseconds(value);
+            float safeValue = ClampCostTelemetryMilliseconds(value);
             WriteBlackbox(lane, jobHash, safeValue, 0f, admitted: false);
             DumpFaultStateToTelemetry();
             _telemetrySink?.ReportNonFiniteAdmissionState(lane, jobHash, safeValue);
@@ -632,7 +632,7 @@ namespace Hecton8.Core.Scheduling
                     _telemetrySink.ReportCostState(
                         slot,
                         jobHashes[slot],
-                        math.isfinite(cost) ? cost : 0f,
+                        ClampCostTelemetryMilliseconds(cost),
                         slotCount,
                         overflow);
                 }
@@ -656,7 +656,7 @@ namespace Hecton8.Core.Scheduling
             {
                 FrameSequence = _refillFrameSequence,
                 JobHash = jobHash,
-                EstimatedCostMs = ClampTelemetryMilliseconds(estimatedCostMs),
+                EstimatedCostMs = ClampCostTelemetryMilliseconds(estimatedCostMs),
                 RemainingBudgetMs = ClampLaneBudgetMilliseconds(laneIndex, remainingBudgetMs),
                 CriticalDebtFrames = _criticalDebtFrameCount,
                 Lane = (byte)laneIndex,
@@ -668,10 +668,10 @@ namespace Hecton8.Core.Scheduling
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float ClampTelemetryMilliseconds(float milliseconds)
+        private static float ClampCostTelemetryMilliseconds(float milliseconds)
         {
             return math.isfinite(milliseconds)
-                ? math.clamp(milliseconds, LaneDebtFloorMs, AdmissionCostClampMs)
+                ? math.clamp(milliseconds, 0f, AdmissionCostClampMs)
                 : 0f;
         }
 

@@ -161,7 +161,7 @@ namespace Hecton8.World
 
             public void PushOverwrite(in T value)
             {
-                NativeArray<T> items = ResolveItems();
+                var items = ResolveItems();
                 if (!items.IsCreated || items.Length <= 0)
                     return;
 
@@ -1537,8 +1537,6 @@ namespace Hecton8.World
 
         private MaterialPropertyBlock _materialPropertyBlock;
 
-        private BoidData[] _spawnData;
-        private BoidData[] _singleBoidUpload;
         private HectonBiolumZone[] _deepBiolumZones;
         private float[] _deepBiolumZoneScores;
         private BeaconNetworkSystem.BeaconSnapshot[] _formationBeaconSnapshots;
@@ -2408,18 +2406,6 @@ namespace Hecton8.World
         {
             _boidMeshVertexCount = boidMesh != null ? boidMesh.vertexCount : 0;
 
-            if (_spawnData == null || _spawnData.Length != boidCount)
-            {
-                // COLD ALLOC: BoidData[boidCount] - CPU staging array for deterministic spawn uploads - owner: SargassumMicroFaunaBoids
-                _spawnData = new BoidData[boidCount];
-            }
-
-            if (_singleBoidUpload == null || _singleBoidUpload.Length != 1)
-            {
-                // COLD ALLOC: BoidData[1] - single-index consumed boid GPU patch upload cache - owner: SargassumMicroFaunaBoids
-                _singleBoidUpload = new BoidData[1];
-            }
-
             if (_deepBiolumZones == null || _deepBiolumZones.Length != deepBiolumAnchorCapacity)
             {
                 // COLD ALLOC: HectonBiolumZone[deepBiolumAnchorCapacity] - deep-sea biolum anchor cache for bait-ball rebuilds - owner: SargassumMicroFaunaBoids
@@ -2546,7 +2532,7 @@ namespace Hecton8.World
 
         private void UploadSpawnDataToBoidBuffers(int uploadCount)
         {
-            NativeArray<BoidData> boidState = ResolveBoidState();
+            var boidState = ResolveBoidState();
             int capacity = boidState.IsCreated ? boidState.Length : 0;
             int safeUploadCount = math.clamp(uploadCount, 0, math.min(boidCount, capacity));
             if (safeUploadCount <= 0)
@@ -2595,7 +2581,7 @@ namespace Hecton8.World
 
         private void UploadGrazingAnchors()
         {
-            NativeArray<GrazingAnchorData> grazingAnchors = ResolveGrazingAnchors();
+            var grazingAnchors = ResolveGrazingAnchors();
             int capacity = grazingAnchors.IsCreated ? grazingAnchors.Length : 0;
             _activeGrazingAnchorCount = math.clamp(_activeGrazingAnchorCount, 0, math.min(grazingAnchorCount, capacity));
             _debugGrazingAnchorCount = _activeGrazingAnchorCount;
@@ -2607,7 +2593,7 @@ namespace Hecton8.World
 
         private void UploadFormationBeacons()
         {
-            NativeArray<FormationBeaconData> formationBeacons = ResolveFormationBeacons();
+            var formationBeacons = ResolveFormationBeacons();
             int capacity = formationBeacons.IsCreated ? formationBeacons.Length : 0;
             _debugFormationBeaconCount = math.clamp(_debugFormationBeaconCount, 0, math.min(formationBeaconCapacity, capacity));
             if (_debugFormationBeaconCount <= 0 || _formationBeaconBuffer == null || !formationBeacons.IsCreated)
@@ -2618,7 +2604,7 @@ namespace Hecton8.World
 
         private void UploadFormationObstacles()
         {
-            NativeArray<FormationObstacleData> formationObstacles = ResolveFormationObstacles();
+            var formationObstacles = ResolveFormationObstacles();
             int capacity = formationObstacles.IsCreated ? formationObstacles.Length : 0;
             _debugFormationObstacleCount = math.clamp(_debugFormationObstacleCount, 0, math.min(formationObstacleCapacity, capacity));
             if (_debugFormationObstacleCount <= 0 || _formationObstacleBuffer == null || !formationObstacles.IsCreated)
@@ -2629,7 +2615,7 @@ namespace Hecton8.World
 
         private void UploadMassiveThreats()
         {
-            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            var massiveThreats = ResolveMassiveThreats();
             int capacity = massiveThreats.IsCreated ? massiveThreats.Length : 0;
             _activeMassiveThreatCount = math.clamp(_activeMassiveThreatCount, 0, math.min(maxMassiveThreatCount, capacity));
             _debugMassiveThreatCount = _activeMassiveThreatCount;
@@ -2746,7 +2732,7 @@ namespace Hecton8.World
             if (EnsureBufferCapacity(ref _threatGridBuffer, cellCount, ThreatGridStride))
                 _computeStaticBuffersBound = false;
             EnsureVaultBufferHandle(_dataVault ?? GlobalRegistry.DataVault, ref _threatGridUploadHandle, BufferID.SargassumThreatGridUpload, cellCount);
-            NativeArray<uint> threatGridUpload = ResolveVaultBuffer(ref _threatGridUploadHandle);
+            var threatGridUpload = ResolveVaultBuffer(ref _threatGridUploadHandle);
             if (!threatGridUpload.IsCreated || threatGridUpload.Length < cellCount)
             {
                 ResetThreatGridSnapshot();
@@ -3152,7 +3138,7 @@ namespace Hecton8.World
 
         private void BuildStatisticalRematerializedSpawnSet(int rematerializedCount)
         {
-            NativeArray<BoidData> boidState = ResolveBoidState();
+            var boidState = ResolveBoidState();
             if (!boidState.IsCreated || boidState.Length <= 0)
                 return;
 
@@ -3185,7 +3171,7 @@ namespace Hecton8.World
 
         private void BuildStatisticalGrazingAnchors(Vector3 center, float radius, int rematerializedCount)
         {
-            NativeArray<GrazingAnchorData> grazingAnchors = ResolveGrazingAnchors();
+            var grazingAnchors = ResolveGrazingAnchors();
             if (!grazingAnchors.IsCreated || grazingAnchors.Length <= 0)
             {
                 _activeGrazingAnchorCount = 0;
@@ -3364,8 +3350,8 @@ namespace Hecton8.World
         {
             _debugFormationBeaconCount = 0;
             _debugFormationObstacleCount = 0;
-            NativeArray<FormationBeaconData> formationBeacons = ResolveFormationBeacons();
-            NativeArray<FormationObstacleData> formationObstacles = ResolveFormationObstacles();
+            var formationBeacons = ResolveFormationBeacons();
+            var formationObstacles = ResolveFormationObstacles();
             int formationBeaconLimit = formationBeacons.IsCreated ? math.min(formationBeaconCapacity, formationBeacons.Length) : 0;
             int formationObstacleLimit = formationObstacles.IsCreated ? math.min(formationObstacleCapacity, formationObstacles.Length) : 0;
             if (formationBeaconLimit <= 0 || formationObstacleLimit <= 0)
@@ -3428,7 +3414,7 @@ namespace Hecton8.World
         private void RefreshStaticObstacleCache()
         {
             _staticObstacleCacheCount = 0;
-            NativeArray<StaticObstacleData> staticObstacleCache = ResolveVaultBuffer(ref _staticObstacleCacheHandle);
+            var staticObstacleCache = ResolveVaultBuffer(ref _staticObstacleCacheHandle);
             if (_mapMagicVegetationBridge == null || !staticObstacleCache.IsCreated)
                 return;
 
@@ -3472,8 +3458,8 @@ namespace Hecton8.World
 
         private void HarvestFormationObstacles(Vector3 origin)
         {
-            NativeArray<StaticObstacleData> staticObstacleCache = ResolveVaultBuffer(ref _staticObstacleCacheHandle);
-            NativeArray<FormationObstacleData> formationObstacles = ResolveFormationObstacles();
+            var staticObstacleCache = ResolveVaultBuffer(ref _staticObstacleCacheHandle);
+            var formationObstacles = ResolveFormationObstacles();
             int formationObstacleLimit = formationObstacles.IsCreated ? math.min(formationObstacleCapacity, formationObstacles.Length) : 0;
             if (formationObstacleLimit <= 0 || !staticObstacleCache.IsCreated)
                 return;
@@ -3513,8 +3499,8 @@ namespace Hecton8.World
             _debugLeviathanNodeCount = _leviathanPathNodeCount;
             _debugLeviathanThreatLevel = 0f;
             _debugLeviathanHotspotWS = _leviathanHotspotWS;
-            NativeArray<LeviathanNodeData> leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
-            NativeArray<LeviathanNodeData> leviathanNodeBack = ResolveVaultBuffer(ref _leviathanNodeBackHandle);
+            var leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
+            var leviathanNodeBack = ResolveVaultBuffer(ref _leviathanNodeBackHandle);
             if (!leviathanNodeFront.IsCreated || !leviathanNodeBack.IsCreated || _mapMagicVegetationBridge == null || !hasPlayerPosition)
             {
                 ClearLeviathanSnapshot();
@@ -3550,8 +3536,8 @@ namespace Hecton8.World
         private void ScheduleLeviathanNodeBuild(NativeArray<Vector3> path, int pathCount)
         {
             int safePathCount = math.min(pathCount, path.Length);
-            NativeArray<LeviathanNodeData> leviathanNodeBack = ResolveVaultBuffer(ref _leviathanNodeBackHandle);
-            NativeArray<int> leviathanNodeCount = ResolveVaultBuffer(ref _leviathanNodeCountHandle);
+            var leviathanNodeBack = ResolveVaultBuffer(ref _leviathanNodeBackHandle);
+            var leviathanNodeCount = ResolveVaultBuffer(ref _leviathanNodeCountHandle);
             if (safePathCount < 2 || !leviathanNodeBack.IsCreated || leviathanNodeBack.Length <= 0 || !leviathanNodeCount.IsCreated)
                 return;
 
@@ -3559,7 +3545,7 @@ namespace Hecton8.World
                 return;
 
             EnsureVaultBufferHandle(_dataVault ?? GlobalRegistry.DataVault, ref _leviathanPathScratchHandle, BufferID.SargassumLeviathanPathScratch, safePathCount);
-            NativeArray<float3> leviathanPathScratch = ResolveVaultBuffer(ref _leviathanPathScratchHandle);
+            var leviathanPathScratch = ResolveVaultBuffer(ref _leviathanPathScratchHandle);
             if (!leviathanPathScratch.IsCreated || leviathanPathScratch.Length < safePathCount)
                 return;
 
@@ -3584,7 +3570,7 @@ namespace Hecton8.World
             positionWS = _fieldCenter;
             tangentWS = Vector3.forward;
             radiusWS = math.max(0.5f, leviathanBodyRadius);
-            NativeArray<LeviathanNodeData> leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
+            var leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
             if (!leviathanNodeFront.IsCreated || _leviathanPathNodeCount < 2)
                 return false;
 
@@ -3697,8 +3683,8 @@ namespace Hecton8.World
 
         private void BuildLeviathanSpawnSet(int spawnCount)
         {
-            NativeArray<BoidData> boidState = ResolveBoidState();
-            NativeArray<LeviathanNodeData> leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
+            var boidState = ResolveBoidState();
+            var leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
             if (_leviathanPathNodeCount < 2 || !boidState.IsCreated || !leviathanNodeFront.IsCreated)
                 return;
 
@@ -3754,7 +3740,7 @@ namespace Hecton8.World
 
         private void BuildDeepSpawnSet(int zoneCount, int spawnCount)
         {
-            NativeArray<BoidData> boidState = ResolveBoidState();
+            var boidState = ResolveBoidState();
             if (!boidState.IsCreated || boidState.Length <= 0)
                 return;
 
@@ -3818,7 +3804,7 @@ namespace Hecton8.World
 
         private void BuildDeepGrazingAnchors(int zoneCount)
         {
-            NativeArray<GrazingAnchorData> grazingAnchors = ResolveGrazingAnchors();
+            var grazingAnchors = ResolveGrazingAnchors();
             if (!grazingAnchors.IsCreated || grazingAnchors.Length <= 0)
             {
                 _activeGrazingAnchorCount = 0;
@@ -3850,7 +3836,7 @@ namespace Hecton8.World
 
         private void BuildSpawnSet(Vector4 densityWorldRect, Vector3 driftOffset, int spawnCount)
         {
-            NativeArray<BoidData> boidState = ResolveBoidState();
+            var boidState = ResolveBoidState();
             if (!boidState.IsCreated || boidState.Length <= 0)
                 return;
 
@@ -3912,7 +3898,7 @@ namespace Hecton8.World
 
         private void BuildGrazingAnchors(Vector4 densityWorldRect, Vector3 driftOffset)
         {
-            NativeArray<GrazingAnchorData> grazingAnchors = ResolveGrazingAnchors();
+            var grazingAnchors = ResolveGrazingAnchors();
             if (!grazingAnchors.IsCreated || grazingAnchors.Length <= 0)
             {
                 _activeGrazingAnchorCount = 0;
@@ -4163,7 +4149,7 @@ namespace Hecton8.World
             float submarineThreatRadius,
             SimulationLodTier simulationLodTier)
         {
-            NativeArray<float4> boidSensoryThreats = ResolveBoidSensoryThreats();
+            var boidSensoryThreats = ResolveBoidSensoryThreats();
             GraphicsBuffer sensoryThreatWriteBuffer = ResolveBoidSensoryThreatWriteBuffer();
             if (!boidSensoryThreats.IsCreated || sensoryThreatWriteBuffer == null)
             {
@@ -4486,7 +4472,7 @@ namespace Hecton8.World
             if (!changed || _predatorAupFallbackBuffer == null)
                 return changed;
 
-            NativeArray<float4> mapped = _predatorAupFallbackBuffer.LockBufferForWrite<float4>(0, PredatorAupBufferCapacity);
+            var mapped = _predatorAupFallbackBuffer.LockBufferForWrite<float4>(0, PredatorAupBufferCapacity);
             for (int i = 0; i < PredatorAupBufferCapacity; i++)
                 mapped[i] = float4.zero;
             _predatorAupFallbackBuffer.UnlockBufferAfterWrite<float4>(PredatorAupBufferCapacity);
@@ -4501,7 +4487,7 @@ namespace Hecton8.World
             SimulationLodTier simulationLodTier,
             bool shouldRender)
         {
-            NativeArray<SimulationFrameConstants> simulationFrame = ResolveVaultBuffer(ref _simulationFrameHandle);
+            var simulationFrame = ResolveVaultBuffer(ref _simulationFrameHandle);
             if (!simulationFrame.IsCreated || _simulationFrameBuffer == null)
                 return false;
 
@@ -4987,7 +4973,7 @@ namespace Hecton8.World
 
         private void HandleMassiveDisplacement(in SargassumGlobalDragManager.MassiveDisplacementSignal signal)
         {
-            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            var massiveThreats = ResolveMassiveThreats();
             int threatCapacity = massiveThreats.IsCreated ? math.min(maxMassiveThreatCount, massiveThreats.Length) : 0;
             if (!massiveThreats.IsCreated ||
                 threatCapacity == 0 ||
@@ -5087,7 +5073,7 @@ namespace Hecton8.World
             float panicRadiusWS,
             float durationSeconds)
         {
-            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            var massiveThreats = ResolveMassiveThreats();
             int threatCapacity = massiveThreats.IsCreated ? math.min(maxMassiveThreatCount, massiveThreats.Length) : 0;
             if (!massiveThreats.IsCreated || threatCapacity == 0)
                 return;
@@ -5155,7 +5141,7 @@ namespace Hecton8.World
             float durationSeconds,
             float strength01)
         {
-            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            var massiveThreats = ResolveMassiveThreats();
             int threatCapacity = massiveThreats.IsCreated ? math.min(maxMassiveThreatCount, massiveThreats.Length) : 0;
             if (!massiveThreats.IsCreated ||
                 threatCapacity == 0 ||
@@ -5226,9 +5212,9 @@ namespace Hecton8.World
             uint predatorId,
             float currentTimeSeconds)
         {
-            NativeArray<BoidData> boidState = ResolveBoidState();
-            NativeArray<BoidKillSignal> killSignals = ResolveVaultBuffer(ref _killSignalHandle);
-            NativeArray<int> killSignalCount = ResolveVaultBuffer(ref _killSignalCountHandle);
+            var boidState = ResolveBoidState();
+            var killSignals = ResolveVaultBuffer(ref _killSignalHandle);
+            var killSignalCount = ResolveVaultBuffer(ref _killSignalCountHandle);
             if (!boidState.IsCreated ||
                 !killSignals.IsCreated ||
                 !killSignalCount.IsCreated ||
@@ -5305,9 +5291,9 @@ namespace Hecton8.World
 
         private int DrainPredatorKillSignals(float currentTimeSeconds)
         {
-            NativeArray<BoidData> boidState = ResolveBoidState();
-            NativeArray<BoidKillSignal> killSignals = ResolveVaultBuffer(ref _killSignalHandle);
-            NativeArray<int> killSignalCount = ResolveVaultBuffer(ref _killSignalCountHandle);
+            var boidState = ResolveBoidState();
+            var killSignals = ResolveVaultBuffer(ref _killSignalHandle);
+            var killSignalCount = ResolveVaultBuffer(ref _killSignalCountHandle);
             if (!boidState.IsCreated || !killSignals.IsCreated || !killSignalCount.IsCreated || killSignalCount.Length <= 0)
                 return 0;
 
@@ -5419,7 +5405,7 @@ namespace Hecton8.World
 
         internal int RegisterWhaleFallScavengerBurst(Vector3 centerWS, uint sourceId, float currentTimeSeconds)
         {
-            NativeArray<BoidData> boidState = ResolveBoidState();
+            var boidState = ResolveBoidState();
             if (!boidState.IsCreated ||
                 _activeBoidCount <= 0 ||
                 _lastSimulationLodTier != SimulationLodTier.Full)
@@ -5501,14 +5487,14 @@ namespace Hecton8.World
                 return;
             }
 
-            NativeArray<BoidData> mapped = buffer.LockBufferForWrite<BoidData>(boidId, 1);
+            var mapped = buffer.LockBufferForWrite<BoidData>(boidId, 1);
             mapped[0] = source;
             buffer.UnlockBufferAfterWrite<BoidData>(1);
         }
 
         private void RecordFoodChainTelemetry(uint flags, Vector3 eventPositionWS, uint sourceHash, uint anomalyHash)
         {
-            NativeArray<FoodChainTelemetryEntry> foodChainTelemetryRing = ResolveVaultBuffer(ref _foodChainTelemetryRingHandle);
+            var foodChainTelemetryRing = ResolveVaultBuffer(ref _foodChainTelemetryRingHandle);
             if (!foodChainTelemetryRing.IsCreated)
                 return;
 
@@ -5565,7 +5551,7 @@ namespace Hecton8.World
 
         private void TryDumpFoodChainTelemetry(uint anomalyHash)
         {
-            NativeArray<FoodChainTelemetryEntry> foodChainTelemetryRing = ResolveVaultBuffer(ref _foodChainTelemetryRingHandle);
+            var foodChainTelemetryRing = ResolveVaultBuffer(ref _foodChainTelemetryRingHandle);
             if (_foodChainTelemetryDumped || !foodChainTelemetryRing.IsCreated)
                 return;
 
@@ -5622,7 +5608,7 @@ namespace Hecton8.World
             int sensoryThreatFlags,
             uint preUploadAnomalyHash)
         {
-            NativeArray<BoidSensoryBlackBoxEntry> boidSensoryBlackBox = ResolveBoidSensoryBlackBox();
+            var boidSensoryBlackBox = ResolveBoidSensoryBlackBox();
             if (!boidSensoryBlackBox.IsCreated || boidSensoryBlackBox.Length <= 0)
                 return;
 
@@ -6362,7 +6348,7 @@ namespace Hecton8.World
             if (_mapMagicVegetationBridge == null)
                 return false;
 
-            NativeArray<Vector3> anchors = _mapMagicVegetationBridge.ActiveAbyssalAnchorsNative;
+            var anchors = _mapMagicVegetationBridge.ActiveAbyssalAnchorsNative;
             int anchorCount = _mapMagicVegetationBridge.ActiveAbyssalAnchorCount;
             if (!anchors.IsCreated || anchorCount <= 0)
                 return false;
@@ -6387,7 +6373,7 @@ namespace Hecton8.World
 
         private void UpdateMassiveThreats()
         {
-            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            var massiveThreats = ResolveMassiveThreats();
             if (!massiveThreats.IsCreated)
                 return;
 
@@ -6476,7 +6462,7 @@ namespace Hecton8.World
             out SimulationLodTier simulationLodTier)
         {
             FoveatedSimulationDecision decision = default;
-            NativeArray<FoveatedSimulationDecision> foveatedSimulationFront = ResolveVaultBuffer(ref _foveatedSimulationFrontHandle);
+            var foveatedSimulationFront = ResolveVaultBuffer(ref _foveatedSimulationFrontHandle);
             if (foveatedSimulationFront.IsCreated && foveatedSimulationFront.Length > 0)
                 decision = foveatedSimulationFront[0];
 
@@ -6634,7 +6620,7 @@ namespace Hecton8.World
         private void RecalculateMassiveThreatCount()
         {
             _activeMassiveThreatCount = 0;
-            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            var massiveThreats = ResolveMassiveThreats();
             int threatCapacity = massiveThreats.IsCreated ? math.min(maxMassiveThreatCount, massiveThreats.Length) : 0;
             if (threatCapacity <= 0)
             {
@@ -6695,7 +6681,7 @@ namespace Hecton8.World
             if (_boidIndirectArgsMesh == mesh && _boidIndirectArgsInstanceCount == instanceCount)
                 return true;
 
-            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> mappedArgs =
+            var mappedArgs =
                 _boidIndirectArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
             mappedArgs[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
@@ -7006,8 +6992,8 @@ namespace Hecton8.World
             EnsureVaultBufferHandle(vault, ref _foveatedSimulationFrontHandle, BufferID.SargassumFoveatedSimulationFront, 1);
             EnsureVaultBufferHandle(vault, ref _foveatedSimulationBackHandle, BufferID.SargassumFoveatedSimulationBack, 1);
             PopulateFoveatedSimulationInput(frameDeltaTime, cameraDistanceSq, previousAccumulator: 0f);
-            NativeArray<FoveatedSimulationInput> foveatedSimulationInput = ResolveVaultBuffer(ref _foveatedSimulationInputHandle);
-            NativeArray<FoveatedSimulationDecision> foveatedSimulationBack = ResolveVaultBuffer(ref _foveatedSimulationBackHandle);
+            var foveatedSimulationInput = ResolveVaultBuffer(ref _foveatedSimulationInputHandle);
+            var foveatedSimulationBack = ResolveVaultBuffer(ref _foveatedSimulationBackHandle);
             if (!foveatedSimulationInput.IsCreated || !foveatedSimulationBack.IsCreated)
                 return;
 
@@ -7025,7 +7011,7 @@ namespace Hecton8.World
 
         private void PopulateFoveatedSimulationInput(float frameDeltaTime, float cameraDistanceSq, float previousAccumulator)
         {
-            NativeArray<FoveatedSimulationInput> foveatedSimulationInput = ResolveVaultBuffer(ref _foveatedSimulationInputHandle);
+            var foveatedSimulationInput = ResolveVaultBuffer(ref _foveatedSimulationInputHandle);
             if (!foveatedSimulationInput.IsCreated || foveatedSimulationInput.Length <= 0)
                 return;
 
@@ -7047,8 +7033,8 @@ namespace Hecton8.World
             if (_foveatedSimulationScheduled)
                 return;
 
-            NativeArray<FoveatedSimulationInput> foveatedSimulationInput = ResolveVaultBuffer(ref _foveatedSimulationInputHandle);
-            NativeArray<FoveatedSimulationDecision> foveatedSimulationBack = ResolveVaultBuffer(ref _foveatedSimulationBackHandle);
+            var foveatedSimulationInput = ResolveVaultBuffer(ref _foveatedSimulationInputHandle);
+            var foveatedSimulationBack = ResolveVaultBuffer(ref _foveatedSimulationBackHandle);
             if (!foveatedSimulationInput.IsCreated ||
                 !foveatedSimulationBack.IsCreated ||
                 foveatedSimulationInput.Length <= 0 ||
@@ -7269,8 +7255,8 @@ namespace Hecton8.World
 
             _leviathanNodeBuildScheduled = false;
 
-            NativeArray<int> leviathanNodeCount = ResolveVaultBuffer(ref _leviathanNodeCountHandle);
-            NativeArray<LeviathanNodeData> leviathanNodeBack = ResolveVaultBuffer(ref _leviathanNodeBackHandle);
+            var leviathanNodeCount = ResolveVaultBuffer(ref _leviathanNodeCountHandle);
+            var leviathanNodeBack = ResolveVaultBuffer(ref _leviathanNodeBackHandle);
             int safeCount = (leviathanNodeCount.IsCreated && leviathanNodeCount.Length > 0)
                 ? math.clamp(leviathanNodeCount[0], 0, leviathanNodeBack.IsCreated ? leviathanNodeBack.Length : 0)
                 : 0;
@@ -7283,7 +7269,7 @@ namespace Hecton8.World
 
         private void UploadActiveLeviathanSnapshot()
         {
-            NativeArray<LeviathanNodeData> leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
+            var leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
             if (_leviathanNodeBuffer == null || !leviathanNodeFront.IsCreated || _leviathanPathNodeCount <= 0)
                 return;
 
@@ -7663,7 +7649,7 @@ namespace Hecton8.World
 
             DispatchOriginShiftToLiveBoidBuffers(runtimeOffset);
 
-            NativeArray<GrazingAnchorData> grazingAnchors = ResolveGrazingAnchors();
+            var grazingAnchors = ResolveGrazingAnchors();
             if (grazingAnchors.IsCreated)
             {
                 int count = math.min(_activeGrazingAnchorCount, grazingAnchors.Length);
@@ -7673,7 +7659,7 @@ namespace Hecton8.World
                 UploadGrazingAnchors();
             }
 
-            NativeArray<MassiveThreatData> massiveThreats = ResolveMassiveThreats();
+            var massiveThreats = ResolveMassiveThreats();
             if (massiveThreats.IsCreated)
             {
                 int count = math.min(_activeMassiveThreatCount, massiveThreats.Length);
@@ -7683,7 +7669,7 @@ namespace Hecton8.World
                 UploadMassiveThreats();
             }
 
-            NativeArray<FormationBeaconData> formationBeacons = ResolveFormationBeacons();
+            var formationBeacons = ResolveFormationBeacons();
             if (formationBeacons.IsCreated)
             {
                 int count = math.min(_debugFormationBeaconCount, formationBeacons.Length);
@@ -7693,7 +7679,7 @@ namespace Hecton8.World
                 UploadFormationBeacons();
             }
 
-            NativeArray<FormationObstacleData> formationObstacles = ResolveFormationObstacles();
+            var formationObstacles = ResolveFormationObstacles();
             if (formationObstacles.IsCreated)
             {
                 int count = math.min(_debugFormationObstacleCount, formationObstacles.Length);
@@ -7703,7 +7689,7 @@ namespace Hecton8.World
                 UploadFormationObstacles();
             }
 
-            NativeArray<LeviathanNodeData> leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
+            var leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
             if (leviathanNodeFront.IsCreated)
             {
                 int frontCount = math.clamp(_leviathanPathNodeCount, 0, leviathanNodeFront.Length);
@@ -7717,7 +7703,7 @@ namespace Hecton8.World
                 GraphicsBufferUploadUtility.UploadNativeArray(_leviathanNodeBuffer, leviathanNodeFront, frontCount);
             }
 
-            NativeArray<LeviathanNodeData> leviathanNodeBack = ResolveVaultBuffer(ref _leviathanNodeBackHandle);
+            var leviathanNodeBack = ResolveVaultBuffer(ref _leviathanNodeBackHandle);
             if (leviathanNodeBack.IsCreated)
             {
                 int backCount = math.clamp(_leviathanPathNodeCount, 0, leviathanNodeBack.Length);

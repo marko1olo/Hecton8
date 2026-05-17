@@ -3,6 +3,7 @@
 Date: 2026-05-14
 Status: ENCYCLOPEDIA VERIFIED
 Evidence class: STATIC_DOC
+Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 Scope: shared terminology for agents and developers. Runtime proof is out of scope.
 

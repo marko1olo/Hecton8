@@ -1,4 +1,5 @@
 using Hecton8.Audio.Propagation;
+using Hecton8.Core.Contracts;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Jobs;

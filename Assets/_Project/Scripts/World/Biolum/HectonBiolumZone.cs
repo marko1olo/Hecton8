@@ -264,7 +264,12 @@ namespace Hecton8.Biolum
         /// </summary>
         public Vector3 GetZonePosition()
         {
-            return _cachedTransform != null ? _cachedTransform.position : transform.position;
+            Vector3 position = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            if (MathGuard.IsFinite(position))
+                return position;
+
+            ReportInvalidZoneInput();
+            return Vector3.zero;
         }
 
         /// <summary>

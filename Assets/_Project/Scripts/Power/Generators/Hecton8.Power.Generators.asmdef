@@ -3,6 +3,8 @@
     "rootNamespace": "Hecton8.Power.Generators",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
         "Hecton8.Power.Generators.Contracts",
         "Unity.Burst",
         "Unity.Collections",

@@ -271,3 +271,21 @@ Solution: This pass used static verification only: targeted `rg` debt scans, han
 Rejected Alternatives: Running another broad build was rejected because it violated the latest operator instruction and would not add proportionate evidence for this narrow edit. Claiming a new compile proof was rejected because no build was run in this pass.
 Scalability potential: No runtime scaling impact; this is validation discipline.
 Hardware Impact: 0 us/frame; validation-only decision.
+
+Problem: Sargassum still declared stale managed `BoidData[]` owners after spawn and single-boid patch paths had moved to vault and mapped GPU writes.
+Solution: Removed `_spawnData`, `_singleBoidUpload`, and their cold-path `EnsureBuffers` allocations. The authoritative CPU staging remains the vault-resolved `NativeArray<BoidData>` view, and single-boid patches continue to write through mapped `GraphicsBuffer` access.
+Rejected Alternatives: Keeping dead arrays as "cold staging" was rejected because they falsely violate H-PHI and leave a managed heap owner in the system. Reintroducing local `NativeArray` staging was rejected because `GlobalDataVault` already owns boid state.
+Scalability potential: Low/Middle keep the same endpoint and acoustic fake behavior without managed staging. High/Ultra keep capsule SDF and instanced visual behavior with the same GPU upload contract.
+Hardware Impact: Removes `BoidData[boidCount]` plus `BoidData[1]` managed owners from this system. No measured frame-time number is claimed; steady hot-path impact is expected 0 us, with memory/GC risk reduced.
+
+Problem: Adjacent legacy boid target tracking still had a player `Transform.position` dependency and its mapped spawn upload helper could lose the original minimum-speed safety when deterministic scatter produced a near-zero vector.
+Solution: Target resolution now uses `PlayerRuntimeContext` pose/AUP data with finite guards and a `PlayerMovement.CurrentAup` fallback. The spawn upload helper restores minimum-speed cardinal fallback before writing both GPU buffers.
+Rejected Alternatives: `Transform.position` polling was rejected by the assignment and the AUP doctrine. A new signal lane was rejected because player runtime context already exists. Reintroducing managed spawn arrays was rejected.
+Scalability potential: Low keeps the same cheap target-follow path and direct upload. High/Ultra retain instanced boid draw and compute behavior without scene-graph position polling.
+Hardware Impact: Removes player scene-graph position polling from the target path and preserves deterministic spawn speed without managed staging. Estimated savings are tiny, under 1 us/frame; no profiler proof is claimed.
+
+Problem: Current compile validation after the adjacent C# debt edits could not complete.
+Solution: Logged `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish22.txt`; `dotnet build --no-restore` timed out with an empty log, then the known orphaned build process was stopped. The status file keeps Polish18 as the last green compile and marks current validation as pending.
+Rejected Alternatives: Running repeated rebuild loops was rejected by the operator instruction. Claiming Polish18 as proof for the latest post-edit state was rejected because the source changed after Polish18.
+Scalability potential: No runtime scaling impact; validation accounting only.
+Hardware Impact: 0 us/frame; build-only blocker.

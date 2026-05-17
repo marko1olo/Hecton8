@@ -4,7 +4,7 @@ Prompt: SIMULATION_BUCKET_DISTRIBUTOR
 Role: CORE_ENGINEER
 Domain: CORE/SCHEDULING
 Task Count: 18
-Current State: PATCH CLEAN / ISOLATED DOTNET GREEN / DEFAULT OUTDIR LOCKED BY CONCURRENT CSC
+Current State: PATCHED / STATIC VERIFIED / ISOLATED DOTNET GREEN BASELINE / NO REBUILD THIS PASS
 
 Mandates Identified Before Coding:
 - ARCH_Execution_Phases.txt
@@ -101,3 +101,8 @@ Mandates Identified Before Coding:
 - [x] BUCKETER_VAULT_LENGTH_GUARDS | DONE | DOD: bucketer cold clear and rebalance-copy paths now check `IsCreated` before reading DataVault buffer lengths. Alternative rejected: relying on earlier initialization proof after possible vault invalidation/teardown races. Estimate: crash prevention; measured runtime gain 0 us.
 - [x] JOB_ADMISSION_BRIDGE_DOUBLE_PUBLISH_GUARD | DONE | DOD: `SetService` now publishes with `Interlocked.CompareExchange` only when the bridge is empty, while preserving same-instance idempotence and owner-checked `ClearService`. Alternative rejected: blind volatile overwrite of existing admission authority. Estimate: ARM64/bootstrap correctness; measured runtime gain 0 us.
 - [x] JOB_ADMISSION_LANE_AWARE_DEBT_CLAMP | DONE | DOD: lane budget clamps now allow negative debt only for lane0 critical; lanes1-5 clamp corrupted negative budgets back to zero before refill, admission, debt borrowing, readout, fault snapshot telemetry, and blackbox writes. Alternative rejected: one lane-agnostic debt floor for all admission lanes. Estimate: telemetry/control correctness; measured runtime gain 0 us.
+- [x] BUCKETER_VAULT_CAPACITY_PROOF | DONE | DOD: bucketer initialization now proves DataVault buffer lengths meet required entity/load/result/frame/blackbox capacities, and `IsInitialized` rejects undersized front-bucket storage. Alternative rejected: treating `IsCreated` as enough proof under vault resize/relocation races. Estimate: crash prevention; measured runtime gain 0 us.
+- [x] BUCKETER_REBALANCE_STORAGE_GATE | DONE | DOD: dynamic rebalance scheduling now requires positive cost/work/load spans and a writable result slot after runtime vault resolution. Alternative rejected: scheduling a background job that cannot publish its result after storage invalidation. Estimate: crash/telemetry correctness; measured runtime gain 0 us.
+- [x] JOB_ADMISSION_COST_TELEMETRY_NONNEGATIVE | DONE | DOD: admission denied/fault/cost-state/blackbox estimated-cost telemetry now clamps to finite nonnegative milliseconds while remaining-budget telemetry keeps lane-aware debt semantics. Alternative rejected: allowing negative invalid-state values to masquerade as cost. Estimate: telemetry hygiene; measured runtime gain 0 us.
+- [x] BUCKETER_ZERO_DELTA_TOASTER_FALLBACK | DONE | DOD: zero or negative unscaled delta now forces minimum active slow buckets instead of high-tier bucket widening. Alternative rejected: spending high-tier active-bucket width during paused/corrupt time input. Estimate: control correctness; measured runtime gain 0 us.
+- [x] NO_REBUILD_CAPACITY_TELEMETRY_PASS | DONE | DOD: per user instruction, this pass used `git diff --check`, forbidden-pattern scans, struct/math scans, and diff review only; no `dotnet build`/rebuild was run. Alternative rejected: another full rebuild for private guard edits with prior isolated green baseline. Estimate: developer-machine time saved; runtime microseconds not measured.

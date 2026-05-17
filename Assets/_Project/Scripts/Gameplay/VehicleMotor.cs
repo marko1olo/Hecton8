@@ -21,7 +21,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Transport/Vehicle Motor")]
     public sealed class VehicleMotor : MonoBehaviour, IOriginShiftListener, ILateFrameTickable, IPostFixedTickable
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct SubmarineState
         {
             public float3 RuntimePosition;
@@ -31,22 +31,7 @@ namespace Hecton8.Gameplay
             public AbsoluteUniversePositionBlit128 Aup;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
-        internal struct HydrodynamicWakeSample
-        {
-            public float3 RuntimePosition;
-            public float3 Velocity;
-            public float3 Forward;
-            public AbsoluteUniversePositionBlit128 Aup;
-            public float SpeedMetersPerSecond;
-            public float SubmersionFactor;
-            public float Intensity01;
-            public float RadiusMeters;
-            public int Sequence;
-            public int Active;
-        }
-
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct ScheduledSweepState
         {
             public Vector3 StartPosition;
@@ -75,9 +60,7 @@ namespace Hecton8.Gameplay
         private const float WakeSiltVisualSpeedThresholdMetersPerSecond = 15f;
         private const float WakeEmitterOffsetMeters = 4f;
         private const float WakeSiltDecalCooldownSeconds = 0.24f;
-        private const int HydrodynamicWakeSampleCapacity = 64;
-        private const int HydrodynamicWakeSampleMask = HydrodynamicWakeSampleCapacity - 1;
-        private const float HydrodynamicWakeBaseRadiusMeters = 7.5f;
+        private const uint VehicleWakeSourceFlag = 2u;
         private const string NativeMemoryOwner = nameof(VehicleMotor);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const float MinEntanglementTetherMeters = 1.25f;
@@ -124,21 +107,14 @@ namespace Hecton8.Gameplay
         private float _brineViscosityQueryRadiusMeters = 0.5f;
         private float _brineViscosityVerticalHalfExtentMeters = 0.5f;
         private NativeArray<SubmarineState> _submarineState;
-        private NativeArray<HydrodynamicWakeSample> _hydrodynamicWakeSamples;
-        private NativeArray<int> _hydrodynamicWakeWriteState;
         private NativeArray<CapsulecastCommand> _scheduledSweepCommands;
         private NativeArray<RaycastHit> _scheduledSweepResults;
-        private JobHandle _hydrodynamicWakeWriteHandle;
         private JobHandle _scheduledSweepHandle;
         private ScheduledSweepState _scheduledSweepState;
-        private bool _hydrodynamicWakeWritePending;
-        private bool _hydrodynamicWakeResetPending;
         private bool _scheduledSweepPending;
         private bool _scheduledSweepReady;
         private bool _scheduledSweepDiscardAfterCompletion;
         private bool _safeTeleportCollisionModeCaptured;
-        private int _hydrodynamicWakeWriteIndex;
-        private int _hydrodynamicWakeSequence;
         private Vector3 _linearVelocity;
         private Vector3 _localAngularVelocityDegrees;
         private float _groundSlopeLimitDegrees = DefaultGroundSlopeLimitDegrees;
@@ -165,53 +141,6 @@ namespace Hecton8.Gameplay
         private Vector3 _lastBlockingImpactNormal = Vector3.up;
         private float _wakeSiltDecalCooldown;
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
-        private struct HydrodynamicWakeWriteJob : IJob
-        {
-            public NativeArray<HydrodynamicWakeSample> Samples;
-            public NativeArray<int> WriteState;
-            public float3 RuntimePosition;
-            public float3 Velocity;
-            public float3 Forward;
-            public AbsoluteUniversePositionBlit128 Aup;
-            public float SpeedMetersPerSecond;
-            public float SubmersionFactor;
-
-            public void Execute()
-            {
-                if (Samples.Length <= 0 || WriteState.Length < 2)
-                    return;
-
-                if (!math.all(math.isfinite(RuntimePosition)) ||
-                    !math.all(math.isfinite(Velocity)) ||
-                    !math.all(math.isfinite(Forward)))
-                {
-                    return;
-                }
-
-                float intensity01 = math.saturate((SpeedMetersPerSecond - WakeSiltVisualSpeedThresholdMetersPerSecond) / 18f);
-                int writeIndex = WriteState[0] & HydrodynamicWakeSampleMask;
-                int sequence = WriteState[1] + 1;
-                Samples[writeIndex] = new HydrodynamicWakeSample
-                {
-                    RuntimePosition = RuntimePosition,
-                    Velocity = Velocity,
-                    Forward = Forward,
-                    Aup = Aup,
-                    SpeedMetersPerSecond = SpeedMetersPerSecond,
-                    SubmersionFactor = SubmersionFactor,
-                    Intensity01 = intensity01,
-                    RadiusMeters = HydrodynamicWakeBaseRadiusMeters + intensity01 * 4f,
-                    Sequence = sequence,
-                    Active = 1
-                };
-
-                WriteState[0] = (writeIndex + 1) & HydrodynamicWakeSampleMask;
-                WriteState[1] = sequence;
-            }
-        }
-
         /// <summary>Current kinematic linear velocity in world space.</summary>
         public Vector3 LinearVelocity => _linearVelocity;
 
@@ -222,10 +151,6 @@ namespace Hecton8.Gameplay
         public Vector3 PerceivedLinearVelocity => HectonPlayerMotor.SafeVelocity(_linearVelocity);
 
         internal NativeArray<SubmarineState>.ReadOnly SubmarineStateNative => _submarineState.AsReadOnly();
-
-        internal NativeArray<HydrodynamicWakeSample>.ReadOnly HydrodynamicWakeSamplesNative => _hydrodynamicWakeSamples.AsReadOnly();
-
-        internal int HydrodynamicWakeSequence => _hydrodynamicWakeSequence;
 
         /// <summary>True while a deferred capsule sweep is waiting for consumption.</summary>
         public bool HasPendingSweep => _scheduledSweepPending || _scheduledSweepReady;
@@ -276,7 +201,6 @@ namespace Hecton8.Gameplay
             _capsule = capsule;
             CacheBrineViscosityQueryShape();
             EnsureSubmarineState();
-            EnsureHydrodynamicWakeBuffer();
             RegisterMotor();
             TryRegisterOriginShiftListener();
             ResetRuntimeState();
@@ -287,7 +211,6 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             CacheBrineViscosityQueryShape();
-            EnsureHydrodynamicWakeBuffer();
             RegisterMotor();
             TryRegisterOriginShiftListener();
             if (headlessVisualRoot != null)
@@ -301,7 +224,6 @@ namespace Hecton8.Gameplay
             TryUnregisterOriginShiftListener();
             UnregisterMotor();
             DisposeScheduledSweepState();
-            DisposeHydrodynamicWakeBuffer();
             DisposeSubmarineState();
         }
 
@@ -312,7 +234,6 @@ namespace Hecton8.Gameplay
             TryUnregisterOriginShiftListener();
             UnregisterMotor();
             DisposeScheduledSweepState();
-            DisposeHydrodynamicWakeBuffer();
             DisposeSubmarineState();
         }
 
@@ -333,7 +254,6 @@ namespace Hecton8.Gameplay
             _lastKelpDensity01 = 0f;
             _hasFloraAnchorAup = false;
             ClearBlockingImpactCache();
-            RequestDeferredHydrodynamicWakeReset();
             _visualTeleportPending = true;
             WriteSubmarineState(_body != null ? _body.position : Vector3.zero, _body != null ? _body.rotation : Quaternion.identity);
         }
@@ -351,7 +271,6 @@ namespace Hecton8.Gameplay
             _linearVelocity = Vector3.zero;
             _localAngularVelocityDegrees = Vector3.zero;
             BeginSafeTeleportCollisionGuard();
-            RequestImmediateHydrodynamicWakeResetWithoutSync();
             _visualTeleportPending = true;
             if (_body != null)
             {
@@ -492,13 +411,8 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            if (_hydrodynamicWakeResetPending)
-                TryResetHydrodynamicWakeBuffer();
-            else
-                TryCompleteHydrodynamicWakeWriteJob();
-
             ApplyHeadlessVisualInterpolation();
-            if (!_hydrodynamicWakeWritePending && !_hydrodynamicWakeResetPending && headlessVisualRoot == null)
+            if (headlessVisualRoot == null)
                 TryUnregisterLateFrameTickable();
         }
 
@@ -524,7 +438,7 @@ namespace Hecton8.Gameplay
             ApplyOriginShift(shiftOffset, false);
         }
 
-        private void ApplyOriginShift(Vector3 shiftOffset, bool purgeWake)
+        private void ApplyOriginShift(Vector3 shiftOffset, bool _)
         {
             if (shiftOffset.sqrMagnitude <= MinVectorMagnitudeSq)
                 return;
@@ -545,10 +459,6 @@ namespace Hecton8.Gameplay
             if (_lastBlockingImpactPoint.sqrMagnitude > MinVectorMagnitudeSq)
                 _lastBlockingImpactPoint -= shiftOffset;
 
-            if (purgeWake)
-                RequestImmediateHydrodynamicWakeResetWithoutSync();
-            else
-                RequestDeferredHydrodynamicWakeReset();
             _visualTeleportPending = true;
 
             Rigidbody body = _body;
@@ -1303,56 +1213,30 @@ namespace Hecton8.Gameplay
             Vector3 safeForward = forward * inverseForwardLength;
             Vector3 emitterPosition = _body.worldCenterOfMass - (safeForward * WakeEmitterOffsetMeters);
             Vector3 visualWakeVelocity = -safeForward * (speed * math.saturate(_hydrodynamicSubmersionFactor) * 0.35f);
-            WriteHydrodynamicWakeSample(emitterPosition, visualWakeVelocity, safeForward, speed);
+            EmitGlobalVehicleWake(emitterPosition, visualWakeVelocity);
             TryEmitWakeSiltDecal(emitterPosition, visualWakeVelocity, speed);
         }
 
-        private void WriteHydrodynamicWakeSample(
+        private static void EmitGlobalVehicleWake(
             Vector3 emitterPosition,
-            Vector3 wakeVelocity,
-            Vector3 safeForward,
-            float speedMetersPerSecond)
+            Vector3 wakeVelocity)
         {
-            if (_hydrodynamicWakeResetPending ||
-                !_hydrodynamicWakeSamples.IsCreated ||
-                _hydrodynamicWakeSamples.Length <= 0 ||
-                !_hydrodynamicWakeWriteState.IsCreated)
-            {
-                return;
-            }
-
-            if (_hydrodynamicWakeWritePending)
-                return;
-
             float3 emitter = new float3(emitterPosition.x, emitterPosition.y, emitterPosition.z);
             float3 velocity = new float3(wakeVelocity.x, wakeVelocity.y, wakeVelocity.z);
-            float3 forward = new float3(safeForward.x, safeForward.y, safeForward.z);
             if (!math.all(math.isfinite(emitter)) ||
-                !math.all(math.isfinite(velocity)) ||
-                !math.all(math.isfinite(forward)))
+                !math.all(math.isfinite(velocity)))
             {
                 return;
             }
 
-            if (!math.isfinite(speedMetersPerSecond))
-                return;
-
-            float safeSpeed = math.max(0f, speedMetersPerSecond);
-            float safeSubmersion = math.saturate(_hydrodynamicSubmersionFactor);
             AbsoluteUniversePosition wakeAup = AbsoluteUniversePosition.FromRuntimePosition(emitterPosition);
-            _hydrodynamicWakeWriteHandle = new HydrodynamicWakeWriteJob
+            WakeGeneratedSignal signal = new WakeGeneratedSignal
             {
-                RuntimePosition = emitter,
                 Velocity = velocity,
-                Forward = forward,
-                Aup = wakeAup.ToAlignedBlit(),
-                SpeedMetersPerSecond = safeSpeed,
-                SubmersionFactor = safeSubmersion,
-                Samples = _hydrodynamicWakeSamples,
-                WriteState = _hydrodynamicWakeWriteState
-            }.Schedule();
-            _hydrodynamicWakeWritePending = true;
-            TryRegisterLateFrameTickable();
+                PositionAup = wakeAup,
+                SourceFlags = VehicleWakeSourceFlag
+            };
+            SignalBus<WakeGeneratedSignal>.Push(in signal);
         }
 
         private void TryEmitWakeSiltDecal(Vector3 emitterPosition, Vector3 wakeVelocity, float speedMetersPerSecond)
@@ -1542,141 +1426,6 @@ namespace Hecton8.Gameplay
             headlessVisualRoot.SetPositionAndRotation(
                 new Vector3(nextPosition.x, nextPosition.y, nextPosition.z),
                 new Quaternion(nextRotation.value.x, nextRotation.value.y, nextRotation.value.z, nextRotation.value.w));
-        }
-
-        private void EnsureHydrodynamicWakeBuffer()
-        {
-            if (!_hydrodynamicWakeSamples.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<HydrodynamicWakeSample>[64] - fixed submarine wake turbulence ring buffer - owner: VehicleMotor
-                _hydrodynamicWakeSamples = new NativeArray<HydrodynamicWakeSample>(
-                    HydrodynamicWakeSampleCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _hydrodynamicWakeSamples,
-                    NativeMemoryOwner,
-                    nameof(_hydrodynamicWakeSamples),
-                    NativeMemoryLifetime);
-            }
-
-            if (_hydrodynamicWakeWriteState.IsCreated)
-                return;
-
-            // COLD ALLOC: NativeArray<int>[2] - wake write index/sequence state owned by Burst job - owner: VehicleMotor
-            _hydrodynamicWakeWriteState = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _hydrodynamicWakeWriteState,
-                NativeMemoryOwner,
-                nameof(_hydrodynamicWakeWriteState),
-                NativeMemoryLifetime);
-        }
-
-        private void RequestDeferredHydrodynamicWakeReset()
-        {
-            _hydrodynamicWakeResetPending = true;
-            TryRegisterLateFrameTickable();
-        }
-
-        private void RequestImmediateHydrodynamicWakeResetWithoutSync()
-        {
-            _hydrodynamicWakeResetPending = true;
-            _hydrodynamicWakeWriteIndex = 0;
-            _hydrodynamicWakeSequence = 0;
-
-            if (_hydrodynamicWakeWriteState.IsCreated && !_hydrodynamicWakeWritePending)
-            {
-                _hydrodynamicWakeWriteState[0] = 0;
-                _hydrodynamicWakeWriteState[1] = 0;
-            }
-
-            if (_hydrodynamicWakeSamples.IsCreated && !_hydrodynamicWakeWritePending)
-            {
-                for (int i = 0; i < _hydrodynamicWakeSamples.Length; i++)
-                    _hydrodynamicWakeSamples[i] = default;
-
-                _hydrodynamicWakeResetPending = false;
-                return;
-            }
-
-            TryRegisterLateFrameTickable();
-        }
-
-        private bool TryResetHydrodynamicWakeBuffer()
-        {
-            if (!TryCompleteHydrodynamicWakeWriteJob())
-                return false;
-
-            bool shouldClearSamples = _hydrodynamicWakeResetPending ||
-                                      _hydrodynamicWakeWriteIndex != 0 ||
-                                      _hydrodynamicWakeSequence != 0;
-            _hydrodynamicWakeWriteIndex = 0;
-            _hydrodynamicWakeSequence = 0;
-            if (_hydrodynamicWakeWriteState.IsCreated)
-            {
-                _hydrodynamicWakeWriteState[0] = 0;
-                _hydrodynamicWakeWriteState[1] = 0;
-            }
-
-            _hydrodynamicWakeResetPending = false;
-            if (!_hydrodynamicWakeSamples.IsCreated)
-                return true;
-
-            if (shouldClearSamples)
-            {
-                for (int i = 0; i < _hydrodynamicWakeSamples.Length; i++)
-                    _hydrodynamicWakeSamples[i] = default;
-            }
-
-            return true;
-        }
-
-        private bool TryCompleteHydrodynamicWakeWriteJob()
-        {
-            if (!_hydrodynamicWakeWritePending)
-                return true;
-
-            if (!DispatcherJobSwap.TryComplete(ref _hydrodynamicWakeWriteHandle, forceComplete: false))
-                return false;
-
-            _hydrodynamicWakeWritePending = false;
-            _hydrodynamicWakeWriteHandle = default;
-            if (_hydrodynamicWakeWriteState.IsCreated && _hydrodynamicWakeWriteState.Length >= 2)
-            {
-                _hydrodynamicWakeWriteIndex = _hydrodynamicWakeWriteState[0] & HydrodynamicWakeSampleMask;
-                _hydrodynamicWakeSequence = _hydrodynamicWakeWriteState[1];
-            }
-
-            return true;
-        }
-
-        private void DisposeHydrodynamicWakeBuffer()
-        {
-            if (_hydrodynamicWakeWriteState.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_hydrodynamicWakeWriteState);
-                if (_hydrodynamicWakeWritePending)
-                    _hydrodynamicWakeWriteState.Dispose(_hydrodynamicWakeWriteHandle);
-                else
-                    _hydrodynamicWakeWriteState.Dispose();
-                _hydrodynamicWakeWriteState = default;
-            }
-
-            if (_hydrodynamicWakeSamples.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_hydrodynamicWakeSamples);
-                if (_hydrodynamicWakeWritePending)
-                    _hydrodynamicWakeSamples.Dispose(_hydrodynamicWakeWriteHandle);
-                else
-                    _hydrodynamicWakeSamples.Dispose();
-                _hydrodynamicWakeSamples = default;
-            }
-
-            _hydrodynamicWakeWriteHandle = default;
-            _hydrodynamicWakeWritePending = false;
-            _hydrodynamicWakeResetPending = false;
-            _hydrodynamicWakeWriteIndex = 0;
-            _hydrodynamicWakeSequence = 0;
         }
 
         private void EnsureSubmarineState()

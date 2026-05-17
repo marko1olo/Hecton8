@@ -251,3 +251,13 @@ Exact Microseconds saved -> 0 us claimed. Normal frame cost is unchanged; fault-
 
 Verification -> `rg` confirms `WriteBlackBoxEntryLittleEndian`, `BlackBoxEntrySizeBytes`, and no raw `ReadOnlySpan<byte>(source)` blackbox export in diagnostics visuals. Per operator instruction, no dotnet rebuild was run.
 Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.
+
+## Live Drift Relock Delta
+
+What was wrong -> A later live-file audit showed `ArchitectEyeVisualizer.cs` had drifted again: dump path reverted to `Dump_ARCHITECT_EYE_VISUALIZER.bin`, `F12` was missing from `Render()`, and fragmented memory colors were yellow.
+What was done -> Reapplied the exact contract locks: `Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin`, `UnityEngine.Input.GetKeyDown(KeyCode.F12)` before the disabled render early return, and red fragmented Vault block/gauge colors.
+Cinematic Cheats used -> None.
+Exact Microseconds saved -> 0 us claimed. This is correctness and operator-control restoration; no new draw calls or allocations.
+
+Verification -> `rg` confirmed the spatial-probe dump path, `KeyCode.F12`, `DrawMeshInstancedIndirect`, red fragmentation colors, 50 signal waterfall history, VRAM pie builder, read-only Vault probe, and explicit blackbox entry writer. Negative audits found no old dump path, no yellow fragmentation literal, no mutable Vault byte probe, no raw blackbox memory export, no standard Unity tick methods, no `Shader.Find`, no `SetData`/`GetData`, no runtime Canvas, no local `new NativeArray`, no `EventBus`, no managed delegates, no non-`Pack = 1` diagnostic structs, and no diagnostic shader compute-thread/RW/discard/clip hazards. Per operator instruction, no dotnet rebuild was run.
+Final Status -> VERIFIED MASTER GRADE - VISION CLEAR.

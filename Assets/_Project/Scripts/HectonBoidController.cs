@@ -834,7 +834,7 @@ namespace Hecton8.AI.GPU
 
                 // NativeArray path: zero managed Color[] allocation.
                 // GetRawTextureData returns existing native buffer â€” zero GC.
-                NativeArray<byte> rawData = _fallbackHeightMap.GetRawTextureData<byte>();
+                var rawData = _fallbackHeightMap.GetRawTextureData<byte>();
                 for (int i = 0; i < rawData.Length; i++)
                 {
                     rawData[i] = 0; // Black = height 0
@@ -906,7 +906,7 @@ namespace Hecton8.AI.GPU
             if (_fallbackFlowFieldBuffer == null)
                 return;
 
-            NativeArray<Vector4> mapped = _fallbackFlowFieldBuffer.LockBufferForWrite<Vector4>(0, 1);
+            var mapped = _fallbackFlowFieldBuffer.LockBufferForWrite<Vector4>(0, 1);
             mapped[0] = Vector4.zero;
             _fallbackFlowFieldBuffer.UnlockBufferAfterWrite<Vector4>(1);
         }
@@ -916,7 +916,7 @@ namespace Hecton8.AI.GPU
             if (_visibleIndirectArgsBuffer == null || fishMesh == null || ReferenceEquals(_indirectArgsMesh, fishMesh))
                 return;
 
-            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> mapped =
+            var mapped =
                 _visibleIndirectArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
             mapped[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
@@ -939,18 +939,23 @@ namespace Hecton8.AI.GPU
             if (safeCount <= 0)
                 return;
 
-            NativeArray<BoidData> writeA = _boidsBufferA.LockBufferForWrite<BoidData>(0, safeCount);
-            NativeArray<BoidData> writeB = _boidsBufferB.LockBufferForWrite<BoidData>(0, safeCount);
+            var writeA = _boidsBufferA.LockBufferForWrite<BoidData>(0, safeCount);
+            var writeB = _boidsBufferB.LockBufferForWrite<BoidData>(0, safeCount);
             float spawnSpeed = useMinimumVelocity ? minSpeed : (minSpeed + maxSpeed) * 0.5f;
             for (int i = 0; i < safeCount; i++)
             {
                 Vector3 position = center + ResolveDeterministicScatterVector(i, center, positionSeed) * spawnRadius;
                 position.y = Mathf.Clamp(position.y, center.y - boundsSize.y, waterSurfaceY - 2f);
 
+                Vector3 velocity = ResolveDeterministicScatterVector(i, center, velocitySeed) * spawnSpeed;
+                float minimumSpeedSq = minSpeed * minSpeed;
+                if (velocity.sqrMagnitude < minimumSpeedSq)
+                    velocity = ResolveDeterministicCardinalAxis(i, velocitySeed) * minSpeed;
+
                 BoidData boid = new BoidData
                 {
                     position = position,
-                    velocity = ResolveDeterministicScatterVector(i, center, velocitySeed) * spawnSpeed,
+                    velocity = velocity,
                     panic = 0f,
                     stateFlags = 0u
                 };
@@ -1499,18 +1504,6 @@ namespace Hecton8.AI.GPU
             }
 
             playerPosition = default;
-            return false;
-        }
-
-        private static bool TryToFiniteVector3(Vector3 value, out Vector3 result)
-        {
-            if (float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z))
-            {
-                result = value;
-                return true;
-            }
-
-            result = default;
             return false;
         }
 

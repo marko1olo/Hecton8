@@ -517,3 +517,15 @@ Rejected Alternatives: Leave raw Unity time, pass time through every abstract zo
 Scalability potential: Low/MX350 gets predictable cheap triangle-wave light drift under the same dispatcher cadence. High/Ultra keeps the richer legacy pooled-light drift while staying phase-compatible with the global pulse sync.
 
 Hardware Impact: 0 us measured and 0 us claimed. The practical gain is deterministic phase ownership and no direct Unity time reads in BIOLUM-owned runtime paths.
+
+## Decision 43 - Legacy Zone Light NaN Vaccination And Build Gate
+
+Problem: The global heartbeat and diffusion paths were guarded, but legacy cave/floor/ocean zone pooled lights could still accept non-finite serialized values for mood, hazard, intensity, range, cluster/light counts, scatter radius, depth, pulse frequency, or world position. Those values can poison pooled `Light` transforms/properties and AUP conversion before the diffusion volume gets a chance to reject them.
+
+Solution: Move finite guards into `HectonBiolumZone`: clamp `_maxLights` and `_updateInterval` at cold start, sanitize sampled zone position before AUP conversion, clamp pooled light position/color/range/intensity writes, and publish one invalid-number telemetry signal per frame on bad zone input. Floor and ocean subclasses now sanitize cluster/light counts, pulse frequency/intensity, cluster size, scatter radius, and depth ratio before procedural drift or intensity math. A one-time restore regenerated the missing project assets file, then the no-restore build gate completed.
+
+Rejected Alternatives: Trust inspector `Range` attributes, let `Light` silently accept NaNs, or skip compilation because the prior build was clean. Serialized data can bypass `Range`; Unity light state is not a NaN boundary; the new C# guard pass needed a current compile result.
+
+Scalability potential: Low/MX350 keeps the cheap pooled-light Dear Lie with bounded counts and finite triangle-wave drift. High/Ultra keeps the richer legacy local glow contribution without letting bad authored data destabilize the global pulse/diffusion pipeline.
+
+Hardware Impact: 0 us measured and 0 us claimed. Build attempt 22 succeeded with 0 warnings and 0 errors. Runtime work remains bounded to 16 pooled lights per zone and one invalid telemetry publish per bad-input frame.

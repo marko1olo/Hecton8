@@ -502,3 +502,26 @@ Verification:
 - Adjacent scan still reports `SonarHoloCompass` local persistent `NativeArray` ownership and `SubmarineSonarHoloMapRenderer` cold shader/material debt.
 - No `dotnet build` or `dotnet rebuild` was run in loop 20 per explicit user instruction. Latest compiled state remains the loop 17 external dependency wall.
 - No `VERIFIED MASTER GRADE` claim; external compile walls, Unity scene binding, and player build proof remain absent.
+
+## 2026-05-17 - Loop 20b signal drift reclosure
+
+What was wrong:
+- A post-log validation pass caught `GlobalSignals.InitializeAllQueues()` reintroduced inside `DiegeticCompassSignals.ConfigureOwnedLanes()`.
+
+What was done:
+- Replaced the broad queue initializer with bounded anomaly/calibration `SignalBus<T>.Configure(...)` plus `EnsureInitialized()` only.
+- Re-ran the own-domain forbidden scan, typed-lane scan, shader/platform scan, `git diff --check`, and focused git status.
+
+Cinematic Cheats used:
+- No visual path changed. Low remains SlowTick/triangle-noise/text; High/Ultra retain indirect dial, chromatic glass, `_CompassOverkill01`, and optional anomaly particles.
+
+Exact Microseconds saved:
+- 0 us measured.
+- This is lane ownership repair, not a frame-time claim.
+
+Verification:
+- Own-domain scan returns no `GlobalSignals.InitializeAllQueues`, local `NativeArray`, consumed-lane `Configure`, standard Unity tick methods, managed formatting, camera polling, compute buffer upload, EventBus, managed delegates, object lookup, coroutine, or direct `H8Memory.Allocate`.
+- Signal scan shows owned anomaly/calibration `Configure(...)`; consumed vitals/health/AUP lanes remain `EnsureInitialized()` only.
+- Shader/platform scan returns no DirectX-only or compute-thread-group hazards in the compass shader/domain.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- No `dotnet build` or `dotnet rebuild` was run.

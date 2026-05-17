@@ -351,3 +351,27 @@ Rejected Alternatives: Keeping the dynamic GPU buffer path was rejected because 
 Scalability potential: Low/MX350 still clamps global wake sampling to 4 slots and stays on cheap dot/radial/triangle math. Middle/High/Ultra use the full 16-slot global wake source for silt, debris, MarineSnow, normal shimmer, and boid scatter.
 
 Hardware Impact: 0 us/frame low-tier cost change because the cap remains 4. High/Ultra restore the existing estimated 2-6 us/frame GPU wake-silt/debris budget to the single global source instead of a duplicate side-channel.
+
+## Decision 30 - Fluid Engine and Vehicle Wake Data Eviction
+
+Problem: The fluid advection stack still contained a private dynamic wake subsystem in `HectonFluidEngine`: GPU buffers, NativeArray staging, decay job, RenderGraph imports, public payload API, and compute binds. `VehicleMotor` also wrote a private `HydrodynamicWakeSample` ring that had no project consumers. Both paths duplicated the global wake authority and violated the data-sovereignty pass.
+
+Solution: Removed the fluid-engine dynamic wake payload and buffer ownership. Fluid advection now binds only sanitized `_GlobalWakeParams` and samples `_GlobalWakeBuffer/_GlobalWakeVectors` in compute. Removed the vehicle hydrodynamic wake NativeArray ring/job and replaced it with direct `SignalBus<WakeGeneratedSignal>.Push` using the existing vehicle wake source flag. Converted touched fluid/vehicle structs to `Pack = 1`.
+
+Rejected Alternatives: Keeping dead vehicle wake samples was rejected because no consumer reads them. Routing wake visuals through `HectonFluidEngine.TryGetDynamicWakeGpuPayload` was rejected because global shader arrays are already authoritative. Adding another polling bridge from VehicleMotor to VFX was rejected because typed signals already exist.
+
+Scalability potential: Low/MX350 remains capped by the global wake params and keeps cheap radial/triangle math. Middle/High/Ultra keep the same 16-slot global wake budget across flora, silt, debris, MarineSnow, and boid scatter, without a second wake storage hierarchy.
+
+Hardware Impact: Removes four fluid-engine dynamic wake GraphicsBuffers, four dynamic wake NativeArrays, one dynamic wake decay/upload path, two VehicleMotor hydrodynamic wake NativeArrays, and one vehicle wake write job. No new per-frame system was added; vehicle wake emission now rides the existing typed wake lane.
+
+## Decision 31 - Current External Core/UI Compile Wall
+
+Problem: After the engine/vehicle purge, a controlled `--no-restore` build first failed because `Temp/obj/Hecton8.Core/project.assets.json` was missing. A restore-enabled build then failed only in dirty `SonarHoloCompass.cs`. A later `--no-restore` build now fails earlier in dirty `H8Memory.cs(1923,9)` with invalid token `}`.
+
+Solution: Recorded the active external compile wall and stopped before editing Core memory/UI files outside the wake/environment ownership slice. Targeted scans confirm no dynamic wake side-channel remains in fluid advection, MarineSnow, carve debris, MarineSnow renderer, HectonFluidEngine, render feature, or VehicleMotor, and no non-`Pack = 1` structs remain in the touched fluid/vehicle/wake-adjacent set.
+
+Rejected Alternatives: Patching dirty `H8Memory.cs` or `SonarHoloCompass.cs` from this wake pass was rejected because those are active Core/UI owners. Claiming a green build after the external wall was rejected. Reverting concurrent edits was rejected under shared-worktree discipline.
+
+Scalability potential: No visual tier change. The wake system remains Low/MX350 capped and High/Ultra full 16-slot global.
+
+Hardware Impact: 0 us/frame for the compile wall. The runtime savings are only from Decision 30's deleted duplicate wake storage/upload path.

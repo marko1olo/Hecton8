@@ -651,3 +651,25 @@ Rejected Alternatives: Claiming Unity shader import validation was rejected beca
 Scalability potential: Validation is shader-static only but confirms the backend-sensitive constructs were removed or bounded.
 
 Hardware Impact: 0us runtime for validation. No rebuild was run.
+
+## 2026-05-17 Loop 25: Adjacent ScatterIndirect Lit Shader Hardening
+
+Problem: `Hecton_ScatterIndirectLit.shader` was a clean adjacent BRG scatter shader still trusting GPU instance payload, material scalar lanes, AUP offsets, and deformation phases. It also used raw `sin()` for sway and let shadow caster deformation diverge from the lit pass by skipping procedural rock displacement. Finite-but-poisoned producer data could reach `uint` yaw sector conversion, `rsqrt`, `rcp`, UV transforms, fog, lighting, emission, and shadow bias.
+
+Solution: Added local finite/positive/non-negative helpers and sanitized `PositionScale`, `NormalRotation`, `AtlasFlow`, material scalar lanes, micro normals, AUP offset, UVs, clip-space output, fog factor, lighting, caustics, biolum, sonar emission, and shadow path inputs. Replaced raw sine sway with `HectonCoreLitTrianglePulse01`, preserving a believable flora motion fake without transcendent trig. Shadow caster now applies the same procedural rock offset as the forward pass before storm-rain ripple and bias.
+
+Rejected Alternatives: Leaving this adjacent shader untouched was rejected because it consumes the same scatter buffers and targets the same Quest/Metal/MX350 risk class. Adding CPU-side validation in `GPUScatterDirector` only was rejected because stale GPU buffers and authored material poison can still enter the shader. Keeping raw sine was rejected because the existing triangle pulse carries the same player-facing sway at lower ALU cost. Rebuilding the full project after this shader-only polish was rejected per direction and because `Assembly-CSharp` is already blocked by generated/plugin metadata.
+
+Scalability potential: Low/MX350 keeps cheap triangle/parabola sway, bounded material lanes, and fail-closed instance data. Middle keeps the existing stochastic surface and caustics path. High/Ultra retain richer micro-normal, environmental wear, caustics, biolum, sonar, storm-rain, and procedural rock variation without letting producer poison corrupt the frame.
+
+Hardware Impact: Removed one raw vertex-stage `sin()` in favor of an existing triangle-pulse fake. Exact GPU microseconds are PENDING PROFILER. Added scalar finite guards are shader hot-path branches; no measured performance claim was made.
+
+Problem: Validation after Loop 25.
+
+Solution: Ran targeted shader scans on `Hecton_ScatterIndirectLit.shader`. No `sin`, `cos`, `tan`, wave intrinsics, memory barriers, `groupshared`, or `DrawMeshInstancedIndirect` remain. Remaining `rsqrt` calls are behind finite length-squared checks; remaining `rcp` calls use `max(scale, 0.0001)`. `git diff --check -- Assets/_Project/Art/Shaders/Hecton_ScatterIndirectLit.shader` reports only LF-to-CRLF warnings.
+
+Rejected Alternatives: Claiming Unity shader import validation was rejected because no Unity import probe was run. Running another dotnet rebuild was rejected for this incremental shader polish.
+
+Scalability potential: Validation is static only but confirms the shader no longer relies on backend-specific behavior for poisoned scatter payloads or raw trigonometric sway.
+
+Hardware Impact: 0us runtime for validation. No rebuild was run.

@@ -10,14 +10,14 @@ Baseline: `Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCE
 
 | Metric | Count |
 |---|---:|
-| Total direct `new NativeArray<T>` constructors | 1106 |
+| Total direct `new NativeArray<T>` constructors | 1091 |
 | Allowed allocator-internal constructors | 6 |
-| Forbidden system constructors | 1100 |
-| Files with forbidden constructors | 170 |
-| Total field-like `NativeArray<T>` declarations | 2677 |
+| Forbidden system constructors | 1085 |
+| Files with forbidden constructors | 168 |
+| Total field-like `NativeArray<T>` declarations | 2649 |
 | Allowed DataVault/H8Memory declarations | 6 |
-| Forbidden system declarations | 2671 |
-| Files with forbidden declarations | 239 |
+| Forbidden system declarations | 2643 |
+| Files with forbidden declarations | 237 |
 
 ## Top 40 Forbidden Files
 
@@ -25,7 +25,7 @@ Baseline: `Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCE
 |---:|---|---|
 | 63 | `Assets/_Project/Scripts/PlayerInventory.cs` | 651, 653, 655, 657, 659, 661, 663, 664, ... |
 | 53 | `Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs` | 152, 153, 154, 319, 320, 396, 397, 398, ... |
-| 44 | `Assets/_Project/Scripts/HectonFluidEngine.cs` | 3726, 3735, 3744, 3753, 3762, 3771, 3780, 3789, ... |
+| 40 | `Assets/_Project/Scripts/HectonFluidEngine.cs` | 3310, 3319, 3328, 3337, 3346, 4212, 4214, 4216, ... |
 | 40 | `Assets/_Project/Scripts/HectonVoxelEngine.cs` | 129, 392, 3963, 3964, 3965, 3966, 3967, 5304, ... |
 | 33 | `Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs` | 3316, 3318, 3320, 3322, 3324, 3326, 3328, 3330, ... |
 | 32 | `Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs` | 754, 755, 756, 757, 758, 759, 760, 761, ... |
@@ -61,8 +61,8 @@ Baseline: `Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCE
 | 7 | `Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs` | 638, 640, 642, 644, 646, 648, 680 |
 | 7 | `Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs` | 207, 208, 209, 210, 211, 212, 213 |
 | 7 | `Assets/_Project/Scripts/Plugins/MapMagic/HectonSpaceEngine098MapMagicNodes.cs` | 108, 109, 256, 257, 258, 412, 413 |
-| 7 | `Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs` | 370, 371, 372, 373, 374, 375, 376 |
 | 7 | `Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs` | 658, 659, 660, 661, 662, 663, 664 |
+| 7 | `Assets/_Project/Scripts/World/FloraInteractionManager.cs` | 1134, 1136, 1141, 1142, 1143, 4903, 4919 |
 
 ## Top 40 Forbidden Declaration Files
 
@@ -71,7 +71,7 @@ Baseline: `Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCE
 | 118 | `Assets/_Project/Scripts/HectonVoxelEngine.cs` | 43, 44, 462, 465, 466, 467, 468, 469, ... |
 | 104 | `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs` | 470, 471, 472, 473, 474, 475, 476, 477, ... |
 | 86 | `Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs` | 203, 206, 207, 208, 319, 320, 321, 322, ... |
-| 79 | `Assets/_Project/Scripts/HectonFluidEngine.cs` | 362, 363, 364, 1308, 1309, 1310, 1311, 1312, ... |
+| 72 | `Assets/_Project/Scripts/HectonFluidEngine.cs` | 1243, 1244, 1245, 1246, 1247, 1248, 1249, 1250, ... |
 | 67 | `Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs` | 102, 103, 104, 105, 106, 107, 108, 109, ... |
 | 67 | `Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs` | 1133, 1134, 1135, 1136, 1137, 1138, 1140, 1590, ... |
 | 67 | `Assets/_Project/Scripts/World/VegetationMemoryPool.cs` | 21, 22, 23, 24, 25, 26, 27, 28, ... |
@@ -97,7 +97,7 @@ Baseline: `Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCE
 | 23 | `Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs` | 82, 83, 84, 85, 86, 87, 88, 89, ... |
 | 23 | `Assets/_Project/Scripts/Physics/TetherVerletJobs.cs` | 38, 39, 40, 41, 43, 44, 139, 140, ... |
 | 22 | `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs` | 189, 190, 382, 383, 384, 385, 386, 387, ... |
-| 22 | `Assets/_Project/Scripts/TetherInstance.cs` | 216, 217, 218, 219, 220, 221, 222, 223, ... |
+| 22 | `Assets/_Project/Scripts/TetherInstance.cs` | 223, 224, 225, 226, 227, 228, 229, 230, ... |
 | 21 | `Assets/_Project/Scripts/Construction/HabitatStressJobs.cs` | 45, 46, 47, 48, 51, 52, 240, 241, ... |
 | 21 | `Assets/_Project/Scripts/HectonWorldGenerator.cs` | 295, 297, 298, 299, 300, 301, 396, 397, ... |
 | 21 | `Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs` | 443, 444, 577, 578, 579, 631, 632, 633, ... |
@@ -106,20 +106,20 @@ Baseline: `Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCE
 | 19 | `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs` | 342, 343, 344, 345, 346, 347, 368, 370, ... |
 | 19 | `Assets/_Project/Scripts/World/FloraInteractionManager.cs` | 136, 137, 138, 139, 144, 216, 223, 224, ... |
 | 19 | `Assets/_Project/Scripts/World/HectonAnomalyEngine.cs` | 749, 752, 755, 758, 821, 824, 827, 830, ... |
-| 18 | `Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs` | 1901, 1902, 1903, 1922, 1923, 1924, 1943, 1944, ... |
+| 18 | `Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs` | 1892, 1893, 1894, 1913, 1914, 1915, 1934, 1935, ... |
 | 17 | `Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs` | 37, 38, 39, 40, 41, 42, 43, 44, ... |
 
 ## Allowed Allocator-Internal Sites
 
 | Count | Path | Lines |
 |---:|---|---|
-| 6 | `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` | 919, 921, 925, 927, 1006, 2201 |
+| 6 | `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` | 927, 929, 933, 935, 1014, 2213 |
 
 ## Allowed DataVault/H8Memory Declaration Sites
 
 | Count | Path | Lines |
 |---:|---|---|
-| 4 | `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` | 789, 790, 792, 793 |
+| 4 | `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` | 797, 798, 800, 801 |
 | 2 | `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` | 331, 332 |
 
 ## Gate Commands

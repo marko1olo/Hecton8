@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Power;
 using Hecton8.Power.Generators.Contracts;
@@ -41,9 +42,7 @@ namespace Hecton8.Power.Generators
         private const float LowTierCadenceSeconds = 10f;
         private const float PowerDirtyDeltaWatts = 0.01f;
         private const float MinimumRadiationRadiusMeters = 0.5f;
-        private const string NativeMemoryOwner = nameof(RadioisotopeThermalGenerator);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
-        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_RTG_DECAY_SIMULATOR.bin";
+        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_VAULT_SOVEREIGNTY_ENFORCER_RTG_DECAY.bin";
         private const uint BlackBoxMagic = 0x52475444u; // RGTD
         private const uint BlackBoxVersion = 2u;
         private const uint RtgTelemetryHash = 0x52544721u; // RTG!
@@ -71,13 +70,13 @@ namespace Hecton8.Power.Generators
         [SerializeField] private string depletedIsotopeItemId = "item.depleted_rtg_isotope";
         [SerializeField] private bool forceLowTierCadence;
 
-        private static NativeArray<float> s_rtgStartTimes;
-        private static NativeArray<float> s_rtgHalfLives;
-        private static NativeArray<float> s_rtgBaseOutput;
-        private static NativeArray<float> s_rtgCurrentOutput;
-        private static NativeArray<float> s_rtgOutputNormalized;
-        private static NativeArray<byte> s_rtgFlags;
-        private static NativeArray<RtgTelemetryEntry> s_telemetryRing;
+        private static VaultBufferHandle<float> s_rtgStartTimesHandle;
+        private static VaultBufferHandle<float> s_rtgHalfLivesHandle;
+        private static VaultBufferHandle<float> s_rtgBaseOutputHandle;
+        private static VaultBufferHandle<float> s_rtgCurrentOutputHandle;
+        private static VaultBufferHandle<float> s_rtgOutputNormalizedHandle;
+        private static VaultBufferHandle<byte> s_rtgFlagsHandle;
+        private static VaultBufferHandle<RtgTelemetryEntry> s_telemetryRingHandle;
         private static RadioisotopeThermalGenerator[] s_instances;
         private static JobHandle s_decayJobHandle;
         private static bool s_decayJobPending;
@@ -170,10 +169,13 @@ namespace Hecton8.Power.Generators
 
             CompleteDecayJobIfReady(true);
             EnsureRtgSaveArrays(data);
+            if (!TryResolveRtgFlags(out NativeArray<byte> rtgFlags))
+                return;
+
             int writeCount = 0;
             for (int i = 0; i < MaxRtgs; i++)
             {
-                if ((s_rtgFlags[i] & FlagActive) == 0)
+                if ((rtgFlags[i] & FlagActive) == 0)
                     continue;
 
                 RadioisotopeThermalGenerator instance = s_instances != null ? s_instances[i] : null;
@@ -208,8 +210,8 @@ namespace Hecton8.Power.Generators
                 _reprocessed = (flags & FlagReprocessed) != 0;
                 _isDead = (flags & FlagDead) != 0;
                 ResolveLocalDecaySnapshot(ResolveCurrentTimeSeconds());
-                if ((flags & FlagWarned20) != 0 && _slot >= 0 && s_rtgFlags.IsCreated)
-                    s_rtgFlags[_slot] = (byte)(s_rtgFlags[_slot] | FlagWarned20);
+                if ((flags & FlagWarned20) != 0 && _slot >= 0 && TryResolveRtgFlags(out NativeArray<byte> rtgFlags))
+                    rtgFlags[_slot] = (byte)(rtgFlags[_slot] | FlagWarned20);
 
                 WriteSlotStateFromInstance();
                 return;
@@ -229,11 +231,19 @@ namespace Hecton8.Power.Generators
             _reprocessed = true;
             _currentOutputWatts = 0f;
             _outputNormalized01 = 0f;
-            if (_slot >= 0 && s_rtgFlags.IsCreated)
+            if (_slot >= 0 &&
+                TryResolveRtgBuffers(
+                    out _,
+                    out _,
+                    out _,
+                    out NativeArray<float> currentOutput,
+                    out NativeArray<float> outputNormalized,
+                    out NativeArray<byte> rtgFlags,
+                    out _))
             {
-                s_rtgFlags[_slot] = (byte)(s_rtgFlags[_slot] | FlagDead | FlagReprocessed);
-                s_rtgCurrentOutput[_slot] = 0f;
-                s_rtgOutputNormalized[_slot] = 0f;
+                rtgFlags[_slot] = (byte)(rtgFlags[_slot] | FlagDead | FlagReprocessed);
+                currentOutput[_slot] = 0f;
+                outputNormalized[_slot] = 0f;
             }
 
             RadiationHazardGrid.UnregisterSource(_sourceId);
@@ -248,8 +258,14 @@ namespace Hecton8.Power.Generators
             normalized01 = 0f;
             if (sourceId == 0u ||
                 s_instances == null ||
-                !s_rtgCurrentOutput.IsCreated ||
-                !s_rtgOutputNormalized.IsCreated)
+                !TryResolveRtgBuffers(
+                    out _,
+                    out _,
+                    out _,
+                    out NativeArray<float> currentOutput,
+                    out NativeArray<float> outputNormalized,
+                    out _,
+                    out _))
             {
                 return false;
             }
@@ -261,8 +277,8 @@ namespace Hecton8.Power.Generators
                 if (instance == null || instance._sourceId != sourceInt)
                     continue;
 
-                watts = s_rtgCurrentOutput[i];
-                normalized01 = s_rtgOutputNormalized[i];
+                watts = currentOutput[i];
+                normalized01 = outputNormalized[i];
                 return true;
             }
 
@@ -293,13 +309,13 @@ namespace Hecton8.Power.Generators
             if (newestFirstIndex < 0 ||
                 newestFirstIndex >= TelemetryCapacity ||
                 s_telemetryCursor <= 0 ||
-                !s_telemetryRing.IsCreated)
+                !TryResolveTelemetryRing(out NativeArray<RtgTelemetryEntry> telemetryRing))
             {
                 return false;
             }
 
             int index = (s_telemetryCursor - 1 - newestFirstIndex + TelemetryCapacity) % TelemetryCapacity;
-            RtgTelemetryEntry entry = s_telemetryRing[index];
+            RtgTelemetryEntry entry = telemetryRing[index];
             sourceId = entry.SourceId;
             outputWatts = entry.OutputWatts;
             normalized01 = entry.NormalizedOutput01;
@@ -364,46 +380,136 @@ namespace Hecton8.Power.Generators
 
         private static void EnsureNativeBuffers()
         {
-            if (s_rtgStartTimes.IsCreated)
-                return;
-
-            s_rtgStartTimes = new NativeArray<float>(MaxRtgs, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            s_rtgHalfLives = new NativeArray<float>(MaxRtgs, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            s_rtgBaseOutput = new NativeArray<float>(MaxRtgs, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            s_rtgCurrentOutput = new NativeArray<float>(MaxRtgs, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            s_rtgOutputNormalized = new NativeArray<float>(MaxRtgs, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            s_rtgFlags = new NativeArray<byte>(MaxRtgs, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            s_telemetryRing = new NativeArray<RtgTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            s_instances = new RadioisotopeThermalGenerator[MaxRtgs];
-
-            NativeMemorySentinel.RegisterNativeArray(s_rtgStartTimes, NativeMemoryOwner, nameof(s_rtgStartTimes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(s_rtgHalfLives, NativeMemoryOwner, nameof(s_rtgHalfLives), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(s_rtgBaseOutput, NativeMemoryOwner, nameof(s_rtgBaseOutput), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(s_rtgCurrentOutput, NativeMemoryOwner, nameof(s_rtgCurrentOutput), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(s_rtgOutputNormalized, NativeMemoryOwner, nameof(s_rtgOutputNormalized), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(s_rtgFlags, NativeMemoryOwner, nameof(s_rtgFlags), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(s_telemetryRing, NativeMemoryOwner, nameof(s_telemetryRing), NativeMemoryLifetime);
+            _ = TryResolveRtgBuffers(out _, out _, out _, out _, out _, out _, out _);
+            if (s_instances == null || s_instances.Length != MaxRtgs)
+                s_instances = new RadioisotopeThermalGenerator[MaxRtgs];
         }
 
         private static void DisposeNativeBuffers()
         {
-            DisposeArray(ref s_rtgStartTimes);
-            DisposeArray(ref s_rtgHalfLives);
-            DisposeArray(ref s_rtgBaseOutput);
-            DisposeArray(ref s_rtgCurrentOutput);
-            DisposeArray(ref s_rtgOutputNormalized);
-            DisposeArray(ref s_rtgFlags);
-            DisposeArray(ref s_telemetryRing);
+            if (TryResolveRtgBuffers(
+                    out NativeArray<float> startTimes,
+                    out NativeArray<float> halfLives,
+                    out NativeArray<float> baseOutput,
+                    out NativeArray<float> currentOutput,
+                    out NativeArray<float> outputNormalized,
+                    out NativeArray<byte> flags,
+                    out NativeArray<RtgTelemetryEntry> telemetryRing))
+            {
+                ClearNativeArray(startTimes);
+                ClearNativeArray(halfLives);
+                ClearNativeArray(baseOutput);
+                ClearNativeArray(currentOutput);
+                ClearNativeArray(outputNormalized);
+                ClearNativeArray(flags);
+                ClearNativeArray(telemetryRing);
+            }
+
+            s_rtgStartTimesHandle = default;
+            s_rtgHalfLivesHandle = default;
+            s_rtgBaseOutputHandle = default;
+            s_rtgCurrentOutputHandle = default;
+            s_rtgOutputNormalizedHandle = default;
+            s_rtgFlagsHandle = default;
+            s_telemetryRingHandle = default;
         }
 
-        private static void DisposeArray<T>(ref NativeArray<T> array) where T : struct
+        private static bool TryResolveRtgBuffers(
+            out NativeArray<float> startTimes,
+            out NativeArray<float> halfLives,
+            out NativeArray<float> baseOutput,
+            out NativeArray<float> currentOutput,
+            out NativeArray<float> outputNormalized,
+            out NativeArray<byte> flags,
+            out NativeArray<RtgTelemetryEntry> telemetryRing)
         {
-            if (!array.IsCreated)
+            startTimes = default;
+            halfLives = default;
+            baseOutput = default;
+            currentOutput = default;
+            outputNormalized = default;
+            flags = default;
+            telemetryRing = default;
+
+            return TryResolveVaultBuffer(
+                    ref s_rtgStartTimesHandle,
+                    BufferID.RtgStartTimes,
+                    MaxRtgs,
+                    out startTimes) &&
+                TryResolveVaultBuffer(
+                    ref s_rtgHalfLivesHandle,
+                    BufferID.RtgHalfLives,
+                    MaxRtgs,
+                    out halfLives) &&
+                TryResolveVaultBuffer(
+                    ref s_rtgBaseOutputHandle,
+                    BufferID.RtgBaseOutput,
+                    MaxRtgs,
+                    out baseOutput) &&
+                TryResolveVaultBuffer(
+                    ref s_rtgCurrentOutputHandle,
+                    BufferID.RtgCurrentOutput,
+                    MaxRtgs,
+                    out currentOutput) &&
+                TryResolveVaultBuffer(
+                    ref s_rtgOutputNormalizedHandle,
+                    BufferID.RtgOutputNormalized,
+                    MaxRtgs,
+                    out outputNormalized) &&
+                TryResolveVaultBuffer(
+                    ref s_rtgFlagsHandle,
+                    BufferID.RtgFlags,
+                    MaxRtgs,
+                    out flags) &&
+                TryResolveVaultBuffer(
+                    ref s_telemetryRingHandle,
+                    BufferID.RtgTelemetryRing,
+                    TelemetryCapacity,
+                    out telemetryRing);
+        }
+
+        private static bool TryResolveRtgFlags(out NativeArray<byte> flags)
+        {
+            return TryResolveVaultBuffer(ref s_rtgFlagsHandle, BufferID.RtgFlags, MaxRtgs, out flags);
+        }
+
+        private static bool TryResolveTelemetryRing(out NativeArray<RtgTelemetryEntry> telemetryRing)
+        {
+            return TryResolveVaultBuffer(
+                ref s_telemetryRingHandle,
+                BufferID.RtgTelemetryRing,
+                TelemetryCapacity,
+                out telemetryRing);
+        }
+
+        private static bool TryResolveVaultBuffer<T>(
+            ref VaultBufferHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (!handle.IsCreated || handle.Length < requiredLength)
+                handle = vault.GetBufferHandle<T>(bufferId, requiredLength, SystemID.Power, NativeArrayOptions.ClearMemory);
+
+            if (!handle.IsCreated)
+                return false;
+
+            buffer = handle.Resolve(vault);
+            return buffer.IsCreated && buffer.Length >= requiredLength;
+        }
+
+        private static void ClearNativeArray<T>(NativeArray<T> buffer) where T : struct
+        {
+            if (!buffer.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            for (int i = 0; i < buffer.Length; i++)
+                buffer[i] = default;
         }
 
         private void TryRegisterRuntime()
@@ -414,7 +520,13 @@ namespace Hecton8.Power.Generators
             EnsureNativeBuffers();
             ResolveIdentity();
             SanitizeInspectorValues();
-            int slot = AllocateSlot(this);
+            if (!TryResolveRtgFlags(out NativeArray<byte> rtgFlags))
+            {
+                DumpBlackBoxOnce(1u);
+                return;
+            }
+
+            int slot = AllocateSlot(this, rtgFlags);
             if (slot < 0)
             {
                 DumpBlackBoxOnce(1u);
@@ -440,28 +552,44 @@ namespace Hecton8.Power.Generators
 
             CompleteDecayJobIfReady(true);
             int slot = _slot;
+            if (!TryResolveRtgBuffers(
+                    out NativeArray<float> startTimes,
+                    out NativeArray<float> halfLives,
+                    out NativeArray<float> baseOutput,
+                    out NativeArray<float> currentOutput,
+                    out NativeArray<float> outputNormalized,
+                    out NativeArray<byte> rtgFlags,
+                    out _))
+            {
+                _slot = -1;
+                return;
+            }
+
             if (slot == s_leaderSlot)
                 SetLeaderSlot(-1);
 
             RadiationHazardGrid.UnregisterSource(_sourceId);
             s_instances[slot] = null;
-            s_rtgFlags[slot] = 0;
-            s_rtgStartTimes[slot] = 0f;
-            s_rtgHalfLives[slot] = 0f;
-            s_rtgBaseOutput[slot] = 0f;
-            s_rtgCurrentOutput[slot] = 0f;
-            s_rtgOutputNormalized[slot] = 0f;
+            rtgFlags[slot] = 0;
+            startTimes[slot] = 0f;
+            halfLives[slot] = 0f;
+            baseOutput[slot] = 0f;
+            currentOutput[slot] = 0f;
+            outputNormalized[slot] = 0f;
             _slot = -1;
             s_activeCount = math.max(0, s_activeCount - 1);
             MarkPowerGridDirty();
             RefreshLeader();
         }
 
-        private static int AllocateSlot(RadioisotopeThermalGenerator instance)
+        private static int AllocateSlot(RadioisotopeThermalGenerator instance, NativeArray<byte> rtgFlags)
         {
+            if (!rtgFlags.IsCreated)
+                return -1;
+
             for (int i = 0; i < MaxRtgs; i++)
             {
-                if ((s_rtgFlags[i] & FlagActive) != 0)
+                if ((rtgFlags[i] & FlagActive) != 0)
                     continue;
 
                 s_instances[i] = instance;
@@ -473,15 +601,25 @@ namespace Hecton8.Power.Generators
 
         private void WriteSlotStateFromInstance()
         {
-            if (_slot < 0 || !s_rtgFlags.IsCreated)
+            if (_slot < 0 ||
+                !TryResolveRtgBuffers(
+                    out NativeArray<float> startTimes,
+                    out NativeArray<float> halfLives,
+                    out NativeArray<float> baseOutput,
+                    out NativeArray<float> currentOutput,
+                    out NativeArray<float> outputNormalized,
+                    out NativeArray<byte> rtgFlags,
+                    out _))
+            {
                 return;
+            }
 
-            s_rtgStartTimes[_slot] = math.max(0f, _startTimeSeconds);
-            s_rtgHalfLives[_slot] = math.max(MinimumHalfLifeSeconds, halfLifeHours * SecondsPerHour);
-            s_rtgBaseOutput[_slot] = math.max(0f, baseOutputWatts);
-            s_rtgCurrentOutput[_slot] = _reprocessed || _isDead ? 0f : math.max(0f, _currentOutputWatts);
-            s_rtgOutputNormalized[_slot] = math.saturate(_outputNormalized01);
-            s_rtgFlags[_slot] = ComposeRuntimeFlags();
+            startTimes[_slot] = math.max(0f, _startTimeSeconds);
+            halfLives[_slot] = math.max(MinimumHalfLifeSeconds, halfLifeHours * SecondsPerHour);
+            baseOutput[_slot] = math.max(0f, baseOutputWatts);
+            currentOutput[_slot] = _reprocessed || _isDead ? 0f : math.max(0f, _currentOutputWatts);
+            outputNormalized[_slot] = math.saturate(_outputNormalized01);
+            rtgFlags[_slot] = ComposeRuntimeFlags();
         }
 
         private void WriteRtgSaveRecord(SaveData data, ref int writeCount)
@@ -540,17 +678,29 @@ namespace Hecton8.Power.Generators
                 return;
             }
 
+            if (!TryResolveRtgBuffers(
+                    out NativeArray<float> startTimes,
+                    out NativeArray<float> halfLives,
+                    out NativeArray<float> baseOutput,
+                    out NativeArray<float> currentOutput,
+                    out NativeArray<float> outputNormalized,
+                    out NativeArray<byte> rtgFlags,
+                    out _))
+            {
+                return;
+            }
+
             s_lastDecayEvaluationSeconds = now;
             s_decayJobHandle = new RtgDecayJob
             {
                 CurrentTimeSeconds = now,
                 DeadThreshold01 = DeadOutputThreshold01,
-                RtgStartTimes = s_rtgStartTimes,
-                RtgHalfLifeSeconds = s_rtgHalfLives,
-                RtgBaseOutputWatts = s_rtgBaseOutput,
-                RtgCurrentOutputWatts = s_rtgCurrentOutput,
-                RtgOutputNormalized = s_rtgOutputNormalized,
-                RtgFlags = s_rtgFlags
+                RtgStartTimes = new NativeSlice<float>(startTimes),
+                RtgHalfLifeSeconds = new NativeSlice<float>(halfLives),
+                RtgBaseOutputWatts = new NativeSlice<float>(baseOutput),
+                RtgCurrentOutputWatts = new NativeSlice<float>(currentOutput),
+                RtgOutputNormalized = new NativeSlice<float>(outputNormalized),
+                RtgFlags = new NativeSlice<byte>(rtgFlags)
             }.Schedule(MaxRtgs, DecayBatchSize);
             s_decayJobPending = true;
         }
@@ -570,21 +720,31 @@ namespace Hecton8.Power.Generators
 
         private static void ApplyDecayResults()
         {
-            if (!s_rtgFlags.IsCreated || s_instances == null)
+            if (s_instances == null ||
+                !TryResolveRtgBuffers(
+                    out _,
+                    out _,
+                    out _,
+                    out NativeArray<float> currentOutput,
+                    out NativeArray<float> outputNormalized,
+                    out NativeArray<byte> rtgFlags,
+                    out _))
+            {
                 return;
+            }
 
             float healthSum = 0f;
             int healthCount = 0;
             for (int i = 0; i < MaxRtgs; i++)
             {
-                if ((s_rtgFlags[i] & FlagActive) == 0)
+                if ((rtgFlags[i] & FlagActive) == 0)
                     continue;
 
                 RadioisotopeThermalGenerator instance = s_instances[i];
                 if (instance == null)
                     continue;
 
-                float normalized = math.saturate(s_rtgOutputNormalized[i]);
+                float normalized = math.saturate(outputNormalized[i]);
                 if (!math.isfinite(normalized))
                 {
                     DumpBlackBoxOnce(2u);
@@ -599,16 +759,16 @@ namespace Hecton8.Power.Generators
 
             for (int i = 0; i < MaxRtgs; i++)
             {
-                if ((s_rtgFlags[i] & FlagActive) == 0)
+                if ((rtgFlags[i] & FlagActive) == 0)
                     continue;
 
                 RadioisotopeThermalGenerator instance = s_instances[i];
                 if (instance == null)
                     continue;
 
-                float outputWatts = s_rtgCurrentOutput[i];
-                float normalized = math.saturate(s_rtgOutputNormalized[i]);
-                byte flags = s_rtgFlags[i];
+                float outputWatts = currentOutput[i];
+                float normalized = math.saturate(outputNormalized[i]);
+                byte flags = rtgFlags[i];
                 if (!math.isfinite(outputWatts) || !math.isfinite(normalized))
                 {
                     DumpBlackBoxOnce(2u);
@@ -632,8 +792,8 @@ namespace Hecton8.Power.Generators
             _reprocessed |= (flags & FlagReprocessed) != 0;
             _outputNormalized01 = math.saturate(normalized01);
             _currentOutputWatts = _isDead || _reprocessed ? 0f : math.max(0f, outputWatts);
-            if (_slot >= 0)
-                s_rtgFlags[_slot] = ComposeRuntimeFlags();
+            if (_slot >= 0 && TryResolveRtgFlags(out NativeArray<byte> rtgFlags))
+                rtgFlags[_slot] = ComposeRuntimeFlags();
 
             if (!_reprocessed && _outputNormalized01 <= WarningOutputThreshold01 && (flags & FlagWarned20) == 0)
                 PublishLowOutputHudWarning();
@@ -689,8 +849,8 @@ namespace Hecton8.Power.Generators
 
         private void PublishLowOutputHudWarning()
         {
-            if (_slot >= 0 && s_rtgFlags.IsCreated)
-                s_rtgFlags[_slot] = (byte)(s_rtgFlags[_slot] | FlagWarned20);
+            if (_slot >= 0 && TryResolveRtgFlags(out NativeArray<byte> rtgFlags))
+                rtgFlags[_slot] = (byte)(rtgFlags[_slot] | FlagWarned20);
 
             HUDNotificationSignal signal = default;
             signal.MessageHash = RtgLowOutputMessageHash;
@@ -733,10 +893,13 @@ namespace Hecton8.Power.Generators
 
         private static void RefreshLeader()
         {
+            if (!TryResolveRtgFlags(out NativeArray<byte> rtgFlags))
+                return;
+
             int next = -1;
             for (int i = 0; i < MaxRtgs; i++)
             {
-                if ((s_rtgFlags[i] & FlagActive) != 0 && s_instances[i] != null)
+                if ((rtgFlags[i] & FlagActive) != 0 && s_instances[i] != null)
                 {
                     next = i;
                     break;
@@ -857,20 +1020,30 @@ namespace Hecton8.Power.Generators
 
         private static void RecordTelemetry(int slot, byte flags)
         {
-            if (slot < 0 || !s_telemetryRing.IsCreated || !s_rtgCurrentOutput.IsCreated)
+            if (slot < 0 ||
+                !TryResolveRtgBuffers(
+                    out _,
+                    out _,
+                    out _,
+                    out NativeArray<float> currentOutput,
+                    out NativeArray<float> outputNormalized,
+                    out _,
+                    out NativeArray<RtgTelemetryEntry> telemetryRing))
+            {
                 return;
+            }
 
             RadioisotopeThermalGenerator instance = s_instances != null ? s_instances[slot] : null;
             if (instance == null)
                 return;
 
             int index = s_telemetryCursor % TelemetryCapacity;
-            s_telemetryRing[index] = new RtgTelemetryEntry
+            telemetryRing[index] = new RtgTelemetryEntry
             {
                 Frame = unchecked((uint)Time.frameCount),
                 SourceId = unchecked((uint)instance._sourceId),
-                OutputWatts = s_rtgCurrentOutput[slot],
-                NormalizedOutput01 = s_rtgOutputNormalized[slot],
+                OutputWatts = currentOutput[slot],
+                NormalizedOutput01 = outputNormalized[slot],
                 AverageHealth01 = s_averageRtgHealth01,
                 ActiveRtgs = (ushort)math.clamp(s_activeCount, 0, ushort.MaxValue),
                 Flags = flags
@@ -884,7 +1057,7 @@ namespace Hecton8.Power.Generators
                 return;
 
             s_blackBoxDumped = true;
-            if (!s_telemetryRing.IsCreated)
+            if (!TryResolveTelemetryRing(out NativeArray<RtgTelemetryEntry> telemetryRing))
                 return;
 
             try
@@ -905,7 +1078,7 @@ namespace Hecton8.Power.Generators
                     for (int i = 0; i < TelemetryCapacity; i++)
                     {
                         int index = (s_telemetryCursor + i) % TelemetryCapacity;
-                        RtgTelemetryEntry entry = s_telemetryRing[index];
+                        RtgTelemetryEntry entry = telemetryRing[index];
                         writer.Write(entry.Frame);
                         writer.Write(entry.SourceId);
                         writer.Write(entry.OutputWatts);
@@ -922,7 +1095,7 @@ namespace Hecton8.Power.Generators
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 23)]
         private struct RtgTelemetryEntry
         {
             public uint Frame;
@@ -974,12 +1147,12 @@ namespace Hecton8.Power.Generators
         public float CurrentTimeSeconds;
         public float DeadThreshold01;
 
-        [ReadOnly] public NativeArray<float> RtgStartTimes;
-        [ReadOnly] public NativeArray<float> RtgHalfLifeSeconds;
-        [ReadOnly] public NativeArray<float> RtgBaseOutputWatts;
-        public NativeArray<float> RtgCurrentOutputWatts;
-        public NativeArray<float> RtgOutputNormalized;
-        public NativeArray<byte> RtgFlags;
+        [ReadOnly] public NativeSlice<float> RtgStartTimes;
+        [ReadOnly] public NativeSlice<float> RtgHalfLifeSeconds;
+        [ReadOnly] public NativeSlice<float> RtgBaseOutputWatts;
+        public NativeSlice<float> RtgCurrentOutputWatts;
+        public NativeSlice<float> RtgOutputNormalized;
+        public NativeSlice<byte> RtgFlags;
 
         public void Execute(int index)
         {

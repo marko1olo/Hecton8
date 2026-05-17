@@ -1525,7 +1525,8 @@ namespace Hecton8.AI.Ambient
                         continue;
                     }
 
-                    double3 delta = DeltaMeters(in Aups[i], in CenterAup);
+                    AbsoluteUniversePosition sampleAup = Aups[i];
+                    double3 delta = DeltaMeters(in sampleAup, in CenterAup);
                     double distSq = math.dot(delta, delta);
                     if (!math.isfinite(distSq) || distSq > RadiusSq)
                         continue;
@@ -1870,7 +1871,7 @@ namespace Hecton8.AI.Ambient
             if (!IsFiniteAup(in centerAup) || !math.isfinite(systemStress01))
                 return 0;
 
-            byte clampedTier = (byte)math.min(qualityTier, (byte)3);
+            byte clampedTier = qualityTier <= 3 ? qualityTier : (byte)3;
             return systemStress01 > MacroHydrationStressCullThreshold01
                 ? (byte)0
                 : clampedTier;

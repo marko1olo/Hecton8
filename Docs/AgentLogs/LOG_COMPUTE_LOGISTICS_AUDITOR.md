@@ -487,3 +487,66 @@ Key numbers indexed:
 - Cumulative tokens per +0.001 Runtime H-Phi risk: 1,174,025,744.
 
 STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 H-Phi Live Rebase 13:37
+
+What was wrong: The 11:42 H-Phi artifact was stale after another source drift: 102 C# files changed and 8,481,368 bytes moved.
+
+What was done:
+
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Re-read `AGENTS.md`, `Docs/Actual Domains of Project.txt`, and relevant mandates.
+- Confirmed `CURRENT_BATCH.md` does not contain `COMPUTE_LOGISTICS_AUDITOR`; inline prompt remains the active directive.
+- Ran source-drift gate and accepted a fresh H-Phi scan.
+- Wrote `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_CURRENT_20260517_1327.json`.
+- Parsed JSONL token usage between 11:42 and 13:37.
+- Ran a 30-second SQLite live pulse at 13:36.
+- Wrote `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1337.md`.
+- Updated the root brief, audit index, token ledger, H-Phi search index, dominance report, status, rationale, and this log.
+
+Cinematic cheats used: None. This is static architecture/token accounting.
+
+Exact microseconds saved: H-Phi was not rerun blindly. The scan was gated by source drift evidence and then cost 82,422 ms.
+
+Key numbers:
+
+- Runtime H-Phi risk: 0.005525762.
+- Runtime H-Phi narrow: 0.077385732.
+- Data sovereignty: 0.144331092.
+- Delta vs 11:42: +0.000147098 risk, +0.001504620 narrow, +29 DataVault refs, -20 owner-blocked NativeArray refs.
+- Regressions in same interval: +21 GlobalRegistry surface, +6 ManagedFormatSurface, +6 PrimaryManagedRuntimeRisk.
+- Token window 11:42-13:37: 304,562,532 tokens.
+- Cache-aware cost between H-Phi artifacts: USD 236.42.
+- No-cache equivalent: USD 1,546.69.
+- Marginal efficiency: 2,070,473,643 tokens per +0.001 Runtime H-Phi risk.
+- SQLite current tokens: 51,372,184,781.
+- 13:36 live rate: 24,665.28 tokens/sec.
+- Meaningful LOC: 856,940.
+- Tokens per meaningful LOC: 59,948.40.
+- Energy estimate: 2,568.61 MWh.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-17 H-Phi Keyword Coverage Boundary
+
+What was wrong: A scan found H-Phi-family text in 340 Markdown files, with 326 not carrying the full `ash-fi` / `HФ` / `Аш-Фи` / `token-H-Phi-ROI` alias line. Most of those files are other-agent logs, generated summaries, or archives.
+
+What was done:
+
+- Created `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_KEYWORD_COVERAGE_20260517.md`.
+- Added the search alias line to stable authority docs: `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md`, `Docs/ARCHITECTURE/README.md`, and `Docs/H8_GLOSSARY.md`.
+- Added the coverage file to the audit index, root brief, and status evidence list.
+- Preserved the boundary: active compute docs and stable authority docs are tagged; other agents' logs are indexed, not mass-edited.
+
+Cinematic cheats used: None. Documentation/indexing only.
+
+Exact microseconds saved: No runtime claim. This prevents broad cross-agent log churn and makes `rg "ash-fi|Аш-Фи|HФ|token-H-Phi-ROI"` sufficient for the compute audit trail.
+
+Key numbers:
+
+- H-Phi-family Markdown docs scanned: 340.
+- H-Phi-family docs missing full alias line: 326.
+- Non-archive H-Phi-family docs scanned: 232.
+- Non-archive docs missing aliases: 220.
+
+STATUS: AUDIT COMPLETE.

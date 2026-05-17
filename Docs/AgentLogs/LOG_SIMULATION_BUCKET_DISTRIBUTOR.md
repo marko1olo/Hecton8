@@ -584,6 +584,33 @@ Verification:
 - No rebuild was run per user instruction.
 - Static scheduling-domain scan remains clean for forbidden hot-path patterns.
 
+## 2026-05-17 - Capacity and Cost Telemetry Guard Pass
+What was wrong:
+- Bucketer initialization accepted created DataVault views without proving required lengths.
+- `IsInitialized` could report true from front-bucket existence alone.
+- Admission fault/denial black-box fields could record negative values as estimated cost.
+- Zero or negative unscaled delta could still unlock high-tier active slow-bucket widening.
+
+What was done:
+- Added DataVault capacity proof for entity front/work/cost buffers, bucket load buffers, rebalance result, frame state, and the 300-frame bucketer black-box ring.
+- Tightened `IsInitialized` to require positive entity capacity and a front buffer at least that large.
+- Blocked dynamic rebalance scheduling unless runtime-resolved cost/work/load spans are positive and a result slot exists.
+- Split admission cost telemetry from lane-budget telemetry: costs now clamp to finite 0..1000 ms; remaining budgets keep lane-aware critical debt semantics.
+- Forced zero/negative delta into minimum active slow-bucket count.
+
+Cinematic cheats used:
+- Toaster path: invalid vault or time input collapses to no-work/minimum-bucket behavior instead of widening work.
+- High/Ultra path: dynamic rebalance and visual-overkill budget remain available only after valid storage and valid forward-time proof.
+
+Exact microseconds saved:
+- 0 us measured. This pass is bounds survival, telemetry correctness, and fallback control; no runtime performance claim.
+
+Verification:
+- No rebuild was run per user instruction.
+- `git diff --check` passed for touched source files; line-ending warnings only.
+- Forbidden-pattern scan found no `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `Debug.Log*`, `new NativeArray/List/HashMap`, `NativeQueue`, `Allocator.`, `H8Memory.Allocate`, `FindObjectOfType`, `GameObject.Find`, `Camera.main`, or `GlobalRegistry.` in `Core/Scheduling` and `Core/Bucketing`.
+- Struct/math scan found only intentional packed structs, guarded `math.rcp`, admitted `Schedule` wrappers, cold teardown/ready `Complete`, and `Dispose`.
+
 ## 2026-05-17 - Lane-Aware Admission Debt Clamp
 What was wrong:
 - Admission budget clamps allowed the negative critical-lane debt floor to apply to every lane.

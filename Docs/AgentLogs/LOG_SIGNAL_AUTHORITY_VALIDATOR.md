@@ -603,3 +603,35 @@ Verification:
 
 Blocked:
 - Unity PlayMode, Quest/Android, Metal/Mac, Steam Deck, and full player-build runtime validation were not run in this signal pass.
+
+## Surgical Record - 2026-05-17 Warning Sweep And Late Signal Drift Closure
+
+What was wrong:
+- `AudioEvent` and `CameraJuiceImpactSignal` were still feature-file `ISignal` payloads.
+- Procedural audio, camera juice, ambient biota, lockstep, gyro-compass, and scalability helpers had recurrent local `SignalBus<T>.Configure` authority.
+- `Hecton8.Core.csproj` emitted `CS2002` because `HectonSignalLaneContract.cs` was included twice through generated project items plus `Directory.Build.targets`.
+
+What was done:
+- Moved the procedural audio and camera impact payloads into `Core/GlobalSignals.cs`.
+- Added central lane policy/validation for procedural audio and camera impact traffic.
+- Reduced feature helpers to `GlobalSignals.InitializeAllQueues()` plus typed `EnsureInitialized()`/Push/snapshot APIs.
+- Added `Compile Remove` before the `Directory.Build.targets` contract re-add so `HectonSignalLaneContract.cs` compiles once.
+- Updated the audio smoke assertion to verify the central signal contract source.
+
+Cinematic cheats used:
+- Low tier keeps audio, camera impact, biome, spawn, debris, compass, glitch, and scalability lanes centrally capped.
+- High and Ultra can spend the same packets on procedural audio intensity, camera impact response, dense ambient debris, compass glass, glitch overlays, visor salt, silt wake, and hull lighting without new broadcast authority.
+
+Exact microseconds saved:
+- Estimated 4-12 us during cold bootstrap/reinitialization by removing repeated helper-level lane mutation.
+- Project include cleanup saves 0 us runtime; it removes a real compiler warning instead of hiding it.
+
+Verification:
+- `ISIGNAL_STRUCT_FILES_OUTSIDE_GLOBALSIGNALS=0`.
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- `SIGNALBUS_USED_TYPES_WITHOUT_GLOBAL_CONFIG=0`.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false /m:1`: PASS, 0 warnings, 0 errors, 2:36.30.
+- No `dotnet rebuild` was run.
+
+Blocked:
+- Full `Assembly-CSharp.csproj`, Unity PlayMode, Quest/Android, Metal/Mac, Steam Deck, and player-build runtime validation were not run in this warning sweep.

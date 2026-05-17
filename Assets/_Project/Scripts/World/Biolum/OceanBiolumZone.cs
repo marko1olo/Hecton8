@@ -224,7 +224,7 @@ namespace Hecton8.Biolum
                     float noiseY = CheapSignedWave((time * 0.15f) + Hash01((i * 73) + 31));
                     float noiseZ = CheapSignedWave((time * 0.1f) + Hash01((i * 79) + 37));
                     Vector3 drift = new Vector3(noiseX, noiseY, noiseZ) * 0.5f;
-                    light.transform.position = transform.position + _lightPositions[i] + drift;
+                    UpdateLightPosition(light, transform.position + _lightPositions[i] + drift);
                 }
 
                 // Update properties

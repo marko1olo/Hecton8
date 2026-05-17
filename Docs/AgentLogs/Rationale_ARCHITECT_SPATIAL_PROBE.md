@@ -219,3 +219,9 @@ Solution: Added an explicit 64-byte little-endian writer for every blackbox entr
 Rejected Alternatives: Keeping raw native memory because all current targets are little-endian, or adding a managed binary writer. Raw memory dumps are weaker forensic evidence; managed writers add failure-path heap and culture/format risk.
 Scalability potential: Low/Middle/High/Ultra runtime frame work is unchanged. Fault dumps become deterministic across PC, Steam Deck, Quest/Android, and Metal/Mac little-endian targets.
 Hardware Impact: 0 us frame-time saved claimed; dump cost is fault-path only, bounded to 300 entries, with no managed byte-array staging.
+
+Problem: The live visualizer file drifted again after prior reporting: `BlackBoxDumpRelativePath` pointed at the old eye-visualizer artifact, the mandated `F12` toggle was absent from `Render()`, and fragmented Vault memory was yellow rather than red.
+Solution: Reapplied only the three contract locks: `Docs/AgentLogs/Dump_ARCHITECT_SPATIAL_PROBE.bin`, `KeyCode.F12` before the `_enabled` render early return, and red fragmented-memory quads/gauge.
+Rejected Alternatives: Broad refactor, scene/prefab YAML edits, or running a rebuild to prove a three-line semantic lock. The drift was local and static-auditable.
+Scalability potential: Low/Middle/High/Ultra all retain the same operator toggle and forensic memory color contract. Postmortem automation has one deterministic artifact name.
+Hardware Impact: 0 us saved claimed; one diagnostics-only key-state check is restored, with no allocation and no new draw submission.

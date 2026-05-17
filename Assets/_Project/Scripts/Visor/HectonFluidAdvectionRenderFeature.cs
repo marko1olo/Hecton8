@@ -56,8 +56,6 @@ namespace Hecton8.Visor
                 BufferHandle debrisRead = renderGraph.ImportBuffer(payload.DebrisRead);
                 BufferHandle debrisWrite = renderGraph.ImportBuffer(payload.DebrisWrite);
                 BufferHandle flow = renderGraph.ImportBuffer(payload.AbyssalFlowBuffer);
-                BufferHandle dynamicWakes = renderGraph.ImportBuffer(payload.DynamicWakes);
-                BufferHandle dynamicWakeVectors = renderGraph.ImportBuffer(payload.DynamicWakeVectors);
                 TextureHandle flowTexture = renderGraph.ImportTexture(payload.AbyssalFlowTextureHandle);
                 TextureHandle sdfTexture = renderGraph.ImportTexture(payload.VoxelSdfTextureHandle);
                 TextureHandle emptyTexture = renderGraph.ImportTexture(payload.EmptyVoxelSdfTextureHandle);
@@ -76,8 +74,6 @@ namespace Hecton8.Visor
                     builder.UseBuffer(debrisRead, AccessFlags.Read);
                     builder.UseBuffer(debrisWrite, AccessFlags.Write);
                     builder.UseBuffer(flow, AccessFlags.Read);
-                    builder.UseBuffer(dynamicWakes, AccessFlags.Read);
-                    builder.UseBuffer(dynamicWakeVectors, AccessFlags.Read);
                     builder.UseTexture(flowTexture, AccessFlags.Read);
                     builder.UseTexture(sdfTexture, AccessFlags.Read);
                     builder.UseTexture(emptyTexture, AccessFlags.Read);

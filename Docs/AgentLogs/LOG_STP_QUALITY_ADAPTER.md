@@ -398,3 +398,29 @@ Validation:
 - Runtime bridge audit now routes render-scale and frame-time publication through finite guards before URP/scalable-buffer writes.
 - `git diff --check` reported only CRLF conversion warnings.
 - Latest compile evidence remains gate 21 before loops 14-18: 0 warnings, 0 errors. Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION.
+
+## 2026-05-17 - Loop 19 / STP Commit-Boundary Clamp
+
+What was wrong:
+- The runtime bridge was guarded, but STP adapter commit paths still trusted raw backing fields when writing Unity dynamic-resolution percentage, sending `IDynamicResolutionRuntime` snapshots, rebinding a runtime service, and encoding scale milli values for signals/telemetry.
+- `ScalabilityEvents.Register(this)` was not Play Mode gated.
+
+What was done:
+- `CommitRenderScale()` now clamps `_currentScale` and `_targetScale` before writing `s_systemScalePercentage`.
+- `CommitRuntimeSnapshot()` now sends clamped current/target scale and sanitized frame-time to `IDynamicResolutionRuntime`.
+- `RebindDynamicResolutionRuntime()` now routes through `CommitRuntimeSnapshot()` instead of duplicating a raw runtime call.
+- `ScaleToMilli()` now clamps input before encoding signal/telemetry milli values.
+- Scalability listener registration now requires `Application.isPlaying`.
+
+Cinematic cheats used:
+- No visual-policy change. Toaster path remains 0.5 base / 0.35 emergency STP dear-lie scaling.
+- High/Ultra still publish visual-overkill consumer flags for visor salt, volumetric silt, procedural hull dents, 16-tap POM, SSS, and raymarched fog.
+
+Exact microseconds saved:
+- Not measured. This is commit-boundary correctness and edit-mode side-effect cleanup, not a measured optimization.
+
+Validation:
+- No dotnet gate was run in this loop because the operator explicitly requested not to rebuild on every pass.
+- Static STP-domain scan found no `Update/LateUpdate/FixedUpdate`, local `NativeArray<T>`, `new NativeArray`, `Allocator.Persistent`, `EventBus`, managed delegate/event, `string.Format`, unsafe normalization, STP-owned compute/threadgroup path, legacy blit, RenderGraph compatibility path, or `Debug.Log`.
+- `git diff --check` reported only CRLF conversion warnings.
+- Latest compile evidence remains gate 21 before loops 14-19: 0 warnings, 0 errors. Unity import, Play Mode, player build, profiler, GC, memory, and visual captures remain PENDING VERIFICATION.

@@ -588,14 +588,19 @@ namespace Hecton8.Gameplay
             {
                 if (voxelVolume != null)
                 {
-                    double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_hit.point);
-                    if (IsFiniteVector(_hit.point) &&
-                        math.all(math.isfinite(absoluteHitPoint)) &&
-                        voxelVolume.ApplyRepairWeldDda(
-                            absoluteHitPoint,
-                            ResolveFiniteDirection(_cachedTransform.forward, Vector3.forward),
-                            ResolveRuntimeRepairPowerNormalized(),
-                            ResolveRuntimeRepairRange()))
+                    bool repairVoxelHit = false;
+                    if (IsFiniteVector(_hit.point))
+                    {
+                        double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_hit.point);
+                        repairVoxelHit = math.all(math.isfinite(absoluteHitPoint)) &&
+                                         voxelVolume.ApplyRepairWeldDda(
+                                             absoluteHitPoint,
+                                             ResolveFiniteDirection(_cachedTransform.forward, Vector3.forward),
+                                             ResolveRuntimeRepairPowerNormalized(),
+                                             ResolveRuntimeRepairRange());
+                    }
+
+                    if (repairVoxelHit)
                     {
                         UpdateBeamHit(_hit.point, _hit.normal);
                         ClearIntegrityDiagnostic();

@@ -57,8 +57,9 @@ namespace Hecton8.UI.Navigation
 
         public static void ConfigureOwnedLanes()
         {
-            global::Hecton8.Core.GlobalSignals.InitializeAllQueues();
+            SignalBus<AnomalyProximitySignal>.Configure(8, maxFrameSignals: 16, lowTierFrameSignals: 4, laneHash: CompassAnomalyLaneHash);
             SignalBus<AnomalyProximitySignal>.EnsureInitialized();
+            SignalBus<CompassCalibratedSignal>.Configure(4, maxFrameSignals: 8, lowTierFrameSignals: 2, laneHash: CompassCalibrationLaneHash);
             SignalBus<CompassCalibratedSignal>.EnsureInitialized();
         }
 

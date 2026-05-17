@@ -56,6 +56,8 @@ Cache is carrying the bill. At current model-aware public-price assumptions, cac
 - Live delta: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_DELTA_20260516.md`
 - Recent 2026-05-17 JSONL rate audit: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_RECENT_JSONL_RATE_AUDIT_20260517.md`
 - H-Phi search index: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_SEARCH_INDEX_20260517.md`
+- H-Phi keyword coverage: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_KEYWORD_COVERAGE_20260517.md`
+- H-Phi rebase 2026-05-17 13:37: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1337.md`
 - H-Phi rebase 2026-05-17 11:42: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1142.md`
 - Post-04:12 token live rebase: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_LIVE_REBASE_20260517_0446.md`
 - 05:34 SQLite live pulse: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_PULSE_20260517_0534.md`
@@ -373,4 +375,30 @@ SQLite live pulse 11:38: current total `51,066,572,323` tokens; 30-second burn `
 Marginal H-Phi ROI vs 04:12: `964,690,350` tokens per `+0.001` Runtime H-Phi risk, `USD 764.11` per `+0.001`.
 
 Detailed file: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1142.md`.
+
+## H-Phi Rebase 2026-05-17T13:37+04:00
+
+Reason for new H-Phi scan: 102 C# files changed after 11:42, touching 8,481,368 bytes. Current first-party surface: 1,585 files, 1,037,644 physical LOC, 856,940 meaningful LOC, 46,331,767 script bytes.
+
+| Metric | Value |
+|---|---:|
+| Runtime H-Phi risk | 0.005525762 |
+| Runtime H-Phi narrow | 0.077385732 |
+| Data sovereignty | 0.144331092 |
+| Memory alignment | 0.536168133 |
+| Delta vs 11:42 Runtime risk | +0.000147098 |
+| Delta vs 11:42 Runtime narrow | +0.001504620 |
+| Delta vs 11:42 Data sovereignty | +0.002787616 |
+| DataVault refs delta | +29 |
+| Owner-blocked NativeArray refs delta | -20 |
+| Primary native ownership risk delta | -28 |
+| Primary managed runtime risk delta | +6 |
+
+Token window 11:42-13:37: `304,562,532` tokens, `USD 236.42` cache-aware, `USD 1,546.69` no-cache, `95.9034%` cached input, average `43,904.07 tokens/sec`.
+
+SQLite live pulse 13:36: current total `51,372,184,781` tokens; 30-second burn `741,683`; rate `24,665.28 tokens/sec`; current energy estimate `2,568.61 MWh`; tokens per meaningful LOC `59,948.40`; tokens per script byte `1,108.79`.
+
+Marginal H-Phi ROI vs 11:42: `2,070,473,643` tokens per `+0.001` Runtime H-Phi risk, `USD 1,607.26` per `+0.001`.
+
+Detailed file: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1337.md`.
 

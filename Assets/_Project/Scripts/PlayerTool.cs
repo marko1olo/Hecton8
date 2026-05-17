@@ -195,14 +195,28 @@ namespace Hecton8.Gameplay
             if (interactionService != null && interactionService.IsInitialized)
             {
                 if (_queuedRaycastRequesterId == 0UL) RefreshQueuedRaycastRequesterId();
+                float safeRange = FiniteNonNegativeOrZero(range);
+                if (!IsFiniteVector(origin) || safeRange <= 0f)
+                {
+                    hit = default;
+                    return false;
+                }
+
                 Vector3 normalizedDirection = NormalizeOrCachedForward(direction);
                 double3 absoluteOrigin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin);
+                if (!IsFiniteVector(normalizedDirection) || !math.all(math.isfinite(absoluteOrigin)))
+                {
+                    hit = default;
+                    return false;
+                }
+
+                float safePower = math.saturate(FiniteNonNegativeOrZero(GetRuntimePowerScalar(1f)));
                 InteractionPacket packet = new InteractionPacket(
                     ResolveRuntimeToolId(),
                     new Unity.Mathematics.float3((float)absoluteOrigin.x, (float)absoluteOrigin.y, (float)absoluteOrigin.z),
                     new Unity.Mathematics.float3(normalizedDirection.x, normalizedDirection.y, normalizedDirection.z),
-                    GetRuntimePowerScalar(1f),
-                    range,
+                    safePower,
+                    safeRange,
                     (byte)ToolActionMode.Primary,
                     (byte)(IsEquipped ? ToolStateBits.Active : ToolStateBits.Idle),
                     unchecked((uint)Time.frameCount));

@@ -327,7 +327,31 @@ Scalability potential: Low/MX350 and Quest avoid undefined native alias use duri
 Hardware Impact: Cold fatal-leak path only. No gameplay hot-path cost; exact CPU microseconds are unmeasured.
 
 Problem: Player presentation typed-lane payloads briefly existed in two places during parallel compile repair, causing duplicate signal definitions; the alternative state was missing the payloads entirely from the compile gate.
-Solution: Kept a single compiled ABI definition in `GlobalSignals.cs`, including the existing `WaterTransitionSignal` lane validation and initialization. Reduced `Core/Signals/PlayerMovementPresentationSignals.cs` to an empty namespace shell so dotnet/Unity do not compile duplicate payloads while project metadata that references the file remains satisfied.
+Solution: Kept a single compiled ABI definition in `Core/Signals/PlayerMovementPresentationSignals.cs`, while `GlobalSignals.cs` owns validation/configuration of the typed lanes.
 Rejected Alternatives: Rejected duplicate signal structs, removing the typed SignalBus lanes, or replacing them with legacy EventBus/managed delegates. Rejected deleting project metadata under a memory-agent pass.
 Scalability potential: Low/Quest/Steam Deck keep compact fixed-size signal payloads and low-tier lane capacities. High/Ultra keep the same typed lanes for richer presentation systems without ABI ambiguity.
 Hardware Impact: Compile/ABI hygiene only. Runtime cost is unchanged; exact CPU microseconds are unmeasured. Validation used `dotnet build --no-restore`; no `dotnet rebuild` was run.
+
+Problem: The no-restore compile gate drifted red after parallel edits because player presentation signal ABI definitions were absent from the compiled surface, while `GlobalSignals` and consumers still configured/read their typed lanes. A stale camera juice reference also pointed at a non-existent `Hecton8.Core.CameraJuiceImpactSignal`, and Boid compile repair had duplicate helper bodies.
+Solution: Restored the single packed player presentation ABI definitions in `Core/Signals/PlayerMovementPresentationSignals.cs`, kept `CameraJuiceImpactSignal` on the existing `Hecton8.Core.Contracts.Signals` lane, and removed the Boid duplicate helper bodies while restoring one bounded GPU upload helper.
+Rejected Alternatives: Rejected adding a second signal file, adding a legacy EventBus/delegate fallback, or inventing a `Hecton8.Core.CameraJuiceImpactSignal` duplicate. Rejected rewriting Boid GPU upload from the Sentinel memory domain; this was a compile bridge only.
+Scalability potential: Low/MX350/Quest/Steam Deck keep compact typed-lane payloads, low-tier lane capacities, and no per-frame disk/polling work. High/Ultra keep the same presentation event budget for richer visuals after Sentinel memory transition proof.
+Hardware Impact: Sentinel hot path remains 0 B/frame by static inspection. The restored signals are ABI/compile hygiene; external Boid helper work is existing bounded GPU upload behavior, not new Sentinel runtime work. Exact CPU microseconds are unmeasured.
+
+Problem: `Temp/obj/Hecton8.Core/project.assets.json` was missing during validation, which makes `dotnet build --no-restore` impossible.
+Solution: Ran `dotnet restore Hecton8.Core.csproj --nologo` once to regenerate assets, then used `dotnet build Hecton8.Core.csproj --no-restore --nologo /clp:ErrorsOnly` for the compile gate.
+Rejected Alternatives: Rejected `dotnet rebuild`. Rejected claiming compile status without a valid assets file.
+Scalability potential: Restore/build metadata has no runtime scalability effect; it only restores deterministic local validation.
+Hardware Impact: 0.0 us runtime. Final no-restore build succeeded with 0 warnings and 0 errors in 00:01:02.39; Unity runtime verification remains pending.
+
+Problem: H8Memory and GlobalDataVault rely on native hash maps for lookup and side-key lists for deterministic teardown iteration. Earlier hardening deduped key creation on the happy path, but an already-existing map entry with a missing or duplicated side key could still survive and make scene-transition owner/vault eviction skip data.
+Solution: `RegisterActiveJob` and `RegisterOwnerPointer` now repair owner-key side lists even when their hash-map entries already exist. `RemoveOwnerPointer` scrubs every matching pointer from the owner lane. GlobalDataVault now repairs `_keys` and `_macroDatabasePayloadKeys` when existing map entries are touched, and key removal scrubs all duplicates.
+Rejected Alternatives: Rejected treating side-key drift as harmless metadata because transition/shutdown and scene-owned vault eviction iterate those key lists. Rejected rebuilding all side lists every transition because the point repair keeps work attached to cold registration/eviction paths.
+Scalability potential: Low/MX350, Quest/Android, and Steam Deck avoid persistent owner/vault metadata leaks without per-frame polling or disk writes. High/Ultra keep deterministic old-scene memory proof before Ocean/VFX domains consume recovered memory.
+Hardware Impact: 0 B/frame. Added work is cold registration/unregister/eviction list scans over bounded native side-key lists. Exact CPU microseconds are unmeasured. Validation used `dotnet build --no-restore`; no `dotnet rebuild` was run.
+
+Problem: `Temp/obj/Hecton8.Core/project.assets.json` was missing again during validation, so no-restore build could not execute.
+Solution: Ran `dotnet restore Hecton8.Core.csproj --nologo` to regenerate the missing assets file, then reran `dotnet build Hecton8.Core.csproj --no-restore --nologo /clp:ErrorsOnly`.
+Rejected Alternatives: Rejected `dotnet rebuild`. Rejected preserving a stale green compile line after the assets file had been deleted externally.
+Scalability potential: Restore/build metadata has no runtime scalability effect.
+Hardware Impact: 0.0 us runtime. Final no-restore build succeeded with 0 warnings and 0 errors in 00:00:31.10; Unity runtime verification remains pending.

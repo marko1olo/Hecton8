@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Editor",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Contracts",
         "Hecton8.Plugins",
         "Hecton8.Dev.SpaceEngine098",
         "UnityEngine.TestRunner",
@@ -17,6 +18,7 @@
         "Unity.TextMeshPro",
         "UnityEngine.UI",
         "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
         "GPUInstancer",
         "Den.Tools",
         "MapMagic",

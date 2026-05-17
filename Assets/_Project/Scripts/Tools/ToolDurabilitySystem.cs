@@ -297,20 +297,20 @@ namespace Hecton8.Tools
         public float GetDurability(string toolID, float maxDurability)
         {
             if (string.IsNullOrEmpty(toolID))
-                return math.max(0f, maxDurability);
+                return ClampFiniteNonNegative(maxDurability);
 
             TryCompleteDecayJobIfScheduled(forceComplete: false);
             if (_durabilityMap.TryGetValue(toolID, out float current))
                 return current;
 
             EnsureToolRegistered(toolID, unchecked((uint)Animator.StringToHash(toolID)), maxDurability);
-            return math.max(0f, maxDurability);
+            return ClampFiniteNonNegative(maxDurability);
         }
 
         public float GetDurabilityNormalized(string toolID, float maxDurability)
         {
-            float current = GetDurability(toolID, maxDurability);
-            return math.saturate(current / math.max(1f, maxDurability));
+            float current = ClampFiniteNonNegative(GetDurability(toolID, maxDurability));
+            return math.saturate(current / ResolveSafeMaxDurability(maxDurability));
         }
 
         public bool IsBroken(string toolID)
@@ -785,7 +785,7 @@ namespace Hecton8.Tools
                     hashID = itemHashId
                 };
                 itemStates[i] = state;
-                _durabilityMap[toolID] = math.max(1f, maxDurability);
+                _durabilityMap[toolID] = ResolveSafeMaxDurability(maxDurability);
                 _brokenMap[toolID] = false;
                 return i;
             }
@@ -795,7 +795,7 @@ namespace Hecton8.Tools
 
         private void UpdateSlotMetadata(int slotIndex, string toolID, uint itemHashId, float maxDurability)
         {
-            float resolvedMaxDurability = math.max(1f, maxDurability);
+            float resolvedMaxDurability = ResolveSafeMaxDurability(maxDurability);
             _toolIdBySlot[slotIndex] = toolID;
             _maxDurabilityBySlot[slotIndex] = resolvedMaxDurability;
             _itemHashBySlot[slotIndex] = itemHashId;
@@ -823,7 +823,7 @@ namespace Hecton8.Tools
         private static float ResolveWearMultiplier(uint itemHashId)
         {
             if (itemHashId != 0u && ItemTemplateRegistry.TryGetTemplate(itemHashId, out ItemTemplate template))
-                return math.max(0f, template.WearMultiplier);
+                return ClampFiniteNonNegative(template.WearMultiplier);
 
             return 1f;
         }
@@ -843,23 +843,25 @@ namespace Hecton8.Tools
                 return;
             }
 
-            float safeMaxDurability = math.max(1f, maxDurability);
+            float safeCurrentDurability = ClampFiniteNonNegative(currentDurability);
+            float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
             uint itemHash = _itemHashBySlot[slotIndex];
             byte flags = (itemStates[slotIndex].flags & BrokenFlag) != 0
                 ? ItemDurabilityChangedSignal.FlagBroken
                 : (byte)0;
-            GlobalSignals.Publish(new ItemDurabilityChangedSignal
+            ItemDurabilityChangedSignal signal = new ItemDurabilityChangedSignal
             {
                 InventoryHash = 0u,
                 ItemHash = itemHash,
-                Durability01 = math.saturate(currentDurability / safeMaxDurability),
+                Durability01 = math.saturate(safeCurrentDurability / safeMaxDurability),
                 AverageEquippedDurability01 = 1f,
                 Frame = (uint)math.max(0, Time.frameCount),
                 SlotIndex = (ushort)slotIndex,
                 Reason = reason,
                 Flags = flags,
                 BiomeHash = 0u
-            });
+            };
+            SignalBus<ItemDurabilityChangedSignal>.Push(in signal);
         }
 
         private bool HasNativeState()

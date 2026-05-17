@@ -1,25 +1,5 @@
 fileFormatVersion: 2
 guid: f9fc305ce1a587449815831373f0c82a
-AudioImporter:
-  externalObjects: {}
-  serializedVersion: 6
-  defaultSettings:
-    loadType: 2
-    sampleRateSetting: 2
-    sampleRateOverride: 22050
-    compressionFormat: 1
-    quality: 0.45
-    conversionMode: 0
-  platformSettingOverrides: {}
-  forceToMono: 1
-  normalize: 1
-  preloadAudioData: 0
-  loadInBackground: 1
-  ambisonic: 0
-  3D: 1
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
 AssetOrigin:
   serializedVersion: 1
   productId: 234344
@@ -27,3 +7,24 @@ AssetOrigin:
   packageVersion: 1.0
   assetPath: Assets/Sci Fi Ambiances/Atmos 3.wav
   uploadId: 530122
+AudioImporter:
+  externalObjects: {}
+  serializedVersion: 8
+  defaultSettings:
+    serializedVersion: 2
+    loadType: 2
+    sampleRateSetting: 2
+    sampleRateOverride: 22050
+    compressionFormat: 1
+    quality: 0.45
+    conversionMode: 0
+    preloadAudioData: 0
+  platformSettingOverrides: {}
+  forceToMono: 1
+  normalize: 1
+  loadInBackground: 1
+  ambisonic: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

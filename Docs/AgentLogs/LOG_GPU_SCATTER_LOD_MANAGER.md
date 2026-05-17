@@ -601,3 +601,32 @@ Validation:
 - Legacy compute scan found no wave intrinsics, no `groupshared`, and no memory barriers.
 - Thread-group scan reports only three `numthreads(HECTON_SCATTER_THREADS, 1, 1)` declarations with `HECTON_SCATTER_THREADS = 64`.
 - Touched-file `git diff --check -- <paths>` reports only LF-to-CRLF warnings.
+
+## 2026-05-17 Continued Pass: Adjacent ScatterIndirect Lit Shader Hardening
+
+What was wrong:
+- `Hecton_ScatterIndirectLit.shader` consumed adjacent scatter instance buffers without local finite gates.
+- Raw instance rotation reached a `uint` yaw-sector cast; raw scale reached `rcp`; raw flow/current vectors reached `rsqrt`; raw material scalars reached micro normals, fog, lighting, emission, and shadow bias.
+- Vertex sway still used raw `sin()`, which is unnecessary for low-tier flora motion.
+- Shadow caster skipped the procedural rock displacement used by the forward pass.
+
+What was done:
+- Added shader-local finite, positive, and non-negative sanitizers.
+- Sanitized instance position/scale/normal/rotation/atlas payload, AUP offset, local position/normal, UVs, material scalar lanes, micro normal controls, fog factor, clip-space position, caustics, biolum, sonar emission, and shadow inputs.
+- Replaced raw sine sway with `HectonCoreLitTrianglePulse01`.
+- Applied procedural rock displacement in the shadow caster path for forward/shadow deformation parity.
+
+Cinematic cheats used:
+- Low/MX350 keeps triangle-pulse parabola sway instead of trigonometric flora motion.
+- High/Ultra keep denser visual channels: stochastic surface, environmental wear, micro normal texture, caustics, biolum, sonar emission, storm-rain ripple, and procedural rock variation.
+
+Exact Microseconds saved:
+- No measured microseconds claimed.
+- Removed one raw vertex-stage `sin()`; exact GPU impact is PENDING PROFILER.
+- Added finite guards; exact GPU cost is PENDING PROFILER.
+
+Validation:
+- No dotnet rebuild was run for this shader-only polish.
+- Targeted scan found no `sin`, `cos`, `tan`, wave intrinsics, memory barriers, `groupshared`, or `DrawMeshInstancedIndirect` in `Hecton_ScatterIndirectLit.shader`.
+- Remaining `rsqrt` calls are length-squared guarded; remaining `rcp` calls clamp the denominator.
+- `git diff --check -- Assets/_Project/Art/Shaders/Hecton_ScatterIndirectLit.shader` reports only LF-to-CRLF warnings.

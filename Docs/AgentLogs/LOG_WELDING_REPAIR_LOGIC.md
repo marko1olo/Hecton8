@@ -899,3 +899,110 @@ Validation:
 - Fixed-string grep returned `NO_REPAIR_SPARK_AUP_GUARD_HOTPATH_BLOAT_MATCHES`.
 - Filtered `dotnet build` returned `NO_REPAIR_SPARK_AUP_GUARD_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
 - Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Thirty-First Pass Repair Voxel / VFX Scar Guard
+What was wrong:
+- The voxel weld branch converted `_hit.point` to AUP before proving it was finite.
+- The voxel weld DDA used raw `_cachedTransform.forward`.
+- VFX scar/deformation intensity used a NaN-prone `math.max` denominator guard on `maxDentDepthMeters`.
+
+What was done:
+- Added finite hit-point and converted-AUP checks before voxel weld DDA.
+- Routed voxel weld direction through `ResolveFiniteDirection`.
+- Replaced VFX scar/deformation denominator guards with `FiniteAtLeast(maxDentDepthMeters, 0.01f)`.
+
+Cinematic Cheats used:
+- No new simulation.
+- The voxel branch remains a bounded repair weld path.
+- The shader scar path remains a cheap scalar fake.
+
+Exact Microseconds saved:
+- No speed gain claimed.
+- Estimated 0-1 us branch cost on voxel repair targets.
+- Estimated 0-1 us branch cost on active scar/deformation evaluation.
+
+Validation:
+- Source grep confirmed finite AUP/direction guards and finite max dent depth denominator use.
+- Fixed-string grep returned `NO_REPAIR_VOXEL_SCAR_GUARD_HOTPATH_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_VOXEL_SCAR_GUARD_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Thirty-Second Pass PlayerTool Queued Raycast Packet Guard
+What was wrong:
+- `PlayerTool.TryResolveQueuedRaycast` converted raw origin to AUP before proving it was finite.
+- `InteractionPacket` received raw range and runtime power from the base tool layer.
+- RepairTool depends on this shared queued raycast path.
+
+What was done:
+- Added finite origin and positive range checks before AUP conversion.
+- Added finite normalized direction and converted-AUP checks before packet construction.
+- Sent `safePower` and `safeRange` to `InteractionPacket`.
+
+Cinematic Cheats used:
+- No new physics query.
+- The tool still uses the queued RaycastCommand lane.
+- Invalid raycast packet authority is discarded before it reaches the interaction service.
+
+Exact Microseconds saved:
+- No speed gain claimed.
+- Estimated 0-1 us branch cost per queued raycast request.
+- Prevents invalid AUP/range/power from entering repair raycast scheduling.
+
+Validation:
+- Source grep confirmed finite packet guards and safe scalar packet fields.
+- Fixed-string grep returned `NO_REPAIR_PLAYERTOOL_RAYCAST_PACKET_HOTPATH_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_PLAYERTOOL_RAYCAST_PACKET_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Thirty-Third Pass ToolDurability Typed Signal / Scalar Guard
+What was wrong:
+- `ToolDurabilitySystem` still published `ItemDurabilityChangedSignal` through `GlobalSignals`.
+- Durability max/current/template scalar paths used NaN-prone `math.max` patterns.
+- This is repair-adjacent because `PlayerTool` and `RepairTool` consume tool durability/energy state.
+
+What was done:
+- Replaced the durability changed publish with `SignalBus<ItemDurabilityChangedSignal>.Push`.
+- Finite-clamped durability reads, normalized durability, slot metadata max durability, durability signal percent, and template wear multipliers.
+
+Cinematic Cheats used:
+- No new durability simulation.
+- No new signal type.
+- Kept the existing fixed tool durability lane; only ingress/scalar hygiene changed.
+
+Exact Microseconds saved:
+- Estimated 0-1 us per durability signal by bypassing the wrapper.
+- Estimated 0-1 us branch cost per durability query/update.
+- No broad speed claim; this is finite-state and signal-lane hygiene.
+
+Validation:
+- Source grep confirmed direct SignalBus durability publication and finite scalar guards.
+- Fixed-string grep returned `NO_REPAIR_TOOLDURABILITY_DURABILITY_NAN_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_TOOLDURABILITY_TYPED_SIGNAL_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-17 - Thirty-Fourth Pass WFC Tool VFX Typed Signal / NaN Guard
+What was wrong:
+- `WfcLaserCutRuntime` still pushed debris, acoustic, and haptic feedback through `GlobalSignals`.
+- Cutter progress/power/heat/stress paths used NaN-prone saturate/max patterns.
+- Dump failure used `Debug.LogError` in a blackbox fault path.
+
+What was done:
+- Replaced feedback publishes with direct `SignalBus<DebrisSpawnSignal>`, `SignalBus<ToolAcousticSignal>`, and `SignalBus<HapticRequest>`.
+- Added finite clamps for progress delta, stored progress, cutter power, heat, system stress, shader globals, feedback intensity, haptic frequency, and telemetry fields.
+- Replaced dump failure console logging with `GlobalTelemetryBus.PublishUnityLogFault`.
+
+Cinematic Cheats used:
+- No new simulation.
+- WFC cut feedback remains scalar VFX/audio/haptic fakery.
+- Invalid cutter values are discarded or clamped before reaching shader globals and typed lanes.
+
+Exact Microseconds saved:
+- Estimated 0-1 us saved per feedback burst by bypassing `GlobalSignals` wrapper dispatch.
+- Estimated 0-1 us branch cost per active WFC cut feedback tick.
+- Fault logging cost is fault path only.
+
+Validation:
+- Source grep confirmed direct typed feedback lanes and finite scalar clamps.
+- Fixed-string grep returned `NO_REPAIR_WFC_TYPED_SIGNAL_BLOAT_MATCHES`.
+- Filtered `dotnet build` returned `NO_REPAIR_WFC_TYPED_SIGNAL_BUILD_DIAGNOSTICS` with `DOTNET_EXIT_CODE=1`.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.

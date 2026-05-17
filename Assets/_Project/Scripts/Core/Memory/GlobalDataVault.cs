@@ -639,6 +639,12 @@ namespace Hecton8.Core.Memory
                 }
 
                 ValidateType<T>(bufferId, existingMeta, stride, alignment);
+                if (!EnsureBufferKeyRegistered(key))
+                {
+                    DumpPhiVodBlackBox();
+                    return false;
+                }
+
                 if (existingMeta.Length >= requiredLength)
                 {
                     if (!IsPointerAligned(existingPointer, VaultBlockAlignment))
@@ -747,7 +753,15 @@ namespace Hecton8.Core.Memory
                 return false;
             }
 
-            _keys.AddNoResize(key);
+            if (!EnsureBufferKeyRegistered(key))
+            {
+                _buffers.Remove(key);
+                _metadata.Remove(key);
+                FreeBlock(blockIndex);
+                DumpPhiVodBlackBox();
+                return false;
+            }
+
             _allocatedBytes += requiredBytes;
             if (exposeExternalView && !MarkExternalView(key, meta.OffsetBytes))
             {
@@ -1339,6 +1353,10 @@ namespace Hecton8.Core.Memory
                 if (!TryEvictLeastRecentlyUsedMacroDatabasePayload())
                     return false;
             }
+            else if (hasExisting && !EnsureMacroDatabaseKeyRegistered(sectorHash))
+            {
+                return false;
+            }
 
             void* payloadPointer = H8Memory.AllocateRaw(
                 byteLength,
@@ -1378,7 +1396,14 @@ namespace Hecton8.Core.Memory
                     return false;
                 }
 
-                _macroDatabasePayloadKeys.AddNoResize(sectorHash);
+                if (!EnsureMacroDatabaseKeyRegistered(sectorHash))
+                {
+                    _macroDatabasePayloadCache.Remove(sectorHash);
+                    H8Memory.FreeRaw(payloadPointer, Allocator.Persistent, SystemID.CoreDataVault);
+                    handle = default;
+                    return false;
+                }
+
                 TouchMacroDatabasePayload(sectorHash);
             }
 
@@ -1563,14 +1588,31 @@ namespace Hecton8.Core.Memory
             if (!_macroDatabasePayloadKeys.IsCreated)
                 return;
 
-            for (int i = 0; i < _macroDatabasePayloadKeys.Length; i++)
+            for (int i = _macroDatabasePayloadKeys.Length - 1; i >= 0; i--)
             {
                 if (_macroDatabasePayloadKeys[i] != sectorHash)
                     continue;
 
                 _macroDatabasePayloadKeys.RemoveAtSwapBack(i);
-                return;
             }
+        }
+
+        private bool EnsureMacroDatabaseKeyRegistered(ulong sectorHash)
+        {
+            if (!_macroDatabasePayloadKeys.IsCreated)
+                return false;
+
+            for (int i = 0; i < _macroDatabasePayloadKeys.Length; i++)
+            {
+                if (_macroDatabasePayloadKeys[i] == sectorHash)
+                    return true;
+            }
+
+            if (_macroDatabasePayloadKeys.Length >= _macroDatabasePayloadKeys.Capacity)
+                return false;
+
+            _macroDatabasePayloadKeys.AddNoResize(sectorHash);
+            return true;
         }
 
         private void RemoveBufferKey(int key)
@@ -1578,14 +1620,31 @@ namespace Hecton8.Core.Memory
             if (!_keys.IsCreated)
                 return;
 
-            for (int i = 0; i < _keys.Length; i++)
+            for (int i = _keys.Length - 1; i >= 0; i--)
             {
                 if (_keys[i] != key)
                     continue;
 
                 _keys.RemoveAtSwapBack(i);
-                return;
             }
+        }
+
+        private bool EnsureBufferKeyRegistered(int key)
+        {
+            if (!_keys.IsCreated)
+                return false;
+
+            for (int i = 0; i < _keys.Length; i++)
+            {
+                if (_keys[i] == key)
+                    return true;
+            }
+
+            if (_keys.Length >= _keys.Capacity)
+                return false;
+
+            _keys.AddNoResize(key);
+            return true;
         }
 
         private int ReleaseBuffersByOwner(SystemID owner, bool sceneOwnedOnly, out long releasedBytes)

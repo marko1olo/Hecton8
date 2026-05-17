@@ -1737,3 +1737,51 @@ Verdict: H-Phi moved again and the marginal risk score ROI recovered from the 04
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-17 H-Phi Live Rebase 13:37
+
+Source drift after the 11:42 H-Phi artifact: 102 C# files modified, 8,481,368 bytes touched. Current first-party script surface: 1,585 files, 1,037,644 physical LOC, 856,940 meaningful LOC.
+
+H-Phi scan time: 82,422 ms. Artifact: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_CURRENT_20260517_1327.json`.
+
+| Metric | 11:42 | 13:37 | Delta |
+|---|---:|---:|---:|
+| Runtime H-Phi risk | 0.005378664 | 0.005525762 | +0.000147098 |
+| Runtime H-Phi narrow | 0.075881112 | 0.077385732 | +0.001504620 |
+| Data sovereignty | 0.141543476 | 0.144331092 | +0.002787616 |
+| Memory alignment | 0.536097561 | 0.536168133 | +0.000070572 |
+| DataVault refs | 1,216 | 1,245 | +29 |
+| Owner-blocked NativeArray refs | 4,961 | 4,941 | -20 |
+| Primary native ownership risk | 5,606 | 5,578 | -28 |
+| Managed format surface | 563 | 569 | +6 |
+| Primary managed runtime risk | 177 | 183 | +6 |
+
+Token window 11:42-13:37:
+
+| Metric | Value |
+|---|---:|
+| Total tokens | 304,562,532 |
+| Average rate | 43,904.07 tokens/sec |
+| Cache ratio | 95.9034% |
+| Cache-aware cost | USD 236.42 |
+| No-cache equivalent | USD 1,546.69 |
+| Prompt rows | 57 |
+| Peak token minute | 11,257,896 at 2026-05-17T11:52+04:00 |
+| Tokens per +0.001 Runtime H-Phi risk | 2,070,473,643 |
+| USD per +0.001 Runtime H-Phi risk | USD 1,607.26 |
+
+SQLite live pulse 13:36:
+
+| Metric | Value |
+|---|---:|
+| Current SQLite tokens | 51,372,184,781 |
+| 30-second delta | 741,683 |
+| Tokens/sec | 24,665.28 |
+| Tokens/min | 1,479,916.51 |
+| Current energy estimate | 2,568.61 MWh |
+| Tokens per meaningful LOC | 59,948.40 |
+| Tokens per script byte | 1,108.79 |
+
+Verdict: H-Phi moved again, but this was not clean progress. DataVault/ownership counters improved while GlobalRegistry and managed format debt grew. No "Compute Thief" conviction is made from this interval because high burn still needs diff/value/validation joins.
+
+STATUS: AUDIT COMPLETE.
+

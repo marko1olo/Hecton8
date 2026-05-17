@@ -42,6 +42,9 @@ Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; int
 - [x] Detect large source drift after 04:12 and rerun H-Phi scan at 11:42.
 - [x] Compute token/cost window between 04:12 and 11:42 H-Phi artifacts.
 - [x] Create H-Phi / ash-fi search index and add keyword aliases to active H-Phi compute docs.
+- [x] Detect source drift after 11:42 and rerun H-Phi scan at 13:37.
+- [x] Compute token/cost window between 11:42 and 13:37 H-Phi artifacts.
+- [x] Update H-Phi / ash-fi keyword coverage notes and stable authority links.
 
 ## Current Evidence
 
@@ -55,6 +58,8 @@ Primary output:
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_LIVE_REBASE_20260517_0446.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_PULSE_20260517_0534.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_SEARCH_INDEX_20260517.md`
+- `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_KEYWORD_COVERAGE_20260517.md`
+- `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1337.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1142.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_0412.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_0217.md`
@@ -176,3 +181,17 @@ No Unity compile/run was required. This task is accounting, not runtime validati
 - First-party meaningful LOC: 854,943.
 - Tokens per meaningful LOC: 59,730.97.
 - Energy estimate: 2,553.33 MWh.
+
+2026-05-17T13:37+04:00:
+
+- H-Phi scan justified by source drift: 102 C# files changed after 11:42, 8,481,368 bytes touched.
+- Runtime H-Phi risk: 0.005525762.
+- Runtime H-Phi narrow: 0.077385732.
+- Data sovereignty: 0.144331092.
+- Delta vs 11:42 H-Phi: +0.000147098 risk, +0.001504620 narrow, +29 DataVault refs, -20 owner-blocked NativeArray refs, -28 PrimaryNativeOwnershipRisk, +6 PrimaryManagedRuntimeRisk.
+- Token window between H-Phi artifacts: 304,562,532 tokens; USD 236.42 cache-aware; USD 1,546.69 no-cache.
+- SQLite thread tokens: 51,372,184,781.
+- 13:36 live burn: 741,683 tokens; 24,665.28 tokens/sec.
+- First-party meaningful LOC: 856,940.
+- Tokens per meaningful LOC: 59,948.40.
+- Energy estimate: 2,568.61 MWh.
