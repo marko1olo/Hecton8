@@ -169,3 +169,43 @@ Verification:
 Evidence boundary:
 - Git/static/Python evidence only.
 - Unity import, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build remain PENDING VERIFICATION.
+
+## 2026-05-17 - Post-Rebase Artifact Repair
+
+What was wrong:
+- Fresh rebase over `origin/main` produced an add/add conflict in `Docs/Tasks/CURRENT_BATCH.md`.
+- After conflict resolution, generated artifacts were stale against the rebased source tree: lore payload mismatch and AI battle `knownBufferCount` mismatch.
+- Binary hygiene was scanning `.binlog` diagnostic containers as if they were runtime `.bin` payloads.
+
+What was done:
+- Kept remote `Docs/Tasks/CURRENT_BATCH.md` active and archived the local auxiliary version at `Docs/Archive/Batch_GIT_SYNC_REBASE/CURRENT_BATCH_local_auxiliary_20260517.md`.
+- Regenerated `Data/Lore/Encyclopedia.h8bin` and `Data/Lore/Encyclopedia.manifest.json`; current blob size is 16128 bytes, 16-byte aligned.
+- Padded `Data/Balance/Baked/Babel_Dictionary.h8bin` from 1284 to 1296 bytes so the production balance dictionary satisfies 16-byte alignment.
+- Regenerated `Tools/AiBattleSim_Report.json`; current `knownBufferCount=476` and artifact rerun verification passes.
+- Restricted `Tools/VerifyBinaryHygiene.py` to real `.bin` and `.h8bin` suffixes instead of matching diagnostic `.binlog` filenames.
+- Refreshed binary hygiene, data inquisition, metric phi data truth, net protocol, and HPhi/ore evidence reports produced by the owner tools.
+
+Cinematic Cheats used:
+- None. Repository/tooling/data integration only.
+
+Exact Microseconds saved:
+- Runtime code changed by GIT_SYNC itself: none.
+- Immediate runtime CPU saving: 0us.
+
+Verification:
+- Full Tools unittest PASS: 304 tests, 145.881 seconds.
+- Lore check PASS: entries=2, blob `Data/Lore/Encyclopedia.h8bin`.
+- AI battle artifact PASS: `ARTIFACT_CHECK_PASSED`, encounters=10000, killRate=0.422, rerunVerified=True.
+- Binary hygiene PASS: binaryCount=46, misalignedCount=0.
+- Data inquisition PASS: binaries=46, aligned16=true.
+- Metric Phi data truth PASS: checks=37, binary_files=46, unaligned=0.
+- Net protocol gate PASS: `NETWORK PROTOCOL READY`, unit tests=8.
+- Net sync Merkle protocol PASS: `BINARY_PAYLOADS_ALIGNED=46`.
+- Babel verifier PASS and Babel dictionary verifier PASS.
+- Ore LCG verifier PASS: `ORE_LCG_VERIFIED_STATIC_ONLY`.
+- `git diff --check` PASS.
+- `git ls-files -u` empty.
+
+Evidence boundary:
+- Git/static/Python evidence only.
+- Unity import, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build remain PENDING VERIFICATION.

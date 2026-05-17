@@ -79,3 +79,27 @@ Solution: Cleaned only paths named by `git diff --cached --check`, normalized th
 Rejected Alternatives: Ignoring `diff --check` warnings was rejected because the requested push must be mechanically clean.
 Scalability potential: Cleaner text artifacts reduce avoidable review noise and future patch failures.
 Hardware Impact: 0us runtime. Repository hygiene only.
+
+## Decision 11: Current Batch Rebase Conflict Split
+
+Problem: Rebase over fresh `origin/main` hit an add/add conflict in `Docs/Tasks/CURRENT_BATCH.md`.
+Solution: Kept the remote/current batch file as the active directive and preserved the local auxiliary batch snapshot at `Docs/Archive/Batch_GIT_SYNC_REBASE/CURRENT_BATCH_local_auxiliary_20260517.md`.
+Rejected Alternatives: Combining two active batch files was rejected because neighboring agent prompts must not contaminate the current batch directive. Dropping the local file was rejected because it contained prior integration evidence.
+Scalability potential: Active batch remains single-source while archived evidence stays inspectable for later audit.
+Hardware Impact: 0us runtime. Git-only operation.
+
+## Decision 12: Post-Rebase Artifact Regeneration
+
+Problem: Rebase changed source inputs underneath generated artifacts; `VerifyLore.py --check` and `AiBattleSim.py --check-artifacts --verify-rerun` failed against stale committed outputs.
+Solution: Regenerated the lore blob/manifest from current Markdown sources and reran the AI battle simulator so the report matches the current `H8Memory.cs` buffer catalog (`knownBufferCount=476`).
+Rejected Alternatives: Committing stale generated artifacts or editing reports by hand was rejected because both validators have deterministic owner tools.
+Scalability potential: Downstream agents receive generated artifacts that match the rebased source tree rather than the pre-rebase source tree.
+Hardware Impact: 0us runtime. Offline data packaging and simulation evidence only.
+
+## Decision 13: Binary Hygiene Payload Scope
+
+Problem: Binary hygiene was treating diagnostic `.binlog` files as product binary payloads because it matched any filename containing `.bin`.
+Solution: Restricted the scan to actual `.bin` and `.h8bin` suffixes, then aligned `Data/Balance/Baked/Babel_Dictionary.h8bin` to 1296 bytes and reran binary hygiene/data-truth gates.
+Rejected Alternatives: Padding arbitrary diagnostic `.binlog` evidence was rejected because build logs are not runtime binary payloads. Suppressing all `Docs/AgentLogs` was rejected because crash dumps named `.bin` still need alignment visibility.
+Scalability potential: The gate now rejects real runtime binary payload misalignment without failing on unrelated compiler diagnostic containers.
+Hardware Impact: 0us runtime. Static tooling only; Unity runtime remains PENDING VERIFICATION.

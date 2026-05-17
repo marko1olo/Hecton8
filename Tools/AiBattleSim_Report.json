@@ -7,7 +7,7 @@
     "initialAggressionScalar": 1.0,
     "passes": 1
   },
-  "elapsedSeconds": 80.7,
+  "elapsedSeconds": 45.163,
   "evidenceClass": "CLI_PYTHON_BATTLE_SIMULATION",
   "frustrationAudit": {
     "allKillsUnder30": false,
@@ -29,7 +29,7 @@
   "globalDataVaultAudit": {
     "feedCount": 7,
     "fieldCount": 22,
-    "knownBufferCount": 66,
+    "knownBufferCount": 476,
     "knownBufferSource": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
     "knownBufferSourceStatus": "SOURCE_PARSED",
     "status": "PASSED",
@@ -807,7 +807,7 @@
     "errors": [],
     "globalDataVaultFeedCount": 7,
     "globalDataVaultFieldCount": 22,
-    "knownBufferCount": 66,
+    "knownBufferCount": 476,
     "knownBufferSource": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
     "knownBufferSourceStatus": "SOURCE_PARSED",
     "mathLodTierCount": 4,

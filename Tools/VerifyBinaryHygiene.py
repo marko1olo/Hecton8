@@ -31,7 +31,7 @@ def collect_records(root: Path) -> list[dict[str, object]]:
         dirnames[:] = [name for name in dirnames if name not in EXCLUDED_PARTS and not is_excluded(relative_dir / name)]
         for filename in filenames:
             path = current / filename
-            if path.suffix.lower() not in {".bin", ".h8bin"} and ".bin" not in path.name.lower():
+            if path.suffix.lower() not in {".bin", ".h8bin"}:
                 continue
             relative = path.relative_to(root)
             if is_excluded(relative):

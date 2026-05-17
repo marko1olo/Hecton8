@@ -6,8 +6,8 @@
   "alignment_bytes": 16,
   "record_layout": "uint32 hash, uint64 absolute_offset, uint32 compressed_length",
   "blob": "Data/Lore/Encyclopedia.h8bin",
-  "blob_length": 16096,
-  "blob_sha256": "75FB9AEEE729789996E40A34672B6F219A0F34F745CEC6DC47AC27FDAA5C3B2A",
+  "blob_length": 16128,
+  "blob_sha256": "C3D7C2F7F914DC4C90BDAA0B35B0E8D9EA33D839E2733BF27C1324B4D9E44B33",
   "source_dir": "Docs/Lore",
   "entry_count": 2,
   "entries": [
@@ -15,14 +15,14 @@
       "hash": "0x448D68AF",
       "canonical_id": "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.md",
       "offset": 64,
-      "compressed_length": 5735,
-      "decompressed_length": 16418,
-      "sha256": "F47F0D4B9C8616A965676C05D17468889DA0A172A34FF7638D8B339D3EE30B09"
+      "compressed_length": 5772,
+      "decompressed_length": 16861,
+      "sha256": "F4F3A50320BA26268F9C97900D12684E3BC7E905A35651779D15B3F0E6C94A37"
     },
     {
       "hash": "0xD1880394",
       "canonical_id": "Docs/Lore/Lore_Bible.md",
-      "offset": 5808,
+      "offset": 5840,
       "compressed_length": 10281,
       "decompressed_length": 25003,
       "sha256": "6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD"

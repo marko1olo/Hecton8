@@ -28,7 +28,7 @@ test_redundant_packet_records_clamp_to_available_ticks (test_net_jitter_sim.NetJ
 test_rollback_stress_corrects_predicted_inputs (test_net_jitter_sim.NetJitterSimTests.test_rollback_stress_corrects_predicted_inputs) ... ok
 
 ----------------------------------------------------------------------
-Ran 8 tests in 3.724s
+Ran 8 tests in 2.067s
 
 OK
 ```
