@@ -95,3 +95,15 @@ Rejected Alternatives: Replacing the original first part was rejected because it
 Scalability potential: Reviewers can open the smaller first-quarter slices without losing the canonical four-part set.
 
 Hardware Impact: Runtime 0 us/frame. Static document handling only.
+
+## Decision 8: Final Evidence Closeout After Archive Push
+
+Problem: The archive commit was pushed and verified, but the checklist still showed the final task as pending.
+
+Solution: Update only the task-local evidence files after remote verification, then commit and push this closeout as a narrow documentation-only delta.
+
+Rejected Alternatives: Leaving the checklist stale was rejected because the reporting protocol requires disk evidence. Editing unrelated concurrent work was rejected because other agents are writing live code and reports.
+
+Scalability potential: Low/Middle readers get a closed archive status. High/Ultra forensic review can correlate the pre-archive commit, archive commit, and closeout commit without scanning chat history.
+
+Hardware Impact: Runtime 0 us/frame. Documentation evidence only.

@@ -2,7 +2,7 @@
 
 Agent: DOC_ARCHIVE_BATCH007
 Domain: Echelon 9.83 Chronicler / Batch Handover Hygiene + Git Sync
-Status: IN PROGRESS / ARCHIVED / PENDING VERIFICATION
+Status: COMPLETE / ARCHIVED / PUSHED
 Task Count: 6
 Evidence class: GIT_CLI / FILESYSTEM / STATIC_DOC
 
@@ -22,7 +22,7 @@ Evidence class: GIT_CLI / FILESYSTEM / STATIC_DOC
 - [x] 3. Inspect Batch006 precedent and Batch007 scope. | DOD: read Batch006 `AgentLogs`, `Tasks`, `AgentLogs_Combined`, and `Tasks_Combined`; active scope before archive was AgentLogs `1215` direct children and Tasks `89` direct children. | Alternative rejected: inventing a new archive layout. | Estimate: 0 us runtime.
 - [x] 4. Create Batch007 archive folders and move archivable direct children. | DOD: created `Docs/Archive/Batch007/{AgentLogs,Tasks,AgentLogs_Combined,Tasks_Combined}`; moved the initial active AgentLogs 1215/1215 and Tasks 89/89, then ran bounded late-writer sweeps until a controlled empty readback was reached; later post-seal writes are treated as concurrent writer activity, not archive proof failure. | Alternative rejected: recursive delete, flat dump, killing writer processes, or forced move of temporarily locked live-writer files. | Estimate: 0 us runtime.
 - [x] 5. Generate two combined long documents from `.txt` and `.md` only. | DOD: generated `AgentLogs_Combined/AgentLogs_Batch007_COMBINED_MD_TXT.md` and `Tasks_Combined/Tasks_Batch007_COMBINED_MD_TXT.md` with provenance boundaries and `.md/.txt` source filtering only; final generation intentionally occurs after this status/log seal. | Alternative rejected: boundary-free concatenation or extra JSON bundle. | Estimate: 0 us runtime.
-- [ ] 6. Verify counts, active-folder hygiene, split AgentLogs summary, commit/push final archive, and append final log. | DOD: readback counts, 4-part AgentLogs split, diff check, commit, push, and `LOG_DOC_ARCHIVE_BATCH007.md` appended. | Alternative rejected: chat-only handoff. | Estimate: 0 us runtime.
+- [x] 6. Verify counts, active-folder hygiene, split AgentLogs summary, commit/push final archive, and append final log. | DOD: active-folder bounded seal reached `0/0`, AgentLogs combined was split into four parts, part 1 was split into A/B subparts, archive commit `180bd51c4` pushed, and `origin/main...HEAD` verified as `0 0`; this evidence update is committed and pushed as the final closeout step. | Alternative rejected: chat-only handoff or destructive cleanup of concurrent post-seal writer files. | Estimate: 0 us runtime.
 
 ## Evidence Boundary
 Filesystem and Git CLI only. Unity Editor, Play Mode, profiler, GCMonitor, Frame Debugger, and Player Build are not run and remain PENDING VERIFICATION.
@@ -34,4 +34,6 @@ Filesystem and Git CLI only. Unity Editor, Play Mode, profiler, GCMonitor, Frame
 - Archive move readback: controlled sweeps reached active AgentLogs/Tasks `0/0` more than once, but parallel agents continued creating post-seal files. This archive is a bounded filesystem snapshot, not a global writer freeze.
 - First combined generation readback before final status seal: AgentLogs `.md/.txt` sources `593`, Tasks `.md/.txt` sources `88`.
 - AgentLogs combined split: `AgentLogs_Batch007_COMBINED_MD_TXT.md` split into 4 line-boundary files `PART01_OF_04` through `PART04_OF_04`; source bytes were approximately 3.34 MB per part except the final remainder.
-- AgentLogs part 1 split: `AgentLogs_Batch007_COMBINED_MD_TXT_PART01_OF_04.md` split into `PART01A_OF_04.md` and `PART01B_OF_04.md`; source bytes approximately `1667230` and `1667308`.
+- AgentLogs part 1 split: `AgentLogs_Batch007_COMBINED_MD_TXT_PART01_OF_04.md` split into `PART01A_OF_04.md` and `PART01B_OF_04.md`; observed file sizes after normalization were approximately `1667441` and `1667519` bytes.
+- Archive push verification: `git push origin main` advanced remote from `dc2753111` to `180bd51c4`, followed by fetch and `git rev-list --left-right --count origin/main...HEAD` = `0 0`.
+- Final evidence closeout: only `Status_DOC_ARCHIVE_BATCH007.md`, `Rationale_DOC_ARCHIVE_BATCH007.md`, and `LOG_DOC_ARCHIVE_BATCH007.md` are modified after the archive push so the checklist and report match the verified remote state.
