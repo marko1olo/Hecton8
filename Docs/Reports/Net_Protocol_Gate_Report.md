@@ -9,7 +9,7 @@ Status: NETWORK PROTOCOL READY
 | Scenario | Status | Sent | Lost | Hash mismatches | Ring mismatches | Float audit |
 |---|---|---:|---:|---:|---:|---|
 | baseline | NETWORK PROTOCOL READY | 1296 | 78 | 0 | 0 | PASS |
-| rollback_stress | NETWORK PROTOCOL READY | 1280 | 77 | 0 | 0 | PASS |
+| rollback_stress | NETWORK PROTOCOL READY | 1300 | 114 | 0 | 0 | PASS |
 | four_client | NETWORK PROTOCOL READY | 7776 | 390 | 0 | 0 | PASS |
 
 ## Unit Tests
@@ -28,7 +28,7 @@ test_redundant_packet_records_clamp_to_available_ticks (test_net_jitter_sim.NetJ
 test_rollback_stress_corrects_predicted_inputs (test_net_jitter_sim.NetJitterSimTests.test_rollback_stress_corrects_predicted_inputs) ... ok
 
 ----------------------------------------------------------------------
-Ran 8 tests in 14.140s
+Ran 8 tests in 3.724s
 
 OK
 ```

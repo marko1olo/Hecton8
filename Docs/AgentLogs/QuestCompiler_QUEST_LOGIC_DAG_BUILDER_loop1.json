@@ -1,0 +1,19 @@
+{
+  "all_done_mask": "0x00000000000000AA",
+  "bits_per_quest": 2,
+  "max_nodes": 32,
+  "node_count": 4,
+  "reachability_order": [
+    "quest_first_hour_wake_up",
+    "quest_first_hour_find_scanner",
+    "quest_first_hour_scan_leviathan_trace",
+    "quest_first_hour_fix_radio"
+  ],
+  "status": "DAG COMPILED",
+  "topological_order": [
+    "quest_first_hour_wake_up",
+    "quest_first_hour_find_scanner",
+    "quest_first_hour_scan_leviathan_trace",
+    "quest_first_hour_fix_radio"
+  ]
+}

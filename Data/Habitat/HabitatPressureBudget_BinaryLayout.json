@@ -1,0 +1,255 @@
+{
+  "schema": "hecton8.habitat.pressure_budget.binary_layout.v1",
+  "magicAscii": "H8HPB",
+  "version": 1,
+  "endianness": "little",
+  "structPrefix": "<",
+  "endianMarkerHex": "0x01020304",
+  "lookupContract": {
+    "model": "stateless_binary_search_by_hash",
+    "moduleSortKey": "moduleHashFnv1a32 ascending",
+    "godModeSortKey": "moduleHashFnv1a32 ascending",
+    "offsetFormula": "recordOffset = sectionOffset + index * strideBytes",
+    "runtimePrivateIndexRequired": false
+  },
+  "headerBytes": 64,
+  "totalBytes": 2704,
+  "fileAlignmentBytes": 16,
+  "payloadHashFnv1a32": 2597791691,
+  "moduleRecord": {
+    "offsetBytes": 64,
+    "count": 15,
+    "strideBytes": 96,
+    "structFormat": "<I i I i I i f f f f f f f f f f f f i i i i I I",
+    "fields": [
+      {
+        "name": "moduleHashFnv1a32",
+        "type": "uint32",
+        "offsetBytes": 0
+      },
+      {
+        "name": "moduleHashFnv1a32Signed",
+        "type": "int32",
+        "offsetBytes": 4
+      },
+      {
+        "name": "archetypeHashFnv1a32",
+        "type": "uint32",
+        "offsetBytes": 8
+      },
+      {
+        "name": "archetypeHashFnv1a32Signed",
+        "type": "int32",
+        "offsetBytes": 12
+      },
+      {
+        "name": "materialHashFnv1a32",
+        "type": "uint32",
+        "offsetBytes": 16
+      },
+      {
+        "name": "materialHashFnv1a32Signed",
+        "type": "int32",
+        "offsetBytes": 20
+      },
+      {
+        "name": "baseSip",
+        "type": "float32",
+        "offsetBytes": 24
+      },
+      {
+        "name": "physicalSip",
+        "type": "float32",
+        "offsetBytes": 28
+      },
+      {
+        "name": "componentModifierSip",
+        "type": "float32",
+        "offsetBytes": 32
+      },
+      {
+        "name": "designCrushPressureMPa",
+        "type": "float32",
+        "offsetBytes": 36
+      },
+      {
+        "name": "crushDepthM",
+        "type": "float32",
+        "offsetBytes": 40
+      },
+      {
+        "name": "stressAt1000m",
+        "type": "float32",
+        "offsetBytes": 44
+      },
+      {
+        "name": "maxBowingBeforeRuptureM",
+        "type": "float32",
+        "offsetBytes": 48
+      },
+      {
+        "name": "pressureRadiusM",
+        "type": "float32",
+        "offsetBytes": 52
+      },
+      {
+        "name": "cylinderLengthM",
+        "type": "float32",
+        "offsetBytes": 56
+      },
+      {
+        "name": "wallThicknessM",
+        "type": "float32",
+        "offsetBytes": 60
+      },
+      {
+        "name": "airVolumeM3",
+        "type": "float32",
+        "offsetBytes": 64
+      },
+      {
+        "name": "dryMassKg",
+        "type": "float32",
+        "offsetBytes": 68
+      },
+      {
+        "name": "glassPanelCount",
+        "type": "int32",
+        "offsetBytes": 72
+      },
+      {
+        "name": "titaniumWallCount",
+        "type": "int32",
+        "offsetBytes": 76
+      },
+      {
+        "name": "bulkheadDoorCount",
+        "type": "int32",
+        "offsetBytes": 80
+      },
+      {
+        "name": "collapseStartsAt1000m",
+        "type": "int32",
+        "offsetBytes": 84
+      },
+      {
+        "name": "flags",
+        "type": "uint32",
+        "offsetBytes": 88
+      },
+      {
+        "name": "reserved",
+        "type": "uint32",
+        "offsetBytes": 92
+      }
+    ]
+  },
+  "godModeRecord": {
+    "offsetBytes": 1504,
+    "count": 15,
+    "strideBytes": 80,
+    "structFormat": "<IIffffffffffffffIIII",
+    "fields": [
+      {
+        "name": "moduleHashFnv1a32",
+        "type": "uint32",
+        "offsetBytes": 0
+      },
+      {
+        "name": "visualDataHashFnv1a32",
+        "type": "uint32",
+        "offsetBytes": 4
+      },
+      {
+        "name": "harmonicHz0",
+        "type": "float32",
+        "offsetBytes": 8
+      },
+      {
+        "name": "harmonicHz1",
+        "type": "float32",
+        "offsetBytes": 12
+      },
+      {
+        "name": "harmonicHz2",
+        "type": "float32",
+        "offsetBytes": 16
+      },
+      {
+        "name": "harmonicHz3",
+        "type": "float32",
+        "offsetBytes": 20
+      },
+      {
+        "name": "gradientStop0",
+        "type": "float32",
+        "offsetBytes": 24
+      },
+      {
+        "name": "gradientStop1",
+        "type": "float32",
+        "offsetBytes": 28
+      },
+      {
+        "name": "gradientStop2",
+        "type": "float32",
+        "offsetBytes": 32
+      },
+      {
+        "name": "gradientStop3",
+        "type": "float32",
+        "offsetBytes": 36
+      },
+      {
+        "name": "crackNoiseOctaves",
+        "type": "float32",
+        "offsetBytes": 40
+      },
+      {
+        "name": "dentNoiseScale",
+        "type": "float32",
+        "offsetBytes": 44
+      },
+      {
+        "name": "sootEdgeNoiseScale",
+        "type": "float32",
+        "offsetBytes": 48
+      },
+      {
+        "name": "frostScatter",
+        "type": "float32",
+        "offsetBytes": 52
+      },
+      {
+        "name": "pressurePulsePhase",
+        "type": "float32",
+        "offsetBytes": 56
+      },
+      {
+        "name": "shaderBowingAmplitudeM",
+        "type": "float32",
+        "offsetBytes": 60
+      },
+      {
+        "name": "decalSeed",
+        "type": "uint32",
+        "offsetBytes": 64
+      },
+      {
+        "name": "crackAtlasIndex",
+        "type": "uint32",
+        "offsetBytes": 68
+      },
+      {
+        "name": "reserved0",
+        "type": "uint32",
+        "offsetBytes": 72
+      },
+      {
+        "name": "reserved1",
+        "type": "uint32",
+        "offsetBytes": 76
+      }
+    ]
+  }
+}

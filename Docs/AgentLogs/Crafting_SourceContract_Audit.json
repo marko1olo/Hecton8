@@ -1,0 +1,25 @@
+{
+  "agent": "CRAFTING_COST_BALANCER",
+  "binary_path": "Data/Economy/Crafting_Costs.h8bin",
+  "consumer_files_checked": [
+    "Tools/VerifyCraftingCosts.py",
+    "Tools/CraftingEconomyMonteCarlo.py"
+  ],
+  "csv_path": "Data/Economy/Crafting_Costs.csv",
+  "domain": "DATA/ECONOMY",
+  "exported_constants": {
+    "KG_TO_MILLIGRAMS": 1000000.0,
+    "UINT32_BITS": 32,
+    "UINT32_MASK": 4294967295
+  },
+  "json_path": "Data/Economy/Crafting_Costs.json",
+  "literal_hit_count": 0,
+  "manifest_binary_sha256": "632fdabb2a57dbe115f18fecc8a23a6ddda2bacb0cf53ea472f29b81a0377f69",
+  "manifest_json_sha256": "b9da262fc47631cc97b3dab7b1faa2d07844c366150ddea3f990c78b3cd148b8",
+  "manifest_path": "Data/Economy/Crafting_Costs.manifest.json",
+  "status": "CRAFTING_SOURCE_CONTRACT_VERIFIED",
+  "toaster_binary_path": "Data/Economy/Crafting_Costs_Toaster.h8bin",
+  "toaster_manifest_binary_sha256": "67d24c52a6a14dcdd7d0488a315067a7eacefc78d444769c7ce9ea959dacc752",
+  "toaster_manifest_json_sha256": "b9da262fc47631cc97b3dab7b1faa2d07844c366150ddea3f990c78b3cd148b8",
+  "toaster_manifest_path": "Data/Economy/Crafting_Costs_Toaster.manifest.json"
+}

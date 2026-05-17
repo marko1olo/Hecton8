@@ -9,13 +9,13 @@
   "artifacts": {
     "specs": {
       "file": "Submarine_Specs.json",
-      "bytes": 33628,
-      "sha256": "F5990771914EE80DA73FFEBC5B7568C9A79C697394AD1B3753ABAB130D7E63EE"
+      "bytes": 47786,
+      "sha256": "60C58C24977229006134F8F10D2ABF8CAD6EF61A439847F3CF53E3BFF85F2FA6"
     },
     "power_csv": {
       "file": "Submarine_SpeedPower.csv",
-      "bytes": 3922,
-      "sha256": "49DD8F4C245906F37984260830FD7C083F5866AA499B302FCFEDF94F2E8F8A35"
+      "bytes": 3926,
+      "sha256": "DF722B3AC423EB6A96A0DBC056755260D8D6A4E07F322062047BB2B2DF09C6C4"
     },
     "power_svg": {
       "file": "Submarine_SpeedPower.svg",
@@ -29,13 +29,15 @@
     },
     "runtime_pack": {
       "file": "Submarine_RuntimePack.bin",
-      "bytes": 1124,
-      "sha256": "872091D8234D11848BAEC016A0C526717840F507F68C464E5317D2D48D534350"
+      "bytes": 1152,
+      "sha256": "EB8C6902C3886CF0998938E566D9311803BE0699B510320786EEF691B04067E5",
+      "alignment_bytes": 16,
+      "aligned_16_byte": true
     },
     "runtime_pack_layout": {
       "file": "Submarine_RuntimePackLayout.json",
-      "bytes": 10213,
-      "sha256": "320C8DA303174F9DCFA9C7FC47CF212498334413F192782984E49CD5AC3274E1"
+      "bytes": 10801,
+      "sha256": "36D3F4EA5723BADBA7D47B8F3148F47CA8DA44B24087B0C50195D33C455C7036"
     }
   },
   "verification_passed": true,

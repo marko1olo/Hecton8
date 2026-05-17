@@ -1,0 +1,152 @@
+{
+  "Schema": "H8.RADIO.DICTIONARY.V1",
+  "HashAlgorithm": "FNV-1a 32-bit over UTF-16LE code units",
+  "PacingModel": {
+    "WordsPerMinute": 171.0,
+    "WordsPerSecond": 2.85,
+    "SecondsPerMinute": 60.0,
+    "ReadingRateProvenance": "Project subtitle comfort floor for stressed radio copy; deliberately below fast adult reading speed so bark timing stays readable under alarm noise.",
+    "RadioSquawkLeadOutMilliseconds": 650,
+    "RadioSquawkLeadOutSeconds": 0.65,
+    "RadioSquawkProvenance": "Receiver squelch tail allowance for chopped industrial radio playback; presentation timing, not a physics LUT.",
+    "SubtitleFloorMilliseconds": 2400,
+    "SubtitleFloorSeconds": 2.4,
+    "SubtitleFloorProvenance": "Minimum command subtitle exposure for short emergency orders on low-tier UI.",
+    "Formula": "max(subtitle_floor_ms / 1000, word_count / (words_per_minute / seconds_per_minute) + radio_squawk_ms / 1000)"
+  },
+  "BinaryModel": {
+    "Magic": "H8RD",
+    "Version": 1,
+    "Endian": "Little",
+    "HeaderSizeBytes": 64,
+    "RecordSizeBytes": 128,
+    "AlignmentBytes": 16,
+    "Flags": {
+      "SortedHashRecords": 1,
+      "LowTierText": 2,
+      "CleanText": 4,
+      "PackedUltraFields": 8,
+      "Combined": 15
+    }
+  },
+  "ScalabilityModel": {
+    "Low": "stripped subtitle text plus static narrowband DSP",
+    "Middle": "full subtitle text plus emotion DSP",
+    "High": "full text plus deterministic radio noise seed",
+    "Ultra": "fixed-record harmonic weights, octave counts, RGBA32 spectral stops, glitch mask, breakup, and signal hash"
+  },
+  "Characters": [
+    {
+      "HashID": 3832850146,
+      "CallsignHash": 1462871724,
+      "Speaker": "Chief Mara Voss",
+      "Callsign": "Chief",
+      "Role": "Marauder shift lead, angry enough to keep rookies alive.",
+      "VocalProfile": "low, clipped, no wasted breath"
+    },
+    {
+      "HashID": 3110879839,
+      "CallsignHash": 121376932,
+      "Speaker": "Rusty Kael",
+      "Callsign": "Rusty",
+      "Role": "Reactor mechanic who trusts manual gauges over Corp glass.",
+      "VocalProfile": "rasped rig-worker drawl"
+    },
+    {
+      "HashID": 3760257511,
+      "CallsignHash": 540053341,
+      "Speaker": "Sister Valve",
+      "Callsign": "Valve",
+      "Role": "Life-support tech, treats bad air as a personal insult.",
+      "VocalProfile": "fast, precise, contempt under pressure"
+    },
+    {
+      "HashID": 3324309591,
+      "CallsignHash": 3298908114,
+      "Speaker": "Nix Calder",
+      "Callsign": "Nix",
+      "Role": "Radio scavenger and signal thief.",
+      "VocalProfile": "dry whisper, always listening past the noise"
+    },
+    {
+      "HashID": 4010272690,
+      "CallsignHash": 3761684546,
+      "Speaker": "Pike Orlov",
+      "Callsign": "Pike",
+      "Role": "Hull cutter with bad knees and worse patience.",
+      "VocalProfile": "hard consonants, old weld-bay cadence"
+    },
+    {
+      "HashID": 54647777,
+      "CallsignHash": 4052612707,
+      "Speaker": "Moth Iverson",
+      "Callsign": "Moth",
+      "Role": "Light tech who reads predator pressure from failing lamps.",
+      "VocalProfile": "soft, distracted, fear held behind teeth"
+    },
+    {
+      "HashID": 3676991181,
+      "CallsignHash": 1783107419,
+      "Speaker": "Dr. Oren Vale",
+      "Callsign": "Vale",
+      "Role": "Biologist blacklisted for writing the dead count plainly.",
+      "VocalProfile": "clinical until the math starts bleeding"
+    },
+    {
+      "HashID": 1675904436,
+      "CallsignHash": 1106611902,
+      "Speaker": "Ledger-9",
+      "Callsign": "Corp-AI",
+      "Role": "Deep Reach compliance voice, polite as a closed hatch.",
+      "VocalProfile": "flat, warm, predatory customer-service calm"
+    },
+    {
+      "HashID": 1767033723,
+      "CallsignHash": 53934760,
+      "Speaker": "Hollis Brant",
+      "Callsign": "Hollis",
+      "Role": "Rival Black Keel pilot trapped on an open channel.",
+      "VocalProfile": "panicked bravado failing into numbers"
+    },
+    {
+      "HashID": 1851585504,
+      "CallsignHash": 1018933383,
+      "Speaker": "Deadlight Orr",
+      "Callsign": "Deadlight",
+      "Role": "Black Keel sonar operator, last voice before the blackwake.",
+      "VocalProfile": "thin, reverent, already half gone"
+    }
+  ],
+  "Slang": [
+    {
+      "HashID": 3804565330,
+      "Term": "silt-lung",
+      "Meaning": "Oxygen deprivation mixed with CO2 confusion.",
+      "Usage": "A diver with silt-lung follows wrong orders and calls it instinct."
+    },
+    {
+      "HashID": 404879063,
+      "Term": "void-kissed",
+      "Meaning": "Radiation or Xenon-Omega exposure that leaves the eyes wrong.",
+      "Usage": "Do not let a void-kissed sample ride in the cabin."
+    },
+    {
+      "HashID": 2725325037,
+      "Term": "brine-debt",
+      "Meaning": "A favor owed because someone spent air to keep you alive.",
+      "Usage": "Brine-debt is paid before salvage shares."
+    },
+    {
+      "HashID": 685789626,
+      "Term": "gasket-prayer",
+      "Meaning": "A desperate sealant patch that works until it decides not to.",
+      "Usage": "A gasket-prayer buys minutes, not forgiveness."
+    },
+    {
+      "HashID": 1397550850,
+      "Term": "blackwake",
+      "Meaning": "The silent pressure shadow before the Alpha Leviathan arrives.",
+      "Usage": "Lights dim, fish flatten, then the blackwake eats the channel."
+    }
+  ]
+}

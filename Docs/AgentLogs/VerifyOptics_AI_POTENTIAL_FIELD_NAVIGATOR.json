@@ -1,0 +1,110 @@
+{
+  "allVariantBinariesAligned16": true,
+  "atlasFit": {
+    "addsRuntimeAssemblyDependency": false,
+    "domain": "DATA/MATH",
+    "family": "Graphics and lighting / Data.Visuals",
+    "stateModel": "stateless binary lookup",
+    "usesGlobalRegistry": false,
+    "usesPrivateNativeState": false
+  },
+  "blueAt500mClear": 0.004993438720703125,
+  "byteOrder": "little-endian",
+  "coefficientProvenance": [
+    {
+      "absorptionMInv": 0.6240000128746033,
+      "beerLambertAt10m": 0.0019498552718089743,
+      "beerLambertAt500m": 3.1631431782227995e-136,
+      "channel": "red",
+      "rounding": "four_significant_digits_before_fp16_bake",
+      "sourceReferenceId": "PopeFry1997PureWaterAbsorption",
+      "wavelengthNm": 700
+    },
+    {
+      "absorptionMInv": 0.04340000078082085,
+      "beerLambertAt10m": 0.6479122504263166,
+      "beerLambertAt500m": 3.7653866035648894e-10,
+      "channel": "green",
+      "rounding": "four_significant_digits_before_fp16_bake",
+      "sourceReferenceId": "PopeFry1997PureWaterAbsorption",
+      "wavelengthNm": 530
+    },
+    {
+      "absorptionMInv": 0.010599999688565731,
+      "beerLambertAt10m": 0.8994246508770406,
+      "beerLambertAt500m": 0.004991594684186976,
+      "channel": "blue",
+      "rounding": "four_significant_digits_before_fp16_bake",
+      "sourceReferenceId": "PopeFry1997PureWaterAbsorption",
+      "wavelengthNm": 470
+    }
+  ],
+  "dataSovereignty": {
+    "globalRegistryRequired": false,
+    "hotPathJsonParsingAllowed": false,
+    "lookupModel": "stateless_binary_lookup",
+    "runtimePrivateStateRequired": false
+  },
+  "evidenceClass": "CLI_PYTHON_BINARY_DECODE",
+  "expectedMatrixBytes": 393216,
+  "fnvArtifactIds": 6,
+  "fnvCollisionCount": 0,
+  "matrix": "Data/Visuals/Water_Extinction_Matrix.bin",
+  "matrixBytes": 393216,
+  "pythonPackingContract": "<e",
+  "redAt10mClearExactFloat32": 0.0019498552718089743,
+  "redAt500mClear": 0.0,
+  "runtimeImpact": {
+    "csharpFilesTouched": 0,
+    "estimatedMx350MicrosecondsSaved": "5-30",
+    "gcBytesPerFrame": 0,
+    "measuredUnityMicrosecondsSaved": 0
+  },
+  "sourceReferences": [
+    {
+      "authors": "Robin M. Pope; Edward S. Fry",
+      "doi": "10.1364/AO.36.008710",
+      "id": "PopeFry1997PureWaterAbsorption",
+      "issue": 33,
+      "journal": "Applied Optics",
+      "pages": "8710-8723",
+      "title": "Absorption spectrum (380-700 nm) of pure water. II. Integrating cavity measurements",
+      "usage": "RGB pure-water absorption anchor provenance; values are rounded before half-float baking.",
+      "volume": 36,
+      "year": 1997
+    }
+  ],
+  "status": "OPTICS_LUT_VERIFIED",
+  "variants": {
+    "main_mx350": {
+      "aligned16": true,
+      "bytes": 393216,
+      "file": "Water_Extinction_Matrix.bin",
+      "shape": [
+        256,
+        256,
+        3
+      ]
+    },
+    "rtx_overkill": {
+      "aligned16": true,
+      "bytes": 1572864,
+      "file": "Water_Extinction_Matrix_Overkill.bin",
+      "shape": [
+        512,
+        512,
+        3
+      ]
+    },
+    "toaster_i3": {
+      "aligned16": true,
+      "bytes": 24576,
+      "file": "Water_Extinction_Matrix_Toaster.bin",
+      "shape": [
+        64,
+        64,
+        3
+      ]
+    }
+  }
+}

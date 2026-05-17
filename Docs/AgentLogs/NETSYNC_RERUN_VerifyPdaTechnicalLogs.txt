@@ -1,0 +1,3 @@
+VERIFY_PDA_TECH_LOGS: entries=100 binaryBytes=58880 alignment=16 endian=< hashCollisions=0 hPhiDataSovereignty=1.0
+
+EXIT=0 elapsed=14.484s

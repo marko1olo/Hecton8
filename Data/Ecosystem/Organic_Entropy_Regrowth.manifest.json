@@ -1,0 +1,169 @@
+{
+  "acceptance": {
+    "minFinalMatureRatio": 0.98,
+    "mode": "total_overharvest",
+    "safeShallowsVsDeepAbyssMinRecoveryRatio": 3.0,
+    "simulationDays": 1000
+  },
+  "binary": {
+    "alignmentBytes": 16,
+    "apexRespawnBytes": 65536,
+    "apexRespawnOffset": 64272,
+    "binaryBytes": 195344,
+    "biomeOffset": 80,
+    "biomeRecordBytes": 32,
+    "cellRecordBytes": 16,
+    "curveRecordCount": 4004,
+    "dayCurveOffset": 208,
+    "dayRecordBytes": 16,
+    "endian": "little",
+    "finalCellOffset": 129808,
+    "finalCellRecordCount": 4096,
+    "fnv1a32": {
+      "collisionCount": 0,
+      "collisions": [],
+      "recordCount": 18,
+      "uniqueHashCount": 18
+    },
+    "headerBytes": 80
+  },
+  "binaryContract": {
+    "alignmentBytes": 16,
+    "apexRespawnLutBytes": 65536,
+    "biomeRecordBytes": 32,
+    "biomeStruct": "<IBBHHHHHHIIIH",
+    "cellRecordBytes": 16,
+    "cellRecordStruct": "<HHBBBBHHI",
+    "dayRecordBytes": 16,
+    "dayRecordStruct": "<HBBBBBBHIH",
+    "endianness": "little",
+    "headerBytes": 80,
+    "headerStruct": "<4sIIIIIIIIIIIIIIIIIII",
+    "lookupModel": "stateless offset reads from SHINOBU/DataVault readonly bytes",
+    "magic": "H8OR",
+    "version": 2
+  },
+  "binaryPath": "C:/Hecton8/Data/Ecosystem/Organic_Entropy_Regrowth.h8bin",
+  "extraDataFields": {
+    "toaster": {
+      "cellAccess": "cell stride 4",
+      "curveAccess": "day stride 10",
+      "payload": "final cell stage, nutrient byte, static silt stain visual id"
+    },
+    "ultra": {
+      "cellAccess": "every final cell record",
+      "curveAccess": "all 1000 days",
+      "payload": "stateHash, overkillNoiseQ, harmonic biolum scar id, overgrowth residue phase"
+    }
+  },
+  "hPhi": {
+    "dataSovereignty": "static binary plus stateless offset lookup; no GameObject truth required",
+    "privateStateRisk": "runtime must memory-map or DataVault-load the binary into owned readonly buffers"
+  },
+  "hPhiAudit": {
+    "crossDomainContract": "WORLD/ECOLOGY publishes data only; runtime consumers query offsets or typed DataVault pages",
+    "dataSovereigntyIncreased": true,
+    "lookupModel": "static binary plus manifest offsets; no GameObject truth and no mutable manager authority",
+    "privateRuntimeStateRequired": false,
+    "stateOwner": "GlobalDataVault readonly page or memory-mapped cold data"
+  },
+  "macroCalibrationBasis": {
+    "apexRespawn": {
+      "maxApexRespawnDaysFormula": "maximumAbyssRewildingDays",
+      "maximumAbyssRewildingDays": 90,
+      "minApexRespawnDaysFormula": "minimumCarcassSignalDays",
+      "minimumCarcassSignalDays": 7
+    },
+    "authority": "deterministic macro ecology calibration; physical chemistry stops at Fickian diffusion, Q10, and Redfield metadata",
+    "foodWeb": {
+      "predationEncounterHalfLifeDays": 24.4,
+      "predationPermilleFormula": "round((1 - 2^(-1 / predationEncounterHalfLifeDays)) * 1000)",
+      "predatorAssimilationRatio": 0.05,
+      "predatorConversionPermilleFormula": "round(predatorAssimilationRatio * 1000)",
+      "predatorMortalityPermilleFormula": "round((1 - 2^(-1 / predatorStarvationHalfLifeDays)) * 1000)",
+      "predatorStarvationHalfLifeDays": 19.4,
+      "preyBiomassDoublingDays": 6.37,
+      "preyGrowthPermilleFormula": "round((2^(1 / preyBiomassDoublingDays) - 1) * 1000)"
+    },
+    "growth": {
+      "baseGrowthProgressPerDayQFormula": "ceil(seedToMatureProgressQ / targetSeedToMatureDaysAtFullNutrients)",
+      "targetSeedToMatureDaysAtFullNutrients": 10
+    },
+    "nutrients": {
+      "minimumNutrientRatioPermille": 94,
+      "miningPenaltyRecoveryDays": 45,
+      "nutrientPenaltyOnMiningQFormula": "passiveNutrientRecoveryPerDayQ * miningPenaltyRecoveryDays",
+      "passiveNutrientRecoveryPerDayQFormula": "ceil((255 - minimumNutrientsQ) / passiveRecoveryDaysFromMinimumToFull)",
+      "passiveRecoveryDaysFromMinimumToFull": 116
+    },
+    "tombstone": {
+      "labileDetritusTurnoverDays": 8,
+      "tombstoneBaseDecayDaysFormula": "labileDetritusTurnoverDays"
+    }
+  },
+  "phaseOwnership": {
+    "postSimulation": "POST_SIMULATION",
+    "simulation": "SIMULATION",
+    "visualSync": "VISUAL_SYNC consumes binary snapshots only"
+  },
+  "physicalBasis": {
+    "biomeTemperatureCelsius": [
+      24.0,
+      16.0,
+      14.0,
+      2.0
+    ],
+    "diffusionFormula": "nutrientDiffusionPermille = round(eddyDiffusivityM2PerSecond * secondsPerDay / (macroCellSizeMeters^2) * 1000)",
+    "eddyDiffusivityM2PerSecond": 0.6674962962962963,
+    "macroCellSizeMeters": 512,
+    "nutrientAuthority": "macro detritus/nitrate debt, not particle chemistry",
+    "q10TemperatureCoefficient": 2.0,
+    "redfieldMolarRatioCNP": {
+      "carbon": 106,
+      "nitrogen": 16,
+      "phosphorus": 1
+    },
+    "referenceTemperatureCelsius": 10.0,
+    "secondsPerDay": 86400,
+    "temperatureFormula": "growthScale = q10TemperatureCoefficient^((biomeTemperatureCelsius - referenceTemperatureCelsius) / 10)"
+  },
+  "scalabilityProfiles": {
+    "high": {
+      "cellSampleStride": 1,
+      "daySampleStride": 2,
+      "profileId": "organic.entropy.high.black_kelp_debt",
+      "runtimeRule": "read dense curve samples and drive layered flora tint/sway",
+      "visualHarmonicOctaves": 5,
+      "visualPayloadId": "fx.organic.high.multi_phase_bloom"
+    },
+    "middle": {
+      "cellSampleStride": 2,
+      "daySampleStride": 5,
+      "profileId": "organic.entropy.middle.pressure_rot",
+      "runtimeRule": "read 5-day curve samples and cheap biolum pulse",
+      "visualHarmonicOctaves": 2,
+      "visualPayloadId": "fx.organic.middle.detritus_pulse"
+    },
+    "toaster": {
+      "cellSampleStride": 4,
+      "daySampleStride": 10,
+      "profileId": "organic.entropy.toaster.rust_nursery_minimal",
+      "runtimeRule": "read decimated daily curve and final cell state; no per-cell animation authority",
+      "visualHarmonicOctaves": 0,
+      "visualPayloadId": "fx.organic.toaster.static_silt_stain"
+    },
+    "ultra": {
+      "cellSampleStride": 1,
+      "daySampleStride": 1,
+      "profileId": "organic.entropy.ultra.abyssal_overgrowth_overkill",
+      "runtimeRule": "full 1000-day curve plus per-cell visual hash for overgrowth scars, harmonic bloom, and dirty biolum residue",
+      "visualHarmonicOctaves": 8,
+      "visualPayloadId": "fx.organic.ultra.harmonic_rot_and_biolum_scar"
+    }
+  },
+  "schema": "H8_Organic_Entropy_BinaryManifest",
+  "sourceConstants": "C:/Hecton8/Data/Ecosystem/Organic_Entropy_Regrowth.json",
+  "status": "PENDING_UNITY_VERIFICATION",
+  "summaryPath": "C:/Hecton8/Data/Ecosystem/Organic_Entropy_Regrowth.summary.json",
+  "version": 2
+}

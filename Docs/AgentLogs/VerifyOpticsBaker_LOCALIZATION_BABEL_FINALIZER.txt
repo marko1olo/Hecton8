@@ -1,0 +1,10 @@
+VERIFY_OPTICS: status=OPTICS_LUT_VERIFIED
+VERIFY_OPTICS: matrixBytes=393216
+VERIFY_OPTICS: aligned16=True
+VERIFY_OPTICS: byteOrder=little-endian
+VERIFY_OPTICS: pack=<e
+VERIFY_OPTICS: fnvCollisions=0
+VERIFY_OPTICS: dataSovereignty=stateless_binary_lookup
+VERIFY_OPTICS: report=Docs/AgentLogs/OpticsVerification_OPTICAL_EXTINCTION_LUT_BAKER.json
+
+EXIT=0 elapsed=12.223s

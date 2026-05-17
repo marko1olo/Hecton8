@@ -80,14 +80,26 @@ This gives organic drift without simulating water as physical authority for ever
 
 The simulator writes `Data/AI/Navigation_Tuning.json` with selected weights, tier profiles, jitter metrics, idle drift metrics, compact path trace samples, and a static performance model.
 
+The simulator also writes `Data/AI/Navigation_Tuning.h8bin` as the SHINOBU/DataVault cache artifact and `Data/AI/Navigation_Tuning.manifest.json` as the standalone ingest manifest. The cache is little-endian, 16-byte aligned, and uses a 64-byte header plus 16-byte records:
+
+```text
+Header: <4sHHIIIIIIII24s
+Record: <IHHfI
+```
+
+Every record key is an ASCII-lower FNV-1a 32-bit hash of the semantic field path. `Tools/VerifyAiNavigationTuning.py` regenerates the blob and manifest, checks byte-for-byte parity, checks file alignment, rejects endian drift, verifies zero FNV collisions, validates zeroed reserved header bytes, records header/payload CRC32 values, and validates the standalone manifest source JSON hash, section offsets, toaster payload, RTX extra data, and stateless lookup contract.
+
 Artifact guard:
 
 ```text
 python Tools/AiPathSim.py --check
 python Tools/AiPathSim.py --check Data/AI/Navigation_Tuning.json
+python Tools/VerifyAiNavigationTuning.py
 ```
 
 The guard reloads the exported JSON, reconstructs the selected weights, replays the full candidate search, and rejects stale or weakened data if reach, SDF clearance, jitter, idle drift, path trace samples, stored raw/smoothed metrics, source constants, source contract file references, or the 100-predator performance model regress. Source drift is checked against every matching live constant in `Assets/_Project/Scripts/HectonFluidEngine.cs`, including `AbyssalFlowTextureResolution`, `AbyssalFlowTextureWorldSizeMeters`, `VectorNoiseResolution`, `SurfaceStormLayerDepthMeters`, `StormSurfaceTurbulenceStrength`, `AbyssalFlowThermoclineDepthMeters`, and `MaxAbyssalHeatSourceCount`. All `sourceFiles` entries must be relative project paths that exist on disk.
+
+The simulator scenario constants are derived from the flow texture cell size, world size, surface storm layer, turbulence scalar, vector-noise resolution, and heat-source capacity. The tuning file now carries this derivation explicitly in `mathAudit.sourceScenarioDerivation`; fixture weights are replay-selected, not hand-entered guesses. The replay-only fixture constants also have a derivation trail in `mathAudit.simulationConstants`: 10Hz `dt`, 36s search horizon, sub-cell target radius, SDF inverse-square clamp, pushout clearance, damping, scoring weights, and 100-predator performance assumptions are named and validated instead of living as anonymous Python literals.
 
 ## Scalability
 
@@ -96,6 +108,7 @@ Low/MX350:
 - One analytical flow sample.
 - One nearest SDF/clearance sample or local proxy.
 - Stronger EWMA smoothing and lower flow boost.
+- SHINOBU runtime can consume the stripped `toasterData` binary records with no strings and no GPU readback.
 
 Middle:
 - 10Hz steering.
@@ -111,6 +124,7 @@ Ultra:
 - 20Hz steering.
 - Optional local vortex interest for visual overkill.
 - Still O(1); no global A* spam and no GPU readback.
+- `rtxOverkillData` exposes harmonic flow bands, richer SDF gradient samples, visual banking curvature samples, and wake-ribbon samples for presentation-only overkill after frame/VRAM guards pass.
 
 Tier switching uses hysteresis from `Data/AI/Navigation_Tuning.json`: 5m distance band and 3s dwell time. Runtime must satisfy both before changing steering tier so predators do not flip between Low/Middle/High/Ultra within the same engagement.
 

@@ -1,0 +1,84 @@
+{
+  "schema_id": "economy.submarine_upgrade_stat_map.v1.layout",
+  "hash_algorithm": "FNV-1a 32-bit via Hecton.Localization.LocHash.Compute (UTF-16 code units, case-preserving)",
+  "consumer": "SHINOBU SuitUpgradeManager",
+  "row_struct": {
+    "name": "SubmarineUpgradeStatRow",
+    "layout_kind": "Sequential",
+    "pack": 4,
+    "size_bytes": 16,
+    "fields": [
+      {
+        "name": "UpgradeHash",
+        "offset": 0,
+        "type": "uint",
+        "bytes": 4
+      },
+      {
+        "name": "Type",
+        "offset": 4,
+        "type": "int",
+        "bytes": 4
+      },
+      {
+        "name": "Value",
+        "offset": 8,
+        "type": "float",
+        "bytes": 4
+      },
+      {
+        "name": "PowerCost",
+        "offset": 12,
+        "type": "float",
+        "bytes": 4
+      }
+    ]
+  },
+  "upgrade_id_map": [
+    {
+      "upgrade_id": "Upgrade_Depth_Mk1",
+      "upgrade_hash32": 579897495,
+      "type": 1
+    },
+    {
+      "upgrade_id": "Upgrade_Depth_Mk2",
+      "upgrade_hash32": 2961774940,
+      "type": 1
+    },
+    {
+      "upgrade_id": "Upgrade_Depth_Mk3",
+      "upgrade_hash32": 3599471557,
+      "type": 1
+    },
+    {
+      "upgrade_id": "Upgrade_Engine_Mk1",
+      "upgrade_hash32": 2970860532,
+      "type": 2
+    },
+    {
+      "upgrade_id": "Upgrade_Engine_Mk2",
+      "upgrade_hash32": 588983087,
+      "type": 2
+    },
+    {
+      "upgrade_id": "Upgrade_Engine_Mk3",
+      "upgrade_hash32": 4246253766,
+      "type": 2
+    },
+    {
+      "upgrade_id": "Upgrade_Hull_Mk1",
+      "upgrade_hash32": 1365320863,
+      "type": 3
+    },
+    {
+      "upgrade_id": "Upgrade_Hull_Mk2",
+      "upgrade_hash32": 3747198308,
+      "type": 3
+    },
+    {
+      "upgrade_id": "Upgrade_Hull_Mk3",
+      "upgrade_hash32": 89927629,
+      "type": 3
+    }
+  ]
+}

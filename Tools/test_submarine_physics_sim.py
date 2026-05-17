@@ -399,8 +399,8 @@ class SubmarinePhysicsSimTests(unittest.TestCase):
             payload = (output_dir / "Submarine_RuntimePack.bin").read_bytes()
             header_size = struct.calcsize(SubmarinePhysicsSim.RUNTIME_PACK_HEADER_FORMAT)
             record_size = struct.calcsize(SubmarinePhysicsSim.RUNTIME_PACK_RECORD_FORMAT)
-            magic, version, hull_count, float_count, stride = struct.unpack(
-                SubmarinePhysicsSim.RUNTIME_PACK_HEADER_FORMAT,
+            magic, version, hull_count, float_count, stride, header_bytes, alignment_bytes = struct.unpack(
+                "<8sIIIIII",
                 payload[:header_size],
             )
 
@@ -409,12 +409,16 @@ class SubmarinePhysicsSimTests(unittest.TestCase):
             self.assertEqual(len(SubmarinePhysicsSim.HULL_SHAPES), hull_count)
             self.assertEqual(SubmarinePhysicsSim.RUNTIME_PACK_FLOAT_COUNT, float_count)
             self.assertEqual(record_size, stride)
+            self.assertEqual(header_size, header_bytes)
+            self.assertEqual(SubmarinePhysicsSim.RUNTIME_PACK_ALIGNMENT_BYTES, alignment_bytes)
+            self.assertEqual(0, header_size % alignment_bytes)
+            self.assertEqual(0, record_size % alignment_bytes)
             self.assertEqual(header_size + (record_size * hull_count), len(payload))
 
             for index, shape in enumerate(SubmarinePhysicsSim.HULL_SHAPES):
                 offset = header_size + (record_size * index)
                 record = struct.unpack(
-                    SubmarinePhysicsSim.RUNTIME_PACK_RECORD_FORMAT,
+                    "<IIffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                     payload[offset:offset + record_size],
                 )
                 self.assertEqual(SubmarinePhysicsSim.fnv1a_32(shape.shape_id), record[0])

@@ -35,6 +35,7 @@ LIFT_SAMPLE_ANGLES_DEGREES: Tuple[float, ...] = (-15.0, -10.0, -5.0, 0.0, 5.0, 1
 CAVITATION_SAMPLE_DEPTHS_M: Tuple[float, ...] = (0.0, 25.0, 50.0, 100.0, 300.0)
 RUNTIME_PACK_MAGIC = b"H8HYDRO\0"
 RUNTIME_PACK_VERSION = 1
+RUNTIME_PACK_ALIGNMENT_BYTES = 16
 RUNTIME_PACK_FLOAT_FIELDS: Tuple[str, ...] = (
     "length_m",
     "beam_m",
@@ -91,8 +92,9 @@ RUNTIME_PACK_FLOAT_FIELDS: Tuple[str, ...] = (
     "cavitation_critical_prop_mps_depth_300",
 )
 RUNTIME_PACK_FLOAT_COUNT = len(RUNTIME_PACK_FLOAT_FIELDS)
-RUNTIME_PACK_HEADER_FORMAT = "<8sIIII"
-RUNTIME_PACK_RECORD_FORMAT = "<II" + ("f" * RUNTIME_PACK_FLOAT_COUNT)
+RUNTIME_PACK_HEADER_FORMAT = "<8sIIIIII"
+RUNTIME_PACK_RECORD_FORMAT = "<II" + ("f" * (RUNTIME_PACK_FLOAT_COUNT + 1))
+RUNTIME_PACK_PADDING_FLOAT_COUNT = 1
 
 
 @dataclass(frozen=True)
@@ -698,17 +700,25 @@ def runtime_record_values(spec: Dict[str, object]) -> List[float]:
 
 def write_runtime_pack(path: Path, specs: Sequence[Dict[str, object]]) -> None:
     header = struct.pack(
-        RUNTIME_PACK_HEADER_FORMAT,
+        "<8sIIIIII",
         RUNTIME_PACK_MAGIC,
         RUNTIME_PACK_VERSION,
         len(specs),
         RUNTIME_PACK_FLOAT_COUNT,
         struct.calcsize(RUNTIME_PACK_RECORD_FORMAT),
+        struct.calcsize(RUNTIME_PACK_HEADER_FORMAT),
+        RUNTIME_PACK_ALIGNMENT_BYTES,
     )
     payload = bytearray(header)
     for index, spec in enumerate(specs):
         shape_hash = fnv1a_32(str(spec["shape_id"]))
-        payload.extend(struct.pack(RUNTIME_PACK_RECORD_FORMAT, shape_hash, index, *runtime_record_values(spec)))
+        payload.extend(struct.pack(
+            "<IIffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            shape_hash,
+            index,
+            *runtime_record_values(spec),
+            0.0,
+        ))
     path.write_bytes(payload)
 
 
@@ -718,8 +728,8 @@ def read_runtime_pack(path: Path) -> List[Dict[str, object]]:
     record_size = struct.calcsize(RUNTIME_PACK_RECORD_FORMAT)
     if len(payload) < header_size:
         raise ValueError("runtime pack truncated header")
-    magic, version, hull_count, float_count, stride = struct.unpack(
-        RUNTIME_PACK_HEADER_FORMAT,
+    magic, version, hull_count, float_count, stride, header_bytes, alignment_bytes = struct.unpack(
+        "<8sIIIIII",
         payload[:header_size],
     )
     if magic != RUNTIME_PACK_MAGIC:
@@ -730,6 +740,10 @@ def read_runtime_pack(path: Path) -> List[Dict[str, object]]:
         raise ValueError("runtime pack float count mismatch")
     if stride != record_size:
         raise ValueError("runtime pack stride mismatch")
+    if header_bytes != header_size:
+        raise ValueError("runtime pack header size mismatch")
+    if alignment_bytes != RUNTIME_PACK_ALIGNMENT_BYTES:
+        raise ValueError("runtime pack alignment mismatch")
     expected_size = header_size + (record_size * hull_count)
     if len(payload) != expected_size:
         raise ValueError("runtime pack byte size mismatch")
@@ -737,7 +751,10 @@ def read_runtime_pack(path: Path) -> List[Dict[str, object]]:
     records: List[Dict[str, object]] = []
     for record_index in range(hull_count):
         offset = header_size + (record_size * record_index)
-        unpacked = struct.unpack(RUNTIME_PACK_RECORD_FORMAT, payload[offset:offset + record_size])
+        unpacked = struct.unpack(
+            "<IIffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            payload[offset:offset + record_size],
+        )
         values: Dict[str, float] = {}
         for field_index, field_name in enumerate(RUNTIME_PACK_FLOAT_FIELDS):
             values[field_name] = float(unpacked[field_index + 2])
@@ -980,25 +997,39 @@ def runtime_pack_layout_document() -> Dict[str, object]:
         "byte_order": "little-endian",
         "magic_ascii": "H8HYDRO\\0",
         "version": RUNTIME_PACK_VERSION,
+        "alignment_bytes": RUNTIME_PACK_ALIGNMENT_BYTES,
         "header": {
             "format": RUNTIME_PACK_HEADER_FORMAT,
             "bytes": header_size,
+            "aligned_16_byte": header_size % RUNTIME_PACK_ALIGNMENT_BYTES == 0,
             "fields": [
                 {"name": "magic", "byte_offset": 0, "bytes": 8, "format": "char[8]"},
                 {"name": "version", "byte_offset": 8, "bytes": 4, "format": "uint32_le"},
                 {"name": "hull_count", "byte_offset": 12, "bytes": 4, "format": "uint32_le"},
                 {"name": "float_count", "byte_offset": 16, "bytes": 4, "format": "uint32_le"},
                 {"name": "record_stride_bytes", "byte_offset": 20, "bytes": 4, "format": "uint32_le"},
+                {"name": "header_bytes", "byte_offset": 24, "bytes": 4, "format": "uint32_le"},
+                {"name": "alignment_bytes", "byte_offset": 28, "bytes": 4, "format": "uint32_le"},
             ],
         },
         "record": {
             "format": RUNTIME_PACK_RECORD_FORMAT,
             "bytes": record_size,
+            "semantic_float_count": RUNTIME_PACK_FLOAT_COUNT,
+            "padding_float_count": RUNTIME_PACK_PADDING_FLOAT_COUNT,
+            "padding_bytes": RUNTIME_PACK_PADDING_FLOAT_COUNT * 4,
+            "aligned_16_byte": record_size % RUNTIME_PACK_ALIGNMENT_BYTES == 0,
             "fields": [
                 {"index": -2, "byte_offset_from_record_start": 0, "name": "shape_hash_fnv1a32", "format": "uint32_le"},
                 {"index": -1, "byte_offset_from_record_start": 4, "name": "shape_index", "format": "uint32_le"},
                 *fields,
             ],
+        },
+        "file": {
+            "expected_bytes_for_hull_count": header_size + (record_size * len(HULL_SHAPES)),
+            "aligned_16_byte": (header_size + (record_size * len(HULL_SHAPES))) % RUNTIME_PACK_ALIGNMENT_BYTES == 0,
+            "record_start_offsets_16_byte_aligned": header_size % RUNTIME_PACK_ALIGNMENT_BYTES == 0
+            and record_size % RUNTIME_PACK_ALIGNMENT_BYTES == 0,
         },
         "hull_order": [shape.shape_id for shape in HULL_SHAPES],
         "notes": [

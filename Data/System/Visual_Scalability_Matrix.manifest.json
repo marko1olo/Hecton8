@@ -1,0 +1,570 @@
+{
+  "alignmentBytes": 16,
+  "binaryPath": "Data/System/Visual_Scalability_Matrix.bin",
+  "endianProbe": "0x01020304",
+  "endianness": "little",
+  "fileAligned16": true,
+  "fileBytes": 2016,
+  "fnv1a32": {
+    "algorithm": "FNV-1a 32-bit ASCII-lower",
+    "collisionCount": 0,
+    "collisions": {},
+    "rowCount": 74
+  },
+  "hashRows": [
+    {
+      "category": "tier",
+      "categoryId": 1,
+      "hash32": 2866453672,
+      "label": "DECK"
+    },
+    {
+      "category": "tier",
+      "categoryId": 1,
+      "hash32": 2545429325,
+      "label": "GOD_MODE"
+    },
+    {
+      "category": "tier",
+      "categoryId": 1,
+      "hash32": 1350222168,
+      "label": "PRO"
+    },
+    {
+      "category": "tier",
+      "categoryId": 1,
+      "hash32": 120807719,
+      "label": "TOASTER"
+    },
+    {
+      "category": "mandate",
+      "categoryId": 2,
+      "hash32": 3743983635,
+      "label": "OPT_Cinematic_Cheat_Protocol_Visual_Fake_First"
+    },
+    {
+      "category": "mandate",
+      "categoryId": 2,
+      "hash32": 1898963181,
+      "label": "OPT_Performance_Budgets_FrameTime_VRAM_Limits"
+    },
+    {
+      "category": "mandate",
+      "categoryId": 2,
+      "hash32": 836418003,
+      "label": "REND_Shader_Noir_Aesthetics_Dithering_Fog"
+    },
+    {
+      "category": "mandate",
+      "categoryId": 2,
+      "hash32": 1545901897,
+      "label": "REND_URP_Graphics_HotPath_Optimization_HLOD"
+    },
+    {
+      "category": "mandate",
+      "categoryId": 2,
+      "hash32": 3004240336,
+      "label": "REND_VRS_MX350_Reality_Check"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 4056324219,
+      "label": "ALU_FBM_PLUS_BLUE_NOISE_JITTER"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 1337879426,
+      "label": "ALU_SINGLE_LAYER"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 2493756868,
+      "label": "ALU_VALUE_NOISE"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 2780578885,
+      "label": "BC5"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 2747023647,
+      "label": "BC7"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 823851513,
+      "label": "BC7_OR_BC3_WHEN_PRESSURED"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 1415471715,
+      "label": "DEPTH_FOG_LUT"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 2207935373,
+      "label": "DUAL_LAYER_ALU_WITH_SHADOW_MASK"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 2166153188,
+      "label": "DUAL_LAYER_ALU_WITH_SHADOW_MASK_AND_DETAIL_NOISE"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 3630994374,
+      "label": "HALF_RES_32_STEP_FAKE"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 237643343,
+      "label": "HALF_RES_8_STEP_FAKE"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 1037941245,
+      "label": "HIGH"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 563096073,
+      "label": "HIGH_VISUAL_OVERKILL"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 1330735745,
+      "label": "LOW"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 1592245500,
+      "label": "LOW_MED"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 2913447899,
+      "label": "NONE"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 1388704967,
+      "label": "RTX2060_to_RTX3070_8GB_desktop"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 1591295350,
+      "label": "RTX4080_or_better_16GB_desktop"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 3651997715,
+      "label": "STATIC_BAKED_OR_OFF"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 2136422931,
+      "label": "SteamDeck_or_handheld_UMA_4GB_budget"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 1538607675,
+      "label": "TRIPLE_LAYER_ALU_FBM_BLUE_NOISE_JITTER"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 4201788990,
+      "label": "TRIPLE_LAYER_HALF_RES_64_STEP_FAKE"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
+      "hash32": 2985815142,
+      "label": "i3_or_i5_low_end_plus_MX350_2GB"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 531327002,
+      "label": "godModeFallbacks.particleBudget"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 2373073775,
+      "label": "godModeFallbacks.pom"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 2044533631,
+      "label": "godModeFallbacks.screenSpaceRefractions"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 1490944666,
+      "label": "godModeFallbacks.shadowQuality"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 4046195035,
+      "label": "godModeFallbacks.ssr"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 900481237,
+      "label": "godModeFallbacks.textureOverrides"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 1110832525,
+      "label": "godModeFallbacks.volumetricNoise"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 1496184707,
+      "label": "godModeFallbacks.volumetricScattering"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 1106464402,
+      "label": "particleBudget"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 1311988503,
+      "label": "pom"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 3420934436,
+      "label": "postProcessing"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 1923074361,
+      "label": "renderScale"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 361526423,
+      "label": "screenSpaceRefractions"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 1494195410,
+      "label": "shadowQuality"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 3292465347,
+      "label": "ssr"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 445222013,
+      "label": "textureOverrides"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 2766440261,
+      "label": "volumetricNoise"
+    },
+    {
+      "category": "fallback",
+      "categoryId": 4,
+      "hash32": 2954118939,
+      "label": "volumetricScattering"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 3731812588,
+      "label": "MAT_Coral_Hero"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 514416966,
+      "label": "MAT_Hull_Hero"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 663870992,
+      "label": "MAT_Rock_Hero"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 1878896685,
+      "label": "MAT_Suit_Hands_Close"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 2899178952,
+      "label": "MAT_Wreckage_Close"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 3161184654,
+      "label": "TX_DetailNormal_BasaltCracks_BC5"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 477896486,
+      "label": "TX_DetailNormal_CoralPores_BC5"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 1584160133,
+      "label": "TX_DetailNormal_CorrodedMetal_BC5"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 1528602895,
+      "label": "TX_DetailNormal_HullMicro_BC5"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 4276696063,
+      "label": "TX_DetailNormal_RubberFabric_BC5"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 2798867635,
+      "label": "TX_MicroORM_BiolumPores_BC7"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 3276284356,
+      "label": "TX_MicroORM_HullWear_BC7"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 2997123317,
+      "label": "TX_MicroORM_MineralWetness_BC7"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 2849209532,
+      "label": "TX_MicroORM_RustMoisture_BC7"
+    },
+    {
+      "category": "material",
+      "categoryId": 5,
+      "hash32": 4113190122,
+      "label": "TX_MicroORM_SuitWear_BC7"
+    },
+    {
+      "category": "physics",
+      "categoryId": 6,
+      "hash32": 660274263,
+      "label": "Beer-Lambert"
+    },
+    {
+      "category": "physics",
+      "categoryId": 6,
+      "hash32": 3875852127,
+      "label": "Beer-Lambert single-scatter presentation fake"
+    },
+    {
+      "category": "physics",
+      "categoryId": 6,
+      "hash32": 1108238972,
+      "label": "distance squared and hysteresis bands; no sqrt in tier switching"
+    },
+    {
+      "category": "physics",
+      "categoryId": 6,
+      "hash32": 3289136770,
+      "label": "mieDensity = turbidityNtu * 0.002"
+    },
+    {
+      "category": "physics",
+      "categoryId": 6,
+      "hash32": 2675024808,
+      "label": "rayleighDensity = mieDensity * rayleighToMieRatio"
+    },
+    {
+      "category": "physics",
+      "categoryId": 6,
+      "hash32": 4186123983,
+      "label": "switch only after distance_sq crosses threshold_sq for the required hysteresis window"
+    },
+    {
+      "category": "physics",
+      "categoryId": 6,
+      "hash32": 266767174,
+      "label": "transmittance = exp(-sigma_extinction_per_meter_rgb * distance_m)"
+    },
+    {
+      "category": "consumer",
+      "categoryId": 7,
+      "hash32": 1726904411,
+      "label": "REND_DYNAMIC_RESOLUTION_ADAPTER"
+    },
+    {
+      "category": "consumer",
+      "categoryId": 7,
+      "hash32": 4053889769,
+      "label": "VISUAL_SYNC"
+    }
+  ],
+  "layout": {
+    "extraRecordBytes": 64,
+    "extraRecordFormat": "<16I",
+    "hashRecordBytes": 16,
+    "hashRecordFormat": "<4I",
+    "headerBytes": 64,
+    "headerFormat": "<4sHHIIIIIIIIII16s",
+    "tierRecordBytes": 128,
+    "tierRecordFormat": "<32I"
+  },
+  "physicsAudit": {
+    "law": "Beer-Lambert",
+    "ninetyPercentLossMetersRgb": [
+      5.116856,
+      19.188209,
+      76.752836
+    ],
+    "sigmaExtinctionPerMeterRgb": [
+      0.45,
+      0.12,
+      0.03
+    ],
+    "status": "PASS",
+    "tenMeterTransmittanceRgb": [
+      0.011109,
+      0.301194,
+      0.740818
+    ]
+  },
+  "scalabilityProfiles": {
+    "rtx_overkill": {
+      "extraDataFields": [
+        "visualDensityScore",
+        "gpuCyclesP95",
+        "gpuCyclesPeak",
+        "lutWidth",
+        "lutHeight",
+        "raymarchSteps",
+        "harmonicNoiseLayers",
+        "harmonicNoiseOctaves",
+        "particleBudget",
+        "detailNormalFlag",
+        "microDetailOrmFlag"
+      ]
+    },
+    "toaster": {
+      "jsonHotPathIo": false,
+      "maxTransientHeapBytes": 0,
+      "record": "fixed 128-byte tier row plus fixed 64-byte extra row"
+    }
+  },
+  "schema": "H8.VisualScalabilityMatrix.Binary.v1",
+  "sections": {
+    "extraRecords": {
+      "bytes": 256,
+      "count": 4,
+      "offset": 576,
+      "stride": 64
+    },
+    "hashRecords": {
+      "bytes": 1184,
+      "count": 74,
+      "offset": 832,
+      "stride": 16
+    },
+    "tierRecords": {
+      "bytes": 512,
+      "count": 4,
+      "offset": 64,
+      "stride": 128
+    }
+  },
+  "sha256": "E52921AD506DE2C96FB7FD4FA5CAC3E671EBF6237A1651632DBF391A0AFA394F",
+  "sourceJson": "Data/System/Visual_Scalability_Matrix.json",
+  "status": "VISUAL_LOD_MATRIX_BIN_BAKED",
+  "stressAudit": {
+    "godModeDensityRatioVsPro": 9.097,
+    "status": "PASS",
+    "tiers": {
+      "DECK": {
+        "estimatedVramMb": 2600.0,
+        "gpuCyclesMean": 115.668,
+        "gpuCyclesP95": 124.848,
+        "gpuCyclesPeak": 129.862,
+        "visualDensityScore": 69.6
+      },
+      "GOD_MODE": {
+        "estimatedVramMb": 11418.0,
+        "gpuCyclesMean": 4340.718,
+        "gpuCyclesP95": 4841.835,
+        "gpuCyclesPeak": 5168.119,
+        "visualDensityScore": 3078.4
+      },
+      "PRO": {
+        "estimatedVramMb": 5432.0,
+        "gpuCyclesMean": 572.578,
+        "gpuCyclesP95": 658.827,
+        "gpuCyclesPeak": 713.544,
+        "visualDensityScore": 338.4
+      },
+      "TOASTER": {
+        "estimatedVramMb": 1560.0,
+        "gpuCyclesMean": 102.335,
+        "gpuCyclesP95": 106.017,
+        "gpuCyclesPeak": 106.549,
+        "visualDensityScore": 14.8
+      }
+    }
+  },
+  "tool": "Tools/VisualLodMatrixBaker.py"
+}

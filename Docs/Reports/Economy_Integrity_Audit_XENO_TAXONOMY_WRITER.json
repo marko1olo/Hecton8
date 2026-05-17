@@ -1,0 +1,138 @@
+﻿{
+  "bulk_transfer": {
+    "bulk_job_volume_limit": true,
+    "bulk_job_weight_limit": true,
+    "capacity_resolver_rejects_nonpositive_unit_value": true,
+    "player_bulk_passes_current_volume": true,
+    "player_bulk_passes_max_volume": true,
+    "try_add_checks_volume_limit": true,
+    "try_add_checks_weight_limit": true,
+    "try_add_rejects_nonpositive_unit_mass": true,
+    "try_add_rejects_nonpositive_unit_volume": true
+  },
+  "exploits": {
+    "nonpositive_costs": [],
+    "nonpositive_quantities": [],
+    "unknown_ingredients": [],
+    "value_mismatches": [],
+    "zero_ingredient_recipes": []
+  },
+  "graph": {
+    "cycle_count": 0,
+    "cycles": [],
+    "edges": 122,
+    "is_dag": true,
+    "nodes": 55,
+    "recursion_cycle_markers": []
+  },
+  "hashes": {
+    "checked": 329,
+    "mismatched": [],
+    "missing": []
+  },
+  "items_csv": {
+    "baseline_mismatches": [],
+    "classification_mismatches": [],
+    "crafted_count": 40,
+    "duplicate_item_ids": [],
+    "external_count": 0,
+    "hash_checks": 150,
+    "hash_mismatches": [],
+    "header_matches": true,
+    "missing_item_values": [],
+    "missing_rows_for_item_values": [],
+    "present": true,
+    "raw_count": 15,
+    "resource_mismatches": [],
+    "rows": 55,
+    "source_recipe_mismatches": []
+  },
+  "networkx_version": "3.6.1",
+  "physical_metadata": {
+    "asset_count": 72,
+    "covered_item_rows": 33,
+    "invalid_effective_mass": [],
+    "invalid_effective_volume": [],
+    "missing_crafted_assets": [
+      "Module_AirlockFrame",
+      "Module_FabricatorBench",
+      "Module_FoundationKit",
+      "Module_O2Recycler",
+      "Module_PowerRelay",
+      "Module_PressurizedContainer",
+      "Module_StorageLocker",
+      "Module_SumpPump",
+      "Upgrade_AbyssPressureShell",
+      "Upgrade_AbyssalStabilizer",
+      "Upgrade_BallastOptimizer",
+      "Upgrade_DepthCompensator",
+      "Upgrade_EmergencyO2Rack",
+      "Upgrade_EngineOverdriveManifold",
+      "Upgrade_GuidanceModule",
+      "Upgrade_HighCapacityCell",
+      "Upgrade_HullArmorLattice",
+      "Upgrade_HydraulicActuator",
+      "Upgrade_ReactorBypassCoupler",
+      "Upgrade_SilentRunningBaffle",
+      "Upgrade_SonarAmplifier",
+      "Upgrade_ThermalShielding"
+    ],
+    "missing_crafted_assets_runtime_blocked": true,
+    "missing_raw_assets": [],
+    "runtime_binding_plan_blocked_count": 22,
+    "serialized_zero_auto_resolved": [
+      "Data_AbyssalCrystal"
+    ],
+    "unblocked_missing_crafted_assets": []
+  },
+  "progression": {
+    "goal_id": "economy.goal.first_submarine_handoff",
+    "max_dependency_depth": 3,
+    "missing_targets": [],
+    "raw_resource_count": 10,
+    "target_count": 7,
+    "target_depths": {
+      "Module_AirlockFrame": 3,
+      "Module_FabricatorBench": 3,
+      "Module_FoundationKit": 3,
+      "Module_O2Recycler": 3,
+      "Module_PowerRelay": 3,
+      "Upgrade_BallastOptimizer": 3,
+      "Upgrade_DepthCompensator": 3
+    },
+    "target_file_present": true,
+    "total_recipe_batches": 46,
+    "unique_recipe_steps": 17
+  },
+  "recipe_identity": {
+    "duplicate_recipe_ids": [],
+    "duplicate_result_item_ids": [],
+    "missing_recipe_ids": [],
+    "missing_result_item_ids": [],
+    "recipe_count": 40
+  },
+  "save_hash_width": {
+    "hashes_above_int32_max": 27,
+    "item_hash_storage_lines": [
+      "613: public int[] itemHashIds;",
+      "1435: public int[] itemHashIds;"
+    ],
+    "max_item_hash32": 4056809162,
+    "same_bit_length": true,
+    "save_data_present": true,
+    "signed_storage_risk": true
+  },
+  "scarcity": {
+    "missing_resource_rows": [],
+    "recipe_specific_biome_constraints_present": false,
+    "resource_matrix_biomes": 10,
+    "resource_matrix_resources": 15,
+    "zero_spawn_resources": []
+  },
+  "sources": {
+    "items_csv_present": true,
+    "recipes": "Data\\Economy\\Recipes.json",
+    "resource_matrix": "Data\\Economy\\Resource_Distribution_Matrix.csv"
+  },
+  "status": "ECONOMY SECURED"
+}

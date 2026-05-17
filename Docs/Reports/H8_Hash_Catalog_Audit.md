@@ -4,10 +4,10 @@ Status: HASHES SYNCHRONIZED
 
 ## Summary
 
-- Total records: 1017
+- Total records: 1018
 - Items: 209
 - Biomes: 523
-- Signals: 285
+- Signals: 286
 - Generated header check: up-to-date
 - Collision status: 0 collisions
 - Runtime impact: 0 us/frame, 0 B/frame
@@ -22,7 +22,7 @@ Status: HASHES SYNCHRONIZED
 
 - `ascii_lower`: 26
 - `loc_utf16`: 813
-- `signal_label`: 178
+- `signal_label`: 179
 
 ## Group Counts
 
@@ -37,7 +37,7 @@ Status: HASHES SYNCHRONIZED
 - `Signals.AuthoredSignalIds`: 107
 - `Signals.ISignalStructNames`: 143
 - `Signals.SignalBusNames`: 3
-- `Signals.StructNames`: 32
+- `Signals.StructNames`: 33
 
 ## Verification Commands
 

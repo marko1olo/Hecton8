@@ -1,0 +1,1172 @@
+[
+  {
+    "HashID": 3237947177,
+    "LineIDHash": 1960532073,
+    "SpeakerHash": 3832850146,
+    "CategoryHash": 4272814209,
+    "Speaker": "Chief Mara Voss",
+    "AudioDelay": 11.18,
+    "Text": "Green suit, quit admiring the corpse lights. Reactor is cold, pumps are starving, and you are two breaths from silt-lung. Get to the breaker spine and wake the damn bus.",
+    "LowTierText": "Reactor cold. Get to breaker spine and wake the bus.",
+    "LowTierHashID": 997937487,
+    "RequiredGlobalState": "Reactor_Fixed = 0",
+    "EmotionTag": "[STRESS]",
+    "EmotionCode": 2,
+    "RequiredGlobalStateHash": 3145511013,
+    "LineID": "RAD_MARAUDER_REACTOR_001",
+    "Category": "Tutorial",
+    "Scalability": {
+      "Low": {
+        "Text": "Reactor cold. Get to breaker spine and wake the bus.",
+        "HashID": 997937487,
+        "MaxCharacters": 52,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 3237947177,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 3237947177,
+        "RadioNoiseSeed": 2916376284,
+        "WordCount": 30
+      },
+      "Ultra": {
+        "NoiseSeed": 3237947177,
+        "EmotionCode": 2,
+        "HarmonicWeightsQ8": [
+          106,
+          73,
+          63,
+          28
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          43,
+          50,
+          31,
+          10
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            58,
+            96,
+            255
+          ],
+          [
+            56,
+            101,
+            118,
+            255
+          ],
+          [
+            159,
+            168,
+            214,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 130,
+        "RadioBreakupQ8": 175
+      }
+    }
+  },
+  {
+    "HashID": 75348903,
+    "LineIDHash": 2598228690,
+    "SpeakerHash": 3110879839,
+    "CategoryHash": 4272814209,
+    "Speaker": "Rusty Kael",
+    "AudioDelay": 9.77,
+    "Text": "Coolant loop is choking on rust paste. Open valve C, then valve A, not the other way unless you want a gasket-prayer for a faceplate. Move.",
+    "LowTierText": "Open coolant valve C, then A. Wrong order cooks the faceplate.",
+    "LowTierHashID": 2618315646,
+    "RequiredGlobalState": "Reactor_BreakerBus = 1; Coolant_Flow = 0",
+    "EmotionTag": "[STRESS]",
+    "EmotionCode": 2,
+    "RequiredGlobalStateHash": 1389728833,
+    "LineID": "RAD_MARAUDER_REACTOR_002",
+    "Category": "Tutorial",
+    "Scalability": {
+      "Low": {
+        "Text": "Open coolant valve C, then A. Wrong order cooks the faceplate.",
+        "HashID": 2618315646,
+        "MaxCharacters": 62,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 75348903,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 75348903,
+        "RadioNoiseSeed": 1767293522,
+        "WordCount": 26
+      },
+      "Ultra": {
+        "NoiseSeed": 75348903,
+        "EmotionCode": 2,
+        "HarmonicWeightsQ8": [
+          137,
+          110,
+          47,
+          16
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          58,
+          33,
+          23,
+          12
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            89,
+            96,
+            255
+          ],
+          [
+            56,
+            138,
+            118,
+            255
+          ],
+          [
+            127,
+            168,
+            190,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 30,
+        "RadioBreakupQ8": 143
+      }
+    }
+  },
+  {
+    "HashID": 2775050743,
+    "LineIDHash": 3235925307,
+    "SpeakerHash": 3760257511,
+    "CategoryHash": 4272814209,
+    "Speaker": "Sister Valve",
+    "AudioDelay": 9.77,
+    "Text": "Control rods are jammed half proud. Kick the manual crank until it locks green. You owe the whole room brine-debt if that core coughs awake dirty.",
+    "LowTierText": "Crank the rods down until green. Move.",
+    "LowTierHashID": 4217278481,
+    "RequiredGlobalState": "Coolant_Flow = 1; ControlRods_Seated = 0",
+    "EmotionTag": "[PANIC]",
+    "EmotionCode": 3,
+    "RequiredGlobalStateHash": 835215174,
+    "LineID": "RAD_MARAUDER_REACTOR_003",
+    "Category": "Tutorial",
+    "Scalability": {
+      "Low": {
+        "Text": "Crank the rods down until green. Move.",
+        "HashID": 4217278481,
+        "MaxCharacters": 38,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 2775050743,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 2775050743,
+        "RadioNoiseSeed": 3360460802,
+        "WordCount": 26
+      },
+      "Ultra": {
+        "NoiseSeed": 2775050743,
+        "EmotionCode": 3,
+        "HarmonicWeightsQ8": [
+          157,
+          122,
+          44,
+          26
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          48,
+          27,
+          22,
+          9
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            109,
+            108,
+            255
+          ],
+          [
+            65,
+            150,
+            118,
+            255
+          ],
+          [
+            121,
+            168,
+            210,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 76,
+        "RadioBreakupQ8": 169
+      }
+    }
+  },
+  {
+    "HashID": 1444167049,
+    "LineIDHash": 3873621924,
+    "SpeakerHash": 1675904436,
+    "CategoryHash": 4272814209,
+    "Speaker": "Ledger-9",
+    "AudioDelay": 9.77,
+    "Text": "Deep Reach thanks you for restoring asset continuity. Advisory: remaining personnel are statistically absent. Please prime the reactor and disregard the knocking inside the heat sink.",
+    "LowTierText": "Prime reactor. Ignore heat-sink knocking.",
+    "LowTierHashID": 4204518426,
+    "RequiredGlobalState": "ControlRods_Seated = 1; Reactor_Primed = 0",
+    "EmotionTag": "[CALM]",
+    "EmotionCode": 1,
+    "RequiredGlobalStateHash": 449750603,
+    "LineID": "RAD_MARAUDER_REACTOR_004",
+    "Category": "Tutorial",
+    "Scalability": {
+      "Low": {
+        "Text": "Prime reactor. Ignore heat-sink knocking.",
+        "HashID": 4204518426,
+        "MaxCharacters": 41,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 1444167049,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 1444167049,
+        "RadioNoiseSeed": 994002044,
+        "WordCount": 26
+      },
+      "Ultra": {
+        "NoiseSeed": 1444167049,
+        "EmotionCode": 1,
+        "HarmonicWeightsQ8": [
+          130,
+          79,
+          34,
+          21
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          63,
+          49,
+          17,
+          14
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            82,
+            84,
+            255
+          ],
+          [
+            47,
+            107,
+            118,
+            255
+          ],
+          [
+            101,
+            168,
+            200,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 152,
+        "RadioBreakupQ8": 85
+      }
+    }
+  },
+  {
+    "HashID": 109583606,
+    "LineIDHash": 216351245,
+    "SpeakerHash": 3832850146,
+    "CategoryHash": 4272814209,
+    "Speaker": "Chief Mara Voss",
+    "AudioDelay": 11.53,
+    "Text": "Good. Now throw the ignition like you hate it. If the lights come up blue, you breathe. If they come up white, run before the void-kissed bastard sings through your teeth.",
+    "LowTierText": "Throw ignition. Blue means breathe. White means run.",
+    "LowTierHashID": 536988725,
+    "RequiredGlobalState": "Reactor_Primed = 1; Reactor_Fixed = 0",
+    "EmotionTag": "[STRESS]",
+    "EmotionCode": 2,
+    "RequiredGlobalStateHash": 2045317062,
+    "LineID": "RAD_MARAUDER_REACTOR_005",
+    "Category": "Tutorial",
+    "Scalability": {
+      "Low": {
+        "Text": "Throw ignition. Blue means breathe. White means run.",
+        "HashID": 536988725,
+        "MaxCharacters": 52,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 109583606,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 109583606,
+        "RadioNoiseSeed": 1805870339,
+        "WordCount": 31
+      },
+      "Ultra": {
+        "NoiseSeed": 109583606,
+        "EmotionCode": 2,
+        "HarmonicWeightsQ8": [
+          157,
+          71,
+          49,
+          16
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          48,
+          53,
+          24,
+          12
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            109,
+            96,
+            255
+          ],
+          [
+            56,
+            99,
+            118,
+            255
+          ],
+          [
+            130,
+            168,
+            190,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 185,
+        "RadioBreakupQ8": 146
+      }
+    }
+  },
+  {
+    "HashID": 3293072071,
+    "LineIDHash": 788629153,
+    "SpeakerHash": 3324309591,
+    "CategoryHash": 1446438227,
+    "Speaker": "Nix Calder",
+    "AudioDelay": 11.88,
+    "Text": "Intercept off Black Keel channel. Hollis is laughing too loud, which means his depth gauge is lying or his nerves are. Their wake just went quiet. That is the blackwake, not weather.",
+    "LowTierText": "Black Keel wake went quiet. That is blackwake, not weather.",
+    "LowTierHashID": 1910968476,
+    "RequiredGlobalState": "Reactor_Fixed = 1; Leviathan_Hunt_Arc = 1",
+    "EmotionTag": "[CALM]",
+    "EmotionCode": 1,
+    "RequiredGlobalStateHash": 3839340784,
+    "LineID": "RAD_MARAUDER_LEVIATHAN_001",
+    "Category": "AmbientInterception",
+    "Scalability": {
+      "Low": {
+        "Text": "Black Keel wake went quiet. That is blackwake, not weather.",
+        "HashID": 1910968476,
+        "MaxCharacters": 59,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 3293072071,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 3293072071,
+        "RadioNoiseSeed": 2841850674,
+        "WordCount": 32
+      },
+      "Ultra": {
+        "NoiseSeed": 3293072071,
+        "EmotionCode": 1,
+        "HarmonicWeightsQ8": [
+          145,
+          82,
+          41,
+          28
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          54,
+          47,
+          20,
+          10
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            97,
+            84,
+            255
+          ],
+          [
+            47,
+            110,
+            118,
+            255
+          ],
+          [
+            114,
+            168,
+            214,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 239,
+        "RadioBreakupQ8": 98
+      }
+    }
+  },
+  {
+    "HashID": 2340379058,
+    "LineIDHash": 1426325770,
+    "SpeakerHash": 1767033723,
+    "CategoryHash": 1446438227,
+    "Speaker": "Hollis Brant",
+    "AudioDelay": 12.23,
+    "Text": "Black Keel to any rig with ears, we have a shadow under us and over us. Sonar says one body, then five, then none. Deadlight, stop praying and give me a damn range.",
+    "LowTierText": "Black Keel reports shadow above and below. Sonar range lost.",
+    "LowTierHashID": 1650164731,
+    "RequiredGlobalState": "Leviathan_Hunt_Arc = 1; BlackKeel_Beacon = 1",
+    "EmotionTag": "[PANIC]",
+    "EmotionCode": 3,
+    "RequiredGlobalStateHash": 3135260574,
+    "LineID": "RAD_MARAUDER_LEVIATHAN_002",
+    "Category": "AmbientInterception",
+    "Scalability": {
+      "Low": {
+        "Text": "Black Keel reports shadow above and below. Sonar range lost.",
+        "HashID": 1650164731,
+        "MaxCharacters": 60,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 2340379058,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 2340379058,
+        "RadioNoiseSeed": 3864272967,
+        "WordCount": 33
+      },
+      "Ultra": {
+        "NoiseSeed": 2340379058,
+        "EmotionCode": 3,
+        "HarmonicWeightsQ8": [
+          140,
+          86,
+          47,
+          24
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          56,
+          45,
+          23,
+          8
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            92,
+            108,
+            255
+          ],
+          [
+            65,
+            114,
+            118,
+            255
+          ],
+          [
+            127,
+            168,
+            207,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 252,
+        "RadioBreakupQ8": 175
+      }
+    }
+  },
+  {
+    "HashID": 2025712659,
+    "LineIDHash": 2064022387,
+    "SpeakerHash": 1851585504,
+    "CategoryHash": 1446438227,
+    "Speaker": "Deadlight Orr",
+    "AudioDelay": 9.07,
+    "Text": "Range is negative. I know that is crap math. The ping comes back before I send it. Something ahead of us already heard tomorrow.",
+    "LowTierText": "Sonar echo returns before send. Orr says range is negative.",
+    "LowTierHashID": 1923670728,
+    "RequiredGlobalState": "BlackKeel_Beacon = 1; BlackKeel_Sonar = 1",
+    "EmotionTag": "[PANIC]",
+    "EmotionCode": 3,
+    "RequiredGlobalStateHash": 536327539,
+    "LineID": "RAD_MARAUDER_LEVIATHAN_003",
+    "Category": "AmbientInterception",
+    "Scalability": {
+      "Low": {
+        "Text": "Sonar echo returns before send. Orr says range is negative.",
+        "HashID": 1923670728,
+        "MaxCharacters": 59,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 2025712659,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 2025712659,
+        "RadioNoiseSeed": 362190310,
+        "WordCount": 24
+      },
+      "Ultra": {
+        "NoiseSeed": 2025712659,
+        "EmotionCode": 3,
+        "HarmonicWeightsQ8": [
+          100,
+          123,
+          55,
+          23
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          44,
+          27,
+          27,
+          15
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            52,
+            108,
+            255
+          ],
+          [
+            65,
+            151,
+            118,
+            255
+          ],
+          [
+            143,
+            168,
+            205,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 73,
+        "RadioBreakupQ8": 191
+      }
+    }
+  },
+  {
+    "HashID": 570926301,
+    "LineIDHash": 2701719004,
+    "SpeakerHash": 54647777,
+    "CategoryHash": 1446438227,
+    "Speaker": "Moth Iverson",
+    "AudioDelay": 8.37,
+    "Text": "Black Keel lamps just corkscrewed inward. Not failed, not cracked, bent. Light does that when the water gets told a bigger lie.",
+    "LowTierText": "Black Keel lamps bent inward. The water is lying.",
+    "LowTierHashID": 2069131303,
+    "RequiredGlobalState": "Player_DepthBand >= 2; Leviathan_Hunt_Arc = 1",
+    "EmotionTag": "[STRESS]",
+    "EmotionCode": 2,
+    "RequiredGlobalStateHash": 4041939648,
+    "LineID": "RAD_MARAUDER_LEVIATHAN_004",
+    "Category": "AmbientInterception",
+    "Scalability": {
+      "Low": {
+        "Text": "Black Keel lamps bent inward. The water is lying.",
+        "HashID": 2069131303,
+        "MaxCharacters": 49,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 570926301,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 570926301,
+        "RadioNoiseSeed": 1328340264,
+        "WordCount": 22
+      },
+      "Ultra": {
+        "NoiseSeed": 570926301,
+        "EmotionCode": 2,
+        "HarmonicWeightsQ8": [
+          151,
+          105,
+          32,
+          18
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          53,
+          34,
+          16,
+          13
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            103,
+            96,
+            255
+          ],
+          [
+            56,
+            133,
+            118,
+            255
+          ],
+          [
+            97,
+            168,
+            194,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 1,
+        "RadioBreakupQ8": 113
+      }
+    }
+  },
+  {
+    "HashID": 1862282485,
+    "LineIDHash": 3339415621,
+    "SpeakerHash": 4010272690,
+    "CategoryHash": 1446438227,
+    "Speaker": "Pike Orlov",
+    "AudioDelay": 10.47,
+    "Text": "Their aft plate folded without a hit report. No teeth marks, no scrape, just pressure making a fist. That damn thing is herding them into the trench mouth.",
+    "LowTierText": "Aft plate folded clean. Alpha is herding them trenchward.",
+    "LowTierHashID": 4190878792,
+    "RequiredGlobalState": "BlackKeel_HullAlarm = 1",
+    "EmotionTag": "[STRESS]",
+    "EmotionCode": 2,
+    "RequiredGlobalStateHash": 1244397184,
+    "LineID": "RAD_MARAUDER_LEVIATHAN_005",
+    "Category": "AmbientInterception",
+    "Scalability": {
+      "Low": {
+        "Text": "Aft plate folded clean. Alpha is herding them trenchward.",
+        "HashID": 4190878792,
+        "MaxCharacters": 57,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 1862282485,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 1862282485,
+        "RadioNoiseSeed": 36394240,
+        "WordCount": 28
+      },
+      "Ultra": {
+        "NoiseSeed": 1862282485,
+        "EmotionCode": 2,
+        "HarmonicWeightsQ8": [
+          157,
+          75,
+          32,
+          22
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          48,
+          51,
+          16,
+          15
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            109,
+            96,
+            255
+          ],
+          [
+            56,
+            103,
+            118,
+            255
+          ],
+          [
+            96,
+            168,
+            203,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 137,
+        "RadioBreakupQ8": 112
+      }
+    }
+  },
+  {
+    "HashID": 125549683,
+    "LineIDHash": 3977112238,
+    "SpeakerHash": 3676991181,
+    "CategoryHash": 1446438227,
+    "Speaker": "Dr. Oren Vale",
+    "AudioDelay": 9.42,
+    "Text": "Biomass displacement exceeds the local fauna ledger by three orders. Translation: the sea is moving around an animal large enough to make our instruments polite.",
+    "LowTierText": "Mass displacement is off-scale. Something huge is moving water.",
+    "LowTierHashID": 3106792522,
+    "RequiredGlobalState": "BlackKeel_HullAlarm = 1; XenonOmega_Sample = 1",
+    "EmotionTag": "[CALM]",
+    "EmotionCode": 1,
+    "RequiredGlobalStateHash": 312997485,
+    "LineID": "RAD_MARAUDER_LEVIATHAN_006",
+    "Category": "AmbientInterception",
+    "Scalability": {
+      "Low": {
+        "Text": "Mass displacement is off-scale. Something huge is moving water.",
+        "HashID": 3106792522,
+        "MaxCharacters": 63,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 125549683,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 125549683,
+        "RadioNoiseSeed": 1783678342,
+        "WordCount": 25
+      },
+      "Ultra": {
+        "NoiseSeed": 125549683,
+        "EmotionCode": 1,
+        "HarmonicWeightsQ8": [
+          124,
+          111,
+          47,
+          16
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          32,
+          33,
+          23,
+          12
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            76,
+            84,
+            255
+          ],
+          [
+            47,
+            139,
+            118,
+            255
+          ],
+          [
+            126,
+            168,
+            190,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 25,
+        "RadioBreakupQ8": 110
+      }
+    }
+  },
+  {
+    "HashID": 936659027,
+    "LineIDHash": 319841559,
+    "SpeakerHash": 1675904436,
+    "CategoryHash": 1446438227,
+    "Speaker": "Ledger-9",
+    "AudioDelay": 8.72,
+    "Text": "Deep Reach advisory: Black Keel distress traffic is unlicensed salvage noise. Authorized crews should maintain course and avoid emotional interpretation of pressure anomalies.",
+    "LowTierText": "Corp calls Black Keel distress unlicensed salvage noise.",
+    "LowTierHashID": 145322432,
+    "RequiredGlobalState": "Corp_ChannelUnlocked = 1; BlackKeel_Distress = 1",
+    "EmotionTag": "[CALM]",
+    "EmotionCode": 1,
+    "RequiredGlobalStateHash": 2585178255,
+    "LineID": "RAD_MARAUDER_LEVIATHAN_007",
+    "Category": "AmbientInterception",
+    "Scalability": {
+      "Low": {
+        "Text": "Corp calls Black Keel distress unlicensed salvage noise.",
+        "HashID": 145322432,
+        "MaxCharacters": 56,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 936659027,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 936659027,
+        "RadioNoiseSeed": 1526673830,
+        "WordCount": 23
+      },
+      "Ultra": {
+        "NoiseSeed": 936659027,
+        "EmotionCode": 1,
+        "HarmonicWeightsQ8": [
+          116,
+          82,
+          58,
+          19
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          36,
+          47,
+          29,
+          13
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            68,
+            84,
+            255
+          ],
+          [
+            47,
+            110,
+            118,
+            255
+          ],
+          [
+            149,
+            168,
+            196,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 237,
+        "RadioBreakupQ8": 133
+      }
+    }
+  },
+  {
+    "HashID": 2563601777,
+    "LineIDHash": 3639294192,
+    "SpeakerHash": 1767033723,
+    "CategoryHash": 1446438227,
+    "Speaker": "Hollis Brant",
+    "AudioDelay": 10.47,
+    "Text": "It took Orr. No breach, no splash, no heroic hell, just his suit cam full of teeth and corridor light. The door stayed closed. The room got longer.",
+    "LowTierText": "Orr taken. Door stayed shut. Room got longer.",
+    "LowTierHashID": 3323762869,
+    "RequiredGlobalState": "BlackKeel_Distress = 1; BlackKeel_CrewLoss >= 1",
+    "EmotionTag": "[PANIC]",
+    "EmotionCode": 3,
+    "RequiredGlobalStateHash": 3816831493,
+    "LineID": "RAD_MARAUDER_LEVIATHAN_008",
+    "Category": "AmbientInterception",
+    "Scalability": {
+      "Low": {
+        "Text": "Orr taken. Door stayed shut. Room got longer.",
+        "HashID": 3323762869,
+        "MaxCharacters": 45,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 2563601777,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 2563601777,
+        "RadioNoiseSeed": 4125494404,
+        "WordCount": 28
+      },
+      "Ultra": {
+        "NoiseSeed": 2563601777,
+        "EmotionCode": 3,
+        "HarmonicWeightsQ8": [
+          124,
+          93,
+          57,
+          25
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          32,
+          40,
+          28,
+          8
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            76,
+            108,
+            255
+          ],
+          [
+            65,
+            121,
+            118,
+            255
+          ],
+          [
+            147,
+            168,
+            209,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 208,
+        "RadioBreakupQ8": 195
+      }
+    }
+  },
+  {
+    "HashID": 3764717911,
+    "LineIDHash": 4276990809,
+    "SpeakerHash": 3832850146,
+    "CategoryHash": 1446438227,
+    "Speaker": "Chief Mara Voss",
+    "AudioDelay": 11.88,
+    "Text": "Do not answer Black Keel if they use your dead friend's voice. The Alpha wears channels like work gloves. Count air, cut lights, and let the rival crew pay their own brine-debt.",
+    "LowTierText": "Do not answer voices wearing dead friends.",
+    "LowTierHashID": 3976743968,
+    "RequiredGlobalState": "BlackKeel_CrewLoss >= 1; Player_RadioTrust = 1",
+    "EmotionTag": "[STRESS]",
+    "EmotionCode": 2,
+    "RequiredGlobalStateHash": 1888299126,
+    "LineID": "RAD_MARAUDER_LEVIATHAN_009",
+    "Category": "AmbientInterception",
+    "Scalability": {
+      "Low": {
+        "Text": "Do not answer voices wearing dead friends.",
+        "HashID": 3976743968,
+        "MaxCharacters": 42,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 3764717911,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 3764717911,
+        "RadioNoiseSeed": 2370728098,
+        "WordCount": 32
+      },
+      "Ultra": {
+        "NoiseSeed": 3764717911,
+        "EmotionCode": 2,
+        "HarmonicWeightsQ8": [
+          117,
+          66,
+          44,
+          30
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          36,
+          55,
+          22,
+          11
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            69,
+            96,
+            255
+          ],
+          [
+            56,
+            94,
+            118,
+            255
+          ],
+          [
+            121,
+            168,
+            218,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 172,
+        "RadioBreakupQ8": 137
+      }
+    }
+  },
+  {
+    "HashID": 1089286526,
+    "LineIDHash": 406676457,
+    "SpeakerHash": 1851585504,
+    "CategoryHash": 1446438227,
+    "Speaker": "Deadlight Orr",
+    "AudioDelay": 11.18,
+    "Text": "Marauders, if this repeats, it is not me. If it knows your call sign, kill the speaker. If it knocks from inside the hull, you are already in its mouth.",
+    "LowTierText": "If this repeats, kill the speaker. Hull knocks mean mouth.",
+    "LowTierHashID": 2594040284,
+    "RequiredGlobalState": "BlackKeel_FinalPing = 1; Leviathan_Proximity >= 2",
+    "EmotionTag": "[PANIC]",
+    "EmotionCode": 3,
+    "RequiredGlobalStateHash": 1743692206,
+    "LineID": "RAD_MARAUDER_LEVIATHAN_010",
+    "Category": "AmbientInterception",
+    "Scalability": {
+      "Low": {
+        "Text": "If this repeats, kill the speaker. Hull knocks mean mouth.",
+        "HashID": 2594040284,
+        "MaxCharacters": 58,
+        "DSPProfile": "radio_narrowband_static"
+      },
+      "Middle": {
+        "TextHashID": 1089286526,
+        "DSPProfile": "radio_narrowband_emotion"
+      },
+      "High": {
+        "TextHashID": 1089286526,
+        "RadioNoiseSeed": 767969419,
+        "WordCount": 30
+      },
+      "Ultra": {
+        "NoiseSeed": 1089286526,
+        "EmotionCode": 3,
+        "HarmonicWeightsQ8": [
+          127,
+          76,
+          61,
+          20
+        ],
+        "HarmonicNoiseOctavesQ8": [
+          33,
+          48,
+          30,
+          14
+        ],
+        "SpectralGradientRGBA32": [
+          [
+            18,
+            79,
+            108,
+            255
+          ],
+          [
+            65,
+            104,
+            118,
+            255
+          ],
+          [
+            155,
+            168,
+            198,
+            255
+          ],
+          [
+            225,
+            239,
+            226,
+            255
+          ]
+        ],
+        "SubtitleGlitchMaskQ8": 148,
+        "RadioBreakupQ8": 203
+      }
+    }
+  }
+]

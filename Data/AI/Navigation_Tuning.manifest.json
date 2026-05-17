@@ -1,0 +1,94 @@
+{
+  "binary": {
+    "alignmentBytes": 16,
+    "byteLength": 1280,
+    "endianness": "little",
+    "headerAudit": {
+      "byteLengthAligned16": true,
+      "headerCrc32": "0xBE84D9E5",
+      "payloadCrc32": "0x38446875",
+      "payloadOffsetAligned16": true,
+      "recordHashesStrictlyIncreasing": true,
+      "reservedBytesZero": true,
+      "semanticIdsUnique": true
+    },
+    "headerBytes": 64,
+    "headerStruct": "<4sHHIIIIIIII24s",
+    "magic": "H8AN",
+    "path": "Data/AI/Navigation_Tuning.h8bin",
+    "payloadBytes": 1216,
+    "payloadOffset": 64,
+    "recordCount": 76,
+    "recordStrideBytes": 16,
+    "recordStruct": "<IHHfI",
+    "sections": {
+      "Header": {
+        "alignmentBytes": 16,
+        "length": 64,
+        "offset": 0
+      },
+      "Records": {
+        "alignmentBytes": 16,
+        "length": 1216,
+        "offset": 64,
+        "recordCount": 76,
+        "recordStrideBytes": 16
+      }
+    },
+    "sha256": "0187CA1B5E198A99EBEB8C8B1672BDFCF76427D1B2DA8669D1AE0D024ABCDD68",
+    "version": 1
+  },
+  "dataSovereigntyAudit": {
+    "atlasDomains": [
+      19,
+      25
+    ],
+    "dataSovereigntyDelta": "adds JSON + h8bin cache artifacts for baked steering constants; runtime owner can request a DataVault buffer and avoid per-agent private state.",
+    "fitsProjectAtlas85DomainMap": true,
+    "hPhiRisk": "Evidence remains STATIC_SOURCE/PY_TOOL until Unity import, Burst profiler, and GCMonitor prove the runtime port.",
+    "runtimeLookupContract": "stateless FNV-1a record lookup into DataVault-owned NativeArray records; no private managed dictionaries in Tick."
+  },
+  "hashing": {
+    "algorithm": "FNV-1a32 ASCII-lower semantic IDs",
+    "collisionCount": 0,
+    "recordCount": 76
+  },
+  "manifestPath": "Data/AI/Navigation_Tuning.manifest.json",
+  "projectAtlasDomains": [
+    19,
+    25
+  ],
+  "promptId": "AI_POTENTIAL_FIELD_NAVIGATOR",
+  "rtxOverkillData": {
+    "extraDataFields": {
+      "flowWakeRibbonSamples": 16,
+      "harmonicFlowBands": 4,
+      "sdfCentralDifferenceGradientSamples": 6,
+      "visualBankingCurvatureSamples": 8,
+      "vortexInterestProbeRadiusMeters": 15.0
+    },
+    "profileId": "RTX_GOD_MODE_FLOW_STEERING",
+    "runtimeGuard": "visual overkill consumes saved cycles only after frame pressure and VRAM graduation guards pass."
+  },
+  "runtimeContract": "stateless FNV-1a record lookup into DataVault-owned NativeArray records; no private managed dictionaries in Tick.",
+  "schema": "H8.NavigationTuning.BinaryManifest.v1",
+  "sourceJsonPath": "Data/AI/Navigation_Tuning.json",
+  "sourceJsonSha256": "AE5937C6451E883F0899486FBE0DCC67D161751172FC3909B55E6DA4A4096C6C",
+  "status": "NAVIGATION_BINARY_VERIFIED",
+  "toasterData": {
+    "cadenceHz": 10,
+    "flowSamplesPerSolve": 1,
+    "gpuReadback": false,
+    "profileId": "TOASTER_STRIPPED",
+    "recordPayload": [
+      "fnv1a32",
+      "tierCode",
+      "valueKind",
+      "floatValue",
+      "flags"
+    ],
+    "sdfProxyChecksPerSolve": 1,
+    "stringsInRuntime": false,
+    "targetHardware": "Celeron/i3/MX350-class fallback"
+  }
+}

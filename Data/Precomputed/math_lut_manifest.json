@@ -1,5 +1,5 @@
 {
-  "binaryHeader": "none",
+  "binaryHeader": "per-file",
   "byteOrder": "little-endian",
   "files": {
     "caustics_dispersion_offsets.bin": {
@@ -11,13 +11,16 @@
           "step": -1
         }
       },
-      "bytes": 1212,
+      "bytes": 1216,
       "columns": [
         "redUvOffset",
         "greenUvOffset",
         "blueUvOffset"
       ],
-      "sha256": "D4EFB9189FD063DBB3A5FC5916AD1857C1BE3CEAF131DC81AA78153D41819A81",
+      "dataBytes": 1212,
+      "fileAlignmentBytes": 16,
+      "paddingBytes": 4,
+      "sha256": "9B2441A2B89D84653119C739F46A57A5D3283B00F3EC8313CD065B8FE55B3FB4",
       "shape": [
         101,
         3
@@ -32,18 +35,34 @@
           "step": 1
         }
       },
-      "bytes": 40020,
+      "binaryHeader": "H8GT64",
+      "bytes": 128128,
       "columns": [
+        "depthMeters",
         "ambientPressureAtm",
+        "ambientPressureKPa",
+        "oxygenFraction",
         "oxygenPartialPressureAtm",
-        "nitrogenPartialPressureAtm",
-        "oxygenToxicity01",
-        "nitrogenNarcosisMultiplier"
+        "oxygenPartialPressureKPa",
+        "nitrogenEquivalentFraction",
+        "nitrogenEquivalentPartialPressureAtm",
+        "nitrogenEquivalentPartialPressureKPa",
+        "carbonDioxideFraction",
+        "carbonDioxidePartialPressureKPa",
+        "hypoxia01",
+        "oxygenCnsToxicity01",
+        "nitrogenNarcosis01",
+        "carbonDioxideToxicity01",
+        "compositeDanger01"
       ],
-      "sha256": "49B92B0632F2051CA930773B03230E6FD1D0078B839C68407559264F3D30461B",
+      "fileAlignmentBytes": 16,
+      "headerBytes": 64,
+      "rowBytes": 64,
+      "rowFormat": "<ffffffffffffffff",
+      "sha256": "A0D6AAB39497BA771FCA7D4C5754C31C0F0CDBEAFF0F9860B44B01BC7240C9DD",
       "shape": [
         2001,
-        5
+        16
       ]
     },
     "gerstner_wave_weather.bin": {
@@ -120,17 +139,17 @@
   "scalarBytes": 4,
   "scalarFormat": "float32",
   "schema": "H8.MathLUTManifest.v1",
-  "structPackFormat": "<f",
+  "structPackFormat": "per-file",
   "validation": {
     "files": {
       "caustics_dispersion_offsets.bin": {
-        "actualBytes": 1212,
-        "expectedBytes": 1212,
+        "actualBytes": 1216,
+        "expectedBytes": 1216,
         "matches": true
       },
       "dalton_gas_toxicity.bin": {
-        "actualBytes": 40020,
-        "expectedBytes": 40020,
+        "actualBytes": 128128,
+        "expectedBytes": 128128,
         "matches": true
       },
       "gerstner_wave_weather.bin": {

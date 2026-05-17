@@ -1,0 +1,151 @@
+biome_id,biome_hash32,biome_display_name,resource_id,resource_hash32,resource_display_name,weight_u8,cumulative_weight_u16,total_weight_u16,expected_basis_points,simulated_count,simulated_basis_points,delta_basis_points
+biome.safe_shallows,967099888,Safe Shallows,Data_TitaniumScrap,3511699502,Titanium Scrap,255,255,510,5000,500305,5003,3
+biome.safe_shallows,967099888,Safe Shallows,Data_Copper,2276338585,Copper Ore,67,322,510,1313,131276,1312,-1
+biome.safe_shallows,967099888,Safe Shallows,Data_SilicaShards,3920354616,Silica Shards,77,399,510,1509,150829,1508,-1
+biome.safe_shallows,967099888,Safe Shallows,Data_FiberKelp,2069849578,Fiber Kelp,63,462,510,1235,123663,1236,1
+biome.safe_shallows,967099888,Safe Shallows,Data_HydrocarbonResin,248205602,Hydrocarbon Resin,25,487,510,490,49038,490,0
+biome.safe_shallows,967099888,Safe Shallows,Data_SulfurClumps,3346875565,Sulfur Clumps,7,494,510,137,13519,135,-2
+biome.safe_shallows,967099888,Safe Shallows,Data_SilverOre,884621125,Silver Ore,5,499,510,98,9849,98,0
+biome.safe_shallows,967099888,Safe Shallows,Data_GoldOre,4056809162,Gold Ore,2,501,510,39,3924,39,0
+biome.safe_shallows,967099888,Safe Shallows,Data_LithiumCrystal,3763503872,Lithium Crystal,3,504,510,58,5917,59,1
+biome.safe_shallows,967099888,Safe Shallows,Data_NickelOre,1037165092,Nickel Ore,1,505,510,19,1881,18,-1
+biome.safe_shallows,967099888,Safe Shallows,Data_CobaltAlloy,857583970,Cobalt Alloy,1,506,510,19,2005,20,1
+biome.safe_shallows,967099888,Safe Shallows,Data_ThermalGel,1601052383,Thermal Gel,1,507,510,19,1945,19,0
+biome.safe_shallows,967099888,Safe Shallows,Data_CarbonGraphite,2008184373,Carbon Graphite,1,508,510,19,1901,19,0
+biome.safe_shallows,967099888,Safe Shallows,Data_RareEarthDust,1997058338,Rare Earth Dust,1,509,510,19,1940,19,0
+biome.safe_shallows,967099888,Safe Shallows,Data_AbyssalCrystal,702456815,Abyssal Crystal,1,510,510,19,2008,20,1
+biome.kelp_karst,989463989,Kelp Karst,Data_TitaniumScrap,3511699502,Titanium Scrap,83,83,455,1824,182566,1825,1
+biome.kelp_karst,989463989,Kelp Karst,Data_Copper,2276338585,Copper Ore,83,166,455,1824,182497,1824,0
+biome.kelp_karst,989463989,Kelp Karst,Data_SilicaShards,3920354616,Silica Shards,68,234,455,1494,150351,1503,9
+biome.kelp_karst,989463989,Kelp Karst,Data_FiberKelp,2069849578,Fiber Kelp,123,357,455,2703,270089,2700,-3
+biome.kelp_karst,989463989,Kelp Karst,Data_HydrocarbonResin,248205602,Hydrocarbon Resin,53,410,455,1164,116073,1160,-4
+biome.kelp_karst,989463989,Kelp Karst,Data_SulfurClumps,3346875565,Sulfur Clumps,17,427,455,373,37145,371,-2
+biome.kelp_karst,989463989,Kelp Karst,Data_SilverOre,884621125,Silver Ore,13,440,455,285,28629,286,1
+biome.kelp_karst,989463989,Kelp Karst,Data_GoldOre,4056809162,Gold Ore,4,444,455,87,8823,88,1
+biome.kelp_karst,989463989,Kelp Karst,Data_LithiumCrystal,3763503872,Lithium Crystal,5,449,455,109,10818,108,-1
+biome.kelp_karst,989463989,Kelp Karst,Data_NickelOre,1037165092,Nickel Ore,1,450,455,21,2209,22,1
+biome.kelp_karst,989463989,Kelp Karst,Data_CobaltAlloy,857583970,Cobalt Alloy,1,451,455,21,2123,21,0
+biome.kelp_karst,989463989,Kelp Karst,Data_ThermalGel,1601052383,Thermal Gel,1,452,455,21,2163,21,0
+biome.kelp_karst,989463989,Kelp Karst,Data_CarbonGraphite,2008184373,Carbon Graphite,1,453,455,21,2162,21,0
+biome.kelp_karst,989463989,Kelp Karst,Data_RareEarthDust,1997058338,Rare Earth Dust,1,454,455,21,2169,21,0
+biome.kelp_karst,989463989,Kelp Karst,Data_AbyssalCrystal,702456815,Abyssal Crystal,1,455,455,21,2183,21,0
+biome.sediment_drift,802545004,Sediment Drift,Data_TitaniumScrap,3511699502,Titanium Scrap,67,67,431,1554,155906,1559,5
+biome.sediment_drift,802545004,Sediment Drift,Data_Copper,2276338585,Copper Ore,86,153,431,1995,200043,2000,5
+biome.sediment_drift,802545004,Sediment Drift,Data_SilicaShards,3920354616,Silica Shards,110,263,431,2552,254247,2542,-10
+biome.sediment_drift,802545004,Sediment Drift,Data_FiberKelp,2069849578,Fiber Kelp,24,287,431,556,55423,554,-2
+biome.sediment_drift,802545004,Sediment Drift,Data_HydrocarbonResin,248205602,Hydrocarbon Resin,43,330,431,997,99870,998,1
+biome.sediment_drift,802545004,Sediment Drift,Data_SulfurClumps,3346875565,Sulfur Clumps,23,353,431,533,53418,534,1
+biome.sediment_drift,802545004,Sediment Drift,Data_SilverOre,884621125,Silver Ore,42,395,431,974,97461,974,0
+biome.sediment_drift,802545004,Sediment Drift,Data_GoldOre,4056809162,Gold Ore,11,406,431,255,25712,257,2
+biome.sediment_drift,802545004,Sediment Drift,Data_LithiumCrystal,3763503872,Lithium Crystal,11,417,431,255,25581,255,0
+biome.sediment_drift,802545004,Sediment Drift,Data_NickelOre,1037165092,Nickel Ore,9,426,431,208,20835,208,0
+biome.sediment_drift,802545004,Sediment Drift,Data_CobaltAlloy,857583970,Cobalt Alloy,1,427,431,23,2282,22,-1
+biome.sediment_drift,802545004,Sediment Drift,Data_ThermalGel,1601052383,Thermal Gel,1,428,431,23,2278,22,-1
+biome.sediment_drift,802545004,Sediment Drift,Data_CarbonGraphite,2008184373,Carbon Graphite,1,429,431,23,2364,23,0
+biome.sediment_drift,802545004,Sediment Drift,Data_RareEarthDust,1997058338,Rare Earth Dust,1,430,431,23,2286,22,-1
+biome.sediment_drift,802545004,Sediment Drift,Data_AbyssalCrystal,702456815,Abyssal Crystal,1,431,431,23,2294,22,-1
+biome.fossil_reef,3131419416,Fossil Reef,Data_TitaniumScrap,3511699502,Titanium Scrap,47,47,408,1151,115901,1159,8
+biome.fossil_reef,3131419416,Fossil Reef,Data_Copper,2276338585,Copper Ore,56,103,408,1372,136864,1368,-4
+biome.fossil_reef,3131419416,Fossil Reef,Data_SilicaShards,3920354616,Silica Shards,74,177,408,1813,181698,1816,3
+biome.fossil_reef,3131419416,Fossil Reef,Data_FiberKelp,2069849578,Fiber Kelp,52,229,408,1274,127415,1274,0
+biome.fossil_reef,3131419416,Fossil Reef,Data_HydrocarbonResin,248205602,Hydrocarbon Resin,64,293,408,1568,156715,1567,-1
+biome.fossil_reef,3131419416,Fossil Reef,Data_SulfurClumps,3346875565,Sulfur Clumps,34,327,408,833,83068,830,-3
+biome.fossil_reef,3131419416,Fossil Reef,Data_SilverOre,884621125,Silver Ore,31,358,408,759,76265,762,3
+biome.fossil_reef,3131419416,Fossil Reef,Data_GoldOre,4056809162,Gold Ore,17,375,408,416,41423,414,-2
+biome.fossil_reef,3131419416,Fossil Reef,Data_LithiumCrystal,3763503872,Lithium Crystal,15,390,408,367,36981,369,2
+biome.fossil_reef,3131419416,Fossil Reef,Data_NickelOre,1037165092,Nickel Ore,13,403,408,318,31600,316,-2
+biome.fossil_reef,3131419416,Fossil Reef,Data_CobaltAlloy,857583970,Cobalt Alloy,1,404,408,24,2464,24,0
+biome.fossil_reef,3131419416,Fossil Reef,Data_ThermalGel,1601052383,Thermal Gel,1,405,408,24,2444,24,0
+biome.fossil_reef,3131419416,Fossil Reef,Data_CarbonGraphite,2008184373,Carbon Graphite,1,406,408,24,2451,24,0
+biome.fossil_reef,3131419416,Fossil Reef,Data_RareEarthDust,1997058338,Rare Earth Dust,1,407,408,24,2335,23,-1
+biome.fossil_reef,3131419416,Fossil Reef,Data_AbyssalCrystal,702456815,Abyssal Crystal,1,408,408,24,2376,23,-1
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_TitaniumScrap,3511699502,Titanium Scrap,31,31,425,729,73040,730,1
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_Copper,2276338585,Copper Ore,36,67,425,847,84362,843,-4
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_SilicaShards,3920354616,Silica Shards,123,190,425,2894,289212,2892,-2
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_FiberKelp,2069849578,Fiber Kelp,5,195,425,117,11871,118,1
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_HydrocarbonResin,248205602,Hydrocarbon Resin,35,230,425,823,82017,820,-3
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_SulfurClumps,3346875565,Sulfur Clumps,68,298,425,1600,160308,1603,3
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_SilverOre,884621125,Silver Ore,25,323,425,588,58926,589,1
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_GoldOre,4056809162,Gold Ore,26,349,425,611,61157,611,0
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_LithiumCrystal,3763503872,Lithium Crystal,32,381,425,752,74896,748,-4
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_NickelOre,1037165092,Nickel Ore,19,400,425,447,44911,449,2
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_CobaltAlloy,857583970,Cobalt Alloy,1,401,425,23,2295,22,-1
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_ThermalGel,1601052383,Thermal Gel,21,422,425,494,49833,498,4
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_CarbonGraphite,2008184373,Carbon Graphite,1,423,425,23,2384,23,0
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_RareEarthDust,1997058338,Rare Earth Dust,1,424,425,23,2350,23,0
+biome.volcanic_glass,2233374817,Volcanic Glass,Data_AbyssalCrystal,702456815,Abyssal Crystal,1,425,425,23,2438,24,1
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_TitaniumScrap,3511699502,Titanium Scrap,20,20,454,440,43708,437,-3
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_Copper,2276338585,Copper Ore,31,51,454,682,67933,679,-3
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_SilicaShards,3920354616,Silica Shards,48,99,454,1057,105536,1055,-2
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_FiberKelp,2069849578,Fiber Kelp,1,100,454,22,2181,21,-1
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_HydrocarbonResin,248205602,Hydrocarbon Resin,42,142,454,925,92463,924,-1
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_SulfurClumps,3346875565,Sulfur Clumps,94,236,454,2070,207856,2078,8
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_SilverOre,884621125,Silver Ore,18,254,454,396,39610,396,0
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_GoldOre,4056809162,Gold Ore,30,284,454,660,65915,659,-1
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_LithiumCrystal,3763503872,Lithium Crystal,39,323,454,859,85770,857,-2
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_NickelOre,1037165092,Nickel Ore,38,361,454,837,84058,840,3
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_CobaltAlloy,857583970,Cobalt Alloy,24,385,454,528,52829,528,0
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_ThermalGel,1601052383,Thermal Gel,59,444,454,1299,130039,1300,1
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_CarbonGraphite,2008184373,Carbon Graphite,8,452,454,176,17591,175,-1
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_RareEarthDust,1997058338,Rare Earth Dust,1,453,454,22,2298,22,0
+biome.thermal_vent,3360498722,Thermal Vent Stack,Data_AbyssalCrystal,702456815,Abyssal Crystal,1,454,454,22,2213,22,0
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_TitaniumScrap,3511699502,Titanium Scrap,14,14,320,437,43663,436,-1
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_Copper,2276338585,Copper Ore,22,36,320,687,68883,688,1
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_SilicaShards,3920354616,Silica Shards,23,59,320,718,71833,718,0
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_FiberKelp,2069849578,Fiber Kelp,1,60,320,31,3121,31,0
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_HydrocarbonResin,248205602,Hydrocarbon Resin,15,75,320,468,47171,471,3
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_SulfurClumps,3346875565,Sulfur Clumps,20,95,320,625,62525,625,0
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_SilverOre,884621125,Silver Ore,16,111,320,500,50326,503,3
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_GoldOre,4056809162,Gold Ore,22,133,320,687,68473,684,-3
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_LithiumCrystal,3763503872,Lithium Crystal,21,154,320,656,65399,653,-3
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_NickelOre,1037165092,Nickel Ore,62,216,320,1937,193986,1939,2
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_CobaltAlloy,857583970,Cobalt Alloy,47,263,320,1468,146869,1468,0
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_ThermalGel,1601052383,Thermal Gel,18,281,320,562,56287,562,0
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_CarbonGraphite,2008184373,Carbon Graphite,24,305,320,750,74815,748,-2
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_RareEarthDust,1997058338,Rare Earth Dust,14,319,320,437,43641,436,-1
+biome.magnetic_trench,1615011056,Magnetic Trench,Data_AbyssalCrystal,702456815,Abyssal Crystal,1,320,320,31,3008,30,-1
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_TitaniumScrap,3511699502,Titanium Scrap,10,10,273,366,36694,366,0
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_Copper,2276338585,Copper Ore,13,23,273,476,47873,478,2
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_SilicaShards,3920354616,Silica Shards,15,38,273,549,54552,545,-4
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_FiberKelp,2069849578,Fiber Kelp,1,39,273,36,3673,36,0
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_HydrocarbonResin,248205602,Hydrocarbon Resin,11,50,273,402,40130,401,-1
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_SulfurClumps,3346875565,Sulfur Clumps,42,92,273,1538,154179,1541,3
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_SilverOre,884621125,Silver Ore,11,103,273,402,40360,403,1
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_GoldOre,4056809162,Gold Ore,16,119,273,586,58502,585,-1
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_LithiumCrystal,3763503872,Lithium Crystal,14,133,273,512,51199,511,-1
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_NickelOre,1037165092,Nickel Ore,21,154,273,769,77186,771,2
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_CobaltAlloy,857583970,Cobalt Alloy,24,178,273,879,87907,879,0
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_ThermalGel,1601052383,Thermal Gel,33,211,273,1208,121278,1212,4
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_CarbonGraphite,2008184373,Carbon Graphite,28,239,273,1025,102073,1020,-5
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_RareEarthDust,1997058338,Rare Earth Dust,27,266,273,989,98777,987,-2
+biome.brine_hadal,684907970,Brine Hadal Basin,Data_AbyssalCrystal,702456815,Abyssal Crystal,7,273,273,256,25617,256,0
+biome.glass_plains,2433526987,The Glass Plains,Data_TitaniumScrap,3511699502,Titanium Scrap,6,6,253,237,23799,237,0
+biome.glass_plains,2433526987,The Glass Plains,Data_Copper,2276338585,Copper Ore,9,15,253,355,35475,354,-1
+biome.glass_plains,2433526987,The Glass Plains,Data_SilicaShards,3920354616,Silica Shards,71,86,253,2806,280628,2806,0
+biome.glass_plains,2433526987,The Glass Plains,Data_FiberKelp,2069849578,Fiber Kelp,1,87,253,39,3887,38,-1
+biome.glass_plains,2433526987,The Glass Plains,Data_HydrocarbonResin,248205602,Hydrocarbon Resin,5,92,253,197,19674,196,-1
+biome.glass_plains,2433526987,The Glass Plains,Data_SulfurClumps,3346875565,Sulfur Clumps,16,108,253,632,63361,633,1
+biome.glass_plains,2433526987,The Glass Plains,Data_SilverOre,884621125,Silver Ore,8,116,253,316,31628,316,0
+biome.glass_plains,2433526987,The Glass Plains,Data_GoldOre,4056809162,Gold Ore,11,127,253,434,43452,434,0
+biome.glass_plains,2433526987,The Glass Plains,Data_LithiumCrystal,3763503872,Lithium Crystal,28,155,253,1106,110678,1106,0
+biome.glass_plains,2433526987,The Glass Plains,Data_NickelOre,1037165092,Nickel Ore,13,168,253,513,51344,513,0
+biome.glass_plains,2433526987,The Glass Plains,Data_CobaltAlloy,857583970,Cobalt Alloy,15,183,253,592,59288,592,0
+biome.glass_plains,2433526987,The Glass Plains,Data_ThermalGel,1601052383,Thermal Gel,14,197,253,553,55427,554,1
+biome.glass_plains,2433526987,The Glass Plains,Data_CarbonGraphite,2008184373,Carbon Graphite,27,224,253,1067,106577,1065,-2
+biome.glass_plains,2433526987,The Glass Plains,Data_RareEarthDust,1997058338,Rare Earth Dust,18,242,253,711,71411,714,3
+biome.glass_plains,2433526987,The Glass Plains,Data_AbyssalCrystal,702456815,Abyssal Crystal,11,253,253,434,43371,433,-1
+biome.abyssal_rift,523767926,Abyssal Rift,Data_TitaniumScrap,3511699502,Titanium Scrap,3,3,166,180,17765,177,-3
+biome.abyssal_rift,523767926,Abyssal Rift,Data_Copper,2276338585,Copper Ore,4,7,166,240,23949,239,-1
+biome.abyssal_rift,523767926,Abyssal Rift,Data_SilicaShards,3920354616,Silica Shards,8,15,166,481,48403,484,3
+biome.abyssal_rift,523767926,Abyssal Rift,Data_FiberKelp,2069849578,Fiber Kelp,1,16,166,60,5964,59,-1
+biome.abyssal_rift,523767926,Abyssal Rift,Data_HydrocarbonResin,248205602,Hydrocarbon Resin,3,19,166,180,18139,181,1
+biome.abyssal_rift,523767926,Abyssal Rift,Data_SulfurClumps,3346875565,Sulfur Clumps,14,33,166,843,84513,845,2
+biome.abyssal_rift,523767926,Abyssal Rift,Data_SilverOre,884621125,Silver Ore,4,37,166,240,24061,240,0
+biome.abyssal_rift,523767926,Abyssal Rift,Data_GoldOre,4056809162,Gold Ore,7,44,166,421,42385,423,2
+biome.abyssal_rift,523767926,Abyssal Rift,Data_LithiumCrystal,3763503872,Lithium Crystal,10,54,166,602,60006,600,-2
+biome.abyssal_rift,523767926,Abyssal Rift,Data_NickelOre,1037165092,Nickel Ore,16,70,166,963,96559,965,2
+biome.abyssal_rift,523767926,Abyssal Rift,Data_CobaltAlloy,857583970,Cobalt Alloy,19,89,166,1144,114440,1144,0
+biome.abyssal_rift,523767926,Abyssal Rift,Data_ThermalGel,1601052383,Thermal Gel,19,108,166,1144,114416,1144,0
+biome.abyssal_rift,523767926,Abyssal Rift,Data_CarbonGraphite,2008184373,Carbon Graphite,23,131,166,1385,138204,1382,-3
+biome.abyssal_rift,523767926,Abyssal Rift,Data_RareEarthDust,1997058338,Rare Earth Dust,19,150,166,1144,114388,1143,-1
+biome.abyssal_rift,523767926,Abyssal Rift,Data_AbyssalCrystal,702456815,Abyssal Crystal,16,166,166,963,96808,968,5

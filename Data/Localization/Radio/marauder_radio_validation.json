@@ -1,0 +1,94 @@
+{
+  "Schema": "H8.RADIO.VALIDATION.V1",
+  "Status": "VERIFIED MASTER GRADE",
+  "CoreStatus": "DIALOGUES BAKED",
+  "EvidenceClass": "STATIC_JSON_CLI",
+  "HashAlgorithm": "FNV-1a 32-bit over UTF-16LE code units",
+  "GeneratedFiles": [
+    "marauder_radio_interceptions.json",
+    "marauder_radio_interceptions_clean.json",
+    "marauder_radio_dictionary.json",
+    "marauder_radio_interceptions.h8bin",
+    "marauder_radio_interceptions.layout.json"
+  ],
+  "MathAudit": {
+    "LutMatrixSurface": "NONE_IN_SCOPE",
+    "PhysicsModelsRequired": "NONE_FOR_RADIO_DIALOGUE",
+    "PacingModel": {
+      "WordsPerMinute": 171.0,
+      "WordsPerSecond": 2.85,
+      "SecondsPerMinute": 60.0,
+      "ReadingRateProvenance": "Project subtitle comfort floor for stressed radio copy; deliberately below fast adult reading speed so bark timing stays readable under alarm noise.",
+      "RadioSquawkLeadOutMilliseconds": 650,
+      "RadioSquawkLeadOutSeconds": 0.65,
+      "RadioSquawkProvenance": "Receiver squelch tail allowance for chopped industrial radio playback; presentation timing, not a physics LUT.",
+      "SubtitleFloorMilliseconds": 2400,
+      "SubtitleFloorSeconds": 2.4,
+      "SubtitleFloorProvenance": "Minimum command subtitle exposure for short emergency orders on low-tier UI.",
+      "Formula": "max(subtitle_floor_ms / 1000, word_count / (words_per_minute / seconds_per_minute) + radio_squawk_ms / 1000)"
+    },
+    "NoMagicPacing": true,
+    "DerivedConstants": {
+      "WordsPerSecond": "171.0 / 60.0",
+      "RadioSquawkLeadOutSeconds": "650 / 1000",
+      "SubtitleFloorSeconds": "2400 / 1000"
+    },
+    "EvidenceLimit": "Radio dialogue owns subtitle pacing only; Beer-Lambert, Dalton, and Sabine tables are outside this data node."
+  },
+  "Scalability": {
+    "ToasterData": "LowTierText is present per line and capped at 72 characters.",
+    "RtxOverkillData": "Ultra signal metadata is packed into fixed record fields: harmonic weights, octave counts, RGBA32 spectral stops, glitch mask, breakup, and signal hash."
+  },
+  "ProjectAtlasFit": {
+    "ProjectAtlasPath": "Docs/PROJECT_ATLAS.md",
+    "ProjectAtlasStaticAssemblyCount": 83,
+    "UserClaimedDomainCount": 85,
+    "DomainCountCorrection": "Current disk PROJECT_ATLAS.md states 83 first-party asmdef files.",
+    "DomainFamily": "UI / Narrative localization data",
+    "RuntimeDependenciesAdded": 0,
+    "CoreReferencesAdded": 0,
+    "PrivateRuntimeStateRequired": false,
+    "DataSovereigntyImpact": "Positive: raw JSON remains authoring data; .h8bin adds sorted stateless hash records, packed Ultra fields, and aligned text payload slices.",
+    "HPhiStaticEstimate": 0.25,
+    "HPhiEvidenceMultiplier": "STATIC_SOURCE_SCAN=0.25 from PROJECT_ATLAS evidence table"
+  },
+  "Raw": {
+    "CleanVariant": false,
+    "EntryCount": 15,
+    "DuplicateHashes": false,
+    "Categories": {
+      "Tutorial": 5,
+      "AmbientInterception": 10
+    },
+    "SterileToneHits": [],
+    "Errors": []
+  },
+  "Clean": {
+    "CleanVariant": true,
+    "EntryCount": 15,
+    "DuplicateHashes": false,
+    "Categories": {
+      "Tutorial": 5,
+      "AmbientInterception": 10
+    },
+    "SterileToneHits": [],
+    "Errors": []
+  },
+  "HashSurface": {
+    "UniqueHashes": 91,
+    "Collisions": [],
+    "CollisionCount": 0
+  },
+  "Binary": {
+    "Path": "C:\\Hecton8\\Data\\Localization\\Radio\\marauder_radio_interceptions.h8bin",
+    "Magic": "H8RD",
+    "Endian": "Little",
+    "HeaderSizeBytes": 64,
+    "RecordSizeBytes": 128,
+    "AlignmentBytes": 16,
+    "RecordCount": 15,
+    "PayloadLengthBytes": 5888,
+    "FileLengthBytes": 7872,
+    "Errors": []
+  }
+}

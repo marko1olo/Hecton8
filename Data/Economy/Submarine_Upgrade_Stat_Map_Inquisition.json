@@ -1,0 +1,84 @@
+{
+  "schema_id": "economy.submarine_upgrade_stat_map.v1.inquisition",
+  "status": "DATA INQUISITION PASS",
+  "math_audit": {
+    "submarine_upgrade_curves": "Hydrostatic pressure, cylindrical shell buckling, quadratic drag power, propeller affinity law.",
+    "beer_lambert_reference": "Verified by Optics/Water extinction data, not owned by this stat-map.",
+    "dalton_reference": "Verified by Dalton gas toxicity data, not owned by this stat-map.",
+    "sabine_reference": "Verified by acoustic LUT data, not owned by this stat-map."
+  },
+  "binary_hygiene": {
+    "schema_id": "economy.submarine_upgrade_stat_map.v1.binary_layout",
+    "status": "BINARY LAYOUT LOCKED",
+    "file": "Submarine_Upgrade_Stat_Map.h8bin",
+    "byte_order": "little-endian",
+    "header_format": "<8sIIIIII",
+    "record_format": "<Iiff",
+    "header_bytes": 32,
+    "record_stride_bytes": 16,
+    "record_count": 9,
+    "total_bytes": 176,
+    "alignment_bytes": 16,
+    "total_size_mod_16": 0
+  },
+  "economy_audit": {
+    "steps": 1000000,
+    "graph_cycle_count": 0,
+    "worst_closed_loop_delta_value_units": -0.7
+  },
+  "lore_audit": {
+    "sterile_terms_purged_from_sidecars": true,
+    "tone": "industrial NASA-punk noir"
+  },
+  "scalability": {
+    "schema_id": "economy.submarine_upgrade_stat_map.v1.scalability",
+    "status": "SCALABILITY LANES BAKED",
+    "runtime_fallback": {
+      "toaster": {
+        "target_hardware": "Celeron_i3_MX350_floor",
+        "ingest_file": "Submarine_Upgrade_Stat_Map.h8bin",
+        "active_fields": [
+          "UpgradeHash",
+          "Type",
+          "Value",
+          "PowerCost"
+        ]
+      }
+    },
+    "rtx_overkill": {
+      "target_hardware": "RTX4080_or_better_16GB_desktop",
+      "extra_data_fields": {
+        "pressure_gradient_resolution": 1024,
+        "propwash_harmonic_count": 8,
+        "silt_noise_octaves": 6,
+        "cavitation_sparkle_lut_samples": 512
+      }
+    }
+  },
+  "atlas_fit": {
+    "domains": [
+      {
+        "id": 4,
+        "domain": "Data Monolith"
+      },
+      {
+        "id": 52,
+        "domain": "Structural Integrity Math"
+      },
+      {
+        "id": 54,
+        "domain": "Power Grid"
+      },
+      {
+        "id": 57,
+        "domain": "Submarine OS"
+      },
+      {
+        "id": 58,
+        "domain": "Submarine Navigation"
+      }
+    ],
+    "h_phi": "Data Sovereignty increased: immutable numeric JSON plus aligned h8bin; consumers perform stateless hash lookup."
+  },
+  "failures": []
+}

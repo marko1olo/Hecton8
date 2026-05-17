@@ -1,0 +1,880 @@
+{
+  "schema": "hecton8.vr_comfort_profiles.v1",
+  "owner": "VR_JERK_THRESHOLD_AUDIT",
+  "status": "COMFORT TUNED",
+  "verificationStatus": "OFFLINE_GENERATED_PENDING_RUNTIME_VERIFICATION",
+  "domain": "DATA/UX",
+  "task": "Define kinematic comfort limits and vignette curves",
+  "units": {
+    "angularVelocity": "radians_per_second",
+    "angularAcceleration": "radians_per_second_squared",
+    "angularJerk": "radians_per_second_cubed",
+    "linearSpeed": "meters_per_second",
+    "opacity": "normalized_0_to_1"
+  },
+  "globalRules": {
+    "jerkNauseaTripRadS3": 50.0,
+    "standardWalkingSpeedMps": 1.4,
+    "combineRule": "max",
+    "runtimePolicy": "cold_load_or_editor_bake_only_no_json_parsing_in_tick",
+    "visualFake": "vignette_or_fade_black_not_physical_vestibular_simulation"
+  },
+  "platformSplit": {
+    "lowHzPolicy": "Quest2_72Hz starts tunneling earlier and releases slower",
+    "highHzPolicy": "PCVR_120Hz allows wider FOV longer but still trips at 50 rad/s3 jerk"
+  },
+  "profiles": [
+    {
+      "id": "Quest2_72Hz",
+      "label": "Quest 2 72 Hz",
+      "refreshHz": 72.0,
+      "frameSeconds": 0.013889,
+      "derivation": {
+        "modelType": "psychophysical_vestibular_comfort_not_BeerLambert_Dalton_or_Sabine",
+        "radianConversion": "radians = degrees * pi / 180",
+        "walkingSpeedSource": "Oculus comfort guidance baseline, 1.4 m/s",
+        "jerkNauseaTripSource": "batch constraint plus angular head jerk research metric",
+        "jerkNauseaTripRadS3": 50.0,
+        "velocityDegreesPerSecond": {
+          "free": 20.0,
+          "soft": 50.0,
+          "hard": 90.0,
+          "fadeBlack": 150.0
+        },
+        "accelerationDegreesPerSecondSquared": {
+          "soft": 160.0,
+          "strong": 300.0,
+          "hard": 400.0,
+          "fadeBlack": 630.0
+        },
+        "jerkMultipliersOfNauseaTrip": {
+          "preemptive": 0.32,
+          "strong": 0.64,
+          "hard": 1.5,
+          "fadeBlack": 2.0
+        }
+      },
+      "angularAccelerationLimits": {
+        "softLimitRadS2": 2.792527,
+        "strongTunnelRadS2": 5.235988,
+        "hardCameraCapRadS2": 6.981317,
+        "teleportFadeBlackRadS2": 10.995574,
+        "releaseBelowRadS2": 1.2,
+        "releaseHysteresisSeconds": 0.3
+      },
+      "angularVelocityLimits": {
+        "freeRadS": 0.349066,
+        "softTunnelRadS": 0.872665,
+        "hardReviewRadS": 1.570796,
+        "teleportFadeBlackRadS": 2.617994
+      },
+      "angularJerkLimits": {
+        "preemptiveRadS3": 16.0,
+        "strongRadS3": 32.0,
+        "nauseaTripRadS3": 50.0,
+        "hardCameraCapRadS3": 75.0,
+        "teleportFadeBlackRadS3": 100.0,
+        "nauseaAccelDeltaPerFrameRadS2": 0.694444
+      },
+      "alphaSlew": {
+        "attackSeconds": 0.075,
+        "releaseSeconds": 0.24,
+        "attackPerFrame": 0.1852,
+        "releasePerFrame": 0.0579
+      },
+      "curves": {
+        "angularVelocityToVignetteOpacity": [
+          {
+            "angularVelocityRadS": 0.0,
+            "angularVelocityDegS": 0.0,
+            "opacity": 0.0
+          },
+          {
+            "angularVelocityRadS": 0.1745,
+            "angularVelocityDegS": 10.0,
+            "opacity": 0.0
+          },
+          {
+            "angularVelocityRadS": 0.3491,
+            "angularVelocityDegS": 20.0,
+            "opacity": 0.0
+          },
+          {
+            "angularVelocityRadS": 0.5236,
+            "angularVelocityDegS": 30.0,
+            "opacity": 0.091
+          },
+          {
+            "angularVelocityRadS": 0.6981,
+            "angularVelocityDegS": 40.0,
+            "opacity": 0.259
+          },
+          {
+            "angularVelocityRadS": 0.8727,
+            "angularVelocityDegS": 50.0,
+            "opacity": 0.35
+          },
+          {
+            "angularVelocityRadS": 1.0472,
+            "angularVelocityDegS": 60.0,
+            "opacity": 0.408
+          },
+          {
+            "angularVelocityRadS": 1.2217,
+            "angularVelocityDegS": 70.0,
+            "opacity": 0.535
+          },
+          {
+            "angularVelocityRadS": 1.3963,
+            "angularVelocityDegS": 80.0,
+            "opacity": 0.662
+          },
+          {
+            "angularVelocityRadS": 1.5708,
+            "angularVelocityDegS": 90.0,
+            "opacity": 0.72
+          },
+          {
+            "angularVelocityRadS": 1.7453,
+            "angularVelocityDegS": 100.0,
+            "opacity": 0.741
+          },
+          {
+            "angularVelocityRadS": 1.9199,
+            "angularVelocityDegS": 110.0,
+            "opacity": 0.793
+          },
+          {
+            "angularVelocityRadS": 2.0944,
+            "angularVelocityDegS": 120.0,
+            "opacity": 0.86
+          },
+          {
+            "angularVelocityRadS": 2.3562,
+            "angularVelocityDegS": 135.0,
+            "opacity": 0.956
+          },
+          {
+            "angularVelocityRadS": 2.618,
+            "angularVelocityDegS": 150.0,
+            "opacity": 1.0
+          },
+          {
+            "angularVelocityRadS": 2.8798,
+            "angularVelocityDegS": 165.0,
+            "opacity": 1.0
+          },
+          {
+            "angularVelocityRadS": 3.1416,
+            "angularVelocityDegS": 180.0,
+            "opacity": 1.0
+          }
+        ],
+        "angularAccelerationToVignetteOpacity": [
+          {
+            "angularAccelerationRadS2": 0.0,
+            "opacity": 0.0
+          },
+          {
+            "angularAccelerationRadS2": 1.2,
+            "opacity": 0.0
+          },
+          {
+            "angularAccelerationRadS2": 2.7925,
+            "opacity": 0.0
+          },
+          {
+            "angularAccelerationRadS2": 5.236,
+            "opacity": 0.35
+          },
+          {
+            "angularAccelerationRadS2": 6.9813,
+            "opacity": 0.7
+          },
+          {
+            "angularAccelerationRadS2": 10.9956,
+            "opacity": 1.0
+          }
+        ],
+        "angularJerkThresholdTable": [
+          {
+            "id": "none",
+            "minRadS3": 0.0,
+            "maxRadS3": 16.0,
+            "action": "no_vignette",
+            "opacity": 0.0
+          },
+          {
+            "id": "preemptive",
+            "minRadS3": 16.0,
+            "maxRadS3": 32.0,
+            "action": "start_vignette_attack",
+            "opacity": 0.3
+          },
+          {
+            "id": "strong",
+            "minRadS3": 32.0,
+            "maxRadS3": 50.0,
+            "action": "strong_vignette_and_camera_damping",
+            "opacity": 0.65
+          },
+          {
+            "id": "nausea_trip",
+            "minRadS3": 50.0,
+            "maxRadS3": 75.0,
+            "action": "full_tunnel_event",
+            "opacity": 0.825
+          },
+          {
+            "id": "fade_black",
+            "minRadS3": 100.0,
+            "maxRadS3": null,
+            "action": "teleport_fade_to_black",
+            "opacity": 1.0
+          }
+        ]
+      },
+      "teleportFake": {
+        "triggerRule": "if angularVelocity OR angularAcceleration OR angularJerk crosses fade-black threshold, fade to black and apply teleport/snap; never show uncontrolled high-speed camera motion",
+        "fadeOutSeconds": 0.055,
+        "blackHoldSeconds": 0.04,
+        "fadeInSeconds": 0.18
+      },
+      "linearSpeedGuard": {
+        "standardWalkingSpeedMps": 1.4,
+        "standardWalkingOpacity": 0.0,
+        "joggingSpeedMps": 3.0,
+        "joggingOpacity": 0.606
+      },
+      "scalability": {
+        "toaster_i3_mx350": {
+          "curveSampleBudget": 6,
+          "useBinaryBlob": true,
+          "binaryPath": "Data/UX/VR_Comfort_Profiles_Toaster.h8bin",
+          "edgeNoiseOctaves": 0,
+          "innerRadiusBias": 0.06,
+          "vignetteStyle": "hard_black_iris",
+          "extraBlitsAllowed": 0
+        },
+        "middle": {
+          "curveSampleBudget": 17,
+          "useBinaryBlob": true,
+          "edgeNoiseOctaves": 1,
+          "innerRadiusBias": 0.0,
+          "vignetteStyle": "soft_visor_iris",
+          "extraBlitsAllowed": 0
+        },
+        "high": {
+          "curveSampleBudget": 17,
+          "useBinaryBlob": true,
+          "edgeNoiseOctaves": 2,
+          "innerRadiusBias": -0.03,
+          "vignetteStyle": "visor_glass_edge_wear",
+          "extraBlitsAllowed": 0
+        },
+        "rtx_overkill": {
+          "curveSampleBudget": 17,
+          "useBinaryBlob": true,
+          "extraBinaryPath": "Data/UX/VR_Comfort_RTXOverkill.h8bin",
+          "edgeNoiseOctaves": 4,
+          "innerRadiusBias": -0.05,
+          "vignetteStyle": "oil_slick_iris_harmonics",
+          "extraData": {
+            "harmonicFrequenciesHz": [
+              0.41,
+              0.73,
+              1.37,
+              2.11
+            ],
+            "harmonicAmplitudes": [
+              0.03,
+              0.018,
+              0.01,
+              0.006
+            ],
+            "gradientStops": [
+              {
+                "t": 0.0,
+                "alpha": 0.0
+              },
+              {
+                "t": 0.45,
+                "alpha": 0.08
+              },
+              {
+                "t": 0.72,
+                "alpha": 0.42
+              },
+              {
+                "t": 1.0,
+                "alpha": 1.0
+              }
+            ]
+          },
+          "extraBlitsAllowed": 0
+        }
+      },
+      "diegeticLabels": {
+        "systemName": "Black-Iris Vestibular Governor",
+        "toasterMode": "rusted peephole tunnel",
+        "comfortTrip": "bulkhead spin clamp",
+        "fadeBlack": "visor blackout shutter",
+        "rtxOverkill": "oil-slick iris harmonics"
+      }
+    },
+    {
+      "id": "PCVR_120Hz",
+      "label": "PC VR 120 Hz",
+      "refreshHz": 120.0,
+      "frameSeconds": 0.008333,
+      "derivation": {
+        "modelType": "psychophysical_vestibular_comfort_not_BeerLambert_Dalton_or_Sabine",
+        "radianConversion": "radians = degrees * pi / 180",
+        "walkingSpeedSource": "Oculus comfort guidance baseline, 1.4 m/s",
+        "jerkNauseaTripSource": "batch constraint plus angular head jerk research metric",
+        "jerkNauseaTripRadS3": 50.0,
+        "velocityDegreesPerSecond": {
+          "free": 30.0,
+          "soft": 60.0,
+          "hard": 120.0,
+          "fadeBlack": 180.0
+        },
+        "accelerationDegreesPerSecondSquared": {
+          "soft": 200.0,
+          "strong": 390.0,
+          "hard": 516.0,
+          "fadeBlack": 802.0
+        },
+        "jerkMultipliersOfNauseaTrip": {
+          "preemptive": 0.4,
+          "strong": 0.7,
+          "hard": 1.7,
+          "fadeBlack": 2.4
+        }
+      },
+      "angularAccelerationLimits": {
+        "softLimitRadS2": 3.490659,
+        "strongTunnelRadS2": 6.806784,
+        "hardCameraCapRadS2": 9.005899,
+        "teleportFadeBlackRadS2": 13.997541,
+        "releaseBelowRadS2": 1.6,
+        "releaseHysteresisSeconds": 0.22
+      },
+      "angularVelocityLimits": {
+        "freeRadS": 0.523599,
+        "softTunnelRadS": 1.047198,
+        "hardReviewRadS": 2.094395,
+        "teleportFadeBlackRadS": 3.141593
+      },
+      "angularJerkLimits": {
+        "preemptiveRadS3": 20.0,
+        "strongRadS3": 35.0,
+        "nauseaTripRadS3": 50.0,
+        "hardCameraCapRadS3": 85.0,
+        "teleportFadeBlackRadS3": 120.0,
+        "nauseaAccelDeltaPerFrameRadS2": 0.416667
+      },
+      "alphaSlew": {
+        "attackSeconds": 0.09,
+        "releaseSeconds": 0.3,
+        "attackPerFrame": 0.0926,
+        "releasePerFrame": 0.0278
+      },
+      "curves": {
+        "angularVelocityToVignetteOpacity": [
+          {
+            "angularVelocityRadS": 0.0,
+            "angularVelocityDegS": 0.0,
+            "opacity": 0.0
+          },
+          {
+            "angularVelocityRadS": 0.1745,
+            "angularVelocityDegS": 10.0,
+            "opacity": 0.0
+          },
+          {
+            "angularVelocityRadS": 0.3491,
+            "angularVelocityDegS": 20.0,
+            "opacity": 0.0
+          },
+          {
+            "angularVelocityRadS": 0.5236,
+            "angularVelocityDegS": 30.0,
+            "opacity": 0.0
+          },
+          {
+            "angularVelocityRadS": 0.6981,
+            "angularVelocityDegS": 40.0,
+            "opacity": 0.091
+          },
+          {
+            "angularVelocityRadS": 0.8727,
+            "angularVelocityDegS": 50.0,
+            "opacity": 0.259
+          },
+          {
+            "angularVelocityRadS": 1.0472,
+            "angularVelocityDegS": 60.0,
+            "opacity": 0.35
+          },
+          {
+            "angularVelocityRadS": 1.2217,
+            "angularVelocityDegS": 70.0,
+            "opacity": 0.377
+          },
+          {
+            "angularVelocityRadS": 1.3963,
+            "angularVelocityDegS": 80.0,
+            "opacity": 0.446
+          },
+          {
+            "angularVelocityRadS": 1.5708,
+            "angularVelocityDegS": 90.0,
+            "opacity": 0.535
+          },
+          {
+            "angularVelocityRadS": 1.7453,
+            "angularVelocityDegS": 100.0,
+            "opacity": 0.624
+          },
+          {
+            "angularVelocityRadS": 1.9199,
+            "angularVelocityDegS": 110.0,
+            "opacity": 0.693
+          },
+          {
+            "angularVelocityRadS": 2.0944,
+            "angularVelocityDegS": 120.0,
+            "opacity": 0.72
+          },
+          {
+            "angularVelocityRadS": 2.3562,
+            "angularVelocityDegS": 135.0,
+            "opacity": 0.764
+          },
+          {
+            "angularVelocityRadS": 2.618,
+            "angularVelocityDegS": 150.0,
+            "opacity": 0.86
+          },
+          {
+            "angularVelocityRadS": 2.8798,
+            "angularVelocityDegS": 165.0,
+            "opacity": 0.956
+          },
+          {
+            "angularVelocityRadS": 3.1416,
+            "angularVelocityDegS": 180.0,
+            "opacity": 1.0
+          }
+        ],
+        "angularAccelerationToVignetteOpacity": [
+          {
+            "angularAccelerationRadS2": 0.0,
+            "opacity": 0.0
+          },
+          {
+            "angularAccelerationRadS2": 1.6,
+            "opacity": 0.0
+          },
+          {
+            "angularAccelerationRadS2": 3.4907,
+            "opacity": 0.0
+          },
+          {
+            "angularAccelerationRadS2": 6.8068,
+            "opacity": 0.35
+          },
+          {
+            "angularAccelerationRadS2": 9.0059,
+            "opacity": 0.7
+          },
+          {
+            "angularAccelerationRadS2": 13.9975,
+            "opacity": 1.0
+          }
+        ],
+        "angularJerkThresholdTable": [
+          {
+            "id": "none",
+            "minRadS3": 0.0,
+            "maxRadS3": 20.0,
+            "action": "no_vignette",
+            "opacity": 0.0
+          },
+          {
+            "id": "preemptive",
+            "minRadS3": 20.0,
+            "maxRadS3": 35.0,
+            "action": "start_vignette_attack",
+            "opacity": 0.3
+          },
+          {
+            "id": "strong",
+            "minRadS3": 35.0,
+            "maxRadS3": 50.0,
+            "action": "strong_vignette_and_camera_damping",
+            "opacity": 0.65
+          },
+          {
+            "id": "nausea_trip",
+            "minRadS3": 50.0,
+            "maxRadS3": 85.0,
+            "action": "full_tunnel_event",
+            "opacity": 0.825
+          },
+          {
+            "id": "fade_black",
+            "minRadS3": 120.0,
+            "maxRadS3": null,
+            "action": "teleport_fade_to_black",
+            "opacity": 1.0
+          }
+        ]
+      },
+      "teleportFake": {
+        "triggerRule": "if angularVelocity OR angularAcceleration OR angularJerk crosses fade-black threshold, fade to black and apply teleport/snap; never show uncontrolled high-speed camera motion",
+        "fadeOutSeconds": 0.045,
+        "blackHoldSeconds": 0.03,
+        "fadeInSeconds": 0.14
+      },
+      "linearSpeedGuard": {
+        "standardWalkingSpeedMps": 1.4,
+        "standardWalkingOpacity": 0.0,
+        "joggingSpeedMps": 3.0,
+        "joggingOpacity": 0.606
+      },
+      "scalability": {
+        "toaster_i3_mx350": {
+          "curveSampleBudget": 6,
+          "useBinaryBlob": true,
+          "binaryPath": "Data/UX/VR_Comfort_Profiles_Toaster.h8bin",
+          "edgeNoiseOctaves": 0,
+          "innerRadiusBias": 0.04,
+          "vignetteStyle": "hard_black_iris",
+          "extraBlitsAllowed": 0
+        },
+        "middle": {
+          "curveSampleBudget": 17,
+          "useBinaryBlob": true,
+          "edgeNoiseOctaves": 1,
+          "innerRadiusBias": 0.0,
+          "vignetteStyle": "soft_visor_iris",
+          "extraBlitsAllowed": 0
+        },
+        "high": {
+          "curveSampleBudget": 17,
+          "useBinaryBlob": true,
+          "edgeNoiseOctaves": 2,
+          "innerRadiusBias": -0.03,
+          "vignetteStyle": "visor_glass_edge_wear",
+          "extraBlitsAllowed": 0
+        },
+        "rtx_overkill": {
+          "curveSampleBudget": 17,
+          "useBinaryBlob": true,
+          "extraBinaryPath": "Data/UX/VR_Comfort_RTXOverkill.h8bin",
+          "edgeNoiseOctaves": 4,
+          "innerRadiusBias": -0.05,
+          "vignetteStyle": "oil_slick_iris_harmonics",
+          "extraData": {
+            "harmonicFrequenciesHz": [
+              0.41,
+              0.73,
+              1.37,
+              2.11
+            ],
+            "harmonicAmplitudes": [
+              0.03,
+              0.018,
+              0.01,
+              0.006
+            ],
+            "gradientStops": [
+              {
+                "t": 0.0,
+                "alpha": 0.0
+              },
+              {
+                "t": 0.45,
+                "alpha": 0.08
+              },
+              {
+                "t": 0.72,
+                "alpha": 0.42
+              },
+              {
+                "t": 1.0,
+                "alpha": 1.0
+              }
+            ]
+          },
+          "extraBlitsAllowed": 0
+        }
+      },
+      "diegeticLabels": {
+        "systemName": "Black-Iris Vestibular Governor",
+        "toasterMode": "rusted peephole tunnel",
+        "comfortTrip": "bulkhead spin clamp",
+        "fadeBlack": "visor blackout shutter",
+        "rtxOverkill": "oil-slick iris harmonics"
+      }
+    }
+  ],
+  "shaderContract": {
+    "comfortScalar": "_VRComfortVignette01",
+    "innerRadius": "_VRComfortInnerRadius",
+    "edgeSoftness": "_VRComfortEdgeSoftness",
+    "applicationPhase": "VISUAL_SYNC",
+    "hlslDoc": "Data/UX/VR_Comfort_HLSL_Integration.md"
+  },
+  "binaryContract": {
+    "path": "Data/UX/VR_Comfort_Profiles.h8bin",
+    "layoutDoc": "Data/UX/VR_Comfort_Binary_Layout.md",
+    "endianness": "little",
+    "structFormats": {
+      "header": "<8s14I",
+      "profile": "<II22f8I",
+      "curve": "<IIff",
+      "hash": "<IIII",
+      "overkillHeader": "<8s10I",
+      "overkillRecord": "<II6f"
+    },
+    "alignmentBytes": 16,
+    "headerBytes": 64,
+    "profileStrideBytes": 128,
+    "curveStrideBytes": 16,
+    "hashStrideBytes": 16,
+    "overkillHeaderBytes": 48,
+    "overkillRecordStrideBytes": 32
+  },
+  "sourcePrinciples": [
+    {
+      "id": "android_xr_locomotion",
+      "evidenceClass": "OFFICIAL_GUIDANCE",
+      "url": "https://developer.android.com/design/ui/xr/guides/considerations",
+      "usedFor": "steady horizon, avoid progressive acceleration, tunnel vision, snap rotation, 72 fps floor"
+    },
+    {
+      "id": "oculus_best_practices",
+      "evidenceClass": "VENDOR_GUIDANCE",
+      "url": "https://brianschrank.com/vrgames/resources/OculusBestPractices.pdf",
+      "usedFor": "walking speed baseline, acceleration/rotation discomfort, avoid camera jerk"
+    },
+    {
+      "id": "fernandes_feiner_2016",
+      "evidenceClass": "PEER_REVIEWED",
+      "doi": "10.1109/3DUI.2016.7460053",
+      "usedFor": "dynamic field-of-view restriction as a sickness mitigation"
+    },
+    {
+      "id": "tanous_2021_angular_jerk",
+      "evidenceClass": "PEER_REVIEWED",
+      "url": "https://www.mdpi.com/2076-3417/11/21/10082",
+      "usedFor": "angular jerk as HMD-measurable vestibular workload metric"
+    }
+  ],
+  "sourceHashes": {
+    "generatorSha256": "089ca55985a3d7e55bcffa08febb6f8d3c409294751282a8bd5950d40f184ead"
+  },
+  "hashRegistry": {
+    "algorithm": "FNV-1a 32-bit ASCII category-prefixed",
+    "seed": 2166136261,
+    "prime": 16777619,
+    "count": 38,
+    "collisionCount": 0,
+    "collisions": [],
+    "records": [
+      {
+        "category": "schema",
+        "value": "hecton8.vr_comfort_profiles.v1",
+        "hash32": 3232011014
+      },
+      {
+        "category": "owner",
+        "value": "VR_JERK_THRESHOLD_AUDIT",
+        "hash32": 2752096301
+      },
+      {
+        "category": "shader",
+        "value": "_VRComfortVignette01",
+        "hash32": 303654880
+      },
+      {
+        "category": "shader",
+        "value": "_VRComfortInnerRadius",
+        "hash32": 2676287565
+      },
+      {
+        "category": "shader",
+        "value": "_VRComfortEdgeSoftness",
+        "hash32": 2950667295
+      },
+      {
+        "category": "section",
+        "value": "profile_records",
+        "hash32": 3738146050
+      },
+      {
+        "category": "section",
+        "value": "velocity_curve_records",
+        "hash32": 244038104
+      },
+      {
+        "category": "section",
+        "value": "hash_records",
+        "hash32": 2577490331
+      },
+      {
+        "category": "tier",
+        "value": "toaster_i3_mx350",
+        "hash32": 1697079128
+      },
+      {
+        "category": "tier",
+        "value": "middle",
+        "hash32": 1497091844
+      },
+      {
+        "category": "tier",
+        "value": "high",
+        "hash32": 3584742777
+      },
+      {
+        "category": "tier",
+        "value": "rtx_overkill",
+        "hash32": 2319302260
+      },
+      {
+        "category": "domain",
+        "value": "VR Somatic Comfort",
+        "hash32": 2871932849
+      },
+      {
+        "category": "domain",
+        "value": "Visor AR HUD",
+        "hash32": 2331848958
+      },
+      {
+        "category": "profile",
+        "value": "Quest2_72Hz",
+        "hash32": 795469686
+      },
+      {
+        "category": "profile_label",
+        "value": "Quest 2 72 Hz",
+        "hash32": 3984959528
+      },
+      {
+        "category": "diegetic",
+        "value": "systemName",
+        "hash32": 3424897413
+      },
+      {
+        "category": "diegetic",
+        "value": "Black-Iris Vestibular Governor",
+        "hash32": 85035653
+      },
+      {
+        "category": "diegetic",
+        "value": "toasterMode",
+        "hash32": 3974848502
+      },
+      {
+        "category": "diegetic",
+        "value": "rusted peephole tunnel",
+        "hash32": 202130458
+      },
+      {
+        "category": "diegetic",
+        "value": "comfortTrip",
+        "hash32": 2508877130
+      },
+      {
+        "category": "diegetic",
+        "value": "bulkhead spin clamp",
+        "hash32": 4290349872
+      },
+      {
+        "category": "diegetic",
+        "value": "fadeBlack",
+        "hash32": 2885955960
+      },
+      {
+        "category": "diegetic",
+        "value": "visor blackout shutter",
+        "hash32": 2014313906
+      },
+      {
+        "category": "diegetic",
+        "value": "rtxOverkill",
+        "hash32": 2722146653
+      },
+      {
+        "category": "diegetic",
+        "value": "oil-slick iris harmonics",
+        "hash32": 3949684447
+      },
+      {
+        "category": "profile",
+        "value": "PCVR_120Hz",
+        "hash32": 2961726233
+      },
+      {
+        "category": "profile_label",
+        "value": "PC VR 120 Hz",
+        "hash32": 2856972335
+      },
+      {
+        "category": "diegetic",
+        "value": "systemName",
+        "hash32": 3424897413
+      },
+      {
+        "category": "diegetic",
+        "value": "Black-Iris Vestibular Governor",
+        "hash32": 85035653
+      },
+      {
+        "category": "diegetic",
+        "value": "toasterMode",
+        "hash32": 3974848502
+      },
+      {
+        "category": "diegetic",
+        "value": "rusted peephole tunnel",
+        "hash32": 202130458
+      },
+      {
+        "category": "diegetic",
+        "value": "comfortTrip",
+        "hash32": 2508877130
+      },
+      {
+        "category": "diegetic",
+        "value": "bulkhead spin clamp",
+        "hash32": 4290349872
+      },
+      {
+        "category": "diegetic",
+        "value": "fadeBlack",
+        "hash32": 2885955960
+      },
+      {
+        "category": "diegetic",
+        "value": "visor blackout shutter",
+        "hash32": 2014313906
+      },
+      {
+        "category": "diegetic",
+        "value": "rtxOverkill",
+        "hash32": 2722146653
+      },
+      {
+        "category": "diegetic",
+        "value": "oil-slick iris harmonics",
+        "hash32": 3949684447
+      }
+    ]
+  }
+}

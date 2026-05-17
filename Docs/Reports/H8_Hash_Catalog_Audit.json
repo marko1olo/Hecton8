@@ -2,7 +2,7 @@
   "categories": {
     "Biomes": 523,
     "Items": 209,
-    "Signals": 285
+    "Signals": 286
   },
   "collision_count": 0,
   "generated_header_check": "up-to-date",
@@ -18,12 +18,12 @@
     "Signals.AuthoredSignalIds": 107,
     "Signals.ISignalStructNames": 143,
     "Signals.SignalBusNames": 3,
-    "Signals.StructNames": 32
+    "Signals.StructNames": 33
   },
   "hash_modes": {
     "ascii_lower": 26,
     "loc_utf16": 813,
-    "signal_label": 178
+    "signal_label": 179
   },
   "records": [
     {
@@ -10019,6 +10019,16 @@
     {
       "category": "Signals",
       "group": "StructNames",
+      "hash_hex": "0x8BDE4FE6",
+      "hash_mode": "signal_label",
+      "hash_value": 2346602470,
+      "name": "PendingBaseTransitionSignal",
+      "source": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "value": "PendingBaseTransitionSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "StructNames",
       "hash_hex": "0x3BC7605C",
       "hash_mode": "signal_label",
       "hash_value": 1002922076,
@@ -10202,5 +10212,5 @@
     "microseconds_per_frame": 0
   },
   "status": "HASHES_SYNCHRONIZED",
-  "total_records": 1017
+  "total_records": 1018
 }

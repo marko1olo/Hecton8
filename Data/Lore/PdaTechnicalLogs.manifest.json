@@ -1,0 +1,737 @@
+{
+  "Magic": "H8PT",
+  "Version": 1,
+  "Endian": "Little",
+  "Structs": {
+    "Header": "<4sHHIIIIIIIIIIIIII",
+    "HeaderSize": 64,
+    "Record": "<IIIIIIIIIIIIIIII",
+    "RecordSize": 64,
+    "ExtraVisualRecord": "<IIIIIIIIIIIIIIII",
+    "ExtraVisualRecordSize": 64
+  },
+  "Alignment": 16,
+  "Entries": 100,
+  "Bytes": 59120,
+  "HashCollisions": 0,
+  "Source": {
+    "Path": "Data/Lore/PdaTechnicalLogs.h8jsonl",
+    "HashAlgorithm": "FNV1a32",
+    "HashInput": "raw_minified_jsonl_bytes",
+    "Hash": "0x0F5C2152",
+    "HashUInt32": 257696082
+  },
+  "Output": "Data/Lore/PdaTechnicalLogs.h8bin",
+  "Header": {
+    "SourceHash": "0x0F5C2152",
+    "Flags": 31,
+    "EntryCount": 100,
+    "RecordSize": 64,
+    "TableOffset": 64,
+    "TextOffset": 6464,
+    "CompactOffset": 40064,
+    "ExtraOffset": 52720
+  },
+  "Sections": {
+    "RecordTable": {
+      "Offset": 64,
+      "Length": 6400,
+      "EndOffset": 6464,
+      "Alignment": 16,
+      "RecordSize": 64
+    },
+    "Text": {
+      "Offset": 6464,
+      "Length": 33600,
+      "EndOffset": 40064,
+      "Alignment": 16
+    },
+    "CompactText": {
+      "Offset": 40064,
+      "Length": 12656,
+      "EndOffset": 52720,
+      "Alignment": 16
+    },
+    "ExtraVisualRecord": {
+      "Offset": 52720,
+      "Length": 6400,
+      "EndOffset": 59120,
+      "Alignment": 16,
+      "RecordSize": 64
+    }
+  },
+  "Integrity": {
+    "Algorithm": "CRC32",
+    "BinaryCrc32": 3742245664,
+    "HeaderCrc32": 193831682,
+    "RecordTableCrc32": 4031395418,
+    "TextCrc32": 1678863080,
+    "CompactTextCrc32": 3684813434,
+    "ExtraVisualRecordCrc32": 2374205060,
+    "PayloadCrc32": 1000259285,
+    "BinaryCrc32Hex": "0xDF0E2320",
+    "HeaderCrc32Hex": "0x0B8DA302",
+    "RecordTableCrc32Hex": "0xF04A365A",
+    "TextCrc32Hex": "0x64116AE8",
+    "CompactTextCrc32Hex": "0xDBA1CA7A",
+    "ExtraVisualRecordCrc32Hex": "0x8D837E84",
+    "PayloadCrc32Hex": "0x3B9EBED5"
+  },
+  "LookupContract": {
+    "EvidenceClass": "CLI_TOOLING",
+    "Algorithm": "uint32_binary_search_sorted_record_table",
+    "RecordKey": "LocHash",
+    "HashAlgorithm": "FNV1a32_UTF16LE_LocID",
+    "TableOrder": "strict_ascending_uint32",
+    "TableOffset": 64,
+    "EntryCount": 100,
+    "RecordStrideBytes": 64,
+    "SearchIterationsMax": 7,
+    "MissingKeyFallback": "not_found_no_exception",
+    "RuntimeAllocationPolicy": "caller_owned_buffer_no_private_cache",
+    "PayloadSemantic": "Text",
+    "PayloadSliceFields": [
+      "TextOffset",
+      "TextLength",
+      "CompactTextOffset",
+      "CompactTextLength",
+      "ExtraVisualOffset",
+      "ExtraVisualLength"
+    ]
+  },
+  "PayloadEnd": 59120,
+  "TrailerPaddingBytes": 0,
+  "ToasterBinary": {
+    "Profile": "toaster_i3_compact_only",
+    "Output": "Data/Lore/PdaTechnicalLogs_Toaster.h8bin",
+    "Entries": 100,
+    "Bytes": 19120,
+    "SizeReductionBytes": 40000,
+    "SizeReductionPercentX100": 6766,
+    "Header": {
+      "SourceHash": "0x0F5C2152",
+      "Flags": 39,
+      "EntryCount": 100,
+      "RecordSize": 64,
+      "TableOffset": 64,
+      "TextOffset": 6464,
+      "CompactOffset": 19120,
+      "ExtraOffset": 19120
+    },
+    "Sections": {
+      "RecordTable": {
+        "Offset": 64,
+        "Length": 6400,
+        "EndOffset": 6464,
+        "Alignment": 16,
+        "RecordSize": 64
+      },
+      "Text": {
+        "Offset": 6464,
+        "Length": 12656,
+        "EndOffset": 19120,
+        "Alignment": 16
+      },
+      "CompactText": {
+        "Offset": 19120,
+        "Length": 0,
+        "EndOffset": 19120,
+        "Alignment": 16
+      },
+      "ExtraVisualRecord": {
+        "Offset": 19120,
+        "Length": 0,
+        "EndOffset": 19120,
+        "Alignment": 16,
+        "RecordSize": 64
+      }
+    },
+    "Integrity": {
+      "Algorithm": "CRC32",
+      "BinaryCrc32": 1269772482,
+      "HeaderCrc32": 3571736667,
+      "RecordTableCrc32": 2051859253,
+      "TextCrc32": 3684813434,
+      "CompactTextCrc32": 0,
+      "ExtraVisualRecordCrc32": 0,
+      "PayloadCrc32": 3684813434,
+      "BinaryCrc32Hex": "0x4BAF30C2",
+      "HeaderCrc32Hex": "0xD4E4605B",
+      "RecordTableCrc32Hex": "0x7A4CE335",
+      "TextCrc32Hex": "0xDBA1CA7A",
+      "CompactTextCrc32Hex": "0x00000000",
+      "ExtraVisualRecordCrc32Hex": "0x00000000",
+      "PayloadCrc32Hex": "0xDBA1CA7A"
+    },
+    "LookupContract": {
+      "EvidenceClass": "CLI_TOOLING",
+      "Algorithm": "uint32_binary_search_sorted_record_table",
+      "RecordKey": "LocHash",
+      "HashAlgorithm": "FNV1a32_UTF16LE_LocID",
+      "TableOrder": "strict_ascending_uint32",
+      "TableOffset": 64,
+      "EntryCount": 100,
+      "RecordStrideBytes": 64,
+      "SearchIterationsMax": 7,
+      "MissingKeyFallback": "not_found_no_exception",
+      "RuntimeAllocationPolicy": "caller_owned_buffer_no_private_cache",
+      "PayloadSemantic": "CompactText",
+      "PayloadSliceFields": [
+        "TextOffset",
+        "TextLength"
+      ]
+    },
+    "PayloadEnd": 19120,
+    "TrailerPaddingBytes": 0,
+    "TierPayloads": [
+      "CompactText"
+    ],
+    "PayloadSource": "CompactText packed into Text section",
+    "BinaryExtraPayloadEncoding": "none_stripped_for_toaster",
+    "RuntimeAllocationPolicy": "caller_owned_buffer_no_private_cache",
+    "UnityRuntimeProof": "PENDING_VERIFICATION"
+  },
+  "PhysicsAudit": {
+    "EvidenceClass": "STATIC_SOURCE",
+    "RuntimeSimulationAuthority": "none",
+    "RequiredModels": {
+      "dalton_partial_pressure": {
+        "Terms": [
+          "dalton",
+          "partial pressure"
+        ],
+        "Count": 3,
+        "LocIDs": [
+          "TECH_02",
+          "TECH_03",
+          "TECH_47"
+        ]
+      },
+      "beer_lambert_attenuation": {
+        "Terms": [
+          "beer-lambert"
+        ],
+        "Count": 2,
+        "LocIDs": [
+          "TECH_21",
+          "TECH_58"
+        ]
+      },
+      "sabine_rt60_reverb": {
+        "Terms": [
+          "sabine",
+          "rt60"
+        ],
+        "Count": 1,
+        "LocIDs": [
+          "TECH_57"
+        ]
+      },
+      "torricelli_ingress": {
+        "Terms": [
+          "torricelli"
+        ],
+        "Count": 1,
+        "LocIDs": [
+          "TECH_42"
+        ]
+      },
+      "project_hydrostatic_scale": {
+        "Terms": [
+          "hydrostatic",
+          "1 mpa per 100 m"
+        ],
+        "Count": 1,
+        "LocIDs": [
+          "TECH_07"
+        ]
+      },
+      "scalar_flood_proxy": {
+        "Terms": [
+          "scalar"
+        ],
+        "Count": 5,
+        "LocIDs": [
+          "TECH_03",
+          "TECH_14",
+          "TECH_16",
+          "TECH_18",
+          "TECH_42"
+        ]
+      }
+    }
+  },
+  "ToneAudit": {
+    "EvidenceClass": "STATIC_SOURCE",
+    "MinimumIndustrialHitsPerEntry": 1,
+    "WeakEntries": [],
+    "PerEntryIndustrialHits": [
+      {
+        "LocID": "TECH_01",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_02",
+        "IndustrialHits": 8
+      },
+      {
+        "LocID": "TECH_03",
+        "IndustrialHits": 9
+      },
+      {
+        "LocID": "TECH_04",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_05",
+        "IndustrialHits": 7
+      },
+      {
+        "LocID": "TECH_06",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_07",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_08",
+        "IndustrialHits": 11
+      },
+      {
+        "LocID": "TECH_09",
+        "IndustrialHits": 8
+      },
+      {
+        "LocID": "TECH_10",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_11",
+        "IndustrialHits": 8
+      },
+      {
+        "LocID": "TECH_12",
+        "IndustrialHits": 10
+      },
+      {
+        "LocID": "TECH_13",
+        "IndustrialHits": 10
+      },
+      {
+        "LocID": "TECH_14",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_15",
+        "IndustrialHits": 8
+      },
+      {
+        "LocID": "TECH_16",
+        "IndustrialHits": 8
+      },
+      {
+        "LocID": "TECH_17",
+        "IndustrialHits": 8
+      },
+      {
+        "LocID": "TECH_18",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_19",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_20",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_21",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_22",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_23",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_24",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_25",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_26",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_27",
+        "IndustrialHits": 9
+      },
+      {
+        "LocID": "TECH_28",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_29",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_30",
+        "IndustrialHits": 8
+      },
+      {
+        "LocID": "TECH_31",
+        "IndustrialHits": 11
+      },
+      {
+        "LocID": "TECH_32",
+        "IndustrialHits": 8
+      },
+      {
+        "LocID": "TECH_33",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_34",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_35",
+        "IndustrialHits": 9
+      },
+      {
+        "LocID": "TECH_36",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_37",
+        "IndustrialHits": 7
+      },
+      {
+        "LocID": "TECH_38",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_39",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_40",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_41",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_42",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_43",
+        "IndustrialHits": 7
+      },
+      {
+        "LocID": "TECH_44",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_45",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_46",
+        "IndustrialHits": 9
+      },
+      {
+        "LocID": "TECH_47",
+        "IndustrialHits": 9
+      },
+      {
+        "LocID": "TECH_48",
+        "IndustrialHits": 9
+      },
+      {
+        "LocID": "TECH_49",
+        "IndustrialHits": 7
+      },
+      {
+        "LocID": "TECH_50",
+        "IndustrialHits": 9
+      },
+      {
+        "LocID": "TECH_51",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_52",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_53",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_54",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_55",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_56",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_57",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_58",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_59",
+        "IndustrialHits": 1
+      },
+      {
+        "LocID": "TECH_60",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_61",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_62",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_63",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_64",
+        "IndustrialHits": 7
+      },
+      {
+        "LocID": "TECH_65",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_66",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_67",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_68",
+        "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_69",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_70",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_71",
+        "IndustrialHits": 9
+      },
+      {
+        "LocID": "TECH_72",
+        "IndustrialHits": 8
+      },
+      {
+        "LocID": "TECH_73",
+        "IndustrialHits": 1
+      },
+      {
+        "LocID": "TECH_74",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_75",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_76",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_77",
+        "IndustrialHits": 10
+      },
+      {
+        "LocID": "TECH_78",
+        "IndustrialHits": 7
+      },
+      {
+        "LocID": "TECH_79",
+        "IndustrialHits": 9
+      },
+      {
+        "LocID": "TECH_80",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_81",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_82",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_83",
+        "IndustrialHits": 9
+      },
+      {
+        "LocID": "TECH_84",
+        "IndustrialHits": 7
+      },
+      {
+        "LocID": "TECH_85",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_86",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_87",
+        "IndustrialHits": 1
+      },
+      {
+        "LocID": "TECH_88",
+        "IndustrialHits": 9
+      },
+      {
+        "LocID": "TECH_89",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_90",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_91",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_92",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_93",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_94",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_95",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_96",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_97",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_98",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_99",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_100",
+        "IndustrialHits": 6
+      }
+    ]
+  },
+  "TierPayloads": [
+    "Text",
+    "CompactText",
+    "ExtraVisualRecord"
+  ],
+  "AuthoringOnlyFields": [
+    "ExtraData"
+  ],
+  "BinaryExtraPayloadEncoding": "fixed_little_endian_uint32_record_no_json",
+  "ExtraDataDerivation": {
+    "SchemaVersion": 2,
+    "Model": "PDA_TECH_EXTRA_V2_HASH_TEXT_PHYSICS",
+    "Formula": "NoiseSeed=LocHash(SeedInput); HydrostaticPaPerMeterX100=round(1025*9.80665*100); HarmonicHzX100=6000+((NoiseSeed>>20)%6001)",
+    "HydrostaticPaPerMeterX100": 1005182,
+    "GradientResolution": 4096,
+    "Authority": "presentation_only_no_simulation_authority",
+    "BinaryRecordFields": [
+      "SchemaVersion",
+      "DerivationModelHash",
+      "VisualDataAuthorityHash",
+      "VisualProfileHash",
+      "GradientLutHash",
+      "GradientResolution",
+      "GradientIndex",
+      "NoiseSeed",
+      "HarmonicOctaves",
+      "HarmonicHzX100",
+      "OverlayFlagsHash",
+      "OverlayIndex",
+      "StressState",
+      "HydrostaticPaPerMeterX100",
+      "SurfacePressurePa",
+      "ProjectPressureMPaPer100mX1000"
+    ]
+  },
+  "ProjectAtlasFit": {
+    "Families": [
+      "UI",
+      "Narrative and prologue"
+    ],
+    "DomainIds": [
+      69,
+      70,
+      72,
+      73
+    ],
+    "DomainNames": [
+      "Zero-GC Subtitles (Babel)",
+      "Diegetic Terminals (3D UI)",
+      "PDA Encyclopedia Streaming",
+      "AUP Narrative Triggers"
+    ],
+    "Domain": "LORE/TEXT offline data artifact",
+    "RuntimeAuthority": "none",
+    "AsmdefAdded": false,
+    "ProjectAtlasSource": "Docs/PROJECT_ATLAS.md"
+  },
+  "HPhiAudit": {
+    "DataSovereigntyStaticScore": 1.0,
+    "LookupModel": "uint32_binary_search_sorted_record_table",
+    "LookupContract": "LookupContract",
+    "ToasterLookupContract": "ToasterBinary.LookupContract",
+    "PrivateRuntimeStateRequired": false,
+    "RuntimeAllocationPolicy": "caller_owned_buffer_no_private_cache",
+    "UnityRuntimeProof": "PENDING VERIFICATION"
+  }
+}

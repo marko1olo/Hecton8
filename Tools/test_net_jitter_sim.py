@@ -4,8 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import os
+import shutil
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -157,10 +158,16 @@ class NetJitterSimTests(unittest.TestCase):
             )
         )
 
-        with tempfile.TemporaryDirectory(prefix="h8_net_float_crime_") as temp_dir:
-            crime_path = Path(temp_dir) / "crime.py"
+        temp_root = TOOLS_ROOT.parent / ".codex_tmp" / "net_float_crime" / str(os.getpid())
+        if temp_root.exists():
+            shutil.rmtree(temp_root, ignore_errors=True)
+        temp_root.mkdir(parents=True, exist_ok=True)
+        try:
+            crime_path = temp_root / "crime.py"
             crime_path.write_text(source, encoding="utf-8")
             result = net_sim.audit_hash_functions(crime_path)
+        finally:
+            shutil.rmtree(temp_root, ignore_errors=True)
 
         self.assertEqual("CRIME", result["status"])
         self.assertTrue(any("division operator" in entry for entry in result["violations"]))

@@ -1,0 +1,73 @@
+{
+  "schema_id": "economy.submarine_upgrade_stat_map.v1.validation",
+  "status": "UPGRADES BAKED",
+  "hash_algorithm": "FNV-1a 32-bit via Hecton.Localization.LocHash.Compute (UTF-16 code units, case-preserving)",
+  "record_count": 9,
+  "hash_uniqueness": true,
+  "mk3_torque_exact": true,
+  "mk1_safe_shallows_achievable": true,
+  "json_minified": true,
+  "power_growth_exponential": true,
+  "power_growth_ratios": [
+    2.190318,
+    2.121422
+  ],
+  "power_formula": "drag_power * torque_multiplier^1.5",
+  "linear_speed_rejection": "Linear speed scaling would put top-tier velocity on the same curve as torque, increasing collision skip risk and braking distance faster than navigation affordances.",
+  "artifacts": {
+    "runtime_json": {
+      "file": "Submarine_Upgrade_Stat_Map.json",
+      "bytes": 631,
+      "sha256": "1DB8BD9C1EAA890A26C24F7D8824A04B8835980ACE492CF2AD5ECEE1A9B7DAC0"
+    },
+    "speed_power_png": {
+      "file": "Submarine_Upgrade_SpeedPower.png",
+      "bytes": 779,
+      "sha256": "5BFF1CCB15A710E149418F5FD42E5E93230E5D001714C2EF9A2311B59F248ED8"
+    },
+    "binary_pack": {
+      "file": "Submarine_Upgrade_Stat_Map.h8bin",
+      "bytes": 176,
+      "sha256": "CA0CB2C3E8E970DC45D45AAEA2E247A8696E910C3990117BA32EE180AF79066A"
+    }
+  },
+  "speed_power_curve": [
+    {
+      "label": "BASE",
+      "tier": 0,
+      "torque_multiplier": 1.0,
+      "speed_mps": 8.697544,
+      "power_kw": 1893.698616,
+      "drag_power_kw": 1893.698616,
+      "torque_power_factor": 1.0
+    },
+    {
+      "label": "MK1",
+      "tier": 1,
+      "torque_multiplier": 1.357209,
+      "speed_mps": 9.825004,
+      "power_kw": 4316.076424,
+      "drag_power_kw": 2729.726411,
+      "torque_power_factor": 1.581139
+    },
+    {
+      "label": "MK2",
+      "tier": 2,
+      "torque_multiplier": 1.842016,
+      "speed_mps": 10.952463,
+      "power_kw": 9453.581896,
+      "drag_power_kw": 3781.432758,
+      "torque_power_factor": 2.5
+    },
+    {
+      "label": "MK3",
+      "tier": 3,
+      "torque_multiplier": 2.5,
+      "speed_mps": 12.079923,
+      "power_kw": 20055.037086,
+      "drag_power_kw": 5073.56766,
+      "torque_power_factor": 3.952847
+    }
+  ],
+  "failures": []
+}

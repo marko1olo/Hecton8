@@ -19,10 +19,11 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import re
 import shutil
-import tempfile
+import uuid
 from pathlib import Path
 from statistics import median
 from typing import Any
@@ -920,6 +921,33 @@ def mutate_binding_plan_runtime_allowed(tmp_dir: Path) -> None:
     write_json(path, data)
 
 
+def validate_crafting_costs(economy_dir: Path) -> dict[str, Any]:
+    import VerifyCraftingCosts as crafting_verify
+
+    path = economy_dir / "Crafting_Costs.json"
+    data = crafting_verify.load_json(path)
+    hash_checks = len(crafting_verify.collect_id_hashes(data))
+    full_binary = crafting_verify.verify_full_binary(data)
+    toaster_binary = crafting_verify.verify_toaster_binary(data)
+    monte_carlo_path = economy_dir / "Crafting_MonteCarlo_Audit.json"
+    monte_carlo = load_json(monte_carlo_path)
+    require(monte_carlo["data_sha256"] == hashlib.sha256(path.read_bytes()).hexdigest(), "Crafting Monte Carlo report is stale")
+    require(int(monte_carlo["steps"]) >= 1_000_000, "Crafting Monte Carlo must run at least 1,000,000 steps")
+    require(int(monte_carlo["profit_steps"]) == 0, "Crafting Monte Carlo found profit steps")
+    require(str(monte_carlo["status"]) == "NO_INFINITE_RESOURCE_OR_ENERGY_LOOP", "Crafting Monte Carlo status mismatch")
+    medians = data["tier_medians"]
+    return {
+        "recipes": len(data["recipes"]),
+        "hashes": hash_checks,
+        "tier_cost_ratios": [float(medians["tier2_to_tier1_cost_ratio"]), float(medians["tier3_to_tier2_cost_ratio"])],
+        "tier_power_ratios": [float(medians["tier2_to_tier1_power_ratio"]), float(medians["tier3_to_tier2_power_ratio"])],
+        "starter_o2_minutes": float(data["starter_edge_guard"]["total_minutes"]),
+        "binary_bytes": int(full_binary["bytes"]),
+        "toaster_binary_bytes": int(toaster_binary["bytes"]),
+        "monte_carlo_steps": int(monte_carlo["steps"]),
+    }
+
+
 def run_negative_tests(economy_dir: Path) -> list[str]:
     tests = (
         (
@@ -960,9 +988,12 @@ def run_negative_tests(economy_dir: Path) -> list[str]:
         ),
     )
     results: list[str] = []
+    scratch_root = economy_dir.parents[1] / "Temp" / "EconomyValidatorNegative"
+    scratch_root.mkdir(parents=True, exist_ok=True)
     for name, mutate, validate, expected_fragment in tests:
-        with tempfile.TemporaryDirectory(prefix="h8_economy_negative_") as temp_root:
-            temp_dir = Path(temp_root)
+        temp_dir = scratch_root / f"{name}_{uuid.uuid4().hex}"
+        temp_dir.mkdir(parents=True)
+        try:
             copy_economy_files(economy_dir, temp_dir)
             mutate(temp_dir)
             try:
@@ -973,6 +1004,8 @@ def run_negative_tests(economy_dir: Path) -> list[str]:
                 results.append(name)
                 continue
             fail(f"{name} unexpectedly passed")
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
     return results
 
 
@@ -987,6 +1020,7 @@ def main() -> None:
     validate_hash_contract()
     matrix_result = validate_resource_matrix(economy_dir / "Resource_Distribution_Matrix.csv")
     recipe_result = validate_recipes(economy_dir / "Recipes.json")
+    crafting_result = validate_crafting_costs(economy_dir)
     items_result = validate_items_csv(economy_dir / "Items.csv", economy_dir / "Recipes.json", economy_dir / "Resource_Distribution_Matrix.csv")
     aligned_resources = validate_resource_value_alignment(economy_dir / "Resource_Distribution_Matrix.csv", economy_dir / "Recipes.json")
     survival_result = validate_survival(economy_dir / "Survival_Stats.json")
@@ -994,13 +1028,14 @@ def main() -> None:
     binding_plan_result = validate_runtime_binding_plan(economy_dir / "Runtime_Binding_Plan.json", economy_dir / "Runtime_Binding_Review.json")
     first_sub_result = validate_first_submarine_path(economy_dir / "Time_To_First_Submarine.json", economy_dir / "Recipes.json")
     unique_hashes = validate_global_hash_collisions(economy_dir)
-    total_hashes = matrix_result["hashes"] + recipe_result["hashes"] + items_result["hashes"] + survival_result["hashes"] + binding_result["hashes"] + binding_plan_result["hashes"] + first_sub_result["hashes"]
+    total_hashes = matrix_result["hashes"] + recipe_result["hashes"] + crafting_result["hashes"] + items_result["hashes"] + survival_result["hashes"] + binding_result["hashes"] + binding_plan_result["hashes"] + first_sub_result["hashes"]
     negative_results = run_negative_tests(economy_dir) if args.negative_tests else []
     print("ECONOMY VALIDATION OK")
     print(f"matrix_rows={matrix_result['rows']} biomes={matrix_result['biomes']} resources={matrix_result['resources']}")
     print(f"items_rows={items_result['rows']} raw={items_result['raw']} crafted={items_result['crafted']}")
     print(f"matrix_recipe_value_aligned_resources={aligned_resources}")
     print(f"recipes={recipe_result['recipes']} tier_ratios={recipe_result['tier_ratios']}")
+    print(f"crafting_costs={crafting_result['recipes']} cost_ratios={crafting_result['tier_cost_ratios']} power_ratios={crafting_result['tier_power_ratios']} starter_o2_minutes={crafting_result['starter_o2_minutes']} binary_bytes={crafting_result['binary_bytes']} toaster_binary_bytes={crafting_result['toaster_binary_bytes']} monte_carlo_steps={crafting_result['monte_carlo_steps']}")
     print(f"survival_velocity_bands={survival_result['velocity_bands']}")
     print(f"binding_unresolved_ids={binding_result['unresolved']}")
     print(f"binding_plan_blocked_ids={binding_plan_result['blocked']} candidates={binding_plan_result['candidates']} author_required={binding_plan_result['author_required']}")

@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "seed": "0xC0FFEE15",
+  "steps": 1000000,
+  "initial_value_units": 112025.6,
+  "max_value_delta_units": 0.0,
+  "min_value_delta_units": -18391.2,
+  "max_step_value_units": 112025.6,
+  "craft_count": 7026,
+  "deconstruct_count": 6966,
+  "failed_craft_count": 632873,
+  "failed_deconstruct_count": 353135,
+  "deconstruction_reclaim_ratio": 0.8,
+  "positive_recipe_margins": [],
+  "max_inventory_slots_used": 18,
+  "invariant": "Crafting is value-neutral or lossy; deconstruction floors 80% ingredient returns; no harvest/spawn source is included during loop audit."
+}

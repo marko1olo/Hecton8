@@ -1,0 +1,79 @@
+{
+  "Schema": "H8.RADIO.VERIFY.V1",
+  "Status": "PASS",
+  "EvidenceClass": "STATIC_JSON_CLI",
+  "JsonHashAudit": {
+    "UniqueHashValues": 91,
+    "CollisionCount": 0,
+    "Collisions": [],
+    "Errors": []
+  },
+  "BinaryAudit": {
+    "Path": "C:\\Hecton8\\Data\\Localization\\Radio\\marauder_radio_interceptions.h8bin",
+    "Endian": "Little",
+    "RecordCount": 15,
+    "HeaderSizeBytes": 64,
+    "RecordSizeBytes": 128,
+    "AlignmentBytes": 16,
+    "FileLengthBytes": 7872,
+    "PayloadLengthBytes": 5888,
+    "Errors": []
+  },
+  "SourceHygieneAudit": {
+    "StructFormats": [
+      "<4sHH14I",
+      "<32I"
+    ],
+    "ExplicitLittleEndianStructs": true,
+    "DirectStructPackCalls": false,
+    "BinaryFileAlignmentRemainders": {
+      "marauder_radio_interceptions.h8bin": 0
+    },
+    "Errors": []
+  },
+  "LoreToneAudit": {
+    "SlangTermsAudited": [
+      "silt-lung",
+      "void-kissed",
+      "brine-debt",
+      "gasket-prayer",
+      "blackwake"
+    ],
+    "MissingSlangTerms": [],
+    "SterileTokenHits": [],
+    "EmotionCounts": {
+      "[STRESS]": 6,
+      "[PANIC]": 5,
+      "[CALM]": 4
+    },
+    "Errors": []
+  },
+  "EconomyMonteCarlo": {
+    "Path": "C:\\Hecton8\\Data\\Economy\\Recipes.json",
+    "Steps": 1000000,
+    "Seed": 2322292017,
+    "Recipes": 40,
+    "PrimitiveItems": 15,
+    "InitialPrimitiveUnitsPerItem": 10000.0,
+    "CraftCount": 57916,
+    "DeconstructCount": 41304,
+    "NormalReclaimRatio": 0.8,
+    "InitialPrimitiveValue": 547000.0,
+    "MaxPrimitiveValue": 547000.0,
+    "PrimitiveValueGrowth": 0.0,
+    "Errors": []
+  },
+  "AtlasFit": {
+    "ProjectAtlasDate": "2026-05-14",
+    "ProjectAtlasStaticAssemblyCount": 83,
+    "UserClaimedDomainCount": 85,
+    "DomainCountCorrection": "Current disk PROJECT_ATLAS.md states 83 first-party asmdef files.",
+    "DomainFamily": "UI / Narrative localization data",
+    "RuntimeDependenciesAdded": 0,
+    "CoreReferencesAdded": 0,
+    "PrivateRuntimeStateRequired": false,
+    "DataSovereigntyImpact": "Positive: stateless hash records, packed Ultra fields, and aligned text payload slices; no private runtime store forced.",
+    "HPhiStaticEstimate": 0.25
+  },
+  "Errors": []
+}

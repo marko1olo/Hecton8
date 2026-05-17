@@ -1,0 +1,180 @@
+{
+  "schema": "H8_QUEST_DAG_BITMASK_V1",
+  "graphId": "first_hour",
+  "graphHash32": "0x83B9BEE8",
+  "hashAlgorithm": "FNV-1a 32-bit ASCII lower, zero remapped to one",
+  "loreManifest": "Data/Lore/Encyclopedia.manifest.json",
+  "compiledBinary": "Data/Narrative/First_Hour_Quests.h8qdag.bin",
+  "atlasDomains": [
+    {
+      "ID": 4,
+      "Name": "Data Monolith",
+      "Reason": "QuestNodes and NarrativeTriggers are static database sections."
+    },
+    {
+      "ID": 73,
+      "Name": "AUP Narrative Triggers",
+      "Reason": "First-hour progression unlocks from authored narrative trigger hashes."
+    },
+    {
+      "ID": 75,
+      "Name": "Frequency Tuning",
+      "Reason": "Scanner trace completion feeds the first-hour scan gate."
+    },
+    {
+      "ID": 78,
+      "Name": "Vocal Warning System",
+      "Reason": "Radio repair unlocks the dirty warning/audio path without owning audio runtime."
+    }
+  ],
+  "binaryLayout": {
+    "magic": "H8QG",
+    "version": 1,
+    "endianness": "little",
+    "alignmentBytes": 16,
+    "headerBytes": 64,
+    "nodeRecordBytes": 32,
+    "triggerRecordBytes": 16,
+    "edgeRecordBytes": 16,
+    "scalabilityTierRecordBytes": 48,
+    "scalabilityTierCount": 4
+  },
+  "stateEncoding": {
+    "storage": "ulong",
+    "bitsPerQuest": 2,
+    "maxQuests": 32,
+    "inactive": 0,
+    "active": 1,
+    "done": 2
+  },
+  "nodes": [
+    {
+      "Slot": 0,
+      "ID": "quest_first_hour_wake_up",
+      "Hash32": "0x315FA14C",
+      "DisplayName": "Wake Up",
+      "DiegeticLabel": "POD COFFIN: WAKE THE BUS",
+      "Prerequisites": [],
+      "CompletionTriggers": [
+        {
+          "Type": "DiscoveryMade",
+          "ID": "first_hour_wake_pod_online",
+          "Hash32": "0xE6EB9B11"
+        }
+      ],
+      "LoreCanonicalID": "Docs/Lore/Lore_Bible.md",
+      "LoreHash32": "0xAEC57EAC"
+    },
+    {
+      "Slot": 1,
+      "ID": "quest_first_hour_find_scanner",
+      "Hash32": "0x5C2D7896",
+      "DisplayName": "Find Scanner",
+      "DiegeticLabel": "RIP THE SCANNER FROM THE LOCKER",
+      "Prerequisites": [
+        "quest_first_hour_wake_up"
+      ],
+      "CompletionTriggers": [
+        {
+          "Type": "ItemCollected",
+          "ID": "Item_Tool_Scanner",
+          "Hash32": "0x28A840B4"
+        }
+      ],
+      "LoreCanonicalID": "Docs/Lore/Lore_Bible.md",
+      "LoreHash32": "0xAEC57EAC"
+    },
+    {
+      "Slot": 2,
+      "ID": "quest_first_hour_scan_leviathan_trace",
+      "Hash32": "0x29384196",
+      "DisplayName": "Scan Leviathan Trace",
+      "DiegeticLabel": "READ THE LEVIATHAN OIL-SCAR",
+      "Prerequisites": [
+        "quest_first_hour_find_scanner"
+      ],
+      "CompletionTriggers": [
+        {
+          "Type": "ScanCompleted",
+          "ID": "leviathan_trace_alpha_scanned",
+          "Hash32": "0x2FCC4837"
+        }
+      ],
+      "LoreCanonicalID": "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.md",
+      "LoreHash32": "0xBC52DB39"
+    },
+    {
+      "Slot": 3,
+      "ID": "quest_first_hour_fix_radio",
+      "Hash32": "0xA48A5B3B",
+      "DisplayName": "Fix Radio",
+      "DiegeticLabel": "PATCH THE DROWNED RADIO",
+      "Prerequisites": [
+        "quest_first_hour_scan_leviathan_trace"
+      ],
+      "CompletionTriggers": [
+        {
+          "Type": "InteractionCompleted",
+          "ID": "radio_repair_completed",
+          "Hash32": "0x485BB212"
+        }
+      ],
+      "LoreCanonicalID": "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.md",
+      "LoreHash32": "0xBC52DB39"
+    }
+  ],
+  "scalabilityTiers": {
+    "Low": {
+      "target": "Celeron/i3/MX350",
+      "stateWordCount": 1,
+      "maxEvaluatedNodesPerSignal": 4,
+      "markerPayload": "hash_only",
+      "scannerVisualProfileHash32": "0x00000000",
+      "radioNoiseProfileHash32": "0x00000000",
+      "scannerGradientProfileHash32": "0x00000000",
+      "radioHarmonicProfileHash32": "0x00000000",
+      "harmonicBands": 0
+    },
+    "Middle": {
+      "target": "i5/MX350",
+      "stateWordCount": 1,
+      "maxEvaluatedNodesPerSignal": 8,
+      "markerPayload": "hash_plus_lore",
+      "scannerVisualProfileHash32": "0x00000000",
+      "radioNoiseProfileHash32": "0x00000000",
+      "scannerGradientProfileHash32": "0x00000000",
+      "radioHarmonicProfileHash32": "0x00000000",
+      "harmonicBands": 0
+    },
+    "High": {
+      "target": "RTX-class",
+      "stateWordCount": 1,
+      "maxEvaluatedNodesPerSignal": 16,
+      "markerPayload": "hash_lore_and_trigger",
+      "scannerVisualProfileId": "quest_vfx_scanner_oil_sheen_overkill",
+      "scannerVisualProfileHash32": "0xE0C19AB9",
+      "radioNoiseProfileId": "quest_vfx_radio_saltwater_scream_harmonics",
+      "radioNoiseProfileHash32": "0x132C57E9",
+      "scannerGradientProfileId": "quest_vfx_scanner_oil_sheen_high_res_gradient",
+      "scannerGradientProfileHash32": "0x6FE4A44B",
+      "radioHarmonicProfileId": "quest_vfx_radio_saltwater_scream_complex_harmonics",
+      "radioHarmonicProfileHash32": "0x3179ECF2",
+      "harmonicBands": 4
+    },
+    "Ultra": {
+      "target": "RTX-overkill",
+      "stateWordCount": 1,
+      "maxEvaluatedNodesPerSignal": 32,
+      "markerPayload": "hash_lore_trigger_and_vfx",
+      "scannerVisualProfileId": "quest_vfx_scanner_oil_sheen_overkill",
+      "scannerVisualProfileHash32": "0xE0C19AB9",
+      "radioNoiseProfileId": "quest_vfx_radio_saltwater_scream_harmonics",
+      "radioNoiseProfileHash32": "0x132C57E9",
+      "scannerGradientProfileId": "quest_vfx_scanner_oil_sheen_high_res_gradient",
+      "scannerGradientProfileHash32": "0x6FE4A44B",
+      "radioHarmonicProfileId": "quest_vfx_radio_saltwater_scream_complex_harmonics",
+      "radioHarmonicProfileHash32": "0x3179ECF2",
+      "harmonicBands": 8
+    }
+  }
+}

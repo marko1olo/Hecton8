@@ -1,0 +1,20 @@
+{
+  "aligned16": true,
+  "binary": "Data/Precomputed/dalton_gas_toxicity.bin",
+  "bytes": 128128,
+  "columnCount": 16,
+  "depth2000mCompositeDanger01": 1.0,
+  "depth57mO2Atm": 1.3937913179397583,
+  "depth57mOxygenCns01": 0.0,
+  "expectedBytes": 128128,
+  "fnvCollisionCount": 0,
+  "headerBytes": 64,
+  "manifest": "Data/Precomputed/dalton_gas_toxicity_manifest.json",
+  "rowBytes": 64,
+  "rowCount": 2001,
+  "sha256": "A0D6AAB39497BA771FCA7D4C5754C31C0F0CDBEAFF0F9860B44B01BC7240C9DD",
+  "status": "PASS",
+  "surfaceO2Atm": 0.20944742858409882
+}
+
+EXIT=0 elapsed=9.067s

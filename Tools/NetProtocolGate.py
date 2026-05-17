@@ -19,6 +19,30 @@ REPO_ROOT = TOOLS_ROOT.parent
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
+NET_CACHE_PREFIXES = ("NetJitterSim", "test_net_jitter_sim", "NetProtocolGate")
+
+
+def cleanup_net_pycache() -> List[str]:
+    failures: List[str] = []
+    cache_dir = TOOLS_ROOT / "__pycache__"
+    if not cache_dir.exists():
+        return failures
+    for path in tuple(cache_dir.iterdir()):
+        if not path.name.startswith(NET_CACHE_PREFIXES):
+            continue
+        for _attempt in range(20):
+            try:
+                path.unlink()
+                break
+            except OSError as exc:
+                last_error = exc
+        else:
+            failures.append(f"NET_SYNC pycache locked: {path.name} ({last_error})")
+    return failures
+
+
+STARTUP_CACHE_FAILURES = cleanup_net_pycache()
+
 import NetJitterSim as net_sim  # noqa: E402
 import test_net_jitter_sim as net_tests  # noqa: E402
 
@@ -51,21 +75,29 @@ REQUIRED_DOC_TERMS = (
     "test_merkle_diff_indices_localize_changed_leaves",
     "Unit tests: 8",
     "STATUS: NETWORK PROTOCOL READY",
+    "BINARY_PAYLOADS_ALIGNED=44",
+    "binary_files=44",
+    "CACHE_FILES_LEFT=0",
+    "PYCACHE_DIRS_LEFT=0",
 )
 EXPECTED_UNIT_TESTS = 8
 
 
 def build_args(scenario: Scenario) -> argparse.Namespace:
+    jitter_ms = 80 if scenario.name == "rollback_stress" else 40
+    loss_percent = "8" if scenario.name == "rollback_stress" else "5"
+    rollback_ticks = 96 if scenario.name == "rollback_stress" else 64
+    redundancy = 24 if scenario.name == "rollback_stress" else 16
     return argparse.Namespace(
         latency_ms=200,
-        jitter_ms=40,
-        loss_bps=net_sim.parse_percent_bps("5"),
+        jitter_ms=jitter_ms,
+        loss_bps=net_sim.parse_percent_bps(loss_percent),
         tick_ms=20,
         ticks=600,
         clients=scenario.clients,
         input_delay_ticks=scenario.input_delay_ticks,
-        rollback_ticks=64,
-        redundancy=16,
+        rollback_ticks=rollback_ticks,
+        redundancy=redundancy,
         seed=0x4E455431,
         report=scenario.report_path,
     )
@@ -133,15 +165,18 @@ def validate_packet_schema() -> List[str]:
 
 
 def validate_pycache() -> List[str]:
+    failures = list(STARTUP_CACHE_FAILURES)
+    failures.extend(cleanup_net_pycache())
     cache_dir = TOOLS_ROOT / "__pycache__"
     if not cache_dir.exists():
-        return []
+        return failures
     offenders = [
         path.name
         for path in cache_dir.iterdir()
-        if path.name.startswith(("NetJitterSim", "test_net_jitter_sim", "NetProtocolGate"))
+        if path.name.startswith(NET_CACHE_PREFIXES)
     ]
-    return [f"NET_SYNC pycache present: {name}" for name in offenders]
+    failures.extend(f"NET_SYNC pycache present: {name}" for name in offenders)
+    return failures
 
 
 def write_gate_report(

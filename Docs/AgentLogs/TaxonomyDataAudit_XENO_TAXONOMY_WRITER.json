@@ -1,0 +1,76 @@
+{
+  "agent": "XENO_TAXONOMY_WRITER",
+  "atlasAudit": {
+    "assemblyCount": 83,
+    "domainIndexCount": 85,
+    "fits85DomainMap": true,
+    "fitsAtlas": true,
+    "has85DomainHeading": true
+  },
+  "binaryAudit": {
+    "exists": true,
+    "fileAligned16": true,
+    "fileSizeBytes": 27536,
+    "headerSizeBytes": 64,
+    "headerStruct": "<4sHHIIIIIIII24s",
+    "passed": true,
+    "path": "Data/Localization/en_US_Taxonomy.h8bin",
+    "recordAligned16": true,
+    "recordSizeBytes": 48,
+    "recordStruct": "<IIIIIIIIIIII",
+    "structFormatsExplicitLittleEndian": true,
+    "textOffsetMisalignments": [],
+    "tierPayloadsPresent": true
+  },
+  "counts": {
+    "faunaAutopsies": 22,
+    "floraBiopsies": 10,
+    "madnessVariants": 6
+  },
+  "economyAudit": {
+    "auditStatus": "ECONOMY SECURED",
+    "cycleCount": 0,
+    "economyEvidenceSource": "Docs/AgentLogs/TaxonomyEconomyMillionStep_XENO_TAXONOMY_WRITER.json",
+    "failures": 0,
+    "graphAuditExists": true,
+    "maxNodesPerPlayer": 10000,
+    "millionStepAuditPassed": true,
+    "monteCarloExists": true,
+    "monteCarloSteps": 1000220,
+    "p99Minutes": 78.48648648648616,
+    "passed": true,
+    "players": 5299,
+    "positiveProfitCycleCount": 0,
+    "taxonomyMillionStepExists": true
+  },
+  "hPhiAudit": {
+    "dataSovereigntyIncrease": "Stateless JSON plus aligned binary cache; no Unity runtime private state added.",
+    "evidenceClass": "STATIC_SOURCE_PLUS_CLI_SCRIPT",
+    "privateRuntimeStateAdded": false,
+    "runtimeClaim": "PENDING VERIFICATION",
+    "statelessLookupReady": true
+  },
+  "hashAudit": {
+    "collisionCount": 0,
+    "collisions": {},
+    "distinctHashCount": 100,
+    "mismatches": [],
+    "passed": true
+  },
+  "loreAudit": {
+    "clinicalMisses": [],
+    "industrialMisses": [],
+    "passed": true,
+    "sterileHits": []
+  },
+  "mathAudit": {
+    "derivedConstants": [
+      "Lotka-Volterra coefficients are copied from EcosystemDirector.cs:720-723.",
+      "Ultra harmonic overlay values are deterministic presentation metadata derived from FNV hash bytes divided by 255 and tau phase; not simulation truth."
+    ],
+    "magicNumberPolicy": "No gameplay physics constants are invented by this compiler.",
+    "physicsLutsOrMatrices": "N/A: taxonomy text/data only; no Beer-Lambert, Dalton, Sabine, pressure, lighting, or acoustic LUT is emitted."
+  },
+  "passed": true,
+  "taxonomyPath": "Data/Localization/en_US_Taxonomy.json"
+}

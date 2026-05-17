@@ -1,0 +1,16 @@
+BABEL VERIFY FAILED: Babel manifest missing sourceHashesSha256 ledger.
+Traceback (most recent call last):
+  File "C:\Hecton8\Tools\VerifyBabelDictionary.py", line 124, in <module>
+    raise SystemExit(main(sys.argv[1:]))
+                     ~~~~^^^^^^^^^^^^^^
+  File "C:\Hecton8\Tools\VerifyBabelDictionary.py", line 118, in main
+    verify(build_arg_parser().parse_args(argv))
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Hecton8\Tools\VerifyBabelDictionary.py", line 65, in verify
+    verify_source_hashes(manifest, sources)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Hecton8\Tools\VerifyBabelDictionary.py", line 44, in verify_source_hashes
+    raise ValueError("Babel manifest missing sourceHashesSha256 ledger.")
+ValueError: Babel manifest missing sourceHashesSha256 ledger.
+
+EXIT=1 elapsed=14.282s

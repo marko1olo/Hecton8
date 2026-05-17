@@ -1,0 +1,65 @@
+{
+  "schema_id": "economy.submarine_upgrade_stat_map.v1.physics",
+  "status": "PHYSICS PROVENANCE BAKED",
+  "source": "Data/Physics/Submarine_Specs.json",
+  "reference_hull_id": "INDUSTRIAL",
+  "constants": {
+    "sea_water_density_kg_m3": 1025.0,
+    "gravity_m_s2": 9.80665,
+    "atmospheric_pressure_pa": 101325.0,
+    "rated_cruise_speed_mps": 8.697544,
+    "terminal_speed_at_max_thrust_mps": 12.079923,
+    "max_thrust_n": 420000.0
+  },
+  "derived_formulas": {
+    "hydrostatic_gauge_pressure_pa": "rho_seawater * gravity * depth_m",
+    "hull_shell_ratio": "cuberoot(gauge_pressure_pa / baseline_gauge_pressure_pa); cylindrical shell buckling p_cr scales with (t / radius)^3",
+    "speed_curve": "rated_cruise_speed + log1p(torque-1)/log1p(mk3_torque-1) * (terminal_speed - rated_cruise_speed)",
+    "drag_power_kw": "drag_force_n * speed_mps / 1000, with drag_force_n = max_thrust_n * (speed/terminal_speed)^2",
+    "upgrade_power_cost_kw": "drag_power_kw * torque_multiplier^1.5; fixed-pitch propeller affinity law uses torque proportional to rpm^2 and shaft power proportional to rpm^3"
+  },
+  "speed_power_curve": [
+    {
+      "label": "BASE",
+      "tier": 0,
+      "torque_multiplier": 1.0,
+      "speed_mps": 8.697544,
+      "power_kw": 1893.698616,
+      "drag_power_kw": 1893.698616,
+      "torque_power_factor": 1.0
+    },
+    {
+      "label": "MK1",
+      "tier": 1,
+      "torque_multiplier": 1.357209,
+      "speed_mps": 9.825004,
+      "power_kw": 4316.076424,
+      "drag_power_kw": 2729.726411,
+      "torque_power_factor": 1.581139
+    },
+    {
+      "label": "MK2",
+      "tier": 2,
+      "torque_multiplier": 1.842016,
+      "speed_mps": 10.952463,
+      "power_kw": 9453.581896,
+      "drag_power_kw": 3781.432758,
+      "torque_power_factor": 2.5
+    },
+    {
+      "label": "MK3",
+      "tier": 3,
+      "torque_multiplier": 2.5,
+      "speed_mps": 12.079923,
+      "power_kw": 20055.037086,
+      "drag_power_kw": 5073.56766,
+      "torque_power_factor": 3.952847
+    }
+  ],
+  "magic_number_audit": {
+    "mk3_torque_multiplier": "authoring target from XML directive, validated exact",
+    "depth_limits_m": "authoring limits from XML directive",
+    "physics_constants": "required from Data/Physics/Submarine_Specs.json; baker fails if absent or incomplete",
+    "torque_to_power_exponent": "1.5 from propeller affinity law: Q proportional n^2, P proportional n^3, therefore P proportional Q^(3/2)"
+  }
+}

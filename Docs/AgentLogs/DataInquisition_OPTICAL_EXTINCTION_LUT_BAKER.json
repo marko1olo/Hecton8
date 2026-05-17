@@ -1,0 +1,145 @@
+{
+  "schema": "hecton8.metric_phi_data_inquisition.v1",
+  "owner": "METRIC_PHI_ANALYST",
+  "evidenceClass": "STATIC_SOURCE/PY_TOOL/FILESYSTEM",
+  "runtimeProof": "PENDING_VERIFICATION",
+  "binaryAlignment": {
+    "count": 43,
+    "alignmentBytes": 16,
+    "failures": []
+  },
+  "manifestEndianness": {
+    "checked": [
+      "Data/Audio/Acoustic_LUT.manifest.json",
+      "Data/Economy/Crafting_Costs.manifest.json",
+      "Data/Economy/Crafting_Costs_Toaster.manifest.json",
+      "Data/Environment/Tide_Harmonics.manifest.json",
+      "Data/Habitat/HabitatPressureBudget_BinaryLayout.json",
+      "Data/Localization/en_US_Taxonomy.manifest.json",
+      "Data/Lore/Encyclopedia.manifest.json",
+      "Data/Precomputed/dalton_gas_toxicity_manifest.json",
+      "Data/System/VFX_Budgets.manifest.json",
+      "Data/System/Visual_Scalability_Matrix.manifest.json",
+      "Assets/_Project/Data/Localization/Babel_Dictionary.manifest.json"
+    ],
+    "count": 11,
+    "endianness": "little",
+    "structPackPrefix": "<"
+  },
+  "structFormats": {
+    "checkedFormats": 164,
+    "explicitLittleEndianFormats": 135,
+    "externalFormatBigEndianExemptions": 29,
+    "failures": []
+  },
+  "physicsSources": {
+    "sources": [
+      "Tools/MathLUTGenerator.py",
+      "Tools/DaltonGasToxicityBaker.py",
+      "Tools/SabineBaker.py",
+      "Tools/SnellBaker.py",
+      "Tools/TideBaker.py",
+      "Tools/VisualLodMatrixBaker.py"
+    ],
+    "physicsTokens": {
+      "beer_lambert": true,
+      "dalton": true,
+      "sabine": true,
+      "snell": true
+    }
+  },
+  "physicsManifests": {
+    "acousticTiers": [
+      "high",
+      "middle",
+      "rtx_overkill",
+      "toaster_i3"
+    ],
+    "daltonRowFormat": "<ffffffffffffffff",
+    "waterFormula": "I = I0 * exp(-mu * depthMeters)",
+    "visualEndian": "little",
+    "snellSchema": "H8.SnellRefractionLut.v1",
+    "tokens": {
+      "acoustic": [
+        "Sabine",
+        "Thorp",
+        "Beer",
+        "Lambert",
+        "hydrostatic"
+      ],
+      "dalton": [
+        "Dalton",
+        "partialPressure",
+        "hydrostaticPressure",
+        "oxygenCns"
+      ],
+      "water": [
+        "BeerLambert",
+        "stateless_binary_lookup",
+        "exp(-mu"
+      ],
+      "snell": [
+        "Snell",
+        "RGBA16F",
+        "MINIMAL",
+        "ULTRA"
+      ]
+    }
+  },
+  "economyMonteCarlo": {
+    "steps": 1000000,
+    "profitSteps": 0,
+    "selection": "multiply_high_to_range",
+    "status": "NO_INFINITE_RESOURCE_OR_ENERGY_LOOP",
+    "maxValueDeltaMilliUnits": -1000,
+    "maxMassDeltaMg": -400000,
+    "maxEnergyDeltaMwh": -133000
+  },
+  "hashes": {
+    "records": 1018,
+    "categories": {
+      "Biomes": 523,
+      "Items": 209,
+      "Signals": 286
+    },
+    "collisionCount": 0
+  },
+  "atlasAndHPhi": {
+    "domainIndexCount": 85,
+    "atlasRows": 85,
+    "hPhiStatic": 6.7481e-05,
+    "dataSovereignty": 0.019743027,
+    "strictLocalNativeArraySovereignty": 0.089045936,
+    "evidenceClass": "STATIC_SOURCE/STATIC_DOC/PY_TOOL"
+  },
+  "loreTone": {
+    "requiredTermsFound": [
+      "rust",
+      "oil",
+      "bulkhead",
+      "pressure",
+      "black"
+    ],
+    "sterileTermsFound": [],
+    "sources": [
+      "Data/Lore/PdaTechnicalLogs.h8jsonl",
+      "Data/Localization/en_US.json",
+      "Data/Localization/Radio/marauder_radio_interceptions_clean.json"
+    ]
+  },
+  "scalability": {
+    "toasterData": true,
+    "rtxOverkillData": true,
+    "payloadsChecked": 4
+  },
+  "dataSovereigntyContracts": {
+    "contracts": {
+      "waterExtinction": "stateless_binary_lookup",
+      "babel": "stateless_hash_offset_lookup",
+      "sabine": "stateless_lut_lookup",
+      "crafting": "stateless_binary_table_lookup"
+    },
+    "privateRuntimeStateRequired": false
+  },
+  "status": "DATA_INQUISITION_VERIFIED_STATIC_ONLY"
+}

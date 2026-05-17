@@ -1,0 +1,14 @@
+{
+  "schema_id": "economy.submarine_upgrade_stat_map.v1.binary_layout",
+  "status": "BINARY LAYOUT LOCKED",
+  "file": "Submarine_Upgrade_Stat_Map.h8bin",
+  "byte_order": "little-endian",
+  "header_format": "<8sIIIIII",
+  "record_format": "<Iiff",
+  "header_bytes": 32,
+  "record_stride_bytes": 16,
+  "record_count": 9,
+  "total_bytes": 176,
+  "alignment_bytes": 16,
+  "total_size_mod_16": 0
+}

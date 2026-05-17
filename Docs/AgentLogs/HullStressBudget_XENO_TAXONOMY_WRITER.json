@@ -1,0 +1,149 @@
+{
+  "schema": "hecton8.habitat.pressure_budget.verification.v1",
+  "status": "PASS",
+  "evidenceBoundary": "CLI_PYTHON_STATIC_DATA",
+  "inputs": {
+    "json": "Data/Habitat/HabitatPressureBudget.json",
+    "binary": "Data/Habitat/HabitatPressureBudget.h8bin",
+    "layout": "Data/Habitat/HabitatPressureBudget_BinaryLayout.json",
+    "binaryRoot": "Data/Habitat",
+    "atlas": "Docs/PROJECT_ATLAS.md",
+    "hphi": "Docs/Reports/HECTON_PHI_SCORE_FINAL.json",
+    "economyMonteCarlo": "Docs/AgentLogs/EconomyMonteCarlo_XENO_TAXONOMY_WRITER_Compatible.json"
+  },
+  "checks": {
+    "payload": {
+      "status": "PASS",
+      "modules": 15,
+      "hashRecordsChecked": 38,
+      "hashCollisionCount": 0,
+      "hashCollisions": [],
+      "failures": []
+    },
+    "structFormats": {
+      "status": "PASS",
+      "formatsChecked": [
+        {
+          "path": "Tools/HullStressBaker.py",
+          "line": 54,
+          "format": "<8sIIIIIIIIIIII8s"
+        },
+        {
+          "path": "Tools/HullStressBaker.py",
+          "line": 55,
+          "format": "<I i I i I i f f f f f f f f f f f f i i i i I I"
+        },
+        {
+          "path": "Tools/HullStressBaker.py",
+          "line": 56,
+          "format": "<IIffffffffffffffIIII"
+        },
+        {
+          "path": "Tools/VerifyHullStressBudget.py",
+          "line": 39,
+          "format": "<8sIIIIIIIIIIII8s"
+        },
+        {
+          "path": "Tools/VerifyHullStressBudget.py",
+          "line": 40,
+          "format": "<I i I i I i f f f f f f f f f f f f i i i i I I"
+        },
+        {
+          "path": "Tools/VerifyHullStressBudget.py",
+          "line": 41,
+          "format": "<IIffffffffffffffIIII"
+        }
+      ],
+      "failures": []
+    },
+    "binaryPayload": {
+      "status": "PASS",
+      "path": "Data/Habitat/HabitatPressureBudget.h8bin",
+      "sizeBytes": 2704,
+      "lookupContract": {
+        "moduleRecordsSortedByHash": true,
+        "godModeRecordsSortedByModuleHash": true,
+        "runtimePrivateIndexRequired": false
+      },
+      "header": {
+        "magic": "H8HPB",
+        "version": 1,
+        "endianMarkerHex": "0x01020304",
+        "headerBytes": 64,
+        "moduleCount": 15,
+        "moduleStrideBytes": 96,
+        "moduleOffsetBytes": 64,
+        "godModeCount": 15,
+        "godModeStrideBytes": 80,
+        "godModeOffsetBytes": 1504,
+        "payloadHashFnv1a32": 2597791691
+      },
+      "failures": []
+    },
+    "binaryAlignment": {
+      "root": "Data/Habitat",
+      "files": [
+        {
+          "path": "Data/Habitat/HabitatPressureBudget.h8bin",
+          "sizeBytes": 2704,
+          "aligned16": true
+        }
+      ],
+      "failures": []
+    },
+    "projectAtlas": {
+      "status": "PASS",
+      "path": "Docs/PROJECT_ATLAS.md",
+      "staticAssemblyCountInAtlas": 83,
+      "domainIndexRows": 85,
+      "hPhiDomainIndexCount": 85,
+      "hPhiEvidenceClass": "STATIC_SOURCE/STATIC_DOC/PY_TOOL",
+      "structuralIntegrityDomain": {
+        "id": 52,
+        "echelon": "6: HABITAT & VEHICLES (Engineering and Bases)",
+        "domain": "Structural Integrity Math",
+        "description": "Structural Integrity Math: Scalar calculation of base deformation (Depth - Reinforcements). Stress factor output to the shader."
+      },
+      "domainFit": "Data/Habitat pressure budget fits 85-domain row 52 Structural Integrity Math plus Environment and survival / Habitat.Deformation.Contracts; no Core dependency added.",
+      "hPhiAudit": {
+        "dataSovereigntyDelta": "positive static-data delta: JSON plus 16-byte aligned binary can be ingested into stateless tables",
+        "privateRuntimeStateAdded": false,
+        "directConcreteRefsAdded": 0,
+        "hotRegistryPollsAdded": 0,
+        "evidenceMultiplier": "CLI_PYTHON_STATIC_DATA"
+      },
+      "failures": []
+    },
+    "economyMonteCarlo": {
+      "status": "PASS",
+      "path": "Docs/AgentLogs/EconomyMonteCarlo_XENO_TAXONOMY_WRITER_Compatible.json",
+      "players": 5299,
+      "maxNodes": 10000,
+      "finalSummary": {
+        "average_minutes": 46.00761744949328,
+        "average_nodes": 188.75636912625023,
+        "copper_p99_minutes": 59.554054054054056,
+        "copper_p99_seed": 1764715294,
+        "copper_worst_minutes": 81.85135135135135,
+        "copper_worst_seed": 340798182,
+        "failures": 0,
+        "median_minutes": 43.60810810810811,
+        "million_step_audit_passed": true,
+        "monte_carlo_steps": 1000220,
+        "p90_minutes": 58.472972972972975,
+        "p95_minutes": 64.70270270270264,
+        "p99_minutes": 78.48648648648616,
+        "p99_nodes": 429.09999999999764,
+        "players": 5299,
+        "successes": 5299,
+        "time_worst_biome_index": 7,
+        "time_worst_seed": 1501987990,
+        "titanium_p99_minutes": 76.71891891891887,
+        "total_nodes_mined": 1000220,
+        "worst_minutes": 112.52702702702703
+      },
+      "failures": []
+    }
+  },
+  "failures": []
+}

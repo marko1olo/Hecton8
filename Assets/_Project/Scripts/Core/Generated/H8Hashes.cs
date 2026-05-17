@@ -4,7 +4,7 @@ namespace Hecton8.Core.Generated
 {
     public static class H8Hashes
     {
-        public const int TotalCount = 1017;
+        public const int TotalCount = 1018;
 
         public static class Items
         {
@@ -1484,7 +1484,7 @@ namespace Hecton8.Core.Generated
 
         public static class Signals
         {
-            public const int Count = 285;
+            public const int Count = 286;
 
             public const string ATLASSIGNALREVEALSTAGE2Id = "ATLAS_SIGNAL_REVEAL_STAGE_2";
             public const uint ATLASSIGNALREVEALSTAGE2Hash = 2388679583u;
@@ -2018,6 +2018,8 @@ namespace Hecton8.Core.Generated
             public const uint MapRevealSignalHash = 582510680u;
             public const string MassiveDisplacementSignalId = "MassiveDisplacementSignal";
             public const uint MassiveDisplacementSignalHash = 4125708918u;
+            public const string PendingBaseTransitionSignalId = "PendingBaseTransitionSignal";
+            public const uint PendingBaseTransitionSignalHash = 2346602470u;
             public const string PhysicsImpactSignalId = "PhysicsImpactSignal";
             public const uint PhysicsImpactSignalHash = 1002922076u;
             public const string PingReturnSignalId = "PingReturnSignal";

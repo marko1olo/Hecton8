@@ -1,6 +1,6 @@
 # HECTON-8 Network Protocol v1
 
-Date: 2026-05-15
+Date: 2026-05-17
 Owner: NET_SYNC_MERKLE_ARCHITECT / BACKEND_ENGINEER
 Status: NETWORK PROTOCOL READY - OFFLINE SIM VERIFIED; UNITY RUNTIME PENDING
 Evidence class: STATIC_DOC / OFFLINE_SIM / STATIC_SOURCE
@@ -57,6 +57,18 @@ Every packet starts with `H8NetEnvelope`:
 | 20 | 4 | AckMask32 | `uint32` | Bit `n` acknowledges `AckSequence - n` |
 
 Reject packet if magic/version/header size is wrong, reserved byte is nonzero, record count overflows payload, or packet type is unknown.
+
+## Merkle Frame Header Addendum
+
+The modding envelope above is the gameplay packet wrapper. Sector repair and Merkle probing use the stricter architecture header in `Docs/ARCHITECTURE/COOP_MERKLE_STATE_DELTA_PROTOCOL.md`:
+
+- `H8NetMerkleFrameHeader64` is exactly `64` bytes.
+- Python struct format is little-endian: `<IHHIIIIQQQHHHHHBBBBH`.
+- `HeaderCrc16` uses CRC-16/CCITT-FALSE: polynomial `0x1021`, initial value `0xFFFF`, xorout `0x0000`, refin=false, refout=false.
+- CRC bytes at offset `62..63` are zero during calculation, then written with `struct.pack_into("<H", ...)`.
+- Current deterministic verifier vector: `HEADER_CRC16_SAMPLE=0x220C`.
+
+If any runtime or tool writes this header without the exact CRC variant and offset rule, reject the packet before DataVault staging.
 
 ## InputState Packet
 
@@ -382,6 +394,40 @@ Regression test coverage:
 | `test_aup64_round_trips_boundaries_and_flags_overflow` | executable `AupLocal64` signed 21-bit millimeter pack/unpack validates min/max and overflow path |
 | `test_merkle_diff_indices_localize_changed_leaves` | executable Merkle comparison localizes changed leaves, including odd leaf counts |
 | `test_float_hash_crime_detector_rejects_float_math` | hash self-audit flags float constants and division in hash functions |
+
+## Current Reset Evidence - 2026-05-17
+
+The original XML directive required 200 ms latency and 5% packet loss. That gate still runs through `Tools/NetProtocolGate.py`. The current reset pass also ran a harsher stress report: 200 ms latency, 80 ms jitter, and 8% loss.
+
+```powershell
+python Tools\NetJitterSim.py --latency-ms 200 --jitter-ms 80 --loss-percent 8 --ticks 600 --clients 4 --input-delay-ticks 12 --rollback-ticks 96 --redundancy 24 --seed 1313817649 --report Docs\AgentLogs\NetJitterSim_NET_SYNC_MERKLE_ARCHITECT.json
+```
+
+Current stress result:
+
+| Metric | Result |
+|---|---:|
+| Status | NETWORK PROTOCOL READY |
+| Sent packets | 7848 |
+| Lost packets | 672 |
+| Delivered packets | 7176 |
+| Payload estimate | 235948 B/s |
+| Rollback events | 245 |
+| Max rollback depth | 3 ticks |
+| MasterStateHash mismatches | 0 |
+| InputRingBuffer mismatches | 0 |
+| Missing actual inputs | 0 |
+| Float hash audit | PASS |
+| Last MasterStateHash | `0x3128242EF58ACE91` |
+
+Current data-truth locks:
+
+- `VerifyNetSyncMerkleProtocol.py`: `STRUCT_COUNT=6`, `DOMAIN_LABELS=85`, `FNV_LABELS=107`, `BINARY_PAYLOADS_ALIGNED=44`, `DATAGRAM_CEILING=1200`, `HEADER_CRC16_SAMPLE=0x220C`, `JITTER_SIM_STATUS=NETWORK PROTOCOL READY`.
+- `VerifyMetricPhiDataTruth.py`: `checks=37`, `failed=0`, `binary_files=44`, `unaligned=0`, `struct_format_sites=274`, `endian_failures=0`.
+- `VerifyH8HashCollisions.py`: 1,018 records, 0 FNV collisions.
+- `CraftingEconomyMonteCarlo.py --steps 1000000`: `profit_steps=0`; value, mass, and energy deltas are negative.
+- `NetProtocolGate.py`: `NETWORK PROTOCOL READY`, 3 scenarios, 8 unit tests.
+- Python cache hygiene: NET-owned cache entries were absent during final scan, and the final broad `Tools` cache readback reported `CACHE_FILES_LEFT=0`, `PYCACHE_DIRS_LEFT=0`. Stable global cache-zero is blocked while unrelated Python agents continue writing `Tools/__pycache__`.
 
 ## Regression Model
 

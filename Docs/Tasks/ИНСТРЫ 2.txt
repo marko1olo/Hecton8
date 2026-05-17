@@ -1,0 +1,51 @@
+
+II. КЛАСТЕР 2 (20 АГЕНТОВ: ДАННЫЕ, ЛОР, МАТЕМАТИКА)
+
+Группа «Архив и Нарратив» (Content)
+
+41. 42. 43.
+44. S
+45.
+
+Группа «Баланс и Экономика» (Econ)
+
+46.
+47. S
+48.
+49.
+50.
+Группа «Математика и Системы» (Math/Web)
+
+51.
+52.
+53.
+54. System Override. Agent Identity: MATHEMATICIAN | Prompt ID:
+    TIDE_FOURIER_BAKER. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag.
+    Task: Bake 100-day deterministic tide harmonic tables.
+55. System Override. Agent Identity: OPTICAL_ENGINEER | Prompt ID:
+    SNELL_LENS_REFRACTION_LUT. Open Docs/Tasks/CURRENT_BATCH.md, extract your
+    XML tag. Task: Bake half-float refraction UV-offset LUTs.
+
+Группа «Финальный Аудит» (Meta)
+
+56. System Override. Agent Identity: TECHNICAL_ARTIST | Prompt ID:
+    VFX_PARTICLE_BUDGET_MAP. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML
+    tag. Task: Define exact compute buffer sizes for all tiers.
+57. System Override. Agent Identity: UX_RESEARCHER | Prompt ID:
+    VR_JERK_THRESHOLD_AUDIT. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML
+    tag. Task: Define kinematic comfort limits and vignette curves.
+58. System Override. Agent Identity: BACKEND_ENGINEER | Prompt ID:
+    LOCALIZATION_BABEL_FINALIZER. Open Docs/Tasks/CURRENT_BATCH.md, extract your
+    XML tag. Task: Compile all JSON strings into a 16-byte aligned binary.
+59. System Override. Agent Identity: QA_ENGINEER | Prompt ID:
+    HEADLESS_SCENARIO_RUNNER. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML
+    tag. Task: Configure the background CI/CD stress runner.
+60. System Override. Agent Identity: TECH_RESEARCHER | Prompt ID:
+    METRIC_PHI_ANALYST. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag.
+    Task: Final calculation of project H-Phi and atlas indexing.
+
+System Override. Agent Identity: RENDER_STRATEGIST | Prompt ID: VISUAL_LOD_GRADE_ARCHITECT. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Task: Define the "Visual Orgasm" matrix for RTX vs Toaster tiers.
+System Override. Agent Identity: AI_PROGRAMMER | Prompt ID: AI_POTENTIAL_FIELD_NAVIGATOR. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Task: Design AI steering through Abyssal Flow potential fields.
+System Override. Agent Identity: BACKEND_ENGINEER | Prompt ID: ORGANIC_ENTROPY_REGENERATOR. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Task: Build the 1000-day world regrowth and nutrient simulation.
+System Override. Agent Identity: AEROSPACE_ENGINEER | Prompt ID: HYDRODYNAMIC_DRAG_MATRIX_BAKER. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Task: Precompute drag and added-mass tensors for all hull types.
+System Override. Agent Identity: BACKEND_ENGINEER | Prompt ID: NET_SYNC_MERKLE_ARCHITECT. Open Docs/Tasks/CURRENT_BATCH.md, extract your XML tag. Task: Design the Merkle-tree state delta protocol for Co-Op sync.

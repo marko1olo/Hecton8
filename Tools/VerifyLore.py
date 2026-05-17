@@ -34,6 +34,8 @@ VERSION = 1
 ALIGNMENT = 16
 HEADER_STRUCT = struct.Struct("<4sHHIIIIII")
 RECORD_STRUCT = struct.Struct("<IQI")
+RAW_HEADER_STRUCT = struct.Struct("<4sIII")
+RAW_RECORD_STRUCT = struct.Struct("<IIII")
 HEADER_SIZE = HEADER_STRUCT.size
 RECORD_SIZE = RECORD_STRUCT.size
 FLAG_FNV1A_ASCII_LOWER = 1
@@ -308,6 +310,9 @@ def bake_blob(entries: list[SourceEntry]) -> bytes:
     if len(blob) < payload_offset:
         blob.extend(b"\x00" * (payload_offset - len(blob)))
     blob.extend(payload)
+    final_padding = align_up(len(blob)) - len(blob)
+    if final_padding > 0:
+        blob.extend(b"\x00" * final_padding)
     return bytes(blob)
 
 
@@ -318,6 +323,74 @@ def read_blob(path: Path) -> tuple[bytes, list[LoreRecord]]:
     except OSError as exc:
         raise ValueError(f"Cannot read blob: {format_repo_path(resolved)}") from exc
     return blob, parse_blob(blob)
+
+
+def try_load_manifest(path: Path) -> dict[str, object] | None:
+    resolved = resolve_repo_path(path)
+    if not resolved.exists():
+        return None
+    try:
+        data = json.loads(resolved.read_text(encoding="utf-8"))
+    except (OSError, JSONDecodeError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def is_raw_utf8_manifest(manifest: dict[str, object] | None) -> bool:
+    return (
+        manifest is not None
+        and manifest.get("magic") == MAGIC.decode("ascii")
+        and manifest.get("compression") == "none/raw-utf8"
+        and manifest.get("endianness") == "little"
+        and manifest.get("header_layout") == "<4sIII magic, version, count, reserved_zero"
+        and manifest.get("record_layout") == "<IIII hash, absolute_offset, length, reserved_zero"
+    )
+
+
+def parse_raw_utf8_blob(blob: bytes) -> list[LoreRecord]:
+    if len(blob) < RAW_HEADER_STRUCT.size:
+        raise ValueError("Raw UTF-8 blob is smaller than the fixed header.")
+
+    magic, version, entry_count, reserved_zero = RAW_HEADER_STRUCT.unpack_from(blob, 0)
+    if magic != MAGIC:
+        raise ValueError(f"Bad magic: {magic!r}")
+    if version != VERSION:
+        raise ValueError(f"Unsupported version: {version}")
+    if reserved_zero != 0:
+        raise ValueError("Raw UTF-8 header reserved field must be zero.")
+
+    table_offset = RAW_HEADER_STRUCT.size
+    payload_offset = align_up(table_offset + entry_count * RAW_RECORD_STRUCT.size)
+    if payload_offset > len(blob):
+        raise ValueError("Raw UTF-8 payload offset points beyond file length.")
+
+    records: list[LoreRecord] = []
+    previous_hash = -1
+    for index in range(entry_count):
+        record_offset = table_offset + index * RAW_RECORD_STRUCT.size
+        hash_value, payload_file_offset, payload_length, record_reserved = RAW_RECORD_STRUCT.unpack_from(blob, record_offset)
+        if hash_value <= previous_hash:
+            raise ValueError("Raw UTF-8 record table is not strictly sorted by hash.")
+        previous_hash = hash_value
+        if record_reserved != 0:
+            raise ValueError(f"Raw UTF-8 record reserved field is nonzero: {format_hash(hash_value)}")
+        if payload_file_offset % ALIGNMENT != 0:
+            raise ValueError(f"Raw UTF-8 payload offset is not aligned: {format_hash(hash_value)}")
+        if payload_file_offset < payload_offset or payload_file_offset + payload_length > len(blob):
+            raise ValueError(f"Raw UTF-8 payload slice is outside file bounds: {format_hash(hash_value)}")
+        records.append(LoreRecord(hash_value, payload_file_offset, payload_length))
+
+    intervals = sorted(records, key=lambda record: record.offset)
+    previous_end = payload_offset
+    for record in intervals:
+        if record.offset < previous_end:
+            raise ValueError(f"Raw UTF-8 payload overlaps previous record: {format_hash(record.hash_value)}")
+        if any(blob[index] != 0 for index in range(previous_end, record.offset)):
+            raise ValueError(f"Raw UTF-8 padding is not zeroed: {format_hash(record.hash_value)}")
+        previous_end = record.offset + record.length
+    if any(blob[index] != 0 for index in range(previous_end, len(blob))):
+        raise ValueError("Raw UTF-8 trailing alignment padding is not zeroed.")
+    return records
 
 
 def parse_blob(blob: bytes) -> list[LoreRecord]:
@@ -341,6 +414,8 @@ def parse_blob(blob: bytes) -> list[LoreRecord]:
     if version != VERSION:
         raise ValueError(f"Unsupported version: {version}")
     if header_size != HEADER_SIZE or record_size != RECORD_SIZE:
+        if len(blob) >= RAW_HEADER_STRUCT.size:
+            return parse_raw_utf8_blob(blob)
         raise ValueError("Header or record size mismatch.")
     if (header_size % ALIGNMENT) != 0 or (table_offset % ALIGNMENT) != 0:
         raise ValueError("Header/table offset is not 16-byte aligned.")
@@ -382,8 +457,10 @@ def parse_blob(blob: bytes) -> list[LoreRecord]:
             raise ValueError(f"Payload padding before {format_hash(record.hash_value)} is not zeroed.")
         previous_end = record.offset + record.length
 
-    if previous_end != len(blob):
-        raise ValueError("Blob contains trailing bytes after the last payload.")
+    if len(blob) % ALIGNMENT != 0:
+        raise ValueError("Blob length is not 16-byte aligned.")
+    if any(blob[index] != 0 for index in range(previous_end, len(blob))):
+        raise ValueError("Blob trailing alignment padding is not zeroed.")
 
     return records
 
@@ -405,6 +482,8 @@ def find_record(records: list[LoreRecord], hash_value: int) -> LoreRecord | None
 
 def extract_payload(blob: bytes, record: LoreRecord) -> bytes:
     compressed = blob[record.offset : record.offset + record.length]
+    if compressed.startswith(b"#") or compressed.startswith(b"\xef\xbb\xbf#"):
+        return compressed
     try:
         return zlib.decompress(compressed)
     except zlib.error as exc:
@@ -508,6 +587,10 @@ def verify_manifest(blob_path: Path, manifest_path: Path, source_dir: Path) -> N
     except JSONDecodeError as exc:
         raise ValueError(f"Cannot parse manifest JSON: {format_repo_path(resolved_manifest_path)}") from exc
 
+    if is_raw_utf8_manifest(manifest):
+        verify_raw_utf8_manifest_data(blob, records, manifest)
+        return
+
     verify_manifest_data(
         blob,
         records,
@@ -516,6 +599,60 @@ def verify_manifest(blob_path: Path, manifest_path: Path, source_dir: Path) -> N
         expected_blob_label=format_repo_path(blob_path),
         expected_source_dir_label=format_repo_path(source_dir),
     )
+
+
+def verify_raw_utf8_manifest_data(blob: bytes, records: list[LoreRecord], manifest: dict[str, object]) -> None:
+    if manifest.get("blob_length") != len(blob):
+        raise ValueError("Raw UTF-8 manifest blob length mismatch.")
+    if manifest.get("blob_sha256") != hashlib.sha256(blob).hexdigest().upper():
+        raise ValueError("Raw UTF-8 manifest blob SHA-256 mismatch.")
+    if manifest.get("entry_count") != len(records):
+        raise ValueError("Raw UTF-8 manifest entry count mismatch.")
+    if manifest.get("alignment_bytes") != ALIGNMENT:
+        raise ValueError("Raw UTF-8 manifest alignment mismatch.")
+
+    entries = manifest.get("entries")
+    if not isinstance(entries, list):
+        raise ValueError("Raw UTF-8 manifest entries must be a list.")
+    record_by_hash = {record.hash_value: record for record in records}
+    seen_hashes: set[int] = set()
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("Raw UTF-8 manifest entry must be an object.")
+        hash_value = parse_hash(str(entry.get("hash", "")))
+        if hash_value in seen_hashes:
+            raise ValueError(f"Duplicate raw UTF-8 manifest hash: {format_hash(hash_value)}")
+        seen_hashes.add(hash_value)
+        record = record_by_hash.get(hash_value)
+        if record is None:
+            raise ValueError(f"Raw UTF-8 manifest hash missing from blob: {format_hash(hash_value)}")
+
+        hash_input = str(entry.get("hash_input", ""))
+        if hash_input and compute_fnv1a32(hash_input) != hash_value:
+            raise ValueError(f"Raw UTF-8 manifest hash mismatch for {hash_input}")
+        if int(entry.get("offset", -1)) != record.offset:
+            raise ValueError(f"Raw UTF-8 manifest offset mismatch: {format_hash(hash_value)}")
+        if int(entry.get("length", -1)) != record.length:
+            raise ValueError(f"Raw UTF-8 manifest length mismatch: {format_hash(hash_value)}")
+
+        payload = extract_payload(blob, record)
+        canonical_id = entry.get("canonical_id")
+        if not isinstance(canonical_id, str) or not canonical_id:
+            raise ValueError(f"Raw UTF-8 manifest canonical id missing: {format_hash(hash_value)}")
+        source_path = REPO_ROOT / canonical_id
+        if not source_path.exists():
+            raise ValueError(f"Raw UTF-8 manifest source missing: {canonical_id}")
+        source_payload = source_path.read_bytes()
+        if payload != source_payload:
+            raise ValueError(f"Raw UTF-8 manifest payload mismatch: {canonical_id}")
+        if entry.get("sha256") != hashlib.sha256(payload).hexdigest().upper():
+            raise ValueError(f"Raw UTF-8 manifest SHA-256 mismatch: {canonical_id}")
+        try:
+            payload.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ValueError(f"Raw UTF-8 payload is not valid UTF-8: {canonical_id}") from exc
+    if len(seen_hashes) != len(records):
+        raise ValueError("Raw UTF-8 manifest did not cover every record.")
 
 
 def verify_manifest_data(
@@ -656,6 +793,16 @@ def run_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
     blob_path = resolve_repo_path(Path(args.blob))
     manifest_path = resolve_repo_path(Path(args.manifest))
     source_dir = resolve_repo_path(Path(args.source_dir))
+    raw_manifest = try_load_manifest(manifest_path)
+
+    if args.check and is_raw_utf8_manifest(raw_manifest):
+        blob, records = read_blob(blob_path)
+        verify_raw_utf8_manifest_data(blob, records, raw_manifest)
+        print(
+            f"CHECK OK: entries={len(records)} blob={format_repo_path(blob_path)} "
+            f"manifest={format_repo_path(manifest_path)} compression=none/raw-utf8 alignment={ALIGNMENT} endian=<"
+        )
+        return 0
 
     if args.hash and args.source_path:
         parser.error("Use either a numeric hash or --source-path, not both.")

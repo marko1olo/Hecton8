@@ -1,0 +1,3 @@
+PDA TECH BINARY OK: entries=100 bytes=58880 output=Data\Lore\PdaTechnicalLogs.h8bin alignment=16 endian=<
+
+EXIT=0 elapsed=22.616s

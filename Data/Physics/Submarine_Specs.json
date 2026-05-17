@@ -8,6 +8,125 @@
     "rotation_rule": "Pitch, yaw, and roll use separate angular damping tensors so hull shape controls attitude feel.",
     "cavitation_rule": "Speed and depth thresholds drive acoustic/VFX feedback; bubble microphysics remains a presentation fake."
   },
+  "physics_derivation": {
+    "density_contract": "SEA_WATER_DENSITY_KG_M3 is 1025.0 to match the runtime ocean physics contract; the baker and consumer must not disagree on rho.",
+    "drag_force": "F_drag_axis = 0.5 * rho * Cd_axis * projected_area_axis * v_axis * abs(v_axis)",
+    "square_drag_acceleration": "k_axis = 0.5 * rho * CdA_axis / (operational_mass + added_mass_axis); analytical velocity decay v1 = v0 / (1 + k_axis * abs(v0) * dt)",
+    "steady_power": "shaft_power_watts = F_drag_x * speed / propulsive_efficiency",
+    "added_mass": "m_added_axis = C_A_axis * rho * displaced_volume",
+    "displaced_volume": "volume = length * beam * height * block_coefficient",
+    "lift": "Cl_axis = clamp(Cl_alpha_axis * angle_radians, -Cl_max, Cl_max)",
+    "cavitation": "sigma = (p_atm + rho*g*depth - p_vapor) / (0.5*rho*v_effective_prop^2); cavitation threshold occurs when sigma <= sigma_critical",
+    "angular_damping": "torque_drag_axis = 0.5 * rho * angular_Cd_axis * reference_area_axis * lever_axis^3 * omega * abs(omega)",
+    "rigid_inertia": "I_axis = operational_mass * (a^2 + b^2) / 12",
+    "added_angular_inertia": "I_added_axis = displaced_water_mass * (a^2 + b^2) * C_added_axis / 12"
+  },
+  "constant_pedigree": {
+    "SEA_WATER_DENSITY_KG_M3": {
+      "value": 1025.0,
+      "unit": "kg/m^3",
+      "source_type": "runtime_contract",
+      "derivation": "Matches SubmarineFluidDynamics seawater rho so baked drag, added mass, pressure, and cavitation agree with runtime force math."
+    },
+    "GRAVITY_M_S2": {
+      "value": 9.80665,
+      "unit": "m/s^2",
+      "source_type": "physical_constant",
+      "derivation": "Standard gravity used in hydrostatic pressure p=rho*g*depth for cavitation sigma."
+    },
+    "ATM_PRESSURE_PA": {
+      "value": 101325.0,
+      "unit": "Pa",
+      "source_type": "physical_constant",
+      "derivation": "One standard atmosphere in the cavitation ambient-pressure term."
+    },
+    "WATER_VAPOR_PRESSURE_PA": {
+      "value": 1700.0,
+      "unit": "Pa",
+      "source_type": "physical_constant_rounded",
+      "derivation": "Cold seawater vapor pressure rounded for conservative cavitation onset thresholds."
+    },
+    "POWER_SPEED_STEP_MPS": {
+      "value": 0.5,
+      "unit": "m/s",
+      "source_type": "offline_sampling_grid",
+      "derivation": "0.5 m/s graph step keeps speed-power CSV dense enough for monotonic audit without bloating cold artifacts."
+    },
+    "POWER_SPEED_MAX_MPS": {
+      "value": 35.0,
+      "unit": "m/s",
+      "source_type": "offline_sampling_grid",
+      "derivation": "35 m/s plot ceiling exceeds all accepted terminal speeds while staying below the failed 50 m/s arcade-speed gate."
+    },
+    "ACCELERATION_DT_SECONDS": {
+      "value": 0.02,
+      "unit": "s",
+      "source_type": "fixed_step_contract",
+      "derivation": "50 Hz offline integration mirrors a conventional Unity fixed-step cadence for acceleration self-audit."
+    },
+    "ACCELERATION_DURATION_SECONDS": {
+      "value": 90.0,
+      "unit": "s",
+      "source_type": "gameplay_gate",
+      "derivation": "90 s full-thrust window catches instant-speed failures without pretending to be an endurance simulation."
+    },
+    "STOP_TARGET_SPEED_RATIO": {
+      "value": 0.05,
+      "unit": "ratio",
+      "source_type": "analytical_stop_gate",
+      "derivation": "Stop distance integrates quadratic drag until 5 percent of terminal speed, avoiding infinite asymptotic zero-speed distance."
+    },
+    "MIN_STOP_DISTANCE_HULL_LENGTHS": {
+      "value": 3.0,
+      "unit": "hull_lengths",
+      "source_type": "xml_acceptance_gate",
+      "derivation": "Recovered XML explicitly requires stop distance from full speed to be at least 3x hull length."
+    },
+    "MAX_ACCEPTED_TERMINAL_SPEED_MPS": {
+      "value": 49.0,
+      "unit": "m/s",
+      "source_type": "xml_self_audit_guard",
+      "derivation": "One m/s below the 50 m/s failure threshold so floating-point rounding cannot pass a near-50 m/s arcade hull."
+    },
+    "INSTANT_50MPS_SECONDS": {
+      "value": 10.0,
+      "unit": "s",
+      "source_type": "xml_self_audit_guard",
+      "derivation": "Any hull reaching 50 m/s inside 10 s is classified as instant acceleration and fails the Square_Drag gate."
+    },
+    "LIFT_SAMPLE_ANGLES_DEGREES": {
+      "value": [
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0,
+        15.0
+      ],
+      "unit": "degrees",
+      "source_type": "control_surface_sampling_grid",
+      "derivation": "Symmetric -15 to +15 degree samples bound pitch/yaw Cl without runtime curve fitting."
+    },
+    "CAVITATION_SAMPLE_DEPTHS_M": {
+      "value": [
+        0.0,
+        25.0,
+        50.0,
+        100.0,
+        300.0
+      ],
+      "unit": "m",
+      "source_type": "hydrostatic_sampling_grid",
+      "derivation": "Surface, shallow, mid, 100 m, and 300 m rows expose sigma depth dependence for lookup tiers."
+    },
+    "RUNTIME_PACK_ALIGNMENT_BYTES": {
+      "value": 16,
+      "unit": "bytes",
+      "source_type": "binary_cache_contract",
+      "derivation": "SHINOBU ingest requires every runtime .bin/.h8bin blob and record offset to be 16-byte aligned."
+    }
+  },
   "units": {
     "density": "kg/m^3",
     "drag_tensor": "Cd * projected_area in m^2",
@@ -27,8 +146,78 @@
     "High": "Angular damping tensors, added angular inertia, wake/acoustic feedback driven by thresholds.",
     "Ultra": "Same physics truth as High plus visual overkill: denser wake sheets, cockpit vibration, sonar bloom, and hull creak audio."
   },
+  "quality_tier_payloads": {
+    "Low": {
+      "target": "Celeron/i3 toaster path",
+      "binary_fields": [
+        "drag_cd_area_x",
+        "square_drag_per_meter_x",
+        "added_mass_kg_x",
+        "effective_mass_kg_x",
+        "angular_damping_yaw",
+        "cavitation_onset_mps_depth_50"
+      ],
+      "math_lod": "surge scalar drag, surge scalar added mass, scalar yaw damping, binary cavitation flag",
+      "fallback_visuals": "thin prop wash and low-rate hull creak events; no dense wake grids"
+    },
+    "Middle": {
+      "target": "baseline MX350/i5",
+      "binary_fields": "full XYZ drag, effective mass, lift samples, and cavitation rows",
+      "math_lod": "diagonal tensors only; no runtime matrix fitting",
+      "fallback_visuals": "thresholded cavitation mist and sonar tick intensity"
+    },
+    "High": {
+      "target": "modern desktop GPU",
+      "binary_fields": "all Middle fields plus angular damping and added angular inertia",
+      "math_lod": "axis-specific attitude damping and wake/audio ramps",
+      "extra_data": [
+        "speed-power CSV",
+        "cavitation depth table",
+        "lift curve samples"
+      ]
+    },
+    "Ultra": {
+      "target": "RTX-overkill visual path",
+      "binary_fields": "same physics truth as High; no divergent high-tier gameplay physics",
+      "math_lod": "physics remains deterministic; saved CPU buys presentation detail",
+      "extra_visual_fields": [
+        "high-resolution wake intensity gradients from square_drag_per_meter",
+        "complex harmonic cockpit vibration from angular_damping tensors",
+        "sonar bloom and vacuum-bubble sheet density from cavitation thresholds",
+        "hull groan layers from effective mass and stop-distance ratios"
+      ]
+    }
+  },
+  "hash_collision_audit": {
+    "algorithm": "FNV-1a 32-bit",
+    "input": "ASCII shape_id",
+    "hull_count": 5,
+    "collision_count": 0,
+    "hashes": [
+      {
+        "shape_id": "SLEEK",
+        "hash_uint32": 1480423705
+      },
+      {
+        "shape_id": "INDUSTRIAL",
+        "hash_uint32": 1306218258
+      },
+      {
+        "shape_id": "BOXY",
+        "hash_uint32": 2100461137
+      },
+      {
+        "shape_id": "ALIEN",
+        "hash_uint32": 4020659628
+      },
+      {
+        "shape_id": "ARMORED_CRAWLER",
+        "hash_uint32": 1518968346
+      }
+    ]
+  },
   "global_constants": {
-    "sea_water_density_kg_m3": 1027.0,
+    "sea_water_density_kg_m3": 1025.0,
     "gravity_m_s2": 9.80665,
     "atmospheric_pressure_pa": 101325.0,
     "water_vapor_pressure_pa": 1700.0,
@@ -38,6 +227,7 @@
   "hulls": [
     {
       "shape_id": "SLEEK",
+      "shape_hash_fnv1a32": 1480423705,
       "display_name": "Sleek Scout",
       "role": "fast narrow exploration hull",
       "dimensions_m": {
@@ -47,10 +237,10 @@
       },
       "operational_mass_kg": 70000.0,
       "displaced_volume_m3": 78.848,
-      "displaced_water_mass_kg": 80976.896,
+      "displaced_water_mass_kg": 80819.2,
       "max_thrust_n": 220000.0,
-      "rated_cruise_speed_mps": 13.85123,
-      "terminal_speed_at_max_thrust_mps": 19.23782,
+      "rated_cruise_speed_mps": 13.864737,
+      "terminal_speed_at_max_thrust_mps": 19.256579,
       "reference_projected_areas": {
         "frontal_x_m2": 6.0928,
         "side_y_m2": 34.944,
@@ -64,6 +254,20 @@
         "Cl_pitch_per_rad": 0.18,
         "Cl_yaw_per_rad": 0.16,
         "Cl_control_surface_max": 0.72
+      },
+      "coefficient_pedigree": {
+        "shape_class": "fast narrow exploration hull",
+        "drag_basis": "Dimensionless Cd values are empirical hull-class constants multiplied by projected reference area. Slender bodies use low axial Cd and high sway/heave Cd; slab-sided work hulls use blunt-body Cd.",
+        "added_mass_basis": "Added mass is C_A * rho * displaced_volume by local axis. Surge C_A stays low for streamlined lengthwise motion; sway/heave C_A approach displaced-water mass for broad pressure hull motion.",
+        "lift_basis": "Small-angle lift is linear Cl_alpha * angle_radians and clamped by Cl_max. It is a control-feel proxy, not per-fin CFD.",
+        "cavitation_basis": "Cavitation uses sigma=(p_ambient-p_vapor)/(0.5*rho*v_effective_prop^2) with depth pressure p_atm+rho*g*depth. Bubble detail is VFX/audio state only.",
+        "angular_basis": "Rigid inertia uses rectangular pressure-hull approximation m*(a^2+b^2)/12. Added angular inertia scales displaced-water inertia by angular_added coefficients.",
+        "source_constants": {
+          "rho_kg_m3": 1025.0,
+          "g_m_s2": 9.80665,
+          "atmospheric_pressure_pa": 101325.0,
+          "water_vapor_pressure_pa": 1700.0
+        }
       },
       "lift_curve_samples": [
         {
@@ -122,19 +326,19 @@
       "reverse_axial_cd_area_m2": 1.462272,
       "square_drag_accel_tensor_per_meter_local_xyz": [
         [
-          0.007773,
+          0.007759,
           0.0,
           0.0
         ],
         [
           0.0,
-          0.11822,
+          0.118104,
           0.0
         ],
         [
           0.0,
           0.0,
-          0.108117
+          0.108006
         ]
       ],
       "added_mass_coefficients_local_xyz": {
@@ -144,36 +348,36 @@
       },
       "added_mass_tensor_kg_local_xyz": [
         [
-          6478.15168,
+          6465.536,
           0.0,
           0.0
         ],
         [
           0.0,
-          69640.13056,
+          69504.512,
           0.0
         ],
         [
           0.0,
           0.0,
-          63161.97888
+          63038.976
         ]
       ],
       "effective_mass_tensor_kg_local_xyz": [
         [
-          76478.15168,
+          76465.536,
           0.0,
           0.0
         ],
         [
           0.0,
-          139640.13056,
+          139504.512,
           0.0
         ],
         [
           0.0,
           0.0,
-          133161.97888
+          133038.976
         ]
       ],
       "rigid_angular_inertia_tensor_kg_m2_local_xyz": [
@@ -195,36 +399,36 @@
       ],
       "added_angular_inertia_tensor_kg_m2_local_xyz": [
         [
-          19520.830396,
+          19482.815147,
           0.0,
           0.0
         ],
         [
           0.0,
-          818989.529225,
+          817394.612907,
           0.0
         ],
         [
           0.0,
           0.0,
-          898303.699627
+          896554.325333
         ]
       ],
       "angular_quadratic_damping_torque_tensor_n_m_per_rad_s_sq_local_xyz": [
         [
-          2306.693136,
+          2302.201037,
           0.0,
           0.0
         ],
         [
           0.0,
-          5696062.09536,
+          5684969.472,
           0.0
         ],
         [
           0.0,
           0.0,
-          5777501.71648
+          5766250.496
         ]
       ],
       "cavitation": {
@@ -237,37 +441,37 @@
           {
             "depth_m": 0.0,
             "ambient_pressure_kpa": 101.325,
-            "critical_effective_prop_speed_mps": 10.38192,
+            "critical_effective_prop_speed_mps": 10.392044,
             "quiet_prop_tip_speed_mps": 9.414306,
-            "hull_speed_onset_mps": 5.337385
+            "hull_speed_onset_mps": 5.366605
           },
           {
             "depth_m": 25.0,
-            "ambient_pressure_kpa": 353.110739,
-            "critical_effective_prop_speed_mps": 19.498493,
+            "ambient_pressure_kpa": 352.620406,
+            "critical_effective_prop_speed_mps": 19.503885,
             "quiet_prop_tip_speed_mps": 9.414306,
-            "hull_speed_onset_mps": 20.8234
+            "hull_speed_onset_mps": 20.830909
           },
           {
             "depth_m": 50.0,
-            "ambient_pressure_kpa": 604.896477,
-            "critical_effective_prop_speed_mps": 25.546001,
+            "ambient_pressure_kpa": 603.915813,
+            "critical_effective_prop_speed_mps": 25.550117,
             "quiet_prop_tip_speed_mps": 9.414306,
-            "hull_speed_onset_mps": 28.961014
+            "hull_speed_onset_mps": 28.966413
           },
           {
             "depth_m": 100.0,
-            "ambient_pressure_kpa": 1108.467955,
-            "critical_effective_prop_speed_mps": 34.603642,
+            "ambient_pressure_kpa": 1106.506625,
+            "critical_effective_prop_speed_mps": 34.606681,
             "quiet_prop_tip_speed_mps": 9.414306,
-            "hull_speed_onset_mps": 40.607795
+            "hull_speed_onset_mps": 40.611646
           },
           {
             "depth_m": 300.0,
-            "ambient_pressure_kpa": 3122.753865,
-            "critical_effective_prop_speed_mps": 58.109101,
+            "ambient_pressure_kpa": 3116.869875,
+            "critical_effective_prop_speed_mps": 58.11091,
             "quiet_prop_tip_speed_mps": 9.414306,
-            "hull_speed_onset_mps": 69.928561
+            "hull_speed_onset_mps": 69.930797
           }
         ],
         "gameplay_output": "Use threshold crossing for acoustic/noise/VFX state. Do not simulate bubble microphysics."
@@ -276,16 +480,17 @@
         "acceleration_gate": {
           "duration_seconds": 90.0,
           "dt_seconds": 0.02,
-          "max_speed_mps": 19.23782,
+          "max_speed_mps": 19.256579,
           "time_to_50_mps_seconds": null
         },
-        "stop_distance_to_5_percent_terminal_speed_m": 385.415708,
-        "stop_distance_hull_lengths": 24.088482,
+        "stop_distance_to_5_percent_terminal_speed_m": 386.104037,
+        "stop_distance_hull_lengths": 24.131502,
         "min_required_stop_distance_m": 48.0
       }
     },
     {
       "shape_id": "INDUSTRIAL",
+      "shape_hash_fnv1a32": 1306218258,
       "display_name": "Industrial Hauler",
       "role": "workhorse vehicle with external equipment mass",
       "dimensions_m": {
@@ -295,10 +500,10 @@
       },
       "operational_mass_kg": 260000.0,
       "displaced_volume_m3": 306.9,
-      "displaced_water_mass_kg": 315186.3,
+      "displaced_water_mass_kg": 314572.5,
       "max_thrust_n": 420000.0,
-      "rated_cruise_speed_mps": 8.689071,
-      "terminal_speed_at_max_thrust_mps": 12.068155,
+      "rated_cruise_speed_mps": 8.697544,
+      "terminal_speed_at_max_thrust_mps": 12.079923,
       "reference_projected_areas": {
         "frontal_x_m2": 17.55,
         "side_y_m2": 85.14,
@@ -312,6 +517,20 @@
         "Cl_pitch_per_rad": 0.1,
         "Cl_yaw_per_rad": 0.09,
         "Cl_control_surface_max": 0.44
+      },
+      "coefficient_pedigree": {
+        "shape_class": "workhorse vehicle with external equipment mass",
+        "drag_basis": "Dimensionless Cd values are empirical hull-class constants multiplied by projected reference area. Slender bodies use low axial Cd and high sway/heave Cd; slab-sided work hulls use blunt-body Cd.",
+        "added_mass_basis": "Added mass is C_A * rho * displaced_volume by local axis. Surge C_A stays low for streamlined lengthwise motion; sway/heave C_A approach displaced-water mass for broad pressure hull motion.",
+        "lift_basis": "Small-angle lift is linear Cl_alpha * angle_radians and clamped by Cl_max. It is a control-feel proxy, not per-fin CFD.",
+        "cavitation_basis": "Cavitation uses sigma=(p_ambient-p_vapor)/(0.5*rho*v_effective_prop^2) with depth pressure p_atm+rho*g*depth. Bubble detail is VFX/audio state only.",
+        "angular_basis": "Rigid inertia uses rectangular pressure-hull approximation m*(a^2+b^2)/12. Added angular inertia scales displaced-water inertia by angular_added coefficients.",
+        "source_constants": {
+          "rho_kg_m3": 1025.0,
+          "g_m_s2": 9.80665,
+          "atmospheric_pressure_pa": 101325.0,
+          "water_vapor_pressure_pa": 1700.0
+        }
       },
       "lift_curve_samples": [
         {
@@ -370,19 +589,19 @@
       "reverse_axial_cd_area_m2": 6.669,
       "square_drag_accel_tensor_per_meter_local_xyz": [
         [
-          0.009683,
+          0.009667,
           0.0,
           0.0
         ],
         [
           0.0,
-          0.088592,
+          0.088512,
           0.0
         ],
         [
           0.0,
           0.0,
-          0.081885
+          0.081807
         ]
       ],
       "added_mass_coefficients_local_xyz": {
@@ -392,36 +611,36 @@
       },
       "added_mass_tensor_kg_local_xyz": [
         [
-          37822.356,
+          37748.7,
           0.0,
           0.0
         ],
         [
           0.0,
-          302578.848,
+          301989.6,
           0.0
         ],
         [
           0.0,
           0.0,
-          277363.944
+          276823.8
         ]
       ],
       "effective_mass_tensor_kg_local_xyz": [
         [
-          297822.356,
+          297748.7,
           0.0,
           0.0
         ],
         [
           0.0,
-          562578.848,
+          561989.6,
           0.0
         ],
         [
           0.0,
           0.0,
-          537363.944
+          536823.8
         ]
       ],
       "rigid_angular_inertia_tensor_kg_m2_local_xyz": [
@@ -443,36 +662,36 @@
       ],
       "added_angular_inertia_tensor_kg_m2_local_xyz": [
         [
-          237703.00125,
+          237240.09375,
           0.0,
           0.0
         ],
         [
           0.0,
-          7681746.769125,
+          7666787.184375,
           0.0
         ],
         [
           0.0,
           0.0,
-          8288874.3795
+          8272732.4625
         ]
       ],
       "angular_quadratic_damping_torque_tensor_n_m_per_rad_s_sq_local_xyz": [
         [
-          35202.832031,
+          35134.277344,
           0.0,
           0.0
         ],
         [
           0.0,
-          47716216.6338,
+          47623293.135,
           0.0
         ],
         [
           0.0,
           0.0,
-          46853132.612
+          46761889.9
         ]
       ],
       "cavitation": {
@@ -485,37 +704,37 @@
           {
             "depth_m": 0.0,
             "ambient_pressure_kpa": 101.325,
-            "critical_effective_prop_speed_mps": 10.105019,
+            "critical_effective_prop_speed_mps": 10.114873,
             "quiet_prop_tip_speed_mps": 10.890855,
             "hull_speed_onset_mps": 0.0
           },
           {
             "depth_m": 25.0,
-            "ambient_pressure_kpa": 353.110739,
-            "critical_effective_prop_speed_mps": 18.978439,
+            "ambient_pressure_kpa": 352.620406,
+            "critical_effective_prop_speed_mps": 18.983688,
             "quiet_prop_tip_speed_mps": 10.890855,
-            "hull_speed_onset_mps": 20.723382
+            "hull_speed_onset_mps": 20.731926
           },
           {
             "depth_m": 50.0,
-            "ambient_pressure_kpa": 604.896477,
-            "critical_effective_prop_speed_mps": 24.864651,
+            "ambient_pressure_kpa": 603.915813,
+            "critical_effective_prop_speed_mps": 24.868658,
             "quiet_prop_tip_speed_mps": 10.890855,
-            "hull_speed_onset_mps": 29.80351
+            "hull_speed_onset_mps": 29.809452
           },
           {
             "depth_m": 100.0,
-            "ambient_pressure_kpa": 1108.467955,
-            "critical_effective_prop_speed_mps": 33.680712,
+            "ambient_pressure_kpa": 1106.506625,
+            "critical_effective_prop_speed_mps": 33.68367,
             "quiet_prop_tip_speed_mps": 10.890855,
-            "hull_speed_onset_mps": 42.495064
+            "hull_speed_onset_mps": 42.499232
           },
           {
             "depth_m": 300.0,
-            "ambient_pressure_kpa": 3122.753865,
-            "critical_effective_prop_speed_mps": 56.559246,
+            "ambient_pressure_kpa": 3116.869875,
+            "critical_effective_prop_speed_mps": 56.561007,
             "quiet_prop_tip_speed_mps": 10.890855,
-            "hull_speed_onset_mps": 74.001052
+            "hull_speed_onset_mps": 74.003445
           }
         ],
         "gameplay_output": "Use threshold crossing for acoustic/noise/VFX state. Do not simulate bubble microphysics."
@@ -524,16 +743,17 @@
         "acceleration_gate": {
           "duration_seconds": 90.0,
           "dt_seconds": 0.02,
-          "max_speed_mps": 12.068155,
+          "max_speed_mps": 12.079923,
           "time_to_50_mps_seconds": null
         },
-        "stop_distance_to_5_percent_terminal_speed_m": 309.380364,
-        "stop_distance_hull_lengths": 14.062744,
+        "stop_distance_to_5_percent_terminal_speed_m": 309.907369,
+        "stop_distance_hull_lengths": 14.086699,
         "min_required_stop_distance_m": 66.0
       }
     },
     {
       "shape_id": "BOXY",
+      "shape_hash_fnv1a32": 2100461137,
       "display_name": "Boxy Salvage Tug",
       "role": "short slab-sided salvage hull",
       "dimensions_m": {
@@ -543,10 +763,10 @@
       },
       "operational_mass_kg": 240000.0,
       "displaced_volume_m3": 282.24,
-      "displaced_water_mass_kg": 289860.48,
+      "displaced_water_mass_kg": 289296.0,
       "max_thrust_n": 600000.0,
-      "rated_cruise_speed_mps": 6.429028,
-      "terminal_speed_at_max_thrust_mps": 8.929206,
+      "rated_cruise_speed_mps": 6.435298,
+      "terminal_speed_at_max_thrust_mps": 8.937913,
       "reference_projected_areas": {
         "frontal_x_m2": 25.2672,
         "side_y_m2": 63.168,
@@ -560,6 +780,20 @@
         "Cl_pitch_per_rad": 0.05,
         "Cl_yaw_per_rad": 0.04,
         "Cl_control_surface_max": 0.24
+      },
+      "coefficient_pedigree": {
+        "shape_class": "short slab-sided salvage hull",
+        "drag_basis": "Dimensionless Cd values are empirical hull-class constants multiplied by projected reference area. Slender bodies use low axial Cd and high sway/heave Cd; slab-sided work hulls use blunt-body Cd.",
+        "added_mass_basis": "Added mass is C_A * rho * displaced_volume by local axis. Surge C_A stays low for streamlined lengthwise motion; sway/heave C_A approach displaced-water mass for broad pressure hull motion.",
+        "lift_basis": "Small-angle lift is linear Cl_alpha * angle_radians and clamped by Cl_max. It is a control-feel proxy, not per-fin CFD.",
+        "cavitation_basis": "Cavitation uses sigma=(p_ambient-p_vapor)/(0.5*rho*v_effective_prop^2) with depth pressure p_atm+rho*g*depth. Bubble detail is VFX/audio state only.",
+        "angular_basis": "Rigid inertia uses rectangular pressure-hull approximation m*(a^2+b^2)/12. Added angular inertia scales displaced-water inertia by angular_added coefficients.",
+        "source_constants": {
+          "rho_kg_m3": 1025.0,
+          "g_m_s2": 9.80665,
+          "atmospheric_pressure_pa": 101325.0,
+          "water_vapor_pressure_pa": 1700.0
+        }
       },
       "lift_curve_samples": [
         {
@@ -618,19 +852,19 @@
       "reverse_axial_cd_area_m2": 16.676352,
       "square_drag_accel_tensor_per_meter_local_xyz": [
         [
-          0.025756,
+          0.025715,
           0.0,
           0.0
         ],
         [
           0.0,
-          0.079136,
+          0.079073,
           0.0
         ],
         [
           0.0,
           0.0,
-          0.081893
+          0.081823
         ]
       ],
       "added_mass_coefficients_local_xyz": {
@@ -640,36 +874,36 @@
       },
       "added_mass_tensor_kg_local_xyz": [
         [
-          52174.8864,
+          52073.28,
           0.0,
           0.0
         ],
         [
           0.0,
-          342035.3664,
+          341369.28,
           0.0
         ],
         [
           0.0,
           0.0,
-          313049.3184
+          312439.68
         ]
       ],
       "effective_mass_tensor_kg_local_xyz": [
         [
-          292174.8864,
+          292073.28,
           0.0,
           0.0
         ],
         [
           0.0,
-          582035.3664,
+          581369.28,
           0.0
         ],
         [
           0.0,
           0.0,
-          553049.3184
+          552439.68
         ]
       ],
       "rigid_angular_inertia_tensor_kg_m2_local_xyz": [
@@ -691,36 +925,36 @@
       ],
       "added_angular_inertia_tensor_kg_m2_local_xyz": [
         [
-          341648.88576,
+          340983.552,
           0.0,
           0.0
         ],
         [
           0.0,
-          3703643.97312,
+          3696431.424,
           0.0
         ],
         [
           0.0,
           0.0,
-          4063998.521856
+          4056084.2112
         ]
       ],
       "angular_quadratic_damping_torque_tensor_n_m_per_rad_s_sq_local_xyz": [
         [
-          96839.062634,
+          96650.476339,
           0.0,
           0.0
         ],
         [
           0.0,
-          12015876.33792,
+          11992476.384,
           0.0
         ],
         [
           0.0,
           0.0,
-          12676323.4416
+          12651637.32
         ]
       ],
       "cavitation": {
@@ -733,37 +967,37 @@
           {
             "depth_m": 0.0,
             "ambient_pressure_kpa": 101.325,
-            "critical_effective_prop_speed_mps": 9.849154,
+            "critical_effective_prop_speed_mps": 9.858759,
             "quiet_prop_tip_speed_mps": 10.995574,
             "hull_speed_onset_mps": 0.0
           },
           {
             "depth_m": 25.0,
-            "ambient_pressure_kpa": 353.110739,
-            "critical_effective_prop_speed_mps": 18.497894,
+            "ambient_pressure_kpa": 352.620406,
+            "critical_effective_prop_speed_mps": 18.50301,
             "quiet_prop_tip_speed_mps": 10.995574,
-            "hull_speed_onset_mps": 21.875188
+            "hull_speed_onset_mps": 21.884543
           },
           {
             "depth_m": 50.0,
-            "ambient_pressure_kpa": 604.896477,
-            "critical_effective_prop_speed_mps": 24.235064,
+            "ambient_pressure_kpa": 603.915813,
+            "critical_effective_prop_speed_mps": 24.238969,
             "quiet_prop_tip_speed_mps": 10.995574,
-            "hull_speed_onset_mps": 31.760474
+            "hull_speed_onset_mps": 31.766917
           },
           {
             "depth_m": 100.0,
-            "ambient_pressure_kpa": 1108.467955,
-            "critical_effective_prop_speed_mps": 32.827897,
+            "ambient_pressure_kpa": 1106.506625,
+            "critical_effective_prop_speed_mps": 32.83078,
             "quiet_prop_tip_speed_mps": 10.995574,
-            "hull_speed_onset_mps": 45.48775
+            "hull_speed_onset_mps": 45.492249
           },
           {
             "depth_m": 300.0,
-            "ambient_pressure_kpa": 3122.753865,
-            "critical_effective_prop_speed_mps": 55.127133,
+            "ambient_pressure_kpa": 3116.869875,
+            "critical_effective_prop_speed_mps": 55.12885,
             "quiet_prop_tip_speed_mps": 10.995574,
-            "hull_speed_onset_mps": 79.44033
+            "hull_speed_onset_mps": 79.442906
           }
         ],
         "gameplay_output": "Use threshold crossing for acoustic/noise/VFX state. Do not simulate bubble microphysics."
@@ -772,16 +1006,17 @@
         "acceleration_gate": {
           "duration_seconds": 90.0,
           "dt_seconds": 0.02,
-          "max_speed_mps": 8.929206,
+          "max_speed_mps": 8.937913,
           "time_to_50_mps_seconds": null
         },
-        "stop_distance_to_5_percent_terminal_speed_m": 116.310875,
-        "stop_distance_hull_lengths": 8.30792,
+        "stop_distance_to_5_percent_terminal_speed_m": 116.497296,
+        "stop_distance_hull_lengths": 8.321235,
         "min_required_stop_distance_m": 42.0
       }
     },
     {
       "shape_id": "ALIEN",
+      "shape_hash_fnv1a32": 4020659628,
       "display_name": "Alien Manta",
       "role": "wide biological silhouette with clean pressure recovery",
       "dimensions_m": {
@@ -791,10 +1026,10 @@
       },
       "operational_mass_kg": 120000.0,
       "displaced_volume_m3": 145.08,
-      "displaced_water_mass_kg": 148997.16,
+      "displaced_water_mass_kg": 148707.0,
       "max_thrust_n": 280000.0,
-      "rated_cruise_speed_mps": 13.295447,
-      "terminal_speed_at_max_thrust_mps": 18.465898,
+      "rated_cruise_speed_mps": 13.308412,
+      "terminal_speed_at_max_thrust_mps": 18.483905,
       "reference_projected_areas": {
         "frontal_x_m2": 9.9944,
         "side_y_m2": 37.44,
@@ -808,6 +1043,20 @@
         "Cl_pitch_per_rad": 0.24,
         "Cl_yaw_per_rad": 0.21,
         "Cl_control_surface_max": 0.86
+      },
+      "coefficient_pedigree": {
+        "shape_class": "wide biological silhouette with clean pressure recovery",
+        "drag_basis": "Dimensionless Cd values are empirical hull-class constants multiplied by projected reference area. Slender bodies use low axial Cd and high sway/heave Cd; slab-sided work hulls use blunt-body Cd.",
+        "added_mass_basis": "Added mass is C_A * rho * displaced_volume by local axis. Surge C_A stays low for streamlined lengthwise motion; sway/heave C_A approach displaced-water mass for broad pressure hull motion.",
+        "lift_basis": "Small-angle lift is linear Cl_alpha * angle_radians and clamped by Cl_max. It is a control-feel proxy, not per-fin CFD.",
+        "cavitation_basis": "Cavitation uses sigma=(p_ambient-p_vapor)/(0.5*rho*v_effective_prop^2) with depth pressure p_atm+rho*g*depth. Bubble detail is VFX/audio state only.",
+        "angular_basis": "Rigid inertia uses rectangular pressure-hull approximation m*(a^2+b^2)/12. Added angular inertia scales displaced-water inertia by angular_added coefficients.",
+        "source_constants": {
+          "rho_kg_m3": 1025.0,
+          "g_m_s2": 9.80665,
+          "atmospheric_pressure_pa": 101325.0,
+          "water_vapor_pressure_pa": 1700.0
+        }
       },
       "lift_curve_samples": [
         {
@@ -866,19 +1115,19 @@
       "reverse_axial_cd_area_m2": 1.99888,
       "square_drag_accel_tensor_per_meter_local_xyz": [
         [
-          0.006368,
+          0.006357,
           0.0,
           0.0
         ],
         [
           0.0,
-          0.058332,
+          0.058279,
           0.0
         ],
         [
           0.0,
           0.0,
-          0.144325
+          0.144175
         ]
       ],
       "added_mass_coefficients_local_xyz": {
@@ -888,36 +1137,36 @@
       },
       "added_mass_tensor_kg_local_xyz": [
         [
-          8939.8296,
+          8922.42,
           0.0,
           0.0
         ],
         [
           0.0,
-          137077.3872,
+          136810.44,
           0.0
         ],
         [
           0.0,
           0.0,
-          104298.012
+          104094.9
         ]
       ],
       "effective_mass_tensor_kg_local_xyz": [
         [
-          128939.8296,
+          128922.42,
           0.0,
           0.0
         ],
         [
           0.0,
-          257077.3872,
+          256810.44,
           0.0
         ],
         [
           0.0,
           0.0,
-          224298.012
+          224094.9
         ]
       ],
       "rigid_angular_inertia_tensor_kg_m2_local_xyz": [
@@ -939,36 +1188,36 @@
       ],
       "added_angular_inertia_tensor_kg_m2_local_xyz": [
         [
-          78571.16904,
+          78418.158,
           0.0,
           0.0
         ],
         [
           0.0,
-          2222223.109392,
+          2217895.5084,
           0.0
         ],
         [
           0.0,
           0.0,
-          2830806.975984
+          2825294.2068
         ]
       ],
       "angular_quadratic_damping_torque_tensor_n_m_per_rad_s_sq_local_xyz": [
         [
-          24462.57888,
+          24414.939973,
           0.0,
           0.0
         ],
         [
           0.0,
-          10381737.6,
+          10361520.0,
           0.0
         ],
         [
           0.0,
           0.0,
-          26106340.0
+          26055500.0
         ]
       ],
       "cavitation": {
@@ -981,37 +1230,37 @@
           {
             "depth_m": 0.0,
             "ambient_pressure_kpa": 101.325,
-            "critical_effective_prop_speed_mps": 10.682908,
+            "critical_effective_prop_speed_mps": 10.693325,
             "quiet_prop_tip_speed_mps": 9.424778,
-            "hull_speed_onset_mps": 5.917317
+            "hull_speed_onset_mps": 5.943303
           },
           {
             "depth_m": 25.0,
-            "ambient_pressure_kpa": 353.110739,
-            "critical_effective_prop_speed_mps": 20.063783,
+            "ambient_pressure_kpa": 352.620406,
+            "critical_effective_prop_speed_mps": 20.069332,
             "quiet_prop_tip_speed_mps": 9.424778,
-            "hull_speed_onset_mps": 20.838113
+            "hull_speed_onset_mps": 20.845507
           },
           {
             "depth_m": 50.0,
-            "ambient_pressure_kpa": 604.896477,
-            "critical_effective_prop_speed_mps": 26.286618,
+            "ambient_pressure_kpa": 603.915813,
+            "critical_effective_prop_speed_mps": 26.290853,
             "quiet_prop_tip_speed_mps": 9.424778,
-            "hull_speed_onset_mps": 28.869348
+            "hull_speed_onset_mps": 28.874685
           },
           {
             "depth_m": 100.0,
-            "ambient_pressure_kpa": 1108.467955,
-            "critical_effective_prop_speed_mps": 35.606854,
+            "ambient_pressure_kpa": 1106.506625,
+            "critical_effective_prop_speed_mps": 35.609981,
             "quiet_prop_tip_speed_mps": 9.424778,
-            "hull_speed_onset_mps": 40.396334
+            "hull_speed_onset_mps": 40.400149
           },
           {
             "depth_m": 300.0,
-            "ambient_pressure_kpa": 3122.753865,
-            "critical_effective_prop_speed_mps": 59.793771,
+            "ambient_pressure_kpa": 3116.869875,
+            "critical_effective_prop_speed_mps": 59.795634,
             "quiet_prop_tip_speed_mps": 9.424778,
-            "hull_speed_onset_mps": 69.466266
+            "hull_speed_onset_mps": 69.468485
           }
         ],
         "gameplay_output": "Use threshold crossing for acoustic/noise/VFX state. Do not simulate bubble microphysics."
@@ -1020,16 +1269,17 @@
         "acceleration_gate": {
           "duration_seconds": 90.0,
           "dt_seconds": 0.02,
-          "max_speed_mps": 18.465898,
+          "max_speed_mps": 18.483905,
           "time_to_50_mps_seconds": null
         },
-        "stop_distance_to_5_percent_terminal_speed_m": 470.406087,
-        "stop_distance_hull_lengths": 23.520304,
+        "stop_distance_to_5_percent_terminal_speed_m": 471.260314,
+        "stop_distance_hull_lengths": 23.563016,
         "min_required_stop_distance_m": 60.0
       }
     },
     {
       "shape_id": "ARMORED_CRAWLER",
+      "shape_hash_fnv1a32": 1518968346,
       "display_name": "Armored Crawler",
       "role": "heavy pressure-rated mobile habitat hull",
       "dimensions_m": {
@@ -1039,10 +1289,10 @@
       },
       "operational_mass_kg": 560000.0,
       "displaced_volume_m3": 633.6512,
-      "displaced_water_mass_kg": 650759.7824,
+      "displaced_water_mass_kg": 649492.48,
       "max_thrust_n": 620000.0,
-      "rated_cruise_speed_mps": 7.133464,
-      "terminal_speed_at_max_thrust_mps": 9.907589,
+      "rated_cruise_speed_mps": 7.14042,
+      "terminal_speed_at_max_thrust_mps": 9.91725,
       "reference_projected_areas": {
         "frontal_x_m2": 27.9552,
         "side_y_m2": 128.128,
@@ -1056,6 +1306,20 @@
         "Cl_pitch_per_rad": 0.06,
         "Cl_yaw_per_rad": 0.05,
         "Cl_control_surface_max": 0.3
+      },
+      "coefficient_pedigree": {
+        "shape_class": "heavy pressure-rated mobile habitat hull",
+        "drag_basis": "Dimensionless Cd values are empirical hull-class constants multiplied by projected reference area. Slender bodies use low axial Cd and high sway/heave Cd; slab-sided work hulls use blunt-body Cd.",
+        "added_mass_basis": "Added mass is C_A * rho * displaced_volume by local axis. Surge C_A stays low for streamlined lengthwise motion; sway/heave C_A approach displaced-water mass for broad pressure hull motion.",
+        "lift_basis": "Small-angle lift is linear Cl_alpha * angle_radians and clamped by Cl_max. It is a control-feel proxy, not per-fin CFD.",
+        "cavitation_basis": "Cavitation uses sigma=(p_ambient-p_vapor)/(0.5*rho*v_effective_prop^2) with depth pressure p_atm+rho*g*depth. Bubble detail is VFX/audio state only.",
+        "angular_basis": "Rigid inertia uses rectangular pressure-hull approximation m*(a^2+b^2)/12. Added angular inertia scales displaced-water inertia by angular_added coefficients.",
+        "source_constants": {
+          "rho_kg_m3": 1025.0,
+          "g_m_s2": 9.80665,
+          "atmospheric_pressure_pa": 101325.0,
+          "water_vapor_pressure_pa": 1700.0
+        }
       },
       "lift_curve_samples": [
         {
@@ -1114,19 +1378,19 @@
       "reverse_axial_cd_area_m2": 14.536704,
       "square_drag_accel_tensor_per_meter_local_xyz": [
         [
-          0.009701,
+          0.009684,
           0.0,
           0.0
         ],
         [
           0.0,
-          0.068436,
+          0.068376,
           0.0
         ],
         [
           0.0,
           0.0,
-          0.071357
+          0.071292
         ]
       ],
       "added_mass_coefficients_local_xyz": {
@@ -1136,36 +1400,36 @@
       },
       "added_mass_tensor_kg_local_xyz": [
         [
-          91106.369536,
+          90928.9472,
           0.0,
           0.0
         ],
         [
           0.0,
-          689805.369344,
+          688462.0288,
           0.0
         ],
         [
           0.0,
           0.0,
-          637744.586752
+          636502.6304
         ]
       ],
       "effective_mass_tensor_kg_local_xyz": [
         [
-          651106.369536,
+          650928.9472,
           0.0,
           0.0
         ],
         [
           0.0,
-          1249805.369344,
+          1248462.0288,
           0.0
         ],
         [
           0.0,
           0.0,
-          1197744.586752
+          1196502.6304
         ]
       ],
       "rigid_angular_inertia_tensor_kg_m2_local_xyz": [
@@ -1187,36 +1451,36 @@
       ],
       "added_angular_inertia_tensor_kg_m2_local_xyz": [
         [
-          885033.304064,
+          883309.7728,
           0.0,
           0.0
         ],
         [
           0.0,
-          29028571.765473,
+          28972040.953856,
           0.0
         ],
         [
           0.0,
           0.0,
-          30421544.771693
+          30362301.257045
         ]
       ],
       "angular_quadratic_damping_torque_tensor_n_m_per_rad_s_sq_local_xyz": [
         [
-          141115.344814,
+          140840.534016,
           0.0,
           0.0
         ],
         [
           0.0,
-          176927229.83936,
+          176582678.272,
           0.0
         ],
         [
           0.0,
           0.0,
-          199778541.81376
+          199389489.152
         ]
       ],
       "cavitation": {
@@ -1229,37 +1493,37 @@
           {
             "depth_m": 0.0,
             "ambient_pressure_kpa": 101.325,
-            "critical_effective_prop_speed_mps": 9.849154,
+            "critical_effective_prop_speed_mps": 9.858759,
             "quiet_prop_tip_speed_mps": 11.440633,
             "hull_speed_onset_mps": 0.0
           },
           {
             "depth_m": 25.0,
-            "ambient_pressure_kpa": 353.110739,
-            "critical_effective_prop_speed_mps": 18.497894,
+            "ambient_pressure_kpa": 352.620406,
+            "critical_effective_prop_speed_mps": 18.50301,
             "quiet_prop_tip_speed_mps": 11.440633,
-            "hull_speed_onset_mps": 20.765159
+            "hull_speed_onset_mps": 20.774459
           },
           {
             "depth_m": 50.0,
-            "ambient_pressure_kpa": 604.896477,
-            "critical_effective_prop_speed_mps": 24.235064,
+            "ambient_pressure_kpa": 603.915813,
+            "critical_effective_prop_speed_mps": 24.238969,
             "quiet_prop_tip_speed_mps": 11.440633,
-            "hull_speed_onset_mps": 30.520995
+            "hull_speed_onset_mps": 30.527322
           },
           {
             "depth_m": 100.0,
-            "ambient_pressure_kpa": 1108.467955,
-            "critical_effective_prop_speed_mps": 32.827897,
+            "ambient_pressure_kpa": 1106.506625,
+            "critical_effective_prop_speed_mps": 32.83078,
             "quiet_prop_tip_speed_mps": 11.440633,
-            "hull_speed_onset_mps": 43.956907
+            "hull_speed_onset_mps": 43.961301
           },
           {
             "depth_m": 300.0,
-            "ambient_pressure_kpa": 3122.753865,
-            "critical_effective_prop_speed_mps": 55.127133,
+            "ambient_pressure_kpa": 3116.869875,
+            "critical_effective_prop_speed_mps": 55.12885,
             "quiet_prop_tip_speed_mps": 11.440633,
-            "hull_speed_onset_mps": 77.038458
+            "hull_speed_onset_mps": 77.040965
           }
         ],
         "gameplay_output": "Use threshold crossing for acoustic/noise/VFX state. Do not simulate bubble microphysics."
@@ -1268,11 +1532,11 @@
         "acceleration_gate": {
           "duration_seconds": 90.0,
           "dt_seconds": 0.02,
-          "max_speed_mps": 9.907588,
+          "max_speed_mps": 9.91725,
           "time_to_50_mps_seconds": null
         },
-        "stop_distance_to_5_percent_terminal_speed_m": 308.815588,
-        "stop_distance_hull_lengths": 11.029128,
+        "stop_distance_to_5_percent_terminal_speed_m": 309.333841,
+        "stop_distance_hull_lengths": 11.047637,
         "min_required_stop_distance_m": 84.0
       }
     }

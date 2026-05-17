@@ -1,0 +1,416 @@
+{
+  "checkpoints": [
+    {
+      "avgApexRespawnDaysByBiome": [
+        9,
+        9,
+        9,
+        7
+      ],
+      "avgNutrientsByBiome": [
+        140,
+        120,
+        100,
+        60
+      ],
+      "avgPredatorByBiome": [
+        60,
+        47,
+        45,
+        20
+      ],
+      "avgPreyByBiome": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "countByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ],
+      "day": 0,
+      "firstHalfRecoveryDays": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "matureByBiome": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "avgApexRespawnDaysByBiome": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "avgNutrientsByBiome": [
+        137,
+        117,
+        101,
+        70
+      ],
+      "avgPredatorByBiome": [
+        60,
+        47,
+        45,
+        20
+      ],
+      "avgPreyByBiome": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "countByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ],
+      "day": 1,
+      "firstHalfRecoveryDays": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "matureByBiome": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "avgApexRespawnDaysByBiome": [
+        17,
+        44,
+        48,
+        89
+      ],
+      "avgNutrientsByBiome": [
+        158,
+        131,
+        130,
+        123
+      ],
+      "avgPredatorByBiome": [
+        39,
+        24,
+        23,
+        18
+      ],
+      "avgPreyByBiome": [
+        217,
+        131,
+        119,
+        5
+      ],
+      "countByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ],
+      "day": 28,
+      "firstHalfRecoveryDays": [
+        28,
+        null,
+        null,
+        null
+      ],
+      "matureByBiome": [
+        874,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "avgApexRespawnDaysByBiome": [
+        8,
+        7,
+        7,
+        7
+      ],
+      "avgNutrientsByBiome": [
+        249,
+        242,
+        242,
+        241
+      ],
+      "avgPredatorByBiome": [
+        39,
+        19,
+        16,
+        0
+      ],
+      "avgPreyByBiome": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "countByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ],
+      "day": 95,
+      "firstHalfRecoveryDays": [
+        28,
+        41,
+        44,
+        88
+      ],
+      "matureByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ]
+    },
+    {
+      "avgApexRespawnDaysByBiome": [
+        8,
+        7,
+        7,
+        7
+      ],
+      "avgNutrientsByBiome": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "avgPredatorByBiome": [
+        39,
+        19,
+        16,
+        0
+      ],
+      "avgPreyByBiome": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "countByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ],
+      "day": 180,
+      "firstHalfRecoveryDays": [
+        28,
+        41,
+        44,
+        88
+      ],
+      "matureByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ]
+    },
+    {
+      "avgApexRespawnDaysByBiome": [
+        8,
+        7,
+        7,
+        7
+      ],
+      "avgNutrientsByBiome": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "avgPredatorByBiome": [
+        39,
+        19,
+        16,
+        0
+      ],
+      "avgPreyByBiome": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "countByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ],
+      "day": 365,
+      "firstHalfRecoveryDays": [
+        28,
+        41,
+        44,
+        88
+      ],
+      "matureByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ]
+    },
+    {
+      "avgApexRespawnDaysByBiome": [
+        8,
+        7,
+        7,
+        7
+      ],
+      "avgNutrientsByBiome": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "avgPredatorByBiome": [
+        39,
+        19,
+        16,
+        0
+      ],
+      "avgPreyByBiome": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "countByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ],
+      "day": 730,
+      "firstHalfRecoveryDays": [
+        28,
+        41,
+        44,
+        88
+      ],
+      "matureByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ]
+    },
+    {
+      "avgApexRespawnDaysByBiome": [
+        8,
+        7,
+        7,
+        7
+      ],
+      "avgNutrientsByBiome": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "avgPredatorByBiome": [
+        39,
+        19,
+        16,
+        0
+      ],
+      "avgPreyByBiome": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "countByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ],
+      "day": 1000,
+      "firstHalfRecoveryDays": [
+        28,
+        41,
+        44,
+        88
+      ],
+      "matureByBiome": [
+        1729,
+        996,
+        564,
+        807
+      ]
+    }
+  ],
+  "days": 1000,
+  "final": {
+    "avgApexRespawnDaysByBiome": [
+      8,
+      7,
+      7,
+      7
+    ],
+    "avgNutrientsByBiome": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "avgPredatorByBiome": [
+      39,
+      19,
+      16,
+      0
+    ],
+    "avgPreyByBiome": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "countByBiome": [
+      1729,
+      996,
+      564,
+      807
+    ],
+    "day": 1000,
+    "firstHalfRecoveryDays": [
+      28,
+      41,
+      44,
+      88
+    ],
+    "matureByBiome": [
+      1729,
+      996,
+      564,
+      807
+    ]
+  },
+  "finalMatureRatio": 1.0,
+  "mode": "total_overharvest",
+  "safeToAbyssRecoveryRatio": 3.142857142857143,
+  "schema": "H8_Organic_Entropy_Regrowth_Summary",
+  "status": "ENTROPY BALANCED",
+  "version": 2
+}

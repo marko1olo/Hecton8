@@ -1,0 +1,49 @@
+{
+  "demands": {
+    "Data_Copper": 13,
+    "Data_FiberKelp": 3,
+    "Data_GoldOre": 1,
+    "Data_HydrocarbonResin": 8,
+    "Data_LithiumCrystal": 3,
+    "Data_NickelOre": 3,
+    "Data_SilicaShards": 1,
+    "Data_SilverOre": 2,
+    "Data_SulfurClumps": 6,
+    "Data_TitaniumScrap": 18
+  },
+  "evidenceClass": "OFFLINE_PYTHON_MONTE_CARLO_DIRECT",
+  "first_base_targets": [
+    "Module_FoundationKit",
+    "Module_AirlockFrame",
+    "Module_FabricatorBench",
+    "Module_PowerRelay",
+    "Module_O2Recycler"
+  ],
+  "max_nodes": 10000,
+  "players": 6000,
+  "status": "PASS",
+  "summary": {
+    "average_minutes": 18.913050000000002,
+    "average_nodes": 189.1305,
+    "copper_p99_minutes": 28.801000000000023,
+    "copper_p99_seed": 2584783823,
+    "copper_worst_minutes": 45.400000000000006,
+    "copper_worst_seed": 340798182,
+    "failures": 0,
+    "median_minutes": 17.1,
+    "million_step_audit_passed": true,
+    "monte_carlo_steps": 1134783,
+    "p90_minutes": 28.200000000000003,
+    "p95_minutes": 33.0,
+    "p99_minutes": 43.502000000000045,
+    "p99_nodes": 435.02000000000044,
+    "players": 6000,
+    "successes": 6000,
+    "time_worst_biome_index": 7,
+    "time_worst_seed": 1501987990,
+    "titanium_p99_minutes": 41.00400000000009,
+    "total_nodes_mined": 1134783,
+    "worst_minutes": 68.10000000000001
+  },
+  "world_seed": 1212498744
+}

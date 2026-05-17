@@ -1,0 +1,260 @@
+{
+  "absorptionCount": 256,
+  "absorptionMax": 0.99,
+  "absorptionMin": 0.01,
+  "binary": "Data/Audio/Acoustic_LUT.bin",
+  "constantProvenance": {
+    "absorptionAxis": {
+      "formula": "linspace(0.01, 0.99, 256)",
+      "reason": "Generic alpha axis stays material-agnostic and avoids runtime string lookups.",
+      "source": "SABINE XML directive"
+    },
+    "equivalentAbsorptionEpsilon": {
+      "formula": "max(S * alpha, 0.0001)",
+      "reason": "Below the valid axis minimum, so it cannot alter prompt-range cells.",
+      "source": "finite division guard"
+    },
+    "hydrostaticPressure": {
+      "formula": "P = P0 + rho * g * depth",
+      "reason": "Pressure is derived from depth, not authored as a curve.",
+      "source": "seawater static pressure"
+    },
+    "mockRoom": {
+      "formula": "50m * 50m * 5m at hydrostatic pressure for 500m depth",
+      "reason": "The prompt gives the footprint; height and pressure are explicit test assumptions.",
+      "source": "SABINE XML smoke test plus project pressure envelope"
+    },
+    "sabineCoefficient": {
+      "formula": "RT60 = 0.161 * V / (S * alpha)",
+      "reason": "Prompt-mandated RT60 authority in seconds for m3/m2 units.",
+      "source": "Sabine metric-room coefficient"
+    },
+    "seawaterConstants": {
+      "formula": "rho=1025kg/m3, g=9.80665m/s2, P0=101325Pa, bulk=2.2e9Pa",
+      "reason": "Kept in the manifest so SHINOBU sees the scalar lineage without parsing the binary.",
+      "source": "offline acoustic reference constants"
+    },
+    "thorpAbsorption": {
+      "formula": "0.11*f2/(1+f2)+44*f2/(4100+f2)+0.000275*f2+0.003",
+      "reason": "High-frequency water loss is derived at 16kHz before Beer-Lambert retention.",
+      "source": "Thorp seawater absorption equation"
+    },
+    "volumeAxis": {
+      "formula": "logspace(10m3, 100000m3, 256)",
+      "reason": "Log spacing preserves low-room detail while keeping the raw blob at 512 KiB.",
+      "source": "SABINE XML directive"
+    }
+  },
+  "domain": "DATA/AUDIO",
+  "endianness": "little",
+  "fileAlignmentBytes": 16,
+  "fileBytes": 524288,
+  "hashes": [
+    {
+      "fnv1a32": 267839588,
+      "hex": "0x0FF6E864",
+      "id": "h8.audio.acoustic_lut"
+    },
+    {
+      "fnv1a32": 3646132880,
+      "hex": "0xD9539290",
+      "id": "h8.audio.acoustic_lut.rt60_seconds"
+    },
+    {
+      "fnv1a32": 2835162906,
+      "hex": "0xA8FD271A",
+      "id": "h8.audio.acoustic_lut.high_frequency_damping"
+    },
+    {
+      "fnv1a32": 3549555011,
+      "hex": "0xD391E943",
+      "id": "h8.audio.acoustic_lut.toaster_i3"
+    },
+    {
+      "fnv1a32": 3718671867,
+      "hex": "0xDDA66DFB",
+      "id": "h8.audio.acoustic_lut.middle"
+    },
+    {
+      "fnv1a32": 3484988446,
+      "hex": "0xCFB8B41E",
+      "id": "h8.audio.acoustic_lut.high"
+    },
+    {
+      "fnv1a32": 3555525247,
+      "hex": "0xD3ED027F",
+      "id": "h8.audio.acoustic_lut.rtx_overkill"
+    },
+    {
+      "fnv1a32": 395729415,
+      "hex": "0x17965A07",
+      "id": "h8.audio.material.rock"
+    },
+    {
+      "fnv1a32": 4285744733,
+      "hex": "0xFF73465D",
+      "id": "h8.audio.material.metal"
+    },
+    {
+      "fnv1a32": 1010947424,
+      "hex": "0x3C41D560",
+      "id": "h8.audio.material.sand"
+    },
+    {
+      "fnv1a32": 598620339,
+      "hex": "0x23AE38B3",
+      "id": "h8.audio.material.coral"
+    }
+  ],
+  "materialPresets": [
+    {
+      "alpha": 0.22,
+      "name": "Rock",
+      "profileId": "basalt_rock",
+      "provenance": "Basalt rock face: hard stone wall control class.",
+      "sourceFile": "Data/Audio/Acoustic_Material_Profiles.json",
+      "sourceKey": "materialProfiles[basalt_rock].coefficients.absorption"
+    },
+    {
+      "alpha": 0.1,
+      "name": "Metal",
+      "profileId": "steel_hull",
+      "provenance": "Riveted steel hull: hard industrial bulkhead control class.",
+      "sourceFile": "Data/Audio/Acoustic_Material_Profiles.json",
+      "sourceKey": "materialProfiles[steel_hull].coefficients.absorption"
+    },
+    {
+      "alpha": 0.74,
+      "name": "Sand",
+      "profileId": "sand_silt",
+      "provenance": "Suspended sand and silt: soft sediment control class.",
+      "sourceFile": "Data/Audio/Acoustic_Material_Profiles.json",
+      "sourceKey": "materialProfiles[sand_silt].coefficients.absorption"
+    },
+    {
+      "alpha": 0.48,
+      "name": "Coral",
+      "profileId": "coral_calcified",
+      "provenance": "Calcified coral: porous biological reef control class.",
+      "sourceFile": "Data/Audio/Acoustic_Material_Profiles.json",
+      "sourceKey": "materialProfiles[coral_calcified].coefficients.absorption"
+    }
+  ],
+  "materialProfileSource": "Data/Audio/Acoustic_Material_Profiles.json",
+  "mockRoomContract": {
+    "depthM": 50.0,
+    "heightM": 5.0,
+    "pressureBar": 51.27233125,
+    "pressureDepthM": 500.0,
+    "pressureFormula": "P = P0 + rho*g*pressureDepthM",
+    "widthM": 50.0
+  },
+  "physics": {
+    "atmosphericPressurePa": 101325.0,
+    "beerLambert": "amplitude = 10^(-(dB_per_km * km) / 20)",
+    "gravityMps2": 9.80665,
+    "hfReferenceFrequencyKhz": 16.0,
+    "hydrostaticPressure": "P = P0 + rho*g*h",
+    "pressure": "P = P0 + rho*g*h",
+    "pressureCorrection": "1 + (P - P0) / seawaterBulkModulus",
+    "projectMaxDepthM": 1500.0,
+    "seawaterBulkModulusPa": 2200000000.0,
+    "seawaterDensityKgM3": 1025.0,
+    "surfaceProxy": "S = 6 * V^(2/3)",
+    "thorpAbsorptionDbPerKm": 2.7688305702943836,
+    "thorpCoefficients": {
+      "boricAcidCoefficient": 0.11,
+      "magnesiumSulfateCoefficient": 44.0,
+      "magnesiumSulfateDenominator": 4100.0,
+      "offsetDbPerKm": 0.003,
+      "pureWaterCoefficient": 0.000275
+    },
+    "thorpEquation": "0.11*f2/(1+f2)+44*f2/(4100+f2)+0.000275*f2+0.003",
+    "waterAbsorption": "Thorp seawater absorption at 16kHz"
+  },
+  "qualityTiers": [
+    {
+      "absorptionStride": 2,
+      "extraData": {
+        "convolutionTail": "disabled",
+        "dirtyResonanceLayers": 0,
+        "gradientBands": 0,
+        "harmonicNoiseOctaves": 0
+      },
+      "id": "toaster_i3",
+      "lookup": "nearest",
+      "maxControlHz": 8,
+      "notes": "Stripped lookup path for Celeron/i3. Use every other LUT row/column and Schroeder tail only.",
+      "reflectionTaps": 0,
+      "volumeStride": 2
+    },
+    {
+      "absorptionStride": 1,
+      "extraData": {
+        "convolutionTail": "short_tail",
+        "dirtyResonanceLayers": 1,
+        "gradientBands": 4,
+        "harmonicNoiseOctaves": 1
+      },
+      "id": "middle",
+      "lookup": "nearest_or_cold_bilerp",
+      "maxControlHz": 10,
+      "notes": "Full LUT authority; bilerp only during control updates, never per sample.",
+      "reflectionTaps": 6,
+      "volumeStride": 1
+    },
+    {
+      "absorptionStride": 1,
+      "extraData": {
+        "convolutionTail": "medium_tail",
+        "dirtyResonanceLayers": 2,
+        "gradientBands": 8,
+        "harmonicNoiseOctaves": 3
+      },
+      "id": "high",
+      "lookup": "cold_bilerp",
+      "maxControlHz": 20,
+      "notes": "Spend saved CPU on early metal-bulkhead slap and cave wall taps.",
+      "reflectionTaps": 12,
+      "volumeStride": 1
+    },
+    {
+      "absorptionStride": 1,
+      "extraData": {
+        "convolutionTail": "full_offline_ir_bank",
+        "dirtyResonanceLayers": 4,
+        "gradientBands": 16,
+        "harmonicNoiseOctaves": 6
+      },
+      "id": "rtx_overkill",
+      "lookup": "cold_bicubic_authoring_preview_only",
+      "maxControlHz": 30,
+      "notes": "God-mode visuals/audio path: gradient-aware sends, convolution tail, and dirty industrial resonance layers.",
+      "reflectionTaps": 24,
+      "volumeStride": 1
+    }
+  ],
+  "recordBytes": 8,
+  "recordFormat": "<ff",
+  "rt60MaxSeconds": 10.0,
+  "runtimeContract": {
+    "atlasAssemblies": [
+      "Hecton8.Audio.Propagation",
+      "Hecton8.Audio.Synthesis",
+      "Hecton8.Audio.Echolocation",
+      "Hecton8.Audio.Virtualization"
+    ],
+    "atlasFamily": "Audio",
+    "audioThreadLookup": "forbidden",
+    "dataSovereignty": "stateless raw binary lookup; no private runtime coefficient solver",
+    "snapshotCadence": "block_or_control_update_only"
+  },
+  "sabineCoefficient": 0.161,
+  "sha256": "F0C1EFB278901AE7D1E29E9FCBFD82C82507DA853C8A3130ADBCCB626F7D90CB",
+  "simdGroupBytes": 16,
+  "simdGroupFormat": "<ffff",
+  "status": "ACOUSTICS BAKED",
+  "volumeCount": 256,
+  "volumeMaxM3": 100000.0,
+  "volumeMinM3": 10.0
+}

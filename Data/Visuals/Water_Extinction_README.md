@@ -1,51 +1,91 @@
 # Water Extinction LUT
 
-Status: OPTICS CALCULATED
+Status: `OPTICS_LUT_VERIFIED`
+Owner: `OPTICAL_EXTINCTION_LUT_BAKER`
 
 ## Files
-- `Water_Extinction_Matrix.bin`: raw little-endian float16 matrix, shape `[256, 256, 256]`, axis order `[depth][turbidity][wavelength]`, `33554432` bytes.
-- `Water_Fog_Density_LUT.bin`: raw little-endian float16 fog density per meter, 0-1500m inclusive, `3002` bytes.
-- `Water_Extinction_GradientPreview.png`: generated ocean vertical color preview.
-- `Water_Extinction_Hecton_CoreLit_Snippet.hlsl`: HLSL sampling snippet for `Hecton_CoreLit.hlsl`.
-- `Water_Extinction_Matrix.json`: machine-readable axes, source inputs, hashes, and self-audit.
+
+- `Water_Extinction_Matrix_Toaster.bin`: raw little-endian float16 matrix,
+  shape `64 x 64 x 3`, axis order `depth, turbidity, rgb`, `24576` bytes.
+- `Water_Extinction_Matrix.bin`: raw little-endian float16 matrix, shape
+  `256 x 256 x 3`, axis order `depth, turbidity, rgb`, `393216` bytes.
+- `Water_Extinction_Matrix_Overkill.bin`: raw little-endian float16 matrix,
+  shape `512 x 512 x 3`, axis order `depth, turbidity, rgb`, `1572864` bytes.
+- `Water_Extinction_GradientPreview.png`: matplotlib preview of the main
+  depth-vs-silt RGB transmittance.
+- `Water_Extinction_GradientPreview_Overkill.png`: high-resolution preview for
+  the RTX overkill variant.
+- `Water_Extinction_Matrix.json`: generated manifest, hashes, formula, variants,
+  alignment checks, and validation values.
+- `Water_Extinction_Hecton_CoreLit_Snippet.hlsl`: reference HLSL sampling
+  snippet for shader agents.
 
 ## Matrix Axes
-- Depth: 0-1500m, 256 linear samples.
-- Turbidity: 0.0-2.5, 256 linear samples.
-- Wavelength: 470-700nm, 256 linear samples.
 
-## Packing
-Upload `Water_Extinction_Matrix.bin` as a single `4096x4096 R16F` texture.
-Flat index:
+- Depth: `0m..500m`, linear samples.
+- Turbidity: `0.0..2.5`, linear samples.
+- RGB: `red, green, blue`.
 
-```hlsl
-flatIndex = ((depthIndex * 256) + turbidityIndex) * 256 + wavelengthIndex;
-texel = uint2(flatIndex & 4095u, flatIndex >> 12);
+## Formula
+
+```text
+I = I0 * exp(-muRgb * (1 + turbidity) * depthMeters)
 ```
 
+Absorption anchors:
+
+- Red: `0.6240 m^-1`, pure-water 700nm anchor, `0.0019498552718089743`
+  transmittance at 10m.
+- Green: `0.0434 m^-1`, pure-water 530nm anchor.
+- Blue: `0.0106 m^-1`, pure-water 470nm anchor, `0.004993438720703125`
+  transmittance at 500m after half-float quantization.
+
+The RGB coefficients are source-named pure-water absorption anchors from Robin
+M. Pope and Edward S. Fry, "Absorption spectrum (380-700 nm) of pure water. II.
+Integrating cavity measurements", Applied Optics 36(33), 8710-8723, 1997,
+doi: `10.1364/AO.36.008710`. Silt/turbidity is applied as a separate project
+multiplier, not hidden inside the pure-water constants.
+
+Tone contract for downstream UI/log text: describe the effect as
+`bilge-silt`, `pressure glass`, `floodlamp bleed`, `bulkhead shadow`, or
+`rust-haze`. Do not relabel it with showroom fog terminology.
+
+## Packing
+
+Every payload is headerless row-major data:
+
+```text
+flatIndex = ((depthIndex * turbidityCount) + turbidityIndex) * 3 + channelIndex
+```
+
+Half-float scalar packing is little-endian Python `<e`. All `.bin` payloads are
+16-byte aligned.
+
+Preferred runtime import is RGB16F by selected tier: `64x64` toaster, `256x256`
+main, or `512x512` overkill. Fallback is cold expansion to RGBAHalf with alpha
+set to `1.0`. Exact raw fallback is `width*3 x height R16F`, with
+`x = turbidityIndex * 3 + channelIndex` and `y = depthIndex`.
+
 ## Verification
-- Red transmittance at 10m: `0.00195026`.
-- Red transmittance at 500m: `0.0000`.
-- Fog density at 0m / 750m / 1500m: `0.00241852` / `0.01320648` / `0.02400208`.
-- Deep silt fog authority: `Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_AbyssalSilt.asset` at `0.024000` per meter.
 
-## Fog And Silt Inputs
-- Surface fog: `Assets/_Project/Data/Atmosphere/Profile_Underwater.asset` at `0.002100` per meter.
-- Representative silt: `1.26578997` from `named silt/sediment RuntimeVisualProfiles`.
-- Named silt/sediment profiles scanned: `14`.
-- All turbidity profiles scanned: `216`.
+Run:
 
-## Source References
-- NOAA Ocean Explorer ocean-color guidance: `https://oceanexplorer.noaa.gov/ocean-fact/red-color/`.
-- Pope/Fry pure-water absorption reference listing: `https://opg.optica.org/ao/issue.cfm?issue=33&volume=36`.
-- GI relay visual-fake handoff read by CLI: `Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md`.
+```powershell
+python Tools/OpticsBaker.py --verify
+python Tools/VerifyOpticsBaker.py
+```
 
-## GI Relay Contract Read By CLI
-- Depth palette fake present: `True`.
-- Fog globals present: `True`.
-- Runtime volumetric GI rejected: `True`.
-- Low-tier snap states present: `True`.
-- Single cubemap path present: `True`.
+Current decoded results:
 
-## Runtime Contract
-This data is a deterministic visual fake. Runtime code should sample textures; it should not recompute Beer-Lambert exponentials per pixel and should not add volumetric water-optics simulation on MX350.
+- Main bytes: `393216`.
+- Toaster bytes: `24576`.
+- Overkill bytes: `1572864`.
+- Red at 500m clear water: `0.0`.
+- Red at 10m clear water: `0.0019498552718089743`.
+- Blue at 500m clear water: `0.004993438720703125`.
+- Variant binary alignment: `16` bytes.
+- Local artifact FNV-1a collisions: `0`.
+- Data sovereignty: `stateless_binary_lookup`.
+
+Runtime readiness remains pending Unity import, shader sampling, profiler, and
+GC evidence.

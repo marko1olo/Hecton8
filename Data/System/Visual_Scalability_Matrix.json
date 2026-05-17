@@ -23,6 +23,71 @@
     "density": "offline_score_units",
     "gpuCycles": "normalized_offline_cycles"
   },
+  "physicsDerivation": {
+    "waterOptics": {
+      "law": "Beer-Lambert",
+      "formula": "transmittance = exp(-sigma_extinction_per_meter_rgb * distance_m)",
+      "sigmaExtinctionPerMeterRgb": [
+        0.45,
+        0.12,
+        0.03
+      ],
+      "tenMeterTransmittanceRgb": [
+        0.011109,
+        0.301194,
+        0.740818
+      ],
+      "ninetyPercentLossMetersRgb": [
+        5.116856,
+        19.188209,
+        76.752836
+      ],
+      "sourceMandates": [
+        "REND_Shader_Noir_Aesthetics_Dithering_Fog",
+        "REND_Abyssal_Lighting_Voxel_Occlusion_Shadows"
+      ]
+    },
+    "volumetricDensity": {
+      "law": "Beer-Lambert single-scatter presentation fake",
+      "mieDensityFormula": "mieDensity = turbidityNtu * 0.002",
+      "rayleighDensityFormula": "rayleighDensity = mieDensity * rayleighToMieRatio",
+      "tierInputs": {
+        "TOASTER": {
+          "turbidityNtu": 2.0,
+          "rayleighToMieRatio": 0.5
+        },
+        "DECK": {
+          "turbidityNtu": 3.0,
+          "rayleighToMieRatio": 0.5
+        },
+        "PRO": {
+          "turbidityNtu": 5.0,
+          "rayleighToMieRatio": 0.4
+        },
+        "GOD_MODE": {
+          "turbidityNtu": 8.0,
+          "rayleighToMieRatio": 0.375
+        }
+      }
+    },
+    "lodMath": {
+      "law": "distance squared and hysteresis bands; no sqrt in tier switching",
+      "formula": "switch only after distance_sq crosses threshold_sq for the required hysteresis window",
+      "hysteresisSeconds": 3.0,
+      "hysteresisMeters": 5.0
+    }
+  },
+  "binaryCache": {
+    "path": "Data/System/Visual_Scalability_Matrix.bin",
+    "manifest": "Data/System/Visual_Scalability_Matrix.manifest.json",
+    "endianness": "little",
+    "alignmentBytes": 16,
+    "headerFormat": "<4sHHIIIIIIIIII16s",
+    "tierRecordFormat": "<32I",
+    "extraRecordFormat": "<16I",
+    "hashRecordFormat": "<4I",
+    "consumer": "H8StaticDataArena or equivalent boot-time DataVault import; no JSON parse in VISUAL_SYNC"
+  },
   "globalGuards": {
     "mx350VramGuardMbIncludingDriverReserve": 1600,
     "mx350VramHardCeilingMb": 1800,

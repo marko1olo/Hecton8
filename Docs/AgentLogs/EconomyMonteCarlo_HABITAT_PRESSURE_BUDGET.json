@@ -1,0 +1,89 @@
+{
+  "status": "ECONOMY PROVEN",
+  "evidence_class": "CLI_PYTHON_STATIC_DATA",
+  "params": {
+    "players": 10000,
+    "max_nodes": 10000,
+    "threshold_minutes": 120.0,
+    "monte_carlo_step_floor": 1000000,
+    "node_minutes": 0.13513513513513514,
+    "overhead_minutes": 20.5,
+    "world_seed": 1212498744
+  },
+  "first_base_targets": [
+    "Module_FoundationKit",
+    "Module_AirlockFrame",
+    "Module_FabricatorBench",
+    "Module_PowerRelay",
+    "Module_O2Recycler"
+  ],
+  "raw_demands": {
+    "Data_Copper": 13,
+    "Data_FiberKelp": 3,
+    "Data_GoldOre": 1,
+    "Data_HydrocarbonResin": 8,
+    "Data_LithiumCrystal": 3,
+    "Data_NickelOre": 3,
+    "Data_SilicaShards": 1,
+    "Data_SilverOre": 2,
+    "Data_SulfurClumps": 6,
+    "Data_TitaniumScrap": 18
+  },
+  "dependency_gaps": [],
+  "baseline_summary": {
+    "players": 10000,
+    "successes": 10000,
+    "failures": 0,
+    "total_nodes_mined": 1902339,
+    "monte_carlo_steps": 1902339,
+    "million_step_audit_passed": true,
+    "average_minutes": 46.20728378378379,
+    "median_minutes": 43.60810810810811,
+    "p90_minutes": 59.013513513513516,
+    "p95_minutes": 65.77027027027027,
+    "p99_minutes": 79.55540540540544,
+    "worst_minutes": 112.52702702702703,
+    "average_nodes": 190.2339,
+    "p99_nodes": 437.0100000000002,
+    "copper_p99_minutes": 59.28378378378378,
+    "titanium_p99_minutes": 76.98783783783787,
+    "copper_worst_seed": 340798182,
+    "copper_worst_minutes": 81.85135135135135,
+    "copper_p99_seed": 631414857,
+    "time_worst_seed": 1501987990,
+    "time_worst_biome_index": 7
+  },
+  "final_summary": {
+    "players": 10000,
+    "successes": 10000,
+    "failures": 0,
+    "total_nodes_mined": 1902339,
+    "monte_carlo_steps": 1902339,
+    "million_step_audit_passed": true,
+    "average_minutes": 46.20728378378379,
+    "median_minutes": 43.60810810810811,
+    "p90_minutes": 59.013513513513516,
+    "p95_minutes": 65.77027027027027,
+    "p99_minutes": 79.55540540540544,
+    "worst_minutes": 112.52702702702703,
+    "average_nodes": 190.2339,
+    "p99_nodes": 437.0100000000002,
+    "copper_p99_minutes": 59.28378378378378,
+    "titanium_p99_minutes": 76.98783783783787,
+    "copper_worst_seed": 340798182,
+    "copper_worst_minutes": 81.85135135135135,
+    "copper_p99_seed": 631414857,
+    "time_worst_seed": 1501987990,
+    "time_worst_biome_index": 7
+  },
+  "tuning_history": [
+    {
+      "pass": 0,
+      "p99_minutes": 79.55540540540544,
+      "copper_p99_minutes": 59.28378378378378
+    }
+  ],
+  "distribution_source": "C:/Hecton8/Data/Economy/Ore_Distribution.json",
+  "distribution_source_format": "json",
+  "distribution_source_sha256": "fb734fa9dd82214bf0ed5237843ca62d625dc07326d2456f8676364f4c9ce84b"
+}

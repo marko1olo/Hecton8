@@ -1,0 +1,2956 @@
+{
+  "binaryAlignment": {
+    "alignmentBytes": 16,
+    "fileCount": 43,
+    "files": [
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 1280,
+        "mod16": 0,
+        "path": "Data/AI/Navigation_Tuning.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 524288,
+        "mod16": 0,
+        "path": "Data/Audio/Acoustic_LUT.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 7424,
+        "mod16": 0,
+        "path": "Data/Economy/Crafting_Costs.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 2464,
+        "mod16": 0,
+        "path": "Data/Economy/Crafting_Costs_Toaster.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 1632,
+        "mod16": 0,
+        "path": "Data/Economy/Ore_Distribution.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 176,
+        "mod16": 0,
+        "path": "Data/Economy/Submarine_Upgrade_Stat_Map.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 195344,
+        "mod16": 0,
+        "path": "Data/Ecosystem/Organic_Entropy_Regrowth.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 9600,
+        "mod16": 0,
+        "path": "Data/Environment/Tide_Harmonics.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 96,
+        "mod16": 0,
+        "path": "Data/Environment/Tide_Harmonics.index.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 2400,
+        "mod16": 0,
+        "path": "Data/Environment/Tide_Harmonics_Low.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 38400,
+        "mod16": 0,
+        "path": "Data/Environment/Tide_Harmonics_Ultra.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 2704,
+        "mod16": 0,
+        "path": "Data/Habitat/HabitatPressureBudget.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 60928,
+        "mod16": 0,
+        "path": "Data/Localization/en_US.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 27536,
+        "mod16": 0,
+        "path": "Data/Localization/en_US_Taxonomy.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 7872,
+        "mod16": 0,
+        "path": "Data/Localization/Radio/marauder_radio_interceptions.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 41488,
+        "mod16": 0,
+        "path": "Data/Lore/Encyclopedia.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 59120,
+        "mod16": 0,
+        "path": "Data/Lore/PdaTechnicalLogs.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 496,
+        "mod16": 0,
+        "path": "Data/Narrative/First_Hour_Quests.h8qdag.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 1152,
+        "mod16": 0,
+        "path": "Data/Physics/Submarine_RuntimePack.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 1024,
+        "mod16": 0,
+        "path": "Data/Precomputed/Atmosphere/atmosphere_density_matrix_rgba16f.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 262144,
+        "mod16": 0,
+        "path": "Data/Precomputed/Atmosphere/atmosphere_sky_gradient_rgba16f.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 1216,
+        "mod16": 0,
+        "path": "Data/Precomputed/caustics_dispersion_offsets.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 128128,
+        "mod16": 0,
+        "path": "Data/Precomputed/dalton_gas_toxicity.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 96112,
+        "mod16": 0,
+        "path": "Data/Precomputed/dalton_gas_toxicity_overkill.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 4080,
+        "mod16": 0,
+        "path": "Data/Precomputed/dalton_gas_toxicity_toaster.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 32000,
+        "mod16": 0,
+        "path": "Data/Precomputed/gerstner_wave_weather.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 262400,
+        "mod16": 0,
+        "path": "Data/Precomputed/Reverb_LUT.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 4000,
+        "mod16": 0,
+        "path": "Data/Precomputed/sabine_reverb_rt60.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 1344,
+        "mod16": 0,
+        "path": "Data/System/VFX_Budgets.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 2016,
+        "mod16": 0,
+        "path": "Data/System/Visual_Scalability_Matrix.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 1472,
+        "mod16": 0,
+        "path": "Data/UX/VR_Comfort_Profiles.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 1120,
+        "mod16": 0,
+        "path": "Data/UX/VR_Comfort_Profiles_Toaster.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 560,
+        "mod16": 0,
+        "path": "Data/UX/VR_Comfort_RTXOverkill.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 25936,
+        "mod16": 0,
+        "path": "Data/Visuals/Biolum_Profiles.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 524288,
+        "mod16": 0,
+        "path": "Data/Visuals/Refraction_LUT_RGBA16F.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 131072,
+        "mod16": 0,
+        "path": "Data/Visuals/Refraction_LUT_RGBA16F_MINIMAL_128.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 2097152,
+        "mod16": 0,
+        "path": "Data/Visuals/Refraction_LUT_RGBA16F_ULTRA_512.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 393216,
+        "mod16": 0,
+        "path": "Data/Visuals/Water_Extinction_Matrix.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 1572864,
+        "mod16": 0,
+        "path": "Data/Visuals/Water_Extinction_Matrix_Overkill.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 24576,
+        "mod16": 0,
+        "path": "Data/Visuals/Water_Extinction_Matrix_Toaster.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 3008,
+        "mod16": 0,
+        "path": "Data/Visuals/Water_Fog_Density_LUT.bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 1534512,
+        "mod16": 0,
+        "path": "Assets/_Project/Data/Localization/Babel_Dictionary.h8bin"
+      },
+      {
+        "aligned16": true,
+        "alignmentBytes": 16,
+        "bytes": 16,
+        "mod16": 0,
+        "path": "Docs/AgentLogs/Dump_HEADLESS_SCENARIO_RUNNER.bin"
+      }
+    ],
+    "unaligned": []
+  },
+  "checks": [
+    {
+      "artifact": "Docs/AgentLogs/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL_H_PHI_SCORE.json",
+      "detail": "PHI CALCULATED",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "h_phi_status",
+      "passed": true
+    },
+    {
+      "artifact": "Docs/AgentLogs/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL_H_PHI_SCORE.json",
+      "detail": "VERIFIED MASTER GRADE STATIC_SOURCE ONLY",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "h_phi_omega_static",
+      "passed": true
+    },
+    {
+      "artifact": "Docs/AgentLogs/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL_H_PHI_SCORE.json",
+      "detail": "domain_index_count=85",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "h_phi_domain_count",
+      "passed": true
+    },
+    {
+      "artifact": "Docs/AgentLogs/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL_H_PHI_SCORE.json",
+      "detail": "generated_at=2026-05-17T00:43:47 eligible_files=5015 report_files=5015 newest=Assets/_Project/Scripts/UI/Localization/H8LocHashes.cs newest_time=2026-05-17T00:25:53.373942",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "h_phi_report_fresh_for_eligible_sources",
+      "passed": true
+    },
+    {
+      "artifact": "Docs/AgentLogs/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL_H_PHI_ARCHITECTURE_GRAPH.png",
+      "detail": "bytes=693471",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "h_phi_graph_exists",
+      "passed": true
+    },
+    {
+      "artifact": "Docs/AgentLogs/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL_H_PHI_SCORE.json",
+      "detail": "Assets/_Project/Scripts/HectonPlayerMovement.cs, Assets/_Project/Scripts/WorldProceduralScatterDirector.cs, Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "top_3_lowest_purity_files",
+      "passed": true
+    },
+    {
+      "artifact": "Docs/AgentLogs/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL_H_PHI_SCORE.json",
+      "detail": "DataSovereignty=0.019743027 strict=0.089045936",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "h_phi_data_sovereignty_honesty",
+      "passed": true
+    },
+    {
+      "artifact": "Docs/AgentLogs/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL_PROJECT_ATLAS.md",
+      "detail": "domain_rows=85",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "project_atlas_85_domain_section",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Visuals/Water_Extinction_Matrix.json",
+      "detail": "BeerLambert / Beer-Lambert extinction with pure-water absorption anchors.",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "beer_lambert_basis",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Visuals/Water_Extinction_Matrix.json",
+      "detail": "byteOrder=little-endian pack=<e",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "optics_little_endian",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Visuals/Water_Extinction_Matrix.json",
+      "detail": "variants=['main_mx350', 'rtx_overkill', 'toaster_i3']",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "optics_scalability_variants",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Visuals/Water_Extinction_Matrix.json",
+      "detail": "{'globalRegistryRequired': False, 'hotPathJsonParsingAllowed': False, 'lookupModel': 'stateless_binary_lookup', 'runtimePrivateStateRequired': False}",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "optics_stateless_lookup",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Visuals/Water_Extinction_Matrix.json",
+      "detail": "rtxOverkillData.harmonicNoise present",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "optics_harmonic_overkill",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Precomputed/dalton_gas_toxicity_manifest.json",
+      "detail": "H8.DaltonGasToxicity.v2",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "dalton_basis",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Precomputed/dalton_gas_toxicity_manifest.json",
+      "detail": "tiers=['high', 'middle', 'rtx_overkill', 'toaster_i3']",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "dalton_scalability_tiers",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Precomputed/dalton_gas_toxicity_manifest.json",
+      "detail": "{'atlasDomain': '46 Hypoxia & Gas Toxicity', 'atlasFamily': 'Environment and survival', 'dataSovereignty': 'stateless aligned binary lookup; no per-system private solver state', 'hotPathAllocation': '0 B/frame', 'loadCadence': 'cold_load_only', 'phase': 'SIMULATION produces gas danger scalar; VISUAL_SYNC consumes presentation fields', 'rtxOverkillBinary': 'Data/Precomputed/dalton_gas_toxicity_overkill.bin', 'toasterBinary': 'Data/Precomputed/dalton_gas_toxicity_toaster.bin'}",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "dalton_stateless_lookup",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Precomputed/math_lut_manifest.json",
+      "detail": "byteOrder=little-endian",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "math_lut_little_endian",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Precomputed/math_lut_manifest.json",
+      "detail": "sabine_reverb_rt60.bin in manifest",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "math_lut_sabine_present",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Precomputed/math_lut_manifest.json",
+      "detail": "caustics paddingBytes=4",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "math_lut_caustics_aligned",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Audio/Acoustic_LUT.manifest.json",
+      "detail": "recordFormat=<ff surfaceProxy present",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "sabine_acoustic_basis",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Audio/Acoustic_LUT.manifest.json",
+      "detail": "tiers=['high', 'middle', 'rtx_overkill', 'toaster_i3']",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "acoustic_scalability_tiers",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Audio/Acoustic_LUT.manifest.json",
+      "detail": "{'atlasAssemblies': ['Hecton8.Audio.Propagation', 'Hecton8.Audio.Synthesis', 'Hecton8.Audio.Echolocation', 'Hecton8.Audio.Virtualization'], 'atlasFamily': 'Audio', 'audioThreadLookup': 'forbidden', 'dataSovereignty': 'stateless raw binary lookup; no private runtime coefficient solver', 'snapshotCadence': 'block_or_control_update_only'}",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "acoustic_stateless_lookup",
+      "passed": true
+    },
+    {
+      "artifact": "Docs/Reports/Economy_MonteCarlo_Audit.json",
+      "detail": "steps=1078223 million=True",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "economy_million_step",
+      "passed": true
+    },
+    {
+      "artifact": "Docs/Reports/Economy_MonteCarlo_Audit.json",
+      "detail": "status=ECONOMY PROVEN failures=0",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "economy_no_failures",
+      "passed": true
+    },
+    {
+      "artifact": "Docs/Reports/Economy_MonteCarlo_Audit.json",
+      "detail": "p99=59.150000000000034 threshold=60.0",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "economy_p99_threshold",
+      "passed": true
+    },
+    {
+      "artifact": "Docs/Reports/H8HashCollision_METRIC_PHI_ANALYST.json",
+      "detail": "collision_count=0",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "fnv_collision_count",
+      "passed": true
+    },
+    {
+      "artifact": "Docs/Reports/H8HashCollision_METRIC_PHI_ANALYST.json",
+      "detail": "records=1018",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "fnv_record_coverage",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Lore/Encyclopedia.manifest.json",
+      "detail": "alignment=16 endian=little",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "lore_binary_contract",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Lore/Encyclopedia.manifest.json",
+      "detail": "noir_signal_count=252",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "lore_noir_signal_density",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Lore/Encyclopedia.manifest.json",
+      "detail": "{'data_sovereignty_static_score': 1.0, 'lookup_model': 'stateless binary search over sorted 16-byte records; payload is raw UTF-8 slice', 'private_runtime_state_required': False, 'unity_runtime_proof': 'PENDING VERIFICATION'}",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "lore_stateless_lookup",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Lore/Encyclopedia.manifest.json",
+      "detail": "profiles=['rtx_overkill', 'toaster']",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "lore_scalability_profiles",
+      "passed": true
+    },
+    {
+      "artifact": "Data/Lore/PdaTechnicalLogs.manifest.json",
+      "detail": "magic=H8PT entries=100 collisions=0",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "tech_lore_manifest",
+      "passed": true
+    },
+    {
+      "artifact": ".codex_tmp/metric_phi_selfcheck/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL.4608.json",
+      "detail": "status=VERIFY_SWEEP_FAIL requiredFailures=2 selfCheckPending=True",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "verify_sweep_pass",
+      "passed": false
+    },
+    {
+      "artifact": ".codex_tmp/metric_phi_selfcheck/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL.4608.json",
+      "detail": "totalCommands=34 results=34",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "verify_sweep_command_coverage",
+      "passed": true
+    },
+    {
+      "artifact": ".codex_tmp/metric_phi_selfcheck/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL.4608.json",
+      "detail": "returnCode=0",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "verify_replay_hasher_reference",
+      "passed": true
+    },
+    {
+      "artifact": "Data",
+      "detail": "files=43 unaligned=0",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "all_data_binaries_aligned16",
+      "passed": true
+    },
+    {
+      "artifact": "Tools",
+      "detail": "format_sites=274 failures=0",
+      "evidence_class": "CLI_PYTHON_STATIC_DATA",
+      "name": "python_struct_endianness",
+      "passed": true
+    }
+  ],
+  "economy": {
+    "failures": 0,
+    "p99Minutes": 59.150000000000034,
+    "players": 7000,
+    "status": "ECONOMY PROVEN",
+    "steps": 1078223
+  },
+  "endianness": {
+    "allowedBigEndian": [
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 554,
+        "path": "Tools/AtmoPreview.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 533,
+        "path": "Tools/AtmoPreview.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 533,
+        "path": "Tools/AtmoPreview.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 685,
+        "path": "Tools/Economy/MonteCarloEconomySim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 697,
+        "path": "Tools/Economy/MonteCarloEconomySim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 685,
+        "path": "Tools/Economy/MonteCarloEconomySim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">II",
+        "line": 321,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">H",
+        "line": 399,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 400,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 401,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">H",
+        "line": 354,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">HH",
+        "line": 362,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 1225,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 1222,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 1235,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBB",
+        "line": 1442,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBB",
+        "line": 422,
+        "path": "Tools/test_submarine_physics_sim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 1064,
+        "path": "Tools/UpgradeCurveBaker.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 1061,
+        "path": "Tools/UpgradeCurveBaker.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 1074,
+        "path": "Tools/UpgradeCurveBaker.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 139,
+        "path": "Tools/VerifyTideBaker.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 135,
+        "path": "Tools/VerifyTideBaker.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 1319,
+        "path": "Tools/VrComfortMath.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 1330,
+        "path": "Tools/VrComfortMath.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 1319,
+        "path": "Tools/VrComfortMath.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 452,
+        "path": "Tools/WaterColorPreview.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 441,
+        "path": "Tools/WaterColorPreview.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 441,
+        "path": "Tools/WaterColorPreview.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      }
+    ],
+    "failures": [],
+    "formatSiteCount": 274,
+    "sites": [
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHH14I",
+        "line": 50,
+        "path": "Data/Localization/Radio/generate_marauder_radio.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<32I",
+        "line": 51,
+        "path": "Data/Localization/Radio/generate_marauder_radio.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHH14I",
+        "line": 22,
+        "path": "Data/Localization/Radio/VerifyMarauderRadio.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<32I",
+        "line": 23,
+        "path": "Data/Localization/Radio/VerifyMarauderRadio.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIIIII",
+        "line": 130,
+        "path": "Tools/AcousticValidator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<fffffff",
+        "line": 133,
+        "path": "Tools/AcousticValidator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4f",
+        "line": 145,
+        "path": "Tools/AcousticValidator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<16f",
+        "line": 146,
+        "path": "Tools/AcousticValidator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIIIII",
+        "line": 174,
+        "path": "Tools/AcousticValidator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<fffffff",
+        "line": 175,
+        "path": "Tools/AcousticValidator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4f",
+        "line": 176,
+        "path": "Tools/AcousticValidator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<16f",
+        "line": 177,
+        "path": "Tools/AcousticValidator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIII24s",
+        "line": 78,
+        "path": "Tools/AiPathSim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHHfI",
+        "line": 79,
+        "path": "Tools/AiPathSim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "dynamic format is guarded by startswith('<') before use",
+        "format": "<guarded>",
+        "line": 146,
+        "path": "Tools/Architecture/VerifyNetSyncMerkleProtocol.py",
+        "status": "GUARDED_DYNAMIC_LITTLE_ENDIAN"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 177,
+        "path": "Tools/Architecture/VerifyNetSyncMerkleProtocol.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "dynamic format is guarded by startswith('<') before use",
+        "format": "<guarded>",
+        "line": 139,
+        "path": "Tools/Architecture/VerifyNetSyncMerkleProtocol.py",
+        "status": "GUARDED_DYNAMIC_LITTLE_ENDIAN"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 178,
+        "path": "Tools/Architecture/VerifyNetSyncMerkleProtocol.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 42,
+        "path": "Tools/AtmoPreview.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 554,
+        "path": "Tools/AtmoPreview.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 533,
+        "path": "Tools/AtmoPreview.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 430,
+        "path": "Tools/AtmoPreview.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 409,
+        "path": "Tools/AtmoPreview.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 533,
+        "path": "Tools/AtmoPreview.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIHHIHHIIIIQIIII",
+        "line": 54,
+        "path": "Tools/BabelCompiler.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I8sHHIIII",
+        "line": 55,
+        "path": "Tools/BabelCompiler.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIHHII",
+        "line": 56,
+        "path": "Tools/BabelCompiler.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIIIIIII",
+        "line": 48,
+        "path": "Tools/BiolumWaveform.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIII15f",
+        "line": 49,
+        "path": "Tools/BiolumWaveform.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4f",
+        "line": 50,
+        "path": "Tools/BiolumWaveform.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<III36f",
+        "line": 51,
+        "path": "Tools/BiolumWaveform.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sIIIIIIIIIIIIIIIIIII",
+        "line": 33,
+        "path": "Tools/CraftingCostsBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIHHHHIIIIIIIIII",
+        "line": 34,
+        "path": "Tools/CraftingCostsBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHHII",
+        "line": 35,
+        "path": "Tools/CraftingCostsBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIII",
+        "line": 36,
+        "path": "Tools/CraftingCostsBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIII",
+        "line": 37,
+        "path": "Tools/CraftingCostsBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sIIIIIIIIIIIIIII",
+        "line": 38,
+        "path": "Tools/CraftingCostsBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIIIII",
+        "line": 39,
+        "path": "Tools/CraftingCostsBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sIIIIIffffffIIII",
+        "line": 59,
+        "path": "Tools/DaltonGasToxicityBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<ffffffffffffffff",
+        "line": 62,
+        "path": "Tools/DaltonGasToxicityBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 851,
+        "path": "Tools/DaltonGasToxicityBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 87,
+        "path": "Tools/DbHealthCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 91,
+        "path": "Tools/DbHealthCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<i",
+        "line": 95,
+        "path": "Tools/DbHealthCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<q",
+        "line": 99,
+        "path": "Tools/DbHealthCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<Q",
+        "line": 103,
+        "path": "Tools/DbHealthCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 67,
+        "path": "Tools/DbHealthCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<i",
+        "line": 71,
+        "path": "Tools/DbHealthCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 75,
+        "path": "Tools/DbHealthCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<q",
+        "line": 79,
+        "path": "Tools/DbHealthCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<Q",
+        "line": 83,
+        "path": "Tools/DbHealthCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 685,
+        "path": "Tools/Economy/MonteCarloEconomySim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 697,
+        "path": "Tools/Economy/MonteCarloEconomySim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 685,
+        "path": "Tools/Economy/MonteCarloEconomySim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIIIIIIIII8s",
+        "line": 54,
+        "path": "Tools/HullStressBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I i I i I i f f f f f f f f f f f f i i i i I I",
+        "line": 55,
+        "path": "Tools/HullStressBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIffffffffffffffIIII",
+        "line": 56,
+        "path": "Tools/HullStressBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIII",
+        "line": 29,
+        "path": "Tools/LocToBinary.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<III",
+        "line": 30,
+        "path": "Tools/LocToBinary.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sIII",
+        "line": 32,
+        "path": "Tools/LorePacker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIII",
+        "line": 33,
+        "path": "Tools/LorePacker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 39,
+        "path": "Tools/MathLUTGenerator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 240,
+        "path": "Tools/MathLUTGenerator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">II",
+        "line": 321,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 375,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 376,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 389,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">H",
+        "line": 399,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 400,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 401,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 410,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 411,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 420,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 421,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container parser selects byte order from file header, not H8 runtime binary blobs",
+        "format": "<dynamic>",
+        "line": 453,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_DYNAMIC_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container parser selects byte order from file header, not H8 runtime binary blobs",
+        "format": "<dynamic>",
+        "line": 456,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_DYNAMIC_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 806,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<i",
+        "line": 387,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<i",
+        "line": 388,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container parser selects byte order from file header, not H8 runtime binary blobs",
+        "format": "<dynamic>",
+        "line": 451,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_DYNAMIC_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container parser selects byte order from file header, not H8 runtime binary blobs",
+        "format": "<dynamic>",
+        "line": 463,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_DYNAMIC_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container parser selects byte order from file header, not H8 runtime binary blobs",
+        "format": "<dynamic>",
+        "line": 464,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_DYNAMIC_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container parser selects byte order from file header, not H8 runtime binary blobs",
+        "format": "<dynamic>",
+        "line": 465,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_DYNAMIC_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 503,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<iiii",
+        "line": 508,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<III",
+        "line": 842,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<III",
+        "line": 995,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">H",
+        "line": 354,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">HH",
+        "line": 362,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<i",
+        "line": 798,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 818,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 837,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<II",
+        "line": 1003,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container parser selects byte order from file header, not H8 runtime binary blobs",
+        "format": "<dynamic>",
+        "line": 469,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_DYNAMIC_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<Q",
+        "line": 815,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container parser selects byte order from file header, not H8 runtime binary blobs",
+        "format": "<dynamic>",
+        "line": 471,
+        "path": "Tools/MemoryBudgetCheck.py",
+        "status": "EXTERNAL_CONTAINER_DYNAMIC_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 37,
+        "path": "Tools/OpticsBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 512,
+        "path": "Tools/OpticsBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHH14I",
+        "line": 63,
+        "path": "Tools/OreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHHBBBBI",
+        "line": 64,
+        "path": "Tools/OreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHBB",
+        "line": 65,
+        "path": "Tools/OreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHHHHI",
+        "line": 66,
+        "path": "Tools/OreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHH14I",
+        "line": 783,
+        "path": "Tools/OreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHHBBBBI",
+        "line": 720,
+        "path": "Tools/OreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<B",
+        "line": 753,
+        "path": "Tools/OreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<B",
+        "line": 755,
+        "path": "Tools/OreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 757,
+        "path": "Tools/OreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHHHHI",
+        "line": 767,
+        "path": "Tools/OreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHBB",
+        "line": 740,
+        "path": "Tools/OreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<B",
+        "line": 760,
+        "path": "Tools/OreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIIIIIIIII",
+        "line": 41,
+        "path": "Tools/PackPdaTechnicalLogs.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIIIIIIIII",
+        "line": 42,
+        "path": "Tools/PackPdaTechnicalLogs.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIIIIIIIII",
+        "line": 43,
+        "path": "Tools/PackPdaTechnicalLogs.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIIIIIIIQ",
+        "line": 41,
+        "path": "Tools/QuestCompiler.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIQQHHBBH",
+        "line": 42,
+        "path": "Tools/QuestCompiler.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIQ",
+        "line": 43,
+        "path": "Tools/QuestCompiler.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIQ",
+        "line": 44,
+        "path": "Tools/QuestCompiler.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIHHHHII",
+        "line": 45,
+        "path": "Tools/QuestCompiler.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<QII",
+        "line": 952,
+        "path": "Tools/RunHeadlessSimulations.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<ff",
+        "line": 26,
+        "path": "Tools/SabineBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<ffff",
+        "line": 28,
+        "path": "Tools/SabineBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<Q",
+        "line": 117,
+        "path": "Tools/Security/ReplayHasher.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 121,
+        "path": "Tools/Security/ReplayHasher.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 125,
+        "path": "Tools/Security/ReplayHasher.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<B",
+        "line": 129,
+        "path": "Tools/Security/ReplayHasher.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 179,
+        "path": "Tools/Security/ReplayHasher.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 29,
+        "path": "Tools/SnellBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 299,
+        "path": "Tools/SnellBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 973,
+        "path": "Tools/SnellBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIII",
+        "line": 110,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "line": 111,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIII",
+        "line": 952,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIII",
+        "line": 987,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "line": 1016,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "line": 966,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 1225,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 1222,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 1235,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBB",
+        "line": 1442,
+        "path": "Tools/SubmarinePhysicsSim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIII24s",
+        "line": 162,
+        "path": "Tools/Taxonomy/audit_taxonomy_data.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIIIII",
+        "line": 163,
+        "path": "Tools/Taxonomy/audit_taxonomy_data.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIII24s",
+        "line": 27,
+        "path": "Tools/Taxonomy/compile_taxonomy.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIIIII",
+        "line": 28,
+        "path": "Tools/Taxonomy/compile_taxonomy.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIII24s",
+        "line": 258,
+        "path": "Tools/Taxonomy/compile_taxonomy.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIIIII",
+        "line": 253,
+        "path": "Tools/Taxonomy/compile_taxonomy.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIII24s",
+        "line": 40,
+        "path": "Tools/Taxonomy/deep_freeze_taxonomy_audit.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIIIII",
+        "line": 41,
+        "path": "Tools/Taxonomy/deep_freeze_taxonomy_audit.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIII24s",
+        "line": 211,
+        "path": "Tools/Taxonomy/deep_freeze_taxonomy_audit.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIIIII",
+        "line": 256,
+        "path": "Tools/Taxonomy/deep_freeze_taxonomy_audit.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIII24s",
+        "line": 28,
+        "path": "Tools/Taxonomy/verify_taxonomy.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIIIII",
+        "line": 29,
+        "path": "Tools/Taxonomy/verify_taxonomy.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIII24s",
+        "line": 269,
+        "path": "Tools/Taxonomy/verify_taxonomy.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIIIII",
+        "line": 322,
+        "path": "Tools/Taxonomy/verify_taxonomy.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<QII",
+        "line": 41,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIfffffffIIIIIII",
+        "line": 42,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIiqqqqqfiBBBB",
+        "line": 43,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIi4xqqqqqfiBBBB4x",
+        "line": 44,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<II",
+        "line": 45,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIhBBBBB",
+        "line": 46,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<Qiiii",
+        "line": 47,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIiiffff",
+        "line": 48,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIiifiII",
+        "line": 49,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIiiiIfffII4x",
+        "line": 50,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<Iiii",
+        "line": 51,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IiIqqqffffffI",
+        "line": 52,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIfff",
+        "line": 53,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<Q",
+        "line": 611,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 620,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 622,
+        "path": "Tools/TelemetryDashboard/server.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 125,
+        "path": "Tools/test_atmo_preview.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 56,
+        "path": "Tools/test_atmo_preview.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 53,
+        "path": "Tools/test_atmo_preview.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 52,
+        "path": "Tools/test_atmo_preview.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 50,
+        "path": "Tools/test_atmo_preview.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 51,
+        "path": "Tools/test_atmo_preview.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 32,
+        "path": "Tools/test_dalton_gas_toxicity_baker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 46,
+        "path": "Tools/test_math_lut_generator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 43,
+        "path": "Tools/test_math_lut_generator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 43,
+        "path": "Tools/test_math_lut_generator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 43,
+        "path": "Tools/test_math_lut_generator.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHH14I",
+        "line": 68,
+        "path": "Tools/test_ore_lcg_baker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 89,
+        "path": "Tools/test_ore_lcg_baker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 197,
+        "path": "Tools/test_snell_baker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 273,
+        "path": "Tools/test_snell_baker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBB",
+        "line": 422,
+        "path": "Tools/test_submarine_physics_sim.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIII",
+        "line": 461,
+        "path": "Tools/test_submarine_physics_sim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "line": 483,
+        "path": "Tools/test_submarine_physics_sim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 57,
+        "path": "Tools/test_tide_baker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 59,
+        "path": "Tools/test_tide_baker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 59,
+        "path": "Tools/test_tide_baker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 59,
+        "path": "Tools/test_tide_baker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<32I",
+        "line": 53,
+        "path": "Tools/test_visual_lod_matrix_baker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 39,
+        "path": "Tools/TideBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8I",
+        "line": 76,
+        "path": "Tools/TideBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 666,
+        "path": "Tools/TideBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 671,
+        "path": "Tools/TideBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 752,
+        "path": "Tools/TideBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIII",
+        "line": 44,
+        "path": "Tools/UpgradeCurveBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<Iiff",
+        "line": 45,
+        "path": "Tools/UpgradeCurveBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIII",
+        "line": 466,
+        "path": "Tools/UpgradeCurveBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIII",
+        "line": 613,
+        "path": "Tools/UpgradeCurveBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<Iiff",
+        "line": 646,
+        "path": "Tools/UpgradeCurveBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<Iiff",
+        "line": 456,
+        "path": "Tools/UpgradeCurveBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 1064,
+        "path": "Tools/UpgradeCurveBaker.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 1061,
+        "path": "Tools/UpgradeCurveBaker.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 1074,
+        "path": "Tools/UpgradeCurveBaker.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "struct scanner internal calcsize uses an already-classified runtime format string",
+        "format": "<dynamic>",
+        "line": 147,
+        "path": "Tools/VerifyDataInquisition.py",
+        "status": "SCANNER_INTERNAL_DYNAMIC_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIIIIIIIII8s",
+        "line": 39,
+        "path": "Tools/VerifyHullStressBudget.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I i I i I i f f f f f f f f f f f f i i i i I I",
+        "line": 40,
+        "path": "Tools/VerifyHullStressBudget.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIffffffffffffffIIII",
+        "line": 41,
+        "path": "Tools/VerifyHullStressBudget.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "struct scanner internal calcsize uses an already-classified runtime format string",
+        "format": "<dynamic>",
+        "line": 280,
+        "path": "Tools/VerifyMetricPhiDataTruth.py",
+        "status": "SCANNER_INTERNAL_DYNAMIC_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHH14I",
+        "line": 183,
+        "path": "Tools/VerifyOreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHHBBBBI",
+        "line": 237,
+        "path": "Tools/VerifyOreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHBB",
+        "line": 252,
+        "path": "Tools/VerifyOreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 271,
+        "path": "Tools/VerifyOreLcgBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHH14I",
+        "line": 43,
+        "path": "Tools/VerifyOreLcgBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHHBBBBI",
+        "line": 44,
+        "path": "Tools/VerifyOreLcgBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHBB",
+        "line": 45,
+        "path": "Tools/VerifyOreLcgBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHHHHI",
+        "line": 46,
+        "path": "Tools/VerifyOreLcgBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHH14I",
+        "line": 114,
+        "path": "Tools/VerifyOreLcgBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHHBBBBI",
+        "line": 163,
+        "path": "Tools/VerifyOreLcgBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHHHHI",
+        "line": 247,
+        "path": "Tools/VerifyOreLcgBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IHBB",
+        "line": 193,
+        "path": "Tools/VerifyOreLcgBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<H",
+        "line": 217,
+        "path": "Tools/VerifyOreLcgBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sIIIIIIIIIIIIIIIIIII",
+        "line": 15,
+        "path": "Tools/VerifyOrganicEntropy.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIIIIIIIQ",
+        "line": 32,
+        "path": "Tools/VerifyQuestDagBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIQQHHBBH",
+        "line": 33,
+        "path": "Tools/VerifyQuestDagBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIQ",
+        "line": 34,
+        "path": "Tools/VerifyQuestDagBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIQ",
+        "line": 35,
+        "path": "Tools/VerifyQuestDagBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIHHHHII",
+        "line": 36,
+        "path": "Tools/VerifyQuestDagBinaryIndependent.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIIIIIIIQ",
+        "line": 42,
+        "path": "Tools/VerifyQuestDagDataTruth.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIQQHHBBH",
+        "line": 43,
+        "path": "Tools/VerifyQuestDagDataTruth.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIQ",
+        "line": 44,
+        "path": "Tools/VerifyQuestDagDataTruth.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIQ",
+        "line": 45,
+        "path": "Tools/VerifyQuestDagDataTruth.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIIIIIIIHHHHII",
+        "line": 46,
+        "path": "Tools/VerifyQuestDagDataTruth.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<ff",
+        "line": 55,
+        "path": "Tools/VerifySabineBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 124,
+        "path": "Tools/VerifySnellRefractionLut.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<e",
+        "line": 224,
+        "path": "Tools/VerifySnellRefractionLut.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8sIIIIII",
+        "line": 203,
+        "path": "Tools/VerifySubmarineHydrodynamicsData.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 139,
+        "path": "Tools/VerifyTideBaker.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<f",
+        "line": 119,
+        "path": "Tools/VerifyTideBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 135,
+        "path": "Tools/VerifyTideBaker.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<I",
+        "line": 319,
+        "path": "Tools/VerifyTideBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<16I",
+        "line": 34,
+        "path": "Tools/VerifyVramBudgets.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4s15I",
+        "line": 35,
+        "path": "Tools/VerifyVramBudgets.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sHHIIIIIIIIII16s",
+        "line": 42,
+        "path": "Tools/VisualLodMatrixBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<32I",
+        "line": 43,
+        "path": "Tools/VisualLodMatrixBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<16I",
+        "line": 44,
+        "path": "Tools/VisualLodMatrixBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4I",
+        "line": 45,
+        "path": "Tools/VisualLodMatrixBaker.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8s14I",
+        "line": 58,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<II22f8I",
+        "line": 59,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIff",
+        "line": 60,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIII",
+        "line": 61,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8s10I",
+        "line": 62,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<II6f",
+        "line": 63,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<II22f8I",
+        "line": 798,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8s14I",
+        "line": 861,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8s14I",
+        "line": 896,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8s10I",
+        "line": 997,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<8s10I",
+        "line": 1028,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIff",
+        "line": 809,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IIII",
+        "line": 826,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 1319,
+        "path": "Tools/VrComfortMath.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 1330,
+        "path": "Tools/VrComfortMath.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<II6f",
+        "line": 956,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<II6f",
+        "line": 971,
+        "path": "Tools/VrComfortMath.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 1319,
+        "path": "Tools/VrComfortMath.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">IIBBBBB",
+        "line": 452,
+        "path": "Tools/WaterColorPreview.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 441,
+        "path": "Tools/WaterColorPreview.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "external image/container fields are spec-mandated big-endian, not H8 runtime binary blobs",
+        "format": ">I",
+        "line": 441,
+        "path": "Tools/WaterColorPreview.py",
+        "status": "EXTERNAL_CONTAINER_BIG_ENDIAN_ALLOWED"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<4sIIIIIIIIIIIIIIIIIII",
+        "line": 36,
+        "path": "Tools/WorldEntropySim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<IBBHHHHHHIIIH",
+        "line": 37,
+        "path": "Tools/WorldEntropySim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<HBBBBBBHIH",
+        "line": 38,
+        "path": "Tools/WorldEntropySim.py",
+        "status": "PASS"
+      },
+      {
+        "detail": "little-endian explicit",
+        "format": "<HHBBBBHHI",
+        "line": 39,
+        "path": "Tools/WorldEntropySim.py",
+        "status": "PASS"
+      }
+    ]
+  },
+  "evidenceClass": "CLI_PYTHON_STATIC_DATA",
+  "generatedAt": "2026-05-17T00:48:28",
+  "hPhi": {
+    "allSourceCounters": {
+      "binary_blittable_safe": 35,
+      "coroutine_surface": 629,
+      "direct_method_calls": 138543,
+      "files": 5015,
+      "find_object_calls": 67,
+      "get_component_calls": 2047,
+      "global_registry_get": 0,
+      "global_registry_surface": 5118,
+      "global_signals_publish": 226,
+      "ifixed_tickable": 62,
+      "ijob": 349,
+      "islow_tickable": 170,
+      "itickable": 158,
+      "job_complete_surface": 97,
+      "lines": 1723788,
+      "linq_surface": 1853,
+      "local_native_array_allocs": 1427,
+      "managed_format_surface": 2168,
+      "native_array_refs": 6696,
+      "signal_bus_publish": 0,
+      "signal_bus_push": 95,
+      "struct_declarations": 2474,
+      "struct_layout_attributes": 997,
+      "unity_loop_shell_methods": 2,
+      "unity_update_methods": 0,
+      "unity_update_methods_raw": 319,
+      "vault_get_buffer_refs": 126
+    },
+    "freshness": {
+      "eligibleFileCount": 5015,
+      "fresh": true,
+      "newestEligibleFile": "Assets/_Project/Scripts/UI/Localization/H8LocHashes.cs",
+      "newestEligibleFileTime": "2026-05-17T00:25:53.373942",
+      "reportFileCount": 5015
+    },
+    "generatedAt": "2026-05-17T00:43:47",
+    "graph": {
+      "edges": 158,
+      "engine": "networkx/matplotlib",
+      "nodes": 92,
+      "path": "Docs/AgentLogs/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL_H_PHI_ARCHITECTURE_GRAPH.png"
+    },
+    "hPhiAudit": {
+      "desired_lookup_model": "stateless typed signal or GlobalDataVault lookup; no private per-system buffer ownership hidden from static audit",
+      "observability_increased_by_this_pass": true,
+      "reason": "This pass added static measurement and atlas/report artifacts only. It did not edit runtime systems, so it cannot honestly claim improved runtime DataVault sovereignty without a separate implementation pass.",
+      "runtime_data_sovereignty_increased_by_this_pass": false,
+      "runtime_data_sovereignty_score": 0.019743027,
+      "strict_local_native_array_sovereignty_score": 0.089045936
+    },
+    "runtimeSourceCounters": {
+      "binary_blittable_safe": 35,
+      "coroutine_surface": 0,
+      "direct_method_calls": 48201,
+      "files": 1279,
+      "find_object_calls": 0,
+      "get_component_calls": 284,
+      "global_registry_get": 0,
+      "global_registry_surface": 5088,
+      "global_signals_publish": 226,
+      "ifixed_tickable": 60,
+      "ijob": 336,
+      "islow_tickable": 168,
+      "itickable": 158,
+      "job_complete_surface": 59,
+      "lines": 886862,
+      "linq_surface": 7,
+      "local_native_array_allocs": 1289,
+      "managed_format_surface": 255,
+      "native_array_refs": 6256,
+      "signal_bus_publish": 0,
+      "signal_bus_push": 95,
+      "struct_declarations": 1891,
+      "struct_layout_attributes": 977,
+      "unity_loop_shell_methods": 2,
+      "unity_update_methods": 0,
+      "unity_update_methods_raw": 2,
+      "vault_get_buffer_refs": 126
+    },
+    "scores": {
+      "ArchitecturalPurity": 1.0,
+      "ArchitecturalPurityExpanded": 1.0,
+      "BinarySafeRatio": 0.018508726,
+      "DataSovereignty": 0.019743027,
+      "HPhiContract": 0.01020039,
+      "HPhiRisk": 0.000553189,
+      "HPhiStatic": 6.7481e-05,
+      "MemoryAlignment": 0.516657853,
+      "NarrowIntegration": 1.0,
+      "RiskIntegration": 0.054232134,
+      "StrictLocalNativeArraySovereignty": 0.089045936,
+      "SynapticDensity": 0.006615556
+    },
+    "top3LowestPurityFiles": [
+      {
+        "domain": "HectonPlayerMovement.cs",
+        "lines": 13353,
+        "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "purity_score": 1.0,
+        "role": "PrimaryRuntime",
+        "typed_tick_job_surface": 1,
+        "unity_update_methods": 0
+      },
+      {
+        "domain": "WorldProceduralScatterDirector.cs",
+        "lines": 11908,
+        "path": "Assets/_Project/Scripts/WorldProceduralScatterDirector.cs",
+        "purity_score": 1.0,
+        "role": "PrimaryRuntime",
+        "typed_tick_job_surface": 2,
+        "unity_update_methods": 0
+      },
+      {
+        "domain": "Audio",
+        "lines": 10536,
+        "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+        "purity_score": 1.0,
+        "role": "PrimaryRuntime",
+        "typed_tick_job_surface": 4,
+        "unity_update_methods": 0
+      }
+    ]
+  },
+  "hashing": {
+    "categories": {
+      "Biomes": 523,
+      "Items": 209,
+      "Signals": 286
+    },
+    "collisionCount": 0,
+    "records": 1018
+  },
+  "inputs": {
+    "atlas": "Docs/AgentLogs/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL_PROJECT_ATLAS.md",
+    "graph": "Docs/AgentLogs/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL_H_PHI_ARCHITECTURE_GRAPH.png",
+    "hPhi": "Docs/AgentLogs/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL_H_PHI_SCORE.json",
+    "verifySweep": ".codex_tmp/metric_phi_selfcheck/MetricPhiVerifySweep_NET_SYNC_MERKLE_ARCHITECT_FINAL.4608.json"
+  },
+  "lore": {
+    "entries": 2,
+    "lookupModel": "stateless binary search over sorted 16-byte records; payload is raw UTF-8 slice",
+    "noirSignalCount": 252,
+    "techLoreStatus": null
+  },
+  "math": {
+    "acoustic": {
+      "status": "ACOUSTICS BAKED",
+      "tiers": [
+        "high",
+        "middle",
+        "rtx_overkill",
+        "toaster_i3"
+      ]
+    },
+    "dalton": {
+      "status": "DALTON_GAS_TOXICITY_BAKED",
+      "tiers": [
+        "high",
+        "middle",
+        "rtx_overkill",
+        "toaster_i3"
+      ]
+    },
+    "mathManifest": {
+      "status": "PASS"
+    },
+    "optics": {
+      "artifactHashCollisionCount": 0,
+      "schema": "H8.WaterExtinctionMatrix.v3",
+      "variants": {
+        "main_mx350": {
+          "aligned16": true,
+          "bytes": 393216,
+          "expectedBytes": 393216,
+          "file": "Water_Extinction_Matrix.bin",
+          "role": "Primary MX350/LOW lookup required by the batch prompt.",
+          "sha256": "99EB8631F64C15181E62E2C1E24CDA285A490330C0F04F99FB218EFEC9BBFF89",
+          "shape": [
+            256,
+            256,
+            3
+          ]
+        },
+        "rtx_overkill": {
+          "aligned16": true,
+          "bytes": 1572864,
+          "expectedBytes": 1572864,
+          "file": "Water_Extinction_Matrix_Overkill.bin",
+          "role": "High-end visual-overkill lookup for denser fog/light blending.",
+          "sha256": "6D8D7ACF02A763A7096C681E5D734F3B37C2595E45977753DBCE1C5161A5A98C",
+          "shape": [
+            512,
+            512,
+            3
+          ]
+        },
+        "toaster_i3": {
+          "aligned16": true,
+          "bytes": 24576,
+          "expectedBytes": 24576,
+          "file": "Water_Extinction_Matrix_Toaster.bin",
+          "role": "Celeron/i3 stripped lookup for lowest bandwidth path.",
+          "sha256": "8AD019294F763A3457AE2CDFCE024516BC3AF0E008A537680BEC8C44259F60D6",
+          "shape": [
+            64,
+            64,
+            3
+          ]
+        }
+      }
+    }
+  },
+  "residualRisk": [
+    "Static/CLI-only evidence; no Unity import, profiler, GCMonitor, frame-time, memory, scene wiring, or player build proof.",
+    "Struct endianness scanner checks literal struct format strings in Python tools; NumPy dtype and C# BinaryPrimitives contracts require their own owner verifiers.",
+    "Lore tone proof is metadata-backed plus validator-backed; semantic taste still requires narrative owner review."
+  ],
+  "schema": "H8.MetricPhi.DataTruthAudit.v1",
+  "status": "DATA_TRUTH_FAILED",
+  "summary": {
+    "failedChecks": 1,
+    "failedNames": [
+      "verify_sweep_pass"
+    ],
+    "totalChecks": 37
+  },
+  "tool": "Tools/VerifyMetricPhiDataTruth.py",
+  "verifySweep": {
+    "requiredFailures": 2,
+    "selfCheckPending": true,
+    "status": "VERIFY_SWEEP_FAIL",
+    "totalCommands": 34,
+    "verifyReplayHasherReference": {
+      "argv": [
+        "C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-B",
+        "Tools/Security/VerifyReplayHasherReference.py",
+        "--xxhash-path",
+        "C:\\Users\\User\\AppData\\Local\\Temp\\metric_phi_xxhash_ref",
+        "--fuzz-count",
+        "256"
+      ],
+      "elapsedSeconds": 20.62,
+      "evidenceClass": "CLI_PYTHON_STATIC_DATA",
+      "label": "VerifyReplayHasherReference",
+      "passed": true,
+      "required": true,
+      "returnCode": 0,
+      "stderr": "",
+      "stdout": "XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=466 shuffle=256\n"
+    }
+  }
+}

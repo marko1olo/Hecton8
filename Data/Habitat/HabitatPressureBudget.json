@@ -1,0 +1,1791 @@
+{
+  "schema": "hecton8.habitat.pressure_budget.v1",
+  "status": "STRESS MATH BAKED",
+  "omegaStatus": "VERIFIED MASTER GRADE",
+  "evidenceBoundary": "STATIC_SOURCE/PYTHON_OFFLINE",
+  "generatedBy": "Tools/HullStressBaker.py",
+  "constants": {
+    "seaWaterDensityKgM3": 1025.0,
+    "gravityMS2": 9.80665,
+    "atmosphericPressurePa": 101325.0,
+    "safetyFactor": 2.5,
+    "sipPerMPa": 1.0,
+    "glassPanelSip": -5,
+    "titaniumWallSip": 2,
+    "bulkheadDoorSip": 4,
+    "lithiumReinforcementSip": 10,
+    "maxBowingBeforeRuptureM": 0.1,
+    "stressFormula": "Stress = AmbientPressureMPa / Total_SIP",
+    "pressureFormula": "AmbientPressureMPa = (101325 + 1025 * 9.80665 * depthM) / 1000000",
+    "cylinderElasticBucklingFormula": "Pcr = 2E/sqrt(3(1-nu^2))*(t/r)^3",
+    "hoopYieldFormula": "Py = yieldStrength * t / r",
+    "shellRingBaseFormula": "baseHz=sqrt(YoungsModulusPa/densityKgM3)/(2*pi*radiusM)/max(4,lengthM/radiusM+8)"
+  },
+  "mathAudit": {
+    "status": "REAL_FORMULA_SOURCE_RECORDED",
+    "applicablePhysics": [
+      "hydrostatic pressure",
+      "external-pressure thin cylindrical shell buckling",
+      "hoop-yield pressure limit",
+      "elastic wave speed for presentation harmonics"
+    ],
+    "notApplicableHere": {
+      "BeerLambert": "No optical absorption LUT or water-color matrix is authored by this habitat SIP baker.",
+      "Dalton": "No gas partial-pressure table is authored by this habitat SIP baker.",
+      "Sabine": "No room-acoustic reverberation bake is authored by this habitat SIP baker."
+    },
+    "derivedConstants": [
+      {
+        "name": "seaWaterDensityKgM3",
+        "value": 1025.0,
+        "basis": "standard seawater engineering approximation"
+      },
+      {
+        "name": "gravityMS2",
+        "value": 9.80665,
+        "basis": "standard gravity"
+      },
+      {
+        "name": "atmosphericPressurePa",
+        "value": 101325.0,
+        "basis": "standard atmosphere"
+      },
+      {
+        "name": "maxBowingBeforeRuptureM",
+        "value": 0.1,
+        "basis": "explicit XML directive"
+      }
+    ]
+  },
+  "loreAudit": {
+    "status": "NASA_PUNK_NOIR_TERMS_APPLIED",
+    "requiredTone": "industrial pressure-shell language, corroded deep-sea hardware, no showroom-polished sci-fi",
+    "approvedTerms": [
+      "scarred",
+      "scabbed",
+      "salt-bitten",
+      "oil-black",
+      "pressure shell",
+      "bulkhead",
+      "viewport"
+    ],
+    "purgedTerms": [
+      "generic 100 HP room",
+      "catalog-room pressure shell",
+      "rubber-stamp integrity"
+    ]
+  },
+  "projectAtlasAudit": {
+    "status": "FITS_STATIC_ATLAS_BOUNDARY",
+    "atlasPath": "Docs/PROJECT_ATLAS.md",
+    "staticAssemblyCountSeen": 83,
+    "domainIndexCountExpected": 85,
+    "domainIndexId": 52,
+    "domainIndexDomain": "Structural Integrity Math",
+    "domainFamily": "Environment and survival",
+    "closestAssembly": "Hecton8.Habitat.Deformation.Contracts",
+    "echelon": "Echelon 6 - Habitat & Vehicles / Structural Integrity Math",
+    "hPhiEffect": {
+      "dataSovereignty": "improved: static JSON plus aligned binary table supports stateless lookup by FNV-1a key",
+      "synapticDensity": "neutral: no new runtime concrete references, no EventID, no GlobalRegistry polling",
+      "phaseDiscipline": "neutral: no runtime tick phase added",
+      "evidenceMultiplier": "CLI_PYTHON_STATIC_DATA only; Unity import and player runtime proof absent"
+    }
+  },
+  "materials": [
+    {
+      "materialId": "glass",
+      "hashFnv1a32": 4060326187,
+      "hashFnv1a32Signed": -234641109,
+      "displayName": "Scarred borosilicate viewport glass",
+      "youngsModulusGPa": 64.0,
+      "poissonRatio": 0.2,
+      "yieldStrengthMPa": 220.0,
+      "densityKgM3": 2230.0,
+      "wallThicknessM": 0.12,
+      "bucklingKnockdown": 0.52,
+      "notes": "Brittle scabbed viewport stock. Physical pressure estimate is retained, but every exposed glass panel applies -5 SIP."
+    },
+    {
+      "materialId": "titanium",
+      "hashFnv1a32": 463438422,
+      "hashFnv1a32Signed": 463438422,
+      "displayName": "Salt-bitten Ti-6Al-4V pressure wall",
+      "youngsModulusGPa": 113.8,
+      "poissonRatio": 0.34,
+      "yieldStrengthMPa": 880.0,
+      "densityKgM3": 4430.0,
+      "wallThicknessM": 0.16,
+      "bucklingKnockdown": 0.72,
+      "notes": "Baseline pressure shell with oxidized yard scars. Authored titanium wall segments add +2 SIP each."
+    },
+    {
+      "materialId": "plasteel",
+      "hashFnv1a32": 702688311,
+      "hashFnv1a32Signed": 702688311,
+      "displayName": "Oil-black plasteel composite pressure shell",
+      "youngsModulusGPa": 155.0,
+      "poissonRatio": 0.29,
+      "yieldStrengthMPa": 1250.0,
+      "densityKgM3": 6200.0,
+      "wallThicknessM": 0.18,
+      "bucklingKnockdown": 0.78,
+      "notes": "Fictional composite mapped to a steel/composite-class shell constant. No extra gameplay wall bonus is applied."
+    }
+  ],
+  "modules": [
+    {
+      "stableId": "base.template.corridor.straight.glass",
+      "hashFnv1a32": 4087003498,
+      "hashFnv1a32Signed": -207963798,
+      "archetypeId": "base.template.corridor.straight",
+      "archetypeHashFnv1a32": 2330276100,
+      "archetypeHashFnv1a32Signed": -1964691196,
+      "displayName": "Scarred borosilicate viewport glass Straight Corridor",
+      "materialId": "glass",
+      "materialHashFnv1a32": 4060326187,
+      "materialHashFnv1a32Signed": -234641109,
+      "sourceTemplate": "Assets/_Project/Data/Construction/StandardModuleTemplates/BaseModuleTemplate_CorridorStraight.asset",
+      "geometry": {
+        "pressureRadiusM": 2.0,
+        "cylinderLengthM": 8.0,
+        "wallThicknessM": 0.12,
+        "jointEfficiency": 0.92,
+        "lengthKnockdown": 0.952,
+        "airVolumeM3": 22.0,
+        "dryMassKg": 12000.0,
+        "notes": "Existing proxy bounds 4x4x8m; pressure radius uses the 4m section radius."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 16.29174,
+        "hoopYieldPressureMPa": 13.2,
+        "designCrushPressureMPa": 2.404706,
+        "crushDepthM": 229.151,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.52,
+        "shellRingBaseHz": 35.526011
+      },
+      "sip": {
+        "physicalSip": 2,
+        "glassPanelCount": 1,
+        "glassSip": -5,
+        "titaniumWallCount": 0,
+        "titaniumWallSip": 0,
+        "bulkheadDoorCount": 0,
+        "bulkheadDoorSip": 0,
+        "componentModifierSip": -5,
+        "baseSip": -3
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 40.612565,
+        "collapseStartsAt1000m": true,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.template.corridor.straight.titanium",
+      "hashFnv1a32": 1406659053,
+      "hashFnv1a32Signed": 1406659053,
+      "archetypeId": "base.template.corridor.straight",
+      "archetypeHashFnv1a32": 2330276100,
+      "archetypeHashFnv1a32Signed": -1964691196,
+      "displayName": "Salt-bitten Ti-6Al-4V pressure wall Straight Corridor",
+      "materialId": "titanium",
+      "materialHashFnv1a32": 463438422,
+      "materialHashFnv1a32Signed": 463438422,
+      "sourceTemplate": "Assets/_Project/Data/Construction/StandardModuleTemplates/BaseModuleTemplate_CorridorStraight.asset",
+      "geometry": {
+        "pressureRadiusM": 2.0,
+        "cylinderLengthM": 8.0,
+        "wallThicknessM": 0.16,
+        "jointEfficiency": 0.92,
+        "lengthKnockdown": 0.952,
+        "airVolumeM3": 22.0,
+        "dryMassKg": 12000.0,
+        "notes": "Existing proxy bounds 4x4x8m; pressure radius uses the 4m section radius."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 71.541365,
+        "hoopYieldPressureMPa": 70.4,
+        "designCrushPressureMPa": 17.757831,
+        "crushDepthM": 1756.549,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.72,
+        "shellRingBaseHz": 33.610746
+      },
+      "sip": {
+        "physicalSip": 17,
+        "glassPanelCount": 0,
+        "glassSip": 0,
+        "titaniumWallCount": 2,
+        "titaniumWallSip": 4,
+        "bulkheadDoorCount": 0,
+        "bulkheadDoorSip": 0,
+        "componentModifierSip": 4,
+        "baseSip": 21
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 0.483483,
+        "collapseStartsAt1000m": false,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.template.corridor.straight.plasteel",
+      "hashFnv1a32": 3721250128,
+      "hashFnv1a32Signed": -573717168,
+      "archetypeId": "base.template.corridor.straight",
+      "archetypeHashFnv1a32": 2330276100,
+      "archetypeHashFnv1a32Signed": -1964691196,
+      "displayName": "Oil-black plasteel composite pressure shell Straight Corridor",
+      "materialId": "plasteel",
+      "materialHashFnv1a32": 702688311,
+      "materialHashFnv1a32Signed": 702688311,
+      "sourceTemplate": "Assets/_Project/Data/Construction/StandardModuleTemplates/BaseModuleTemplate_CorridorStraight.asset",
+      "geometry": {
+        "pressureRadiusM": 2.0,
+        "cylinderLengthM": 8.0,
+        "wallThicknessM": 0.18,
+        "jointEfficiency": 0.92,
+        "lengthKnockdown": 0.952,
+        "airVolumeM3": 22.0,
+        "dryMassKg": 12000.0,
+        "notes": "Existing proxy bounds 4x4x8m; pressure radius uses the 4m section radius."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 136.334122,
+        "hoopYieldPressureMPa": 112.5,
+        "designCrushPressureMPa": 30.741984,
+        "crushDepthM": 3048.271,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.78,
+        "shellRingBaseHz": 33.15728
+      },
+      "sip": {
+        "physicalSip": 30,
+        "glassPanelCount": 0,
+        "glassSip": 0,
+        "titaniumWallCount": 0,
+        "titaniumWallSip": 0,
+        "bulkheadDoorCount": 0,
+        "bulkheadDoorSip": 0,
+        "componentModifierSip": 0,
+        "baseSip": 30
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 0.338438,
+        "collapseStartsAt1000m": false,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.template.room.multipurpose.glass",
+      "hashFnv1a32": 3876150698,
+      "hashFnv1a32Signed": -418816598,
+      "archetypeId": "base.template.room.multipurpose",
+      "archetypeHashFnv1a32": 2468322500,
+      "archetypeHashFnv1a32Signed": -1826644796,
+      "displayName": "Scarred borosilicate viewport glass Multipurpose Room",
+      "materialId": "glass",
+      "materialHashFnv1a32": 4060326187,
+      "materialHashFnv1a32Signed": -234641109,
+      "sourceTemplate": "Assets/_Project/Data/Construction/StandardModuleTemplates/BaseModuleTemplate_MultiPurposeRoom.asset",
+      "geometry": {
+        "pressureRadiusM": 3.0,
+        "cylinderLengthM": 10.0,
+        "wallThicknessM": 0.12,
+        "jointEfficiency": 0.88,
+        "lengthKnockdown": 0.96,
+        "airVolumeM3": 68.0,
+        "dryMassKg": 22000.0,
+        "notes": "Existing proxy bounds 10x6x10m; pressure radius uses vertical half-height, not decorative width."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 4.827182,
+        "hoopYieldPressureMPa": 8.8,
+        "designCrushPressureMPa": 0.848225,
+        "crushDepthM": 74.305,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.52,
+        "shellRingBaseHz": 25.077184
+      },
+      "sip": {
+        "physicalSip": 0,
+        "glassPanelCount": 3,
+        "glassSip": -15,
+        "titaniumWallCount": 0,
+        "titaniumWallSip": 0,
+        "bulkheadDoorCount": 0,
+        "bulkheadDoorSip": 0,
+        "componentModifierSip": -15,
+        "baseSip": -15
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 40.612565,
+        "collapseStartsAt1000m": true,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.template.room.multipurpose.titanium",
+      "hashFnv1a32": 3648479021,
+      "hashFnv1a32Signed": -646488275,
+      "archetypeId": "base.template.room.multipurpose",
+      "archetypeHashFnv1a32": 2468322500,
+      "archetypeHashFnv1a32Signed": -1826644796,
+      "displayName": "Salt-bitten Ti-6Al-4V pressure wall Multipurpose Room",
+      "materialId": "titanium",
+      "materialHashFnv1a32": 463438422,
+      "materialHashFnv1a32Signed": 463438422,
+      "sourceTemplate": "Assets/_Project/Data/Construction/StandardModuleTemplates/BaseModuleTemplate_MultiPurposeRoom.asset",
+      "geometry": {
+        "pressureRadiusM": 3.0,
+        "cylinderLengthM": 10.0,
+        "wallThicknessM": 0.16,
+        "jointEfficiency": 0.88,
+        "lengthKnockdown": 0.96,
+        "airVolumeM3": 68.0,
+        "dryMassKg": 22000.0,
+        "notes": "Existing proxy bounds 10x6x10m; pressure radius uses vertical half-height, not decorative width."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 21.197442,
+        "hoopYieldPressureMPa": 46.933333,
+        "designCrushPressureMPa": 5.157388,
+        "crushDepthM": 503.0,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.72,
+        "shellRingBaseHz": 23.725233
+      },
+      "sip": {
+        "physicalSip": 5,
+        "glassPanelCount": 0,
+        "glassSip": 0,
+        "titaniumWallCount": 4,
+        "titaniumWallSip": 8,
+        "bulkheadDoorCount": 0,
+        "bulkheadDoorSip": 0,
+        "componentModifierSip": 8,
+        "baseSip": 13
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 0.781011,
+        "collapseStartsAt1000m": false,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.template.room.multipurpose.plasteel",
+      "hashFnv1a32": 660403344,
+      "hashFnv1a32Signed": 660403344,
+      "archetypeId": "base.template.room.multipurpose",
+      "archetypeHashFnv1a32": 2468322500,
+      "archetypeHashFnv1a32Signed": -1826644796,
+      "displayName": "Oil-black plasteel composite pressure shell Multipurpose Room",
+      "materialId": "plasteel",
+      "materialHashFnv1a32": 702688311,
+      "materialHashFnv1a32Signed": 702688311,
+      "sourceTemplate": "Assets/_Project/Data/Construction/StandardModuleTemplates/BaseModuleTemplate_MultiPurposeRoom.asset",
+      "geometry": {
+        "pressureRadiusM": 3.0,
+        "cylinderLengthM": 10.0,
+        "wallThicknessM": 0.18,
+        "jointEfficiency": 0.88,
+        "lengthKnockdown": 0.96,
+        "airVolumeM3": 68.0,
+        "dryMassKg": 22000.0,
+        "notes": "Existing proxy bounds 10x6x10m; pressure radius uses vertical half-height, not decorative width."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 40.395295,
+        "hoopYieldPressureMPa": 75.0,
+        "designCrushPressureMPa": 10.647295,
+        "crushDepthM": 1049.161,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.78,
+        "shellRingBaseHz": 23.405139
+      },
+      "sip": {
+        "physicalSip": 10,
+        "glassPanelCount": 0,
+        "glassSip": 0,
+        "titaniumWallCount": 0,
+        "titaniumWallSip": 0,
+        "bulkheadDoorCount": 0,
+        "bulkheadDoorSip": 0,
+        "componentModifierSip": 0,
+        "baseSip": 10
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 1.015314,
+        "collapseStartsAt1000m": true,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.template.moonpool.bay.glass",
+      "hashFnv1a32": 2719153369,
+      "hashFnv1a32Signed": -1575813927,
+      "archetypeId": "base.template.moonpool.bay",
+      "archetypeHashFnv1a32": 1106191951,
+      "archetypeHashFnv1a32Signed": 1106191951,
+      "displayName": "Scarred borosilicate viewport glass Moonpool",
+      "materialId": "glass",
+      "materialHashFnv1a32": 4060326187,
+      "materialHashFnv1a32Signed": -234641109,
+      "sourceTemplate": "Assets/_Project/Data/Construction/StandardModuleTemplates/BaseModuleTemplate_Moonpool.asset",
+      "geometry": {
+        "pressureRadiusM": 4.0,
+        "cylinderLengthM": 10.0,
+        "wallThicknessM": 0.12,
+        "jointEfficiency": 0.62,
+        "lengthKnockdown": 0.97,
+        "airVolumeM3": 74.0,
+        "dryMassKg": 26000.0,
+        "notes": "Open bay aperture is modeled as low joint efficiency; this is the weak large-module case."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 2.036468,
+        "hoopYieldPressureMPa": 6.6,
+        "designCrushPressureMPa": 0.254744,
+        "crushDepthM": 15.263,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.52,
+        "shellRingBaseHz": 20.300578
+      },
+      "sip": {
+        "physicalSip": 0,
+        "glassPanelCount": 2,
+        "glassSip": -10,
+        "titaniumWallCount": 0,
+        "titaniumWallSip": 0,
+        "bulkheadDoorCount": 1,
+        "bulkheadDoorSip": 4,
+        "componentModifierSip": -6,
+        "baseSip": -6
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 40.612565,
+        "collapseStartsAt1000m": true,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.template.moonpool.bay.titanium",
+      "hashFnv1a32": 2703530128,
+      "hashFnv1a32Signed": -1591437168,
+      "archetypeId": "base.template.moonpool.bay",
+      "archetypeHashFnv1a32": 1106191951,
+      "archetypeHashFnv1a32Signed": 1106191951,
+      "displayName": "Salt-bitten Ti-6Al-4V pressure wall Moonpool",
+      "materialId": "titanium",
+      "materialHashFnv1a32": 463438422,
+      "materialHashFnv1a32Signed": 463438422,
+      "sourceTemplate": "Assets/_Project/Data/Construction/StandardModuleTemplates/BaseModuleTemplate_Moonpool.asset",
+      "geometry": {
+        "pressureRadiusM": 4.0,
+        "cylinderLengthM": 10.0,
+        "wallThicknessM": 0.16,
+        "jointEfficiency": 0.62,
+        "lengthKnockdown": 0.97,
+        "airVolumeM3": 74.0,
+        "dryMassKg": 26000.0,
+        "notes": "Open bay aperture is modeled as low joint efficiency; this is the weak large-module case."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 8.942671,
+        "hoopYieldPressureMPa": 35.2,
+        "designCrushPressureMPa": 1.548899,
+        "crushDepthM": 144.011,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.72,
+        "shellRingBaseHz": 19.206141
+      },
+      "sip": {
+        "physicalSip": 1,
+        "glassPanelCount": 0,
+        "glassSip": 0,
+        "titaniumWallCount": 3,
+        "titaniumWallSip": 6,
+        "bulkheadDoorCount": 1,
+        "bulkheadDoorSip": 4,
+        "componentModifierSip": 10,
+        "baseSip": 11
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 0.923013,
+        "collapseStartsAt1000m": false,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.template.moonpool.bay.plasteel",
+      "hashFnv1a32": 2487321505,
+      "hashFnv1a32Signed": -1807645791,
+      "archetypeId": "base.template.moonpool.bay",
+      "archetypeHashFnv1a32": 1106191951,
+      "archetypeHashFnv1a32Signed": 1106191951,
+      "displayName": "Oil-black plasteel composite pressure shell Moonpool",
+      "materialId": "plasteel",
+      "materialHashFnv1a32": 702688311,
+      "materialHashFnv1a32Signed": 702688311,
+      "sourceTemplate": "Assets/_Project/Data/Construction/StandardModuleTemplates/BaseModuleTemplate_Moonpool.asset",
+      "geometry": {
+        "pressureRadiusM": 4.0,
+        "cylinderLengthM": 10.0,
+        "wallThicknessM": 0.18,
+        "jointEfficiency": 0.62,
+        "lengthKnockdown": 0.97,
+        "airVolumeM3": 74.0,
+        "dryMassKg": 26000.0,
+        "notes": "Open bay aperture is modeled as low joint efficiency; this is the weak large-module case."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 17.041765,
+        "hoopYieldPressureMPa": 56.25,
+        "designCrushPressureMPa": 3.197662,
+        "crushDepthM": 308.038,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.78,
+        "shellRingBaseHz": 18.947017
+      },
+      "sip": {
+        "physicalSip": 3,
+        "glassPanelCount": 0,
+        "glassSip": 0,
+        "titaniumWallCount": 0,
+        "titaniumWallSip": 0,
+        "bulkheadDoorCount": 1,
+        "bulkheadDoorSip": 4,
+        "componentModifierSip": 4,
+        "baseSip": 7
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 1.450449,
+        "collapseStartsAt1000m": true,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.module.window.glass",
+      "hashFnv1a32": 757664498,
+      "hashFnv1a32Signed": 757664498,
+      "archetypeId": "base.module.window",
+      "archetypeHashFnv1a32": 1235783852,
+      "archetypeHashFnv1a32Signed": 1235783852,
+      "displayName": "Scarred borosilicate viewport glass Glass Observatory",
+      "materialId": "glass",
+      "materialHashFnv1a32": 4060326187,
+      "materialHashFnv1a32Signed": -234641109,
+      "sourceTemplate": "Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_WindowObservation.asset",
+      "geometry": {
+        "pressureRadiusM": 3.2,
+        "cylinderLengthM": 6.0,
+        "wallThicknessM": 0.12,
+        "jointEfficiency": 0.5,
+        "lengthKnockdown": 0.9775,
+        "airVolumeM3": 160.0,
+        "dryMassKg": 18000.0,
+        "notes": "Viewport-dominant module; glass penalty intentionally overwhelms physical shell estimate."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 3.977476,
+        "hoopYieldPressureMPa": 8.25,
+        "designCrushPressureMPa": 0.40435,
+        "crushDepthM": 30.146,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.52,
+        "shellRingBaseHz": 26.98178
+      },
+      "sip": {
+        "physicalSip": 0,
+        "glassPanelCount": 6,
+        "glassSip": -30,
+        "titaniumWallCount": 0,
+        "titaniumWallSip": 0,
+        "bulkheadDoorCount": 0,
+        "bulkheadDoorSip": 0,
+        "componentModifierSip": -30,
+        "baseSip": -30
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 40.612565,
+        "collapseStartsAt1000m": true,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.module.window.titanium",
+      "hashFnv1a32": 3239054773,
+      "hashFnv1a32Signed": -1055912523,
+      "archetypeId": "base.module.window",
+      "archetypeHashFnv1a32": 1235783852,
+      "archetypeHashFnv1a32Signed": 1235783852,
+      "displayName": "Salt-bitten Ti-6Al-4V pressure wall Glass Observatory",
+      "materialId": "titanium",
+      "materialHashFnv1a32": 463438422,
+      "materialHashFnv1a32Signed": 463438422,
+      "sourceTemplate": "Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_WindowObservation.asset",
+      "geometry": {
+        "pressureRadiusM": 3.2,
+        "cylinderLengthM": 6.0,
+        "wallThicknessM": 0.16,
+        "jointEfficiency": 0.5,
+        "lengthKnockdown": 0.9775,
+        "airVolumeM3": 160.0,
+        "dryMassKg": 18000.0,
+        "notes": "Viewport-dominant module; glass penalty intentionally overwhelms physical shell estimate."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 17.466154,
+        "hoopYieldPressureMPa": 44.0,
+        "designCrushPressureMPa": 2.458536,
+        "crushDepthM": 234.506,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.72,
+        "shellRingBaseHz": 25.527149
+      },
+      "sip": {
+        "physicalSip": 2,
+        "glassPanelCount": 0,
+        "glassSip": 0,
+        "titaniumWallCount": 1,
+        "titaniumWallSip": 2,
+        "bulkheadDoorCount": 0,
+        "bulkheadDoorSip": 0,
+        "componentModifierSip": 2,
+        "baseSip": 4
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 2.538285,
+        "collapseStartsAt1000m": true,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.module.window.plasteel",
+      "hashFnv1a32": 3332162616,
+      "hashFnv1a32Signed": -962804680,
+      "archetypeId": "base.module.window",
+      "archetypeHashFnv1a32": 1235783852,
+      "archetypeHashFnv1a32Signed": 1235783852,
+      "displayName": "Oil-black plasteel composite pressure shell Glass Observatory",
+      "materialId": "plasteel",
+      "materialHashFnv1a32": 702688311,
+      "materialHashFnv1a32Signed": 702688311,
+      "sourceTemplate": "Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_WindowObservation.asset",
+      "geometry": {
+        "pressureRadiusM": 3.2,
+        "cylinderLengthM": 6.0,
+        "wallThicknessM": 0.18,
+        "jointEfficiency": 0.5,
+        "lengthKnockdown": 0.9775,
+        "airVolumeM3": 160.0,
+        "dryMassKg": 18000.0,
+        "notes": "Viewport-dominant module; glass penalty intentionally overwhelms physical shell estimate."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 33.284698,
+        "hoopYieldPressureMPa": 70.3125,
+        "designCrushPressureMPa": 5.075584,
+        "crushDepthM": 494.862,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.78,
+        "shellRingBaseHz": 25.182744
+      },
+      "sip": {
+        "physicalSip": 5,
+        "glassPanelCount": 0,
+        "glassSip": 0,
+        "titaniumWallCount": 0,
+        "titaniumWallSip": 0,
+        "bulkheadDoorCount": 0,
+        "bulkheadDoorSip": 0,
+        "componentModifierSip": 0,
+        "baseSip": 5
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 2.030628,
+        "collapseStartsAt1000m": true,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.template.airlock.hatch.glass",
+      "hashFnv1a32": 699168839,
+      "hashFnv1a32Signed": 699168839,
+      "archetypeId": "base.template.airlock.hatch",
+      "archetypeHashFnv1a32": 2909533885,
+      "archetypeHashFnv1a32Signed": -1385433411,
+      "displayName": "Scarred borosilicate viewport glass Bulkhead Airlock",
+      "materialId": "glass",
+      "materialHashFnv1a32": 4060326187,
+      "materialHashFnv1a32Signed": -234641109,
+      "sourceTemplate": "Assets/_Project/Data/Construction/StandardModuleTemplates/BaseModuleTemplate_Airlock.asset",
+      "geometry": {
+        "pressureRadiusM": 2.5,
+        "cylinderLengthM": 6.0,
+        "wallThicknessM": 0.12,
+        "jointEfficiency": 0.95,
+        "lengthKnockdown": 0.9712,
+        "airVolumeM3": 18.0,
+        "dryMassKg": 9000.0,
+        "notes": "Emergency airlock template; two bulkhead doors apply +4 SIP each."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 8.341371,
+        "hoopYieldPressureMPa": 10.56,
+        "designCrushPressureMPa": 1.600785,
+        "crushDepthM": 149.173,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.52,
+        "shellRingBaseHz": 32.793241
+      },
+      "sip": {
+        "physicalSip": 1,
+        "glassPanelCount": 3,
+        "glassSip": -15,
+        "titaniumWallCount": 0,
+        "titaniumWallSip": 0,
+        "bulkheadDoorCount": 2,
+        "bulkheadDoorSip": 8,
+        "componentModifierSip": -7,
+        "baseSip": -6
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 40.612565,
+        "collapseStartsAt1000m": true,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.template.airlock.hatch.titanium",
+      "hashFnv1a32": 834114962,
+      "hashFnv1a32Signed": 834114962,
+      "archetypeId": "base.template.airlock.hatch",
+      "archetypeHashFnv1a32": 2909533885,
+      "archetypeHashFnv1a32Signed": -1385433411,
+      "displayName": "Salt-bitten Ti-6Al-4V pressure wall Bulkhead Airlock",
+      "materialId": "titanium",
+      "materialHashFnv1a32": 463438422,
+      "materialHashFnv1a32Signed": 463438422,
+      "sourceTemplate": "Assets/_Project/Data/Construction/StandardModuleTemplates/BaseModuleTemplate_Airlock.asset",
+      "geometry": {
+        "pressureRadiusM": 2.5,
+        "cylinderLengthM": 6.0,
+        "wallThicknessM": 0.16,
+        "jointEfficiency": 0.95,
+        "lengthKnockdown": 0.9712,
+        "airVolumeM3": 18.0,
+        "dryMassKg": 9000.0,
+        "notes": "Emergency airlock template; two bulkhead doors apply +4 SIP each."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 36.629179,
+        "hoopYieldPressureMPa": 56.32,
+        "designCrushPressureMPa": 9.733117,
+        "crushDepthM": 958.214,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.72,
+        "shellRingBaseHz": 31.025304
+      },
+      "sip": {
+        "physicalSip": 9,
+        "glassPanelCount": 0,
+        "glassSip": 0,
+        "titaniumWallCount": 2,
+        "titaniumWallSip": 4,
+        "bulkheadDoorCount": 2,
+        "bulkheadDoorSip": 8,
+        "componentModifierSip": 12,
+        "baseSip": 21
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 0.483483,
+        "collapseStartsAt1000m": false,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    },
+    {
+      "stableId": "base.template.airlock.hatch.plasteel",
+      "hashFnv1a32": 3753117443,
+      "hashFnv1a32Signed": -541849853,
+      "archetypeId": "base.template.airlock.hatch",
+      "archetypeHashFnv1a32": 2909533885,
+      "archetypeHashFnv1a32Signed": -1385433411,
+      "displayName": "Oil-black plasteel composite pressure shell Bulkhead Airlock",
+      "materialId": "plasteel",
+      "materialHashFnv1a32": 702688311,
+      "materialHashFnv1a32Signed": 702688311,
+      "sourceTemplate": "Assets/_Project/Data/Construction/StandardModuleTemplates/BaseModuleTemplate_Airlock.asset",
+      "geometry": {
+        "pressureRadiusM": 2.5,
+        "cylinderLengthM": 6.0,
+        "wallThicknessM": 0.18,
+        "jointEfficiency": 0.95,
+        "lengthKnockdown": 0.9712,
+        "airVolumeM3": 18.0,
+        "dryMassKg": 9000.0,
+        "notes": "Emergency airlock template; two bulkhead doors apply +4 SIP each."
+      },
+      "physics": {
+        "elasticBucklingPressureMPa": 69.80307,
+        "hoopYieldPressureMPa": 90.0,
+        "designCrushPressureMPa": 20.093769,
+        "crushDepthM": 1988.938,
+        "safetyFactor": 2.5,
+        "bucklingKnockdown": 0.78,
+        "shellRingBaseHz": 30.60672
+      },
+      "sip": {
+        "physicalSip": 20,
+        "glassPanelCount": 0,
+        "glassSip": 0,
+        "titaniumWallCount": 0,
+        "titaniumWallSip": 0,
+        "bulkheadDoorCount": 2,
+        "bulkheadDoorSip": 8,
+        "componentModifierSip": 8,
+        "baseSip": 28
+      },
+      "runtimeStress": {
+        "ambientPressureAt1000mMPa": 10.153141,
+        "stressAt1000m": 0.362612,
+        "collapseStartsAt1000m": false,
+        "maxBowingBeforeRuptureM": 0.1
+      }
+    }
+  ],
+  "toasterData": {
+    "schema": "hecton8.habitat.pressure_budget.toaster.v1",
+    "target": "Celeron/i3/MX350 stripped lookup",
+    "binarySlice": "moduleRecords",
+    "notes": "Integer and fixed-point fields are enough for alarms, collapse start, and low-tier bowing suppression.",
+    "fields": [
+      "hashFnv1a32",
+      "baseSip",
+      "crushDepthMInt",
+      "stressAt1000mQ8_8",
+      "collapseStartsAt1000m"
+    ],
+    "records": [
+      {
+        "hashFnv1a32": 660403344,
+        "baseSip": 10,
+        "crushDepthMInt": 1049,
+        "stressAt1000mQ8_8": 260,
+        "collapseStartsAt1000m": true
+      },
+      {
+        "hashFnv1a32": 699168839,
+        "baseSip": -6,
+        "crushDepthMInt": 149,
+        "stressAt1000mQ8_8": 10397,
+        "collapseStartsAt1000m": true
+      },
+      {
+        "hashFnv1a32": 757664498,
+        "baseSip": -30,
+        "crushDepthMInt": 30,
+        "stressAt1000mQ8_8": 10397,
+        "collapseStartsAt1000m": true
+      },
+      {
+        "hashFnv1a32": 834114962,
+        "baseSip": 21,
+        "crushDepthMInt": 958,
+        "stressAt1000mQ8_8": 124,
+        "collapseStartsAt1000m": false
+      },
+      {
+        "hashFnv1a32": 1406659053,
+        "baseSip": 21,
+        "crushDepthMInt": 1757,
+        "stressAt1000mQ8_8": 124,
+        "collapseStartsAt1000m": false
+      },
+      {
+        "hashFnv1a32": 2487321505,
+        "baseSip": 7,
+        "crushDepthMInt": 308,
+        "stressAt1000mQ8_8": 371,
+        "collapseStartsAt1000m": true
+      },
+      {
+        "hashFnv1a32": 2703530128,
+        "baseSip": 11,
+        "crushDepthMInt": 144,
+        "stressAt1000mQ8_8": 236,
+        "collapseStartsAt1000m": false
+      },
+      {
+        "hashFnv1a32": 2719153369,
+        "baseSip": -6,
+        "crushDepthMInt": 15,
+        "stressAt1000mQ8_8": 10397,
+        "collapseStartsAt1000m": true
+      },
+      {
+        "hashFnv1a32": 3239054773,
+        "baseSip": 4,
+        "crushDepthMInt": 235,
+        "stressAt1000mQ8_8": 650,
+        "collapseStartsAt1000m": true
+      },
+      {
+        "hashFnv1a32": 3332162616,
+        "baseSip": 5,
+        "crushDepthMInt": 495,
+        "stressAt1000mQ8_8": 520,
+        "collapseStartsAt1000m": true
+      },
+      {
+        "hashFnv1a32": 3648479021,
+        "baseSip": 13,
+        "crushDepthMInt": 503,
+        "stressAt1000mQ8_8": 200,
+        "collapseStartsAt1000m": false
+      },
+      {
+        "hashFnv1a32": 3721250128,
+        "baseSip": 30,
+        "crushDepthMInt": 3048,
+        "stressAt1000mQ8_8": 87,
+        "collapseStartsAt1000m": false
+      },
+      {
+        "hashFnv1a32": 3753117443,
+        "baseSip": 28,
+        "crushDepthMInt": 1989,
+        "stressAt1000mQ8_8": 93,
+        "collapseStartsAt1000m": false
+      },
+      {
+        "hashFnv1a32": 3876150698,
+        "baseSip": -15,
+        "crushDepthMInt": 74,
+        "stressAt1000mQ8_8": 10397,
+        "collapseStartsAt1000m": true
+      },
+      {
+        "hashFnv1a32": 4087003498,
+        "baseSip": -3,
+        "crushDepthMInt": 229,
+        "stressAt1000mQ8_8": 10397,
+        "collapseStartsAt1000m": true
+      }
+    ]
+  },
+  "godModeVisualData": {
+    "schema": "hecton8.habitat.pressure_budget.god_mode_visuals.v1",
+    "target": "RTX-overkill presentation data",
+    "physicsBoundary": "Derived from stress, shell geometry, and shell ring base frequency; gameplay truth remains scalar SIP.",
+    "formula": "baseHz=sqrt(YoungsModulus/density)/(2*pi*radius)/max(4,length/radius+8); harmonics use integer modes 1,2,3,5.",
+    "records": [
+      {
+        "moduleHashFnv1a32": 660403344,
+        "visualStableId": "base.template.room.multipurpose.plasteel.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 1362594845,
+        "harmonicGroanHz": [
+          24.593317,
+          49.186635,
+          73.779952,
+          122.966586
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.08884,
+          0.32768,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.33,
+          "sootEdgeNoiseScale": 0.25,
+          "pressurePulsePhase": 0.955337
+        },
+        "viewportFrostScatter": 0.025383,
+        "shaderBowingAmplitudeM": 0.025383,
+        "decalSeed": 1529343218,
+        "crackAtlasIndex": 0
+      },
+      {
+        "moduleHashFnv1a32": 699168839,
+        "visualStableId": "base.template.airlock.hatch.glass.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 2858037746,
+        "harmonicGroanHz": [
+          37.712227,
+          75.424454,
+          113.136681,
+          188.561136
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.35,
+          0.85,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.275,
+          "sootEdgeNoiseScale": 0.15,
+          "pressurePulsePhase": 0.469841
+        },
+        "viewportFrostScatter": 1.0,
+        "shaderBowingAmplitudeM": 0.1,
+        "decalSeed": 3796183177,
+        "crackAtlasIndex": 7
+      },
+      {
+        "moduleHashFnv1a32": 757664498,
+        "visualStableId": "base.module.window.glass.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 1394138171,
+        "harmonicGroanHz": [
+          31.029047,
+          62.058094,
+          93.087141,
+          155.145235
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.35,
+          0.85,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.352,
+          "sootEdgeNoiseScale": 0.15,
+          "pressurePulsePhase": 0.042756
+        },
+        "viewportFrostScatter": 1.0,
+        "shaderBowingAmplitudeM": 0.1,
+        "decalSeed": 4134084216,
+        "crackAtlasIndex": 2
+      },
+      {
+        "moduleHashFnv1a32": 834114962,
+        "visualStableId": "base.template.airlock.hatch.titanium.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 1053848475,
+        "harmonicGroanHz": [
+          31.775314,
+          63.550629,
+          95.325943,
+          158.876572
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.042305,
+          0.23461,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.275,
+          "sootEdgeNoiseScale": 0.15,
+          "pressurePulsePhase": 0.584268
+        },
+        "viewportFrostScatter": 0.012087,
+        "shaderBowingAmplitudeM": 0.012087,
+        "decalSeed": 3209477336,
+        "crackAtlasIndex": 2
+      },
+      {
+        "moduleHashFnv1a32": 1406659053,
+        "visualStableId": "base.template.corridor.straight.titanium.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 3207045476,
+        "harmonicGroanHz": [
+          34.423257,
+          68.846514,
+          103.269772,
+          172.116286
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.042305,
+          0.23461,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.22,
+          "sootEdgeNoiseScale": 0.2,
+          "pressurePulsePhase": 0.913787
+        },
+        "viewportFrostScatter": 0.012087,
+        "shaderBowingAmplitudeM": 0.012087,
+        "decalSeed": 3785972699,
+        "crackAtlasIndex": 13
+      },
+      {
+        "moduleHashFnv1a32": 2487321505,
+        "visualStableId": "base.template.moonpool.bay.plasteel.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 354234312,
+        "harmonicGroanHz": [
+          20.321101,
+          40.642202,
+          60.963303,
+          101.605505
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.126914,
+          0.403829,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.44,
+          "sootEdgeNoiseScale": 0.25,
+          "pressurePulsePhase": 0.514183
+        },
+        "viewportFrostScatter": 0.036261,
+        "shaderBowingAmplitudeM": 0.036261,
+        "decalSeed": 1344098015,
+        "crackAtlasIndex": 1
+      },
+      {
+        "moduleHashFnv1a32": 2703530128,
+        "visualStableId": "base.template.moonpool.bay.titanium.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 1914744861,
+        "harmonicGroanHz": [
+          20.092517,
+          40.185034,
+          60.277551,
+          100.462584
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.080764,
+          0.311527,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.44,
+          "sootEdgeNoiseScale": 0.25,
+          "pressurePulsePhase": 0.595956
+        },
+        "viewportFrostScatter": 0.023075,
+        "shaderBowingAmplitudeM": 0.023075,
+        "decalSeed": 1135079666,
+        "crackAtlasIndex": 0
+      },
+      {
+        "moduleHashFnv1a32": 2719153369,
+        "visualStableId": "base.template.moonpool.bay.glass.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 1971420464,
+        "harmonicGroanHz": [
+          23.345665,
+          46.691329,
+          70.036994,
+          116.728324
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.35,
+          0.85,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.44,
+          "sootEdgeNoiseScale": 0.25,
+          "pressurePulsePhase": 0.987701
+        },
+        "viewportFrostScatter": 1.0,
+        "shaderBowingAmplitudeM": 0.1,
+        "decalSeed": 4036038151,
+        "crackAtlasIndex": 9
+      },
+      {
+        "moduleHashFnv1a32": 3239054773,
+        "visualStableId": "base.module.window.titanium.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 2683828604,
+        "harmonicGroanHz": [
+          28.766908,
+          57.533816,
+          86.300724,
+          143.83454
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.2221,
+          0.5942,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.352,
+          "sootEdgeNoiseScale": 0.15,
+          "pressurePulsePhase": 0.053544
+        },
+        "viewportFrostScatter": 0.063457,
+        "shaderBowingAmplitudeM": 0.063457,
+        "decalSeed": 2679162931,
+        "crackAtlasIndex": 5
+      },
+      {
+        "moduleHashFnv1a32": 3332162616,
+        "visualStableId": "base.module.window.plasteel.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 181100629,
+        "harmonicGroanHz": [
+          27.739583,
+          55.479167,
+          83.21875,
+          138.697916
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.17768,
+          0.50536,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.352,
+          "sootEdgeNoiseScale": 0.15,
+          "pressurePulsePhase": 0.766491
+        },
+        "viewportFrostScatter": 0.050766,
+        "shaderBowingAmplitudeM": 0.050766,
+        "decalSeed": 2760301930,
+        "crackAtlasIndex": 8
+      },
+      {
+        "moduleHashFnv1a32": 3648479021,
+        "visualStableId": "base.template.room.multipurpose.titanium.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 4114957092,
+        "harmonicGroanHz": [
+          24.651716,
+          49.303433,
+          73.955149,
+          123.258582
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.068338,
+          0.286677,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.33,
+          "sootEdgeNoiseScale": 0.25,
+          "pressurePulsePhase": 0.371786
+        },
+        "viewportFrostScatter": 0.019525,
+        "shaderBowingAmplitudeM": 0.019525,
+        "decalSeed": 741119003,
+        "crackAtlasIndex": 13
+      },
+      {
+        "moduleHashFnv1a32": 3721250128,
+        "visualStableId": "base.template.corridor.straight.plasteel.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 1871189853,
+        "harmonicGroanHz": [
+          33.718364,
+          67.436728,
+          101.155093,
+          168.591821
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.029613,
+          0.209227,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.22,
+          "sootEdgeNoiseScale": 0.2,
+          "pressurePulsePhase": 0.770764
+        },
+        "viewportFrostScatter": 0.008461,
+        "shaderBowingAmplitudeM": 0.008461,
+        "decalSeed": 1103225010,
+        "crackAtlasIndex": 0
+      },
+      {
+        "moduleHashFnv1a32": 3753117443,
+        "visualStableId": "base.template.airlock.hatch.plasteel.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 1690215422,
+        "harmonicGroanHz": [
+          31.161638,
+          62.323276,
+          93.484915,
+          155.808191
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.031729,
+          0.213457,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.275,
+          "sootEdgeNoiseScale": 0.15,
+          "pressurePulsePhase": 0.02739
+        },
+        "viewportFrostScatter": 0.009065,
+        "shaderBowingAmplitudeM": 0.009065,
+        "decalSeed": 2501344901,
+        "crackAtlasIndex": 3
+      },
+      {
+        "moduleHashFnv1a32": 3876150698,
+        "visualStableId": "base.template.room.multipurpose.glass.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 3706270691,
+        "harmonicGroanHz": [
+          28.838762,
+          57.677523,
+          86.516285,
+          144.193808
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.35,
+          0.85,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.33,
+          "sootEdgeNoiseScale": 0.25,
+          "pressurePulsePhase": 0.365881
+        },
+        "viewportFrostScatter": 1.0,
+        "shaderBowingAmplitudeM": 0.1,
+        "decalSeed": 1450213696,
+        "crackAtlasIndex": 10
+      },
+      {
+        "moduleHashFnv1a32": 4087003498,
+        "visualStableId": "base.template.corridor.straight.glass.god_mode_pressure_scars",
+        "visualDataHashFnv1a32": 923069475,
+        "harmonicGroanHz": [
+          40.854913,
+          81.709825,
+          122.564738,
+          204.274563
+        ],
+        "pressureGradientStops": [
+          0.0,
+          0.35,
+          0.85,
+          1.0
+        ],
+        "complexHarmonicNoise": {
+          "octaves": 6,
+          "dentNoiseScale": 0.22,
+          "sootEdgeNoiseScale": 0.2,
+          "pressurePulsePhase": 0.724285
+        },
+        "viewportFrostScatter": 1.0,
+        "shaderBowingAmplitudeM": 0.1,
+        "decalSeed": 2341196544,
+        "crackAtlasIndex": 10
+      }
+    ]
+  },
+  "hashAudit": {
+    "algorithm": "FNV-1a 32-bit",
+    "recordsChecked": 38,
+    "collisionCount": 0,
+    "collisions": []
+  },
+  "binaryLayout": {
+    "schema": "hecton8.habitat.pressure_budget.binary_layout.v1",
+    "magicAscii": "H8HPB",
+    "version": 1,
+    "endianness": "little",
+    "structPrefix": "<",
+    "endianMarkerHex": "0x01020304",
+    "lookupContract": {
+      "model": "stateless_binary_search_by_hash",
+      "moduleSortKey": "moduleHashFnv1a32 ascending",
+      "godModeSortKey": "moduleHashFnv1a32 ascending",
+      "offsetFormula": "recordOffset = sectionOffset + index * strideBytes",
+      "runtimePrivateIndexRequired": false
+    },
+    "headerBytes": 64,
+    "totalBytes": 2704,
+    "fileAlignmentBytes": 16,
+    "payloadHashFnv1a32": 2597791691,
+    "moduleRecord": {
+      "offsetBytes": 64,
+      "count": 15,
+      "strideBytes": 96,
+      "structFormat": "<I i I i I i f f f f f f f f f f f f i i i i I I",
+      "fields": [
+        {
+          "name": "moduleHashFnv1a32",
+          "type": "uint32",
+          "offsetBytes": 0
+        },
+        {
+          "name": "moduleHashFnv1a32Signed",
+          "type": "int32",
+          "offsetBytes": 4
+        },
+        {
+          "name": "archetypeHashFnv1a32",
+          "type": "uint32",
+          "offsetBytes": 8
+        },
+        {
+          "name": "archetypeHashFnv1a32Signed",
+          "type": "int32",
+          "offsetBytes": 12
+        },
+        {
+          "name": "materialHashFnv1a32",
+          "type": "uint32",
+          "offsetBytes": 16
+        },
+        {
+          "name": "materialHashFnv1a32Signed",
+          "type": "int32",
+          "offsetBytes": 20
+        },
+        {
+          "name": "baseSip",
+          "type": "float32",
+          "offsetBytes": 24
+        },
+        {
+          "name": "physicalSip",
+          "type": "float32",
+          "offsetBytes": 28
+        },
+        {
+          "name": "componentModifierSip",
+          "type": "float32",
+          "offsetBytes": 32
+        },
+        {
+          "name": "designCrushPressureMPa",
+          "type": "float32",
+          "offsetBytes": 36
+        },
+        {
+          "name": "crushDepthM",
+          "type": "float32",
+          "offsetBytes": 40
+        },
+        {
+          "name": "stressAt1000m",
+          "type": "float32",
+          "offsetBytes": 44
+        },
+        {
+          "name": "maxBowingBeforeRuptureM",
+          "type": "float32",
+          "offsetBytes": 48
+        },
+        {
+          "name": "pressureRadiusM",
+          "type": "float32",
+          "offsetBytes": 52
+        },
+        {
+          "name": "cylinderLengthM",
+          "type": "float32",
+          "offsetBytes": 56
+        },
+        {
+          "name": "wallThicknessM",
+          "type": "float32",
+          "offsetBytes": 60
+        },
+        {
+          "name": "airVolumeM3",
+          "type": "float32",
+          "offsetBytes": 64
+        },
+        {
+          "name": "dryMassKg",
+          "type": "float32",
+          "offsetBytes": 68
+        },
+        {
+          "name": "glassPanelCount",
+          "type": "int32",
+          "offsetBytes": 72
+        },
+        {
+          "name": "titaniumWallCount",
+          "type": "int32",
+          "offsetBytes": 76
+        },
+        {
+          "name": "bulkheadDoorCount",
+          "type": "int32",
+          "offsetBytes": 80
+        },
+        {
+          "name": "collapseStartsAt1000m",
+          "type": "int32",
+          "offsetBytes": 84
+        },
+        {
+          "name": "flags",
+          "type": "uint32",
+          "offsetBytes": 88
+        },
+        {
+          "name": "reserved",
+          "type": "uint32",
+          "offsetBytes": 92
+        }
+      ]
+    },
+    "godModeRecord": {
+      "offsetBytes": 1504,
+      "count": 15,
+      "strideBytes": 80,
+      "structFormat": "<IIffffffffffffffIIII",
+      "fields": [
+        {
+          "name": "moduleHashFnv1a32",
+          "type": "uint32",
+          "offsetBytes": 0
+        },
+        {
+          "name": "visualDataHashFnv1a32",
+          "type": "uint32",
+          "offsetBytes": 4
+        },
+        {
+          "name": "harmonicHz0",
+          "type": "float32",
+          "offsetBytes": 8
+        },
+        {
+          "name": "harmonicHz1",
+          "type": "float32",
+          "offsetBytes": 12
+        },
+        {
+          "name": "harmonicHz2",
+          "type": "float32",
+          "offsetBytes": 16
+        },
+        {
+          "name": "harmonicHz3",
+          "type": "float32",
+          "offsetBytes": 20
+        },
+        {
+          "name": "gradientStop0",
+          "type": "float32",
+          "offsetBytes": 24
+        },
+        {
+          "name": "gradientStop1",
+          "type": "float32",
+          "offsetBytes": 28
+        },
+        {
+          "name": "gradientStop2",
+          "type": "float32",
+          "offsetBytes": 32
+        },
+        {
+          "name": "gradientStop3",
+          "type": "float32",
+          "offsetBytes": 36
+        },
+        {
+          "name": "crackNoiseOctaves",
+          "type": "float32",
+          "offsetBytes": 40
+        },
+        {
+          "name": "dentNoiseScale",
+          "type": "float32",
+          "offsetBytes": 44
+        },
+        {
+          "name": "sootEdgeNoiseScale",
+          "type": "float32",
+          "offsetBytes": 48
+        },
+        {
+          "name": "frostScatter",
+          "type": "float32",
+          "offsetBytes": 52
+        },
+        {
+          "name": "pressurePulsePhase",
+          "type": "float32",
+          "offsetBytes": 56
+        },
+        {
+          "name": "shaderBowingAmplitudeM",
+          "type": "float32",
+          "offsetBytes": 60
+        },
+        {
+          "name": "decalSeed",
+          "type": "uint32",
+          "offsetBytes": 64
+        },
+        {
+          "name": "crackAtlasIndex",
+          "type": "uint32",
+          "offsetBytes": 68
+        },
+        {
+          "name": "reserved0",
+          "type": "uint32",
+          "offsetBytes": 72
+        },
+        {
+          "name": "reserved1",
+          "type": "uint32",
+          "offsetBytes": 76
+        }
+      ]
+    }
+  },
+  "simulation": {
+    "scenario": "1000m base with four glass corridors",
+    "depthM": 1000.0,
+    "ambientPressureMPa": 10.153141,
+    "moduleStableId": "base.template.corridor.straight.glass",
+    "moduleBaseSip": -3,
+    "moduleCount": 4,
+    "totalSipBeforeReinforcement": -12.0,
+    "stressBeforeReinforcement": 40.612565,
+    "collapseSeconds": 0.25,
+    "collapsesUnder10Seconds": true,
+    "lithiumReinforcementSip": 10,
+    "reinforcementsNeededToSave": 3,
+    "totalSipAfterReinforcement": 18.0,
+    "stressAfterReinforcement": 0.564063,
+    "savedByReinforcements": true
+  },
+  "reinforcementGraph": [
+    {
+      "depthM": 0,
+      "ambientPressureMPa": 0.101325,
+      "requiredLithiumReinforcements": 2
+    },
+    {
+      "depthM": 250,
+      "ambientPressureMPa": 2.614279,
+      "requiredLithiumReinforcements": 2
+    },
+    {
+      "depthM": 500,
+      "ambientPressureMPa": 5.127233,
+      "requiredLithiumReinforcements": 2
+    },
+    {
+      "depthM": 750,
+      "ambientPressureMPa": 7.640187,
+      "requiredLithiumReinforcements": 2
+    },
+    {
+      "depthM": 1000,
+      "ambientPressureMPa": 10.153141,
+      "requiredLithiumReinforcements": 3
+    },
+    {
+      "depthM": 1250,
+      "ambientPressureMPa": 12.666095,
+      "requiredLithiumReinforcements": 3
+    },
+    {
+      "depthM": 1500,
+      "ambientPressureMPa": 15.179049,
+      "requiredLithiumReinforcements": 3
+    },
+    {
+      "depthM": 1750,
+      "ambientPressureMPa": 17.692003,
+      "requiredLithiumReinforcements": 3
+    },
+    {
+      "depthM": 2000,
+      "ambientPressureMPa": 20.204957,
+      "requiredLithiumReinforcements": 4
+    },
+    {
+      "depthM": 2250,
+      "ambientPressureMPa": 22.717912,
+      "requiredLithiumReinforcements": 4
+    },
+    {
+      "depthM": 2500,
+      "ambientPressureMPa": 25.230866,
+      "requiredLithiumReinforcements": 4
+    },
+    {
+      "depthM": 2750,
+      "ambientPressureMPa": 27.74382,
+      "requiredLithiumReinforcements": 4
+    },
+    {
+      "depthM": 3000,
+      "ambientPressureMPa": 30.256774,
+      "requiredLithiumReinforcements": 5
+    },
+    {
+      "depthM": 3250,
+      "ambientPressureMPa": 32.769728,
+      "requiredLithiumReinforcements": 5
+    },
+    {
+      "depthM": 3500,
+      "ambientPressureMPa": 35.282682,
+      "requiredLithiumReinforcements": 5
+    },
+    {
+      "depthM": 3750,
+      "ambientPressureMPa": 37.795636,
+      "requiredLithiumReinforcements": 5
+    },
+    {
+      "depthM": 4000,
+      "ambientPressureMPa": 40.30859,
+      "requiredLithiumReinforcements": 6
+    },
+    {
+      "depthM": 4250,
+      "ambientPressureMPa": 42.821544,
+      "requiredLithiumReinforcements": 6
+    },
+    {
+      "depthM": 4500,
+      "ambientPressureMPa": 45.334498,
+      "requiredLithiumReinforcements": 6
+    },
+    {
+      "depthM": 4750,
+      "ambientPressureMPa": 47.847452,
+      "requiredLithiumReinforcements": 6
+    },
+    {
+      "depthM": 5000,
+      "ambientPressureMPa": 50.360406,
+      "requiredLithiumReinforcements": 7
+    }
+  ]
+}

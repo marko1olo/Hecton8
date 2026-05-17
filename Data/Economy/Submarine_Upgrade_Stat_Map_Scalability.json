@@ -1,0 +1,25 @@
+{
+  "schema_id": "economy.submarine_upgrade_stat_map.v1.scalability",
+  "status": "SCALABILITY LANES BAKED",
+  "runtime_fallback": {
+    "toaster": {
+      "target_hardware": "Celeron_i3_MX350_floor",
+      "ingest_file": "Submarine_Upgrade_Stat_Map.h8bin",
+      "active_fields": [
+        "UpgradeHash",
+        "Type",
+        "Value",
+        "PowerCost"
+      ]
+    }
+  },
+  "rtx_overkill": {
+    "target_hardware": "RTX4080_or_better_16GB_desktop",
+    "extra_data_fields": {
+      "pressure_gradient_resolution": 1024,
+      "propwash_harmonic_count": 8,
+      "silt_noise_octaves": 6,
+      "cavitation_sparkle_lut_samples": 512
+    }
+  }
+}

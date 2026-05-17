@@ -1,0 +1,183 @@
+{
+  "alignmentBytes": 16,
+  "defaultTier": "main",
+  "domain": "Data/Environment",
+  "endianness": "little",
+  "evidenceClass": "OFFLINE_PYTHON_BAKE",
+  "hPhi": {
+    "lookupModel": "stateless_binary_lookup",
+    "payloadDataSovereigntyScore": 1.0,
+    "privateRuntimeStateRequired": false
+  },
+  "headerBytes": 0,
+  "headerless": true,
+  "indexBinary": {
+    "alignmentBytes": 16,
+    "alignmentRemainder": 0,
+    "byteSize": 96,
+    "crc32": 202123830,
+    "crc32Hex": "0x0C0C2A36",
+    "fieldLayout": [
+      "tierHash32",
+      "tierIndex",
+      "sampleCount",
+      "sampleStrideMilliHours",
+      "byteSize",
+      "crc32",
+      "firstSampleU32",
+      "flags"
+    ],
+    "headerBytes": 0,
+    "headerless": true,
+    "path": "Data/Environment/Tide_Harmonics.index.h8bin",
+    "recordBytes": 32,
+    "recordCount": 3,
+    "recordStructFormat": "<8I",
+    "records": [
+      {
+        "byteSize": 2400,
+        "crc32": 205905004,
+        "firstSampleU32": 1083630832,
+        "flags": 1,
+        "sampleCount": 600,
+        "sampleStrideMilliHours": 4000,
+        "tier": "low",
+        "tierHash32": 829821797,
+        "tierIndex": 0
+      },
+      {
+        "byteSize": 9600,
+        "crc32": 3965217956,
+        "firstSampleU32": 1083630832,
+        "flags": 257,
+        "sampleCount": 2400,
+        "sampleStrideMilliHours": 1000,
+        "tier": "main",
+        "tierHash32": 461642972,
+        "tierIndex": 1
+      },
+      {
+        "byteSize": 38400,
+        "crc32": 545267821,
+        "firstSampleU32": 1083630832,
+        "flags": 513,
+        "sampleCount": 9600,
+        "sampleStrideMilliHours": 250,
+        "tier": "ultra",
+        "tierHash32": 3489898825,
+        "tierIndex": 2
+      }
+    ],
+    "sha256": "159010bb9533ee47cf5503524e867d3d327b21b208948eb8e40507b9d88a8d3e"
+  },
+  "interpolationFormula": "tide=lerp(table[i0], table[(i0+1)%sampleCount], frac((H8Time.Time/3600)/sampleStrideHours))",
+  "kingTideDays": [
+    14,
+    42
+  ],
+  "kingTideWarningMeters": 4.25,
+  "payloads": [
+    {
+      "alignmentBytes": 16,
+      "alignmentRemainder": 0,
+      "binary": "Data/Environment/Tide_Harmonics_Low.bin",
+      "byteSize": 2400,
+      "crc32": 205905004,
+      "crc32Hex": "0x0C45DC6C",
+      "firstSampleBytes": "f0e49640",
+      "headerBytes": 0,
+      "headerless": true,
+      "kingTideByteOffsets": [
+        336,
+        1008
+      ],
+      "kingTideSampleIndices": [
+        84,
+        252
+      ],
+      "lookupFormula": "sample=(H8Time.Time/3600/sampleStrideHours)%sampleCount; i0=floor(sample); i1=(i0+1)%sampleCount",
+      "recordBytes": 4,
+      "recordStructFormat": "<f",
+      "sampleCount": 600,
+      "sampleStrideHours": 4.0,
+      "sha256": "5f9dfab502a80d64aade7f869d9060af66165abfe8471d3d2ed626fd0609718b",
+      "tier": "low",
+      "tierIndex": 0
+    },
+    {
+      "alignmentBytes": 16,
+      "alignmentRemainder": 0,
+      "binary": "Data/Environment/Tide_Harmonics.bin",
+      "byteSize": 9600,
+      "crc32": 3965217956,
+      "crc32Hex": "0xEC586CA4",
+      "firstSampleBytes": "f0e49640",
+      "headerBytes": 0,
+      "headerless": true,
+      "kingTideByteOffsets": [
+        1344,
+        4032
+      ],
+      "kingTideSampleIndices": [
+        336,
+        1008
+      ],
+      "lookupFormula": "sample=(H8Time.Time/3600/sampleStrideHours)%sampleCount; i0=floor(sample); i1=(i0+1)%sampleCount",
+      "recordBytes": 4,
+      "recordStructFormat": "<f",
+      "sampleCount": 2400,
+      "sampleStrideHours": 1.0,
+      "sha256": "9f126311c293f891580a5e5eb852b347f18739b752e32cf4e34a2c60c1350d5f",
+      "tier": "main",
+      "tierIndex": 1
+    },
+    {
+      "alignmentBytes": 16,
+      "alignmentRemainder": 0,
+      "binary": "Data/Environment/Tide_Harmonics_Ultra.bin",
+      "byteSize": 38400,
+      "crc32": 545267821,
+      "crc32Hex": "0x2080206D",
+      "firstSampleBytes": "f0e49640",
+      "headerBytes": 0,
+      "headerless": true,
+      "kingTideByteOffsets": [
+        5376,
+        16128
+      ],
+      "kingTideSampleIndices": [
+        1344,
+        4032
+      ],
+      "lookupFormula": "sample=(H8Time.Time/3600/sampleStrideHours)%sampleCount; i0=floor(sample); i1=(i0+1)%sampleCount",
+      "recordBytes": 4,
+      "recordStructFormat": "<f",
+      "sampleCount": 9600,
+      "sampleStrideHours": 0.25,
+      "sha256": "174a8277848cc9c37513b3c72fa38e8a8ccf607cc714f72da28288db3523ef37",
+      "tier": "ultra",
+      "tierIndex": 2
+    }
+  ],
+  "promptId": "TIDE_FOURIER_BAKER",
+  "recordBytes": 4,
+  "recordStructFormat": "<f",
+  "rtxOverkillTier": "ultra",
+  "runtimePolicy": {
+    "hotPath": "no file IO, no JSON parsing, no string lookup, no harmonic solve",
+    "loadPhase": "cold-load once into DataVault/fixed native memory",
+    "ownership": "celestial/tide authority publishes resolved scalar to fluid consumers",
+    "runtimeProof": "PENDING_VERIFICATION"
+  },
+  "sampleIndexFormula": "sampleIndex=floor((H8Time.Time/3600)/sampleStrideHours)%sampleCount",
+  "schema": "H8_TIDE_HARMONICS_MANIFEST_V1",
+  "sourceMetadata": "Data/Environment/Tide_Harmonics.json",
+  "status": "TIDES BAKED",
+  "structPackPrefix": "<",
+  "tierOrder": [
+    "low",
+    "main",
+    "ultra"
+  ],
+  "toasterTier": "low"
+}

@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "localization": "Data/Localization/en_US.json",
+  "extra_text_paths": [
+    "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.md"
+  ],
+  "entries": 188,
+  "catalog_terms": 225,
+  "item_like_mentions": 26,
+  "structural_problems": [],
+  "unresolved_item_like_mentions": []
+}

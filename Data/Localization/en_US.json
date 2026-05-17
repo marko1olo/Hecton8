@@ -634,6 +634,706 @@
       "Layer": "Narrative",
       "Category": "audit",
       "Text": "Lore consistency audit: Depth bands stay inside current project ranges: Spine 0-100 m, Drowned Factories 100-1500 m, Drop 1000-2500 m, Deep Abyss 2500-4000 m, Thermal Fields 4000-5500 m. RENDER_GI_RELAY depth color saturates by 500 m, so deeper bands use silhouettes, fog, biome emissives, thermal orange, scanner UI, and audio pressure instead of promising unique depth colors. Pressure language follows the project survival simplification of 1 MPa per 100 m, so 4000 m reads as 40 MPa in-system. Gas references use Dalton's Law as scalar partial-pressure bookkeeping, not particle simulation. Oxygen Tank means suit_oxygen_t1_aux_reservoir / SuitUpgrades.HighCapacityTank and only adds +4 MaxO2. Nitrogen narcosis appears when compartment or suit conditions justify cognitive noise, especially above 4 atm room-pressure language. Abyssal Flow Fields are described as VFX, audio, and AI-readability cues first; mass physical forcing is reserved for player, vehicles, hazards, or near interactables. Flora reaction text favors global shader sway and flow fakes before per-frond simulation."
+    },
+    {
+      "LocID": "TECH_01",
+      "Hash": "0xC2DCC831",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Jury-Rigged Laser Cutter // Marauder field unit built from a cracked industrial emitter, a pump-handle trigger, and three scavenged heat sinks. It cuts by dumping energy into a narrow surface band; if the spot blooms white before the seam moves, the operator is cooking plating instead of opening it. Bleed heat into brine between passes and compare tool draw against the battery pigtail in <link=0xF0282285>."
+    },
+    {
+      "LocID": "TECH_02",
+      "Hash": "0xE8DF429A",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Oxygen Scrubber Mk1 // Packed lithium-hydroxide bed with a manual bypass flap and a liar's green lamp. The bed removes CO2, not fear, and it does not create oxygen. Dalton's Law is the audit: safe total pressure means nothing if O2 partial pressure falls or CO2 climbs. Replace warm black media before it becomes the ash fault described in <link=0x34E4376C>."
+    },
+    {
+      "LocID": "TECH_03",
+      "Hash": "0x0EE1BD03",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Dalton Rack Balancer // The gas rack treats atmosphere as scalar partial pressures: O2, CO2, N2, and trace junk add up to the room state. A comfortable gauge can still be a coffin if the oxygen slice is wrong. Do not chase total pressure first; balance O2 and scrub CO2, then confirm room pressure against the analog cabin gauge in <link=0x4B8C2888>."
+    },
+    {
+      "LocID": "TECH_04",
+      "Hash": "0x34E4376C",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "CO2 Bed Overheat Ticket // Failure signature: scrubber outlet warms, fan draw rises, and the room gets stupid before it gets loud. Heat means the bed is saturated or contaminated. Marauder fix is ugly: isolate the rack, open the service face, bag the media, and vent through an emergency air pocket only if <link=0xAD55D9F9> confirms enough reserve to survive the swap."
+    },
+    {
+      "LocID": "TECH_05",
+      "Hash": "0x5AE6B1D5",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Auxiliary Reservoir Test // Suit auxiliary reservoir is a small O2 reserve, not a depth license. The audit number is +4 MaxO2 in the current resolver; it does not improve crush depth, thermal range, or hull stress. Treat it as one extra mistake, not permission to dive like a paid corpse. Cross-check gas math in <link=0x0EE1BD03> before trusting any unscarred tank label."
+    },
+    {
+      "LocID": "TECH_06",
+      "Hash": "0x80E92C3E",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Pressure Door Bypass // Corporate doors fail polite: green lamp, dead actuator, flooded hinge pocket. Bypass starts with mechanical dogs, then hydraulic bleed, then cutter work only after the frame is unloaded. If the hatch opens inward under pressure differential, the room chooses the operator. Verify bulkhead state against <link=0xD0315387> before touching the wheel."
+    },
+    {
+      "LocID": "TECH_07",
+      "Hash": "0xA6EBA6A7",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Hull Patch Lamination // Patch plate is a layered lie that works if the lie is repeatable: roughen metal, clamp titanium laminate, inject sealant, and let pressure seat the patch instead of fighting it. Hydrostatic ledger follows project simplification, 1 MPa per 100 m, so a 4000 m mistake is a 40 MPa bill. Inspect microfractures with <link=0x3421BC6F>."
+    },
+    {
+      "LocID": "TECH_08",
+      "Hash": "0x6CC67A80",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Crush Gauge Analog // Analog crush gauge is a Bourdon tube with a needle that cannot be bribed by firmware. It drifts, but it drifts honestly. If digital depth disagrees with needle plus cable payout, the map is wrong or the hull is moving inside its own damage. Read this before accepting any comfort from the hull alarm in <link=0xB3823EE4>."
+    },
+    {
+      "LocID": "TECH_09",
+      "Hash": "0x92C8F4E9",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Bulkhead Dog Manual // Bulkhead dogs are not handles. They are load clamps. Dog opposite corners first, then chase the ring in a star pattern so the gasket sees even compression. A single proud dog leaves a crescent leak that becomes a cold wire across the floor. If the seal state disagrees across adjacent compartments, fail closed as in <link=0xD0315387>."
+    },
+    {
+      "LocID": "TECH_10",
+      "Hash": "0xAD55D9F9",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Emergency Air Pocket // Emergency air pocket is a sealed volume with enough breathable mix to finish one repair or admit one bad decision. It must not be used as storage, smoking room, or morale booth. Check O2 partial, CO2 scrub time, and door swing before entry. If the pocket pressure is high but the head hurts, reread <link=0xE8DF429A>."
+    },
+    {
+      "LocID": "TECH_11",
+      "Hash": "0x87535F90",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Pump B Priming Sheet // Pump B starts dry only once, and then it becomes scrap with witnesses. Flood the intake, crack the bleed, rotate by hand, and listen for clean water before power. Cavitation sounds like gravel in a prayer tin and means the impeller is eating vapor. If it screams under load, follow the acoustic test in <link=0xC61FFAA8>."
+    },
+    {
+      "LocID": "TECH_12",
+      "Hash": "0xF95ACECB",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Sump Pump Brownout // Sump pump on a brownout will run just enough to convince command the room is saved, then stall with the check valve open. Priority bus must feed life support before comfort lights; nobody drowned because a corridor looked moody. If the pump browns out twice, cut noncritical load using the priority ladder in <link=0x2568F49F>."
+    },
+    {
+      "LocID": "TECH_13",
+      "Hash": "0xD3585462",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Pipe Hammer Arrestor // Water hammer is a fist made of timing. A fast valve closure sends pressure back through the pipe, bends weak brackets, and turns old welds into wet clocks. Fit the arrestor vertical, drainable, and upstream of the cheap valve. If hammer appears after a seal job, inspect the printed gasket route in <link=0xA6292BAA>."
+    },
+    {
+      "LocID": "TECH_14",
+      "Hash": "0x455FC39D",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Flood Plane Scalar // Noncritical rooms do not need real fluid truth. They need scalar fill ratio, shader wetness plane, pooled leak audio, and a number the pump graph can trust. Save the expensive mass and center-of-mass changes for vessels or rooms the player controls. That fake-first line is the same doctrine used by <link=0xAA2ED91E>."
+    },
+    {
+      "LocID": "TECH_15",
+      "Hash": "0x1F5D4934",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Bilge Sensor Salt Creep // Salt creep bridges sensor pads and makes dry compartments report a shallow flood. Wipe pads, dry the housing, then test with a measured cup before opening a pump ticket. If a sensor flips every few seconds, add hysteresis instead of chasing ghosts in the wire. Cross-check the PDA stream behavior in <link=0xD0520D07>."
+    },
+    {
+      "LocID": "TECH_16",
+      "Hash": "0x9164B86F",
+      "Layer": "Narrative",
+      "Category": "habitat_integrity_corruption",
+      "Text": "Habitat Integrity Manual S0 // Stress state nominal. Integrity is a scalar, not a promise. Depth pressure follows 1 MPa per 100 m and fatigue does not forgive just because the wall is quiet. Inspect ribs, patch deltas, and gasket compression before raising module load. If local fill ratio rises, route alarms through <link=0x455FC39D> before mass truth is approved."
+    },
+    {
+      "LocID": "TECH_17",
+      "Hash": "0x6B623E06",
+      "Layer": "Narrative",
+      "Category": "habitat_integrity_corruption",
+      "Text": "Habitat Integrity Manual S1 // Stress state elevated. The manual says deformation is subcritical. The wall says maybe. Trust the wall only after the gauge, and trust the gauge only after the spare gauge. Do not weld over wet metal because wet metal writes back. Compare crack bloom against <link=0x3421BC6F> and stop calling the sound settling."
+    },
+    {
+      "LocID": "TECH_18",
+      "Hash": "0xDD69AD41",
+      "Layer": "Narrative",
+      "Category": "habitat_integrity_corruption",
+      "Text": "Habitat Integrity Manual S2 // Stress state high. Integrity scalar is chewing its own tail: lower hull rating raises stress, higher stress eats rating. That is math, not mood. If the room starts repeating pump noises after power-off, log it as vibration, then leave anyway. The emergency route must obey <link=0xEC432E91> before anyone votes."
+    },
+    {
+      "LocID": "TECH_19",
+      "Hash": "0xB76732D8",
+      "Layer": "Narrative",
+      "Category": "habitat_integrity_corruption",
+      "Text": "Habitat Integrity Manual S3 // Stress state critical. Do not personalize the hull. It does not hate you. It is a pressure vessel with fatigue debt and a bad memory for heat. If the needle flickers, that is not a wink. If the seam shines, that is not mercy. Patch only if <link=0xA6EBA6A7> is already staged and the exit remains mapped."
+    },
+    {
+      "LocID": "TECH_20",
+      "Hash": "0x7E20B34A",
+      "Layer": "Narrative",
+      "Category": "habitat_integrity_corruption",
+      "Text": "Habitat Integrity Manual S4 // Stress state terminal. The module is now an argument between water and arithmetic, and arithmetic is tired. Stop reading comfort labels. Count doors. Count air. Count hands. The wall may sound like voices because stress makes sensors out of meat. Black Box capture in <link=0xC640B428> is for whoever has to explain the hole."
+    },
+    {
+      "LocID": "TECH_21",
+      "Hash": "0xA4232DB3",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Thermal Cutting DDA Note // Voxel cutting uses a DDA march, not a heroic beam myth. Step cell by cell, apply Beer-Lambert attenuation through dirty density, early-out when power falls under threshold, and schedule rebuilds after dirty chunks coalesce. The player sees a hot line; the system sees bounded edits. Pair the cutting pass with the slag handling note in <link=0x8D5F0AFB>."
+    },
+    {
+      "LocID": "TECH_22",
+      "Hash": "0x321BBE78",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Drill Stamp Table // Drill does not carve courage. It subtracts density inside a bounded stamp and leaves the mesher to clean the wound later. Cheap rigs stamp small and often; expensive rigs stamp wider only when rebuild budget is clear. If the drill chatters, check power delivery and recoil math against <link=0x3C2D1757>."
+    },
+    {
+      "LocID": "TECH_23",
+      "Hash": "0x581E38E1",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Welder Heat Bloom // Welder heat bloom is a visual proxy over a structural request. The glowing bead lies for the eye while the structure owner registers the edge. Do not let tool code own physics joints. Publish the weld request, let the graph decide, and keep the pretty orange fake cheap. Related patch rules live in <link=0xA6EBA6A7>."
+    },
+    {
+      "LocID": "TECH_24",
+      "Hash": "0x162A9CEE",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Harpoon Visual Cable // Harpoon cable on the PDA is not a chain of truth. Logic owns target lock and tension threshold; the cable is a spline with a few Verlet nodes to sell the pull. If the target breaks, despawn the line and clear busy state. Do not add Unity joints because a cable looked lonely. See recoil limits in <link=0x3C2D1757>."
+    },
+    {
+      "LocID": "TECH_25",
+      "Hash": "0x3C2D1757",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Torque Spanner // Torque spanner applies numbers, not hope. Use it on clamps, dogs, brackets, and battery trays where over-tightening makes the next failure invisible. Record final torque in the PDA so the next Marauder knows whether a bolt loosened or a liar signed the tag. Use it before the seal test in <link=0x92C8F4E9>."
+    },
+    {
+      "LocID": "TECH_26",
+      "Hash": "0xCA25A81C",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Scanner Ray Budget // Scanner has a ray budget because the sea already owns enough frame time. Batch queries, skip occluded targets, and never sweep the world because the cursor twitched. If the first hit is bad, defer instead of allocating another search. PDA cache discipline is documented in <link=0xB0990C70>."
+    },
+    {
+      "LocID": "TECH_27",
+      "Hash": "0xF0282285",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Tool Battery Pigtail // Battery pigtail is the field bypass nobody admits on inspection forms. It lets a tool drink from a pack directly, but it also bypasses polite current limiting. If insulation smells sweet or the connector sweats brine, stop. The pigtail can save a route or cook a hand. Check bus behavior in <link=0x675C9092>."
+    },
+    {
+      "LocID": "TECH_28",
+      "Hash": "0x4E0CE002",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Worklamp Blackout Discipline // A worklamp is a scalpel, not a blanket. Light the cut, not the whole grave. Every watt stolen from pumps returns as water, CO2, or a door that opens slower. Marauder rule: if the light does not change the next action, kill it. Brownout priority is not negotiable; see <link=0x2568F49F>."
+    },
+    {
+      "LocID": "TECH_29",
+      "Hash": "0x740F5A6B",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Spark Trap // Spark trap is a grounded mesh cup fitted under cut lines and relay work. It catches slag, cracked ceramic, and the bright little lies that start fires in oxygen-rich pockets. Empty it cold. If it rattles after a job, count fragments before walking away. Slag disposal continues in <link=0x8D5F0AFB>."
+    },
+    {
+      "LocID": "TECH_30",
+      "Hash": "0x8D5F0AFB",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Slag Bucket // Slag bucket is double-walled, wet-lined, and marked with a heat stripe. Do not dump hot slag into open water near intake filters unless you want the scrubber to inhale metal soup. Let it hiss in the bucket, seal, tag, and carry it like a grudge. Heat bloom from cutting starts at <link=0xA4232DB3>."
+    },
+    {
+      "LocID": "TECH_31",
+      "Hash": "0x675C9092",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "48V DC Bus // The 48V bus is low enough to survive wet hands sometimes and high enough to ruin a pump every time. Keep branch runs short, fuse ugly, and label both ends because labels outlive confidence. Voltage sag under tool load points to cable loss before battery failure. Cell bank behavior is logged in <link=0x415A1629>."
+    },
+    {
+      "LocID": "TECH_32",
+      "Hash": "0x415A1629",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Salt Battery Bank // Salt battery stacks hate cold, brine, and heroic discharge curves. Warm the rack before load testing and never trust open-circuit voltage after a long sit. A pack can read full while its internal resistance is already writing the obituary. Heater tax belongs in <link=0x58BFFA5E>."
+    },
+    {
+      "LocID": "TECH_33",
+      "Hash": "0x1B579BC0",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Reactor Bypass Coupler // Bypass coupler routes just enough power around a sulking reactor branch to keep pumps and air honest. It is not an invitation to bring lights, fabricator, and music back online. The coupler has one job: buy time. If it warms faster than the load table predicts, inspect the exchanger note in <link=0xFF667A36>."
+    },
+    {
+      "LocID": "TECH_34",
+      "Hash": "0x2568F49F",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Brownout Priority // Brownout priority is life support, pumps, doors, comms, tools, then comfort if the ocean feels generous. The graph does not care who outranks whom; it cares about load, capacity, and resistance. If supply ratio falls below critical, cut ambient systems before the sump stalls. See <link=0xF95ACECB> for the common failure."
+    },
+    {
+      "LocID": "TECH_35",
+      "Hash": "0xFF667A36",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Thermal Exchanger Blind Spot // A thermal exchanger can report nominal while a dead leg cooks behind it. Sensor placement lies when flow is bad. Touch nothing; scan inlet, outlet, and bracket temperature with a real differential. If heat source moves faster than the probe cadence, treat it as a routing fault and read <link=0x2E161104>."
+    },
+    {
+      "LocID": "TECH_36",
+      "Hash": "0xD963FFCD",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Cable Run Tagging // Cable tags must name source, sink, fuse, and the last idiot who opened the tray. A redone run without tags is sabotage even if it was meant as help. Use paint, punch tag, and PDA hash because salt removes ink before guilt. Ground fault procedure starts in <link=0xB3618564>."
+    },
+    {
+      "LocID": "TECH_37",
+      "Hash": "0xB3618564",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Ground Fault Brine // Ground fault in brine is a slow ambush. The meter may show a polite leak until a pump starts and the whole tray becomes a weapon. Isolate branch, rinse with fresh reserve only if life support can spare it, then dry with heat under watch. Do not re-energize before reading <link=0x977063DA>."
+    },
+    {
+      "LocID": "TECH_38",
+      "Hash": "0xBD72DE43",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Capacitor Hand Warmer // Old crews call the diagnostic capacitor a hand warmer because it stays hot after the panel dies. That joke cost fingers. Discharge through the resistor lead, wait the full count, then verify with the meter. If someone bypassed the resistor, mark the panel hostile and route power through <link=0x1B579BC0>."
+    },
+    {
+      "LocID": "TECH_39",
+      "Hash": "0x977063DA",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Junction Box Bracket // A junction box bracket is structural, electrical, and moral. If it flexes, the cable gland works loose; if the gland works loose, brine gets a vote. Replace bent brackets before replacing fuses. A fuse that keeps failing may be telling the truth about a moving box. See cable tagging in <link=0xD963FFCD>."
+    },
+    {
+      "LocID": "TECH_40",
+      "Hash": "0x5E29E44C",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Power Ledger Cheat // Marauder power ledger has three columns: declared load, real load, and the amount command is pretending not to see. Write all three. A hidden heater, private oxygen rack, or Atlas-6 branch shows up as missing watts before it shows as bodies. Audit against priority state in <link=0x2568F49F>."
+    },
+    {
+      "LocID": "TECH_41",
+      "Hash": "0x842C5EB5",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Ballast Valve Trim // Ballast trim valve should move like a stubborn wrist, not a free wheel. If it spins easy, the stem is sheared or the linkage is gone. Trim in pulses, wait for vessel response, and do not chase perfect level during flood ingress. Auto-level notes for vessels are in <link=0x677D4A12>."
+    },
+    {
+      "LocID": "TECH_42",
+      "Hash": "0xAA2ED91E",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Torricelli Breach Card // Breach ingress starts with Torricelli: velocity from head pressure, area from the hole, coefficient from how ugly the edge is. The game does not need droplet truth; it needs bounded volume rate and consequences. Use scalar fill for rooms, mass truth for controlled vessels. Related flood fake policy is <link=0x455FC39D>."
+    },
+    {
+      "LocID": "TECH_43",
+      "Hash": "0xD0315387",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Bulkhead State Sync // Seal state belongs to both sides of a bulkhead. If one compartment says sealed and the neighbor says open, force sealed and investigate later. Containment beats elegance. The worst bug is not a stuck door; it is a door two systems disagree about while water chooses the faster story. See <link=0x92C8F4E9>."
+    },
+    {
+      "LocID": "TECH_44",
+      "Hash": "0xC61FFAA8",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Pump Cavitation Audio // Cavitation has a clean signature: gravel chatter, rising pitch, dropping flow, and a mechanic's stomach turning before the gauge updates. Audio is an early warning channel, not decoration. Kill power, flood intake, clear vapor. If command asks why the pump is stopped, send them <link=0x87535F90>."
+    },
+    {
+      "LocID": "TECH_45",
+      "Hash": "0xEC227511",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Current Turbine Overpitch // Overpitching current turbine blades steals output from tomorrow's bearings. The meter smiles, the shaft warms, then salt shock finds every cheap decision in the hub. Use overpitch only to keep air and pumps alive. If somebody used it for lights, hand them the blackout doctrine in <link=0x4E0CE002>."
+    },
+    {
+      "LocID": "TECH_46",
+      "Hash": "0x1224EF7A",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Desal Grit Loop // Desal loop grit means intake screens failed or somebody dumped slag upstream like a genius with a short future. Grit eats pump faces, valve seats, and patience. Backflush at low pressure, inspect screens, then sample before restart. If the grit is metallic, compare against slag handling in <link=0x8D5F0AFB>."
+    },
+    {
+      "LocID": "TECH_47",
+      "Hash": "0x382769E3",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Oxygen Pressure Line // Oxygen pressure line is clean, dry, and boring by design. Oil, tape scraps, or hot metal in that line turns maintenance into a flash event. Crack valves slow, purge dead legs, and record partial pressure after every repair. If the line feeds a suspect room, run Dalton checks from <link=0x0EE1BD03>."
+    },
+    {
+      "LocID": "TECH_48",
+      "Hash": "0x2E161104",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Coolant Dead Leg // Dead leg is a pipe section with no honest flow. It reports cold until load shifts, then dumps stored heat into the wrong place. Find it by measuring temperature delta under changing load, not by staring at the diagram. Dead legs hide behind blind exchanger readings; start there with <link=0xFF667A36>."
+    },
+    {
+      "LocID": "TECH_49",
+      "Hash": "0x54188B6D",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Waste Heat Scavenger // Waste heat scavenger is a coil wrapped around someone else's bad efficiency. Useful for thawing valves and warming cells, dangerous when it steals margin from life support. Fit bypass, label the thermal debt, and never make heat recovery a hidden dependency. Battery heater notes continue in <link=0x58BFFA5E>."
+    },
+    {
+      "LocID": "TECH_50",
+      "Hash": "0x6EA5707D",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Condensate Frost // Condensate frost around a valve is a map of pressure drop and thermal insult. Thin white bloom means inspect. Heavy rim means flow is choking. Frost that grows after shutdown means a leak is still feeding it. Do not lick it, joke about it, or ignore it. Valve freeze procedure is <link=0x1B785540>."
+    },
+    {
+      "LocID": "TECH_51",
+      "Hash": "0x48A2F614",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "AUP Route Marker // AUP route marker stores grid coordinate and local offset so the world can shift without losing the way home. Paint marks are for eyes; hashes are for machines. If a route crosses a rebase boundary, trust the marker only after the local offset quantizes clean. Map cache behavior is covered in <link=0xB0990C70>."
+    },
+    {
+      "LocID": "TECH_52",
+      "Hash": "0xBAAA654F",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Sonar No-Range Return // No-range sonar return means bearing exists but distance is contaminated by multipath, absorption, or something moving too wide for the pulse model. Do not call it contact and do not call it safe. Log bearing, reduce speed, and wait for a second channel. Acoustic pinger discipline is <link=0xFC9E0142>."
+    },
+    {
+      "LocID": "TECH_53",
+      "Hash": "0x94A7EAE6",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Manual Compass // Manual compass is sealed, weighted, and dumb enough to survive a software argument. It hates local current, big metal, and crew who forget deviation cards. Use it when the PDA map jitters or the sonar starts selling poetry. For dead-reckoning cleanup, use the board method in <link=0xD69B86D9>."
+    },
+    {
+      "LocID": "TECH_54",
+      "Hash": "0xD69B86D9",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Dead Reckoning Slate // Dead reckoning slate is a wet panel with heading, time, thrust, and shame. It will not be exact. It will be less wrong than a corrupted route cache. Update every turn, not every panic. If AUP marker and slate disagree, stop moving until <link=0x48A2F614> is reconciled."
+    },
+    {
+      "LocID": "TECH_55",
+      "Hash": "0xB0990C70",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "PDA Scan Cache // PDA scan cache keeps discovered pages by hash and mask, not by string title. That keeps lookup cheap and prevents the archive from inventing records because a label changed. If the page is missing, show the fallback and log once. Streaming rules are expanded in <link=0xD0520D07>."
+    },
+    {
+      "LocID": "TECH_56",
+      "Hash": "0x22A07BAB",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Map POI Upload // Map POI upload is a dirty-page job. If the points did not change, do not shove them across the bus to feel productive. Low tier sends compact positions; high tier can afford smoother fade and richer glyphs. The upload still obeys the same cache law as <link=0xB0990C70>."
+    },
+    {
+      "LocID": "TECH_57",
+      "Hash": "0xFC9E0142",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Acoustic Pinger // Acoustic pinger is a timed lie used carefully. It says where sound survived, not where truth lives. Thorp absorption handles open-water loss; enclosed module echo uses a Sabine RT60 estimate, not mood. Hard walls, silt, and moving hulls can fold a pulse into a false bearing. Use two pings separated by motion; if the return follows the helmet, inspect the suit before the sea. Related no-range warning is <link=0xBAAA654F>."
+    },
+    {
+      "LocID": "TECH_58",
+      "Hash": "0x9EB943C5",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Depth Palette Note // Depth color saturates early because Beer-Lambert attenuation kills red before the PDA gets poetic. Below that, readability comes from silhouette, fog, emissive biomes, thermal orange, scanner UI, and audio pressure. Do not promise unique blue for every deeper meter. The ocean already spent that palette. Navigation lights should follow <link=0x718EA2F1>."
+    },
+    {
+      "LocID": "TECH_59",
+      "Hash": "0x78B6C95C",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Signal Timing 11:23 // A clean repeated interval is data until it starts making decisions for you. The 11:23 timing mark is logged as cadence, not intent. Correlate with power spikes, fauna silence, and route lockouts before naming causes. Black Box capture in <link=0xC640B428> keeps the argument from becoming campfire theater."
+    },
+    {
+      "LocID": "TECH_60",
+      "Hash": "0x3E33154E",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Blackwater Visibility // Blackwater visibility is not solved by more light. More light can flatten contrast, wake predators, and advertise panic. Use narrow beam, sonar pulse, and panel glow. If particles erase the route, slow down instead of blooming the lamp. Worklamp doctrine starts at <link=0x4E0CE002>."
+    },
+    {
+      "LocID": "TECH_61",
+      "Hash": "0x64358FB7",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Scrap Sorter Assay // Scrap sorter assay uses density, magnet response, and conductivity before anyone names a prize. Paint color is not metallurgy. Corporate tags lie after fire, brine, and lawyers. Sort into copper, titanium, ceramic, and junk, then let the fabricator complain with numbers. Copper salvage is tied to <link=0xCC2BA613>."
+    },
+    {
+      "LocID": "TECH_62",
+      "Hash": "0xF22E207C",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Titanium Laminate // Titanium laminate is strong until bad prep turns it into expensive wallpaper. Grind bright, wipe salt, clamp flat, then bond under pressure. Do not bridge paint, rust bloom, or old sealant. If the patch needs to carry pressure, run the hull procedure in <link=0xA6EBA6A7> instead of improvising sculpture."
+    },
+    {
+      "LocID": "TECH_63",
+      "Hash": "0x18309AE5",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Sealant Pack Handling // Sealant pack stock has a shelf life, temperature band, and a bad attitude after freezing. Warm it in hand heat or waste coil, not open flame. Purge first centimeter because grit collects in the nozzle. If the bead foams, the surface is wet or the pack is dead. Printed gasket use is <link=0xA6292BAA>."
+    },
+    {
+      "LocID": "TECH_64",
+      "Hash": "0xA6292BAA",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Printed Gasket // Printed gasket is acceptable for low-cycle covers, inspection ports, and the kind of leak that insults boots instead of killing crews. It is not a pressure-door miracle. Print oversize, trim, grease lightly, and torque in star pattern. For real door load, return to <link=0x92C8F4E9>."
+    },
+    {
+      "LocID": "TECH_65",
+      "Hash": "0xCC2BA613",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Copper Bus Salvage // Copper bus salvage starts with power proof, not enthusiasm. De-energize, discharge, cut lugs, and keep green corrosion out of the good bin. A bright copper strip can still be annealed soft after a heat event. Check bracket movement and fault history using <link=0x977063DA>."
+    },
+    {
+      "LocID": "TECH_66",
+      "Hash": "0x5A2436D8",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Lens Polishing // Scanner lens polish is not vanity. A scratched lens throws false scatter into range estimates and makes the PDA blame water for human neglect. Use figure-eight strokes, clean slurry, and inspect under narrow light. If sonar and optics disagree after polish, escalate to pinger validation in <link=0xFC9E0142>."
+    },
+    {
+      "LocID": "TECH_67",
+      "Hash": "0x8026B141",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Bearing Rebuild // Bearing rebuild needs clean grease, matched balls, and patience the station no longer stocks. If the race is pitted, do not pretend fresh grease is repair. A bad bearing sings before it seizes, and that song travels through hull plates like gossip. Turbine overpitch damage is logged in <link=0xEC227511>."
+    },
+    {
+      "LocID": "TECH_68",
+      "Hash": "0x0E1F4206",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Ceramic Fuse // Ceramic fuse is there to die instead of the system. Replacing it with wire is not fieldcraft; it is delayed arson. Match rating, check downstream fault, and save the blown fuse because its fracture pattern tells whether the hit was surge or overload. Ground fault checks start at <link=0xB3618564>."
+    },
+    {
+      "LocID": "TECH_69",
+      "Hash": "0x3421BC6F",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Microfracture Dye // Microfracture dye makes cracks confess under narrow light. Clean, apply, wait, wipe, inspect. A line that reappears after wiping is a crack; a smear is dirty technique. Use dye before welding, after impact, and whenever a wall starts making polite noises. Habitat stress states begin at <link=0x9164B86F>."
+    },
+    {
+      "LocID": "TECH_70",
+      "Hash": "0x4EAEA17F",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Fabricator Feed Jam // Fabricator feed jam usually means mixed scrap, wet powder, or a crew trying to print hope from trash. Kill heat, reverse feed, clear with brass hook, then run a dry purge. Do not force the ram; bent feed screws turn every future print into evidence. Material sorting begins with <link=0x64358FB7>."
+    },
+    {
+      "LocID": "TECH_71",
+      "Hash": "0x28AC2716",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Cold Current Suit // Cold current does not need drama. It takes heat through a simple exponential slide toward ambient. If insulation is damaged, the slide gets steep and fingers get stupid. Log external temperature, internal temperature, and battery heater load before blaming the suit. Heater cost belongs to <link=0x58BFFA5E>."
+    },
+    {
+      "LocID": "TECH_72",
+      "Hash": "0x02A9ACAD",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Thermal Vent Warning // Thermal vent water is not friendly because it is warm. It carries chemistry, flow shear, and sensor lies. Treat orange light as a hazard marker unless a survey says otherwise. Use vent heat for scavenging only through a controlled exchanger. Dead-leg heat traps are explained in <link=0x2E161104>."
+    },
+    {
+      "LocID": "TECH_73",
+      "Hash": "0xDCA73244",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Radiation Scrubber // Radiation scrubber is shielding, filter media, and logging discipline. It reduces dose rate; it does not cleanse courage or inventory mistakes. Check cumulative dose, media color, and seal seating before entering a hot room. If the PDA reports comfort while the badge darkens, trust the badge and file under <link=0x962CE0E0>."
+    },
+    {
+      "LocID": "TECH_74",
+      "Hash": "0xB6A4B7DB",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Nitrogen Narcosis Checklist // Nitrogen narcosis starts as confidence with bad handwriting. At high pressure, cognition gets noisy before the body admits trouble. Use buddy math, short commands, and instrument cross-checks. If somebody laughs at warning lights, reduce task load and revisit Dalton bookkeeping in <link=0x0EE1BD03>."
+    },
+    {
+      "LocID": "TECH_75",
+      "Hash": "0x90A23D72",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Hypoxia Response // Hypoxia response is not a speech contest. Sit the diver down, verify O2 partial pressure, check regulator flow, and stop them from doing clever work. Blue lips are late evidence. Bad decisions arrive first. Use the emergency pocket only after confirming it is not a CO2 trap with <link=0xAD55D9F9>."
+    },
+    {
+      "LocID": "TECH_76",
+      "Hash": "0x6A9FC309",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "CO2 Headache // CO2 headache is the room billing you for bad scrub. Symptoms: heat, pressure behind eyes, anger at simple tasks, and the belief that another minute is fine. Another minute is not fine. Swap media, raise ventilation, and audit the scrubber bed. Start with <link=0xE8DF429A>."
+    },
+    {
+      "LocID": "TECH_77",
+      "Hash": "0x449D48A0",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Heat Exchanger Wet // A wet heat exchanger loses efficiency and starts growing failures in layers: corrosion, insulation rot, sensor drift, then a polite fire alarm with no visible fire. Dry it, pressure test it, and check coolant flow under load. If readings stay pretty, suspect a blind spot from <link=0xFF667A36>."
+    },
+    {
+      "LocID": "TECH_78",
+      "Hash": "0x7EC274C7",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Insulation Pinhole // Insulation pinhole is small until the suit crosses a cold seam. Then heat leaves through that dot like debt through a company account. Mark with dye, patch dry, and retest under cold flow. Do not count on body heat to make up the loss; the heater tax is in <link=0x58BFFA5E>."
+    },
+    {
+      "LocID": "TECH_79",
+      "Hash": "0x58BFFA5E",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Battery Heater Tax // Battery heater tax is the watts paid to keep cells honest in cold water. It reduces available tool time and makes fake full packs reveal themselves under load. Budget heater draw before cutter work or scooter tow. If the cells sag anyway, inspect the bank behavior in <link=0x415A1629>."
+    },
+    {
+      "LocID": "TECH_80",
+      "Hash": "0x1B785540",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Frosted Valve Caution // Frosted valve gets one gentle test, not a wrestling match. Ice can hold a seal shut until torque snaps the stem and hands the room to the sea. Warm the body, tap the bonnet, then move in pulses. If frost returns after closure, hunt the pressure drop using <link=0x6EA5707D>."
+    },
+    {
+      "LocID": "TECH_81",
+      "Hash": "0x417ACFA9",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Scooter Cavitation // Scooter cavitation is the little motor screaming that it is making vapor instead of thrust. Back off throttle, change angle, and let flow reattach. Pushing harder just buys noise, heat, and a shorter swim home. If towing a vessel, compare propwash silt behavior with <link=0x2589AE1F>."
+    },
+    {
+      "LocID": "TECH_82",
+      "Hash": "0x677D4A12",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Submarine Auto-Level // Auto-level is a control assist, not a priest. It trims pitch and roll with ballast and thrust, then waits for the hull to answer. Chasing zero every frame wastes power and makes passengers sick. Use damped corrections, not panic toggles. Manual ballast notes are in <link=0x842C5EB5>."
+    },
+    {
+      "LocID": "TECH_83",
+      "Hash": "0x8D7FC47B",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Ballast Bladder Patch // Ballast bladder patch must flex, seal, and not shed into the pump. Clean rubber, roughen lightly, apply patch, cure under mild pressure, then cycle shallow. A patch that holds at dock can still fold under depth load. Watch auto-level response afterward using <link=0x677D4A12>."
+    },
+    {
+      "LocID": "TECH_84",
+      "Hash": "0xB3823EE4",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Hull Stress Alarm // Hull stress alarm is a thresholded warning from a simplified fatigue model. It does not know fear, debt, or whether the crew is nearly done. Above critical, stop task stacking and reduce pressure exposure. If alarm and analog needle disagree, believe the uglier reading and inspect <link=0x6CC67A80>."
+    },
+    {
+      "LocID": "TECH_85",
+      "Hash": "0xD984B94D",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Docking Collar // Docking collar must align before it seals. If the clamps pull the vessels together from bad angle, the gasket folds and the pressure test becomes theater. Use low thrust, visual marks, and one mechanic with authority to abort. Final seal torque borrows rules from <link=0x92C8F4E9>."
+    },
+    {
+      "LocID": "TECH_86",
+      "Hash": "0xFF8733B6",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Drone Repair Loop // Repair drone loop is useful until it starts polishing the same wound forever. Give it bounded targets, fixed material budget, and a hard return timer. A drone that cannot explain its repair should not own the repair. If it comes back time-shifted, record with <link=0xC640B428> before reuse."
+    },
+    {
+      "LocID": "TECH_87",
+      "Hash": "0x2589AE1F",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Propwash Silt // Propwash silt is visibility debt. It sells motion, hides predators, and ruins scan confidence. Low tier can fake it with particles and fog masks; high tier can layer richer local response. The physics truth stays with vehicle control, not every grain. Visibility doctrine continues in <link=0x3E33154E>."
+    },
+    {
+      "LocID": "TECH_88",
+      "Hash": "0x4B8C2888",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Cabin Pressure Gauge // Cabin pressure gauge is the room's pulse. It must be analog-backed, eye-readable, and checked before anyone opens a door into a new pressure story. Total pressure does not prove breathable mix, but it proves the door will have opinions. Pair with Dalton math from <link=0x0EE1BD03>."
+    },
+    {
+      "LocID": "TECH_89",
+      "Hash": "0x718EA2F1",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Navigation Light Discipline // Navigation lights show shape and intent, not bravery. Use low-output markers, sector blink codes, and shielded lamps so the water reads your silhouette without turning the vessel into bait. If depth palette is saturated, lights carry readability. Cross-reference <link=0x9EB943C5>."
+    },
+    {
+      "LocID": "TECH_90",
+      "Hash": "0xEC432E91",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Emergency Ascent No // Emergency ascent is not a reset button. From depth it trades one failure for decompression injury, hull shock, lost tools, and a report nobody wants to write. Ascend by envelope unless the module is already lost. If stress is critical, count exits and evidence first. Habitat terminal state is <link=0x7E20B34A>."
+    },
+    {
+      "LocID": "TECH_91",
+      "Hash": "0xC640B428",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Black Box 300 Frame // Critical systems keep a 300-frame ring of positions, hashes, flags, and high-level state because 'no idea' is not a diagnostic category. On NaN, crash, or impossible transition, dump the ring before memory goes soft. This is how lies get shorter. NaN quarantine protocol follows in <link=0x38482363>."
+    },
+    {
+      "LocID": "TECH_92",
+      "Hash": "0x38482363",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "NaN Quarantine // NaN is a leak in arithmetic. If a float feeding physics or rendering stops being finite, replace with safe fallback, flag telemetry, and dump context. Do not let one bad division teach the hull to fly. Any dumped record should carry stable tags, usually from the FNV ledger in <link=0x1245A8FA>."
+    },
+    {
+      "LocID": "TECH_93",
+      "Hash": "0x1245A8FA",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "FNV Tag Ledger // FNV tag ledger gives authored text and systems stable numeric handles. Keys are not prose; prose changes and keys stay. If a PDA entry links another record, it links the hash, not a title that localization will bend later. This entry is the reason every page can point at <link=0xB0990C70> without string lookup."
+    },
+    {
+      "LocID": "TECH_94",
+      "Hash": "0x844D1835",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Save Packet Note // Save packet stores divergence, not the whole ocean. Dead doors, cut resources, placed structures, and unlocked records matter. Every pretty particle that can be recomputed from seed stays out. If a text record unlocks, store the bit, not the paragraph. PDA bitmask rules start in <link=0xB0990C70>."
+    },
+    {
+      "LocID": "TECH_95",
+      "Hash": "0x5E4A9DCC",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Addressable Cache Ticket // Addressable cache ticket says who loaded a thing, who still owns it, and when it can be released. Fire-and-forget loads are just leaks wearing boots. Text payloads are cheap, but cheap still needs an owner. If the PDA streams pages on demand, it follows <link=0xD0520D07>."
+    },
+    {
+      "LocID": "TECH_96",
+      "Hash": "0xD0520D07",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "PDA Page Streaming // PDA page streaming reads by hash, fills a fixed char buffer, and refuses to allocate just because the player scrolls fast. Missing key returns a fixed error, logs once, and stays boring. Richer hardware may add glitch overlays; the text path remains dull and safe. Hash behavior is in <link=0x1245A8FA>."
+    },
+    {
+      "LocID": "TECH_97",
+      "Hash": "0xAA4F929E",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Text Decay Table // Text decay is pre-authored substitution and shader behavior, not live madness prose. Stress can choose a version or corrupt glyphs from a table; it must not allocate a fresh sentence every frame. The Habitat Integrity stress run proves the content side. Start at <link=0x9164B86F>."
+    },
+    {
+      "LocID": "TECH_98",
+      "Hash": "0xBC2F5B49",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Lockout Placard // Lockout placard has three useful fields: what is isolated, why, and who is allowed to kill power again. Anything else is office perfume. If the placard says temporary and the salt line says old, believe the salt. Confirm electrical isolation with the bracket and fault checks in <link=0x977063DA>."
+    },
+    {
+      "LocID": "TECH_99",
+      "Hash": "0x962CE0E0",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Marauder QA Stamp // Marauder QA stamp is not approval; it is blame with coordinates. Stamp only after the repair survives pressure, power, thermal, and human stupidity checks. Write what was rejected, not just what was done. If the next diver cannot reproduce the decision, the stamp is trash. Link evidence to <link=0xC640B428>."
+    },
+    {
+      "LocID": "TECH_100",
+      "Hash": "0x8B921D71",
+      "Layer": "Narrative",
+      "Category": "pda_technical_log",
+      "Text": "Final Field Rule // Final field rule: map exit, count air, kill comfort load, trust analog when firmware smiles, and write the failure in words a tired diver can use. The ocean punishes vague nouns. If a log cannot tell the next crew how the machine breaks, it is decoration. Start the chain again at <link=0xC2DCC831>."
     }
   ]
 }

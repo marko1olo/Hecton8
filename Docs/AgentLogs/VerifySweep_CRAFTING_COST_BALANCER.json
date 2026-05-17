@@ -1,0 +1,208 @@
+{
+  "agent": "CRAFTING_COST_BALANCER",
+  "domain": "DATA/ECONOMY",
+  "failed_count": 1,
+  "failed_scripts": [
+    "Tools/VerifySubmarineHydrodynamicsData.py"
+  ],
+  "note": "Top-level Verify*.py files were restored for the crafting/data gates available on disk; concurrently removed untracked cross-domain verifier scripts are outside this agent's write scope.",
+  "script_count": 28,
+  "scripts": [
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyAiNavigationTuning.py",
+      "seconds": 1.423,
+      "stderr_tail": "",
+      "stdout_tail": "AI NAV VERIFY PASSED\njson=Data/AI/Navigation_Tuning.json\nbinary=Data/AI/Navigation_Tuning.h8bin bytes=1280 records=0\nmanifest=Data/AI/Navigation_Tuning.manifest.json\nendianness=little alignment=16 fnvCollisions=0\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyBabel.py",
+      "seconds": 4.606,
+      "stderr_tail": "",
+      "stdout_tail": "VERIFY BABEL OK: records=32672 sources=45 bytes=1534512 alignment=16 endian=little hashCollisions=0\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyBabelDictionary.py",
+      "seconds": 2.034,
+      "stderr_tail": "",
+      "stdout_tail": "BABEL VERIFIED sources=45 entries=32672 languages=17 bytes=1534512 word_count=170779 constants=12768 endian=< alignment=16 collisions_resolved=0\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyBinaryHygiene.py",
+      "seconds": 11.381,
+      "stderr_tail": "",
+      "stdout_tail": "VERIFY_BINARY_HYGIENE: status=BINARY_HYGIENE_VERIFIED\nVERIFY_BINARY_HYGIENE: binaryCount=44\nVERIFY_BINARY_HYGIENE: misalignedCount=0\nVERIFY_BINARY_HYGIENE: report=Docs/AgentLogs/BinaryHygiene_CRAFTING_COST_BALANCER.json\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyCraftingCosts.py",
+      "seconds": 1.99,
+      "stderr_tail": "",
+      "stdout_tail": "CRAFTING COST VERIFY OK\nbinary_bytes=7424 toaster_binary_bytes=2464 recipe_count=50 ingredient_count=171 tool_count=38 godmode_visual_count=50\nalignment=16 endian=< payload_crc32=1295072744\nhash_pairs=342 collisions=0\nproject_atlas=Data Monolith + Crafting Fast-Fail Validator\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyCraftingSourceContracts.py",
+      "seconds": 1.788,
+      "stderr_tail": "",
+      "stdout_tail": "CRAFTING SOURCE CONTRACT VERIFY OK\nliteral_hit_count=0\nreport=Docs\\AgentLogs\\Crafting_SourceContract_Audit.json\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyDaltonGasToxicity.py",
+      "seconds": 1.343,
+      "stderr_tail": "",
+      "stdout_tail": "{\n  \"aligned16\": true,\n  \"binary\": \"Data/Precomputed/dalton_gas_toxicity.bin\",\n  \"bytes\": 128128,\n  \"endianness\": \"<\",\n  \"fnvCollisionCount\": 0,\n  \"overkillBytes\": 96112,\n  \"status\": \"VERIFY_DALTON_GAS_TOXICITY_PASS\",\n  \"toasterBytes\": 4080\n}\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyDataInquisition.py",
+      "seconds": 4.675,
+      "stderr_tail": "",
+      "stdout_tail": "DATA INQUISITION OK\nbinaries=44 aligned16=true manifests=11 endian=< structFormats=273 monteCarloSteps=1000000 hashCollisions=0 atlasDomains=85 status=DATA_INQUISITION_VERIFIED_STATIC_ONLY\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyH8HashCollisions.py",
+      "seconds": 4.637,
+      "stderr_tail": "",
+      "stdout_tail": "Wrote Docs/AgentLogs/H8Hash_Collision_CRAFTING_COST_BALANCER.json\nH8 hash records: 480\nHASH COLLISIONS: 0\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyHullStressBudget.py",
+      "seconds": 1.677,
+      "stderr_tail": "",
+      "stdout_tail": "verification_report=C:\\Hecton8\\Data\\Habitat\\HabitatPressureBudget_Verification.json\nstatus=PASS\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyLore.py",
+      "seconds": 2.427,
+      "stderr_tail": "",
+      "stdout_tail": "CHECK OK: entries=2 blob=Data/Lore/Encyclopedia.h8bin manifest=Data/Lore/Encyclopedia.manifest.json compression=none/raw-utf8 alignment=16 endian=<\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyMetricPhiDataTruth.py",
+      "seconds": 3.844,
+      "stderr_tail": "",
+      "stdout_tail": "METRIC_PHI_DATA_TRUTH_STATUS: DATA_TRUTH_VERIFIED\nchecks=37 failed=0\nbinary_files=44 unaligned=0\nstruct_format_sites=274 endian_failures=0\nreport=Docs/Reports/METRIC_PHI_DATA_TRUTH_AUDIT.json\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyOpticsBaker.py",
+      "seconds": 1.867,
+      "stderr_tail": "",
+      "stdout_tail": "VERIFY_OPTICS: status=OPTICS_LUT_VERIFIED\nVERIFY_OPTICS: matrixBytes=393216\nVERIFY_OPTICS: aligned16=True\nVERIFY_OPTICS: byteOrder=little-endian\nVERIFY_OPTICS: pack=<e\nVERIFY_OPTICS: fnvCollisions=0\nVERIFY_OPTICS: dataSovereignty=stateless_binary_lookup\nVERIFY_OPTICS: report=Docs/AgentLogs/OpticsVerification_OPTICAL_EXTINCTION_LUT_BAKER.json\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyOreLcgBaker.py",
+      "seconds": 0.724,
+      "stderr_tail": "",
+      "stdout_tail": "VERIFY_ORE_LCG_STATUS: ORE_LCG_VERIFIED_STATIC_ONLY\nreport=C:\\Hecton8\\Docs\\AgentLogs\\VerifyOreLcg_RESOURCE_SPAWN_LCG_TABLES.json\nbinaryBytes=1776\nhashCollisions=0\nruntimeProof=PENDING_VERIFICATION\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyOreLcgBinaryIndependent.py",
+      "seconds": 1.873,
+      "stderr_tail": "",
+      "stdout_tail": "VERIFY_ORE_LCG_BINARY_INDEPENDENT_STATUS: ORE_LCG_BINARY_INDEPENDENT_VERIFIED_STATIC_ONLY\nreport=C:\\Hecton8\\Docs\\AgentLogs\\VerifyOreLcgBinaryIndependent_RESOURCE_SPAWN_LCG_TABLES.json\nbinaryBytes=1776\nresourceRecordsChecked=150\nruntimeProof=PENDING_VERIFICATION\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyOrganicEntropy.py",
+      "seconds": 0.603,
+      "stderr_tail": "",
+      "stdout_tail": "{\"bytes\": 195344, \"cell_records\": 4096, \"curve_records\": 4004, \"day_count\": 1000, \"hash_collisions\": 0, \"status\": \"ORGANIC ENTROPY VERIFIED\"}\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyPdaTechnicalLogs.py",
+      "seconds": 0.426,
+      "stderr_tail": "",
+      "stdout_tail": "VERIFY_PDA_TECH_LOGS: entries=100 binaryBytes=59120 alignment=16 endian=< hashCollisions=0 hPhiDataSovereignty=1.0\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyQuestDag.py",
+      "seconds": 1.035,
+      "stderr_tail": "",
+      "stdout_tail": "VERIFY OK: nodes=4 hashes=31 binaryBytes=496 constants=7745\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyQuestDagBinaryIndependent.py",
+      "seconds": 0.31,
+      "stderr_tail": "",
+      "stdout_tail": "INDEPENDENT BINARY VERIFY OK: nodes=4 bytes=496 tierOffset=304 magic=b'H8QG'\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifySabineBaker.py",
+      "seconds": 0.659,
+      "stderr_tail": "",
+      "stdout_tail": "VERIFY_SABINE: binaryBytes=524288\nVERIFY_SABINE: recordFormat=<ff\nVERIFY_SABINE: simdGroupFormat=<ffff\nVERIFY_SABINE: fnvIds=11\nVERIFY_SABINE: fnvCollisions=0\nVERIFY_SABINE: tiers=high,middle,rtx_overkill,toaster_i3\nVERIFY_SABINE: atlasFamily=Audio\nVERIFY_SABINE: dataSovereignty=stateless_binary_lookup\nVERIFY_SABINE: mathAudit=Sabine+Thorp+BeerLambert+HydrostaticPressure\nSTATUS: SABINE_LUT_VERIFIED\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifySnellRefractionLut.py",
+      "seconds": 0.5,
+      "stderr_tail": "",
+      "stdout_tail": "VERIFY_SNELL_REFRACTION_LUT: PASS\nbytes=524288\nmaxAbsOffset=0.09997559\ncriticalAngleDegrees=48.753467\nzeroPerpendicular=True\nfnvCollisionCount=0\n"
+    },
+    {
+      "returncode": 1,
+      "script": "Tools/VerifySubmarineHydrodynamicsData.py",
+      "seconds": 1.157,
+      "stderr_tail": "Traceback (most recent call last):\n  File \"C:\\Hecton8\\Tools\\VerifySubmarineHydrodynamicsData.py\", line 15, in main\n    SubmarinePhysicsSim.run(output_dir)\n    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Hecton8\\Tools\\SubmarinePhysicsSim.py\", line 1254, in run\n    write_json(json_path, document)\n    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Hecton8\\Tools\\SubmarinePhysicsSim.py\", line 635, in write_json\n    path.write_text(json.dumps(document, indent=2, sort_keys=False, allow_nan=False) + \"\\n\", encoding=\"utf-8\")\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\pathlib\\__init__.py\", line 814, in write_text\n    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:\n         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\pathlib\\__init__.py\", line 776, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\tmpjr5it8mg\\\\Submarine_Specs.json'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"<frozen os>\", line 377, in walk\nPermissionError: [WinError 5] \u041e\u0442\u043a\u0430\u0437\u0430\u043d\u043e \u0432 \u0434\u043e\u0441\u0442\u0443\u043f\u0435: 'C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\tmpjr5it8mg'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"C:\\Hecton8\\Tools\\VerifySubmarineHydrodynamicsData.py\", line 47, in <module>\n    raise SystemExit(main())\n                     ~~~~^^\n  File \"C:\\Hecton8\\Tools\\VerifySubmarineHydrodynamicsData.py\", line 13, in main\n    with tempfile.TemporaryDirectory() as tmp:\n         ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\tempfile.py\", line 971, in __exit__\n    self.cleanup()\n    ~~~~~~~~~~~~^^\n  File \"C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\tempfile.py\", line 975, in cleanup\n    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)\n    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\tempfile.py\", line 955, in _rmtree\n    _shutil.rmtree(name, onexc=onexc)\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 852, in rmtree\n    _rmtree_impl(path, dir_fd, onexc)\n    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 689, in _rmtree_unsafe\n    for dirpath, dirnames, filenames in results:\n                                        ^^^^^^^\n  File \"<frozen os>\", line 413, in walk\n  File \"C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 687, in onerror\n    onexc(os.scandir, err.filename, err)\n    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\tempfile.py\", line 927, in onexc\n    _resetperms(path)\n    ~~~~~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\tempfile.py\", line 287, in _resetperms\n    _dont_follow_symlinks(_os.chmod, path, 0o700)\n    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\tempfile.py\", line 276, in _dont_follow_symlinks\n    func(path, *args, follow_symlinks=False)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nPermissionError: [WinError 5] \u041e\u0442\u043a\u0430\u0437\u0430\u043d\u043e \u0432 \u0434\u043e\u0441\u0442\u0443\u043f\u0435: 'C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\tmpjr5it8mg'\n",
+      "stdout_tail": ""
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyTideBaker.py",
+      "seconds": 0.922,
+      "stderr_tail": "",
+      "stdout_tail": "{\n  \"errors\": [],\n  \"report\": \"Docs/AgentLogs/VerifyTideBaker_TIDE_FOURIER_BAKER.json\",\n  \"status\": \"PASS\"\n}\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyTideInquisition.py",
+      "seconds": 1.097,
+      "stderr_tail": "",
+      "stdout_tail": "{\n  \"status\": \"PASS\",\n  \"errors\": [],\n  \"report\": \"Docs\\\\AgentLogs\\\\VerifyTideInquisition_TIDE_FOURIER_BAKER.json\",\n  \"runtimeProof\": \"PENDING_VERIFICATION\",\n  \"commandCount\": 14\n}\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyUpgradeCurveBaker.py",
+      "seconds": 1.229,
+      "stderr_tail": "",
+      "stdout_tail": "{\n  \"status\": \"PASS\",\n  \"runtime_rows\": 9,\n  \"binary_bytes\": 176,\n  \"binary_mod16\": 0,\n  \"monte_carlo_steps\": 1000000,\n  \"power_growth_ratios\": [\n    2.190318,\n    2.121422\n  ],\n  \"atlas_domains\": [\n    4,\n    52,\n    54,\n    57,\n    58\n  ],\n  \"failures\": []\n}\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyVisualLodMatrix.py",
+      "seconds": 0.675,
+      "stderr_tail": "",
+      "stdout_tail": "VERIFY_VISUAL_LOD_MATRIX_OK\nbinary=Data/System/Visual_Scalability_Matrix.bin\nmanifest=Data/System/Visual_Scalability_Matrix.manifest.json\nbytes=2016\nendianness=little\naligned16=True\nhash_collisions=0\ntiers=4\nextra_records=4\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyVramBudgets.py",
+      "seconds": 0.987,
+      "stderr_tail": "",
+      "stdout_tail": "VFX_VRAM_BUDGETS_OK TOASTER=474272B DECK=2539680B PRO=10010784B GOD_MODE=16128160B HASH_COLLISIONS=0 BINARY=Data/System/VFX_Budgets.h8bin MANIFEST=Data/System/VFX_Budgets.manifest.json\n"
+    },
+    {
+      "returncode": 0,
+      "script": "Tools/VerifyVrComfortData.py",
+      "seconds": 1.17,
+      "stderr_tail": "",
+      "stdout_tail": "{\n  \"binary\": {\n    \"alignmentBytes\": 16,\n    \"endianness\": \"little\",\n    \"lengthBytes\": 1472,\n    \"path\": \"Data/UX/VR_Comfort_Profiles.h8bin\",\n    \"status\": \"PASS\"\n  },\n  \"hashes\": {\n    \"collisionCount\": 0,\n    \"status\": \"PASS\"\n  },\n  \"owner\": \"VR_JERK_THRESHOLD_AUDIT\",\n  \"rtxOverkillBinary\": {\n    \"lengthBytes\": 560,\n    \"path\": \"Data/UX/VR_Comfort_RTXOverkill.h8bin\",\n    \"status\": \"PASS\"\n  },\n  \"runtimeProof\": \"PENDING_VERIFICATION\",\n  \"schema\": \"hecton8.vr_comfort_verify.v1\",\n  \"status\": \"PASS\",\n  \"toasterBinary\": {\n    \"lengthBytes\": 1120,\n    \"path\": \"Data/UX/VR_Comfort_Profiles_Toaster.h8bin\",\n    \"status\": \"PASS\"\n  }\n}\n"
+    }
+  ]
+}

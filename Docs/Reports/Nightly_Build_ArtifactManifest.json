@@ -1,0 +1,199 @@
+{
+  "artifactCount": 27,
+  "artifacts": [
+    {
+      "bytes": 16695,
+      "exists": true,
+      "path": "Tools/HeadlessScenarios.json",
+      "role": "scenario_catalog",
+      "sha256": "d55a09d33e8ba7ae6008363a248bf37a400c68a62a5459623c36a9841cb2ccb4"
+    },
+    {
+      "bytes": 9934,
+      "exists": true,
+      "path": "Docs/Reports/Nightly_Build_Report.md",
+      "role": "markdown_report",
+      "sha256": "76296a499b4b1e97ac305f58cd57a12e360f67e2f638fc0842e78bb80e3e8dfe"
+    },
+    {
+      "bytes": 12459,
+      "exists": true,
+      "path": "Docs/Reports/Nightly_Build_Report.json",
+      "role": "json_report",
+      "sha256": "8f808323caa22a3839afedb0cbd2175ac8246c1c27b0412bc88e9bc911f42716"
+    },
+    {
+      "bytes": 695,
+      "exists": true,
+      "path": "Docs/Reports/Nightly_Build_FrameTime.svg",
+      "role": "frame_time_svg",
+      "sha256": "1521fb1997816fb7fdd3aee15ea6e8fa843a527343d3d39598db404a770f7e90"
+    },
+    {
+      "bytes": 1151,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/100_Days_Idle/replay_00/unity.log",
+      "role": "100_Days_Idle_replay_0_unity_log",
+      "sha256": "6fbec0dfb4c2ce6cf71d697134fb5aa4814e071857a9e5a8ca42c0dc8689c6c7"
+    },
+    {
+      "bytes": 986,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/100_Days_Idle/replay_00/telemetry.jsonl",
+      "role": "100_Days_Idle_replay_0_telemetry_jsonl",
+      "sha256": "35f4fcb89f9b29b41e6d09d2225fd76c2654e1c0c499202fc3101140f6f0007e"
+    },
+    {
+      "bytes": 0,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/100_Days_Idle/replay_00/process_stdout.log",
+      "role": "100_Days_Idle_replay_0_stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1151,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/100_Days_Idle/replay_01/unity.log",
+      "role": "100_Days_Idle_replay_1_unity_log",
+      "sha256": "6fbec0dfb4c2ce6cf71d697134fb5aa4814e071857a9e5a8ca42c0dc8689c6c7"
+    },
+    {
+      "bytes": 986,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/100_Days_Idle/replay_01/telemetry.jsonl",
+      "role": "100_Days_Idle_replay_1_telemetry_jsonl",
+      "sha256": "35f4fcb89f9b29b41e6d09d2225fd76c2654e1c0c499202fc3101140f6f0007e"
+    },
+    {
+      "bytes": 0,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/100_Days_Idle/replay_01/process_stdout.log",
+      "role": "100_Days_Idle_replay_1_stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 174,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/FNV_Hash_Catalog.log",
+      "role": "validation_FNV_Hash_Catalog",
+      "sha256": "06fe70730b8728891fc300b1e159bc7545523b0a085206dda8a416cbecbea81a"
+    },
+    {
+      "bytes": 191,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/Data_Inquisition_Static.log",
+      "role": "validation_Data_Inquisition_Static",
+      "sha256": "c3dc4acffb092918e6403b76b5ceb9782b0cef9ec17c90795c3b944b32da9497"
+    },
+    {
+      "bytes": 215,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/Binary_Hygiene_Global.log",
+      "role": "validation_Binary_Hygiene_Global",
+      "sha256": "6282d4c414bfa783b65d2498526aa5c2ad686e3cbbbaf1101fc8327c71be24e3"
+    },
+    {
+      "bytes": 200,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/Metric_Phi_Data_Truth.log",
+      "role": "validation_Metric_Phi_Data_Truth",
+      "sha256": "56d7121e38795bae34269235726c03a9f763a05dfddca95ea81a3f7fb6092983"
+    },
+    {
+      "bytes": 324,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/Optics_Beer_Lambert_LUT.log",
+      "role": "validation_Optics_Beer_Lambert_LUT",
+      "sha256": "928f4c7b055b708151f7f6e01acc8f06498638d6bbbaf71a716dff2725f55333"
+    },
+    {
+      "bytes": 149,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/Lore_Blob_Contract.log",
+      "role": "validation_Lore_Blob_Contract",
+      "sha256": "cc069528e33c4e67b5c112804152d020d9a8b3ac5a628fa870d085a55183a0c0"
+    },
+    {
+      "bytes": 694,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/Sabine_Acoustic_Physics.log",
+      "role": "validation_Sabine_Acoustic_Physics",
+      "sha256": "7720ca06975c2a1487c346beb9c815e400ad0e8c74036c34ad38ccab66a0096c"
+    },
+    {
+      "bytes": 186,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/VFX_VRAM_Binary_Budget.log",
+      "role": "validation_VFX_VRAM_Binary_Budget",
+      "sha256": "73f4c9049cfe67012368a47872946b7b5621db309aedc79469b9756f1c85549c"
+    },
+    {
+      "bytes": 2710,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/BlueNoise_Flow_Texture.log",
+      "role": "validation_BlueNoise_Flow_Texture",
+      "sha256": "6d42cdbfb414f5d8065e17f397806ea52c41237186bc4b95015f7f57f3627630"
+    },
+    {
+      "bytes": 147,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/Taxonomy_Lore_Binary.log",
+      "role": "validation_Taxonomy_Lore_Binary",
+      "sha256": "b35d447ca52e55b6e103bbc60affaa3fe551ce382c6025ef397a801a10c925ac"
+    },
+    {
+      "bytes": 48,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/Replay_Hasher_Verifier_Guard.log",
+      "role": "validation_Replay_Hasher_Verifier_Guard",
+      "sha256": "96097b30d674cb9ca853d3fb826a37d65a69ca1f4a1139c5780a020794841ad7"
+    },
+    {
+      "bytes": 308,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/Save_Master_Hash_CSharp.log",
+      "role": "validation_Save_Master_Hash_CSharp",
+      "sha256": "178466280d863cb5c17ac78607a5425764e0967d9617d8ba4663501bba037572"
+    },
+    {
+      "bytes": 2962,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/Binary_Alignment_Scan.log",
+      "role": "validation_Binary_Alignment_Scan",
+      "sha256": "7cda65e99e9742cb663a0b019ac55223a9961c45f27b675d4cb802f2e8473640"
+    },
+    {
+      "bytes": 357,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/QA_Source_Contract_Scan.log",
+      "role": "validation_QA_Source_Contract_Scan",
+      "sha256": "d38eb3c125317277a5be0acf5756691d6afd8750a57dca7e39b228b8938f1e15"
+    },
+    {
+      "bytes": 4874,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/Verification_Tool_Inventory.log",
+      "role": "validation_Verification_Tool_Inventory",
+      "sha256": "6d50811eed45d0fdcbbcb5c6b2c53f801f711f8a7d81d37263d1e9dfd9a4d525"
+    },
+    {
+      "bytes": 13068,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/H_Phi_Domain_Map.log",
+      "role": "validation_H_Phi_Domain_Map",
+      "sha256": "c760197c1ad5a5ca1f46ca3a1171ee2782470b916e3385173ec82d4f425c84e9"
+    },
+    {
+      "bytes": 397,
+      "exists": true,
+      "path": ".codex-artifacts/headless-scenarios/20260516T224717Z/validation/Economy_MonteCarlo_MillionStep.log",
+      "role": "validation_Economy_MonteCarlo_MillionStep",
+      "sha256": "c341c2fa92035c9125ff976e8ccdc82cb491f5e7cc8f28de99964973431c1728"
+    }
+  ],
+  "generatedUtc": "2026-05-16T22:47:17Z",
+  "missingArtifacts": [],
+  "schema": "H8_HEADLESS_ARTIFACT_MANIFEST",
+  "status": "PASS",
+  "version": 1
+}

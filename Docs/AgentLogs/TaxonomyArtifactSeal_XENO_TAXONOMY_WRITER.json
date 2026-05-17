@@ -1,0 +1,161 @@
+{
+  "agent": "XENO_TAXONOMY_WRITER",
+  "artifactCount": 19,
+  "artifacts": [
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 73902,
+      "exists": true,
+      "path": "Data/Localization/en_US_Taxonomy.json",
+      "sha256": "A088ECCC1EE77CF50105E2095A9DDD790340040541956184CCB1D4EA44FCA70F"
+    },
+    {
+      "aligned16": true,
+      "binaryLike": true,
+      "bytes": 27536,
+      "exists": true,
+      "path": "Data/Localization/en_US_Taxonomy.h8bin",
+      "sha256": "299D7FE176AD5A80DC0097554ABB0130C02CAE7C8D3A800A836649A59954DCF9"
+    },
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 2375,
+      "exists": true,
+      "path": "Data/Localization/en_US_Taxonomy.manifest.json",
+      "sha256": "EF81FC2E25606583BED252BF7FDC2EB697D601DD2217F9F07C0015C5845523E9"
+    },
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 1898,
+      "exists": true,
+      "path": "Docs/AgentLogs/TaxonomyEconomyMillionStep_XENO_TAXONOMY_WRITER.json",
+      "sha256": "97AC680859D97CED1E8A915C531B1BA7EC57E374B503EB3A0FC799133F030053"
+    },
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 20655,
+      "exists": true,
+      "path": "Docs/AgentLogs/VerifySweep_XENO_TAXONOMY_WRITER.json",
+      "sha256": "345E60B93DA8752BFE15B7B22485BEFBE92EF02990997BDB98C7584DE280456F"
+    },
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 8638,
+      "exists": true,
+      "path": "Data/Visuals/Water_Extinction_Matrix.json",
+      "sha256": "56028A35EA1FD1C0EA83D7F2695FF5C97547C7D425880D49F3671563EED859BC"
+    },
+    {
+      "aligned16": true,
+      "binaryLike": true,
+      "bytes": 393216,
+      "exists": true,
+      "path": "Data/Visuals/Water_Extinction_Matrix.bin",
+      "sha256": "99EB8631F64C15181E62E2C1E24CDA285A490330C0F04F99FB218EFEC9BBFF89"
+    },
+    {
+      "aligned16": true,
+      "binaryLike": true,
+      "bytes": 24576,
+      "exists": true,
+      "path": "Data/Visuals/Water_Extinction_Matrix_Toaster.bin",
+      "sha256": "8AD019294F763A3457AE2CDFCE024516BC3AF0E008A537680BEC8C44259F60D6"
+    },
+    {
+      "aligned16": true,
+      "binaryLike": true,
+      "bytes": 1572864,
+      "exists": true,
+      "path": "Data/Visuals/Water_Extinction_Matrix_Overkill.bin",
+      "sha256": "6D8D7ACF02A763A7096C681E5D734F3B37C2595E45977753DBCE1C5161A5A98C"
+    },
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 12178,
+      "exists": true,
+      "path": "Data/Precomputed/dalton_gas_toxicity_manifest.json",
+      "sha256": "B898FC578433F79A0281D9E912865593C2DD21EA3BFB06932027065103393FF0"
+    },
+    {
+      "aligned16": true,
+      "binaryLike": true,
+      "bytes": 128128,
+      "exists": true,
+      "path": "Data/Precomputed/dalton_gas_toxicity.bin",
+      "sha256": "A0D6AAB39497BA771FCA7D4C5754C31C0F0CDBEAFF0F9860B44B01BC7240C9DD"
+    },
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 8377,
+      "exists": true,
+      "path": "Data/Audio/Acoustic_LUT.manifest.json",
+      "sha256": "19FB3F941A0F9A4CA09835E9659CD7B7540043ACFFAA20D7CF5712103AB99294"
+    },
+    {
+      "aligned16": true,
+      "binaryLike": true,
+      "bytes": 524288,
+      "exists": true,
+      "path": "Data/Audio/Acoustic_LUT.bin",
+      "sha256": "F0C1EFB278901AE7D1E29E9FCBFD82C82507DA853C8A3130ADBCCB626F7D90CB"
+    },
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 54117,
+      "exists": true,
+      "path": "Tools/Taxonomy/compile_taxonomy.py",
+      "sha256": "FF092D76D3E8A6673E3460617D0B2D63BD3A4EF52DDCCE0642F9140CE1938DB7"
+    },
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 24413,
+      "exists": true,
+      "path": "Tools/Taxonomy/verify_taxonomy.py",
+      "sha256": "C5C31B70DC53D6376DFACD2C2D0A9C49392731AAA5DBBE7C9DF6129EF81F3455"
+    },
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 11727,
+      "exists": true,
+      "path": "Tools/Taxonomy/audit_taxonomy_data.py",
+      "sha256": "9381C40E76192DEEF0D7CF6EAB62647DF0CA27B34B0EADA3E84D58E7EE2DA428"
+    },
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 6267,
+      "exists": true,
+      "path": "Tools/Taxonomy/run_taxonomy_economy_million_step.py",
+      "sha256": "D6DEB61662BC215B934B3587225414C3D9868C36C2485587343899B37CA61179"
+    },
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 6876,
+      "exists": true,
+      "path": "Tools/Taxonomy/run_verify_sweep.py",
+      "sha256": "0F3641FE80140EAA6A2C60907C8D0482A831521F68A6ADE7E59876A9C7F5B35F"
+    },
+    {
+      "aligned16": null,
+      "binaryLike": false,
+      "bytes": 33913,
+      "exists": true,
+      "path": "Tools/Taxonomy/deep_freeze_taxonomy_audit.py",
+      "sha256": "AE3D51937D60C72AA325DBD62CDBFC8FDED30C08F2D6FAB0AB46C422273C0BFE"
+    }
+  ],
+  "failures": [],
+  "passed": true,
+  "schema": "H8.TAXONOMY.ARTIFACT_SEAL.V1"
+}

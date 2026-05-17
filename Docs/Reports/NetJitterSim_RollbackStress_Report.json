@@ -2,28 +2,28 @@
   "config": {
     "clients": 2,
     "input_delay_ticks": 8,
-    "jitter_ms": 40,
+    "jitter_ms": 80,
     "latency_ms": 200,
-    "loss_bps": 500,
-    "loss_percent_text": "5%",
-    "redundancy": 16,
-    "rollback_ticks": 64,
+    "loss_bps": 800,
+    "loss_percent_text": "8%",
+    "redundancy": 24,
+    "rollback_ticks": 96,
     "seed": 1313166385,
     "tick_ms": 20,
     "ticks": 600
   },
   "network": {
-    "delivered_packets": 1203,
-    "estimated_payload_bytes_per_second": 26900,
-    "lost_packets": 77,
-    "payload_bytes": 344320,
-    "sent_packets": 1280
+    "delivered_packets": 1186,
+    "estimated_payload_bytes_per_second": 39320,
+    "lost_packets": 114,
+    "payload_bytes": 511168,
+    "sent_packets": 1300
   },
   "rollback": {
-    "corrected_slots": 1190,
-    "events": 1190,
-    "max_depth_ticks": 4,
-    "predicted_slots": 2729,
+    "corrected_slots": 809,
+    "events": 809,
+    "max_depth_ticks": 5,
+    "predicted_slots": 1808,
     "too_old_corrections": 0
   },
   "samples": {

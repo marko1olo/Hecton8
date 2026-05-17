@@ -10,7 +10,6 @@ from __future__ import annotations
 import importlib.util
 import pathlib
 import sys
-import tempfile
 import types
 
 
@@ -97,7 +96,7 @@ def run_guard_checks(verifier, replay) -> list[str]:
     )
     expect_runtime(
         "XXHASH_MODULE_FILE_GUARD",
-        "has no __file__",
+        "has no file/spec path",
         lambda: verifier.verify_module_path(types.SimpleNamespace(), pathlib.Path.cwd()),
         errors,
     )
@@ -235,15 +234,15 @@ def run_guard_checks(verifier, replay) -> list[str]:
         replay.shuffle_hash128 = original_shuffle
         replay.unshuffle_hash128 = original_unshuffle
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        package_root = pathlib.Path(temp_dir)
-        helper_name = "_h8_temp_xxhash_helper_probe"
-        helper_module = types.ModuleType(helper_name)
-        helper_module.__file__ = str(package_root / "helper.py")
-        sys.modules[helper_name] = helper_module
-        verifier.remove_new_modules_loaded_from(package_root, set(sys.modules) - {helper_name})
-        if helper_name in sys.modules:
-            errors.append("XXHASH_TEMP_HELPER_MODULE_CLEANUP_GUARD did not remove temp helper")
+    package_root = pathlib.Path(__file__).resolve().parents[2] / ".codex-artifacts" / "replay-reference-verifier"
+    package_root.mkdir(parents=True, exist_ok=True)
+    helper_name = "_h8_temp_xxhash_helper_probe"
+    helper_module = types.ModuleType(helper_name)
+    helper_module.__file__ = str(package_root / "helper.py")
+    sys.modules[helper_name] = helper_module
+    verifier.remove_new_modules_loaded_from(package_root, set(sys.modules) - {helper_name})
+    if helper_name in sys.modules:
+        errors.append("XXHASH_TEMP_HELPER_MODULE_CLEANUP_GUARD did not remove temp helper")
 
     return errors
 

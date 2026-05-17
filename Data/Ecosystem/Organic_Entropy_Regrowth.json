@@ -1,0 +1,189 @@
+{
+  "schema": "H8_Organic_Entropy_Regrowth",
+  "version": 2,
+  "status": "ENTROPY BALANCED",
+  "unityVerificationStatus": "PENDING_UNITY_VERIFICATION",
+  "macroSectorMeters": 512,
+  "gridWidth": 64,
+  "gridHeight": 64,
+  "entropyTestWorldSeed": 0,
+  "macroSectorOriginX": 0,
+  "macroSectorOriginZ": 0,
+  "baseGrowthProgressPerDayQ": 10,
+  "nutrientDiffusionPermille": 220,
+  "passiveNutrientRecoveryPerDayQ": 2,
+  "nutrientPenaltyOnMiningQ": 90,
+  "minimumNutrientsQ": 24,
+  "seedToMatureProgressQ": 100,
+  "tombstoneBaseDecayDays": 8,
+  "preyGrowthPermille": 115,
+  "predationPermille": 28,
+  "predatorConversionPermille": 50,
+  "predatorMortalityPermille": 35,
+  "minApexRespawnDays": 7,
+  "maxApexRespawnDays": 90,
+  "physicalBasis": {
+    "secondsPerDay": 86400,
+    "macroCellSizeMeters": 512,
+    "eddyDiffusivityM2PerSecond": 0.6674962962962963,
+    "diffusionFormula": "nutrientDiffusionPermille = round(eddyDiffusivityM2PerSecond * secondsPerDay / (macroCellSizeMeters^2) * 1000)",
+    "q10TemperatureCoefficient": 2.0,
+    "referenceTemperatureCelsius": 10.0,
+    "temperatureFormula": "growthScale = q10TemperatureCoefficient^((biomeTemperatureCelsius - referenceTemperatureCelsius) / 10)",
+    "redfieldMolarRatioCNP": {
+      "carbon": 106,
+      "nitrogen": 16,
+      "phosphorus": 1
+    },
+    "nutrientAuthority": "macro detritus/nitrate debt, not particle chemistry",
+    "biomeTemperatureCelsius": [
+      24.0,
+      16.0,
+      14.0,
+      2.0
+    ]
+  },
+  "macroCalibrationBasis": {
+    "authority": "deterministic macro ecology calibration; physical chemistry stops at Fickian diffusion, Q10, and Redfield metadata",
+    "growth": {
+      "targetSeedToMatureDaysAtFullNutrients": 10,
+      "baseGrowthProgressPerDayQFormula": "ceil(seedToMatureProgressQ / targetSeedToMatureDaysAtFullNutrients)"
+    },
+    "nutrients": {
+      "minimumNutrientRatioPermille": 94,
+      "passiveRecoveryDaysFromMinimumToFull": 116,
+      "passiveNutrientRecoveryPerDayQFormula": "ceil((255 - minimumNutrientsQ) / passiveRecoveryDaysFromMinimumToFull)",
+      "miningPenaltyRecoveryDays": 45,
+      "nutrientPenaltyOnMiningQFormula": "passiveNutrientRecoveryPerDayQ * miningPenaltyRecoveryDays"
+    },
+    "foodWeb": {
+      "preyBiomassDoublingDays": 6.37,
+      "preyGrowthPermilleFormula": "round((2^(1 / preyBiomassDoublingDays) - 1) * 1000)",
+      "predationEncounterHalfLifeDays": 24.4,
+      "predationPermilleFormula": "round((1 - 2^(-1 / predationEncounterHalfLifeDays)) * 1000)",
+      "predatorAssimilationRatio": 0.05,
+      "predatorConversionPermilleFormula": "round(predatorAssimilationRatio * 1000)",
+      "predatorStarvationHalfLifeDays": 19.4,
+      "predatorMortalityPermilleFormula": "round((1 - 2^(-1 / predatorStarvationHalfLifeDays)) * 1000)"
+    },
+    "tombstone": {
+      "labileDetritusTurnoverDays": 8,
+      "tombstoneBaseDecayDaysFormula": "labileDetritusTurnoverDays"
+    },
+    "apexRespawn": {
+      "minimumCarcassSignalDays": 7,
+      "maximumAbyssRewildingDays": 90,
+      "minApexRespawnDaysFormula": "minimumCarcassSignalDays",
+      "maxApexRespawnDaysFormula": "maximumAbyssRewildingDays"
+    }
+  },
+  "biomes": [
+    {
+      "id": 0,
+      "name": "Safe Shallows",
+      "temperatureQ": 240,
+      "nutrientStartQ": 230,
+      "expectedHalfRecoveryDaysUnderTotalOverharvest": 28
+    },
+    {
+      "id": 1,
+      "name": "Temperate Reef",
+      "temperatureQ": 190,
+      "nutrientStartQ": 210,
+      "expectedHalfRecoveryDaysUnderTotalOverharvest": 41
+    },
+    {
+      "id": 2,
+      "name": "Thermal Vent",
+      "temperatureQ": 180,
+      "nutrientStartQ": 190,
+      "expectedHalfRecoveryDaysUnderTotalOverharvest": 44
+    },
+    {
+      "id": 3,
+      "name": "Deep Abyss",
+      "temperatureQ": 80,
+      "nutrientStartQ": 150,
+      "expectedHalfRecoveryDaysUnderTotalOverharvest": 88
+    }
+  ],
+  "acceptance": {
+    "simulationDays": 1000,
+    "mode": "total_overharvest",
+    "minFinalMatureRatio": 0.98,
+    "safeShallowsVsDeepAbyssMinRecoveryRatio": 3.0
+  },
+  "binaryContract": {
+    "magic": "H8OR",
+    "version": 2,
+    "endianness": "little",
+    "alignmentBytes": 16,
+    "headerStruct": "<4sIIIIIIIIIIIIIIIIIII",
+    "biomeStruct": "<IBBHHHHHHIIIH",
+    "dayRecordStruct": "<HBBBBBBHIH",
+    "cellRecordStruct": "<HHBBBBHHI",
+    "headerBytes": 80,
+    "biomeRecordBytes": 32,
+    "dayRecordBytes": 16,
+    "cellRecordBytes": 16,
+    "apexRespawnLutBytes": 65536,
+    "lookupModel": "stateless offset reads from SHINOBU/DataVault readonly bytes"
+  },
+  "hPhiAudit": {
+    "dataSovereigntyIncreased": true,
+    "privateRuntimeStateRequired": false,
+    "lookupModel": "static binary plus manifest offsets; no GameObject truth and no mutable manager authority",
+    "stateOwner": "GlobalDataVault readonly page or memory-mapped cold data",
+    "crossDomainContract": "WORLD/ECOLOGY publishes data only; runtime consumers query offsets or typed DataVault pages"
+  },
+  "extraDataFields": {
+    "toaster": {
+      "curveAccess": "day stride 10",
+      "cellAccess": "cell stride 4",
+      "payload": "final cell stage, nutrient byte, static silt stain visual id"
+    },
+    "ultra": {
+      "curveAccess": "all 1000 days",
+      "cellAccess": "every final cell record",
+      "payload": "stateHash, overkillNoiseQ, harmonic biolum scar id, overgrowth residue phase"
+    }
+  },
+  "scalabilityProfiles": {
+    "toaster": {
+      "profileId": "organic.entropy.toaster.rust_nursery_minimal",
+      "visualPayloadId": "fx.organic.toaster.static_silt_stain",
+      "daySampleStride": 10,
+      "cellSampleStride": 4,
+      "visualHarmonicOctaves": 0,
+      "runtimeRule": "read decimated daily curve and final cell state; no per-cell animation authority"
+    },
+    "middle": {
+      "profileId": "organic.entropy.middle.pressure_rot",
+      "visualPayloadId": "fx.organic.middle.detritus_pulse",
+      "daySampleStride": 5,
+      "cellSampleStride": 2,
+      "visualHarmonicOctaves": 2,
+      "runtimeRule": "read 5-day curve samples and cheap biolum pulse"
+    },
+    "high": {
+      "profileId": "organic.entropy.high.black_kelp_debt",
+      "visualPayloadId": "fx.organic.high.multi_phase_bloom",
+      "daySampleStride": 2,
+      "cellSampleStride": 1,
+      "visualHarmonicOctaves": 5,
+      "runtimeRule": "read dense curve samples and drive layered flora tint/sway"
+    },
+    "ultra": {
+      "profileId": "organic.entropy.ultra.abyssal_overgrowth_overkill",
+      "visualPayloadId": "fx.organic.ultra.harmonic_rot_and_biolum_scar",
+      "daySampleStride": 1,
+      "cellSampleStride": 1,
+      "visualHarmonicOctaves": 8,
+      "runtimeRule": "full 1000-day curve plus per-cell visual hash for overgrowth scars, harmonic bloom, and dirty biolum residue"
+    }
+  },
+  "loreVoice": {
+    "forbiddenRegister": "white-wall lab copy and polished showroom science",
+    "approvedTone": "rust nursery, nutrient debt, black kelp, sulfur scab, pressure rot, biolum scar"
+  }
+}

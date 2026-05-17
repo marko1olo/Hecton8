@@ -3,9 +3,11 @@
   "byte_order": "little-endian",
   "magic_ascii": "H8HYDRO\\0",
   "version": 1,
+  "alignment_bytes": 16,
   "header": {
-    "format": "<8sIIII",
-    "bytes": 24,
+    "format": "<8sIIIIII",
+    "bytes": 32,
+    "aligned_16_byte": true,
     "fields": [
       {
         "name": "magic",
@@ -36,12 +38,28 @@
         "byte_offset": 20,
         "bytes": 4,
         "format": "uint32_le"
+      },
+      {
+        "name": "header_bytes",
+        "byte_offset": 24,
+        "bytes": 4,
+        "format": "uint32_le"
+      },
+      {
+        "name": "alignment_bytes",
+        "byte_offset": 28,
+        "bytes": 4,
+        "format": "uint32_le"
       }
     ]
   },
   "record": {
-    "format": "<IIfffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    "bytes": 220,
+    "format": "<IIffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "bytes": 224,
+    "semantic_float_count": 53,
+    "padding_float_count": 1,
+    "padding_bytes": 4,
+    "aligned_16_byte": true,
     "fields": [
       {
         "index": -2,
@@ -374,6 +392,11 @@
         "format": "float32_le"
       }
     ]
+  },
+  "file": {
+    "expected_bytes_for_hull_count": 1152,
+    "aligned_16_byte": true,
+    "record_start_offsets_16_byte_aligned": true
   },
   "hull_order": [
     "SLEEK",

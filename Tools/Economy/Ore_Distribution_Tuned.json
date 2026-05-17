@@ -1,0 +1,1049 @@
+{
+  "schema_id": "economy.ore_distribution_tuned.v1",
+  "source_path": "C:/Hecton8/Data/Economy/Ore_Distribution.json",
+  "source_format": "json",
+  "source_sha256": "69178711485687302dcba23e33ea20b9860ff0baffcd22470feda6f8e428ad4e",
+  "threshold_minutes": 60.0,
+  "tuning_applied": true,
+  "baseline_p99_minutes": 79.555405,
+  "final_p99_minutes": 59.285135,
+  "tuning_history": [
+    {
+      "pass": 0,
+      "p99_minutes": 79.55540540540544,
+      "copper_p99_minutes": 59.28378378378378
+    },
+    {
+      "pass": 1,
+      "p99_minutes": 59.285135135135164,
+      "copper_p99_minutes": 55.5
+    }
+  ],
+  "scalability": {
+    "toaster": {
+      "profile_id": "GRIT_TOASTER_STRIPPED",
+      "lookup_contract": "uint16_weighted_cumulative_only",
+      "max_extra_fields_per_resource": 0,
+      "resource_payload": [
+        "resource_hash32",
+        "lcg_spawn_weight_u16"
+      ],
+      "runtime_notes": "Hash and weight payload only; display and visual payload stripped before runtime ingest."
+    },
+    "middle": {
+      "profile_id": "WET_RIG_STANDARD",
+      "lookup_contract": "uint16_weighted_cumulative_plus_display",
+      "resource_payload": [
+        "resource_hash32",
+        "resource_display_name",
+        "lcg_spawn_weight_u16"
+      ]
+    },
+    "high": {
+      "profile_id": "BLACK_RIG_RTX_OVERKILL",
+      "lookup_contract": "deterministic_weighted_lookup_plus_visual_hints",
+      "lore_tone": "wet hull grit, dead-wire copper, black-resin sludge",
+      "extra_data": {
+        "cluster_noise_octaves": 4,
+        "inspection_gradient_samples": 8,
+        "mica_glint_probability_q16": 983,
+        "wet_soot_overlay_weight_q16": 3277
+      },
+      "extra_data_derivation": {
+        "cluster_noise_octaves": "2 base sediment strata + 2 pressure-scatter bands",
+        "inspection_gradient_samples": "2^3 power-of-two LUT lane for high profile resource inspection",
+        "mica_glint_probability_q16": "round(0.015 * 65535)",
+        "wet_soot_overlay_weight_q16": "round(0.050 * 65535)"
+      }
+    },
+    "ultra": {
+      "profile_id": "ABYSS_GOD_MODE_VISUALS",
+      "lookup_contract": "deterministic_weighted_lookup_plus_harmonic_noise",
+      "lore_tone": "pressure-black ore bloom with hydraulic lamp noise",
+      "extra_data": {
+        "cluster_noise_octaves": 6,
+        "inspection_gradient_samples": 16,
+        "harmonic_detail_bands": 5,
+        "resource_scar_highlight_lut_samples": 32
+      },
+      "extra_data_derivation": {
+        "cluster_noise_octaves": "2 base sediment strata + 4 high-pressure harmonic bands",
+        "inspection_gradient_samples": "2^4 power-of-two LUT lane for god-mode resource inspection",
+        "harmonic_detail_bands": "five low-frequency industrial noise bands, visual-only",
+        "resource_scar_highlight_lut_samples": "2^5 sample lane for scarcity highlight LUT"
+      }
+    }
+  },
+  "biomes": [
+    {
+      "biome_id": "biome.safe_shallows",
+      "biome_display_name": "Safe Shallows",
+      "distance_from_origin_m": 250.0,
+      "resources": [
+        {
+          "resource_id": "Data_TitaniumScrap",
+          "resource_hash32": 3511699502,
+          "resource_display_name": "Titanium Scrap",
+          "lcg_spawn_weight_u16": 821
+        },
+        {
+          "resource_id": "Data_Copper",
+          "resource_hash32": 2276338585,
+          "resource_display_name": "Copper Ore",
+          "lcg_spawn_weight_u16": 182
+        },
+        {
+          "resource_id": "Data_SilicaShards",
+          "resource_hash32": 3920354616,
+          "resource_display_name": "Silica Shards",
+          "lcg_spawn_weight_u16": 217
+        },
+        {
+          "resource_id": "Data_FiberKelp",
+          "resource_hash32": 2069849578,
+          "resource_display_name": "Fiber Kelp",
+          "lcg_spawn_weight_u16": 188
+        },
+        {
+          "resource_id": "Data_HydrocarbonResin",
+          "resource_hash32": 248205602,
+          "resource_display_name": "Hydrocarbon Resin",
+          "lcg_spawn_weight_u16": 108
+        },
+        {
+          "resource_id": "Data_SulfurClumps",
+          "resource_hash32": 3346875565,
+          "resource_display_name": "Sulfur Clumps",
+          "lcg_spawn_weight_u16": 53
+        },
+        {
+          "resource_id": "Data_SilverOre",
+          "resource_hash32": 884621125,
+          "resource_display_name": "Silver Ore",
+          "lcg_spawn_weight_u16": 32
+        },
+        {
+          "resource_id": "Data_GoldOre",
+          "resource_hash32": 4056809162,
+          "resource_display_name": "Gold Ore",
+          "lcg_spawn_weight_u16": 20
+        },
+        {
+          "resource_id": "Data_LithiumCrystal",
+          "resource_hash32": 3763503872,
+          "resource_display_name": "Lithium Crystal",
+          "lcg_spawn_weight_u16": 30
+        },
+        {
+          "resource_id": "Data_NickelOre",
+          "resource_hash32": 1037165092,
+          "resource_display_name": "Nickel Ore",
+          "lcg_spawn_weight_u16": 25
+        },
+        {
+          "resource_id": "Data_CobaltAlloy",
+          "resource_hash32": 857583970,
+          "resource_display_name": "Cobalt Alloy",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_ThermalGel",
+          "resource_hash32": 1601052383,
+          "resource_display_name": "Thermal Gel",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_CarbonGraphite",
+          "resource_hash32": 2008184373,
+          "resource_display_name": "Carbon Graphite",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_RareEarthDust",
+          "resource_hash32": 1997058338,
+          "resource_display_name": "Rare Earth Dust",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_AbyssalCrystal",
+          "resource_hash32": 702456815,
+          "resource_display_name": "Abyssal Crystal",
+          "lcg_spawn_weight_u16": 1
+        }
+      ]
+    },
+    {
+      "biome_id": "biome.kelp_karst",
+      "biome_display_name": "Kelp Karst",
+      "distance_from_origin_m": 600.0,
+      "resources": [
+        {
+          "resource_id": "Data_TitaniumScrap",
+          "resource_hash32": 3511699502,
+          "resource_display_name": "Titanium Scrap",
+          "lcg_spawn_weight_u16": 281
+        },
+        {
+          "resource_id": "Data_Copper",
+          "resource_hash32": 2276338585,
+          "resource_display_name": "Copper Ore",
+          "lcg_spawn_weight_u16": 208
+        },
+        {
+          "resource_id": "Data_SilicaShards",
+          "resource_hash32": 3920354616,
+          "resource_display_name": "Silica Shards",
+          "lcg_spawn_weight_u16": 184
+        },
+        {
+          "resource_id": "Data_FiberKelp",
+          "resource_hash32": 2069849578,
+          "resource_display_name": "Fiber Kelp",
+          "lcg_spawn_weight_u16": 330
+        },
+        {
+          "resource_id": "Data_HydrocarbonResin",
+          "resource_hash32": 248205602,
+          "resource_display_name": "Hydrocarbon Resin",
+          "lcg_spawn_weight_u16": 174
+        },
+        {
+          "resource_id": "Data_SulfurClumps",
+          "resource_hash32": 3346875565,
+          "resource_display_name": "Sulfur Clumps",
+          "lcg_spawn_weight_u16": 75
+        },
+        {
+          "resource_id": "Data_SilverOre",
+          "resource_hash32": 884621125,
+          "resource_display_name": "Silver Ore",
+          "lcg_spawn_weight_u16": 49
+        },
+        {
+          "resource_id": "Data_GoldOre",
+          "resource_hash32": 4056809162,
+          "resource_display_name": "Gold Ore",
+          "lcg_spawn_weight_u16": 23
+        },
+        {
+          "resource_id": "Data_LithiumCrystal",
+          "resource_hash32": 3763503872,
+          "resource_display_name": "Lithium Crystal",
+          "lcg_spawn_weight_u16": 33
+        },
+        {
+          "resource_id": "Data_NickelOre",
+          "resource_hash32": 1037165092,
+          "resource_display_name": "Nickel Ore",
+          "lcg_spawn_weight_u16": 23
+        },
+        {
+          "resource_id": "Data_CobaltAlloy",
+          "resource_hash32": 857583970,
+          "resource_display_name": "Cobalt Alloy",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_ThermalGel",
+          "resource_hash32": 1601052383,
+          "resource_display_name": "Thermal Gel",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_CarbonGraphite",
+          "resource_hash32": 2008184373,
+          "resource_display_name": "Carbon Graphite",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_RareEarthDust",
+          "resource_hash32": 1997058338,
+          "resource_display_name": "Rare Earth Dust",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_AbyssalCrystal",
+          "resource_hash32": 702456815,
+          "resource_display_name": "Abyssal Crystal",
+          "lcg_spawn_weight_u16": 1
+        }
+      ]
+    },
+    {
+      "biome_id": "biome.sediment_drift",
+      "biome_display_name": "Sediment Drift",
+      "distance_from_origin_m": 900.0,
+      "resources": [
+        {
+          "resource_id": "Data_TitaniumScrap",
+          "resource_hash32": 3511699502,
+          "resource_display_name": "Titanium Scrap",
+          "lcg_spawn_weight_u16": 223
+        },
+        {
+          "resource_id": "Data_Copper",
+          "resource_hash32": 2276338585,
+          "resource_display_name": "Copper Ore",
+          "lcg_spawn_weight_u16": 204
+        },
+        {
+          "resource_id": "Data_SilicaShards",
+          "resource_hash32": 3920354616,
+          "resource_display_name": "Silica Shards",
+          "lcg_spawn_weight_u16": 276
+        },
+        {
+          "resource_id": "Data_FiberKelp",
+          "resource_hash32": 2069849578,
+          "resource_display_name": "Fiber Kelp",
+          "lcg_spawn_weight_u16": 76
+        },
+        {
+          "resource_id": "Data_HydrocarbonResin",
+          "resource_hash32": 248205602,
+          "resource_display_name": "Hydrocarbon Resin",
+          "lcg_spawn_weight_u16": 142
+        },
+        {
+          "resource_id": "Data_SulfurClumps",
+          "resource_hash32": 3346875565,
+          "resource_display_name": "Sulfur Clumps",
+          "lcg_spawn_weight_u16": 86
+        },
+        {
+          "resource_id": "Data_SilverOre",
+          "resource_hash32": 884621125,
+          "resource_display_name": "Silver Ore",
+          "lcg_spawn_weight_u16": 116
+        },
+        {
+          "resource_id": "Data_GoldOre",
+          "resource_hash32": 4056809162,
+          "resource_display_name": "Gold Ore",
+          "lcg_spawn_weight_u16": 37
+        },
+        {
+          "resource_id": "Data_LithiumCrystal",
+          "resource_hash32": 3763503872,
+          "resource_display_name": "Lithium Crystal",
+          "lcg_spawn_weight_u16": 45
+        },
+        {
+          "resource_id": "Data_NickelOre",
+          "resource_hash32": 1037165092,
+          "resource_display_name": "Nickel Ore",
+          "lcg_spawn_weight_u16": 40
+        },
+        {
+          "resource_id": "Data_CobaltAlloy",
+          "resource_hash32": 857583970,
+          "resource_display_name": "Cobalt Alloy",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_ThermalGel",
+          "resource_hash32": 1601052383,
+          "resource_display_name": "Thermal Gel",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_CarbonGraphite",
+          "resource_hash32": 2008184373,
+          "resource_display_name": "Carbon Graphite",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_RareEarthDust",
+          "resource_hash32": 1997058338,
+          "resource_display_name": "Rare Earth Dust",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_AbyssalCrystal",
+          "resource_hash32": 702456815,
+          "resource_display_name": "Abyssal Crystal",
+          "lcg_spawn_weight_u16": 1
+        }
+      ]
+    },
+    {
+      "biome_id": "biome.fossil_reef",
+      "biome_display_name": "Fossil Reef",
+      "distance_from_origin_m": 1300.0,
+      "resources": [
+        {
+          "resource_id": "Data_TitaniumScrap",
+          "resource_hash32": 3511699502,
+          "resource_display_name": "Titanium Scrap",
+          "lcg_spawn_weight_u16": 157
+        },
+        {
+          "resource_id": "Data_Copper",
+          "resource_hash32": 2276338585,
+          "resource_display_name": "Copper Ore",
+          "lcg_spawn_weight_u16": 134
+        },
+        {
+          "resource_id": "Data_SilicaShards",
+          "resource_hash32": 3920354616,
+          "resource_display_name": "Silica Shards",
+          "lcg_spawn_weight_u16": 181
+        },
+        {
+          "resource_id": "Data_FiberKelp",
+          "resource_hash32": 2069849578,
+          "resource_display_name": "Fiber Kelp",
+          "lcg_spawn_weight_u16": 137
+        },
+        {
+          "resource_id": "Data_HydrocarbonResin",
+          "resource_hash32": 248205602,
+          "resource_display_name": "Hydrocarbon Resin",
+          "lcg_spawn_weight_u16": 184
+        },
+        {
+          "resource_id": "Data_SulfurClumps",
+          "resource_hash32": 3346875565,
+          "resource_display_name": "Sulfur Clumps",
+          "lcg_spawn_weight_u16": 107
+        },
+        {
+          "resource_id": "Data_SilverOre",
+          "resource_hash32": 884621125,
+          "resource_display_name": "Silver Ore",
+          "lcg_spawn_weight_u16": 84
+        },
+        {
+          "resource_id": "Data_GoldOre",
+          "resource_hash32": 4056809162,
+          "resource_display_name": "Gold Ore",
+          "lcg_spawn_weight_u16": 50
+        },
+        {
+          "resource_id": "Data_LithiumCrystal",
+          "resource_hash32": 3763503872,
+          "resource_display_name": "Lithium Crystal",
+          "lcg_spawn_weight_u16": 51
+        },
+        {
+          "resource_id": "Data_NickelOre",
+          "resource_hash32": 1037165092,
+          "resource_display_name": "Nickel Ore",
+          "lcg_spawn_weight_u16": 47
+        },
+        {
+          "resource_id": "Data_CobaltAlloy",
+          "resource_hash32": 857583970,
+          "resource_display_name": "Cobalt Alloy",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_ThermalGel",
+          "resource_hash32": 1601052383,
+          "resource_display_name": "Thermal Gel",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_CarbonGraphite",
+          "resource_hash32": 2008184373,
+          "resource_display_name": "Carbon Graphite",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_RareEarthDust",
+          "resource_hash32": 1997058338,
+          "resource_display_name": "Rare Earth Dust",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_AbyssalCrystal",
+          "resource_hash32": 702456815,
+          "resource_display_name": "Abyssal Crystal",
+          "lcg_spawn_weight_u16": 1
+        }
+      ]
+    },
+    {
+      "biome_id": "biome.volcanic_glass",
+      "biome_display_name": "Volcanic Glass",
+      "distance_from_origin_m": 1800.0,
+      "resources": [
+        {
+          "resource_id": "Data_TitaniumScrap",
+          "resource_hash32": 3511699502,
+          "resource_display_name": "Titanium Scrap",
+          "lcg_spawn_weight_u16": 108
+        },
+        {
+          "resource_id": "Data_Copper",
+          "resource_hash32": 2276338585,
+          "resource_display_name": "Copper Ore",
+          "lcg_spawn_weight_u16": 87
+        },
+        {
+          "resource_id": "Data_SilicaShards",
+          "resource_hash32": 3920354616,
+          "resource_display_name": "Silica Shards",
+          "lcg_spawn_weight_u16": 282
+        },
+        {
+          "resource_id": "Data_FiberKelp",
+          "resource_hash32": 2069849578,
+          "resource_display_name": "Fiber Kelp",
+          "lcg_spawn_weight_u16": 26
+        },
+        {
+          "resource_id": "Data_HydrocarbonResin",
+          "resource_hash32": 248205602,
+          "resource_display_name": "Hydrocarbon Resin",
+          "lcg_spawn_weight_u16": 112
+        },
+        {
+          "resource_id": "Data_SulfurClumps",
+          "resource_hash32": 3346875565,
+          "resource_display_name": "Sulfur Clumps",
+          "lcg_spawn_weight_u16": 176
+        },
+        {
+          "resource_id": "Data_SilverOre",
+          "resource_hash32": 884621125,
+          "resource_display_name": "Silver Ore",
+          "lcg_spawn_weight_u16": 66
+        },
+        {
+          "resource_id": "Data_GoldOre",
+          "resource_hash32": 4056809162,
+          "resource_display_name": "Gold Ore",
+          "lcg_spawn_weight_u16": 68
+        },
+        {
+          "resource_id": "Data_LithiumCrystal",
+          "resource_hash32": 3763503872,
+          "resource_display_name": "Lithium Crystal",
+          "lcg_spawn_weight_u16": 85
+        },
+        {
+          "resource_id": "Data_NickelOre",
+          "resource_hash32": 1037165092,
+          "resource_display_name": "Nickel Ore",
+          "lcg_spawn_weight_u16": 56
+        },
+        {
+          "resource_id": "Data_CobaltAlloy",
+          "resource_hash32": 857583970,
+          "resource_display_name": "Cobalt Alloy",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_ThermalGel",
+          "resource_hash32": 1601052383,
+          "resource_display_name": "Thermal Gel",
+          "lcg_spawn_weight_u16": 21
+        },
+        {
+          "resource_id": "Data_CarbonGraphite",
+          "resource_hash32": 2008184373,
+          "resource_display_name": "Carbon Graphite",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_RareEarthDust",
+          "resource_hash32": 1997058338,
+          "resource_display_name": "Rare Earth Dust",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_AbyssalCrystal",
+          "resource_hash32": 702456815,
+          "resource_display_name": "Abyssal Crystal",
+          "lcg_spawn_weight_u16": 1
+        }
+      ]
+    },
+    {
+      "biome_id": "biome.thermal_vent",
+      "biome_display_name": "Thermal Vent Stack",
+      "distance_from_origin_m": 2400.0,
+      "resources": [
+        {
+          "resource_id": "Data_TitaniumScrap",
+          "resource_hash32": 3511699502,
+          "resource_display_name": "Titanium Scrap",
+          "lcg_spawn_weight_u16": 64
+        },
+        {
+          "resource_id": "Data_Copper",
+          "resource_hash32": 2276338585,
+          "resource_display_name": "Copper Ore",
+          "lcg_spawn_weight_u16": 62
+        },
+        {
+          "resource_id": "Data_SilicaShards",
+          "resource_hash32": 3920354616,
+          "resource_display_name": "Silica Shards",
+          "lcg_spawn_weight_u16": 96
+        },
+        {
+          "resource_id": "Data_FiberKelp",
+          "resource_hash32": 2069849578,
+          "resource_display_name": "Fiber Kelp",
+          "lcg_spawn_weight_u16": 11
+        },
+        {
+          "resource_id": "Data_HydrocarbonResin",
+          "resource_hash32": 248205602,
+          "resource_display_name": "Hydrocarbon Resin",
+          "lcg_spawn_weight_u16": 101
+        },
+        {
+          "resource_id": "Data_SulfurClumps",
+          "resource_hash32": 3346875565,
+          "resource_display_name": "Sulfur Clumps",
+          "lcg_spawn_weight_u16": 191
+        },
+        {
+          "resource_id": "Data_SilverOre",
+          "resource_hash32": 884621125,
+          "resource_display_name": "Silver Ore",
+          "lcg_spawn_weight_u16": 41
+        },
+        {
+          "resource_id": "Data_GoldOre",
+          "resource_hash32": 4056809162,
+          "resource_display_name": "Gold Ore",
+          "lcg_spawn_weight_u16": 63
+        },
+        {
+          "resource_id": "Data_LithiumCrystal",
+          "resource_hash32": 3763503872,
+          "resource_display_name": "Lithium Crystal",
+          "lcg_spawn_weight_u16": 81
+        },
+        {
+          "resource_id": "Data_NickelOre",
+          "resource_hash32": 1037165092,
+          "resource_display_name": "Nickel Ore",
+          "lcg_spawn_weight_u16": 79
+        },
+        {
+          "resource_id": "Data_CobaltAlloy",
+          "resource_hash32": 857583970,
+          "resource_display_name": "Cobalt Alloy",
+          "lcg_spawn_weight_u16": 24
+        },
+        {
+          "resource_id": "Data_ThermalGel",
+          "resource_hash32": 1601052383,
+          "resource_display_name": "Thermal Gel",
+          "lcg_spawn_weight_u16": 59
+        },
+        {
+          "resource_id": "Data_CarbonGraphite",
+          "resource_hash32": 2008184373,
+          "resource_display_name": "Carbon Graphite",
+          "lcg_spawn_weight_u16": 8
+        },
+        {
+          "resource_id": "Data_RareEarthDust",
+          "resource_hash32": 1997058338,
+          "resource_display_name": "Rare Earth Dust",
+          "lcg_spawn_weight_u16": 1
+        },
+        {
+          "resource_id": "Data_AbyssalCrystal",
+          "resource_hash32": 702456815,
+          "resource_display_name": "Abyssal Crystal",
+          "lcg_spawn_weight_u16": 1
+        }
+      ]
+    },
+    {
+      "biome_id": "biome.magnetic_trench",
+      "biome_display_name": "Magnetic Trench",
+      "distance_from_origin_m": 3200.0,
+      "resources": [
+        {
+          "resource_id": "Data_TitaniumScrap",
+          "resource_hash32": 3511699502,
+          "resource_display_name": "Titanium Scrap",
+          "lcg_spawn_weight_u16": 51
+        },
+        {
+          "resource_id": "Data_Copper",
+          "resource_hash32": 2276338585,
+          "resource_display_name": "Copper Ore",
+          "lcg_spawn_weight_u16": 48
+        },
+        {
+          "resource_id": "Data_SilicaShards",
+          "resource_hash32": 3920354616,
+          "resource_display_name": "Silica Shards",
+          "lcg_spawn_weight_u16": 51
+        },
+        {
+          "resource_id": "Data_FiberKelp",
+          "resource_hash32": 2069849578,
+          "resource_display_name": "Fiber Kelp",
+          "lcg_spawn_weight_u16": 11
+        },
+        {
+          "resource_id": "Data_HydrocarbonResin",
+          "resource_hash32": 248205602,
+          "resource_display_name": "Hydrocarbon Resin",
+          "lcg_spawn_weight_u16": 52
+        },
+        {
+          "resource_id": "Data_SulfurClumps",
+          "resource_hash32": 3346875565,
+          "resource_display_name": "Sulfur Clumps",
+          "lcg_spawn_weight_u16": 55
+        },
+        {
+          "resource_id": "Data_SilverOre",
+          "resource_hash32": 884621125,
+          "resource_display_name": "Silver Ore",
+          "lcg_spawn_weight_u16": 38
+        },
+        {
+          "resource_id": "Data_GoldOre",
+          "resource_hash32": 4056809162,
+          "resource_display_name": "Gold Ore",
+          "lcg_spawn_weight_u16": 49
+        },
+        {
+          "resource_id": "Data_LithiumCrystal",
+          "resource_hash32": 3763503872,
+          "resource_display_name": "Lithium Crystal",
+          "lcg_spawn_weight_u16": 48
+        },
+        {
+          "resource_id": "Data_NickelOre",
+          "resource_hash32": 1037165092,
+          "resource_display_name": "Nickel Ore",
+          "lcg_spawn_weight_u16": 123
+        },
+        {
+          "resource_id": "Data_CobaltAlloy",
+          "resource_hash32": 857583970,
+          "resource_display_name": "Cobalt Alloy",
+          "lcg_spawn_weight_u16": 47
+        },
+        {
+          "resource_id": "Data_ThermalGel",
+          "resource_hash32": 1601052383,
+          "resource_display_name": "Thermal Gel",
+          "lcg_spawn_weight_u16": 18
+        },
+        {
+          "resource_id": "Data_CarbonGraphite",
+          "resource_hash32": 2008184373,
+          "resource_display_name": "Carbon Graphite",
+          "lcg_spawn_weight_u16": 24
+        },
+        {
+          "resource_id": "Data_RareEarthDust",
+          "resource_hash32": 1997058338,
+          "resource_display_name": "Rare Earth Dust",
+          "lcg_spawn_weight_u16": 14
+        },
+        {
+          "resource_id": "Data_AbyssalCrystal",
+          "resource_hash32": 702456815,
+          "resource_display_name": "Abyssal Crystal",
+          "lcg_spawn_weight_u16": 1
+        }
+      ]
+    },
+    {
+      "biome_id": "biome.brine_hadal",
+      "biome_display_name": "Brine Hadal Basin",
+      "distance_from_origin_m": 4300.0,
+      "resources": [
+        {
+          "resource_id": "Data_TitaniumScrap",
+          "resource_hash32": 3511699502,
+          "resource_display_name": "Titanium Scrap",
+          "lcg_spawn_weight_u16": 42
+        },
+        {
+          "resource_id": "Data_Copper",
+          "resource_hash32": 2276338585,
+          "resource_display_name": "Copper Ore",
+          "lcg_spawn_weight_u16": 34
+        },
+        {
+          "resource_id": "Data_SilicaShards",
+          "resource_hash32": 3920354616,
+          "resource_display_name": "Silica Shards",
+          "lcg_spawn_weight_u16": 36
+        },
+        {
+          "resource_id": "Data_FiberKelp",
+          "resource_hash32": 2069849578,
+          "resource_display_name": "Fiber Kelp",
+          "lcg_spawn_weight_u16": 11
+        },
+        {
+          "resource_id": "Data_HydrocarbonResin",
+          "resource_hash32": 248205602,
+          "resource_display_name": "Hydrocarbon Resin",
+          "lcg_spawn_weight_u16": 45
+        },
+        {
+          "resource_id": "Data_SulfurClumps",
+          "resource_hash32": 3346875565,
+          "resource_display_name": "Sulfur Clumps",
+          "lcg_spawn_weight_u16": 95
+        },
+        {
+          "resource_id": "Data_SilverOre",
+          "resource_hash32": 884621125,
+          "resource_display_name": "Silver Ore",
+          "lcg_spawn_weight_u16": 29
+        },
+        {
+          "resource_id": "Data_GoldOre",
+          "resource_hash32": 4056809162,
+          "resource_display_name": "Gold Ore",
+          "lcg_spawn_weight_u16": 38
+        },
+        {
+          "resource_id": "Data_LithiumCrystal",
+          "resource_hash32": 3763503872,
+          "resource_display_name": "Lithium Crystal",
+          "lcg_spawn_weight_u16": 35
+        },
+        {
+          "resource_id": "Data_NickelOre",
+          "resource_hash32": 1037165092,
+          "resource_display_name": "Nickel Ore",
+          "lcg_spawn_weight_u16": 48
+        },
+        {
+          "resource_id": "Data_CobaltAlloy",
+          "resource_hash32": 857583970,
+          "resource_display_name": "Cobalt Alloy",
+          "lcg_spawn_weight_u16": 24
+        },
+        {
+          "resource_id": "Data_ThermalGel",
+          "resource_hash32": 1601052383,
+          "resource_display_name": "Thermal Gel",
+          "lcg_spawn_weight_u16": 33
+        },
+        {
+          "resource_id": "Data_CarbonGraphite",
+          "resource_hash32": 2008184373,
+          "resource_display_name": "Carbon Graphite",
+          "lcg_spawn_weight_u16": 28
+        },
+        {
+          "resource_id": "Data_RareEarthDust",
+          "resource_hash32": 1997058338,
+          "resource_display_name": "Rare Earth Dust",
+          "lcg_spawn_weight_u16": 27
+        },
+        {
+          "resource_id": "Data_AbyssalCrystal",
+          "resource_hash32": 702456815,
+          "resource_display_name": "Abyssal Crystal",
+          "lcg_spawn_weight_u16": 7
+        }
+      ]
+    },
+    {
+      "biome_id": "biome.glass_plains",
+      "biome_display_name": "The Glass Plains",
+      "distance_from_origin_m": 5600.0,
+      "resources": [
+        {
+          "resource_id": "Data_TitaniumScrap",
+          "resource_hash32": 3511699502,
+          "resource_display_name": "Titanium Scrap",
+          "lcg_spawn_weight_u16": 34
+        },
+        {
+          "resource_id": "Data_Copper",
+          "resource_hash32": 2276338585,
+          "resource_display_name": "Copper Ore",
+          "lcg_spawn_weight_u16": 27
+        },
+        {
+          "resource_id": "Data_SilicaShards",
+          "resource_hash32": 3920354616,
+          "resource_display_name": "Silica Shards",
+          "lcg_spawn_weight_u16": 138
+        },
+        {
+          "resource_id": "Data_FiberKelp",
+          "resource_hash32": 2069849578,
+          "resource_display_name": "Fiber Kelp",
+          "lcg_spawn_weight_u16": 11
+        },
+        {
+          "resource_id": "Data_HydrocarbonResin",
+          "resource_hash32": 248205602,
+          "resource_display_name": "Hydrocarbon Resin",
+          "lcg_spawn_weight_u16": 34
+        },
+        {
+          "resource_id": "Data_SulfurClumps",
+          "resource_hash32": 3346875565,
+          "resource_display_name": "Sulfur Clumps",
+          "lcg_spawn_weight_u16": 48
+        },
+        {
+          "resource_id": "Data_SilverOre",
+          "resource_hash32": 884621125,
+          "resource_display_name": "Silver Ore",
+          "lcg_spawn_weight_u16": 23
+        },
+        {
+          "resource_id": "Data_GoldOre",
+          "resource_hash32": 4056809162,
+          "resource_display_name": "Gold Ore",
+          "lcg_spawn_weight_u16": 29
+        },
+        {
+          "resource_id": "Data_LithiumCrystal",
+          "resource_hash32": 3763503872,
+          "resource_display_name": "Lithium Crystal",
+          "lcg_spawn_weight_u16": 61
+        },
+        {
+          "resource_id": "Data_NickelOre",
+          "resource_hash32": 1037165092,
+          "resource_display_name": "Nickel Ore",
+          "lcg_spawn_weight_u16": 33
+        },
+        {
+          "resource_id": "Data_CobaltAlloy",
+          "resource_hash32": 857583970,
+          "resource_display_name": "Cobalt Alloy",
+          "lcg_spawn_weight_u16": 15
+        },
+        {
+          "resource_id": "Data_ThermalGel",
+          "resource_hash32": 1601052383,
+          "resource_display_name": "Thermal Gel",
+          "lcg_spawn_weight_u16": 14
+        },
+        {
+          "resource_id": "Data_CarbonGraphite",
+          "resource_hash32": 2008184373,
+          "resource_display_name": "Carbon Graphite",
+          "lcg_spawn_weight_u16": 27
+        },
+        {
+          "resource_id": "Data_RareEarthDust",
+          "resource_hash32": 1997058338,
+          "resource_display_name": "Rare Earth Dust",
+          "lcg_spawn_weight_u16": 18
+        },
+        {
+          "resource_id": "Data_AbyssalCrystal",
+          "resource_hash32": 702456815,
+          "resource_display_name": "Abyssal Crystal",
+          "lcg_spawn_weight_u16": 11
+        }
+      ]
+    },
+    {
+      "biome_id": "biome.abyssal_rift",
+      "biome_display_name": "Abyssal Rift",
+      "distance_from_origin_m": 7200.0,
+      "resources": [
+        {
+          "resource_id": "Data_TitaniumScrap",
+          "resource_hash32": 3511699502,
+          "resource_display_name": "Titanium Scrap",
+          "lcg_spawn_weight_u16": 28
+        },
+        {
+          "resource_id": "Data_Copper",
+          "resource_hash32": 2276338585,
+          "resource_display_name": "Copper Ore",
+          "lcg_spawn_weight_u16": 19
+        },
+        {
+          "resource_id": "Data_SilicaShards",
+          "resource_hash32": 3920354616,
+          "resource_display_name": "Silica Shards",
+          "lcg_spawn_weight_u16": 23
+        },
+        {
+          "resource_id": "Data_FiberKelp",
+          "resource_hash32": 2069849578,
+          "resource_display_name": "Fiber Kelp",
+          "lcg_spawn_weight_u16": 11
+        },
+        {
+          "resource_id": "Data_HydrocarbonResin",
+          "resource_hash32": 248205602,
+          "resource_display_name": "Hydrocarbon Resin",
+          "lcg_spawn_weight_u16": 30
+        },
+        {
+          "resource_id": "Data_SulfurClumps",
+          "resource_hash32": 3346875565,
+          "resource_display_name": "Sulfur Clumps",
+          "lcg_spawn_weight_u16": 44
+        },
+        {
+          "resource_id": "Data_SilverOre",
+          "resource_hash32": 884621125,
+          "resource_display_name": "Silver Ore",
+          "lcg_spawn_weight_u16": 16
+        },
+        {
+          "resource_id": "Data_GoldOre",
+          "resource_hash32": 4056809162,
+          "resource_display_name": "Gold Ore",
+          "lcg_spawn_weight_u16": 21
+        },
+        {
+          "resource_id": "Data_LithiumCrystal",
+          "resource_hash32": 3763503872,
+          "resource_display_name": "Lithium Crystal",
+          "lcg_spawn_weight_u16": 28
+        },
+        {
+          "resource_id": "Data_NickelOre",
+          "resource_hash32": 1037165092,
+          "resource_display_name": "Nickel Ore",
+          "lcg_spawn_weight_u16": 39
+        },
+        {
+          "resource_id": "Data_CobaltAlloy",
+          "resource_hash32": 857583970,
+          "resource_display_name": "Cobalt Alloy",
+          "lcg_spawn_weight_u16": 19
+        },
+        {
+          "resource_id": "Data_ThermalGel",
+          "resource_hash32": 1601052383,
+          "resource_display_name": "Thermal Gel",
+          "lcg_spawn_weight_u16": 19
+        },
+        {
+          "resource_id": "Data_CarbonGraphite",
+          "resource_hash32": 2008184373,
+          "resource_display_name": "Carbon Graphite",
+          "lcg_spawn_weight_u16": 23
+        },
+        {
+          "resource_id": "Data_RareEarthDust",
+          "resource_hash32": 1997058338,
+          "resource_display_name": "Rare Earth Dust",
+          "lcg_spawn_weight_u16": 19
+        },
+        {
+          "resource_id": "Data_AbyssalCrystal",
+          "resource_hash32": 702456815,
+          "resource_display_name": "Abyssal Crystal",
+          "lcg_spawn_weight_u16": 16
+        }
+      ]
+    }
+  ]
+}

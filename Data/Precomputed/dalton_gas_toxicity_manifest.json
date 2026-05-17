@@ -1,0 +1,398 @@
+{
+  "axes": {
+    "depthMeters": {
+      "count": 2001,
+      "max": 2000.0,
+      "min": 0.0,
+      "step": 1.0
+    }
+  },
+  "binary": "Data/Precomputed/dalton_gas_toxicity.bin",
+  "binaryHeader": "H8GT64",
+  "columnCount": 16,
+  "columns": [
+    "depthMeters",
+    "ambientPressureAtm",
+    "ambientPressureKPa",
+    "oxygenFraction",
+    "oxygenPartialPressureAtm",
+    "oxygenPartialPressureKPa",
+    "nitrogenEquivalentFraction",
+    "nitrogenEquivalentPartialPressureAtm",
+    "nitrogenEquivalentPartialPressureKPa",
+    "carbonDioxideFraction",
+    "carbonDioxidePartialPressureKPa",
+    "hypoxia01",
+    "oxygenCnsToxicity01",
+    "nitrogenNarcosis01",
+    "carbonDioxideToxicity01",
+    "compositeDanger01"
+  ],
+  "constants": {
+    "atmosphericPressurePa": 101325.0,
+    "dryAirNormalizedFractions": {
+      "carbonDioxide": 0.00041997480151190935,
+      "nitrogenEquivalent": 0.7901325920444774,
+      "oxygen": 0.2094474331540108
+    },
+    "dryAirSourceFractions": {
+      "argon": 0.00934,
+      "carbonDioxide": 0.00042,
+      "nitrogen": 0.78084,
+      "oxygen": 0.20946
+    },
+    "kPaPerAtm": 101.325,
+    "seawaterDensityKgM3": 1025.0,
+    "standardGravityMps2": 9.80665,
+    "thresholds": {
+      "co2IdlhKPa": 4.053,
+      "co2IdlhPpm": 40000.0,
+      "co2RelTwaKPa": 0.506625,
+      "co2RelTwaPpm": 5000.0,
+      "co2StelKPa": 3.03975,
+      "co2StelPpm": 30000.0,
+      "hypoxiaFatalKPa": 10.0,
+      "hypoxiaSoftKPa": 16.0,
+      "nitrogenNarcosisFullAtm": 8.0,
+      "nitrogenNarcosisSoftAtm": 4.0,
+      "oxygenCnsFullAtm": 1.6,
+      "oxygenCnsSoftAtm": 1.4,
+      "ppmToFraction": 1e-06
+    }
+  },
+  "depthCount": 2001,
+  "domain": "DATA/GAS_DYNAMICS",
+  "endianness": "little",
+  "fileAligned16": true,
+  "fileAlignmentBytes": 16,
+  "fileBytes": 128128,
+  "floatFormat": "<f",
+  "hashes": [
+    {
+      "fnv1a32": 3093455440,
+      "hex": "0xB8626250",
+      "id": "h8.data.gas.dalton_toxicity.v2"
+    },
+    {
+      "fnv1a32": 3601327554,
+      "hex": "0xD6A7E5C2",
+      "id": "h8.data.gas.dry_air_noaa_normalized"
+    },
+    {
+      "fnv1a32": 3977427536,
+      "hex": "0xED12BA50",
+      "id": "h8.data.gas.depth_meters"
+    },
+    {
+      "fnv1a32": 230516913,
+      "hex": "0x0DBD68B1",
+      "id": "h8.data.gas.ambient_pressure_atm"
+    },
+    {
+      "fnv1a32": 1498538744,
+      "hex": "0x5951E2F8",
+      "id": "h8.data.gas.oxygen_partial_pressure"
+    },
+    {
+      "fnv1a32": 1300932265,
+      "hex": "0x4D8AA6A9",
+      "id": "h8.data.gas.nitrogen_equivalent_partial_pressure"
+    },
+    {
+      "fnv1a32": 1021046350,
+      "hex": "0x3CDBEE4E",
+      "id": "h8.data.gas.carbon_dioxide_partial_pressure"
+    },
+    {
+      "fnv1a32": 3455922316,
+      "hex": "0xCDFD308C",
+      "id": "h8.data.gas.hypoxia_curve"
+    },
+    {
+      "fnv1a32": 1796982269,
+      "hex": "0x6B1BC5FD",
+      "id": "h8.data.gas.oxygen_cns_curve"
+    },
+    {
+      "fnv1a32": 278414643,
+      "hex": "0x10984533",
+      "id": "h8.data.gas.nitrogen_narcosis_curve"
+    },
+    {
+      "fnv1a32": 2366285622,
+      "hex": "0x8D0AA736",
+      "id": "h8.data.gas.carbon_dioxide_curve"
+    },
+    {
+      "fnv1a32": 1763810807,
+      "hex": "0x69219DF7",
+      "id": "h8.data.gas.composite_danger_curve"
+    },
+    {
+      "fnv1a32": 2336378908,
+      "hex": "0x8B42501C",
+      "id": "h8.data.gas.toaster_i3_stride_8"
+    },
+    {
+      "fnv1a32": 578626462,
+      "hex": "0x227D239E",
+      "id": "h8.data.gas.middle_stride_2"
+    },
+    {
+      "fnv1a32": 2162688124,
+      "hex": "0x80E8007C",
+      "id": "h8.data.gas.high_stride_1"
+    },
+    {
+      "fnv1a32": 2543399035,
+      "hex": "0x9799307B",
+      "id": "h8.data.gas.rtx_overkill_gradients"
+    },
+    {
+      "fnv1a32": 3274942933,
+      "hex": "0xC333A9D5",
+      "id": "h8.data.gas.toaster_binary.h8gl"
+    },
+    {
+      "fnv1a32": 2640785027,
+      "hex": "0x9D672E83",
+      "id": "h8.data.gas.overkill_binary.h8gx"
+    }
+  ],
+  "headerBytes": 64,
+  "headerFormat": "<4sIIIIIffffffIIII",
+  "physics": {
+    "co2Curve": "smoothstep((ppCO2kPa - co2RelTwaKPa) / (co2IdlhKPa - co2RelTwaKPa))",
+    "co2KPaDerivation": "co2KPa = co2Ppm * (1 / 1000000) * 101.325",
+    "compositeDanger": "max(hypoxia, oxygenCns, nitrogenNarcosis, carbonDioxide)",
+    "daltonLaw": "partialPressure = gasFraction * absolutePressure",
+    "hydrostaticPressure": "P_abs = P_atm + rho_seawater * g0 * depthMeters",
+    "hypoxiaCurve": "smoothstep((16kPa - ppO2kPa) / (16kPa - 10kPa))",
+    "nitrogenNarcosisCurve": "smoothstep((ppN2EquivalentAtm - 4.00) / (8.00 - 4.00))",
+    "oxygenCnsCurve": "smoothstep((ppO2Atm - 1.40) / (1.60 - 1.40))"
+  },
+  "qualityTiers": [
+    {
+      "binary": "Data/Precomputed/dalton_gas_toxicity_toaster.bin",
+      "binaryHeader": "H8GL64",
+      "columns": [
+        "oxygenCnsToxicity01",
+        "nitrogenNarcosis01",
+        "carbonDioxideToxicity01",
+        "compositeDanger01"
+      ],
+      "depthStrideMeters": 8,
+      "id": "toaster_i3",
+      "lookup": "nearest",
+      "notes": "Use coarse depth buckets and max danger flag only. No interpolation, no gradients."
+    },
+    {
+      "columns": [
+        "depthMeters",
+        "ambientPressureAtm",
+        "ambientPressureKPa",
+        "oxygenFraction",
+        "oxygenPartialPressureAtm",
+        "oxygenPartialPressureKPa",
+        "nitrogenEquivalentFraction",
+        "nitrogenEquivalentPartialPressureAtm",
+        "nitrogenEquivalentPartialPressureKPa",
+        "carbonDioxideFraction",
+        "carbonDioxidePartialPressureKPa",
+        "hypoxia01",
+        "oxygenCnsToxicity01",
+        "nitrogenNarcosis01",
+        "carbonDioxideToxicity01",
+        "compositeDanger01"
+      ],
+      "depthStrideMeters": 2,
+      "id": "middle",
+      "lookup": "linear",
+      "notes": "Full rows, linear depth interpolation on control cadence only."
+    },
+    {
+      "binary": "Data/Precomputed/dalton_gas_toxicity_overkill.bin",
+      "binaryHeader": "H8GX64",
+      "columns": [
+        "depthMeters",
+        "ambientPressureAtm",
+        "ambientPressureKPa",
+        "oxygenFraction",
+        "oxygenPartialPressureAtm",
+        "oxygenPartialPressureKPa",
+        "nitrogenEquivalentFraction",
+        "nitrogenEquivalentPartialPressureAtm",
+        "nitrogenEquivalentPartialPressureKPa",
+        "carbonDioxideFraction",
+        "carbonDioxidePartialPressureKPa",
+        "hypoxia01",
+        "oxygenCnsToxicity01",
+        "nitrogenNarcosis01",
+        "carbonDioxideToxicity01",
+        "compositeDanger01"
+      ],
+      "depthStrideMeters": 1,
+      "extraData": [
+        "central_difference_danger_gradient",
+        "visor_pulse_gain",
+        "breath_audio_filter_gain"
+      ],
+      "id": "high",
+      "lookup": "linear_plus_gradient",
+      "notes": "Spend saved simulation time on warning presentation, not molecule simulation."
+    },
+    {
+      "binary": "Data/Precomputed/dalton_gas_toxicity_overkill.bin",
+      "binaryHeader": "H8GX64",
+      "columns": [
+        "depthMeters",
+        "ambientPressureAtm",
+        "ambientPressureKPa",
+        "oxygenFraction",
+        "oxygenPartialPressureAtm",
+        "oxygenPartialPressureKPa",
+        "nitrogenEquivalentFraction",
+        "nitrogenEquivalentPartialPressureAtm",
+        "nitrogenEquivalentPartialPressureKPa",
+        "carbonDioxideFraction",
+        "carbonDioxidePartialPressureKPa",
+        "hypoxia01",
+        "oxygenCnsToxicity01",
+        "nitrogenNarcosis01",
+        "carbonDioxideToxicity01",
+        "compositeDanger01"
+      ],
+      "depthStrideMeters": 1,
+      "extraData": [
+        "depthMeters",
+        "compositeDanger01",
+        "highResolutionDangerGradientPerMeter",
+        "oxygenCnsGradientPerMeter",
+        "nitrogenNarcosisGradientPerMeter",
+        "carbonDioxideGradientPerMeter",
+        "visorPulseGain",
+        "breathAudioFilterGain",
+        "complexHarmonicNoiseSeed01",
+        "complexHarmonicNoisePhaseRadians",
+        "perceptualColorLutDrive",
+        "dirtyRegulatorDistortionGain"
+      ],
+      "id": "rtx_overkill",
+      "lookup": "cubic_authoring_preview_or_gpu_visual_sync",
+      "notes": "Gameplay truth remains the same scalar table; extra channels drive visual/audio overload."
+    }
+  ],
+  "rowAligned16": true,
+  "rowBytes": 64,
+  "rowFormat": "<ffffffffffffffff",
+  "rowMajorIndex": "byteOffset = 64 + ((depthIndex * 16) + columnIndex) * 4",
+  "runtimeContract": {
+    "atlasDomain": "46 Hypoxia & Gas Toxicity",
+    "atlasFamily": "Environment and survival",
+    "dataSovereignty": "stateless aligned binary lookup; no per-system private solver state",
+    "hotPathAllocation": "0 B/frame",
+    "loadCadence": "cold_load_only",
+    "phase": "SIMULATION produces gas danger scalar; VISUAL_SYNC consumes presentation fields",
+    "rtxOverkillBinary": "Data/Precomputed/dalton_gas_toxicity_overkill.bin",
+    "toasterBinary": "Data/Precomputed/dalton_gas_toxicity_toaster.bin"
+  },
+  "schema": "H8.DaltonGasToxicity.v2",
+  "sha256": "A0D6AAB39497BA771FCA7D4C5754C31C0F0CDBEAFF0F9860B44B01BC7240C9DD",
+  "shape": [
+    2001,
+    16
+  ],
+  "sourceNotes": [
+    "NOAA diving standards use 1.40 ATA planned oxygen partial pressure and 1.60 ATA decompression allowance.",
+    "US Navy diving physiology references nitrogen narcosis around 4 ATA nitrogen partial pressure with severe impairment by 8 ATA.",
+    "NIOSH carbon dioxide limits provide 5000 ppm TWA, 30000 ppm STEL, and 40000 ppm IDLH anchors."
+  ],
+  "sourceReferences": [
+    {
+      "authority": "NOAA Office of Marine and Aviation Operations",
+      "id": "NOAA_NDSSM_2025",
+      "url": "https://www.omao.noaa.gov/sites/default/files/2025-06/2025%20NDSSM%20NOAA%20Diving%20Standards%20and%20Safety%20Manual%20.pdf",
+      "usedFor": [
+        "oxygenCnsSoftAtm=1.40",
+        "oxygenCnsFullAtm=1.60",
+        "nitrogenNarcosisSoftAtm=4.00"
+      ]
+    },
+    {
+      "authority": "Naval Sea Systems Command",
+      "id": "US_NAVY_DIVING_MANUAL_REV7",
+      "url": "https://www.navsea.navy.mil/Portals/103/Documents/SUPSALV/Diving/US%20NAVY%20DIVING%20MANUAL_REV7_Change%20A-FINAL-reduced.pdf",
+      "usedFor": [
+        "nitrogenNarcosisSoftAtm=4.00",
+        "nitrogenNarcosisFullAtm=8.00"
+      ]
+    },
+    {
+      "authority": "CDC NIOSH",
+      "id": "NIOSH_CO2_IDLH",
+      "url": "https://www.cdc.gov/niosh/idlh/124389.html",
+      "usedFor": [
+        "co2RelTwaPpm=5000",
+        "co2StelPpm=30000",
+        "co2IdlhPpm=40000",
+        "co2KPa = co2Ppm * 0.000001 * 101.325"
+      ]
+    }
+  ],
+  "status": "DALTON_GAS_TOXICITY_BAKED",
+  "tierBinaries": {
+    "rtx_overkill": {
+      "binary": "Data/Precomputed/dalton_gas_toxicity_overkill.bin",
+      "columnCount": 12,
+      "columns": [
+        "depthMeters",
+        "compositeDanger01",
+        "highResolutionDangerGradientPerMeter",
+        "oxygenCnsGradientPerMeter",
+        "nitrogenNarcosisGradientPerMeter",
+        "carbonDioxideGradientPerMeter",
+        "visorPulseGain",
+        "breathAudioFilterGain",
+        "complexHarmonicNoiseSeed01",
+        "complexHarmonicNoisePhaseRadians",
+        "perceptualColorLutDrive",
+        "dirtyRegulatorDistortionGain"
+      ],
+      "depthStepMeters": 1.0,
+      "endianness": "little",
+      "fileAligned16": true,
+      "fileBytes": 96112,
+      "headerBytes": 64,
+      "magic": "H8GX",
+      "rowAligned16": true,
+      "rowBytes": 48,
+      "rowCount": 2001,
+      "rowFormat": "<ffffffffffff",
+      "sha256": "75457EE7B7477FE68CBE793422589672BC7C27B1D4AC8F0169F9E8DD98FAB5FE",
+      "version": 2
+    },
+    "toaster_i3": {
+      "binary": "Data/Precomputed/dalton_gas_toxicity_toaster.bin",
+      "columnCount": 4,
+      "columns": [
+        "oxygenCnsToxicity01",
+        "nitrogenNarcosis01",
+        "carbonDioxideToxicity01",
+        "compositeDanger01"
+      ],
+      "depthStepMeters": 8.0,
+      "endianness": "little",
+      "fileAligned16": true,
+      "fileBytes": 4080,
+      "headerBytes": 64,
+      "magic": "H8GL",
+      "rowAligned16": true,
+      "rowBytes": 16,
+      "rowCount": 251,
+      "rowFormat": "<ffff",
+      "sha256": "55EBA424343AA566F14E579B883C1016A8FAAC6F5B348A5F70493FA3D9823721",
+      "version": 2
+    }
+  },
+  "tool": "Tools/DaltonGasToxicityBaker.py"
+}

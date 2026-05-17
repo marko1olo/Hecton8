@@ -148,15 +148,16 @@ class VerifyLoreTests(unittest.TestCase):
         with contextlib.redirect_stdout(output):
             self.assertEqual(VerifyLore.main(["--check"]), 0)
 
+        expected_entries = VerifyLore.load_source_entries(Path("Docs/Lore"))
         blob, records = VerifyLore.read_blob(Path("Data/Lore/Encyclopedia.h8bin"))
-        self.assertEqual(len(records), 1)
+        self.assertEqual(len(records), len(expected_entries))
         self.assertGreater(len(blob), 0)
         VerifyLore.verify_manifest(
             Path("Data/Lore/Encyclopedia.h8bin"),
             Path("Data/Lore/Encyclopedia.manifest.json"),
             Path("Docs/Lore"),
         )
-        self.assertIn("CHECK OK: entries=1", output.getvalue())
+        self.assertIn(f"CHECK OK: entries={len(expected_entries)}", output.getvalue())
         self.assertIn("blob=Data/Lore/Encyclopedia.h8bin", output.getvalue())
         self.assertEqual(
             VerifyLore.canonicalize_path(Path("Docs/Lore/Lore_Bible.md")),

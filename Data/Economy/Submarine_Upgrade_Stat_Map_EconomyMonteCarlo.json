@@ -1,0 +1,19 @@
+{
+  "schema_id": "economy.submarine_upgrade_stat_map.v1.economy_monte_carlo",
+  "schema_hash32": 4265123035,
+  "status": "PASS",
+  "steps": 1000000,
+  "seed": 4069841216,
+  "seed_derivation": {
+    "algorithm": "FNV-1a 32-bit UTF-16",
+    "label": "economy.submarine_upgrade_stat_map.v1.monte_carlo_seed"
+  },
+  "lcg": {
+    "multiplier": 1664525,
+    "increment": 1013904223,
+    "modulus": 4294967296
+  },
+  "graph_cycle_count": 0,
+  "worst_closed_loop_delta_value_units": -0.7,
+  "infinite_resource_loop_proof": "no profitable craft->deconstruct cycle found in deterministic closed-loop audit"
+}

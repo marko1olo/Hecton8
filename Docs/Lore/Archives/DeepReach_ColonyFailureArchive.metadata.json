@@ -1,0 +1,392 @@
+{
+  "archive_id": "deep_reach_aux_node_failure_archive",
+  "status": "ARCHIVES COMPILED",
+  "evidence_class": "STATIC_DOC",
+  "source_markdown": "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.md",
+  "coordinate_model": "AUP",
+  "constants": {
+    "site_depth_m": 500,
+    "ambient_pressure_mpa": 5.0,
+    "ambient_pressure_kpa": 5000,
+    "pressure_model": "depth_m * 0.01 MPa",
+    "water_density_kg_m3": 1025.0,
+    "gravity_m_s2": 9.80665,
+    "breach_discharge_coefficient_cd": 0.62,
+    "render_gi_depth_palette_saturation_m": 500
+  },
+  "logs": [
+    {
+      "log_id": "FAULT-001",
+      "timestamp_utc": "2147-09-03T04:12:00Z",
+      "title": "AIR_LEDGER_DESYNC",
+      "map_node_id": "archive_aux500_hab_a_001",
+      "aup_sector": [0, -1, 4],
+      "local_m": [12.0, -500.0, 41.0],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [1361286512, 71708594]
+    },
+    {
+      "log_id": "FAULT-002",
+      "timestamp_utc": "2147-09-03T05:40:00Z",
+      "title": "STRUCTURAL_FATIGUE_UNDERREPORTED",
+      "map_node_id": "archive_aux500_hull_c_002",
+      "aup_sector": [0, -1, 4],
+      "local_m": [31.4, -500.0, 64.2],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [3550014518, 2908503494]
+    },
+    {
+      "log_id": "FAULT-003",
+      "timestamp_utc": "2147-09-03T08:25:00Z",
+      "title": "BREACH_RATE_MASKED_AS_PUMP_LOAD",
+      "map_node_id": "archive_aux500_pump_b_003",
+      "aup_sector": [0, -1, 4],
+      "local_m": [5.6, -503.0, 79.7],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [822934043, 2033101255, 3268286546]
+    },
+    {
+      "log_id": "FAULT-004",
+      "timestamp_utc": "2147-09-03T11:15:00Z",
+      "title": "POWER_PRIORITY_COLLISION",
+      "map_node_id": "archive_aux500_pwr_a_004",
+      "aup_sector": [0, -1, 4],
+      "local_m": [-18.0, -499.5, 66.1],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [2185499708, 4027154086, 1562252576]
+    },
+    {
+      "log_id": "FAULT-005",
+      "timestamp_utc": "2147-09-03T14:50:00Z",
+      "title": "PRESSURIZED_CONTAINER_OVERRIDE",
+      "map_node_id": "archive_aux500_lab_3_005",
+      "aup_sector": [0, -1, 4],
+      "local_m": [-44.5, -500.0, 51.8],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [2749184637, 2908096734]
+    },
+    {
+      "log_id": "FAULT-006",
+      "timestamp_utc": "2147-09-03T18:30:00Z",
+      "title": "DALTON_PARTIAL_PRESSURE_INVERSION",
+      "map_node_id": "archive_aux500_hab_c_006",
+      "aup_sector": [0, -1, 4],
+      "local_m": [16.9, -500.0, 23.3],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [2872587453, 1361286512]
+    },
+    {
+      "log_id": "FAULT-007",
+      "timestamp_utc": "2147-09-03T21:10:00Z",
+      "title": "REPAIR_QUEUE_STARVATION",
+      "map_node_id": "archive_aux500_fab_a_007",
+      "aup_sector": [0, -1, 4],
+      "local_m": [42.0, -500.0, 18.2],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [3511699502, 3550014518, 3187749649]
+    },
+    {
+      "log_id": "FAULT-008",
+      "timestamp_utc": "2147-09-04T00:44:00Z",
+      "title": "BLACK_BOX_RING_OVERWRITE",
+      "map_node_id": "archive_aux500_ops_a_008",
+      "aup_sector": [0, -1, 4],
+      "local_m": [0.0, -500.0, 0.0],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [2534372966, 71708594]
+    },
+    {
+      "log_id": "FAULT-009",
+      "timestamp_utc": "2147-09-04T03:18:00Z",
+      "title": "THERMAL_CONTROL_BACKDRIVE",
+      "map_node_id": "archive_aux500_therm_a_009",
+      "aup_sector": [0, -1, 4],
+      "local_m": [-12.7, -500.0, -35.0],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [2908096734, 1562252576]
+    },
+    {
+      "log_id": "FAULT-010",
+      "timestamp_utc": "2147-09-04T07:05:00Z",
+      "title": "DEPTH_COMPENSATION_FALSE_PASS",
+      "map_node_id": "archive_aux500_dock_a_010",
+      "aup_sector": [0, -1, 4],
+      "local_m": [64.4, -500.0, -6.5],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [1167658630, 3268286546]
+    },
+    {
+      "log_id": "FAULT-011",
+      "timestamp_utc": "2147-09-04T10:22:00Z",
+      "title": "ACOUSTIC_BEARING_MISROUTE",
+      "map_node_id": "archive_aux500_sonar_a_011",
+      "aup_sector": [0, -1, 4],
+      "local_m": [88.0, -500.0, 14.0],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [2406373322, 2534372966]
+    },
+    {
+      "log_id": "FAULT-012",
+      "timestamp_utc": "2147-09-04T14:48:00Z",
+      "title": "REACTOR_BYPASS_HEAT_SPIKE",
+      "map_node_id": "archive_aux500_pwr_b_012",
+      "aup_sector": [0, -1, 4],
+      "local_m": [-28.0, -500.0, -52.0],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [3833141382, 4027154086]
+    },
+    {
+      "log_id": "FAULT-013",
+      "timestamp_utc": "2147-09-04T19:36:00Z",
+      "title": "HULL_ARMOR_MISALLOCATION",
+      "map_node_id": "archive_aux500_hull_f_013",
+      "aup_sector": [0, -1, 4],
+      "local_m": [-72.0, -500.0, 33.0],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [932012347, 2908503494]
+    },
+    {
+      "log_id": "FAULT-014",
+      "timestamp_utc": "2147-09-05T02:11:00Z",
+      "title": "THE_ANOMALY_SENSOR_CONTACT",
+      "map_node_id": "archive_aux500_outer_hull_4_014",
+      "aup_sector": [0, -1, 4],
+      "local_m": [117.2, -500.0, 88.3],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [2406373322, 3550014518]
+    },
+    {
+      "log_id": "FAULT-015",
+      "timestamp_utc": "2147-09-05T02:19:00Z",
+      "title": "COLONY_TERMINAL_STATE",
+      "map_node_id": "archive_aux500_ops_a_015",
+      "aup_sector": [0, -1, 4],
+      "local_m": [11.72, -500.0, 88.3],
+      "depth_m": 500,
+      "pressure_kpa": 5000,
+      "linked_item_hashes": [2534372966, 2872587453]
+    }
+  ],
+  "math_audit": {
+    "status": "DERIVED_CONSTANTS_ONLY",
+    "dalton_partial_pressure": {
+      "source_log": "FAULT-006",
+      "formula": "p_i_kpa = mole_fraction_i * total_pressure_kpa",
+      "total_pressure_kpa": 430.0,
+      "mole_fractions": {
+        "o2": 0.18,
+        "n2": 0.785,
+        "co2": 0.035
+      },
+      "derived_partial_pressures_kpa": {
+        "pO2": 77.4,
+        "pN2": 337.55,
+        "pCO2": 15.05
+      },
+      "fraction_sum": 1.0
+    },
+    "torricelli_ingress": {
+      "source_log": "FAULT-003",
+      "formula": "v = sqrt(2*g*depth_m); q_m3_s = Cd * area_m2 * v; mass_kg_s = q_m3_s * rho",
+      "depth_m": 500.0,
+      "g_m_s2": 9.80665,
+      "breach_area_m2": 0.0012,
+      "cd": 0.62,
+      "rho_kg_m3": 1025.0,
+      "derived_velocity_m_s": 99.028531,
+      "derived_flow_m3_s": 0.073677,
+      "derived_mass_kg_s": 75.519158
+    },
+    "beer_lambert_visual_truth": {
+      "source_file": "Data/Visuals/Water_Extinction_README.md",
+      "formula": "I = I0 * exp(-muRgb * (1 + turbidity) * depthMeters)",
+      "depth_m": 500.0,
+      "turbidity": 0.0,
+      "mu_rgb_m_inv": {
+        "red": 0.6907755136,
+        "green": 0.0383764170,
+        "blue": 0.0046051703
+      },
+      "derived_transmittance_rgb": {
+        "red": 1.00001394724e-150,
+        "green": 0.00000000464163145,
+        "blue": 0.099999994299
+      },
+      "half_float_cache_red_at_500m": 0.0,
+      "cache_reference": "Data/Visuals/Water_Extinction_Matrix.bin uses little-endian half-float <e, 256x256x3."
+    },
+    "sabine_terminal_alcove_rt60": {
+      "source_file": "Data/Audio/Acoustic_Material_Profiles.json",
+      "formula": "T60_s = 0.161 * room_volume_m3 / sum(surface_area_m2 * absorption_coefficient)",
+      "room_dimensions_m": [8.0, 3.0, 4.0],
+      "room_volume_m3": 96.0,
+      "surface_area_m2": 136.0,
+      "absorption_area_m2_sabins": 44.56,
+      "derived_rt60_s": 0.346858,
+      "surface_budget": [
+        { "material_id": "titanium_bulkhead", "area_m2": 64.0, "absorption": 0.08, "sabins": 5.12 },
+        { "material_id": "glass_port", "area_m2": 4.0, "absorption": 0.06, "sabins": 0.24 },
+        { "material_id": "flooded_fabric", "area_m2": 12.0, "absorption": 0.91, "sabins": 10.92 },
+        { "material_id": "water_open", "area_m2": 24.0, "absorption": 0.68, "sabins": 16.32 },
+        { "material_id": "rubber_gasket", "area_m2": 2.0, "absorption": 0.88, "sabins": 1.76 },
+        { "material_id": "reactor_concrete", "area_m2": 30.0, "absorption": 0.34, "sabins": 10.2 }
+      ]
+    }
+  },
+  "binary_cache_contract": {
+    "status": "CACHE_READY_STATIC_LOOKUP",
+    "alignment_bytes": 16,
+    "lore_blob": {
+      "path": "Data/Lore/Encyclopedia.h8bin",
+      "signature": "H8LR",
+      "bytes": 41488,
+      "endianness": "little",
+      "python_structs": ["<4sIII", "<IIII"],
+      "header_fields": ["signature", "version", "count", "reserved_zero"],
+      "record_layout": "<IIII hash, absolute_offset, length, reserved_zero",
+      "source_hash": "0xBC52DB39",
+      "compression": "none/raw-utf8",
+      "tail_padding": "zero-filled to 16-byte boundary"
+    },
+    "localization_blob": {
+      "path": "Data/Localization/en_US.bin",
+      "signature": "H8LB",
+      "bytes": 60928,
+      "endianness": "little",
+      "python_structs": ["<4sHHIIIIII", "<III"],
+      "header_fields": ["signature", "version", "header_size", "entry_count", "record_size", "table_offset", "data_offset", "data_length", "flags"],
+      "record_layout": "<III hash, payload_relative_offset, length",
+      "tail_padding": "zero-filled to 16-byte boundary"
+    },
+    "lookup_model": {
+      "primary_key": "FNV-1a32 source hash or map_node_id",
+      "runtime_state": "stateless offset/length record lookup; no private per-terminal cache required",
+      "cold_import_owner": "DataVault or equivalent static arena"
+    }
+  },
+  "hash_collision_audit": {
+    "status": "ZERO_COLLISIONS",
+    "tool": "Tools/VerifyH8HashCollisions.py",
+    "report": "Docs/AgentLogs/HashCollision_CORP_FAILURE_ARCHIVIST.md",
+    "json": "Docs/AgentLogs/HashCollision_CORP_FAILURE_ARCHIVIST.json",
+    "records_checked": 1018,
+    "collision_count": 0,
+    "runtime_impact_us_per_frame": 0
+  },
+  "economy_audit": {
+    "status": "NO_INFINITE_RESOURCE_LOOP_IN_SCOPED_RECIPES",
+    "graph_report": "Docs/AgentLogs/EconomyRecipeGraphAudit_CORP_FAILURE_ARCHIVIST.md",
+    "monte_carlo_report": "Docs/AgentLogs/EconomyMonteCarlo_CORP_FAILURE_ARCHIVIST.json",
+    "crafting_monte_carlo_report": "Data/Economy/Crafting_MonteCarlo_Audit.json",
+    "crafting_cost_binary": {
+      "path": "Data/Economy/Crafting_Costs.h8bin",
+      "manifest": "Data/Economy/Crafting_Costs.manifest.json",
+      "signature": "H8CR",
+      "bytes": 7424,
+      "alignment_bytes": 16,
+      "endianness": "little",
+      "header_struct": "<4sIIIIIIIIIIIIIIIIIII",
+      "recipe_struct": "<IIIIHHHHIIIIIIIIII",
+      "ingredient_struct": "<IHHII",
+      "tool_struct": "<IIII",
+      "godmode_visual_struct": "<IIII",
+      "recipe_count": 50,
+      "ingredient_count": 171,
+      "tool_count": 38,
+      "godmode_visual_count": 50,
+        "hash_pairs": 342,
+        "hash_collisions": 0,
+        "payload_crc32": 1295072744
+      },
+      "crafting_cost_toaster_binary": {
+        "path": "Data/Economy/Crafting_Costs_Toaster.h8bin",
+        "manifest": "Data/Economy/Crafting_Costs_Toaster.manifest.json",
+        "signature": "H8CT",
+        "bytes": 2464,
+        "alignment_bytes": 16,
+        "endianness": "little",
+        "header_struct": "<4sIIIIIIIIIIIIIII",
+        "record_struct": "<IIIIIIIIIIII",
+        "record_count": 50,
+        "omitted_tables": [
+          "ingredients",
+          "required_tools",
+          "godmode_visuals"
+        ],
+        "payload_crc32": 2980799518
+      },
+    "monte_carlo_steps": 1000000,
+    "monte_carlo_seed": "0xC0FFEE15",
+    "max_positive_inventory_value_delta": 0.0,
+    "crafting_profit_steps": 0,
+    "crafting_max_value_delta_milli_units": -1000,
+    "crafting_max_mass_delta_mg": -400000,
+    "crafting_max_energy_delta_mwh": -133000,
+    "recipe_graph_cycle_count": 0,
+    "positive_margin_recipe_count": 0,
+    "deconstruct_return_ratio": 0.8
+  },
+  "scalability_payloads": {
+    "source_file": "Data/System/Visual_Scalability_Matrix.json",
+    "toaster_data": {
+      "hardware_class": "i3_or_i5_low_end_plus_MX350_2GB",
+      "fields": ["log_id", "timestamp_utc", "map_node_id", "aup_sector", "local_m", "depth_m", "pressure_kpa", "linked_item_hashes"],
+      "presentation": "plain terminal text plus 2-color palette; no harmonic terminal noise, no live acoustic graph",
+      "biolum_reference": "Data/Visuals/Biolum_BinarySchema.json constants.toasterColorCount = 2",
+      "economy_binary_reference": "Data/Economy/Crafting_Costs_Toaster.h8bin omits ingredients, required tools, and godmode visuals for low-end cache residency.",
+      "runtime_impact_us_per_frame": 0
+    },
+    "god_mode_extra_data": {
+      "hardware_class": "RTX4080_or_better_16GB_desktop",
+      "fields": ["beer_lambert_depth_gradient", "sabine_rt60_s", "dalton_partial_pressure_bars", "acoustic_carrier_hz", "pressure_pulse_delta_kpa", "terminal_corruption_variants"],
+      "presentation": "10-color terminal ramp, up to 8 harmonic noise bands, 256-sample curve payload, acoustic-reactive glitch gate clamped to 15 Hz",
+      "biolum_reference": "Data/Visuals/Biolum_BinarySchema.json godColorCount=10, maxHarmonics=8, curveSamples=256, safetyClampHz=15.0",
+      "economy_binary_reference": "Data/Economy/Crafting_Costs.h8bin retains 50 godmode visual records and full ingredient/tool tables.",
+      "fallback": "collapse to TOASTER fields and static 2-color palette when frame or memory pressure trips"
+    }
+  },
+  "atlas_alignment": {
+    "source_file": "Docs/PROJECT_ATLAS.md",
+    "atlas_domain_count": 85,
+    "fitted_domains": [
+      { "id": 4, "name": "Data Monolith (Static DB)" },
+      { "id": 69, "name": "Zero-GC Subtitles (Babel)" },
+      { "id": 70, "name": "Diegetic Terminals (3D UI)" },
+      { "id": 72, "name": "PDA Encyclopedia Streaming" },
+      { "id": 73, "name": "AUP Narrative Triggers" },
+      { "id": 74, "name": "Cartography & Fog of War" }
+    ],
+    "fit_status": "WITHIN_85_DOMAIN_MAP"
+  },
+  "h_phi_audit": {
+    "status": "LOCAL_ARCHIVE_STATELESS_GLOBAL_RUNTIME_UNCHANGED",
+    "reason": "Archive truth moved into static Markdown/JSON/H8LR binary with hash and offset lookup; consumers do not need private mutable terminal state. The project H-Phi tool reports this pass did not increase runtime Data Sovereignty because no runtime system was edited.",
+    "h_phi_report": "Docs/AgentLogs/HPhi_CORP_FAILURE_ARCHIVIST.json",
+    "runtime_data_sovereignty_increased_by_this_pass": false,
+    "observability_increased_by_this_pass": true,
+    "project_atlas_data_sovereignty_score": 0.019743027,
+    "project_atlas_binary_safe_ratio": 0.018508726,
+    "local_lookup_pattern": "hash -> record offset -> raw UTF-8 span",
+    "private_state_added": false
+  },
+  "lore_register_audit": {
+    "status": "NASA_PUNK_NOIR_DIRTY_INDUSTRIAL",
+    "approved_terms": ["wet ledger", "relay cage", "sump gallery", "pressure wound", "dead bus", "salted contacts", "black absorber"],
+    "sterile_phrase_purge_count": 5,
+    "forbidden_nonphysical_terms_present": false
+  }
+}

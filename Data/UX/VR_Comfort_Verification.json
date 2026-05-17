@@ -1,0 +1,110 @@
+{
+  "schema": "hecton8.vr_comfort_verify.v1",
+  "owner": "VR_JERK_THRESHOLD_AUDIT",
+  "status": "PASS",
+  "evidenceClass": "OFFLINE_TOOL_VALIDATED",
+  "payload": {
+    "path": "Data\\UX\\VR_Comfort_Profiles.json",
+    "schema": "hecton8.vr_comfort_profiles.v1",
+    "profileCount": 2,
+    "status": "PASS"
+  },
+  "binary": {
+    "path": "Data\\UX\\VR_Comfort_Profiles.h8bin",
+    "lengthBytes": 1472,
+    "endianness": "little",
+    "alignmentBytes": 16,
+    "profileCount": 2,
+    "curveRecordCount": 34,
+    "hashRecordCount": 38,
+    "payloadCrc32": 1408369073,
+    "sha256": "ad63eed8e1a1a3150ca7eff78f602b749a85e7fc501f0b24498176a7640008df",
+    "status": "PASS"
+  },
+  "toasterBinary": {
+    "path": "Data\\UX\\VR_Comfort_Profiles_Toaster.h8bin",
+    "lengthBytes": 1120,
+    "endianness": "little",
+    "alignmentBytes": 16,
+    "profileCount": 2,
+    "curveRecordCount": 12,
+    "hashRecordCount": 38,
+    "payloadCrc32": 1600410003,
+    "sha256": "9c3f3b67a12116ffd2e1af5a8eb84467e9372a33855a2c91832ae20f376a5f8e",
+    "status": "PASS"
+  },
+  "rtxOverkillBinary": {
+    "path": "Data\\UX\\VR_Comfort_RTXOverkill.h8bin",
+    "lengthBytes": 560,
+    "endianness": "little",
+    "alignmentBytes": 16,
+    "recordCount": 16,
+    "payloadCrc32": 1856327131,
+    "sha256": "d2545ebd0592341f8e7cc110b005cee124225ad7cdb7f5ef027d4933f6f7300b",
+    "status": "PASS"
+  },
+  "hashes": {
+    "algorithm": "FNV-1a 32-bit ASCII category-prefixed",
+    "recordCount": 38,
+    "collisionCount": 0,
+    "status": "PASS"
+  },
+  "png": {
+    "path": "Data\\UX\\VR_Comfort_Velocity_Opacity.png",
+    "lengthBytes": 46574,
+    "signature": "89504E470D0A1A0A",
+    "status": "PASS"
+  },
+  "atlasFit": {
+    "path": "Docs\\PROJECT_ATLAS.md",
+    "domains": [
+      39,
+      71
+    ],
+    "fit": "VR comfort data maps to domain 39 and shader/visor consumption maps to domain 71",
+    "status": "PASS"
+  },
+  "lore": {
+    "requiredTerms": [
+      "black",
+      "bulkhead",
+      "visor",
+      "rust",
+      "oil"
+    ],
+    "status": "PASS"
+  },
+  "structPackAudit": {
+    "gameBinaryFormats": [
+      "<8s14I",
+      "<II22f8I",
+      "<IIff",
+      "<IIII",
+      "<8s10I",
+      "<II6f"
+    ],
+    "allGameBinaryFormatsLittleEndian": true,
+    "pngWriterNote": "PNG chunk writer uses PNG-specified big-endian container integers; it is not a .h8bin/.bin gameplay blob.",
+    "status": "PASS"
+  },
+  "externalEconomyEvidence": {
+    "status": "PASS",
+    "ownership": "EXTERNAL_TO_DATA_UX_NO_RECIPE_FILES_TOUCHED_BY_THIS_TASK",
+    "monteCarlo": {
+      "path": "Docs\\Reports\\Economy_MonteCarlo_Audit.md",
+      "requiredTokenCount": 3,
+      "status": "PASS"
+    },
+    "recipeGraph": {
+      "path": "Docs\\AgentLogs\\EconomyRecipeGraphAudit_VR_JERK_THRESHOLD_AUDIT.md",
+      "requiredTokenCount": 3,
+      "status": "PASS"
+    },
+    "validator": {
+      "path": "Docs\\AgentLogs\\EconomyValidation_VR_JERK_THRESHOLD_AUDIT.md",
+      "requiredTokenCount": 3,
+      "status": "PASS"
+    }
+  },
+  "runtimeProof": "PENDING_VERIFICATION"
+}

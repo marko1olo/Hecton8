@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "localization": "Data/Localization/en_US.json",
+  "extra_text_paths": [],
+  "entries": 188,
+  "catalog_terms": 225,
+  "item_like_mentions": 11,
+  "structural_problems": [],
+  "unresolved_item_like_mentions": []
+}
