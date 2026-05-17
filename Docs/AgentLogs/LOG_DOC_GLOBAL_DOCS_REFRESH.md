@@ -19,3 +19,13 @@ What was done: Reran static doc/source/package/root scans, normalized tracked cl
 Cinematic Cheats used: Not applicable. Static documentation pass only.
 
 Exact Microseconds saved: 0 us runtime claimed.
+
+## 2026-05-17 Git Push Closeout
+
+What was wrong: The documentation refresh needed remote confirmation while the worktree still contained unrelated concurrent changes.
+
+What was done: Committed the narrow documentation refresh as `e4e42fad7 docs: refresh documentation currency`, pushed it to `origin/main`, fetched remote state, and verified `origin/main...HEAD = 0 0`. This closeout records the remote proof without staging unrelated files.
+
+Cinematic Cheats used: Not applicable. Git evidence only.
+
+Exact Microseconds saved: 0 us runtime claimed.

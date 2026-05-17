@@ -47,3 +47,15 @@ Rejected Alternatives: Moving or staging the dirty compute file was rejected as 
 Scalability potential: Stable root governance remains simple while compute evidence remains findable through report bundles.
 
 Hardware Impact: Runtime 0 us/frame.
+
+## Decision 4: Narrow Commit And Push
+
+Problem: The worktree still contains unrelated concurrent source/report changes while the documentation refresh needed to be committed and pushed.
+
+Solution: Stage only DOC_GLOBAL_DOCS_REFRESH evidence files, stable header updates, and governance/report index patches. Commit `e4e42fad7`, push it, fetch remote, and verify divergence `0 0`. Then record this closeout in task-local evidence files only.
+
+Rejected Alternatives: Staging the whole dirty tree was rejected. Force push was rejected. Moving dirty root `COMPUTE_AUDIT_BRIEF.md` was rejected because another worker had active changes there.
+
+Scalability potential: Low/Middle agents get current docs without losing parallel work. High/Ultra forensic review can correlate the report, status, rationale, and Git commits.
+
+Hardware Impact: Runtime 0 us/frame.
