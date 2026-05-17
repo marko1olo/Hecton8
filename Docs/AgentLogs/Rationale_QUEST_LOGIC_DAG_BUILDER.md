@@ -107,7 +107,7 @@ Hardware Impact: Low-end avoids JSON tier parsing during ingest; estimated cold-
 ## Decision 014 - Economy Re-Audit Result
 
 Problem: The previous Monte Carlo pass had crossed the 60-minute p99 gate, so economy proof could not be claimed.
-Solution: Re-ran `EconomyValidator --negative-tests`, `EconomyRecipeGraphAudit`, and `MonteCarloEconomySim`. Validator and graph audit exited 0. Current Monte Carlo exited 0 with 1,541,057 mined nodes, 0 failures, million-step proof true, and p99=59.285 minutes under the 60.0 minute gate.
+Solution: Re-ran `EconomyValidator --negative-tests`, `EconomyRecipeGraphAudit`, and `MonteCarloEconomySim`. Validator and graph audit exited 0. Current 2026-05-17 Monte Carlo exited 0 with 1,539,943 mined nodes, 0 failures, million-step proof true, and p99=59.285 minutes under the 60.0 minute gate.
 Rejected Alternatives: Editing economy data from the quest agent was rejected because it crosses ownership. Suppressing the prior risk was rejected; the new run replaces it with current evidence.
 Scalability potential: Quest DAG remains a stateless lookup table; economy evidence no longer blocks the data inquisition result.
 Hardware Impact: No quest runtime impact. Economy proof is offline data balance evidence.
@@ -183,3 +183,11 @@ Solution: Added content-equality guards to `QuestCompiler.py` text and binary wr
 Rejected Alternatives: Manually touching the H-Phi timestamp was rejected because it would be fake freshness. Avoiding quest compiler reruns was rejected because the user explicitly demanded self-validation. Removing generated C# from H-Phi freshness was rejected because generated source still affects static source truth.
 Scalability potential: Low/Middle and High/Ultra quest data remain identical; the improvement is deterministic audit stability, not runtime behavior.
 Hardware Impact: 0 us runtime impact. It prevents no-op generator runs from invalidating static evidence while preserving the 3-8 us quest bitmask evaluation savings.
+
+## Decision 024 - Live Lore Manifest Schema Compatibility
+
+Problem: The 2026-05-17 broad sweep failed because `VerifyLore.py --check` rebuilt `Data/Lore/Encyclopedia.manifest.json` to the live filename-stem FNV contract with `source` and `id` fields, while `QuestCompiler.py` only accepted a stale `canonical_id` field. The quest JSON was briefly aligned to a repository-relative path-hash manifest that did not survive the owner lore verifier.
+Solution: Restored quest lore hashes to the owner-baked manifest values (`Lore_Bible=0xAEC57EAC`, `DeepReach_ColonyFailureArchive=0xBC52DB39`) and changed `load_lore_hashes()` to accept `canonical_id`, `source`, and `id` keys, normalized with forward slashes. Tightened `VerifyQuestDagDataTruth.py` to count only the bounded `### 85 Identified Domains` table in `PROJECT_ATLAS.md`.
+Rejected Alternatives: Pinning the quest JSON to a transient alternate hash scope was rejected because `VerifyLore.py --check` is the owner source of truth and rewrites the manifest. Relaxing the quest verifier to skip lore hash equality was rejected because the XML task explicitly requires FNV lore tie-in. Treating every `PROJECT_ATLAS.md` table row as a domain was rejected because non-domain tables polluted the count.
+Scalability potential: Low/Middle still resolve lore by a single uint hash and source key. High/Ultra can consume richer lore/noir metadata from the same manifest without adding private quest state or runtime string lookup.
+Hardware Impact: 0 us new runtime cost. The fix preserves the existing 1-2 us lore-gate savings by preventing failed lookup fallback, and it keeps the broad static sweep green without adding runtime branches.

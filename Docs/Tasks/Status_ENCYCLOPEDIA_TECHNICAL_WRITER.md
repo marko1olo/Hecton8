@@ -56,22 +56,27 @@ Status: TECH LORE COMPILED / VERIFIED MASTER GRADE for STATIC_SOURCE and CLI_TOO
 - Loop 16: COMPLETE - H8PT manifest now records a bounded stateless lookup contract: `uint32_binary_search_sorted_record_table`, `SearchIterationsMax=7`, `not_found_no_exception`; tests decode real records and missing hashes through the table. Evidence class: CLI_TOOLING.
 - Loop 17: COMPLETE - Full Metric-Phi sweep refreshed after verifier scanner hardening; 35/35 required commands pass, `VerifyMetricPhiDataTruth` reports 37 checks, 0 failed, 43 aligned binaries, 0 struct endian failures. Evidence class: CLI_TOOLING.
 - Loop 18: COMPLETE - Added dedicated compact-only toaster H8PT `Data/Lore/PdaTechnicalLogs_Toaster.h8bin`; `VerifyPdaTechnicalLogs` now rejects stale/missing toaster binary, manifest drift, and non-stripped compact/extra sections. Evidence class: CLI_TOOLING.
+- Loop 19: COMPLETE - Active `CURRENT_BATCH.md` no longer contains this XML; original directive recovered from `Docs/Archive/Batch_GIT_SYNC_REBASE/CURRENT_BATCH_local_auxiliary_20260517.md`. Restored missing PDA tools (`PdaTechSchema`, `LoreTechValidator`, `PackPdaTechnicalLogs`, independent `VerifyPdaTechnicalLogs`, tests), regenerated stale H8PT from current JSONL, and revalidated. Evidence class: CLI_TOOLING.
+- Loop 20: COMPLETE - Self-audit corrected stale rationale metrics to current disk truth: JSONL 155,363 bytes, full H8PT 59,120 bytes, toaster H8PT 19,120 bytes, source hash `0xD76EE1F0`, tone range `1..6`, project FNV collision count 0, and current economy inquisition `PASS`. Evidence class: CLI_TOOLING.
+- Loop 21: COMPLETE - Full Metric-Phi sweep rerun through `Tools\RunMetricPhiVerifySweep.py`; final report now reads `VERIFY_SWEEP_PASS`, 35 commands, required failures 0. Standalone `Tools\VerifyMetricPhiDataTruth.py` confirms `DATA_TRUTH_VERIFIED`, 37 checks, failed 0, 46 aligned binaries, 133 explicit struct format sites, endian failures 0. Evidence class: CLI_TOOLING.
 
 ## Escalation Audit Notes
 
 - PDA H8PT binary: `entries=100 bytes=59120 alignment=16 endian=<`.
-- PDA H8PT source/header map: `SourceHash=0x0F5C2152`, `RecordTable=64+6400`, `Text=6464+33600`, `CompactText=40064+12656`, `ExtraVisualRecord=52720+6400`, `PayloadEnd=59120`, `TrailerPaddingBytes=0`.
-- PDA H8PT CRC32: binary `0xDF0E2320`, header `0x0B8DA302`, table `0xF04A365A`, text `0x64116AE8`, compact `0xDBA1CA7A`, extra `0x8D837E84`, payload `0x3B9EBED5`.
+- PDA H8PT source/header map: `SourceHash=0xD76EE1F0`, `RecordTable=64+6400`, `Text=6464+33600`, `CompactText=40064+12656`, `ExtraVisualRecord=52720+6400`, `PayloadEnd=59120`, `TrailerPaddingBytes=0`.
+- PDA H8PT CRC32: binary `0xAAC08582`, header `0xFAC8DA3C`, table `0xF04A365A`, text `0x64116AE8`, compact `0xDBA1CA7A`, extra `0x8D837E84`, payload `0x3B9EBED5`.
 - PDA H8PT lookup contract: `uint32_binary_search_sorted_record_table`, `LocHash`, strict ascending table order, `SearchIterationsMax=7`, fallback `not_found_no_exception`, runtime allocation policy `caller_owned_buffer_no_private_cache`.
 - PDA toaster H8PT binary: `entries=100 bytes=19120 flags=39 alignment=16 endian=<`, `RecordTable=64+6400`, `Text=6464+12656`, `CompactText=19120+0`, `ExtraVisualRecord=19120+0`, `PayloadEnd=19120`, `TrailerPaddingBytes=0`.
-- PDA toaster H8PT CRC32: binary `0x4BAF30C2`, header `0xD4E4605B`, table `0x7A4CE335`, text `0xDBA1CA7A`; size reduction `40000` bytes / `67.66%`.
+- PDA toaster H8PT CRC32: binary `0x55D25846`, header `0x25A11965`, table `0x7A4CE335`, text `0xDBA1CA7A`; size reduction `40000` bytes / `67.66%`.
 - PDA toaster lookup contract: `uint32_binary_search_sorted_record_table`, payload semantic `CompactText`, slice fields `TextOffset/TextLength`, `SearchIterationsMax=7`, fallback `not_found_no_exception`.
 - PDA physics coverage: Dalton `TECH_02/TECH_03/TECH_47`; Beer-Lambert `TECH_21/TECH_58`; Sabine RT60 `TECH_57`; Torricelli `TECH_42`; hydrostatic `TECH_07`; scalar proxy `TECH_03/TECH_14/TECH_16/TECH_18/TECH_42`.
-- PDA tone coverage: 100 entries audited, `WeakEntries=[]`, minimum industrial hits per entry `1`, observed hit range `1..11`.
+- PDA tone coverage: 100 entries audited, `WeakEntries=[]`, minimum industrial hits per entry `1`, observed hit range `1..6`.
 - Localization binary: `entries=188 bytes=60928 payload=58640`, 16-byte aligned through `Tools/LocToBinary.py`.
 - PDA verifier: `python Tools\VerifyPdaTechnicalLogs.py` -> `entries=100 binaryBytes=59120 toasterBytes=19120 alignment=16 endian=< hashCollisions=0 hPhiDataSovereignty=1.0`.
-- Lore tests: `python -B -m unittest Tools.test_lore_checker Tools.test_lore_semantic_sync Tools.test_verify_lore Tools.test_pda_technical_logs -v` -> 36 tests OK.
+- Project hash collision verifier: `python Tools\VerifyH8HashCollisions.py` -> `H8 hash records: 1046`, `HASH COLLISIONS: 0`.
+- Lore tests: `python -B -m unittest Tools.test_lore_checker Tools.test_lore_semantic_sync Tools.test_verify_lore Tools.test_pda_technical_logs -v` -> 29 tests OK.
 - PROJECT_ATLAS fit: domain IDs `69,70,72,73` verified against `Docs/PROJECT_ATLAS.md`.
-- Economy audit: `Tools/CraftingEconomyMonteCarlo.py --steps 1000000` passed `profit_steps=0`; broader `Tools/Economy/DataTruthInquisition.py --root .` reports `PASS`, `monte_carlo_steps=1541057`, `recipe_cycles=0`, `binary_unaligned=0`, `binary_endian_unknown=0`.
-- Data/H-Phi audit: `Docs/Reports/METRIC_PHI_VERIFY_SWEEP.json` -> `VERIFY_SWEEP_PASS`, `commands=35 required_failures=0`; `Tools\VerifyDataInquisition.py` -> `DATA_INQUISITION_VERIFIED_STATIC_ONLY`, `binaries=44`, `atlasDomains=85`; `Tools\VerifyMetricPhiDataTruth.py` -> `DATA_TRUTH_VERIFIED`, `checks=37 failed=0`, `binary_files=44`.
+- Economy audit: `Tools/CraftingEconomyMonteCarlo.py --steps 1000000` passed `profit_steps=0`; broader `Tools/Economy/DataTruthInquisition.py --root .` reports `status=PASS`, `monte_carlo_steps=1539943`, `fnv_collisions=0`, `recipe_cycles=0`, `binary_unaligned=0`, `binary_endian_unknown=0`, and `struct_format_failures=0`.
+- Data/H-Phi audit: `Tools\VerifyDataInquisition.py` -> `DATA_INQUISITION_VERIFIED_STATIC_ONLY`, `binaries=46`, `atlasDomains=85`; `Tools\VerifyMetricPhiDataTruth.py` -> `DATA_TRUTH_VERIFIED`, `checks=37 failed=0`, `binary_files=46`.
+- Full sweep audit: `Tools\RunMetricPhiVerifySweep.py` -> `VERIFY_SWEEP_PASS`, `commands=35`, `required_failures=0`; `Docs/Reports/METRIC_PHI_VERIFY_SWEEP.json` verified with `totalCommands=35`, `requiredFailures=0`.
 - Scoped `git diff --check` for this lane passes; only line-ending warnings remain.

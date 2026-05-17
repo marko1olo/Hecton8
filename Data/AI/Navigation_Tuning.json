@@ -1,4 +1,50 @@
 {
+  "binaryCache": {
+    "alignmentBytes": 16,
+    "endianness": "little",
+    "fileBytes": 1280,
+    "hashAudit": {
+      "algorithm": "FNV-1a32 ASCII-lower semantic IDs",
+      "collisionCount": 0,
+      "recordCount": 76,
+      "semanticIdsUnique": true,
+      "sortedHashes": true
+    },
+    "headerAudit": {
+      "flags": 1,
+      "headerCrc32": "0xEDC63F65",
+      "payloadCrc32": "0x89810120",
+      "reservedZero": true,
+      "semanticHashCrc32": "0xBC8A06A3"
+    },
+    "headerBytes": 64,
+    "headerStruct": "<4sHHIIIIIIII24s",
+    "magic": "H8AN",
+    "manifestPath": "Data/AI/Navigation_Tuning.manifest.json",
+    "path": "Data/AI/Navigation_Tuning.h8bin",
+    "payloadBytes": 1216,
+    "payloadOffsetBytes": 64,
+    "recordCount": 76,
+    "recordStrideBytes": 16,
+    "recordStruct": "<IHHfI",
+    "runtimeLookupContract": "stateless FNV-1a record lookup into DataVault-owned NativeArray records; no private managed dictionaries in Tick.",
+    "sections": {
+      "Header": {
+        "alignmentBytes": 16,
+        "offsetBytes": 0,
+        "sizeBytes": 64
+      },
+      "RecordPayload": {
+        "alignmentBytes": 16,
+        "offsetBytes": 64,
+        "recordCount": 76,
+        "recordStrideBytes": 16,
+        "sizeBytes": 1216
+      }
+    },
+    "sha256": "70EAD237B6241E4B23FB9AECF47B045DE1EE16B306D7820BA2DCDD1877C0A947",
+    "version": 1
+  },
   "blackBoxTelemetry": {
     "capacityFrames": 300,
     "dumpPath": "Docs/AgentLogs/Dump_AI_POTENTIAL_FIELD_NAVIGATOR.bin",
@@ -59,6 +105,12 @@
     ],
     "storage": "NativeArray<AiPotentialFieldTelemetryEntry> circular buffer"
   },
+  "dataSovereigntyAudit": {
+    "dependencyBoundary": "no concrete fluid, voxel, player, or economy class references in hot path",
+    "hPhiImpact": "increases sovereignty by moving tuning into fixed binary records with standalone manifest metadata",
+    "runtimeLookupContract": "stateless FNV-1a record lookup into DataVault-owned NativeArray records; no private managed dictionaries in Tick.",
+    "stateOwnership": "AI movement owner consumes read-only flow/SDF/cognition snapshots and writes steering output plus black-box telemetry."
+  },
   "evidenceClass": "PY_SIM_STATIC_MODEL",
   "failureModes": [
     "No finite flow sample: use target attraction plus SDF repulsion only.",
@@ -82,6 +134,111 @@
       -8.0496
     ],
     "mean_velocity_flow_alignment01": 0.9979
+  },
+  "mathAudit": {
+    "hardScience": {
+      "domain": "Potential-field steering; not a fluid physics solver.",
+      "ewma": {
+        "basis": "discrete exponential weighted moving average for intent jitter suppression",
+        "formula": "intent = lerp(previousSteering, targetAttraction + flowBoostResistance, ewmaSteeringAlpha); steering = intent + immediateSdfRepulsion",
+        "rejection": "SDF wall term is excluded from smoothing because delayed walls clip predators through boundaries."
+      },
+      "flowBoostResistance": {
+        "basis": "AbyssalFlowField vector as a steering hint",
+        "derivedFrom": "dot(flowDir,targetDir) determines boost versus resistance",
+        "formula": "flowDir * flowSpeed * (dot(flowDir,targetDir) >= 0 ? boost : -resistance)"
+      },
+      "obstacleRepulsion": {
+        "basis": "inverse-square SDF boundary pressure",
+        "derivedFrom": "1/d^2 repulsion with divide guard; SDF term is immediate, not EWMA delayed",
+        "formula": "normal * min(maxRepulsion, sdfObstacleRepulsionWeight / max(distanceMeters,0.25)^2)",
+        "safeDistanceClampMeters": 0.25
+      },
+      "sourceScenarioDerivation": {
+        "hurricaneCenter": "scenario midpoint at the predator crossing depth",
+        "pulseBand": "deterministic triangle wave, not random noise",
+        "shearScalar": "vectorNoiseResolution * stormSurfaceTurbulenceStrength * 0.09375",
+        "stormRadiusMeters": "flowTextureWorldSizeMeters + surfaceStormLayerDepthMeters * stormSurfaceTurbulenceStrength",
+        "swirlScalar": "surfaceStormLayerDepthMeters * stormSurfaceTurbulenceStrength * 0.29",
+        "tangentShearLeak": "same magnitude as vertical flow scalar; presentation-current asymmetry only",
+        "undertowScalar": "surfaceStormLayerDepthMeters * stormSurfaceTurbulenceStrength * 0.11",
+        "verticalScalar": "stormSurfaceTurbulenceStrength * 0.875"
+      },
+      "targetAttraction": {
+        "basis": "unit pull vector from resolved cognition target",
+        "derivedFrom": "predator/prey intent, not a hand-authored force field",
+        "formula": "normalize(target - position) * targetAttractionWeight"
+      }
+    },
+    "simulationConstants": {
+      "dtSeconds": {
+        "derivation": "1 / 10Hz potential solve cadence from prompt",
+        "value": 0.1
+      },
+      "flowCurrentCoupling": {
+        "derivation": "visual-belief current bleed into predator velocity",
+        "value": 0.08
+      },
+      "idleDriftMinAlignment01": {
+        "derivation": "idle-current-belief acceptance floor",
+        "value": 0.95
+      },
+      "idleDriftMinDistanceMeters": {
+        "derivation": "idle-current-belief acceptance floor",
+        "value": 10.0
+      },
+      "idleVelocityDamping": {
+        "derivation": "idle drift fake; keeps fauna coupled to flow",
+        "value": 0.9
+      },
+      "maxSteps": {
+        "derivation": "36 second stress replay at 10Hz",
+        "value": 360
+      },
+      "minReplayClearanceGuardMeters": {
+        "derivation": "selection guard for no-clipping path acceptance",
+        "value": 2.0
+      },
+      "performanceCadenceHz": {
+        "derivation": "prompt requirement",
+        "value": 10
+      },
+      "performancePopulation": {
+        "derivation": "prompt requirement",
+        "value": 100
+      },
+      "scoringWeights": {
+        "derivation": "selection-objective weights; not physical coefficients or runtime physics truth",
+        "finalDistancePenaltyPerMeter": 30.0,
+        "flowAlignmentBonus": 1.5,
+        "hardObstaclePenaltyBase": 20000.0,
+        "hardObstaclePenaltyPerMeter": 1000.0,
+        "jitterEventPenalty": 500.0,
+        "pathLengthPenaltyPerMeter": 1.15,
+        "positiveFlowUseBonus": 4.0,
+        "reachBonus": 10000.0,
+        "sdfPushoutEventPenalty": 5000.0,
+        "softObstacleClearanceTargetMeters": 4.0,
+        "softObstaclePenaltyScale": 120.0,
+        "timeStepPenalty": 2.5
+      },
+      "sdfPushoutClearanceMeters": {
+        "derivation": "post-integrate replay safety skin",
+        "value": 0.75
+      },
+      "sdfSafeDistanceClampMeters": {
+        "derivation": "inverse-square divide guard",
+        "value": 0.25
+      },
+      "targetRadiusMeters": {
+        "derivation": "0.96 * 3.125m flow texture cell; sub-cell reach tolerance",
+        "value": 3.0
+      },
+      "velocityDamping": {
+        "derivation": "predator inertia fake; prevents stop-start thrash",
+        "value": 0.94
+      }
+    }
   },
   "pathTrace": {
     "finalDistanceMeters": 2.8104,
@@ -348,6 +505,19 @@
     "seconds": 23.8,
     "steps": 238
   },
+  "rtxOverkillData": {
+    "extraDataFields": [
+      "harmonicFlowBand0",
+      "harmonicFlowBand1",
+      "harmonicFlowBand2",
+      "sdfGradientSample8",
+      "bankingCurvatureSamples",
+      "wakeRibbonSamples",
+      "currentAnomalySonarPulse"
+    ],
+    "profile": "Ultra/God-Mode visuals",
+    "runtimeBoundary": "presentation-only visual overkill; gameplay steering truth stays the fixed potential-field record set"
+  },
   "sampleCostModel": {
     "branchClampSitesPerSolve": 7,
     "flowSamplesPerSolve": 1,
@@ -487,5 +657,16 @@
         "wallInfluenceMeters": 10.0
       }
     }
+  },
+  "toasterData": {
+    "maxBinaryBytes": 1280,
+    "profile": "Low/MX350/Celeron-i3",
+    "records": [
+      "selectedWeights",
+      "search cadence",
+      "smoothed metrics",
+      "tier hysteresis"
+    ],
+    "runtimeShape": "one flow sample, one nearest SDF/bounds sample, 10Hz solve, no strings in hot path"
   }
 }

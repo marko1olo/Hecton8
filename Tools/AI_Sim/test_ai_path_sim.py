@@ -20,6 +20,8 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[2]
 SIM_PATH = ROOT / "Tools" / "AiPathSim.py"
 TUNING_PATH = ROOT / "Data" / "AI" / "Navigation_Tuning.json"
+BINARY_PATH = ROOT / "Data" / "AI" / "Navigation_Tuning.h8bin"
+MANIFEST_PATH = ROOT / "Data" / "AI" / "Navigation_Tuning.manifest.json"
 
 
 def load_sim_module():
@@ -54,6 +56,53 @@ class AiPathSimTests(unittest.TestCase):
     def test_export_self_check_passes(self) -> None:
         valid, errors = self.sim.validate_export(self.tuning)
         self.assertTrue(valid, errors)
+
+    def test_math_scalability_and_sovereignty_audits_are_exported(self) -> None:
+        self.assertEqual(self.tuning["mathAudit"]["hardScience"], self.sim.HARD_SCIENCE_AUDIT)
+        self.assertEqual(self.tuning["mathAudit"]["simulationConstants"], self.sim.SIMULATION_CONSTANT_AUDIT)
+        self.assertEqual(self.tuning["dataSovereigntyAudit"], self.sim.DATA_SOVEREIGNTY_AUDIT)
+        self.assertEqual(self.tuning["toasterData"], self.sim.TOASTER_DATA)
+        self.assertEqual(self.tuning["rtxOverkillData"], self.sim.RTX_OVERKILL_DATA)
+
+    def test_binary_cache_manifest_is_exported(self) -> None:
+        blob, expected_cache, keyed_records = self.sim.build_binary_cache_info(self.tuning)
+        expected_manifest = self.sim.build_standalone_manifest(
+            self.tuning,
+            self.sim.canonical_json_bytes(self.tuning),
+            blob,
+            expected_cache,
+            keyed_records,
+        )
+        self.assertEqual(self.tuning["binaryCache"], expected_cache)
+        self.assertEqual(json.loads(MANIFEST_PATH.read_text(encoding="utf-8")), expected_manifest)
+        self.assertEqual(BINARY_PATH.read_bytes(), blob)
+        self.assertEqual(expected_cache["recordCount"], 76)
+
+    def test_binary_header_roundtrip(self) -> None:
+        blob = BINARY_PATH.read_bytes()
+        header = self.sim.struct.unpack(self.sim.BINARY_HEADER_FORMAT, blob[: self.sim.BINARY_HEADER_SIZE])
+        payload = blob[self.sim.BINARY_HEADER_SIZE :]
+        self.assertEqual(header[0], self.sim.BINARY_MAGIC)
+        self.assertEqual(header[1], self.sim.BINARY_VERSION)
+        self.assertEqual(header[2], self.sim.BINARY_HEADER_SIZE)
+        self.assertEqual(header[3], len(blob))
+        self.assertEqual(header[4], 76)
+        self.assertEqual(header[5], self.sim.BINARY_RECORD_SIZE)
+        self.assertEqual(header[6], self.sim.BINARY_HEADER_SIZE)
+        self.assertEqual(header[7], len(payload))
+        self.assertEqual(header[8], self.sim.zlib.crc32(payload) & self.sim.UINT32_MASK)
+        self.assertEqual(header[10], self.sim.BINARY_FLAG_LITTLE_ENDIAN)
+        self.assertEqual(header[11], bytes(24))
+        self.assertEqual(len(blob) % self.sim.BINARY_ALIGNMENT, 0)
+
+    def test_binary_hashes_are_unique_and_sorted(self) -> None:
+        _, expected_cache, keyed_records = self.sim.build_binary_cache_info(self.tuning)
+        hashes = [semantic_hash for semantic_hash, _ in keyed_records]
+        labels = [record.label for _, record in keyed_records]
+        self.assertEqual(len(hashes), len(set(hashes)))
+        self.assertEqual(labels, sorted(labels, key=lambda label: self.sim.fnv1a32(label)))
+        self.assertEqual(expected_cache["hashAudit"]["collisionCount"], 0)
+        self.assertTrue(expected_cache["hashAudit"]["sortedHashes"])
 
     def test_formula_contract_is_validated(self) -> None:
         self.assertEqual(self.tuning["formula"], self.sim.FORMULA_CONTRACT)
@@ -113,9 +162,15 @@ class AiPathSimTests(unittest.TestCase):
 
     def test_export_regeneration_is_deterministic(self) -> None:
         before = TUNING_PATH.read_bytes()
+        before_binary = BINARY_PATH.read_bytes()
+        before_manifest = MANIFEST_PATH.read_bytes()
         subprocess.run([sys.executable, str(SIM_PATH)], cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
         after = TUNING_PATH.read_bytes()
+        after_binary = BINARY_PATH.read_bytes()
+        after_manifest = MANIFEST_PATH.read_bytes()
         self.assertEqual(before, after)
+        self.assertEqual(before_binary, after_binary)
+        self.assertEqual(before_manifest, after_manifest)
 
     def test_blackbox_telemetry_contract_is_exported(self) -> None:
         telemetry = self.tuning["blackBoxTelemetry"]

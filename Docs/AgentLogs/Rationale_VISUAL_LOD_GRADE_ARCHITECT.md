@@ -242,3 +242,27 @@ Rejected Alternatives: Trusting the previous VISUAL-owned CURRENT sweep was reje
 Scalability potential: The visual tier contract remains stateless: Toaster reads stripped fixed records; God Mode reads extra records for high-res gradients, harmonic noise, and longer visual residency without private runtime state.
 
 Hardware Impact: 0 us runtime. Offline verification/reporting only. Current Loop 14 evidence: MetricPhi sweep PASS with 35 commands/0 required failures/`selfCheckPending=False`; MetricPhi data-truth PASS with 37 checks/0 failures/44 aligned binaries/274 struct format sites/0 endian failures; visual matrix PASS at 2016 bytes/aligned16/little-endian/0 hash collisions/God Mode ratio 9.097; binary hygiene PASS with 44 binaries/0 misaligned; economy DataTruth PASS with 1,078,223 Monte Carlo steps/0 FNV collisions/0 recipe cycles/0 endian or alignment failures.
+
+## Decision 21 - Visual Baker Source Authority Repair
+
+Problem: The visual matrix proof chain had degraded: `Tools/VisualLodMatrixBaker.py` and its regression test were missing from disk, and `Tools/VerifyVisualLodMatrix.py` only printed success instead of validating the binary. That was not AAA data truth.
+
+Solution: Restore `Tools/VisualLodMatrixBaker.py` as the owner compiler/verifier. It now recomputes Beer-Lambert values, validates tier contracts, runs the offline stress estimator, writes little-endian `<` fixed records, emits a 16-byte aligned binary, collision-checks FNV-1a ASCII-lower rows, and compares current binary/manifest against a deterministic rebuild. Replace `VerifyVisualLodMatrix.py` with a real verifier and add negative tests for non-derived optics, Toaster feature leaks, and underfed God Mode density.
+
+Rejected Alternatives: Keeping the stub verifier was rejected because it allowed false green output. Trusting the existing `.bin` without source authority was rejected because SHINOBU ingest needs reproducible bytes. Hand-editing the manifest was rejected because it would not prove the binary layout.
+
+Scalability potential: The restored binary keeps Toaster on stripped 128-byte tier rows plus 64-byte extra rows while God Mode receives high-res gradient/noise/particle/detail fields through fixed records, not private runtime state.
+
+Hardware Impact: 0 us runtime. Offline tooling only. Current visual binary evidence: 2048 bytes, 16-byte aligned, little-endian, 76 FNV rows, 0 collisions, 4 tier records, 4 extra records, God Mode density ratio 9.097.
+
+## Decision 22 - Balance Binary Endian Manifest Closure
+
+Problem: Economy DataTruth reported 2 unknown-endian blobs: `Data/Balance/Baked/H8StaticData.bin` and `Data/Balance/Baked/Babel_Dictionary.h8bin`. Both payloads were aligned, but without sidecar manifests the scanner could not prove byte order.
+
+Solution: Add `H8StaticData.manifest.json` and `Babel_Dictionary.manifest.json` next to the payloads. The manifests bind each binary to `H8StaticDataContracts.cs`, record explicit little-endian struct formats (`<IHHHHIIIIIIIIIIIII` and `<IHHIIIIII`), file sizes, header fields, CRCs, SHA-256, and stateless reader contracts. Payload bytes were not changed.
+
+Rejected Alternatives: Weakening `DataTruthInquisition.py` was rejected because it would hide real ingestion risk. Editing the binary by hand was rejected because the C# baker owns payload bytes. Ignoring the blockers as out-of-domain was rejected because the user explicitly requested project-wide binary/cache hygiene.
+
+Scalability potential: Data Sovereignty increases because static balance and Babel payloads are now self-describing fixed-layout blobs. Low-end hardware reads the same stateless layout without runtime JSON; high-end hardware does not require private mutable state.
+
+Hardware Impact: 0 us runtime. Offline metadata only. Current DataTruth evidence: 1,539,943 Monte Carlo steps, 0 FNV collisions, 0 recipe cycles, 46 binary blobs, 0 unaligned, 0 unknown endian, 0 struct format failures.

@@ -4,7 +4,7 @@ Prompt ID: ENCYCLOPEDIA_LORE_BAKER
 Role: BACKEND_ENGINEER
 Domain: DATA/LORE
 Task count: 15
-Status: VERIFIED MASTER GRADE
+Status: STATIC DATA VERIFIED / UNITY RUNTIME PENDING VERIFICATION
 
 ## Mandates Loaded
 
@@ -68,3 +68,23 @@ Status: VERIFIED MASTER GRADE
 - [x] Removed Python execution caches created under `Tools`. | Justification: verified `C:\Hecton8\Tools\__pycache__`, `C:\Hecton8\Tools\Security\__pycache__`, and `C:\Hecton8\Tools\Taxonomy\__pycache__` resolved under workspace before deletion; post-delete scan must remain empty. Alternative rejected: leaving transient cache directories as source artifacts. Estimate: 46,000,000 us.
 
 Evidence boundary: CLI/static data verification only. Unity import, Play Mode GC, Profiler, and runtime MMF reader behavior remain PENDING VERIFICATION because no Unity logs were provided in this shell.
+
+## 2026-05-17 Corrective Rerun / Data Truth Closure
+
+- [x] Re-read status/rationale before work. | Justification: disk state is the only durable memory. Alternative rejected: trusting compressed chat history. Estimate: 18,000,000 us.
+- [x] Re-queried `Docs/Tasks/CURRENT_BATCH.md` for `<AGENT_PROMPT id="ENCYCLOPEDIA_LORE_BAKER">`. | Justification: current batch file no longer contains this ID, so the active assignment is bound to this status/rationale/log set, not a fresh XML block. Alternative rejected: inventing a new XML directive. Estimate: 12,000,000 us.
+- [x] Corrected stale H8LR truth. | Justification: current raw `Data/Lore/Encyclopedia.h8bin` is 41,920 bytes, not the earlier 41,488-byte bake. Entries: `Lore_Bible` length 25,003 at offset 48; `DeepReach_ColonyFailureArchive` length 16,861 at offset 25,056. Alternative rejected: preserving stale status numbers. Estimate: 34,000,000 us.
+- [x] Restored missing `Tools/DaltonGasToxicityBaker.py`. | Justification: prior status claimed a baker pass while the file was absent; restored tool verifies manifest constants, SHA-256, header/row sizes, 16-byte alignment, FNV rows, and sample Dalton/hydrostatic physics rows. Alternative rejected: relying on `VerifyDaltonGasToxicity.py` alone. Estimate: 88,000,000 us.
+- [x] Hardened `Tools/VerifyMetricPhiDataTruth.py`. | Justification: it now reads current sweep summary fields and actual artifact evidence instead of legacy top-level keys and filler guards. Alternative rejected: leaving a false data-truth gate. Estimate: 74,000,000 us.
+- [x] Hardened `Tools/H8VerifyCore.py` external container filtering. | Justification: JPEG/PSD big-endian header readers are not HECTON binary DTO endianness violations; the scan now excludes external container contexts. Alternative rejected: accepting false positives or weakening all endian checks. Estimate: 21,000,000 us.
+- [x] Re-ran raw lore verification. | Justification: `python -B Tools/LorePacker.py --check --hash-audit --list`, `python -B Tools/VerifyLore.py --check --verify-source --verify-manifest --list`, and `python -B -m unittest Tools.test_verify_lore -v` all passed; 12 tests OK; collisions=0. Alternative rejected: manifest-only proof. Estimate: 92,000,000 us.
+- [x] Re-ran hard-science audits. | Justification: optics Beer-Lambert PASS at 393,216 bytes; Dalton gas PASS at 128,128 bytes with toaster 4,080 and overkill 96,112; Sabine/Thorp/Beer-Lambert acoustics PASS at 524,288 bytes. Alternative rejected: accepting magic-number constants without verifier proof. Estimate: 190,000,000 us.
+- [x] Re-ran economy audit. | Justification: `CraftingEconomyMonteCarlo --steps 1000000` PASS, profit_steps=0, max_value_delta_milli_units=-1000. Alternative rejected: recipe balance by inspection. Estimate: 127,000,000 us.
+- [x] Re-ran hash and binary hygiene. | Justification: `VerifyH8HashCollisions.py` PASS, 1,046 records, 0 collisions; `VerifyBinaryHygiene.py` PASS, 46 binaries, 0 misaligned. Alternative rejected: lore-only collision proof. Estimate: 226,000,000 us.
+- [x] Re-ran broad inquisition. | Justification: `VerifyDataInquisition.py` PASS, 46 binaries, 11 manifests, little-endian, structFormats=273, Monte Carlo=1,000,000, hashCollisions=0, atlasDomains=85. Alternative rejected: isolated subsystem passes. Estimate: 38,000,000 us.
+- [x] Re-ran full Metric Phi sweep. | Justification: `python -B Tools/RunMetricPhiVerifySweep.py` PASS, 35/35 commands, required_failures=0; follow-up `VerifyMetricPhiDataTruth.py` PASS, 37 checks, 46 binaries, 133 relevant struct sites, endian_failures=0. Alternative rejected: stopping after the first failed sweep. Estimate: 485,300,000 us.
+- [x] Re-ran standalone taxonomy sweep. | Justification: `python -B Tools/Taxonomy/run_verify_sweep.py` PASS, 25/25. Alternative rejected: relying only on embedded taxonomy verifier. Estimate: 297,900,000 us.
+- [x] Removed transient Python cache. | Justification: resolved `C:\Hecton8\Tools\__pycache__` under workspace before deletion; post-delete scan returned empty. Alternative rejected: broad deletion or leaving cache debt. Estimate: 33,000,000 us.
+- [x] Ran source whitespace guard. | Justification: `git diff --check` returned only CRLF conversion warnings, no whitespace errors. Alternative rejected: ignoring local diff hygiene. Estimate: 46,000,000 us.
+
+Evidence boundary: CLI/static data verification only. Unity import, Play Mode, GCMonitor, Profiler, player build, and frame-time proof remain PENDING VERIFICATION.

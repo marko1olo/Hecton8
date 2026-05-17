@@ -6,7 +6,7 @@ Evidence class: CLI_PYTHON + STATIC_DATA. Runtime Unity proof remains PENDING VE
 ## Inputs
 
 - Distribution source: `C:\Hecton8\Data\Economy\Ore_Distribution.json`
-- Source SHA-256: `69178711485687302dcba23e33ea20b9860ff0baffcd22470feda6f8e428ad4e`
+- Source SHA-256: `7416a6cf98c12016e161cee7a65c1d1f22113f81521ef2eef05e30bfc621716f`
 - Recipes: `Data/Economy/Recipes.json`
 - Note: `Ore_Distribution.json` was used.
 - Time model: Time_To_First_Submarine.json: 15.000 harvest minutes / 111 source resources = 0.135135 minutes/node; overhead=20.500; first_base_raw_total=58

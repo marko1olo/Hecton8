@@ -4,12 +4,12 @@
   "endianProbe": "0x01020304",
   "endianness": "little",
   "fileAligned16": true,
-  "fileBytes": 2016,
+  "fileBytes": 2048,
   "fnv1a32": {
     "algorithm": "FNV-1a 32-bit ASCII-lower",
     "collisionCount": 0,
     "collisions": {},
-    "rowCount": 74
+    "rowCount": 76
   },
   "hashRows": [
     {
@@ -147,6 +147,12 @@
     {
       "category": "feature",
       "categoryId": 3,
+      "hash32": 2985815142,
+      "label": "i3_or_i5_low_end_plus_MX350_2GB"
+    },
+    {
+      "category": "feature",
+      "categoryId": 3,
       "hash32": 1330735745,
       "label": "LOW"
     },
@@ -197,12 +203,6 @@
       "categoryId": 3,
       "hash32": 4201788990,
       "label": "TRIPLE_LAYER_HALF_RES_64_STEP_FAKE"
-    },
-    {
-      "category": "feature",
-      "categoryId": 3,
-      "hash32": 2985815142,
-      "label": "i3_or_i5_low_end_plus_MX350_2GB"
     },
     {
       "category": "fallback",
@@ -435,6 +435,18 @@
     {
       "category": "physics",
       "categoryId": 6,
+      "hash32": 1119963186,
+      "label": "REND_Abyssal_Lighting_Voxel_Occlusion_Shadows"
+    },
+    {
+      "category": "physics",
+      "categoryId": 6,
+      "hash32": 836418003,
+      "label": "REND_Shader_Noir_Aesthetics_Dithering_Fog"
+    },
+    {
+      "category": "physics",
+      "categoryId": 6,
       "hash32": 4186123983,
       "label": "switch only after distance_sq crosses threshold_sq for the required hysteresis window"
     },
@@ -517,8 +529,8 @@
       "stride": 64
     },
     "hashRecords": {
-      "bytes": 1184,
-      "count": 74,
+      "bytes": 1216,
+      "count": 76,
       "offset": 832,
       "stride": 16
     },
@@ -529,7 +541,7 @@
       "stride": 128
     }
   },
-  "sha256": "E52921AD506DE2C96FB7FD4FA5CAC3E671EBF6237A1651632DBF391A0AFA394F",
+  "sha256": "13F772B45120CC9DEB4810C0C1770ADD55F9CACCC6E619A13D879780D1516B67",
   "sourceJson": "Data/System/Visual_Scalability_Matrix.json",
   "status": "VISUAL_LOD_MATRIX_BIN_BAKED",
   "stressAudit": {
@@ -566,5 +578,11 @@
       }
     }
   },
+  "tierOrder": [
+    "TOASTER",
+    "DECK",
+    "PRO",
+    "GOD_MODE"
+  ],
   "tool": "Tools/VisualLodMatrixBaker.py"
 }

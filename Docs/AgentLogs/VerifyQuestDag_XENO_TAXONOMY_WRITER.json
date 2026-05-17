@@ -1,75 +1,9 @@
 {
-  "atlas_domains": [
-    4,
-    73,
-    75,
-    78
-  ],
   "binary": "Data/Narrative/First_Hour_Quests.h8qdag.bin",
-  "binary_validation": {
-    "aligned_16_bytes": true,
-    "byte_count": 496,
-    "edge_count": 3,
-    "edge_offset": 256,
-    "edge_record_bytes": 16,
-    "header_bytes": 64,
-    "little_endian": true,
-    "node_count": 4,
-    "node_offset": 64,
-    "node_record_bytes": 32,
-    "scalability_tier_count": 4,
-    "scalability_tier_offset": 304,
-    "scalability_tier_record_bytes": 48,
-    "sha256": "01D823243E1315F2C7263806C59967173B9315F6E4052A5726C6AEF27FC2E156",
-    "trigger_count": 4,
-    "trigger_offset": 192,
-    "trigger_record_bytes": 16
-  },
-  "constants": "Assets/_Project/Scripts/Core/Generated/H8QuestMasks.cs",
-  "constants_validation": {
-    "public_const_count": 123,
-    "static_class_count": 9
-  },
-  "expected_binary_validation": {
-    "aligned_16_bytes": true,
-    "byte_count": 496,
-    "edge_count": 3,
-    "edge_offset": 256,
-    "edge_record_bytes": 16,
-    "header_bytes": 64,
-    "little_endian": true,
-    "node_count": 4,
-    "node_offset": 64,
-    "node_record_bytes": 32,
-    "scalability_tier_count": 4,
-    "scalability_tier_offset": 304,
-    "scalability_tier_record_bytes": 48,
-    "sha256": "01D823243E1315F2C7263806C59967173B9315F6E4052A5726C6AEF27FC2E156",
-    "trigger_count": 4,
-    "trigger_offset": 192,
-    "trigger_record_bytes": 16
-  },
-  "graph": "Data/Narrative/First_Hour_Quests.json",
-  "hash_collision_count": 0,
-  "node_count": 4,
-  "reachability_order": [
-    "quest_first_hour_wake_up",
-    "quest_first_hour_find_scanner",
-    "quest_first_hour_scan_leviathan_trace",
-    "quest_first_hour_fix_radio"
-  ],
-  "scalability_tiers": [
-    "Low",
-    "Middle",
-    "High",
-    "Ultra"
-  ],
-  "status": "VERIFY OK",
-  "topological_order": [
-    "quest_first_hour_wake_up",
-    "quest_first_hour_find_scanner",
-    "quest_first_hour_scan_leviathan_trace",
-    "quest_first_hour_fix_radio"
-  ],
-  "unique_hash_count": 31
+  "binaryBytes": 496,
+  "constants": 123,
+  "constantsPath": "Assets/_Project/Scripts/Core/Generated/H8QuestMasks.cs",
+  "hashes": 31,
+  "nodes": 4,
+  "status": "PASS"
 }

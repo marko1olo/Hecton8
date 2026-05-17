@@ -1,13 +1,5 @@
 {
-  "allVariantBinariesAligned16": true,
-  "atlasFit": {
-    "addsRuntimeAssemblyDependency": false,
-    "domain": "DATA/MATH",
-    "family": "Graphics and lighting / Data.Visuals",
-    "stateModel": "stateless binary lookup",
-    "usesGlobalRegistry": false,
-    "usesPrivateNativeState": false
-  },
+  "aligned16": true,
   "blueAt500mClear": 0.004993438720703125,
   "byteOrder": "little-endian",
   "coefficientProvenance": [
@@ -39,27 +31,18 @@
       "wavelengthNm": 470
     }
   ],
-  "dataSovereignty": {
-    "globalRegistryRequired": false,
-    "hotPathJsonParsingAllowed": false,
-    "lookupModel": "stateless_binary_lookup",
-    "runtimePrivateStateRequired": false
-  },
-  "evidenceClass": "CLI_PYTHON_BINARY_DECODE",
-  "expectedMatrixBytes": 393216,
-  "fnvArtifactIds": 6,
-  "fnvCollisionCount": 0,
+  "dataSovereignty": "stateless_binary_lookup",
+  "expectedBytes": 393216,
+  "fnvCollisions": 0,
   "matrix": "Data/Visuals/Water_Extinction_Matrix.bin",
   "matrixBytes": 393216,
-  "pythonPackingContract": "<e",
-  "redAt10mClearExactFloat32": 0.0019498552718089743,
+  "pack": "<e",
   "redAt500mClear": 0.0,
-  "runtimeImpact": {
-    "csharpFilesTouched": 0,
-    "estimatedMx350MicrosecondsSaved": "5-30",
-    "gcBytesPerFrame": 0,
-    "measuredUnityMicrosecondsSaved": 0
-  },
+  "shape": [
+    256,
+    256,
+    3
+  ],
   "sourceReferences": [
     {
       "authors": "Robin M. Pope; Edward S. Fry",
@@ -74,37 +57,5 @@
       "year": 1997
     }
   ],
-  "status": "OPTICS_LUT_VERIFIED",
-  "variants": {
-    "main_mx350": {
-      "aligned16": true,
-      "bytes": 393216,
-      "file": "Water_Extinction_Matrix.bin",
-      "shape": [
-        256,
-        256,
-        3
-      ]
-    },
-    "rtx_overkill": {
-      "aligned16": true,
-      "bytes": 1572864,
-      "file": "Water_Extinction_Matrix_Overkill.bin",
-      "shape": [
-        512,
-        512,
-        3
-      ]
-    },
-    "toaster_i3": {
-      "aligned16": true,
-      "bytes": 24576,
-      "file": "Water_Extinction_Matrix_Toaster.bin",
-      "shape": [
-        64,
-        64,
-        3
-      ]
-    }
-  }
+  "status": "OPTICS_LUT_VERIFIED"
 }

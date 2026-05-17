@@ -1,0 +1,82 @@
+{
+  "aligned16": true,
+  "binary": "Data/Precomputed/dalton_gas_toxicity.bin",
+  "bytes": 128128,
+  "dataSovereignty": "stateless aligned binary lookup; no per-system private solver state",
+  "endianness": "<",
+  "evidenceClass": "CLI_STATIC_DATA",
+  "fnvCollisions": 0,
+  "fnvRecords": 18,
+  "headerFormat": "<4sIIIIIffffffIIII",
+  "manifest": "Data/Precomputed/dalton_gas_toxicity_manifest.json",
+  "rowFormat": "<ffffffffffffffff",
+  "sampleRows": [
+    {
+      "ambientPressureAtm": 1.0,
+      "carbonDioxideToxicity01": 0.0,
+      "compositeDanger01": 0.0,
+      "depthMeters": 0.0,
+      "index": 0,
+      "nitrogenNarcosis01": 0.0,
+      "oxygenCnsToxicity01": 0.0
+    },
+    {
+      "ambientPressureAtm": 1.9920371770858765,
+      "carbonDioxideToxicity01": 0.0,
+      "compositeDanger01": 0.0,
+      "depthMeters": 10.0,
+      "index": 10,
+      "nitrogenNarcosis01": 0.0,
+      "oxygenCnsToxicity01": 0.0
+    },
+    {
+      "ambientPressureAtm": 10.920371055603027,
+      "carbonDioxideToxicity01": 0.0,
+      "compositeDanger01": 1.0,
+      "depthMeters": 100.0,
+      "index": 100,
+      "nitrogenNarcosis01": 1.0,
+      "oxygenCnsToxicity01": 1.0
+    },
+    {
+      "ambientPressureAtm": 100.2037124633789,
+      "carbonDioxideToxicity01": 1.0,
+      "compositeDanger01": 1.0,
+      "depthMeters": 1000.0,
+      "index": 1000,
+      "nitrogenNarcosis01": 1.0,
+      "oxygenCnsToxicity01": 1.0
+    },
+    {
+      "ambientPressureAtm": 199.4074249267578,
+      "carbonDioxideToxicity01": 1.0,
+      "compositeDanger01": 1.0,
+      "depthMeters": 2000.0,
+      "index": 2000,
+      "nitrogenNarcosis01": 1.0,
+      "oxygenCnsToxicity01": 1.0
+    }
+  ],
+  "sourceReferences": [
+    "NOAA_NDSSM_2025",
+    "US_NAVY_DIVING_MANUAL_REV7",
+    "NIOSH_CO2_IDLH"
+  ],
+  "status": "DALTON_GAS_TOXICITY_VERIFY_PASS",
+  "tierBinaries": {
+    "rtx_overkill": {
+      "binary": "Data/Precomputed/dalton_gas_toxicity_overkill.bin",
+      "bytes": 96112,
+      "rowBytes": 48,
+      "rowCount": 2001,
+      "sha256": "75457EE7B7477FE68CBE793422589672BC7C27B1D4AC8F0169F9E8DD98FAB5FE"
+    },
+    "toaster_i3": {
+      "binary": "Data/Precomputed/dalton_gas_toxicity_toaster.bin",
+      "bytes": 4080,
+      "rowBytes": 16,
+      "rowCount": 251,
+      "sha256": "55EBA424343AA566F14E579B883C1016A8FAAC6F5B348A5F70493FA3D9823721"
+    }
+  }
+}

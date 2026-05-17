@@ -75,8 +75,8 @@ REQUIRED_DOC_TERMS = (
     "test_merkle_diff_indices_localize_changed_leaves",
     "Unit tests: 8",
     "STATUS: NETWORK PROTOCOL READY",
-    "BINARY_PAYLOADS_ALIGNED=44",
-    "binary_files=44",
+    "BINARY_PAYLOADS_ALIGNED=46",
+    "binary_files=46",
     "CACHE_FILES_LEFT=0",
     "PYCACHE_DIRS_LEFT=0",
 )

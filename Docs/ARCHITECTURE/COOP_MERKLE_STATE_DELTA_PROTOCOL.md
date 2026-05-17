@@ -47,7 +47,7 @@ Task count in active XML: `0`. Task count in archived XML: `7`.
 - `Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs` already uses XXHash3-style 64-bit state hashing and save-domain separation.
 - `Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs` and `Assets/_Project/Scripts/Core/DodReplayRecorder.cs` are the closest deterministic validation references.
 - `Docs/PROJECT_ATLAS.md` defines the 85-domain architecture and states that `Hecton8.Core` must not absorb new domain dependencies.
-- Active binary payload scan outside generated/cache directories currently finds `44` `.bin` / `.h8bin` files and all are 16-byte aligned. This is verifier-owned, not a chat-only claim.
+- Active binary payload scan outside generated/cache directories currently finds `46` `.bin` / `.h8bin` files and all are 16-byte aligned. This is verifier-owned, not a chat-only claim.
 
 ## Non-Goals
 
@@ -461,7 +461,7 @@ Economy audit: no recipe, loot, inventory quantity, barter, or resource-generati
 
 Lore audit: wire names use industrial state terms: root seal, repair request, sector ledger, black box, staging page. Sterile transport names are absent from the protocol. Cross-domain guard passed: `VerifyLore.py --check` returned `CHECK OK`, `entries=2`, `alignment=16`, `endian=<`.
 
-H-Phi/Data Sovereignty audit: this design adds no local native allocations and no Unity-object truth stores. The design-level protocol model is `7` DataVault buffer families, `4` future typed signal lanes, `0` direct concrete cross-domain references, `0` hot registry polls, and `0` runtime JSON paths. Source H-Phi counters are not changed until runtime code exists; the design increases the future Data Sovereignty target by making every steady-state buffer vault-owned. Current-disk data checks passed: `VerifyMetricPhiDataTruth.py` reported `checks=37 failed=0`, `binary_files=44 unaligned=0`, `struct_format_sites=274 endian_failures=0`; `VerifyDataInquisition.py` reported `binaries=44 aligned16=true`, `manifests=11`, `structFormats=273`, `monteCarloSteps=1000000`, `hashCollisions=0`, `atlasDomains=85`; canonical `RunMetricPhiVerifySweep.py` report records `VERIFY_SWEEP_PASS`, `totalCommands=35`, `requiredFailures=0`, and `selfCheckPending=false`. The H-Phi sidecar records `5015` eligible files, `1,723,788` lines, `DataSovereignty=0.019743027`, and `StrictLocalNativeArraySovereignty=0.089045936`; runtime sovereignty did not improve in this offline pass. `HectonPhiAudit.ps1 -Summary -Json -CoreGraphOnly` completed as `STATIC_SOURCE`; the full all-surface H-Phi run is not counted as proof.
+H-Phi/Data Sovereignty audit: this design adds no local native allocations and no Unity-object truth stores. The design-level protocol model is `7` DataVault buffer families, `4` future typed signal lanes, `0` direct concrete cross-domain references, `0` hot registry polls, and `0` runtime JSON paths. Source H-Phi counters are not changed until runtime code exists; the design increases the future Data Sovereignty target by making every steady-state buffer vault-owned. Current-disk data checks passed: `VerifyMetricPhiDataTruth.py` reported `checks=37 failed=0`, `binary_files=46 unaligned=0`, `struct_format_sites=274 endian_failures=0`; `VerifyDataInquisition.py` reported `binaries=46 aligned16=true`, `manifests=11`, `structFormats=273`, `monteCarloSteps=1000000`, `hashCollisions=0`, `atlasDomains=85`; canonical `RunMetricPhiVerifySweep.py` report records `VERIFY_SWEEP_PASS`, `totalCommands=35`, `requiredFailures=0`, and `selfCheckPending=false`. The H-Phi sidecar records `5015` eligible files, `1,723,788` lines, `DataSovereignty=0.019743027`, and `StrictLocalNativeArraySovereignty=0.089045936`; runtime sovereignty did not improve in this offline pass. `HectonPhiAudit.ps1 -Summary -Json -CoreGraphOnly` completed as `STATIC_SOURCE`; the full all-surface H-Phi run is not counted as proof.
 
 Binary/cache audit: all packet structs are verifier-checked for little-endian `<` packing and 16-byte size alignment. The verifier also scans active `.bin` / `.h8bin` payloads outside ignored generated directories and fails on any file whose byte size is not divisible by `16`.
 
@@ -476,7 +476,7 @@ NET_SYNC_MERKLE_PROTOCOL_VERIFY=PASS
 STRUCT_COUNT=6
 DOMAIN_LABELS=85
 FNV_LABELS=107
-BINARY_PAYLOADS_ALIGNED=44
+BINARY_PAYLOADS_ALIGNED=46
 DATAGRAM_CEILING=1200
 HEADER_CRC16_SAMPLE=0x220C
 JITTER_SIM_STATUS=NETWORK PROTOCOL READY

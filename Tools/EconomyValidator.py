@@ -921,12 +921,71 @@ def mutate_binding_plan_runtime_allowed(tmp_dir: Path) -> None:
     write_json(path, data)
 
 
+def mutate_crafting_output_mass(tmp_dir: Path) -> None:
+    path = tmp_dir / "Crafting_Costs.json"
+    data = load_json(path)
+    recipes = data.get("recipes")
+    require(isinstance(recipes, list) and recipes, "negative crafting mass test requires recipes")
+    recipes[0]["output_mass_kg"] = round(float(recipes[0]["output_mass_kg"]) + 0.25, 3)
+    write_json(path, data)
+
+
+def mutate_crafting_tier2_tool_gate(tmp_dir: Path) -> None:
+    path = tmp_dir / "Crafting_Costs.json"
+    data = load_json(path)
+    recipes = data.get("recipes")
+    require(isinstance(recipes, list) and recipes, "negative crafting tier gate test requires recipes")
+    for recipe in recipes:
+        if int(recipe["progression_tier"]) == 2:
+            recipe["required_tools"] = []
+            write_json(path, data)
+            return
+    fail("negative crafting tier gate test requires a tier 2 recipe")
+
+
+def mutate_crafting_time_zero(tmp_dir: Path) -> None:
+    path = tmp_dir / "Crafting_Costs.json"
+    data = load_json(path)
+    recipes = data.get("recipes")
+    require(isinstance(recipes, list) and recipes, "negative crafting time test requires recipes")
+    recipes[0]["FabricationTimeSeconds"] = 0
+    write_json(path, data)
+
+
+def mutate_crafting_monte_carlo_profit(tmp_dir: Path) -> None:
+    path = tmp_dir / "Crafting_MonteCarlo_Audit.json"
+    data = load_json(path)
+    data["profit_steps"] = 1
+    data["status"] = "NEGATIVE_TEST_PROFIT_LOOP"
+    write_json(path, data)
+
+
 def validate_crafting_costs(economy_dir: Path) -> dict[str, Any]:
     import VerifyCraftingCosts as crafting_verify
 
     path = economy_dir / "Crafting_Costs.json"
     data = crafting_verify.load_json(path)
+    recipes = data["recipes"]
+    catalog = crafting_verify.build_catalog(data)
+    power_model = data["power_model"]
     hash_checks = len(crafting_verify.collect_id_hashes(data))
+    require(len(recipes) == crafting_verify.TARGET_RECIPE_COUNT, "Crafting_Costs.json must contain 50 recipes")
+    require(data["status_id"] == "economy.crafting_costs.balanced", "Crafting_Costs status mismatch")
+    for recipe in recipes:
+        recipe_id = recipe["recipe_id"]
+        input_mass = sum(float(ingredient["total_mass_kg"]) for ingredient in recipe["ingredients"])
+        require(abs(float(recipe["input_mass_kg"]) - input_mass) <= 0.001, f"{recipe_id} crafting input mass mismatch")
+        require(abs(float(recipe["output_mass_kg"]) - input_mass) <= 0.001, f"{recipe_id} crafting output mass mismatch")
+        require(float(recipe["PowerCost_kWh"]) > 0.0, f"{recipe_id} crafting power must be positive")
+        require(float(recipe["FabricationTimeSeconds"]) > 0.0, f"{recipe_id} crafting time must be positive")
+        require(float(recipe["deconstruct_reclaim_ratio"]) < 1.0, f"{recipe_id} crafting reclaim must stay below break-even")
+        if int(recipe["progression_tier"]) == 2:
+            has_tier1_tool = any(int(catalog[tool["item_id"]]["tier"]) == 1 for tool in recipe["required_tools"])
+            require(has_tier1_tool, f"{recipe_id} tier 2 recipe missing tier 1 tool")
+        energy_terms = crafting_verify.compute_energy_terms(recipe, catalog, power_model)
+        for key, expected in energy_terms.items():
+            tolerance = 0.001 if key == "total_kwh" else 0.000001
+            require(abs(float(recipe["physical_energy_terms_kwh"][key]) - expected) <= tolerance, f"{recipe_id} crafting energy term mismatch {key}")
     full_binary = crafting_verify.verify_full_binary(data)
     toaster_binary = crafting_verify.verify_toaster_binary(data)
     monte_carlo_path = economy_dir / "Crafting_MonteCarlo_Audit.json"
@@ -985,6 +1044,30 @@ def run_negative_tests(economy_dir: Path) -> list[str]:
             mutate_binding_plan_runtime_allowed,
             lambda tmp_dir: validate_runtime_binding_plan(tmp_dir / "Runtime_Binding_Plan.json", tmp_dir / "Runtime_Binding_Review.json"),
             "must not be approved for runtime use",
+        ),
+        (
+            "crafting_output_mass_mismatch",
+            mutate_crafting_output_mass,
+            lambda tmp_dir: validate_crafting_costs(tmp_dir),
+            "crafting output mass mismatch",
+        ),
+        (
+            "crafting_tier2_missing_tool",
+            mutate_crafting_tier2_tool_gate,
+            lambda tmp_dir: validate_crafting_costs(tmp_dir),
+            "tier 2 recipe missing tier 1 tool",
+        ),
+        (
+            "crafting_zero_time",
+            mutate_crafting_time_zero,
+            lambda tmp_dir: validate_crafting_costs(tmp_dir),
+            "crafting time must be positive",
+        ),
+        (
+            "crafting_monte_carlo_profit",
+            mutate_crafting_monte_carlo_profit,
+            lambda tmp_dir: validate_crafting_costs(tmp_dir),
+            "Crafting Monte Carlo found profit steps",
         ),
     )
     results: list[str] = []

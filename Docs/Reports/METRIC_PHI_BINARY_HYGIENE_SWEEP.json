@@ -1,6 +1,6 @@
 {
   "alignmentBytes": 16,
-  "binaryCount": 44,
+  "binaryCount": 46,
   "excludedParts": [
     "Build",
     "Builds",
@@ -35,6 +35,18 @@
       "alignmentRemainder": 0,
       "bytes": 524288,
       "path": "Data/Audio/Acoustic_LUT.bin"
+    },
+    {
+      "aligned16": true,
+      "alignmentRemainder": 0,
+      "bytes": 1296,
+      "path": "Data/Balance/Baked/Babel_Dictionary.h8bin"
+    },
+    {
+      "aligned16": true,
+      "alignmentRemainder": 0,
+      "bytes": 896,
+      "path": "Data/Balance/Baked/H8StaticData.bin"
     },
     {
       "aligned16": true,
@@ -117,7 +129,7 @@
     {
       "aligned16": true,
       "alignmentRemainder": 0,
-      "bytes": 41488,
+      "bytes": 41920,
       "path": "Data/Lore/Encyclopedia.h8bin"
     },
     {
@@ -207,7 +219,7 @@
     {
       "aligned16": true,
       "alignmentRemainder": 0,
-      "bytes": 2016,
+      "bytes": 2048,
       "path": "Data/System/Visual_Scalability_Matrix.bin"
     },
     {

@@ -1,5 +1,9 @@
 {
+  "binary": "Data/Narrative/First_Hour_Quests.h8qdag.bin",
   "binaryBytes": 496,
+  "constants": 123,
+  "constantsPath": "Assets/_Project/Scripts/Core/Generated/H8QuestMasks.cs",
+  "hashes": 31,
   "nodes": 4,
   "status": "PASS"
 }

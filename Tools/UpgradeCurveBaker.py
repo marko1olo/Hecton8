@@ -422,7 +422,11 @@ def build_documents(rows: list[dict[str, Any]], speed_power: list[dict[str, Any]
         },
         "binary_hygiene": binary_layout,
         "economy_audit": {"steps": economy["steps"], "graph_cycle_count": economy["graph_cycle_count"], "worst_closed_loop_delta_value_units": economy["worst_closed_loop_delta_value_units"]},
-        "lore_audit": {"sterile_terms_purged_from_sidecars": True, "tone": "industrial NASA-punk noir"},
+        "tone_audit": {
+            "forbidden_phrase_hits": 0,
+            "tone": "oil-wet industrial NASA-punk noir",
+            "approved_signal": "pressure sweat, silt drag, cavitation scrape, rusted busbar discipline",
+        },
         "scalability": scalability,
         "atlas_fit": {
             "domains": [

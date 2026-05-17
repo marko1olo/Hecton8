@@ -422,8 +422,8 @@ Current stress result:
 
 Current data-truth locks:
 
-- `VerifyNetSyncMerkleProtocol.py`: `STRUCT_COUNT=6`, `DOMAIN_LABELS=85`, `FNV_LABELS=107`, `BINARY_PAYLOADS_ALIGNED=44`, `DATAGRAM_CEILING=1200`, `HEADER_CRC16_SAMPLE=0x220C`, `JITTER_SIM_STATUS=NETWORK PROTOCOL READY`.
-- `VerifyMetricPhiDataTruth.py`: `checks=37`, `failed=0`, `binary_files=44`, `unaligned=0`, `struct_format_sites=274`, `endian_failures=0`.
+- `VerifyNetSyncMerkleProtocol.py`: `STRUCT_COUNT=6`, `DOMAIN_LABELS=85`, `FNV_LABELS=107`, `BINARY_PAYLOADS_ALIGNED=46`, `DATAGRAM_CEILING=1200`, `HEADER_CRC16_SAMPLE=0x220C`, `JITTER_SIM_STATUS=NETWORK PROTOCOL READY`.
+- `VerifyMetricPhiDataTruth.py`: `checks=37`, `failed=0`, `binary_files=46`, `unaligned=0`, `struct_format_sites=274`, `endian_failures=0`.
 - `VerifyH8HashCollisions.py`: 1,018 records, 0 FNV collisions.
 - `CraftingEconomyMonteCarlo.py --steps 1000000`: `profit_steps=0`; value, mass, and energy deltas are negative.
 - `NetProtocolGate.py`: `NETWORK PROTOCOL READY`, 3 scenarios, 8 unit tests.

@@ -103,3 +103,19 @@ Solution: Restricted the scan to actual `.bin` and `.h8bin` suffixes, then align
 Rejected Alternatives: Padding arbitrary diagnostic `.binlog` evidence was rejected because build logs are not runtime binary payloads. Suppressing all `Docs/AgentLogs` was rejected because crash dumps named `.bin` still need alignment visibility.
 Scalability potential: The gate now rejects real runtime binary payload misalignment without failing on unrelated compiler diagnostic containers.
 Hardware Impact: 0us runtime. Static tooling only; Unity runtime remains PENDING VERIFICATION.
+
+## Decision 14: Fast-Forward Pull Before Commit
+
+Problem: Fresh fetch showed `origin/main` advanced by one commit (`edc1f7149`) while local `main` was clean.
+Solution: Used `git pull --ff-only origin main`, producing a linear fast-forward with no merge commit and no unmerged index entries.
+Rejected Alternatives: Merge pull was rejected because there were no local commits to merge. Force operations were rejected because remote history was authoritative.
+Scalability potential: Keeps the shared branch linear for the next integrator and avoids synthetic conflict surfaces.
+Hardware Impact: 0us runtime. Git-only operation.
+
+## Decision 15: Owner-Tool Generated Artifact Repair
+
+Problem: Post-pull full unittest exposed stale generated AI and lore artifacts: AI battle report had `knownBufferCount=476` while current `H8Memory.cs` parsed 523 buffers, and the lore blob lacked the current raw H8LR record for `DeepReach_ColonyFailureArchive`.
+Solution: Regenerated `Tools/AiBattleSim_Report.json` with `Tools/AiBattleSim.py` and regenerated the lore package with `Tools/VerifyLore.py --check --hash-audit`, then reran focused and full test gates to PASS.
+Rejected Alternatives: Manual JSON/binary edits were rejected because deterministic owner tools exist. Pushing the fast-forwarded batch without repair was rejected because full unittest was red.
+Scalability potential: Committed generated data now tracks the current source and memory-buffer catalog, reducing repeated red gates for downstream agents.
+Hardware Impact: 0us runtime. Offline data/tooling only; Unity runtime remains PENDING VERIFICATION.

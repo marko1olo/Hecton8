@@ -314,9 +314,25 @@ def unlink_with_retry(path: Path) -> bool:
     return not path.exists()
 
 
-def cleanup_selfcheck_sidecars(json_output_path: Path) -> list[Path]:
+def cleanup_selfcheck_sidecars(
+    json_output_path: Path,
+    *,
+    current_pid: int | None = None,
+    stale_after_seconds: float = 3600.0,
+) -> list[Path]:
     leftovers: list[Path] = []
+    now = time.time()
     for path in json_output_path.parent.glob(f"{json_output_path.stem}.selfcheck.*.json"):
+        remove = False
+        if current_pid is not None and path.name == f"{json_output_path.stem}.selfcheck.{current_pid}.json":
+            remove = True
+        else:
+            try:
+                remove = now - path.stat().st_mtime >= stale_after_seconds
+            except OSError:
+                remove = False
+        if not remove:
+            continue
         if not unlink_with_retry(path):
             leftovers.append(path)
     return leftovers
@@ -462,7 +478,7 @@ def run(args: argparse.Namespace) -> int:
         False,
     )
     write_reports(final_payload, json_output_path, markdown_output_path)
-    cleanup_selfcheck_sidecars(json_output_path)
+    cleanup_selfcheck_sidecars(json_output_path, current_pid=os.getpid(), stale_after_seconds=0.0)
 
     required_failures = final_payload["summary"]["requiredFailures"]
     print(f"METRIC_PHI_VERIFY_SWEEP_STATUS: {final_payload['status']}")

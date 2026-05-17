@@ -17,7 +17,24 @@ STRUCT_FORMAT_RE = re.compile(
     r"\bstruct\.(?:pack|unpack|pack_into|unpack_from|calcsize|Struct)\(\s*(?:[rubfRUBF]*)(['\"])([^'\"]+)\1"
 )
 MULTIBYTE_FORMAT_CHARS = set("hHiIlLqQefd")
-EXTERNAL_CONTAINER_TOKENS = ("PNG", "png", "IHDR", "IDAT", "IEND", "chunk", "crc", "zlib")
+EXTERNAL_CONTAINER_TOKENS = (
+    "PNG",
+    "png",
+    "IHDR",
+    "IDAT",
+    "IEND",
+    "chunk",
+    "crc",
+    "zlib",
+    "jpeg",
+    "JPEG",
+    "JPG",
+    "marker",
+    "SOF",
+    "psd",
+    "PSD",
+    "8BPS",
+)
 
 
 def path(relative: str | Path) -> Path:
@@ -112,7 +129,15 @@ def scan_struct_endianness() -> tuple[int, list[str]]:
 
 def count_atlas_domains() -> int:
     atlas = path("Docs/PROJECT_ATLAS.md").read_text(encoding="utf-8-sig", errors="ignore")
-    return len(re.findall(r"^\| (?:[1-9]|[1-7][0-9]|8[0-5]) \|", atlas, flags=re.MULTILINE))
+    marker = "### 85 Identified Domains"
+    marker_index = atlas.find(marker)
+    if marker_index < 0:
+        return 0
+    domain_section = atlas[marker_index:]
+    next_section = domain_section.find("\n### ", len(marker))
+    if next_section >= 0:
+        domain_section = domain_section[:next_section]
+    return len(re.findall(r"^\| (?:[1-9]|[1-7][0-9]|8[0-5]) \|", domain_section, flags=re.MULTILINE))
 
 
 def assert_python_syntax(relative: str | Path) -> None:

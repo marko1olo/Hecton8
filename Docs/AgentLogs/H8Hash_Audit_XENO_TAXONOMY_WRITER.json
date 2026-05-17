@@ -2,7 +2,7 @@
   "categories": {
     "Biomes": 523,
     "Items": 209,
-    "Signals": 286
+    "Signals": 314
   },
   "collision_count": 0,
   "generated_header_check": "not checked",
@@ -16,14 +16,14 @@
     "Items.LocalizedNameKeys": 72,
     "Items.PersistentIds": 72,
     "Signals.AuthoredSignalIds": 107,
-    "Signals.ISignalStructNames": 143,
-    "Signals.SignalBusNames": 3,
-    "Signals.StructNames": 33
+    "Signals.ISignalStructNames": 176,
+    "Signals.SignalBusNames": 5,
+    "Signals.StructNames": 26
   },
   "hash_modes": {
     "ascii_lower": 26,
     "loc_utf16": 813,
-    "signal_label": 179
+    "signal_label": 207
   },
   "records": [
     {
@@ -8429,6 +8429,26 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0xBE765440",
+      "hash_mode": "signal_label",
+      "hash_value": 3195425856,
+      "name": "AcousticZoneChangedEvent",
+      "source": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs",
+      "value": "AcousticZoneChangedEvent"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0xED991377",
+      "hash_mode": "signal_label",
+      "hash_value": 3986232183,
+      "name": "AnomalyProximitySignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "AnomalyProximitySignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0xCA1F42C2",
       "hash_mode": "signal_label",
       "hash_value": 3391046338,
@@ -8529,6 +8549,16 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0x1E850F4A",
+      "hash_mode": "signal_label",
+      "hash_value": 512036682,
+      "name": "BubbleSpawnSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "BubbleSpawnSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0x2AFCB198",
       "hash_mode": "signal_label",
       "hash_value": 721203608,
@@ -8575,6 +8605,16 @@
       "name": "CombatDamageSignal",
       "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "CombatDamageSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x8A89C934",
+      "hash_mode": "signal_label",
+      "hash_value": 2324285748,
+      "name": "CompassCalibratedSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "CompassCalibratedSignal"
     },
     {
       "category": "Signals",
@@ -8659,16 +8699,6 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
-      "hash_hex": "0x218882D4",
-      "hash_mode": "signal_label",
-      "hash_value": 562594516,
-      "name": "DamageSignal",
-      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-      "value": "DamageSignal"
-    },
-    {
-      "category": "Signals",
-      "group": "ISignalStructNames",
       "hash_hex": "0xB55760B8",
       "hash_mode": "signal_label",
       "hash_value": 3042402488,
@@ -8679,12 +8709,32 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0x69881FB6",
+      "hash_mode": "signal_label",
+      "hash_value": 1770528694,
+      "name": "DataVaultUpdateSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "DataVaultUpdateSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0x40D0075D",
       "hash_mode": "signal_label",
       "hash_value": 1087375197,
       "name": "DebrisSpawnSignal",
       "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "DebrisSpawnSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0xCE3F669C",
+      "hash_mode": "signal_label",
+      "hash_value": 3460261532,
+      "name": "DebugSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "DebugSignal"
     },
     {
       "category": "Signals",
@@ -8709,12 +8759,32 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0xE5226E38",
+      "hash_mode": "signal_label",
+      "hash_value": 3844238904,
+      "name": "DeferredSubmarineImpactSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "DeferredSubmarineImpactSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0xA37A74D4",
       "hash_mode": "signal_label",
       "hash_value": 2742711508,
       "name": "DeflectSignal",
       "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "DeflectSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x54C2B6D7",
+      "hash_mode": "signal_label",
+      "hash_value": 1422046935,
+      "name": "DesyncDetectedSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "DesyncDetectedSignal"
     },
     {
       "category": "Signals",
@@ -8729,11 +8799,21 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0x7F09563E",
+      "hash_mode": "signal_label",
+      "hash_value": 2131318334,
+      "name": "DirectorAIMusicSignal",
+      "source": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs",
+      "value": "DirectorAIMusicSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0x3153D851",
       "hash_mode": "signal_label",
       "hash_value": 827578449,
       "name": "DockingCompleteSignal",
-      "source": "Assets/_Project/Scripts/Vehicles/Automation/DroneDockingSignals.cs",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "DockingCompleteSignal"
     },
     {
@@ -8743,7 +8823,7 @@
       "hash_mode": "signal_label",
       "hash_value": 2028510831,
       "name": "DockingFailedSignal",
-      "source": "Assets/_Project/Scripts/Vehicles/Automation/DroneDockingSignals.cs",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "DockingFailedSignal"
     },
     {
@@ -8753,7 +8833,7 @@
       "hash_mode": "signal_label",
       "hash_value": 2936709691,
       "name": "DockingRequestSignal",
-      "source": "Assets/_Project/Scripts/Vehicles/Automation/DroneDockingSignals.cs",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "DockingRequestSignal"
     },
     {
@@ -8775,6 +8855,16 @@
       "name": "EntityDeathSignal",
       "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "EntityDeathSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x573BB0DD",
+      "hash_mode": "signal_label",
+      "hash_value": 1463529693,
+      "name": "EntitySpawnSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "EntitySpawnSignal"
     },
     {
       "category": "Signals",
@@ -8829,11 +8919,21 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0x39E3B546",
+      "hash_mode": "signal_label",
+      "hash_value": 971224390,
+      "name": "FramePacingWarningSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "FramePacingWarningSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0x72FD9837",
       "hash_mode": "signal_label",
       "hash_value": 1929222199,
       "name": "FrameTimeSignal",
-      "source": "Assets/_Project/Scripts/Core/HomeostasisBrain.cs",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "FrameTimeSignal"
     },
     {
@@ -8909,6 +9009,16 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0x99A4817A",
+      "hash_mode": "signal_label",
+      "hash_value": 2577695098,
+      "name": "HullRepairedSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "HullRepairedSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0xF397FF1B",
       "hash_mode": "signal_label",
       "hash_value": 4086824731,
@@ -8925,6 +9035,16 @@
       "name": "ImpactSignal",
       "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "ImpactSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x4F85A12B",
+      "hash_mode": "signal_label",
+      "hash_value": 1334157611,
+      "name": "InputSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "InputSignal"
     },
     {
       "category": "Signals",
@@ -8999,12 +9119,32 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0xE1B0CDBB",
+      "hash_mode": "signal_label",
+      "hash_value": 3786460603,
+      "name": "KccVelocitySignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "KccVelocitySignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0x25E07F09",
       "hash_mode": "signal_label",
       "hash_value": 635469577,
       "name": "KillSwitchSignal",
-      "source": "Assets/_Project/Scripts/Core/HomeostasisBrain.cs",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "KillSwitchSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x9F9D60E5",
+      "hash_mode": "signal_label",
+      "hash_value": 2677891301,
+      "name": "LaserCutterEventPayload",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "LaserCutterEventPayload"
     },
     {
       "category": "Signals",
@@ -9015,6 +9155,16 @@
       "name": "LightLevelSignal",
       "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "LightLevelSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0xC2BBB790",
+      "hash_mode": "signal_label",
+      "hash_value": 3267082128,
+      "name": "LockstepSnapshotSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "LockstepSnapshotSignal"
     },
     {
       "category": "Signals",
@@ -9149,6 +9299,16 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0xAC435694",
+      "hash_mode": "signal_label",
+      "hash_value": 2890094228,
+      "name": "PhysicsEventPayload",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "PhysicsEventPayload"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0xC4766A5D",
       "hash_mode": "signal_label",
       "hash_value": 3296094813,
@@ -9219,6 +9379,36 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0x0C6B5471",
+      "hash_mode": "signal_label",
+      "hash_value": 208360561,
+      "name": "PlayerExhaleSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "PlayerExhaleSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x7F048B59",
+      "hash_mode": "signal_label",
+      "hash_value": 2131004249,
+      "name": "PlayerFatalPressureSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "PlayerFatalPressureSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x5CFCFEBE",
+      "hash_mode": "signal_label",
+      "hash_value": 1560084158,
+      "name": "PlayerFootstepSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "PlayerFootstepSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0x16C594C0",
       "hash_mode": "signal_label",
       "hash_value": 382047424,
@@ -9235,6 +9425,16 @@
       "name": "PlayerLookTargetSignal",
       "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "PlayerLookTargetSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x0141C365",
+      "hash_mode": "signal_label",
+      "hash_value": 21087077,
+      "name": "PlayerSprintStateSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "PlayerSprintStateSignal"
     },
     {
       "category": "Signals",
@@ -9259,12 +9459,52 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0xDD8B5153",
+      "hash_mode": "signal_label",
+      "hash_value": 3716895059,
+      "name": "PlayerTransportBailoutSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "PlayerTransportBailoutSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x6411655C",
+      "hash_mode": "signal_label",
+      "hash_value": 1678861660,
+      "name": "PlayerWaterSplashSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "PlayerWaterSplashSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0xDA836F98",
       "hash_mode": "signal_label",
       "hash_value": 3666046872,
       "name": "PowerDrainSignal",
       "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "PowerDrainSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x6CD2C232",
+      "hash_mode": "signal_label",
+      "hash_value": 1825751602,
+      "name": "PrefabAcousticSignatureSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "PrefabAcousticSignatureSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x26431D67",
+      "hash_mode": "signal_label",
+      "hash_value": 641932647,
+      "name": "PrefabLoreLinkSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "PrefabLoreLinkSignal"
     },
     {
       "category": "Signals",
@@ -9333,7 +9573,7 @@
       "hash_mode": "signal_label",
       "hash_value": 2877987825,
       "name": "ReentryVfxStateSignal",
-      "source": "Assets/_Project/Scripts/Core/Signals/PrologueReentrySignals.cs",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "ReentryVfxStateSignal"
     },
     {
@@ -9419,6 +9659,16 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0x39A83C80",
+      "hash_mode": "signal_label",
+      "hash_value": 967326848,
+      "name": "ScalabilityChangedEvent",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "ScalabilityChangedEvent"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0xDEFC40A7",
       "hash_mode": "signal_label",
       "hash_value": 3741073575,
@@ -9479,6 +9729,16 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0x18F6997B",
+      "hash_mode": "signal_label",
+      "hash_value": 418814331,
+      "name": "SimulationBucketSyncSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "SimulationBucketSyncSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0x672338D4",
       "hash_mode": "signal_label",
       "hash_value": 1730361556,
@@ -9525,6 +9785,26 @@
       "name": "SpectrumScanSignal",
       "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "SpectrumScanSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x58303CF2",
+      "hash_mode": "signal_label",
+      "hash_value": 1479556338,
+      "name": "SplashEvent",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "SplashEvent"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0xA3180402",
+      "hash_mode": "signal_label",
+      "hash_value": 2736260098,
+      "name": "StateCorrectionSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "StateCorrectionSignal"
     },
     {
       "category": "Signals",
@@ -9599,6 +9879,26 @@
     {
       "category": "Signals",
       "group": "ISignalStructNames",
+      "hash_hex": "0x667A6E4B",
+      "hash_mode": "signal_label",
+      "hash_value": 1719299659,
+      "name": "SyncFenceSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "SyncFenceSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x48AD51C5",
+      "hash_mode": "signal_label",
+      "hash_value": 1219318213,
+      "name": "SystemGlitchSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "SystemGlitchSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
       "hash_hex": "0xB8222146",
       "hash_mode": "signal_label",
       "hash_value": 3089244486,
@@ -9613,7 +9913,7 @@
       "hash_mode": "signal_label",
       "hash_value": 1564079642,
       "name": "SystemHealthSignal",
-      "source": "Assets/_Project/Scripts/Core/HomeostasisBrain.cs",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "SystemHealthSignal"
     },
     {
@@ -9645,6 +9945,36 @@
       "name": "TemperatureChangedSignal",
       "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "TemperatureChangedSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0x915A2BDB",
+      "hash_mode": "signal_label",
+      "hash_value": 2438605787,
+      "name": "TetherFiredSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "TetherFiredSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0xC5E05ADA",
+      "hash_mode": "signal_label",
+      "hash_value": 3319814874,
+      "name": "TetherSnappedSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "TetherSnappedSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "ISignalStructNames",
+      "hash_hex": "0xBDD68E5D",
+      "hash_mode": "signal_label",
+      "hash_value": 3184954973,
+      "name": "TetherTensionSignal",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "value": "TetherTensionSignal"
     },
     {
       "category": "Signals",
@@ -9743,7 +10073,7 @@
       "hash_mode": "signal_label",
       "hash_value": 1510638386,
       "name": "VisorDropletSignal",
-      "source": "Assets/_Project/Scripts/Core/Signals/PrologueReentrySignals.cs",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "VisorDropletSignal"
     },
     {
@@ -9753,7 +10083,7 @@
       "hash_mode": "signal_label",
       "hash_value": 1952737563,
       "name": "VisualFlareSignal",
-      "source": "Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftRuntime.cs",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "VisualFlareSignal"
     },
     {
@@ -9783,7 +10113,7 @@
       "hash_mode": "signal_label",
       "hash_value": 681088598,
       "name": "VoxelCarveEvent",
-      "source": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "source": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
       "value": "VoxelCarveEvent"
     },
     {
@@ -9859,6 +10189,26 @@
     {
       "category": "Signals",
       "group": "SignalBusNames",
+      "hash_hex": "0xE18FB2AA",
+      "hash_mode": "signal_label",
+      "hash_value": 3784290986,
+      "name": "CoreTetherFiredSignal",
+      "source": "Assets/_Project/Scripts/Physics/TetherSignals.cs",
+      "value": "CoreTetherFiredSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "SignalBusNames",
+      "hash_hex": "0x63DE6509",
+      "hash_mode": "signal_label",
+      "hash_value": 1675519241,
+      "name": "LaserCutterEventPayloadSignal",
+      "source": "Assets/_Project/Scripts/LaserCutter.cs",
+      "value": "LaserCutterEventPayloadSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "SignalBusNames",
       "hash_hex": "0xFCBC995B",
       "hash_mode": "signal_label",
       "hash_value": 4240218459,
@@ -9899,26 +10249,6 @@
     {
       "category": "Signals",
       "group": "StructNames",
-      "hash_hex": "0xE5226E38",
-      "hash_mode": "signal_label",
-      "hash_value": 3844238904,
-      "name": "DeferredSubmarineImpactSignal",
-      "source": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
-      "value": "DeferredSubmarineImpactSignal"
-    },
-    {
-      "category": "Signals",
-      "group": "StructNames",
-      "hash_hex": "0x54C2B6D7",
-      "hash_mode": "signal_label",
-      "hash_value": 1422046935,
-      "name": "DesyncDetectedSignal",
-      "source": "Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs",
-      "value": "DesyncDetectedSignal"
-    },
-    {
-      "category": "Signals",
-      "group": "StructNames",
       "hash_hex": "0x40AFF198",
       "hash_mode": "signal_label",
       "hash_value": 1085272472,
@@ -9949,16 +10279,6 @@
     {
       "category": "Signals",
       "group": "StructNames",
-      "hash_hex": "0x4F85A12B",
-      "hash_mode": "signal_label",
-      "hash_value": 1334157611,
-      "name": "InputSignal",
-      "source": "Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs",
-      "value": "InputSignal"
-    },
-    {
-      "category": "Signals",
-      "group": "StructNames",
       "hash_hex": "0xFAC00F31",
       "hash_mode": "signal_label",
       "hash_value": 4206890801,
@@ -9985,16 +10305,6 @@
       "name": "InteractionSignal",
       "source": "Assets/_Project/Scripts/Interaction/EquipmentInteractionContracts.cs",
       "value": "InteractionSignal"
-    },
-    {
-      "category": "Signals",
-      "group": "StructNames",
-      "hash_hex": "0xE1B0CDBB",
-      "hash_mode": "signal_label",
-      "hash_value": 3786460603,
-      "name": "KccVelocitySignal",
-      "source": "Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs",
-      "value": "KccVelocitySignal"
     },
     {
       "category": "Signals",
@@ -10069,6 +10379,16 @@
     {
       "category": "Signals",
       "group": "StructNames",
+      "hash_hex": "0x0651C70E",
+      "hash_mode": "signal_label",
+      "hash_value": 106022670,
+      "name": "RemovedDeferredSubmarineImpactSignal",
+      "source": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+      "value": "RemovedDeferredSubmarineImpactSignal"
+    },
+    {
+      "category": "Signals",
+      "group": "StructNames",
       "hash_hex": "0x75BBEEF2",
       "hash_mode": "signal_label",
       "hash_value": 1975250674,
@@ -10089,16 +10409,6 @@
     {
       "category": "Signals",
       "group": "StructNames",
-      "hash_hex": "0xA3180402",
-      "hash_mode": "signal_label",
-      "hash_value": 2736260098,
-      "name": "StateCorrectionSignal",
-      "source": "Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs",
-      "value": "StateCorrectionSignal"
-    },
-    {
-      "category": "Signals",
-      "group": "StructNames",
       "hash_hex": "0x83E3D2E0",
       "hash_mode": "signal_label",
       "hash_value": 2212745952,
@@ -10109,42 +10419,12 @@
     {
       "category": "Signals",
       "group": "StructNames",
-      "hash_hex": "0x667A6E4B",
-      "hash_mode": "signal_label",
-      "hash_value": 1719299659,
-      "name": "SyncFenceSignal",
-      "source": "Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs",
-      "value": "SyncFenceSignal"
-    },
-    {
-      "category": "Signals",
-      "group": "StructNames",
       "hash_hex": "0x4E8AB8C4",
       "hash_mode": "signal_label",
       "hash_value": 1317714116,
       "name": "TerrainChunkGeneratedSignal",
       "source": "Assets/_Project/Scripts/World/Contracts/TerrainChunkGeneratedSignal.cs",
       "value": "TerrainChunkGeneratedSignal"
-    },
-    {
-      "category": "Signals",
-      "group": "StructNames",
-      "hash_hex": "0x915A2BDB",
-      "hash_mode": "signal_label",
-      "hash_value": 2438605787,
-      "name": "TetherFiredSignal",
-      "source": "Assets/_Project/Scripts/Physics/Tethers/Contracts/TetherSignalContracts.cs",
-      "value": "TetherFiredSignal"
-    },
-    {
-      "category": "Signals",
-      "group": "StructNames",
-      "hash_hex": "0xC5E05ADA",
-      "hash_mode": "signal_label",
-      "hash_value": 3319814874,
-      "name": "TetherSnappedSignal",
-      "source": "Assets/_Project/Scripts/Physics/TetherSignals.cs",
-      "value": "TetherSnappedSignal"
     },
     {
       "category": "Signals",
@@ -10212,5 +10492,5 @@
     "microseconds_per_frame": 0
   },
   "status": "HASHES_SYNCHRONIZED",
-  "total_records": 1018
+  "total_records": 1046
 }

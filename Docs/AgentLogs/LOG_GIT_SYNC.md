@@ -36,6 +36,50 @@ Evidence boundary:
 - Git/static/Python evidence only.
 - Unity import, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build remain PENDING VERIFICATION.
 
+## 2026-05-17 - Fast-Forward Pull And Generated Repair
+
+What was wrong:
+- `origin/main` advanced by one commit after the previous push.
+- Fast-forward pull brought in a large current batch, but full `Tools` unittest exposed stale generated artifacts.
+- First failure: `Tools/AiBattleSim_Report.json` had stale `knownBufferCount=476`; current `H8Memory.cs` parsed 523 buffers.
+- Second failure: `Data/Lore/Encyclopedia.h8bin` lacked the current raw H8LR record for `DeepReach_ColonyFailureArchive`.
+
+What was done:
+- Pulled with `git pull --ff-only origin main`, reaching `edc1f7149 chore: integrate current Hecton batch`.
+- Regenerated `Tools/AiBattleSim_Report.json` through `Tools/AiBattleSim.py`.
+- Regenerated raw H8LR lore outputs through `Tools/VerifyLore.py --check --hash-audit`.
+- Kept additional generated outputs produced by the pulled batch owner tests and full verifier sweep.
+- Re-ran focused and full Python validation to green.
+
+Cinematic Cheats used:
+- None. Repository/tooling/data integration only.
+
+Exact Microseconds saved:
+- Runtime code changed by GIT_SYNC itself: none.
+- Immediate runtime CPU saving: 0us.
+
+Verification:
+- `git pull --ff-only origin main` PASS; divergence after pull `0 0`.
+- First full `Tools` unittest FAIL: stale AI battle artifact.
+- AI battle artifact check PASS after regeneration: `knownBufferCount=523`, rerunVerified=True.
+- Second full `Tools` unittest FAIL: stale lore blob.
+- Lore pack/check/hash audit PASS: entries=2, raw blob=41920 bytes, collisions=0.
+- Focused lore + AI unittest PASS: 70 tests, 18.533 seconds.
+- Final full `Tools` unittest PASS: 289 tests, 910.358 seconds.
+- Binary hygiene PASS: binaryCount=46, misalignedCount=0.
+- Data inquisition PASS: binaries=46, aligned16=true.
+- Net sync Merkle protocol PASS: `BINARY_PAYLOADS_ALIGNED=46`.
+- Net protocol gate PASS: `NETWORK PROTOCOL READY`.
+- Babel verifier and dictionary verifier PASS.
+- Quest DAG verifier PASS: nodes=4, binaryBytes=496.
+- PDA technical logs verifier PASS: entries=100, binaryBytes=59120, toasterBytes=19120.
+- `git diff --check` PASS.
+- `git ls-files -u` empty.
+
+Evidence boundary:
+- Git/static/Python evidence only.
+- Unity import, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build remain PENDING VERIFICATION.
+
 ## 2026-05-17 - Validated Batch Integration
 
 What was wrong:

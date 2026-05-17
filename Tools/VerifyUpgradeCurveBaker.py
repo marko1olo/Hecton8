@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import struct
 import sys
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,7 @@ import UpgradeCurveBaker
 ROOT = Path(__file__).resolve().parents[1]
 ECONOMY_DIR = ROOT / "Data" / "Economy"
 ATLAS_PATH = ROOT / "Docs" / "PROJECT_ATLAS.md"
+FORBIDDEN_TONE_TERMS = ("sterile", "clean sci-fi", "pristine", "utopian", "sleek", "seamless chrome")
 
 
 def load_json(path: Path) -> Any:
@@ -35,6 +37,7 @@ def verify_artifacts() -> dict[str, Any]:
     scalability = load_json(ECONOMY_DIR / UpgradeCurveBaker.SCALABILITY_JSON_NAME)
     binary_layout = load_json(ECONOMY_DIR / UpgradeCurveBaker.BINARY_LAYOUT_JSON_NAME)
     binary = (ECONOMY_DIR / UpgradeCurveBaker.BINARY_PACK_NAME).read_bytes()
+    inquisition_text = (ECONOMY_DIR / UpgradeCurveBaker.INQUISITION_JSON_NAME).read_text(encoding="utf-8").lower()
 
     if validation.get("mk3_torque_exact") is not True:
         failures.append("Mk3 torque exact audit failed")
@@ -44,6 +47,12 @@ def verify_artifacts() -> dict[str, Any]:
         failures.append("runtime hash collision")
     if binary_layout.get("byte_order") != "little-endian" or binary_layout.get("total_size_mod_16") != 0:
         failures.append("binary byte order/alignment drift")
+    if not str(binary_layout.get("header_format", "")).startswith("<") or not str(binary_layout.get("record_format", "")).startswith("<"):
+        failures.append("binary struct format must be explicitly little-endian")
+    if binary_layout.get("header_bytes") != struct.calcsize(UpgradeCurveBaker.BINARY_HEADER_FORMAT):
+        failures.append("binary header size drift")
+    if binary_layout.get("record_stride_bytes") != struct.calcsize(UpgradeCurveBaker.BINARY_RECORD_FORMAT):
+        failures.append("binary record stride drift")
     if monte_carlo.get("steps") != UpgradeCurveBaker.MONTE_CARLO_STEPS:
         failures.append("Monte Carlo step count drift")
     if monte_carlo.get("graph_cycle_count") != 0 or monte_carlo.get("worst_closed_loop_delta_value_units", 1.0) > 0.0:
@@ -56,6 +65,12 @@ def verify_artifacts() -> dict[str, Any]:
         failures.append("toaster binary fallback missing")
     if scalability.get("rtx_overkill", {}).get("extra_data_fields", {}).get("propwash_harmonic_count", 0) < 8:
         failures.append("RTX harmonic overkill field too low")
+    tone_audit = inquisition.get("tone_audit", {})
+    if tone_audit.get("forbidden_phrase_hits") != 0:
+        failures.append("tone audit reports forbidden phrase hits")
+    for term in FORBIDDEN_TONE_TERMS:
+        if term in inquisition_text:
+            failures.append(f"forbidden tone phrase leaked into sidecar: {term}")
     atlas_text = ATLAS_PATH.read_text(encoding="utf-8", errors="replace")
     domains = [int(row["id"]) for row in inquisition.get("atlas_fit", {}).get("domains", [])]
     for domain_id in domains:

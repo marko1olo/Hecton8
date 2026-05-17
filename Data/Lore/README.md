@@ -51,6 +51,8 @@ The PDA manifest mirrors the `H8PT` header for ingestion audits: raw JSONL `FNV1
 
 The same manifest carries section-level CRC32 integrity for the full binary, header, record table, full text, compact text, extra visual records, and combined payload. `Tools/VerifyPdaTechnicalLogs.py` rejects any CRC drift before claiming the artifact is fresh.
 
+`Tools/VerifyPdaTechnicalLogs.py` is intentionally independent of the packer. It unpacks the H8PT header and records directly with `<4sHHIIIIIIIIIIIIII` and `<IIIIIIIIIIIIIIII`, validates the full and toaster binaries against JSONL payloads, and rejects stale source hashes, stale CRCs, bad offsets, broken links, nonzero toaster visual fields, and atlas/H-Phi drift.
+
 The manifest now includes a `LookupContract` for stateless PDA access: `uint32_binary_search_sorted_record_table`, `LocHash` key, strict ascending table order, `SearchIterationsMax=7` for the current 100 rows, and `not_found_no_exception` fallback. `Tools/test_pda_technical_logs.py` decodes the H8PT table directly and proves TECH_01/TECH_50/TECH_100 plus a missing hash resolve within that bound without private caches.
 
 The PDA manifest also carries a static physics coverage audit from `Tools/LoreTechValidator.py`:

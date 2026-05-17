@@ -59,8 +59,8 @@ Hardware Impact: The template prevents managed references in the intended runtim
 Problem: JSON/CSV are correct source artifacts but not zero-cost for SHINOBU ingestion.
 Solution: Add `Data/Economy/Ore_Distribution.h8bin` with explicit little-endian `struct.pack("<...")`, 64-byte header, 16-byte aligned sections, CRC32, and SHA-256 cross-reference in JSON.
 Rejected Alternatives: Leaving SHINOBU to parse JSON at runtime was rejected after the binary/cache hygiene escalation. Raw ad hoc binary writing without a header was rejected because Steam Deck/Quest byte order and offset proof would be hearsay.
-Scalability potential: Low reads the minimal section: density bytes, clump bytes, and total weights. Ultra reads the visual section for deterministic vein gradients and harmonic noise after gameplay selection.
-Hardware Impact: On i3/MX350, runtime startup can memcpy 1632 bytes into an unmanaged table instead of parsing 30KB of JSON. Microsecond gain remains static until startup profiling.
+Scalability potential: Low reads the minimal section: density bytes, clump bytes, total weights, and the flat U8 weight matrix. Ultra reads the visual section for deterministic vein gradients and harmonic noise after gameplay selection.
+Hardware Impact: On i3/MX350, runtime startup can memcpy 1776 bytes into an unmanaged table instead of parsing JSON. Microsecond gain remains static until startup profiling.
 
 ### Decision 7: Replace Weak Density/Clump Formulas
 
@@ -133,3 +133,19 @@ Solution: EconomyValidator was rerun with approved escalation for temp-directory
 Rejected Alternatives: Ignoring failures because they were outside `Data/Economy` was rejected for the global inquisition. Editing other domains was also rejected because direct reruns proved no current data defect in AI/Habitat, and domain boundaries forbid unnecessary cross-domain mutation.
 Scalability potential: Global data gate evidence now includes the ore verifiers alongside other binary/LUT systems, so the 85-domain map remains coherent.
 Hardware Impact: Static-only. No Unity runtime or target hardware proof was produced.
+
+### Decision 16: Strengthen Toaster Binary And Repair Global Binary Hygiene
+
+Problem: The JSON toaster contract named `weight_matrix_u8_flat`, but the fastest binary minimal section initially carried only density, clump, and total weights. A later full sweep also exposed non-ore binary hygiene debt: the lore blob had trailing bytes, `Data/Balance/Baked/Babel_Dictionary.h8bin` was 1284 bytes, and the hygiene verifier incorrectly counted `.binlog` diagnostic evidence as game binary.
+Solution: Expanded the ore minimal LOD payload to `density_u8[10]`, `clump_u8[10]`, `total_weight_u16[10]`, `weight_u8[150]`, then 16-byte padding. Re-baked `Ore_Distribution.h8bin` to 1776 bytes with minimal LOD bytes `192`, minimal payload bytes `190`, ultra offset `1616`, CRC `2957493204`, and SHA-256 `60f9a95ec619b4c9b7c168a01ac308415190df44b545fb1f722a11e983709c06`. Re-baked lore through `VerifyLore.py`, padded the balance Babel dictionary to `1296` bytes with header length/CRC updated, and narrowed binary hygiene scanning to actual `.bin/.h8bin` suffixes.
+Rejected Alternatives: Leaving toaster consumers to scan full resource records was rejected because the binary minimal section should be a stripped ingest lane. Ignoring non-ore binary failures was rejected because the user's binary hygiene requirement was global. Deleting or reverting unrelated concurrent-agent work was rejected.
+Scalability potential: Low/Celeron/i3 can read the minimal LOD section as a compact stateless table. High/Ultra still consume deterministic visual-only gradient and harmonic fields after resource authority is chosen.
+Hardware Impact: Static-only. Binary ingest is now more direct for low hardware, but Unity startup/profiler/GCMonitor proof remains absent. H-Phi runtime Data Sovereignty remains `0.019743027`; this pass did not add DataVault runtime ownership.
+
+### Decision 17: Fix Metric Phi Sweep Self-Check Contract
+
+Problem: A final manual `Verify*.py` sweep exposed current-disk verifier debt outside the ore table. `VerifyMetricPhiDataTruth.py` had been tightened to require exactly `35` sweep commands even when `RunMetricPhiVerifySweep.py` intentionally invokes it against a pre-final self-check report with `selfCheckPending=true` and `34` completed commands. That false failure poisoned `Docs/Reports/METRIC_PHI_VERIFY_SWEEP.json`, which then made `VerifyQuestDagDataTruth.py` fail its H-Phi report check.
+Solution: Patched `Tools\VerifyMetricPhiDataTruth.py` so the command-count check accepts `35` commands for final reports, or `34` commands only when the sweep payload explicitly declares `selfCheckPending=true`. Required failures still must be zero. Reran the canonical sweep, standalone Metric Phi data truth, standalone Quest DAG data truth, and the full 33-script `Verify*.py` enumeration.
+Rejected Alternatives: Suppressing `VerifyMetricPhiDataTruth.py`, editing reports by hand, or lowering `requiredFailures` tolerance was rejected. The defect was in the verifier state model, not in ore data or Quest DAG binary data.
+Scalability potential: The offline verification lane now supports both the runner's self-check and final report state without weakening the final 35-command evidence gate. Low/Ultra data paths remain stateless binary/JSON lookup artifacts.
+Hardware Impact: Static-only. No Unity runtime code changed; the gain is preventing false-failed evidence from blocking SHINOBU data ingestion review. Runtime proof remains absent.

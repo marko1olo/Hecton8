@@ -196,3 +196,32 @@ Current `Docs\Reports\METRIC_PHI_VERIFY_SWEEP.json` reports `VERIFY_SWEEP_PASS` 
 
 Exact Microseconds saved:
 PENDING UNITY PROFILER. Offline bake time for this pass was `134712.20us`. Runtime estimate remains `8-20us` saved per acoustic-zone update by replacing runtime formula evaluation with fixed-stride binary lookup.
+
+## 2026-05-17 - Reproducibility And Endian Closure
+
+What was wrong:
+The active `Docs\Tasks\CURRENT_BATCH.md` no longer contains `SABINE_REVERB_MATRIX_GEN`, so the current task had to be recovered from the archived batch file. `Tools\SabineBaker.py` was absent while `Data\Audio\Acoustic_LUT.bin` still existed, which left the binary without a reproducible source. The Sabine verifier had degraded into static printouts. Repo-wide data truth was also blocked by two aligned but unknown-endian balance blobs.
+
+What was done:
+Restored `Tools\SabineBaker.py` as a pure Python + NumPy baker for the raw row-major `<ff>` acoustic matrix. Replaced `Tools\VerifySabineBaker.py` with a real verifier that rebuilds expected values, checks `<ff` little-endian bytes, validates adjacent `<ffff>` SIMD groups, verifies manifest SHA256/provenance/FNV rows, rejects stale magic damping literals, and confirms Project Atlas audio-domain fit. Added cold sidecar manifests for `Data\Balance\Baked\Babel_Dictionary.h8bin` and `Data\Balance\Baked\H8StaticData.bin` without changing either payload. Extended the economy data truth audit to count Sabine Beer-Lambert evidence.
+
+Cinematic Cheats used:
+Sabine remains a deterministic reverb-tail control fake, not a real-time FDN solve. The mock room uses a `50x50x5m` metal chamber to keep formula validation below the 10s clamp. Toaster path is nearest fixed-stride binary lookup. RTX-overkill path stays as manifest `extraData`: high-resolution gradients, harmonic noise octaves, longer convolution tail controls, and dirty resonance layers.
+
+Verification:
+`python -B Tools\SabineBaker.py` exited 0, printed `STATUS: ACOUSTICS BAKED`, and rebaked SHA256 `F0C1EFB278901AE7D1E29E9FCBFD82C82507DA853C8A3130ADBCCB626F7D90CB`.
+Mock room evidence: RT60 `3.35416667s`, damping `0.94167485`, pressure `51.27233125bar`.
+`python -B Tools\VerifySabineBaker.py` exited 0 with `STATUS: SABINE_LUT_VERIFIED`.
+`python -B Tools\Economy\MonteCarloEconomySim.py --players 10000 --max-nodes 10000 --world-seed 1212498744` exited 0 with `STATUS: ECONOMY PROVEN`, `total_nodes_mined=1539943`, `failures=0`, and p99 `59.285`.
+`python -B Tools\Economy\DataTruthInquisition.py --root .` exited 0 with `status=PASS`, `monte_carlo_steps=1539943`, `fnv_collisions=0`, `recipe_cycles=0`, `binary_unaligned=0`, `binary_endian_unknown=0`, and `struct_format_failures=0`.
+`python -B Tools\RunMetricPhiVerifySweep.py --json-output Docs\Reports\SABINE_LOOP16_METRIC_PHI_VERIFY_SWEEP.json --markdown-output Docs\Reports\SABINE_LOOP16_METRIC_PHI_VERIFY_SWEEP.md` exited 0 with `VERIFY_SWEEP_PASS`, `commands=35`, and `required_failures=0`.
+`python -B Tools\VerifyMetricPhiDataTruth.py --sweep-input Docs\Reports\SABINE_LOOP16_METRIC_PHI_VERIFY_SWEEP.json --json-output Docs\Reports\SABINE_LOOP16_METRIC_PHI_DATA_TRUTH.json --markdown-output Docs\Reports\SABINE_LOOP16_METRIC_PHI_DATA_TRUTH.md` exited 0 with `DATA_TRUTH_VERIFIED`, `checks=37`, and `failed=0`.
+`python -B Tools\VerifyBinaryHygiene.py --report Docs\Reports\SABINE_LOOP16_BINARY_HYGIENE_POST_SWEEP.json` exited 0 with `binaryCount=46` and `misalignedCount=0`.
+`python -B Tools\VerifyH8HashCollisions.py --root .` exited 0 with `H8 hash records: 1046` and `HASH COLLISIONS: 0`.
+`python -B Tools\VerifyLore.py --check` exited 0 with `CHECK OK`.
+
+Exact Microseconds saved:
+PENDING UNITY PROFILER. This pass restored offline reproducibility and closed static data hygiene; no Unity runtime system was changed. The acoustic runtime estimate remains `8-20us` saved per zone update by replacing Sabine, hydrostatic pressure, Thorp attenuation, and Beer-Lambert math with a fixed-stride binary lookup. Adjacent `<ffff>` ingest remains an estimated `1-3us` saved per bulk control refresh.
+
+Blocked:
+`dotnet build Hecton8.Core.csproj --no-restore -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` could not run because `dotnet` is not installed on PATH, and neither `C:\Program Files\dotnet\dotnet.exe` nor `C:\Program Files (x86)\dotnet\dotnet.exe` exists. Compile status is blocked by host toolchain absence, not claimed.

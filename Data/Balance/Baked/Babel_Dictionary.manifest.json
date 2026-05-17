@@ -1,0 +1,19 @@
+{
+  "alignmentBytes": 16,
+  "binary": "Data/Balance/Baked/Babel_Dictionary.h8bin",
+  "binaryBytes": 1296,
+  "domain": "DATA/BALANCE",
+  "endianness": "little",
+  "headerFormat": "<IHHIIIIII",
+  "headerLayout": "H8BabelDictionaryHeader: uint32 magic, uint16 version, uint16 headerSize, uint32 entryCount, uint32 indexOffset, uint32 dataOffset, uint32 fileByteLength, uint32 payloadCrc32, uint32 flags",
+  "magic": "H8AB",
+  "recordFormat": "<IIII",
+  "recordLayout": "H8BabelDictionaryEntry: uint32 hash, uint32 offset, uint32 length, uint32 flags",
+  "runtimeContract": "zero-copy UTF8 slice lookup by uint hash; no string table construction on hot path",
+  "sha256": "C86112A4AB020516C0C5CCE08DF4398695A6624453F79EBBF257A4172C2B6F67",
+  "sourceEvidence": [
+    "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs:H8BabelDictionaryHeader Pack=1 Size=32",
+    "Assets/_Project/Scripts/Core/Data/H8DataBaker.cs:WriteBabelDictionary sets LittleEndianFlag"
+  ],
+  "status": "BALANCE_BABEL_ENDIAN_VERIFIED"
+}

@@ -647,3 +647,75 @@ Rejected Alternatives: Restoring the entire `Tools` tree wholesale was rejected 
 Scalability potential: Offline verification infrastructure only. Runtime data remains fixed, little-endian, 16-byte aligned, and stateless.
 
 Hardware Impact: 0 us runtime. Recovery and offline verification only; no Unity runtime code, packet schema, public API, native allocation, or hot path changed.
+
+## Decision 055 - Eighth Reset Payload Inventory Drift
+
+Problem: Fresh disk verification after the latest reset found the active binary payload inventory at `46` aligned `.bin` / `.h8bin` files, while the last CTO log and rationale trail still ended on the recovered `44`-payload state. The two new current payloads are `Data/Balance/Baked/Babel_Dictionary.h8bin` (`1296` bytes) and `Data/Balance/Baked/H8StaticData.bin` (`896` bytes). Leaving the old count as the latest evidence would make the NET handoff stale.
+
+Solution: Update the current NET evidence and gate terms to require `BINARY_PAYLOADS_ALIGNED=46`, `binary_files=46`, and `binaries=46`, while preserving older `44` entries as historical evidence snapshots. Re-run the direct NET, Metric Phi, Data Inquisition, binary hygiene, economy, hash, lore, hard-science, replay, and H-Phi static gates before final handoff.
+
+Rejected Alternatives: Leaving `44` in the latest rationale/log was rejected because current disk is the only source of truth. Rewriting every old loop entry was rejected because historical entries document prior runs. Weakening binary hygiene to ignore newly added Balance payloads was rejected because SHINOBU ingest needs the full active payload inventory.
+
+Scalability potential: Low/toaster and SHINOBU ingest now see the actual active payload set. Ultra/God-Mode visual payloads remain stateless data records; no gameplay authority, private runtime state, or Unity object truth store was added.
+
+Hardware Impact: 0 us runtime. Offline evidence and gate terms only; no Unity runtime code, packet schema, binary layout, public API, native allocation, or hot path changed.
+
+## Decision 056 - Balance Binary Endian Classifier Repair
+
+Problem: `Tools/Economy/DataTruthInquisition.py --root .` returned `PENDING_BLOCKERS` after the inventory advanced to `46` payloads because `Data/Balance/Baked/Babel_Dictionary.h8bin` and `Data/Balance/Baked/H8StaticData.bin` had no manifest-linked endian evidence. Both files were aligned, but unknown endian status is still a SHINOBU ingest blocker.
+
+Solution: Patch the audit tool to infer `H8AB` and `H8SD` binary headers through little-endian field reads: magic, format version, header size, file length, 16-byte offsets, and `LittleEndianFlag`. Source proof is `H8DataBaker` line-level behavior: `BitConverter.IsLittleEndian` rejection before baking, fixed `StructLayout(Pack = 1)` contracts, `LittleEndianFlag` written into both headers, and `StaticDataStore` / `BabelDictionaryStore` rejecting headers without that flag.
+
+Rejected Alternatives: A blind `SOURCE_ENDIAN_EVIDENCE` whitelist was rejected because it would hide future header drift. Ignoring the Balance baked payloads was rejected because current production binary scope is `46`. Rewriting the C# baker was rejected because the binary itself already carries enough fixed header proof and runtime readers already enforce the endian flag.
+
+Scalability potential: Low/toaster and SHINOBU ingest now classify the Balance monolith and Babel slice table as stateless, 16-byte aligned, little-endian data. Ultra/God-Mode payloads remain presentation-only records; no gameplay authority or private runtime state was added.
+
+Hardware Impact: 0 us runtime. Offline verifier repair only; no Unity runtime code, packet schema, public API, native allocation, or hot path changed.
+
+## Decision 057 - Post-Verifier Cache Boundary
+
+Problem: Final Python verification regenerated `42` `.pyc` files and `4` `__pycache__` directories under `C:\Hecton8\Tools`, which is incompatible with a clean SHINOBU handoff if left on disk.
+
+Solution: Remove only generated cache paths whose resolved locations stay under `C:\Hecton8\Tools`, then perform a 5-second no-Python readback. Result: `removedFiles=42`, `removedDirs=4`, `errors=0`, `cacheFiles=0`, `cacheDirs=0`. External Python processes remained volatile (`activePython=6` at cleanup, latest no-Python readback `activePython=4`), so stable global cache-zero remains conditional on those writers staying bytecode-disabled or idle.
+
+Rejected Alternatives: Killing unrelated Python agents was rejected because this workspace is shared. Deleting outside `Tools` was rejected. Re-running broad Python verifiers after cache cleanup was rejected because it would recreate bytecode and reopen the same loop.
+
+Scalability potential: Offline SHINOBU handoff hygiene only. Runtime data remains fixed, little-endian, 16-byte aligned, and stateless.
+
+Hardware Impact: 0 us runtime. Cache cleanup only; no Unity runtime code, packet schema, binary layout, public API, native allocation, or hot path changed.
+
+## Decision 058 - External Cache Volatility Retry
+
+Problem: A later no-Python readback found `1` regenerated `.pyc` file and `1` `__pycache__` directory under `Tools` while external Python writers were still active.
+
+Solution: Remove an additional `7` generated cache files and `2` cache directories under verified `C:\Hecton8\Tools`. The immediate 2-second readback returned `cacheFiles=0`, `cacheDirs=0`, `errors=0`, with `activePython=8`.
+
+Rejected Alternatives: Killing unrelated Python processes was rejected because this is a shared workspace. Claiming global cache-zero as stable was rejected because active external writers can recreate bytecode after a clean readback.
+
+Scalability potential: Offline SHINOBU handoff hygiene only. Runtime data remains fixed, little-endian, 16-byte aligned, and stateless.
+
+Hardware Impact: 0 us runtime. Cache cleanup only; no Unity runtime code, packet schema, binary layout, public API, native allocation, or hot path changed.
+
+## Decision 059 - Final Syntax And Diff Hygiene
+
+Problem: The final verifier pass and explicit `py_compile` syntax check can regenerate Python bytecode, and ending without a whitespace check would leave the handoff dependent on implicit tool behavior.
+
+Solution: Run `python -B -m py_compile` for `Tools/NetProtocolGate.py`, `Tools/Economy/DataTruthInquisition.py`, `Tools/Architecture/VerifyNetSyncMerkleProtocol.py`, and `Tools/RunMetricPhiVerifySweep.py`; then remove only generated cache paths under verified `C:\Hecton8\Tools` and run targeted `git diff --check`. Final cleanup after py_compile removed `8` generated cache files and `1` cache directory, with readback `CACHE_FILES_LEFT=0`, `PYCACHE_DIRS_LEFT=0`, and `ACTIVE_PYTHON=7`.
+
+Rejected Alternatives: Skipping syntax verification was rejected because gate scripts changed during the reset. Leaving py_compile bytecode was rejected because SHINOBU ingest hygiene requires a clean handoff. Killing unrelated Python processes was rejected because this is a shared workspace.
+
+Scalability potential: Offline verifier hygiene only. Low/toaster and SHINOBU ingest keep aligned, little-endian, stateless data; Ultra/God-Mode payloads remain data-only visual extras.
+
+Hardware Impact: 0 us runtime. No Unity runtime code, packet schema, binary layout, public API, native allocation, or hot path changed.
+
+## Decision 060 - Shared Cache Volatility Boundary
+
+Problem: After the final syntax/diff pass, unrelated Python writers regenerated non-NET bytecode under `Tools/__pycache__`, including Sabine, Visual LOD, and economy inquisition artifacts. Stable global cache-zero cannot be asserted while those writers are still active.
+
+Solution: Remove only generated cache paths whose resolved locations stay under `C:\Hecton8\Tools`. Final cleanup removed `12` generated cache files and `2` cache directories, with immediate readback `CACHE_FILES_LEFT=0`, `PYCACHE_DIRS_LEFT=0`, `REMOVE_ERRORS=0`, and `ACTIVE_PYTHON=11`. The last pre-handoff retry removed `4` regenerated cache files and `1` cache directory, with immediate readback `LAST_CACHE_FILES_LEFT=0`, `LAST_PYCACHE_DIRS_LEFT=0`, and `LAST_ACTIVE_PYTHON=5`.
+
+Rejected Alternatives: Killing unrelated Python processes was rejected because this workspace is shared. Claiming stable global cache-zero while `ACTIVE_PYTHON=11` was rejected as false evidence. Ignoring regenerated non-NET bytecode was rejected because SHINOBU hygiene still needs the current readback.
+
+Scalability potential: Offline handoff hygiene only. Runtime data remains fixed, little-endian, 16-byte aligned, and stateless.
+
+Hardware Impact: 0 us runtime. Cache cleanup only; no Unity runtime code, packet schema, binary layout, public API, native allocation, or hot path changed.

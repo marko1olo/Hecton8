@@ -96,6 +96,133 @@ Final status:
 - VERIFIED MASTER GRADE for static/CLI text and binary data gates only.
 - Unity runtime and PDA UI verification remain PENDING VERIFICATION.
 
+## 2026-05-17 - Eighth Pass / Full Metric-Phi Sweep Reconciliation
+
+What was wrong:
+- Targeted PDA/lore gates were green, but the user explicitly demanded another self-validation loop over the Python `Verify*.py` surface.
+- A sweep stdout/report mismatch appeared during inspection; final disk reports had to be re-read and verified directly instead of trusting stdout alone.
+
+What was done:
+- Ran `python Tools\RunMetricPhiVerifySweep.py` end-to-end.
+- Re-read `Docs/Reports/METRIC_PHI_VERIFY_SWEEP.json` and `Docs/Reports/METRIC_PHI_DATA_TRUTH_AUDIT.json`.
+- Re-ran standalone `python Tools\VerifyMetricPhiDataTruth.py` after the sweep report landed.
+- Updated `Docs/Tasks/Status_ENCYCLOPEDIA_TECHNICAL_WRITER.md` and `Docs/AgentLogs/Rationale_ENCYCLOPEDIA_TECHNICAL_WRITER.md`.
+
+Cinematic Cheats used:
+- None added in runtime. Existing PDA High/Ultra overkill remains fixed metadata: 4096-gradient profile IDs, harmonic centihertz, overlay flags, and stress state.
+- Low/Toaster fallback remains a separate compact-only H8PT artifact.
+
+Exact microseconds saved:
+- Runtime measured savings: 0 us measured.
+- Runtime code changed: none.
+- Offline proof improved: stale or partial evidence can no longer be used as the current claim because the sweep JSON and Data Truth JSON were both re-read.
+
+Verification:
+- `python Tools\RunMetricPhiVerifySweep.py` -> `METRIC_PHI_VERIFY_SWEEP_STATUS: VERIFY_SWEEP_PASS`, `commands=35 required_failures=0`.
+- `Docs/Reports/METRIC_PHI_VERIFY_SWEEP.json` -> `status=VERIFY_SWEEP_PASS`, `totalCommands=35`, `requiredFailures=0`.
+- `python Tools\VerifyMetricPhiDataTruth.py` -> `METRIC_PHI_DATA_TRUTH_STATUS: DATA_TRUTH_VERIFIED`, `checks=37 failed=0`, `binary_files=46 unaligned=0`, `struct_format_sites=133 endian_failures=0`.
+- `Docs/Reports/METRIC_PHI_DATA_TRUTH_AUDIT.json` -> `status=DATA_TRUTH_VERIFIED`, `failedChecks=0`, `verifySweep.status=VERIFY_SWEEP_PASS`, `verifySweep.totalCommands=35`.
+
+Regression model:
+- CPU/GC: no Unity runtime code changed; Unity import, Play Mode, profiler, GCMonitor, frame-time, visual, and player-build proof remain absent.
+- Memory: full PDA H8PT remains 59,120 bytes; toaster PDA H8PT remains 19,120 bytes.
+- Correctness: project-level verifier surface now agrees with PDA-level verifier surface.
+- H-Phi: data remains stateless; no private runtime cache, Unity manager, asmdef, or runtime lookup state added.
+
+Final status:
+- TECH LORE COMPILED.
+- VERIFIED MASTER GRADE for static/CLI text and binary data gates only.
+- Unity runtime and PDA UI verification remain PENDING VERIFICATION.
+
+## 2026-05-17 - Fifth Pass / Evidence Reconciliation And Hash Audit
+
+What was wrong:
+- Active `Docs/Tasks/CURRENT_BATCH.md` no longer contains `ENCYCLOPEDIA_TECHNICAL_WRITER`; original XML had to be recovered from `Docs/Archive/Batch_GIT_SYNC_REBASE/CURRENT_BATCH_local_auxiliary_20260517.md`.
+- The rationale still carried stale evidence from prior bakes: old byte counts, source hash `0xB9667FF8`, an old economy audit state, and tone hit range `1..11`.
+- The current manifest and verifier evidence show source hash `0xD76EE1F0`, full H8PT 59,120 bytes, toaster H8PT 19,120 bytes, and tone hit range `1..6`.
+
+What was done:
+- Re-read `Docs/Tasks/Status_ENCYCLOPEDIA_TECHNICAL_WRITER.md`, `Docs/AgentLogs/Rationale_ENCYCLOPEDIA_TECHNICAL_WRITER.md`, the recovered XML block, and the domain map.
+- Corrected `Docs/AgentLogs/Rationale_ENCYCLOPEDIA_TECHNICAL_WRITER.md` to match current disk truth.
+- Updated `Docs/Tasks/Status_ENCYCLOPEDIA_TECHNICAL_WRITER.md` with Loop 20 and project hash-collision evidence.
+- Re-ran PDA validator/verifier and the project FNV collision audit.
+
+Cinematic Cheats used:
+- PDA extra data remains deterministic presentation metadata, not simulation truth.
+- Toaster profile remains compact text only; High/Ultra profile keeps fixed `ExtraVisualRecord` fields for visual overkill without runtime JSON parsing.
+
+Exact microseconds saved:
+- Runtime measured savings: 0 us measured.
+- Runtime code changed: none.
+- Expected avoided integration debt: stale manifest/rationale values now fail human audit before runtime teams ingest the artifact.
+
+Verification:
+- Recovered XML: `PROMPT IDENTIFIED: ENCYCLOPEDIA_TECHNICAL_WRITER | DOMAIN: LORE/TEXT | TASK COUNT: 15`.
+- `python Tools\LoreTechValidator.py` -> `PDA TECH VALIDATOR OK: entries=100 maxText=1500 maxCompact=240 hashCollisions=0`.
+- `python Tools\VerifyPdaTechnicalLogs.py` -> `entries=100 binaryBytes=59120 toasterBytes=19120 alignment=16 endian=< hashCollisions=0 hPhiDataSovereignty=1.0`.
+- `python Tools\VerifyH8HashCollisions.py` -> `H8 hash records: 1046`, `HASH COLLISIONS: 0`.
+- Manifest tone audit: `WeakEntries=[]`, minimum industrial hits per entry `1`, observed hit range `1..6`.
+- Current broader economy inquisition reports `PASS`: `monte_carlo_steps=1539943`, `fnv_collisions=0`, `recipe_cycles=0`, `binary_unaligned=0`, `binary_endian_unknown=0`, `struct_format_failures=0`.
+
+Regression model:
+- CPU/GC: no runtime code changed.
+- Memory: current full H8PT is 59,120 bytes; toaster H8PT is 19,120 bytes; JSONL authoring source is 155,363 bytes.
+- Correctness: source/header/manifest/hash/tone evidence reconciled to current disk state.
+- H-Phi: PDA artifact remains stateless; no private cache, Unity manager, asmdef, or runtime lookup state added.
+
+Final status:
+- TECH LORE COMPILED.
+- VERIFIED MASTER GRADE for static/CLI text and binary data gates only.
+- Unity runtime and PDA UI verification remain PENDING VERIFICATION.
+
+## 2026-05-17 - Sixth Pass / Toolchain Recovery And Source-Hash Reconciliation
+
+What was wrong:
+- Active `Docs/Tasks/CURRENT_BATCH.md` rotated away from `ENCYCLOPEDIA_TECHNICAL_WRITER`; the original XML is no longer present there.
+- Disk truth contradicted the status log: `Tools/VerifyPdaTechnicalLogs.py` was a stub, and `Tools/PdaTechSchema.py`, `Tools/LoreTechValidator.py`, `Tools/PackPdaTechnicalLogs.py`, and `Tools/test_pda_technical_logs.py` were missing.
+- Current `Data/Lore/PdaTechnicalLogs.h8jsonl` had source hash `0xD76EE1F0`, while the old H8PT header still carried `0x0F5C2152`.
+
+What was done:
+- Recovered the original XML from `Docs/Archive/Batch_GIT_SYNC_REBASE/CURRENT_BATCH_local_auxiliary_20260517.md`.
+- Restored `Tools/PdaTechSchema.py`, `Tools/LoreTechValidator.py`, `Tools/PackPdaTechnicalLogs.py`, `Tools/VerifyPdaTechnicalLogs.py`, and `Tools/test_pda_technical_logs.py`.
+- Replaced the verifier stub with direct H8PT unpacking and manifest validation; it does not use the packer as binary authority.
+- Regenerated `Data/Lore/PdaTechnicalLogs.h8bin`, `Data/Lore/PdaTechnicalLogs_Toaster.h8bin`, and `Data/Lore/PdaTechnicalLogs.manifest.json` from the current JSONL source.
+- Updated `Data/Lore/README.md`, status, rationale, and this log to reflect the recovered toolchain.
+
+Cinematic Cheats used:
+- Full H8PT keeps fixed high-tier presentation records instead of runtime JSON parsing.
+- Toaster H8PT strips visual payload and stores compact text only.
+
+Exact microseconds saved:
+- Runtime measured savings: 0 us measured; no Unity runtime code was touched.
+- Static toaster artifact still saves 40,000 bytes versus the full H8PT.
+- Source-hash reconciliation prevents stale binary ingestion before runtime gets involved.
+
+Verification:
+- `python -m py_compile Tools\PdaTechSchema.py Tools\LoreTechValidator.py Tools\PackPdaTechnicalLogs.py Tools\VerifyPdaTechnicalLogs.py Tools\test_pda_technical_logs.py` -> PASS.
+- `python Tools\LoreTechValidator.py` -> `entries=100 maxText=1500 maxCompact=240 hashCollisions=0`.
+- `python Tools\PackPdaTechnicalLogs.py` -> `entries=100 bytes=59120 toasterBytes=19120 alignment=16 endian=<`.
+- `python Tools\PackPdaTechnicalLogs.py --check` -> PASS.
+- `python Tools\VerifyPdaTechnicalLogs.py` -> `entries=100 binaryBytes=59120 toasterBytes=19120 alignment=16 endian=< hashCollisions=0 hPhiDataSovereignty=1.0`.
+- `python -B -m unittest Tools.test_pda_technical_logs -v` -> 8 tests OK.
+- `python -B -m unittest Tools.test_lore_checker Tools.test_lore_semantic_sync Tools.test_verify_lore Tools.test_pda_technical_logs -v` -> 29 tests OK.
+- `python Tools\VerifyBinaryHygiene.py` -> `binaryCount=46`, `misalignedCount=0`.
+- `python Tools\VerifyDataInquisition.py` -> `binaries=46 aligned16=true manifests=11 endian=< structFormats=273 monteCarloSteps=1000000 hashCollisions=0 atlasDomains=85`.
+- `python Tools\VerifyMetricPhiDataTruth.py` -> `checks=37 failed=0 binary_files=46 unaligned=0 struct_format_sites=274 endian_failures=0`.
+- `python Tools\CraftingEconomyMonteCarlo.py --steps 1000000` -> `profit_steps=0`.
+- `python Tools\Economy\DataTruthInquisition.py --root .` -> superseded by current rerun: `status=PASS`, `monte_carlo_steps=1539943`, `fnv_collisions=0`, `recipe_cycles=0`, `binary_unaligned=0`, `binary_endian_unknown=0`, `struct_format_failures=0`.
+
+Regression model:
+- CPU/GC: no runtime code changed; Unity/GCMonitor proof remains absent.
+- Memory: full H8PT remains 59,120 bytes; toaster H8PT remains 19,120 bytes.
+- Correctness: source hash now matches current JSONL; independent verifier rejects stale source, CRC drift, broken links, bad offsets, and non-stripped toaster visual fields.
+- H-Phi: stateless lookup contract remains `uint32_binary_search_sorted_record_table`; no private runtime state added.
+
+Final status:
+- TECH LORE COMPILED.
+- VERIFIED MASTER GRADE for static/CLI text and binary data gates only.
+- Unity runtime and PDA UI verification remain PENDING VERIFICATION.
+
 ## 2026-05-17 - Fifth Pass / Dedicated Toaster H8PT
 
 What was wrong:
@@ -518,6 +645,50 @@ Regression model:
 - Memory: H8PT binary now 58,880 bytes.
 - Correctness: fixed visual record fields are validated against JSONL `ExtraData`.
 - H-Phi: data remains stateless; no asmdef or runtime state added.
+
+Final status:
+- TECH LORE COMPILED.
+- VERIFIED MASTER GRADE for static/CLI text and binary data gates only.
+- Unity runtime and PDA UI verification remain PENDING VERIFICATION.
+
+## 2026-05-17 - Seventh Pass / Current Effective Evidence
+
+What was wrong:
+- Earlier log sections preserve pass-local numbers from previous bakes. Current disk truth had to be stated at the bottom of this append-only log so the newest evidence is not confused with superseded artifacts.
+- The current verification rerun shows the broader economy inquisition is `PASS`, not blocked.
+
+What was done:
+- Re-ran the PDA validator, independent H8PT verifier, binary hygiene, Data Inquisition, Metric-Phi Data Truth, project FNV collision audit, PDA/lore unit suite, packer freshness check, crafting Monte Carlo, and economy Data Truth Inquisition.
+- Updated status and rationale so their active evidence matches the current manifest and command output.
+- Appended this effective-state entry at the bottom of the CTO-facing log.
+
+Cinematic Cheats used:
+- PDA High/Ultra data remains fixed visual metadata: 4096-gradient profile IDs, harmonic centihertz, overlay flags, and stress state. No runtime fluid/light/audio simulation authority was added.
+- PDA Low/Toaster data remains compact text only in a separate 19,120-byte H8PT artifact.
+
+Exact microseconds saved:
+- Runtime measured savings: 0 us measured.
+- Runtime code changed: none.
+- Static ingest debt reduced: full H8PT is 59,120 bytes; toaster H8PT is 19,120 bytes; no runtime JSON parse is required by the PDA data contract.
+
+Verification:
+- `python -m py_compile Tools\PdaTechSchema.py Tools\LoreTechValidator.py Tools\PackPdaTechnicalLogs.py Tools\VerifyPdaTechnicalLogs.py Tools\test_pda_technical_logs.py` -> PASS.
+- `python Tools\LoreTechValidator.py` -> `PDA TECH VALIDATOR OK: entries=100 maxText=1500 maxCompact=240 hashCollisions=0`.
+- `python Tools\PackPdaTechnicalLogs.py --check` -> `entries=100 bytes=59120 toasterBytes=19120 alignment=16 endian=<`.
+- `python Tools\VerifyPdaTechnicalLogs.py` -> `entries=100 binaryBytes=59120 toasterBytes=19120 alignment=16 endian=< hashCollisions=0 hPhiDataSovereignty=1.0`.
+- `python -B -m unittest Tools.test_lore_checker Tools.test_lore_semantic_sync Tools.test_verify_lore Tools.test_pda_technical_logs -v` -> 29 tests OK.
+- `python Tools\VerifyBinaryHygiene.py` -> `binaryCount=46`, `misalignedCount=0`.
+- `python Tools\VerifyDataInquisition.py` -> `binaries=46 aligned16=true manifests=11 endian=< structFormats=273 monteCarloSteps=1000000 hashCollisions=0 atlasDomains=85`.
+- `python Tools\VerifyMetricPhiDataTruth.py` -> `checks=37 failed=0 binary_files=46 unaligned=0 struct_format_sites=274 endian_failures=0`.
+- `python Tools\VerifyH8HashCollisions.py --write-json Docs\AgentLogs\HashCollision_ENCYCLOPEDIA_TECHNICAL_WRITER.json --write-report Docs\AgentLogs\HashCollision_ENCYCLOPEDIA_TECHNICAL_WRITER.md` -> `H8 hash records: 1046`, `HASH COLLISIONS: 0`.
+- `python Tools\CraftingEconomyMonteCarlo.py --steps 1000000` -> `steps=1000000 profit_steps=0 seed=3237998101`.
+- `python Tools\Economy\DataTruthInquisition.py --root .` -> `status=PASS`, `monte_carlo_steps=1539943`, `fnv_collisions=0`, `recipe_cycles=0`, `binary_unaligned=0`, `binary_endian_unknown=0`, `struct_format_failures=0`.
+
+Regression model:
+- CPU/GC: no Unity runtime code changed; Unity import, Play Mode, profiler, GCMonitor, frame-time, visual, and player-build proof remain absent.
+- Memory: current JSONL authoring source is 155,363 bytes; full H8PT is 59,120 bytes; toaster H8PT is 19,120 bytes.
+- Correctness: source hash is `0xD76EE1F0`; CRCs are full binary `0xAAC08582`, header `0xFAC8DA3C`, record table `0xF04A365A`, text `0x64116AE8`, compact `0xDBA1CA7A`, extra `0x8D837E84`, payload `0x3B9EBED5`.
+- H-Phi: lookup is bounded stateless binary search over sorted `LocHash` records with `SearchIterationsMax=7`; no private runtime cache or Unity manager was added.
 
 Final status:
 - TECH LORE COMPILED.

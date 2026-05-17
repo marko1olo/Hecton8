@@ -18,12 +18,12 @@
     "Path": "Data/Lore/PdaTechnicalLogs.h8jsonl",
     "HashAlgorithm": "FNV1a32",
     "HashInput": "raw_minified_jsonl_bytes",
-    "Hash": "0x0F5C2152",
-    "HashUInt32": 257696082
+    "Hash": "0xD76EE1F0",
+    "HashUInt32": 3614368240
   },
   "Output": "Data/Lore/PdaTechnicalLogs.h8bin",
   "Header": {
-    "SourceHash": "0x0F5C2152",
+    "SourceHash": "0xD76EE1F0",
     "Flags": 31,
     "EntryCount": 100,
     "RecordSize": 64,
@@ -62,15 +62,15 @@
   },
   "Integrity": {
     "Algorithm": "CRC32",
-    "BinaryCrc32": 3742245664,
-    "HeaderCrc32": 193831682,
+    "BinaryCrc32": 2864743810,
+    "HeaderCrc32": 4207467068,
     "RecordTableCrc32": 4031395418,
     "TextCrc32": 1678863080,
     "CompactTextCrc32": 3684813434,
     "ExtraVisualRecordCrc32": 2374205060,
     "PayloadCrc32": 1000259285,
-    "BinaryCrc32Hex": "0xDF0E2320",
-    "HeaderCrc32Hex": "0x0B8DA302",
+    "BinaryCrc32Hex": "0xAAC08582",
+    "HeaderCrc32Hex": "0xFAC8DA3C",
     "RecordTableCrc32Hex": "0xF04A365A",
     "TextCrc32Hex": "0x64116AE8",
     "CompactTextCrc32Hex": "0xDBA1CA7A",
@@ -109,7 +109,7 @@
     "SizeReductionBytes": 40000,
     "SizeReductionPercentX100": 6766,
     "Header": {
-      "SourceHash": "0x0F5C2152",
+      "SourceHash": "0xD76EE1F0",
       "Flags": 39,
       "EntryCount": 100,
       "RecordSize": 64,
@@ -148,15 +148,15 @@
     },
     "Integrity": {
       "Algorithm": "CRC32",
-      "BinaryCrc32": 1269772482,
-      "HeaderCrc32": 3571736667,
+      "BinaryCrc32": 1439848518,
+      "HeaderCrc32": 631314789,
       "RecordTableCrc32": 2051859253,
       "TextCrc32": 3684813434,
       "CompactTextCrc32": 0,
       "ExtraVisualRecordCrc32": 0,
       "PayloadCrc32": 3684813434,
-      "BinaryCrc32Hex": "0x4BAF30C2",
-      "HeaderCrc32Hex": "0xD4E4605B",
+      "BinaryCrc32Hex": "0x55D25846",
+      "HeaderCrc32Hex": "0x25A11965",
       "RecordTableCrc32Hex": "0x7A4CE335",
       "TextCrc32Hex": "0xDBA1CA7A",
       "CompactTextCrc32Hex": "0x00000000",
@@ -268,87 +268,87 @@
     "PerEntryIndustrialHits": [
       {
         "LocID": "TECH_01",
-        "IndustrialHits": 6
-      },
-      {
-        "LocID": "TECH_02",
-        "IndustrialHits": 8
-      },
-      {
-        "LocID": "TECH_03",
-        "IndustrialHits": 9
-      },
-      {
-        "LocID": "TECH_04",
-        "IndustrialHits": 4
-      },
-      {
-        "LocID": "TECH_05",
-        "IndustrialHits": 7
-      },
-      {
-        "LocID": "TECH_06",
-        "IndustrialHits": 6
-      },
-      {
-        "LocID": "TECH_07",
-        "IndustrialHits": 5
-      },
-      {
-        "LocID": "TECH_08",
-        "IndustrialHits": 11
-      },
-      {
-        "LocID": "TECH_09",
-        "IndustrialHits": 8
-      },
-      {
-        "LocID": "TECH_10",
-        "IndustrialHits": 6
-      },
-      {
-        "LocID": "TECH_11",
-        "IndustrialHits": 8
-      },
-      {
-        "LocID": "TECH_12",
-        "IndustrialHits": 10
-      },
-      {
-        "LocID": "TECH_13",
-        "IndustrialHits": 10
-      },
-      {
-        "LocID": "TECH_14",
         "IndustrialHits": 3
       },
       {
-        "LocID": "TECH_15",
-        "IndustrialHits": 8
-      },
-      {
-        "LocID": "TECH_16",
-        "IndustrialHits": 8
-      },
-      {
-        "LocID": "TECH_17",
-        "IndustrialHits": 8
-      },
-      {
-        "LocID": "TECH_18",
-        "IndustrialHits": 6
-      },
-      {
-        "LocID": "TECH_19",
-        "IndustrialHits": 6
-      },
-      {
-        "LocID": "TECH_20",
+        "LocID": "TECH_02",
         "IndustrialHits": 5
       },
       {
-        "LocID": "TECH_21",
+        "LocID": "TECH_03",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_04",
+        "IndustrialHits": 1
+      },
+      {
+        "LocID": "TECH_05",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_06",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_07",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_08",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_09",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_10",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_11",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_12",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_13",
         "IndustrialHits": 6
+      },
+      {
+        "LocID": "TECH_14",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_15",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_16",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_17",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_18",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_19",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_20",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_21",
+        "IndustrialHits": 2
       },
       {
         "LocID": "TECH_22",
@@ -356,15 +356,15 @@
       },
       {
         "LocID": "TECH_23",
-        "IndustrialHits": 5
+        "IndustrialHits": 3
       },
       {
         "LocID": "TECH_24",
-        "IndustrialHits": 4
+        "IndustrialHits": 3
       },
       {
         "LocID": "TECH_25",
-        "IndustrialHits": 3
+        "IndustrialHits": 4
       },
       {
         "LocID": "TECH_26",
@@ -372,47 +372,47 @@
       },
       {
         "LocID": "TECH_27",
-        "IndustrialHits": 9
+        "IndustrialHits": 3
       },
       {
         "LocID": "TECH_28",
-        "IndustrialHits": 4
+        "IndustrialHits": 3
       },
       {
         "LocID": "TECH_29",
-        "IndustrialHits": 4
+        "IndustrialHits": 2
       },
       {
         "LocID": "TECH_30",
-        "IndustrialHits": 8
+        "IndustrialHits": 2
       },
       {
         "LocID": "TECH_31",
-        "IndustrialHits": 11
+        "IndustrialHits": 4
       },
       {
         "LocID": "TECH_32",
-        "IndustrialHits": 8
-      },
-      {
-        "LocID": "TECH_33",
         "IndustrialHits": 5
       },
       {
+        "LocID": "TECH_33",
+        "IndustrialHits": 4
+      },
+      {
         "LocID": "TECH_34",
-        "IndustrialHits": 6
+        "IndustrialHits": 2
       },
       {
         "LocID": "TECH_35",
-        "IndustrialHits": 9
+        "IndustrialHits": 4
       },
       {
         "LocID": "TECH_36",
-        "IndustrialHits": 6
+        "IndustrialHits": 5
       },
       {
         "LocID": "TECH_37",
-        "IndustrialHits": 7
+        "IndustrialHits": 5
       },
       {
         "LocID": "TECH_38",
@@ -420,123 +420,123 @@
       },
       {
         "LocID": "TECH_39",
-        "IndustrialHits": 6
+        "IndustrialHits": 3
       },
       {
         "LocID": "TECH_40",
-        "IndustrialHits": 4
-      },
-      {
-        "LocID": "TECH_41",
-        "IndustrialHits": 3
-      },
-      {
-        "LocID": "TECH_42",
         "IndustrialHits": 2
       },
       {
-        "LocID": "TECH_43",
-        "IndustrialHits": 7
-      },
-      {
-        "LocID": "TECH_44",
-        "IndustrialHits": 6
-      },
-      {
-        "LocID": "TECH_45",
-        "IndustrialHits": 4
-      },
-      {
-        "LocID": "TECH_46",
-        "IndustrialHits": 9
-      },
-      {
-        "LocID": "TECH_47",
-        "IndustrialHits": 9
-      },
-      {
-        "LocID": "TECH_48",
-        "IndustrialHits": 9
-      },
-      {
-        "LocID": "TECH_49",
-        "IndustrialHits": 7
-      },
-      {
-        "LocID": "TECH_50",
-        "IndustrialHits": 9
-      },
-      {
-        "LocID": "TECH_51",
-        "IndustrialHits": 5
-      },
-      {
-        "LocID": "TECH_52",
-        "IndustrialHits": 4
-      },
-      {
-        "LocID": "TECH_53",
-        "IndustrialHits": 4
-      },
-      {
-        "LocID": "TECH_54",
-        "IndustrialHits": 6
-      },
-      {
-        "LocID": "TECH_55",
-        "IndustrialHits": 5
-      },
-      {
-        "LocID": "TECH_56",
-        "IndustrialHits": 6
-      },
-      {
-        "LocID": "TECH_57",
-        "IndustrialHits": 3
-      },
-      {
-        "LocID": "TECH_58",
-        "IndustrialHits": 6
-      },
-      {
-        "LocID": "TECH_59",
+        "LocID": "TECH_41",
         "IndustrialHits": 1
       },
       {
-        "LocID": "TECH_60",
+        "LocID": "TECH_42",
+        "IndustrialHits": 1
+      },
+      {
+        "LocID": "TECH_43",
+        "IndustrialHits": 1
+      },
+      {
+        "LocID": "TECH_44",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_45",
         "IndustrialHits": 5
       },
       {
-        "LocID": "TECH_61",
+        "LocID": "TECH_46",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_47",
         "IndustrialHits": 4
       },
       {
+        "LocID": "TECH_48",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_49",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_50",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_51",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_52",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_53",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_54",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_55",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_56",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_57",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_58",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_59",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_60",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_61",
+        "IndustrialHits": 1
+      },
+      {
         "LocID": "TECH_62",
-        "IndustrialHits": 6
+        "IndustrialHits": 5
       },
       {
         "LocID": "TECH_63",
-        "IndustrialHits": 5
+        "IndustrialHits": 1
       },
       {
         "LocID": "TECH_64",
-        "IndustrialHits": 7
-      },
-      {
-        "LocID": "TECH_65",
-        "IndustrialHits": 6
-      },
-      {
-        "LocID": "TECH_66",
-        "IndustrialHits": 6
-      },
-      {
-        "LocID": "TECH_67",
         "IndustrialHits": 5
       },
       {
+        "LocID": "TECH_65",
+        "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_66",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_67",
+        "IndustrialHits": 4
+      },
+      {
         "LocID": "TECH_68",
-        "IndustrialHits": 6
+        "IndustrialHits": 4
       },
       {
         "LocID": "TECH_69",
@@ -544,71 +544,71 @@
       },
       {
         "LocID": "TECH_70",
-        "IndustrialHits": 5
+        "IndustrialHits": 2
       },
       {
         "LocID": "TECH_71",
-        "IndustrialHits": 9
+        "IndustrialHits": 2
       },
       {
         "LocID": "TECH_72",
-        "IndustrialHits": 8
-      },
-      {
-        "LocID": "TECH_73",
-        "IndustrialHits": 1
-      },
-      {
-        "LocID": "TECH_74",
-        "IndustrialHits": 2
-      },
-      {
-        "LocID": "TECH_75",
-        "IndustrialHits": 2
-      },
-      {
-        "LocID": "TECH_76",
-        "IndustrialHits": 4
-      },
-      {
-        "LocID": "TECH_77",
-        "IndustrialHits": 10
-      },
-      {
-        "LocID": "TECH_78",
-        "IndustrialHits": 7
-      },
-      {
-        "LocID": "TECH_79",
-        "IndustrialHits": 9
-      },
-      {
-        "LocID": "TECH_80",
-        "IndustrialHits": 5
-      },
-      {
-        "LocID": "TECH_81",
         "IndustrialHits": 3
       },
       {
-        "LocID": "TECH_82",
+        "LocID": "TECH_73",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_74",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_75",
+        "IndustrialHits": 1
+      },
+      {
+        "LocID": "TECH_76",
         "IndustrialHits": 2
       },
       {
-        "LocID": "TECH_83",
-        "IndustrialHits": 9
-      },
-      {
-        "LocID": "TECH_84",
-        "IndustrialHits": 7
-      },
-      {
-        "LocID": "TECH_85",
+        "LocID": "TECH_77",
         "IndustrialHits": 5
       },
       {
-        "LocID": "TECH_86",
+        "LocID": "TECH_78",
+        "IndustrialHits": 1
+      },
+      {
+        "LocID": "TECH_79",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_80",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_81",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_82",
         "IndustrialHits": 4
+      },
+      {
+        "LocID": "TECH_83",
+        "IndustrialHits": 5
+      },
+      {
+        "LocID": "TECH_84",
+        "IndustrialHits": 2
+      },
+      {
+        "LocID": "TECH_85",
+        "IndustrialHits": 3
+      },
+      {
+        "LocID": "TECH_86",
+        "IndustrialHits": 2
       },
       {
         "LocID": "TECH_87",
@@ -616,19 +616,19 @@
       },
       {
         "LocID": "TECH_88",
-        "IndustrialHits": 9
+        "IndustrialHits": 2
       },
       {
         "LocID": "TECH_89",
-        "IndustrialHits": 2
+        "IndustrialHits": 1
       },
       {
         "LocID": "TECH_90",
-        "IndustrialHits": 5
+        "IndustrialHits": 1
       },
       {
         "LocID": "TECH_91",
-        "IndustrialHits": 2
+        "IndustrialHits": 3
       },
       {
         "LocID": "TECH_92",
@@ -636,7 +636,7 @@
       },
       {
         "LocID": "TECH_93",
-        "IndustrialHits": 3
+        "IndustrialHits": 1
       },
       {
         "LocID": "TECH_94",
@@ -644,15 +644,15 @@
       },
       {
         "LocID": "TECH_95",
-        "IndustrialHits": 2
+        "IndustrialHits": 3
       },
       {
         "LocID": "TECH_96",
-        "IndustrialHits": 5
+        "IndustrialHits": 1
       },
       {
         "LocID": "TECH_97",
-        "IndustrialHits": 3
+        "IndustrialHits": 4
       },
       {
         "LocID": "TECH_98",
@@ -660,11 +660,11 @@
       },
       {
         "LocID": "TECH_99",
-        "IndustrialHits": 3
+        "IndustrialHits": 5
       },
       {
         "LocID": "TECH_100",
-        "IndustrialHits": 6
+        "IndustrialHits": 3
       }
     ]
   },

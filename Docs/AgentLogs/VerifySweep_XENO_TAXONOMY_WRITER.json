@@ -9,12 +9,12 @@
         "-B",
         "Tools/Architecture/VerifyNetSyncMerkleProtocol.py"
       ],
-      "elapsedMs": 5271,
+      "elapsedMs": 8269,
       "name": "VerifyNetSyncMerkleProtocol",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "NET_SYNC_MERKLE_PROTOCOL_VERIFY=PASS\nSTRUCT_COUNT=6\nDOMAIN_LABELS=85\nFNV_LABELS=107\nBINARY_PAYLOADS_ALIGNED=43\nDATAGRAM_CEILING=1200\nHEADER_CRC16_SAMPLE=0x220C\nJITTER_SIM_STATUS=NETWORK PROTOCOL READY\nJITTER_SIM_LOST_PACKETS=672\nJITTER_SIM_ROLLBACK_MAX_DEPTH=3\n",
+      "stdout": "NET_SYNC_MERKLE_PROTOCOL_VERIFY=PASS\nSTRUCT_COUNT=6\nDOMAIN_LABELS=85\nFNV_LABELS=107\nBINARY_PAYLOADS_ALIGNED=46\nDATAGRAM_CEILING=1200\nHEADER_CRC16_SAMPLE=0x220C\nJITTER_SIM_STATUS=NETWORK PROTOCOL READY\nJITTER_SIM_LOST_PACKETS=672\nJITTER_SIM_ROLLBACK_MAX_DEPTH=3\n",
       "timedOut": false
     },
     {
@@ -23,7 +23,7 @@
         "-B",
         "Tools/NoiseBaker/VerifyBlueNoiseSpectrum.py"
       ],
-      "elapsedMs": 4687,
+      "elapsedMs": 5942,
       "name": "VerifyBlueNoiseSpectrum",
       "passed": true,
       "returnCode": 0,
@@ -35,16 +35,14 @@
       "command": [
         "python",
         "-B",
-        "Tools/Security/VerifyReplayHasherReference.py",
-        "--xxhash-path",
-        "C:\\Users\\User\\AppData\\Local\\Temp\\metric_phi_xxhash_ref"
+        "Tools/Security/VerifyReplayHasherReference.py"
       ],
-      "elapsedMs": 4672,
+      "elapsedMs": 2225,
       "name": "VerifyReplayHasherReference",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128\n",
+      "stdout": "XXH3_OFFICIAL_VECTORS_AND_SHUFFLE_FUZZ_OK vectors=28 shuffle=128 source=Cyan4973/xxHash:cli/xsum_sanity_check.c\n",
       "timedOut": false
     },
     {
@@ -54,7 +52,7 @@
         "Tools/Taxonomy/verify_taxonomy.py",
         "Data/Localization/en_US_Taxonomy.json"
       ],
-      "elapsedMs": 952,
+      "elapsedMs": 1590,
       "name": "verify_taxonomy",
       "passed": true,
       "returnCode": 0,
@@ -68,12 +66,12 @@
         "-B",
         "Tools/VerifyAiNavigationTuning.py"
       ],
-      "elapsedMs": 14669,
+      "elapsedMs": 19473,
       "name": "VerifyAiNavigationTuning",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "AI NAV VERIFY PASSED\njson=Data/AI/Navigation_Tuning.json\nbinary=Data/AI/Navigation_Tuning.h8bin bytes=1280 records=76\nmanifest=Data/AI/Navigation_Tuning.manifest.json\nheader=<4sHHIIIIIIII24s record=<IHHfI headerCrc32=0xBE84D9E5 payloadCrc32=0x38446875\nbinaryAudit=endianness=little alignment=16 reservedZero=True sortedHashes=True semanticIdsUnique=True fnvCollisions=0\nmathAudit=AI potential-field steering; no Beer-Lambert, Dalton, or Sabine LUT is owned by this artifact. | sdf=SDF repulsion uses inverse-square force from U_obstacle = k / max(distance, epsilon); force magnitude = k / max(distance,0.25)^2. | ewma=EWMA is a first-order low-pass filter; equivalent tauSeconds is exported per selected alpha as -dt / ln(1-alpha).\nscalability=toasterCadenceHz=10 toasterFlowSamples=1 rtxHarmonicBands=4 rtxSdfGradientSamples=6\nperformance=predators=100 cadenceHz=10 samplesPerSecond=1000 scalarOpsFrameHigh=7166.67\n",
+      "stdout": "AI NAV VERIFY PASSED\njson=Data/AI/Navigation_Tuning.json\nbinary=Data/AI/Navigation_Tuning.h8bin bytes=1280 records=76\nmanifest=Data/AI/Navigation_Tuning.manifest.json\nlayout=header=<4sHHIIIIIIII24s record=<IHHfI alignment=16 endian=little\ncrc=header=0xEDC63F65 payload=0x89810120 semantic=0xBC8A06A3 reservedZero=True\nhash=algorithm=FNV-1a32 ASCII-lower semantic IDs records=76 fnvCollisions=0 sorted=True\nperformance=predators=100 cadenceHz=10 samplesPerSecond=1000 scalarOpsFrameHigh=7166.67\nmath=flowBasis=AbyssalFlowField vector as a steering hint sdfBasis=inverse-square SDF boundary pressure\nscalability=toaster=Low/MX350/Celeron-i3 rtx=Ultra/God-Mode visuals extraFields=7\n",
       "timedOut": false
     },
     {
@@ -82,12 +80,12 @@
         "-B",
         "Tools/VerifyBabel.py"
       ],
-      "elapsedMs": 6793,
+      "elapsedMs": 1595,
       "name": "VerifyBabel",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "VERIFY BABEL OK: records=32788 sources=46 bytes=1534512 alignment=16 endian=little hashCollisions=0\n",
+      "stdout": "VERIFY BABEL OK: records=32672 sources=45 bytes=1534512 alignment=16 endian=little hashCollisions=0\n",
       "timedOut": false
     },
     {
@@ -96,12 +94,12 @@
         "-B",
         "Tools/VerifyBabelDictionary.py"
       ],
-      "elapsedMs": 54577,
+      "elapsedMs": 2289,
       "name": "VerifyBabelDictionary",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "BABEL VERIFIED sources=46 entries=32788 languages=17 bytes=1534512 word_count=171309 constants=12884 endian=< alignment=16 collisions_resolved=0\n",
+      "stdout": "BABEL VERIFIED sources=45 entries=32672 languages=17 bytes=1534512 word_count=170779 constants=12768 endian=< alignment=16 collisions_resolved=0\n",
       "timedOut": false
     },
     {
@@ -112,12 +110,12 @@
         "--report",
         "Docs/AgentLogs/BinaryHygiene_XENO_TAXONOMY_WRITER.json"
       ],
-      "elapsedMs": 3779,
+      "elapsedMs": 17617,
       "name": "VerifyBinaryHygiene",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "VERIFY_BINARY_HYGIENE: status=BINARY_HYGIENE_VERIFIED\nVERIFY_BINARY_HYGIENE: binaryCount=43\nVERIFY_BINARY_HYGIENE: misalignedCount=0\nVERIFY_BINARY_HYGIENE: report=Docs/AgentLogs/BinaryHygiene_XENO_TAXONOMY_WRITER.json\n",
+      "stdout": "VERIFY_BINARY_HYGIENE: status=BINARY_HYGIENE_VERIFIED\nVERIFY_BINARY_HYGIENE: binaryCount=46\nVERIFY_BINARY_HYGIENE: misalignedCount=0\nVERIFY_BINARY_HYGIENE: report=Docs/AgentLogs/BinaryHygiene_XENO_TAXONOMY_WRITER.json\n",
       "timedOut": false
     },
     {
@@ -126,7 +124,7 @@
         "-B",
         "Tools/VerifyCraftingCosts.py"
       ],
-      "elapsedMs": 2810,
+      "elapsedMs": 3441,
       "name": "VerifyCraftingCosts",
       "passed": true,
       "returnCode": 0,
@@ -142,12 +140,12 @@
         "--report",
         "Docs/AgentLogs/DataInquisition_XENO_TAXONOMY_WRITER.json"
       ],
-      "elapsedMs": 30709,
+      "elapsedMs": 7212,
       "name": "VerifyDataInquisition",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "DATA INQUISITION OK\nbinaries=43 aligned16=true manifests=11 endian=< structFormats=273 monteCarloSteps=1000000 hashCollisions=0 atlasDomains=85 status=DATA_INQUISITION_VERIFIED_STATIC_ONLY\n",
+      "stdout": "DATA INQUISITION OK\nbinaries=46 aligned16=true manifests=11 endian=< structFormats=273 monteCarloSteps=1000000 hashCollisions=0 atlasDomains=85 status=DATA_INQUISITION_VERIFIED_STATIC_ONLY\n",
       "timedOut": false
     },
     {
@@ -160,12 +158,12 @@
         "--write-report",
         "Docs/AgentLogs/H8Hash_Audit_XENO_TAXONOMY_WRITER.md"
       ],
-      "elapsedMs": 23440,
+      "elapsedMs": 128851,
       "name": "VerifyH8HashCollisions",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "H8 hash records: 1018\nItems: 209\nBiomes: 523\nSignals: 286\nWrote Docs/AgentLogs/H8Hash_Audit_XENO_TAXONOMY_WRITER.md\nWrote Docs/AgentLogs/H8Hash_Audit_XENO_TAXONOMY_WRITER.json\nHASH COLLISIONS: 0\n",
+      "stdout": "H8 hash records: 1046\nItems: 209\nBiomes: 523\nSignals: 314\nWrote Docs/AgentLogs/H8Hash_Audit_XENO_TAXONOMY_WRITER.md\nWrote Docs/AgentLogs/H8Hash_Audit_XENO_TAXONOMY_WRITER.json\nHASH COLLISIONS: 0\n",
       "timedOut": false
     },
     {
@@ -178,12 +176,12 @@
         "--write-report",
         "Docs/AgentLogs/HullStressBudget_XENO_TAXONOMY_WRITER.json"
       ],
-      "elapsedMs": 3162,
+      "elapsedMs": 3207,
       "name": "VerifyHullStressBudget",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "verification_report=Docs\\AgentLogs\\HullStressBudget_XENO_TAXONOMY_WRITER.json\nstatus=PASS\n",
+      "stdout": "verification_report=C:\\Hecton8\\Docs\\AgentLogs\\HullStressBudget_XENO_TAXONOMY_WRITER.json\nstatus=PASS\n",
       "timedOut": false
     },
     {
@@ -193,12 +191,12 @@
         "Tools/VerifyLore.py",
         "--check"
       ],
-      "elapsedMs": 1829,
+      "elapsedMs": 4313,
       "name": "VerifyLore",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "CHECK OK: entries=2 blob=Data/Lore/Encyclopedia.h8bin manifest=Data/Lore/Encyclopedia.manifest.json compression=none/raw-utf8 alignment=16 endian=<\n",
+      "stdout": "LORE BAKED: entries=2 bytes=41920 output=Data/Lore/Encyclopedia.h8bin\nCHECK OK\n",
       "timedOut": false
     },
     {
@@ -213,12 +211,12 @@
         "--markdown-output",
         "Docs/AgentLogs/MetricPhiDataTruth_XENO_TAXONOMY_WRITER.md"
       ],
-      "elapsedMs": 38694,
+      "elapsedMs": 9147,
       "name": "VerifyMetricPhiDataTruth",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "METRIC_PHI_DATA_TRUTH_STATUS: DATA_TRUTH_VERIFIED\nchecks=37 failed=0\nbinary_files=43 unaligned=0\nstruct_format_sites=274 endian_failures=0\nreport=Docs/AgentLogs/MetricPhiDataTruth_XENO_TAXONOMY_WRITER.json\n",
+      "stdout": "METRIC_PHI_DATA_TRUTH_STATUS: DATA_TRUTH_VERIFIED\nchecks=37 failed=0\nbinary_files=46 unaligned=0\nstruct_format_sites=133 endian_failures=0\nreport=Docs/AgentLogs/MetricPhiDataTruth_XENO_TAXONOMY_WRITER.json\n",
       "timedOut": false
     },
     {
@@ -229,7 +227,7 @@
         "--report",
         "Docs/AgentLogs/OpticsVerification_XENO_TAXONOMY_WRITER.json"
       ],
-      "elapsedMs": 2826,
+      "elapsedMs": 4670,
       "name": "VerifyOpticsBaker",
       "passed": true,
       "returnCode": 0,
@@ -243,7 +241,7 @@
         "-B",
         "Tools/VerifyOrganicEntropy.py"
       ],
-      "elapsedMs": 2066,
+      "elapsedMs": 2624,
       "name": "VerifyOrganicEntropy",
       "passed": true,
       "returnCode": 0,
@@ -257,7 +255,7 @@
         "-B",
         "Tools/VerifyPdaTechnicalLogs.py"
       ],
-      "elapsedMs": 4725,
+      "elapsedMs": 5877,
       "name": "VerifyPdaTechnicalLogs",
       "passed": true,
       "returnCode": 0,
@@ -273,7 +271,7 @@
         "--report",
         "Docs/AgentLogs/VerifyQuestDag_XENO_TAXONOMY_WRITER.json"
       ],
-      "elapsedMs": 2380,
+      "elapsedMs": 4907,
       "name": "VerifyQuestDag",
       "passed": true,
       "returnCode": 0,
@@ -287,7 +285,7 @@
         "-B",
         "Tools/VerifySabineBaker.py"
       ],
-      "elapsedMs": 4260,
+      "elapsedMs": 5653,
       "name": "VerifySabineBaker",
       "passed": true,
       "returnCode": 0,
@@ -301,7 +299,7 @@
         "-B",
         "Tools/VerifySnellRefractionLut.py"
       ],
-      "elapsedMs": 4282,
+      "elapsedMs": 3275,
       "name": "VerifySnellRefractionLut",
       "passed": true,
       "returnCode": 0,
@@ -317,7 +315,7 @@
         "--report",
         "Docs/AgentLogs/VerifyTideBaker_XENO_TAXONOMY_WRITER.json"
       ],
-      "elapsedMs": 5076,
+      "elapsedMs": 3350,
       "name": "VerifyTideBaker",
       "passed": true,
       "returnCode": 0,
@@ -331,7 +329,7 @@
         "-B",
         "Tools/VerifyUpgradeCurveBaker.py"
       ],
-      "elapsedMs": 19998,
+      "elapsedMs": 5530,
       "name": "VerifyUpgradeCurveBaker",
       "passed": true,
       "returnCode": 0,
@@ -345,12 +343,12 @@
         "-B",
         "Tools/VerifyVisualLodMatrix.py"
       ],
-      "elapsedMs": 2279,
+      "elapsedMs": 4435,
       "name": "VerifyVisualLodMatrix",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "VERIFY_VISUAL_LOD_MATRIX_OK\nbinary=Data/System/Visual_Scalability_Matrix.bin\nmanifest=Data/System/Visual_Scalability_Matrix.manifest.json\nbytes=2016\nendianness=little\naligned16=True\nhash_collisions=0\ntiers=4\nextra_records=4\n",
+      "stdout": "VERIFY_VISUAL_LOD_MATRIX_OK\nbinary=Data/System/Visual_Scalability_Matrix.bin\nmanifest=Data/System/Visual_Scalability_Matrix.manifest.json\nbytes=2048\nendianness=little\naligned16=True\nhash_collisions=0\ntiers=4\nextra_records=4\ngod_mode_density_ratio_vs_pro=9.097\n",
       "timedOut": false
     },
     {
@@ -359,7 +357,7 @@
         "-B",
         "Tools/VerifyVramBudgets.py"
       ],
-      "elapsedMs": 2163,
+      "elapsedMs": 4616,
       "name": "VerifyVramBudgets",
       "passed": true,
       "returnCode": 0,
@@ -373,12 +371,12 @@
         "-B",
         "Tools/VerifyVrComfortData.py"
       ],
-      "elapsedMs": 1229,
+      "elapsedMs": 3910,
       "name": "VerifyVrComfortData",
       "passed": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "{\n  \"schema\": \"hecton8.vr_comfort_verify.v1\",\n  \"owner\": \"VR_JERK_THRESHOLD_AUDIT\",\n  \"status\": \"PASS\",\n  \"evidenceClass\": \"OFFLINE_TOOL_VALIDATED\",\n  \"payload\": {\n    \"path\": \"Data\\\\UX\\\\VR_Comfort_Profiles.json\",\n    \"schema\": \"hecton8.vr_comfort_profiles.v1\",\n    \"profileCount\": 2,\n    \"status\": \"PASS\"\n  },\n  \"binary\": {\n    \"path\": \"Data\\\\UX\\\\VR_Comfort_Profiles.h8bin\",\n    \"lengthBytes\": 1472,\n    \"endianness\": \"little\",\n    \"alignmentBytes\": 16,\n    \"profileCount\": 2,\n    \"curveRecordCount\": 34,\n    \"hashRecordCount\": 38,\n    \"payloadCrc32\": 1408369073,\n    \"sha256\": \"ad63eed8e1a1a3150ca7eff78f602b749a85e7fc501f0b24498176a7640008df\",\n    \"status\": \"PASS\"\n  },\n  \"toasterBinary\": {\n    \"path\": \"Data\\\\UX\\\\VR_Comfort_Profiles_Toaster.h8bin\",\n    \"lengthBytes\": 1120,\n    \"endianness\": \"little\",\n    \"alignmentBytes\": 16,\n    \"profileCount\": 2,\n    \"curveRecordCount\": 12,\n    \"hashRecordCount\": 38,\n    \"payloadCrc32\": 1600410003,\n    \"sha256\": \"9c3f3b67a12116ffd2e1af5a8eb84467e9372a33855a2c91832ae20f376a5f8e\",\n    \"status\": \"PASS\"\n  },\n  \"rtxOverkillBinary\": {\n    \"path\": \"Data\\\\UX\\\\VR_Comfort_RTXOverkill.h8bin\",\n    \"lengthBytes\": 560,\n    \"endianness\": \"little\",\n    \"alignmentBytes\": 16,\n    \"recordCount\": 16,\n    \"payloadCrc32\": 1856327131,\n    \"sha256\": \"d2545ebd0592341f8e7cc110b005cee124225ad7cdb7f5ef027d4933f6f7300b\",\n    \"status\": \"PASS\"\n  },\n  \"hashes\": {\n    \"algorithm\": \"FNV-1a 32-bit ASCII category-prefixed\",\n    \"recordCount\": 38,\n    \"collisionCount\": 0,\n    \"status\": \"PASS\"\n  },\n  \"png\": {\n    \"path\": \"Data\\\\UX\\\\VR_Comfort_Velocity_Opacity.png\",\n    \"lengthBytes\": 46574,\n    \"signature\": \"89504E470D0A1A0A\",\n    \"status\": \"PASS\"\n  },\n  \"atlasFit\": {\n    \"path\": \"Docs\\\\PROJECT_ATLAS.md\",\n    \"domains\": [\n      39,\n      71\n    ],\n    \"fit\": \"VR comfort data maps to domain 39 and shader/visor consumption maps to domain 71\",\n    \"status\": \"PASS\"\n  },\n  \"lore\": {\n    \"requiredTerms\": [\n      \"black\",\n      \"bulkhead\",\n      \"visor\",\n      \"rust\",\n      \"oil\"\n    ],\n    \"status\": \"PASS\"\n  },\n  \"structPackAudit\": {\n    \"gameBinaryFormats\": [\n      \"<8s14I\",\n      \"<II22f8I\",\n      \"<IIff\",\n      \"<IIII\",\n      \"<8s10I\",\n      \"<II6f\"\n    ],\n    \"allGameBinaryFormatsLittleEndian\": true,\n    \"pngWriterNote\": \"PNG chunk writer uses PNG-specified big-endian container integers; it is not a .h8bin/.bin gameplay blob.\",\n    \"status\": \"PASS\"\n  },\n  \"externalEconomyEvidence\": {\n    \"status\": \"PASS\",\n    \"ownership\": \"EXTERNAL_TO_DATA_UX_NO_RECIPE_FILES_TOUCHED_BY_THIS_TASK\",\n    \"monteCarlo\": {\n      \"path\": \"Docs\\\\Reports\\\\Economy_MonteCarlo_Audit.md\",\n      \"requiredTokenCount\": 3,\n      \"status\": \"PASS\"\n    },\n    \"recipeGraph\": {\n      \"path\": \"Docs\\\\AgentLogs\\\\EconomyRecipeGraphAudit_VR_JERK_THRESHOLD_AUDIT.md\",\n      \"requiredTokenCount\": 3,\n      \"status\": \"PASS\"\n    },\n    \"validator\": {\n      \"path\": \"Docs\\\\AgentLogs\\\\EconomyValidation_VR_JERK_THRESHOLD_AUDIT.md\",\n      \"requiredTokenCount\": 3,\n      \"status\": \"PASS\"\n    }\n  },\n  \"runtimeProof\": \"PENDING_VERIFICATION\"\n}\n",
+      "stdout": "{\n  \"binary\": {\n    \"alignmentBytes\": 16,\n    \"endianness\": \"little\",\n    \"lengthBytes\": 1472,\n    \"path\": \"Data/UX/VR_Comfort_Profiles.h8bin\",\n    \"status\": \"PASS\"\n  },\n  \"hashes\": {\n    \"collisionCount\": 0,\n    \"status\": \"PASS\"\n  },\n  \"owner\": \"VR_JERK_THRESHOLD_AUDIT\",\n  \"rtxOverkillBinary\": {\n    \"lengthBytes\": 560,\n    \"path\": \"Data/UX/VR_Comfort_RTXOverkill.h8bin\",\n    \"status\": \"PASS\"\n  },\n  \"runtimeProof\": \"PENDING_VERIFICATION\",\n  \"schema\": \"hecton8.vr_comfort_verify.v1\",\n  \"status\": \"PASS\",\n  \"toasterBinary\": {\n    \"lengthBytes\": 1120,\n    \"path\": \"Data/UX/VR_Comfort_Profiles_Toaster.h8bin\",\n    \"status\": \"PASS\"\n  }\n}\n",
       "timedOut": false
     }
   ],

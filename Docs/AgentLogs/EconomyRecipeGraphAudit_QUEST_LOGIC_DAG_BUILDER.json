@@ -1,7 +1,7 @@
 # Economy Integrity Audit
 
 Agent: BACKEND_ENGINEER / ITEM_RECIPE_GRAPH_AUDITOR
-Date: 2026-05-16
+Date: 2026-05-17
 Evidence class: STATIC_SOURCE plus CLI_PYTHON. Unity compile, Play Mode, profiler, and player build remain PENDING VERIFICATION.
 
 ## Commands

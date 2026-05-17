@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-05-17T03:07:20",
+  "generatedAt": "2026-05-17T12:25:05",
   "python": "C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
-  "requestedXxhashPath": "C:\\Users\\User\\AppData\\Local\\Temp\\h8_xxhash_ref",
+  "requestedXxhashPath": "C:\\Users\\User\\AppData\\Local\\Temp\\metric_phi_xxhash_ref",
   "residualRisk": [
     "CLI Python only; no Unity runtime, profiler, GCMonitor, frame-time, visual, or player-build proof.",
     "Some verifiers mutate report artifacts by design; this sweep records command evidence after mutation.",
@@ -16,14 +16,14 @@
         "-B",
         "Tools/VerifyAiNavigationTuning.py"
       ],
-      "elapsedSeconds": 0.413,
+      "elapsedSeconds": 30.096,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyAiNavigationTuning",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "AI NAV VERIFY PASSED\njson=Data/AI/Navigation_Tuning.json\nbinary=Data/AI/Navigation_Tuning.h8bin bytes=1280 records=0\nmanifest=Data/AI/Navigation_Tuning.manifest.json\nendianness=little alignment=16 fnvCollisions=0\n"
+      "stdout": "AI NAV VERIFY PASSED\njson=Data/AI/Navigation_Tuning.json\nbinary=Data/AI/Navigation_Tuning.h8bin bytes=1280 records=76\nmanifest=Data/AI/Navigation_Tuning.manifest.json\nlayout=header=<4sHHIIIIIIII24s record=<IHHfI alignment=16 endian=little\ncrc=header=0xEDC63F65 payload=0x89810120 semantic=0xBC8A06A3 reservedZero=True\nhash=algorithm=FNV-1a32 ASCII-lower semantic IDs records=76 fnvCollisions=0 sorted=True\nperformance=predators=100 cadenceHz=10 samplesPerSecond=1000 scalarOpsFrameHigh=7166.67\nmath=flowBasis=AbyssalFlowField vector as a steering hint sdfBasis=inverse-square SDF boundary pressure\nscalability=toaster=Low/MX350/Celeron-i3 rtx=Ultra/God-Mode visuals extraFields=7\n"
     },
     {
       "argv": [
@@ -35,14 +35,14 @@
         "--write-report",
         "Docs/Reports/H8_Hash_Catalog_Audit.md"
       ],
-      "elapsedSeconds": 0.813,
+      "elapsedSeconds": 98.254,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyH8HashCollisionsCanonical",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "Wrote Docs/Reports/H8_Hash_Catalog_Audit.json\nH8 hash records: 480\nHASH COLLISIONS: 0\n"
+      "stdout": "H8 hash records: 1046\nItems: 209\nBiomes: 523\nSignals: 314\nWrote Docs/Reports/H8_Hash_Catalog_Audit.md\nWrote Docs/Reports/H8_Hash_Catalog_Audit.json\nHASH COLLISIONS: 0\n"
     },
     {
       "argv": [
@@ -50,7 +50,7 @@
         "-B",
         "Tools/VerifyCraftingCosts.py"
       ],
-      "elapsedSeconds": 0.427,
+      "elapsedSeconds": 2.804,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyCraftingCosts",
       "passed": true,
@@ -65,22 +65,14 @@
         "-B",
         "Tools/VerifyCraftingSourceContracts.py"
       ],
-      "attempt": 2,
-      "elapsedSeconds": 1.824,
+      "elapsedSeconds": 1.422,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
-      "initialFailure": {
-        "elapsedSeconds": 0.546,
-        "returnCode": 1,
-        "stderr": "CRAFTING SOURCE CONTRACT VERIFY FAILED: raw verifier/simulator literals remain: [{'file': 'Tools/VerifyCraftingCosts.py', 'line': 95, 'pattern': '0\\\\.0000001', 'text': 'return round(value + 0.0000001, 6)'}]\n",
-        "stdout": ""
-      },
       "label": "VerifyCraftingSourceContracts",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "CRAFTING SOURCE CONTRACT VERIFY OK\nliteral_hit_count=0\nreport=Docs\\AgentLogs\\Crafting_SourceContract_Audit.json\n",
-      "transientFailureRecovered": true
+      "stdout": "CRAFTING SOURCE CONTRACT VERIFY OK\nliteral_hit_count=0\nreport=Docs\\AgentLogs\\Crafting_SourceContract_Audit.json\n"
     },
     {
       "argv": [
@@ -88,7 +80,7 @@
         "-B",
         "Tools/VerifyDaltonGasToxicity.py"
       ],
-      "elapsedSeconds": 0.444,
+      "elapsedSeconds": 1.749,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyDaltonGasToxicity",
       "passed": true,
@@ -105,14 +97,14 @@
         "--report",
         "Docs/Reports/METRIC_PHI_DATA_INQUISITION_SWEEP.json"
       ],
-      "elapsedSeconds": 2.137,
+      "elapsedSeconds": 7.598,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyDataInquisition",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "DATA INQUISITION OK\nbinaries=44 aligned16=true manifests=11 endian=< structFormats=273 monteCarloSteps=1000000 hashCollisions=0 atlasDomains=85 status=DATA_INQUISITION_VERIFIED_STATIC_ONLY\n"
+      "stdout": "DATA INQUISITION OK\nbinaries=46 aligned16=true manifests=11 endian=< structFormats=273 monteCarloSteps=1000000 hashCollisions=0 atlasDomains=85 status=DATA_INQUISITION_VERIFIED_STATIC_ONLY\n"
     },
     {
       "argv": [
@@ -124,14 +116,14 @@
         "--write-report",
         "Docs/Reports/H8HashCollision_METRIC_PHI_ANALYST.md"
       ],
-      "elapsedSeconds": 1.937,
+      "elapsedSeconds": 114.428,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyH8HashCollisions",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "Wrote Docs/Reports/H8HashCollision_METRIC_PHI_ANALYST.json\nH8 hash records: 480\nHASH COLLISIONS: 0\n"
+      "stdout": "H8 hash records: 1046\nItems: 209\nBiomes: 523\nSignals: 314\nWrote Docs/Reports/H8HashCollision_METRIC_PHI_ANALYST.md\nWrote Docs/Reports/H8HashCollision_METRIC_PHI_ANALYST.json\nHASH COLLISIONS: 0\n"
     },
     {
       "argv": [
@@ -139,7 +131,7 @@
         "-B",
         "Tools/VerifyHullStressBudget.py"
       ],
-      "elapsedSeconds": 1.141,
+      "elapsedSeconds": 2.88,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyHullStressBudget",
       "passed": true,
@@ -155,14 +147,14 @@
         "Tools/VerifyLore.py",
         "--check"
       ],
-      "elapsedSeconds": 1.681,
+      "elapsedSeconds": 3.548,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyLore",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "CHECK OK: entries=2 blob=Data/Lore/Encyclopedia.h8bin manifest=Data/Lore/Encyclopedia.manifest.json compression=none/raw-utf8 alignment=16 endian=<\n"
+      "stdout": "LORE BAKED: entries=2 bytes=41920 output=Data/Lore/Encyclopedia.h8bin\nCHECK OK\n"
     },
     {
       "argv": [
@@ -170,7 +162,7 @@
         "-B",
         "Tools/VerifyQuestDagBinaryIndependent.py"
       ],
-      "elapsedSeconds": 0.476,
+      "elapsedSeconds": 4.69,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyQuestDagBinaryIndependent",
       "passed": true,
@@ -187,7 +179,7 @@
         "--report",
         "Docs/Reports/METRIC_PHI_OPTICS_VERIFY.json"
       ],
-      "elapsedSeconds": 2.047,
+      "elapsedSeconds": 6.119,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyOpticsBaker",
       "passed": true,
@@ -202,7 +194,7 @@
         "-B",
         "Tools/VerifyOreLcgBaker.py"
       ],
-      "elapsedSeconds": 1.845,
+      "elapsedSeconds": 3.434,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyOreLcgBaker",
       "passed": true,
@@ -217,7 +209,7 @@
         "-B",
         "Tools/VerifyOreLcgBinaryIndependent.py"
       ],
-      "elapsedSeconds": 1.705,
+      "elapsedSeconds": 4.049,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyOreLcgBinaryIndependent",
       "passed": true,
@@ -232,7 +224,7 @@
         "-B",
         "Tools/VerifyOrganicEntropy.py"
       ],
-      "elapsedSeconds": 0.83,
+      "elapsedSeconds": 3.838,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyOrganicEntropy",
       "passed": true,
@@ -247,14 +239,14 @@
         "-B",
         "Tools/VerifyPdaTechnicalLogs.py"
       ],
-      "elapsedSeconds": 0.585,
+      "elapsedSeconds": 5.519,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyPdaTechnicalLogs",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "VERIFY_PDA_TECH_LOGS: entries=100 binaryBytes=59120 alignment=16 endian=< hashCollisions=0 hPhiDataSovereignty=1.0\n"
+      "stdout": "VERIFY_PDA_TECH_LOGS: entries=100 binaryBytes=59120 toasterBytes=19120 alignment=16 endian=< hashCollisions=0 hPhiDataSovereignty=1.0\n"
     },
     {
       "argv": [
@@ -262,14 +254,14 @@
         "-B",
         "Tools/VerifyQuestDag.py"
       ],
-      "elapsedSeconds": 0.682,
+      "elapsedSeconds": 3.894,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyQuestDag",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "VERIFY OK: nodes=4 hashes=31 binaryBytes=496 constants=7745\n"
+      "stdout": "VERIFY OK: nodes=4 hashes=31 binaryBytes=496 constants=123\n"
     },
     {
       "argv": [
@@ -277,14 +269,14 @@
         "-B",
         "Tools/VerifySabineBaker.py"
       ],
-      "elapsedSeconds": 0.532,
+      "elapsedSeconds": 8.93,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifySabineBaker",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "VERIFY_SABINE: binaryBytes=524288\nVERIFY_SABINE: recordFormat=<ff\nVERIFY_SABINE: simdGroupFormat=<ffff\nVERIFY_SABINE: fnvIds=11\nVERIFY_SABINE: fnvCollisions=0\nVERIFY_SABINE: tiers=high,middle,rtx_overkill,toaster_i3\nVERIFY_SABINE: atlasFamily=Audio\nVERIFY_SABINE: dataSovereignty=stateless_binary_lookup\nVERIFY_SABINE: mathAudit=Sabine+Thorp+BeerLambert+HydrostaticPressure\nSTATUS: SABINE_LUT_VERIFIED\n"
+      "stdout": "VERIFY_SABINE: binaryBytes=524288\nVERIFY_SABINE: recordFormat=<ff\nVERIFY_SABINE: simdGroupFormat=<ffff\nVERIFY_SABINE: rt60Range=0.05839461..10.00000000\nVERIFY_SABINE: dampingRange=0.09852124..0.99430436\nVERIFY_SABINE: manifest=Data/Audio/Acoustic_LUT.manifest.json\nVERIFY_SABINE: fnvIds=11\nVERIFY_SABINE: fnvCollisions=0\nVERIFY_SABINE: materialPresetSource=Data/Audio/Acoustic_Material_Profiles.json\nVERIFY_SABINE: constantProvenance=8\nVERIFY_SABINE: tiers=high,middle,rtx_overkill,toaster_i3\nVERIFY_SABINE: atlasFamily=Audio\nVERIFY_SABINE: dataSovereignty=stateless_binary_lookup\nVERIFY_SABINE: mathAudit=Sabine+Thorp+BeerLambert+HydrostaticPressure\nSTATUS: SABINE_LUT_VERIFIED\n"
     },
     {
       "argv": [
@@ -292,7 +284,7 @@
         "-B",
         "Tools/VerifySnellRefractionLut.py"
       ],
-      "elapsedSeconds": 0.673,
+      "elapsedSeconds": 3.745,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifySnellRefractionLut",
       "passed": true,
@@ -309,7 +301,7 @@
         "--report",
         "Docs/Reports/METRIC_PHI_TIDE_VERIFY.json"
       ],
-      "elapsedSeconds": 0.986,
+      "elapsedSeconds": 3.328,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyTideBaker",
       "passed": true,
@@ -324,7 +316,7 @@
         "-B",
         "Tools/VerifyTideInquisition.py"
       ],
-      "elapsedSeconds": 0.764,
+      "elapsedSeconds": 3.568,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyTideInquisition",
       "passed": true,
@@ -339,7 +331,7 @@
         "-B",
         "Tools/VerifyUpgradeCurveBaker.py"
       ],
-      "elapsedSeconds": 1.032,
+      "elapsedSeconds": 4.995,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyUpgradeCurveBaker",
       "passed": true,
@@ -354,14 +346,14 @@
         "-B",
         "Tools/VerifyVisualLodMatrix.py"
       ],
-      "elapsedSeconds": 0.635,
+      "elapsedSeconds": 3.133,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyVisualLodMatrix",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "VERIFY_VISUAL_LOD_MATRIX_OK\nbinary=Data/System/Visual_Scalability_Matrix.bin\nmanifest=Data/System/Visual_Scalability_Matrix.manifest.json\nbytes=2016\nendianness=little\naligned16=True\nhash_collisions=0\ntiers=4\nextra_records=4\n"
+      "stdout": "VERIFY_VISUAL_LOD_MATRIX_OK\nbinary=Data/System/Visual_Scalability_Matrix.bin\nmanifest=Data/System/Visual_Scalability_Matrix.manifest.json\nbytes=2048\nendianness=little\naligned16=True\nhash_collisions=0\ntiers=4\nextra_records=4\ngod_mode_density_ratio_vs_pro=9.097\n"
     },
     {
       "argv": [
@@ -369,7 +361,7 @@
         "-B",
         "Tools/VerifyVramBudgets.py"
       ],
-      "elapsedSeconds": 0.483,
+      "elapsedSeconds": 3.046,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyVramBudgets",
       "passed": true,
@@ -384,7 +376,7 @@
         "-B",
         "Tools/VerifyVrComfortData.py"
       ],
-      "elapsedSeconds": 0.27,
+      "elapsedSeconds": 2.36,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyVrComfortData",
       "passed": true,
@@ -399,14 +391,14 @@
         "-B",
         "Tools/Architecture/VerifyNetSyncMerkleProtocol.py"
       ],
-      "elapsedSeconds": 1.322,
+      "elapsedSeconds": 7.452,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyNetSyncMerkleProtocol",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "NET_SYNC_MERKLE_PROTOCOL_VERIFY=PASS\nSTRUCT_COUNT=6\nDOMAIN_LABELS=85\nFNV_LABELS=107\nBINARY_PAYLOADS_ALIGNED=44\nDATAGRAM_CEILING=1200\nHEADER_CRC16_SAMPLE=0x220C\nJITTER_SIM_STATUS=NETWORK PROTOCOL READY\nJITTER_SIM_LOST_PACKETS=672\nJITTER_SIM_ROLLBACK_MAX_DEPTH=3\n"
+      "stdout": "NET_SYNC_MERKLE_PROTOCOL_VERIFY=PASS\nSTRUCT_COUNT=6\nDOMAIN_LABELS=85\nFNV_LABELS=107\nBINARY_PAYLOADS_ALIGNED=46\nDATAGRAM_CEILING=1200\nHEADER_CRC16_SAMPLE=0x220C\nJITTER_SIM_STATUS=NETWORK PROTOCOL READY\nJITTER_SIM_LOST_PACKETS=672\nJITTER_SIM_ROLLBACK_MAX_DEPTH=3\n"
     },
     {
       "argv": [
@@ -414,7 +406,7 @@
         "-B",
         "Tools/NoiseBaker/VerifyBlueNoiseSpectrum.py"
       ],
-      "elapsedSeconds": 1.233,
+      "elapsedSeconds": 6.482,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyBlueNoiseSpectrum",
       "passed": true,
@@ -429,7 +421,7 @@
         "-B",
         "Tools/Taxonomy/verify_taxonomy.py"
       ],
-      "elapsedSeconds": 0.344,
+      "elapsedSeconds": 2.623,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyTaxonomy",
       "passed": true,
@@ -444,7 +436,7 @@
         "-B",
         "Tools/EconomyValidator.py"
       ],
-      "elapsedSeconds": 1.095,
+      "elapsedSeconds": 4.538,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "EconomyValidator",
       "passed": true,
@@ -459,7 +451,7 @@
         "-B",
         "Tools/BabelCompiler.py"
       ],
-      "elapsedSeconds": 0.533,
+      "elapsedSeconds": 2.974,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "BabelCompiler",
       "passed": true,
@@ -475,7 +467,7 @@
         "Tools/VerifyBabel.py",
         "--hash-audit"
       ],
-      "elapsedSeconds": 1.596,
+      "elapsedSeconds": 3.446,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyBabel",
       "passed": true,
@@ -490,7 +482,7 @@
         "-B",
         "Tools/VerifyBabelDictionary.py"
       ],
-      "elapsedSeconds": 0.55,
+      "elapsedSeconds": 2.73,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyBabelDictionary",
       "passed": true,
@@ -507,14 +499,14 @@
         "--report",
         "Docs/Reports/METRIC_PHI_BINARY_HYGIENE_SWEEP.json"
       ],
-      "elapsedSeconds": 4.479,
+      "elapsedSeconds": 13.785,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyBinaryHygiene",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "VERIFY_BINARY_HYGIENE: status=BINARY_HYGIENE_VERIFIED\nVERIFY_BINARY_HYGIENE: binaryCount=44\nVERIFY_BINARY_HYGIENE: misalignedCount=0\nVERIFY_BINARY_HYGIENE: report=Docs/Reports/METRIC_PHI_BINARY_HYGIENE_SWEEP.json\n"
+      "stdout": "VERIFY_BINARY_HYGIENE: status=BINARY_HYGIENE_VERIFIED\nVERIFY_BINARY_HYGIENE: binaryCount=46\nVERIFY_BINARY_HYGIENE: misalignedCount=0\nVERIFY_BINARY_HYGIENE: report=Docs/Reports/METRIC_PHI_BINARY_HYGIENE_SWEEP.json\n"
     },
     {
       "argv": [
@@ -528,14 +520,14 @@
         "Packages",
         "Tools"
       ],
-      "elapsedSeconds": 44.242,
+      "elapsedSeconds": 40.931,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "CalculateHPhi",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "HPHI_SCAN_START files=5038 workers=4 evidence=STATIC_SOURCE/STATIC_DOC/PY_TOOL\nWROTE Docs/Reports/HECTON_PHI_SCORE_FINAL.json\nWROTE Docs/Reports/HECTON_PHI_ARCHITECTURE_GRAPH.png\nUPDATED Docs/PROJECT_ATLAS.md\nDOMAIN_INDEX_COUNT=88\nRUNTIME_H_PHI_STATIC=6.7481e-05\nSTATUS: PHI CALCULATED\n"
+      "stdout": "HPHI_SCAN_START files=4901 workers=4 evidence=STATIC_SOURCE/STATIC_DOC/PY_TOOL\nWROTE Docs/Reports/HECTON_PHI_SCORE_FINAL.json\nWROTE Docs/Reports/HECTON_PHI_ARCHITECTURE_GRAPH.png\nUPDATED Docs/PROJECT_ATLAS.md\nDOMAIN_INDEX_COUNT=85\nRUNTIME_H_PHI_STATIC=6.7481e-05\nSTATUS: PHI CALCULATED\n"
     },
     {
       "argv": [
@@ -543,11 +535,11 @@
         "-B",
         "Tools/Security/VerifyReplayHasherReference.py",
         "--xxhash-path",
-        "C:\\Users\\User\\AppData\\Local\\Temp\\h8_xxhash_ref",
+        "C:\\Users\\User\\AppData\\Local\\Temp\\metric_phi_xxhash_ref",
         "--fuzz-count",
         "256"
       ],
-      "elapsedSeconds": 6.535,
+      "elapsedSeconds": 18.102,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyReplayHasherReference",
       "passed": true,
@@ -562,16 +554,16 @@
         "-B",
         "Tools/VerifyMetricPhiDataTruth.py",
         "--sweep-input",
-        "C:\\Hecton8\\Docs\\Reports\\METRIC_PHI_VERIFY_SWEEP.selfcheck.9992.json"
+        "C:\\Hecton8\\Docs\\Reports\\METRIC_PHI_VERIFY_SWEEP.selfcheck.3500.json"
       ],
-      "elapsedSeconds": 2.968,
+      "elapsedSeconds": 14.359,
       "evidenceClass": "CLI_PYTHON_STATIC_DATA",
       "label": "VerifyMetricPhiDataTruth",
       "passed": true,
       "required": true,
       "returnCode": 0,
       "stderr": "",
-      "stdout": "METRIC_PHI_DATA_TRUTH_STATUS: DATA_TRUTH_VERIFIED\nchecks=37 failed=0\nbinary_files=44 unaligned=0\nstruct_format_sites=274 endian_failures=0\nreport=Docs/Reports/METRIC_PHI_DATA_TRUTH_AUDIT.json\n"
+      "stdout": "METRIC_PHI_DATA_TRUTH_STATUS: DATA_TRUTH_VERIFIED\nchecks=37 failed=0\nbinary_files=46 unaligned=0\nstruct_format_sites=133 endian_failures=0\nreport=Docs/Reports/METRIC_PHI_DATA_TRUTH_AUDIT.json\n"
     }
   ],
   "schema": "H8.MetricPhi.VerifySweep.v1",
@@ -581,11 +573,9 @@
     "requiredFailures": 0,
     "selfCheckPending": false,
     "totalCommands": 35,
-    "transientRetryPasses": [
-      "VerifyCraftingSourceContracts"
-    ]
+    "transientRetryPasses": []
   },
   "tool": "Tools/RunMetricPhiVerifySweep.py",
-  "xxhashPath": "C:\\Users\\User\\AppData\\Local\\Temp\\h8_xxhash_ref",
+  "xxhashPath": "C:\\Users\\User\\AppData\\Local\\Temp\\metric_phi_xxhash_ref",
   "xxhashPathMode": "EXTERNAL_XXHASH_PATH_ACCEPTED"
 }

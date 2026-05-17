@@ -32,6 +32,11 @@ EXCLUDED_PREFIXES = (
 )
 EXCLUDED_PARTS = {"Build", "Builds", "Library", "Obj", "Temp"}
 HEADLESS_DUMP_MAGIC_U64 = 0x484543544F4E3800
+H8_STATIC_DATA_MAGIC = b"H8SD"
+H8_BABEL_DICTIONARY_MAGIC = b"H8AB"
+H8_STATIC_DATA_HEADER_BYTES = 64
+H8_BABEL_DICTIONARY_HEADER_BYTES = 32
+H8_LITTLE_ENDIAN_FLAG = 1
 SOURCE_ENDIAN_EVIDENCE = {
     "Data/Precomputed/Reverb_LUT.bin": "Tools/AcousticValidator.py:<f4,<fffffff",
     "Data/Visuals/Water_Fog_Density_LUT.bin": "Tools/WaterColorPreview.py:<f2",
@@ -363,13 +368,42 @@ def iter_production_binary_paths(root: Path) -> list[Path]:
 
 def infer_little_endian_header(path: Path) -> str | None:
     try:
-        header = path.read_bytes()[:16]
+        file_bytes = path.read_bytes()
     except OSError:
         return None
+    header = file_bytes[:64]
     if len(header) >= 16:
         headless_magic = int.from_bytes(header[:8], "little")
         if headless_magic == HEADLESS_DUMP_MAGIC_U64:
             return "binary_header=<QII"
+    if len(header) >= H8_BABEL_DICTIONARY_HEADER_BYTES and header[:4] == H8_BABEL_DICTIONARY_MAGIC:
+        format_version = int.from_bytes(header[4:6], "little")
+        header_bytes = int.from_bytes(header[6:8], "little")
+        file_byte_length = int.from_bytes(header[20:24], "little")
+        flags = int.from_bytes(header[28:32], "little")
+        if (
+            format_version >= 1
+            and header_bytes == H8_BABEL_DICTIONARY_HEADER_BYTES
+            and file_byte_length == len(file_bytes)
+            and (flags & H8_LITTLE_ENDIAN_FLAG) != 0
+        ):
+            return "binary_header=H8AB<32"
+    if len(header) >= H8_STATIC_DATA_HEADER_BYTES and header[:4] == H8_STATIC_DATA_MAGIC:
+        format_version = int.from_bytes(header[4:6], "little")
+        header_bytes = int.from_bytes(header[6:8], "little")
+        file_byte_length = int.from_bytes(header[12:16], "little")
+        lookup_offset = int.from_bytes(header[28:32], "little")
+        records_offset = int.from_bytes(header[32:36], "little")
+        flags = int.from_bytes(header[44:48], "little")
+        if (
+            format_version >= 1
+            and header_bytes == H8_STATIC_DATA_HEADER_BYTES
+            and file_byte_length == len(file_bytes)
+            and (lookup_offset & 15) == 0
+            and (records_offset & 15) == 0
+            and (flags & H8_LITTLE_ENDIAN_FLAG) != 0
+        ):
+            return "binary_header=H8SD<64"
     return None
 
 

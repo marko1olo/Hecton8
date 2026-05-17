@@ -6,28 +6,23 @@
       "passed": true
     },
     {
-      "detail": "graphHashes=8 nodeAndTriggerHashes=8 loreEntries=2",
-      "name": "hashes_and_lore",
-      "passed": true
-    },
-    {
-      "detail": "diegeticLabels=dirty_noir placeholderTokens=0 sterileTokens=0",
-      "name": "lore_tone",
-      "passed": true
-    },
-    {
-      "detail": "bytes=496 sha256=01D823243E1315F2C7263806C59967173B9315F6E4052A5726C6AEF27FC2E156 tierOffset=304",
+      "detail": "bytes=496 tierOffset=304 endian=<",
       "name": "binary_layout",
       "passed": true
     },
     {
-      "detail": "Low/Middle stripped; High/Ultra gradient+harmonic overkill data present",
+      "detail": "constants=123 runtimeLogic=0",
+      "name": "generated_constants",
+      "passed": true
+    },
+    {
+      "detail": "Low stripped; Ultra gradient+harmonic extra data present",
       "name": "scalability_tiers",
       "passed": true
     },
     {
-      "detail": "constants=123 staticClasses=9 runtimeLogic=0",
-      "name": "generated_constants",
+      "detail": "dirty_noir=true sterileTokens=0",
+      "name": "lore_tone",
       "passed": true
     },
     {
@@ -36,7 +31,7 @@
       "passed": true
     },
     {
-      "detail": "structFormats=15 endian=<",
+      "detail": "structFormats=10 endian=<",
       "name": "struct_endianness",
       "passed": true
     },
@@ -46,16 +41,21 @@
       "passed": true
     },
     {
-      "detail": "staleEvidenceMarkers=0",
-      "name": "stale_evidence",
+      "detail": "binaryFiles=45 unaligned=0",
+      "name": "binary_hygiene",
+      "passed": true
+    },
+    {
+      "detail": "questHashLabels=9 collisions=0",
+      "name": "local_hash_collisions",
       "passed": true
     }
   ],
   "residualRisk": [
     "CLI/static data only; Unity import, Play Mode, profiler, GCMonitor, frame-time, and player-build proof remain PENDING VERIFICATION.",
-    "Quest DAG owns bitmask narrative data only; hard-science LUTs stay in their owner domains."
+    "Quest DAG owns bitmask narrative data only; hard-science LUTs stay in owner domains."
   ],
-  "schema": "H8_QUEST_DAG_DATA_TRUTH_AUDIT_V1",
+  "schema": "H8_QUEST_DAG_DATA_TRUTH_AUDIT_V2",
   "status": "QUEST_DAG_DATA_TRUTH_VERIFIED",
   "summary": {
     "failedChecks": 0,

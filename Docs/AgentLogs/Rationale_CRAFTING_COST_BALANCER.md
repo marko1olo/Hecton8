@@ -173,3 +173,29 @@ Solution: Added `Tools\VerifyCraftingSourceContracts.py`, a permanent `Verify*.p
 Rejected Alternatives: Keeping the proof as an `rg` command was rejected because it leaves no stable artifact and is not picked up by `Tools\RunFullVerifySweep.py`.
 Scalability potential: The source contract verifier protects Toaster and Ultra paths by keeping all pack layout and scale authority in one baker contract.
 Hardware Impact: Runtime cost unchanged. Offline sweep now runs 26 verifier scripts; latest `VerifySweep_CRAFTING_COST_BALANCER.json` reports `failed_count=0`.
+
+## OSHINO Revalidation Decisions - 2026-05-17
+
+Problem: The live batch file no longer contains `CRAFTING_COST_BALANCER`, but the active status/rationale files still require this agent to finish its own economy evidence.
+Solution: Treated `Docs\Archive\Batch_GIT_SYNC_REBASE\CURRENT_BATCH_local_auxiliary_20260517.md` as the preserved original directive and re-extracted the exact XML block before touching data.
+Rejected Alternatives: Switching to the new live batch prompt was rejected because it would abandon the owned 15-task economy assignment; relying on chat memory was rejected by the anti-amnesia protocol.
+Scalability potential: Stable disk evidence keeps the Data Monolith and Toaster/God-Mode contracts traceable across batch rollover.
+Hardware Impact: No runtime change. This is evidence hygiene only.
+
+Problem: The latest broad verifier failure was stale cross-domain evidence, not a crafting table defect: Metric Phi still recorded an old Quest DAG lore-manifest failure even though direct quest verification could pass after current lore check.
+Solution: Reran `VerifyLore.py --check`, `VerifyMetricPhiDataTruth.py`, `VerifyQuestDag.py`, `VerifyQuestDagBinaryIndependent.py`, and `VerifyQuestDagDataTruth.py`, then refreshed the full sweep. The quest gate stayed strict; no fallback lore schema or weakened hash rule was added.
+Rejected Alternatives: Adding permissive `source` fallback logic to `QuestCompiler.load_lore_hashes` was rejected because the current manifest and verifier path can be made consistent without changing the compiler contract.
+Scalability potential: Quest data remains stateless bitmask/binary lookup data; PDA and encyclopedia payloads remain fixed hash-addressed slices.
+Hardware Impact: Runtime cost unchanged. CLI evidence only; Unity import, Play Mode, profiler, GCMonitor, and player build remain PENDING VERIFICATION.
+
+Problem: `EconomyValidator.py --negative-tests` had regressed to 6 malformed cases after tool restoration, while the previous economy evidence claimed 10.
+Solution: Added four crafting-specific negative tests and explicit `validate_crafting_costs` checks for recipe count, status, mass parity, positive kWh/time, sub-break-even reclaim, Tier 2 Tier 1 tool gate, and physical energy term recomputation before binary readback.
+Rejected Alternatives: Letting `VerifyCraftingCosts.py` alone cover these regressions was rejected because the XML names `Tools\EconomyValidator.py` as the economy simulator/gate.
+Scalability potential: The validator now protects the Toaster H8CT scalar path and the full H8CR/God-Mode path from authoring drift before runtime ingestion.
+Hardware Impact: Runtime cost unchanged. Offline validator now rejects 10 malformed cases; no player-frame cost.
+
+Problem: The final sweep needed to reflect current disk state after the validator patch.
+Solution: Reran `py_compile`, `VerifyCraftingSourceContracts.py`, `VerifyCraftingCosts.py`, `CraftingEconomyMonteCarlo.py --steps 1000000`, `EconomyValidator.py --root . --negative-tests`, `VerifyDataInquisition.py`, and `RunFullVerifySweep.py`. Final sweep report covers 29 verifier scripts with `failed_count=0`.
+Rejected Alternatives: Keeping the earlier passing sweep was rejected because the validator source changed afterward.
+Scalability potential: Fresh binary/hash/data inquisition confirms 46 aligned binary artifacts and 0 hash collisions for current static data.
+Hardware Impact: Static tooling only. Monte Carlo stayed `profit_steps=0`; worst deltas remained negative (`-1000` milli-value, `-400000 mg`, `-133000 mWh`).

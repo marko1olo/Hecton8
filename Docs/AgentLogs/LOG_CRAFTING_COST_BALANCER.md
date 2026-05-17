@@ -94,6 +94,38 @@ Verification:
 
 STATUS: VERIFIED MASTER GRADE for offline CLI artifacts. Unity runtime remains PENDING VERIFICATION.
 
+## 2026-05-17 - OSHINO Static Evidence Revalidation
+
+What was wrong:
+- The live batch file rolled forward and no longer carried `CRAFTING_COST_BALANCER`; the original assignment had to be recovered from archive.
+- The global Metric Phi evidence files contained stale Quest DAG failure state even though direct current quest and lore checks could pass.
+- `EconomyValidator.py --negative-tests` had regressed to 6 malformed cases after tool restoration; the previous 10-case claim was not valid for current disk state.
+
+What was done:
+- Re-extracted the original XML from `Docs\Archive\Batch_GIT_SYNC_REBASE\CURRENT_BATCH_local_auxiliary_20260517.md`.
+- Rebound Metric Phi / Quest DAG evidence by rerunning lore, quest, Metric Phi data-truth, and quest data-truth verifiers without weakening hash/lore validation.
+- Added four crafting-specific negative cases to `Tools\EconomyValidator.py`: output mass drift, Tier 2 missing Tier 1 tool, zero fabrication time, and Monte Carlo profit-loop tamper.
+- Reran the economy bake, million-step Monte Carlo, crafting binary readback, source contract verifier, economy validator, data inquisition, and full `Verify*.py` sweep.
+
+Cinematic Cheats used:
+- Physical kWh derivation stays offline; runtime consumers read precomputed scalar kWh/mWh.
+- Toaster path uses `Crafting_Costs_Toaster.h8bin` fixed records; God-Mode consumes packed gradient/noise visual records from the full H8CR blob.
+
+Exact Microseconds saved:
+- Runtime measured savings: 0 us claimed. No Unity profiler, GCMonitor, Play Mode, or player-build artifact exists.
+- Static ingestion guard: full crafting binary is 7,424 bytes, Toaster binary is 2,464 bytes, both 16-byte aligned.
+
+Verification:
+- `python -B Tools\CraftingCostsBaker.py` -> 50 recipes, cost ratios `2.931/3.173`, power ratios `2.916/2.966`, starter O2 `4.446`, full SHA256 `632fdabb2a57dbe115f18fecc8a23a6ddda2bacb0cf53ea472f29b81a0377f69`, Toaster SHA256 `67d24c52a6a14dcdd7d0488a315067a7eacefc78d444769c7ce9ea959dacc752`.
+- `python -B Tools\CraftingEconomyMonteCarlo.py --steps 1000000` -> `profit_steps=0`, max value delta `-1000`, max mass delta `-400000 mg`, max energy delta `-133000 mWh`.
+- `python -B Tools\EconomyValidator.py --root . --negative-tests` -> `STATUS: ECONOMY BALANCED`, `negative_cases=10`.
+- `python -B Tools\VerifyCraftingCosts.py` -> 50 recipes, 171 ingredients, 38 tool records, 50 God-Mode visual records, 342 hash pairs, 0 collisions.
+- `python -B Tools\VerifyDataInquisition.py --report Docs\AgentLogs\Data_Inquisition_CRAFTING_COST_BALANCER.json` -> 46 binaries, aligned16 true, 11 manifests, endian `<`, 273 struct formats, 1,000,000 Monte Carlo steps, 0 hash collisions, 85 atlas domains.
+- `python -B Tools\RunFullVerifySweep.py` -> 29 top-level verifier scripts, `failed_count=0`, report `Docs\AgentLogs\VerifySweep_CRAFTING_COST_BALANCER.json`.
+- `python -B -m py_compile Tools\EconomyValidator.py Tools\VerifyCraftingCosts.py Tools\CraftingCostsBaker.py Tools\CraftingEconomyMonteCarlo.py Tools\RunFullVerifySweep.py` -> passed.
+
+STATUS: VERIFIED MASTER GRADE for offline CLI artifacts. Unity runtime remains PENDING VERIFICATION.
+
 ## 2026-05-16 - Source Contract Verifier Gate
 
 What was wrong:

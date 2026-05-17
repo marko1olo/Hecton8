@@ -13,20 +13,20 @@ Evidence class: CLI_PYTHON + STATIC_DATA. Runtime Unity proof remains PENDING VE
 
 ## Binary Hygiene
 
-- Binary blob count: 44
+- Binary blob count: 46
 - Unaligned blobs: 0 []
 - Unknown endian manifests: 0 []
 - Big or mixed endian manifests: 0 []
 - Binary status: PASS
-- Python struct format sites: 118
+- Python struct format sites: 133
 - H8 endian failures: 0 []
 - External container big-endian allowed: 23
 
 ## Physics Math Evidence
 
-- Beer-Lambert: PASS via ['Tools/WaterColorPreview.py', 'Tools/OpticsBaker.py', 'Data/Audio/Acoustic_LUT_StructLayout.md', 'Data/Audio/Acoustic_LUT.manifest.json']
-- Dalton: PASS via ['Data/Precomputed/dalton_gas_toxicity_manifest.json']
-- Sabine: PASS via ['Data/Audio/Acoustic_LUT_StructLayout.md']
+- Beer-Lambert: PASS via ['Tools/WaterColorPreview.py', 'Tools/OpticsBaker.py', 'Tools/SabineBaker.py', 'Data/Audio/Acoustic_LUT_StructLayout.md', 'Data/Audio/Acoustic_LUT.manifest.json']
+- Dalton: PASS via ['Tools/DaltonGasToxicityBaker.py', 'Data/Precomputed/dalton_gas_toxicity_manifest.json']
+- Sabine: PASS via ['Tools/SabineBaker.py', 'Data/Audio/Acoustic_LUT_StructLayout.md']
 
 ## Scalability
 

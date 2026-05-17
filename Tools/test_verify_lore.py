@@ -1,21 +1,39 @@
 #!/usr/bin/env python3
-"""Regression tests for Tools/VerifyLore.py."""
+"""Regression tests for the raw H8LR lore packer/verifier."""
 
 from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
+import shutil
 import sys
 import unittest
-from unittest import mock
+import uuid
+from contextlib import contextmanager
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import VerifyLore
+import LorePacker  # noqa: E402
+import VerifyLore  # noqa: E402
 
 
-class VerifyLoreTests(unittest.TestCase):
+TEMP_ROOT = Path(r"C:\Users\User\.codex\memories\h8_lore_tests")
+
+
+@contextmanager
+def owned_temp_dir():
+    path = TEMP_ROOT / uuid.uuid4().hex
+    path.mkdir(parents=True, exist_ok=False)
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
+
+
+class LorePackerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.repo_root = Path(__file__).resolve().parents[1]
@@ -27,639 +45,134 @@ class VerifyLoreTests(unittest.TestCase):
     def tearDown(self) -> None:
         os.chdir(self.previous_cwd)
 
-    def make_entry(self, canonical_id: str, payload: bytes) -> VerifyLore.SourceEntry:
-        return VerifyLore.SourceEntry(
-            source_path=Path(canonical_id),
-            canonical_id=canonical_id,
-            hash_value=VerifyLore.compute_fnv1a32(canonical_id),
+    def make_entry(self, lore_id: str, payload: bytes) -> LorePacker.SourceEntry:
+        return LorePacker.SourceEntry(
+            source_path=Path(f"Docs/Lore/{lore_id}.md"),
+            lore_id=lore_id,
+            hash_value=LorePacker.compute_fnv1a32(lore_id),
             payload=payload,
         )
 
-    def test_empty_string_hash_matches_h8_data_hash_zero_contract(self) -> None:
-        self.assertEqual(VerifyLore.compute_fnv1a32(""), 0)
-
-    def test_bake_extract_and_verify_multiple_markdown_files_in_memory(self) -> None:
+    def test_blob_uses_prompt_layout_and_raw_payloads(self) -> None:
         entries = [
-            self.make_entry("Docs/Lore/alpha.md", b"# Alpha\nPressure note.\n"),
-            self.make_entry("Docs/Lore/sub/beta.md", b"# Beta\nAtlas note.\n"),
+            self.make_entry("Lore_Bible", b"# Lore\npressure hull abyss\n"),
+            self.make_entry("DeepReach_ColonyFailureArchive", b"# Archive\nrust relay fault\n"),
         ]
 
-        blob = VerifyLore.bake_blob(entries)
-        records = VerifyLore.parse_blob(blob)
-        self.assertEqual(len(records), 2)
-        self.assertEqual(records, sorted(records, key=lambda record: record.hash_value))
+        blob, records = LorePacker.bake_blob(sorted(entries, key=lambda row: row.hash_value))
 
+        self.assertEqual(16, LorePacker.HEADER_STRUCT.size)
+        self.assertEqual(16, LorePacker.RECORD_STRUCT.size)
+        self.assertEqual(b"H8LR", blob[:4])
+        self.assertEqual(0, len(blob) % 16)
+        self.assertEqual(records, LorePacker.parse_blob(blob))
         for record in records:
-            self.assertEqual(record.offset % VerifyLore.ALIGNMENT, 0)
+            self.assertEqual(0, record.offset % 16)
+            expected = next(entry.payload for entry in entries if entry.hash_value == record.hash_value)
+            self.assertEqual(expected, blob[record.offset : record.offset + record.length])
 
-        VerifyLore.verify_entries_against_blob(blob, records, entries)
-        manifest = VerifyLore.build_manifest_data(
-            "Data/Lore/Encyclopedia.h8bin",
-            blob,
-            records,
-            entries,
-            "Docs/Lore",
-        )
-        VerifyLore.verify_manifest_data(blob, records, entries, manifest)
-        self.assertEqual(manifest["entry_count"], 2)
-        self.assertEqual(manifest["alignment_bytes"], VerifyLore.ALIGNMENT)
-        self.assertEqual(len(manifest["entries"]), 2)
+    def test_current_artifacts_verify(self) -> None:
+        self.assertEqual(0, VerifyLore.main(["--check", "--verify-manifest", "--list"]))
 
-    def test_bake_rejects_non_utf8_markdown_payload(self) -> None:
-        entries = [self.make_entry("Docs/Lore/bad.md", b"# Bad\n\xff\n")]
+    def test_manifest_requires_no_compression_and_scalability_metadata(self) -> None:
+        self.assertEqual(0, LorePacker.main(["--check"]))
+        manifest = json.loads(Path("Data/Lore/Encyclopedia.manifest.json").read_text(encoding="utf-8"))
 
-        with self.assertRaisesRegex(ValueError, "not valid UTF-8"):
-            VerifyLore.bake_blob(entries)
+        self.assertEqual("none/raw-utf8", manifest["compression"])
+        self.assertEqual("<4sIII", manifest["header_struct_format"])
+        self.assertEqual("<IIII", manifest["record_struct_format"])
+        self.assertEqual("little", manifest["endianness"])
+        self.assertEqual(72, manifest["project_atlas_fit"]["domain_id"])
+        self.assertIn("toaster", manifest["scalability_profiles"])
+        self.assertIn("rtx_overkill", manifest["scalability_profiles"])
+        self.assertFalse(manifest["h_phi_audit"]["private_runtime_state_required"])
 
-    def test_bake_rejects_hash_mismatched_entries(self) -> None:
-        entry = VerifyLore.SourceEntry(
-            source_path=Path("Docs/Lore/wrong.md"),
-            canonical_id="Docs/Lore/wrong.md",
-            hash_value=0x12345678,
-            payload=b"# Wrong\n",
-        )
+    def test_duplicate_filename_hash_fails(self) -> None:
+        with owned_temp_dir() as root:
+            source_dir = root / "Docs" / "Lore"
+            (source_dir / "A").mkdir(parents=True)
+            (source_dir / "B").mkdir(parents=True)
+            (source_dir / "A" / "Same.md").write_text("# Same\npressure\n", encoding="utf-8")
+            (source_dir / "B" / "Same.md").write_text("# Same\nhull\n", encoding="utf-8")
 
-        with self.assertRaisesRegex(ValueError, "Hash mismatch"):
-            VerifyLore.bake_blob([entry])
+            with self.assertRaisesRegex(ValueError, "Duplicate lore filename-derived ID"):
+                LorePacker.load_source_entries(source_dir)
 
-    def test_bake_rejects_duplicate_canonical_ids(self) -> None:
-        first = self.make_entry("Docs/Lore/alpha.md", b"# Alpha\n")
+    def test_fnv1a_is_case_folded_and_ascii_guarded(self) -> None:
+        self.assertEqual(LorePacker.compute_fnv1a32("Lore_Bible"), LorePacker.compute_fnv1a32("lore_bible"))
 
-        with self.assertRaisesRegex(ValueError, "Duplicate lore source canonical id"):
-            VerifyLore.bake_blob([first, first])
+        with owned_temp_dir() as root:
+            source_dir = root / "Docs" / "Lore"
+            source_dir.mkdir(parents=True)
+            (source_dir / "Лор.md").write_text("# Bad\npressure\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "ASCII"):
+                LorePacker.load_source_entries(source_dir)
 
-    def test_bake_rejects_malformed_canonical_ids(self) -> None:
-        invalid_ids = (
-            "Docs\\Lore\\bad.md",
-            "Docs/Lore/Вad.md",
-            "Docs/Lore/not_markdown.txt",
-        )
+    def test_parse_rejects_alignment_and_reserved_corruption(self) -> None:
+        entries = [self.make_entry("Lore_Bible", b"# Lore\npressure\n")]
+        blob, _records = LorePacker.bake_blob(entries)
+        corrupted = bytearray(blob)
+        corrupted[16 + 12] = 1
+        with self.assertRaisesRegex(ValueError, "reserved pad"):
+            LorePacker.parse_blob(bytes(corrupted))
 
-        for canonical_id in invalid_ids:
-            with self.subTest(canonical_id=canonical_id):
-                hash_value = VerifyLore.compute_fnv1a32(canonical_id)
-                entry = VerifyLore.SourceEntry(
-                    source_path=Path(canonical_id),
-                    canonical_id=canonical_id,
-                    hash_value=hash_value,
-                    payload=b"# Bad\n",
-                )
+        corrupted = bytearray(blob)
+        corrupted[16 + 4] = 13
+        with self.assertRaisesRegex(ValueError, "payload offset"):
+            LorePacker.parse_blob(bytes(corrupted))
 
-                with self.assertRaises(ValueError):
-                    VerifyLore.bake_blob([entry])
+    def test_sterile_sci_fi_terms_fail_bake(self) -> None:
+        with owned_temp_dir() as root:
+            source_dir = root / "Docs" / "Lore"
+            source_dir.mkdir(parents=True)
+            (source_dir / "Bad.md").write_text("# Bad\nquantum veil\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "sterile"):
+                LorePacker.load_source_entries(source_dir)
 
-    def test_bake_rejects_path_traversal_canonical_ids(self) -> None:
-        invalid_ids = (
-            "/Docs/Lore/bad.md",
-            "Docs//Lore/bad.md",
-            "Docs/Lore/./bad.md",
-            "Docs/Lore/../bad.md",
-        )
-
-        for canonical_id in invalid_ids:
-            with self.subTest(canonical_id=canonical_id):
-                hash_value = VerifyLore.compute_fnv1a32(canonical_id)
-                entry = VerifyLore.SourceEntry(
-                    source_path=Path(canonical_id),
-                    canonical_id=canonical_id,
-                    hash_value=hash_value,
-                    payload=b"# Bad\n",
-                )
-
-                with self.assertRaises(ValueError):
-                    VerifyLore.bake_blob([entry])
-
-    def test_absolute_and_relative_paths_hash_to_same_canonical_id(self) -> None:
-        source_path = Path("Docs/Lore/Lore_Bible.md")
-        self.assertTrue(source_path.exists())
-        relative_canonical = VerifyLore.canonicalize_path(source_path)
-        absolute_canonical = VerifyLore.canonicalize_path(source_path.resolve())
-        self.assertEqual(relative_canonical, "Docs/Lore/Lore_Bible.md")
-        self.assertEqual(relative_canonical, absolute_canonical)
-        self.assertEqual(
-            VerifyLore.compute_fnv1a32(relative_canonical),
-            VerifyLore.compute_fnv1a32(absolute_canonical),
-        )
-
-    def test_check_command_is_independent_of_process_cwd(self) -> None:
-        os.chdir(self.repo_root / "Tools")
+    def test_verify_lore_cli_extracts_by_source_path(self) -> None:
         output = io.StringIO()
-
         with contextlib.redirect_stdout(output):
-            self.assertEqual(VerifyLore.main(["--check"]), 0)
-
-        expected_entries = VerifyLore.load_source_entries(Path("Docs/Lore"))
-        blob, records = VerifyLore.read_blob(Path("Data/Lore/Encyclopedia.h8bin"))
-        self.assertEqual(len(records), len(expected_entries))
-        self.assertGreater(len(blob), 0)
-        VerifyLore.verify_manifest(
-            Path("Data/Lore/Encyclopedia.h8bin"),
-            Path("Data/Lore/Encyclopedia.manifest.json"),
-            Path("Docs/Lore"),
-        )
-        self.assertIn(f"CHECK OK: entries={len(expected_entries)}", output.getvalue())
-        self.assertIn("blob=Data/Lore/Encyclopedia.h8bin", output.getvalue())
-        self.assertEqual(
-            VerifyLore.canonicalize_path(Path("Docs/Lore/Lore_Bible.md")),
-            "Docs/Lore/Lore_Bible.md",
-        )
-
-    def test_cli_rejects_hash_and_source_path_together(self) -> None:
-        with contextlib.redirect_stderr(io.StringIO()):
-            with self.assertRaises(SystemExit) as context:
-                VerifyLore.main(["0xD1880394", "--source-path", "Docs/Lore/Lore_Bible.md"])
-
-        self.assertNotEqual(context.exception.code, 0)
-
-    def test_cli_rejects_invalid_hash_without_traceback(self) -> None:
-        stderr = io.StringIO()
-
-        with contextlib.redirect_stderr(stderr):
-            with self.assertRaises(SystemExit) as context:
-                VerifyLore.main(["NOT_A_HASH"])
-
-        self.assertNotEqual(context.exception.code, 0)
-        self.assertIn("Invalid hash value", stderr.getvalue())
-        self.assertNotIn("Traceback", stderr.getvalue())
-
-    def test_cli_rejects_missing_hash_without_traceback(self) -> None:
-        stderr = io.StringIO()
-
-        with contextlib.redirect_stderr(stderr):
-            with self.assertRaises(SystemExit) as context:
-                VerifyLore.main(["0xFFFFFFFF"])
-
-        self.assertNotEqual(context.exception.code, 0)
-        self.assertIn("Hash not found", stderr.getvalue())
-        self.assertNotIn("Traceback", stderr.getvalue())
-
-    def test_cli_rejects_missing_blob_without_traceback(self) -> None:
-        stderr = io.StringIO()
-
-        with contextlib.redirect_stderr(stderr):
-            with self.assertRaises(SystemExit) as context:
-                VerifyLore.main(["--check", "--blob", ".codex-artifacts/missing_lore_blob.h8bin"])
-
-        self.assertNotEqual(context.exception.code, 0)
-        self.assertIn("Cannot read blob", stderr.getvalue())
-        self.assertNotIn("Traceback", stderr.getvalue())
-
-    def test_cli_rejects_missing_manifest_without_traceback(self) -> None:
-        stderr = io.StringIO()
-
-        with contextlib.redirect_stderr(stderr):
-            with self.assertRaises(SystemExit) as context:
+            self.assertEqual(
+                0,
                 VerifyLore.main(
                     [
-                        "--verify-manifest",
-                        "--manifest",
-                        ".codex-artifacts/missing_lore_manifest.json",
+                        "--check",
+                        "--hash-source",
+                        "--source-path",
+                        "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.md",
                     ]
-                )
-
-        self.assertNotEqual(context.exception.code, 0)
-        self.assertIn("Cannot read manifest", stderr.getvalue())
-        self.assertNotIn("Traceback", stderr.getvalue())
-
-    def test_cli_rejects_invalid_manifest_json_without_traceback(self) -> None:
-        manifest_path = Path(".codex-artifacts/invalid_lore_manifest.json")
-        VerifyLore.atomic_write_text(manifest_path, "{")
-        stderr = io.StringIO()
-
-        try:
-            with contextlib.redirect_stderr(stderr):
-                with self.assertRaises(SystemExit) as context:
-                    VerifyLore.main(["--verify-manifest", "--manifest", str(manifest_path)])
-        finally:
-            if manifest_path.exists():
-                manifest_path.unlink()
-
-        self.assertNotEqual(context.exception.code, 0)
-        self.assertIn("Cannot parse manifest JSON", stderr.getvalue())
-        self.assertNotIn("Traceback", stderr.getvalue())
-
-    def test_hash_parser_rejects_out_of_uint32_range_values(self) -> None:
-        for value in ("-1", "0x100000000", "4294967296"):
-            with self.subTest(value=value):
-                with self.assertRaises(ValueError):
-                    VerifyLore.parse_hash(value)
-
-    def test_atomic_write_failure_reports_value_error_and_cleans_temp(self) -> None:
-        output_path = Path(".codex-artifacts/atomic_write_failure_probe.md")
-        temp_path = output_path.with_name(output_path.name + ".tmp")
-        if temp_path.exists():
-            temp_path.unlink()
-
-        with mock.patch.object(Path, "replace", side_effect=PermissionError("denied")):
-            with self.assertRaisesRegex(ValueError, "Cannot write file atomically"):
-                VerifyLore.atomic_write_bytes(output_path, b"payload")
-
-        self.assertFalse(temp_path.exists())
-
-    def test_missing_hash_returns_none(self) -> None:
-        record = VerifyLore.LoreRecord(0x10, 32, 4)
-        self.assertIsNone(VerifyLore.find_record([record], 0x20))
-
-    def test_bad_magic_blob_is_rejected(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = bytearray(VerifyLore.bake_blob(entries))
-        blob[0:4] = b"BAD!"
-
-        with self.assertRaises(ValueError):
-            VerifyLore.parse_blob(bytes(blob))
-
-    def test_unsorted_record_table_is_rejected(self) -> None:
-        entries = [
-            self.make_entry("Docs/Lore/alpha.md", b"# Alpha\nPressure note.\n"),
-            self.make_entry("Docs/Lore/beta.md", b"# Beta\nAtlas note.\n"),
-        ]
-        blob = bytearray(VerifyLore.bake_blob(entries))
-        records = VerifyLore.parse_blob(blob)
-        self.assertEqual(len(records), 2)
-        VerifyLore.RECORD_STRUCT.pack_into(
-            blob,
-            VerifyLore.HEADER_SIZE,
-            records[1].hash_value,
-            records[1].offset,
-            records[1].length,
-        )
-        VerifyLore.RECORD_STRUCT.pack_into(
-            blob,
-            VerifyLore.HEADER_SIZE + VerifyLore.RECORD_SIZE,
-            records[0].hash_value,
-            records[0].offset,
-            records[0].length,
-        )
-
-        with self.assertRaises(ValueError):
-            VerifyLore.parse_blob(bytes(blob))
-
-    def test_overlapping_payload_records_are_rejected(self) -> None:
-        entries = [
-            self.make_entry("Docs/Lore/alpha.md", b"# Alpha\nPressure note.\n"),
-            self.make_entry("Docs/Lore/beta.md", b"# Beta\nAtlas note.\n"),
-        ]
-        blob = bytearray(VerifyLore.bake_blob(entries))
-        records = VerifyLore.parse_blob(blob)
-        self.assertEqual(len(records), 2)
-        second_record_offset = VerifyLore.HEADER_SIZE + VerifyLore.RECORD_SIZE
-        VerifyLore.RECORD_STRUCT.pack_into(
-            blob,
-            second_record_offset,
-            records[1].hash_value,
-            records[0].offset,
-            records[1].length,
-        )
-
-        with self.assertRaises(ValueError):
-            VerifyLore.parse_blob(bytes(blob))
-
-    def test_nonzero_payload_padding_is_rejected(self) -> None:
-        gap_start = 0
-        gap_end = 0
-        blob = bytearray()
-        for suffix in range(32):
-            entries = [
-                self.make_entry("Docs/Lore/alpha.md", b"# Alpha\nPressure note.\n" + bytes([65 + suffix]) * suffix),
-                self.make_entry("Docs/Lore/beta.md", b"# Beta\nAtlas note.\n"),
-            ]
-            blob = bytearray(VerifyLore.bake_blob(entries))
-            records = sorted(VerifyLore.parse_blob(blob), key=lambda record: record.offset)
-            gap_start = records[0].offset + records[0].length
-            gap_end = records[1].offset
-            if gap_end > gap_start:
-                break
-
-        self.assertGreater(gap_end, gap_start)
-        blob[gap_start] = 0xFF
-
-        with self.assertRaises(ValueError):
-            VerifyLore.parse_blob(bytes(blob))
-
-    def test_trailing_blob_bytes_are_rejected(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = VerifyLore.bake_blob(entries) + b"\x00"
-
-        with self.assertRaises(ValueError):
-            VerifyLore.parse_blob(blob)
-
-    def test_corrupt_compressed_payload_is_rejected(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = bytearray(VerifyLore.bake_blob(entries))
-        records = VerifyLore.parse_blob(blob)
-        blob[records[0].offset] ^= 0xFF
-
-        with self.assertRaisesRegex(ValueError, "Payload decompression failed"):
-            VerifyLore.verify_entries_against_blob(bytes(blob), records, entries)
-
-    def test_missing_docs_lore_does_not_fallback_to_design_redirect(self) -> None:
-        self.assertTrue(Path("Docs/Design/Lore_Bible.md").exists())
-        missing_dir = Path(".__verify_lore_missing_docs_lore_sentinel__")
-        self.assertFalse(missing_dir.exists())
-        self.assertEqual(VerifyLore.discover_markdown_sources(missing_dir), [])
-        with self.assertRaises(ValueError):
-            VerifyLore.bake_blob(VerifyLore.load_source_entries(missing_dir))
-
-    def test_source_path_hash_matches_numeric_lookup(self) -> None:
-        source_path = Path("Docs/Lore/Lore_Bible.md")
-        canonical = VerifyLore.canonicalize_path(source_path)
-        source_path_hash = VerifyLore.compute_fnv1a32(canonical)
-        entries = VerifyLore.load_source_entries(VerifyLore.PRIMARY_SOURCE_DIR)
-        matching = [entry for entry in entries if entry.canonical_id == canonical]
-        self.assertEqual(len(matching), 1)
-        self.assertEqual(source_path_hash, matching[0].hash_value)
-
-    def test_manifest_sha_mismatch_is_rejected(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = VerifyLore.bake_blob(entries)
-        records = VerifyLore.parse_blob(blob)
-        manifest = VerifyLore.build_manifest_data(
-            "Data/Lore/Encyclopedia.h8bin",
-            blob,
-            records,
-            entries,
-            "Docs/Lore",
-        )
-        manifest["entries"][0]["sha256"] = "0" * 64
-
-        with self.assertRaises(ValueError):
-            VerifyLore.verify_manifest_data(blob, records, entries, manifest)
-
-    def test_manifest_generation_rejects_blob_source_mismatch(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        stale_entries = [self.make_entry("Docs/Lore/entry.md", b"Stale entry\n")]
-        blob = VerifyLore.bake_blob(stale_entries)
-        records = VerifyLore.parse_blob(blob)
-
-        with self.assertRaises(ValueError):
-            VerifyLore.build_manifest_data(
-                "Data/Lore/Encyclopedia.h8bin",
-                blob,
-                records,
-                entries,
-                "Docs/Lore",
+                ),
             )
+        self.assertIn("0x", output.getvalue())
 
-    def test_manifest_generation_rejects_hash_mismatched_entries(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = VerifyLore.bake_blob(entries)
-        records = VerifyLore.parse_blob(blob)
-        mismatched_entries = [
-            VerifyLore.SourceEntry(
-                source_path=Path("Docs/Lore/entry.md"),
-                canonical_id="Docs/Lore/entry.md",
-                hash_value=0x12345678,
-                payload=b"Entry\n",
-            )
-        ]
+    def test_verify_lore_cli_check_reports_raw_contract(self) -> None:
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(0, VerifyLore.main(["--check", "--list"]))
+        text = output.getvalue()
+        self.assertIn("LORE BAKED", text)
+        self.assertIn("CHECK OK", text)
+        self.assertIn("offset=", text)
 
-        with self.assertRaisesRegex(ValueError, "Hash mismatch"):
-            VerifyLore.build_manifest_data(
-                "Data/Lore/Encyclopedia.h8bin",
-                blob,
-                records,
-                mismatched_entries,
-                "Docs/Lore",
-            )
+    def test_manifest_json_on_disk_matches_schema(self) -> None:
+        self.assertEqual(0, LorePacker.main(["--check"]))
+        blob = Path("Data/Lore/Encyclopedia.h8bin").read_bytes()
+        records = LorePacker.parse_blob(blob)
+        entries = LorePacker.load_source_entries(Path("Docs/Lore"))
+        manifest = json.loads(Path("Data/Lore/Encyclopedia.manifest.json").read_text(encoding="utf-8"))
+        LorePacker.verify_manifest(blob, records, entries, manifest)
 
-    def test_manifest_verification_rejects_blob_source_mismatch_even_when_manifest_matches_blob(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        stale_entries = [self.make_entry("Docs/Lore/entry.md", b"Stale entry\n")]
-        blob = VerifyLore.bake_blob(stale_entries)
-        records = VerifyLore.parse_blob(blob)
-        manifest = VerifyLore.build_manifest_data(
-            "Data/Lore/Encyclopedia.h8bin",
-            blob,
-            records,
-            stale_entries,
-            "Docs/Lore",
-        )
+    def test_no_runtime_string_hashing_needed_in_generated_constants(self) -> None:
+        self.assertEqual(0, LorePacker.main(["--check"]))
+        generated = Path("Assets/_Project/Scripts/Core/Generated/H8LoreHashes.cs").read_text(encoding="utf-8")
+        self.assertIn("public const uint", generated)
+        self.assertNotIn("Compute", generated)
+        self.assertNotIn("string", generated.lower())
 
-        with self.assertRaises(ValueError):
-            VerifyLore.verify_manifest_data(blob, records, entries, manifest)
-
-    def test_manifest_blob_length_mismatch_is_rejected(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = VerifyLore.bake_blob(entries)
-        records = VerifyLore.parse_blob(blob)
-        manifest = VerifyLore.build_manifest_data(
-            "Data/Lore/Encyclopedia.h8bin",
-            blob,
-            records,
-            entries,
-            "Docs/Lore",
-        )
-        manifest["blob_length"] = len(blob) + 1
-
-        with self.assertRaises(ValueError):
-            VerifyLore.verify_manifest_data(blob, records, entries, manifest)
-
-    def test_manifest_metadata_mismatch_is_rejected(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = VerifyLore.bake_blob(entries)
-        records = VerifyLore.parse_blob(blob)
-        manifest = VerifyLore.build_manifest_data(
-            "Data/Lore/Encyclopedia.h8bin",
-            blob,
-            records,
-            entries,
-            "Docs/Lore",
-        )
-        manifest["compression"] = "raw"
-
-        with self.assertRaises(ValueError):
-            VerifyLore.verify_manifest_data(blob, records, entries, manifest)
-
-    def test_manifest_malformed_integer_fields_are_rejected(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = VerifyLore.bake_blob(entries)
-        records = VerifyLore.parse_blob(blob)
-        manifest = VerifyLore.build_manifest_data(
-            "Data/Lore/Encyclopedia.h8bin",
-            blob,
-            records,
-            entries,
-            "Docs/Lore",
-        )
-
-        for key, message in (
-            ("version", "Manifest version mismatch"),
-            ("blob_length", "Manifest blob length mismatch"),
-            ("entry_count", "Manifest entry count mismatch"),
-        ):
-            for invalid_value in (None, "1", 1.5, True):
-                with self.subTest(key=key, invalid_value=invalid_value):
-                    mutated = dict(manifest)
-                    mutated[key] = invalid_value
-                    with self.assertRaisesRegex(ValueError, message):
-                        VerifyLore.verify_manifest_data(blob, records, entries, mutated)
-
-        for key, message in (
-            ("offset", "Manifest offset mismatch"),
-            ("compressed_length", "Manifest compressed length mismatch"),
-            ("decompressed_length", "Manifest decompressed length mismatch"),
-        ):
-            for invalid_value in (None, "1", 1.5, True):
-                with self.subTest(key=key, invalid_value=invalid_value):
-                    mutated = dict(manifest)
-                    mutated_entries = [dict(manifest["entries"][0])]
-                    mutated_entries[0][key] = invalid_value
-                    mutated["entries"] = mutated_entries
-                    with self.assertRaisesRegex(ValueError, message):
-                        VerifyLore.verify_manifest_data(blob, records, entries, mutated)
-
-    def test_manifest_malformed_entry_shapes_are_rejected(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = VerifyLore.bake_blob(entries)
-        records = VerifyLore.parse_blob(blob)
-        manifest = VerifyLore.build_manifest_data(
-            "Data/Lore/Encyclopedia.h8bin",
-            blob,
-            records,
-            entries,
-            "Docs/Lore",
-        )
-
-        with self.subTest(shape="root"):
-            with self.assertRaisesRegex(ValueError, "Manifest root must be an object"):
-                VerifyLore.verify_manifest_data(blob, records, entries, [])
-
-        with self.subTest(shape="entries-not-list"):
-            mutated = dict(manifest)
-            mutated["entries"] = {}
-            with self.assertRaisesRegex(ValueError, "Manifest entries must be a list"):
-                VerifyLore.verify_manifest_data(blob, records, entries, mutated)
-
-        with self.subTest(shape="entry-not-object"):
-            mutated = dict(manifest)
-            mutated["entries"] = ["bad"]
-            with self.assertRaisesRegex(ValueError, "Manifest entry must be an object"):
-                VerifyLore.verify_manifest_data(blob, records, entries, mutated)
-
-    def test_manifest_unknown_keys_are_rejected(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = VerifyLore.bake_blob(entries)
-        records = VerifyLore.parse_blob(blob)
-        manifest = VerifyLore.build_manifest_data(
-            "Data/Lore/Encyclopedia.h8bin",
-            blob,
-            records,
-            entries,
-            "Docs/Lore",
-        )
-
-        with self.subTest(shape="root-extra"):
-            mutated = dict(manifest)
-            mutated["debug_note"] = "bad"
-            with self.assertRaisesRegex(ValueError, "Manifest root keys mismatch"):
-                VerifyLore.verify_manifest_data(blob, records, entries, mutated)
-
-        with self.subTest(shape="root-missing"):
-            mutated = dict(manifest)
-            del mutated["blob_sha256"]
-            with self.assertRaisesRegex(ValueError, "Manifest root keys mismatch"):
-                VerifyLore.verify_manifest_data(blob, records, entries, mutated)
-
-        with self.subTest(shape="entry-extra"):
-            mutated = dict(manifest)
-            mutated_entries = [dict(manifest["entries"][0])]
-            mutated_entries[0]["debug_note"] = "bad"
-            mutated["entries"] = mutated_entries
-            with self.assertRaisesRegex(ValueError, "Manifest entry keys mismatch"):
-                VerifyLore.verify_manifest_data(blob, records, entries, mutated)
-
-        with self.subTest(shape="entry-missing"):
-            mutated = dict(manifest)
-            mutated_entries = [dict(manifest["entries"][0])]
-            del mutated_entries[0]["sha256"]
-            mutated["entries"] = mutated_entries
-            with self.assertRaisesRegex(ValueError, "Manifest entry keys mismatch"):
-                VerifyLore.verify_manifest_data(blob, records, entries, mutated)
-
-    def test_manifest_hash_field_must_be_canonical_string(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = VerifyLore.bake_blob(entries)
-        records = VerifyLore.parse_blob(blob)
-        manifest = VerifyLore.build_manifest_data(
-            "Data/Lore/Encyclopedia.h8bin",
-            blob,
-            records,
-            entries,
-            "Docs/Lore",
-        )
-        hash_value = manifest["entries"][0]["hash"]
-        decimal_hash = str(VerifyLore.parse_hash(hash_value))
-        invalid_values = (
-            VerifyLore.parse_hash(hash_value),
-            hash_value.lower(),
-            decimal_hash,
-            hash_value.replace("0x", "0X"),
-        )
-
-        for invalid_value in invalid_values:
-            with self.subTest(invalid_value=invalid_value):
-                mutated = dict(manifest)
-                mutated_entries = [dict(manifest["entries"][0])]
-                mutated_entries[0]["hash"] = invalid_value
-                mutated["entries"] = mutated_entries
-                with self.assertRaises(ValueError):
-                    VerifyLore.verify_manifest_data(blob, records, entries, mutated)
-
-    def test_manifest_blob_label_mismatch_is_rejected_when_expected(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = VerifyLore.bake_blob(entries)
-        records = VerifyLore.parse_blob(blob)
-        manifest = VerifyLore.build_manifest_data(
-            "Data/Lore/Stale.h8bin",
-            blob,
-            records,
-            entries,
-            "Docs/Lore",
-        )
-
-        with self.assertRaises(ValueError):
-            VerifyLore.verify_manifest_data(
-                blob,
-                records,
-                entries,
-                manifest,
-                expected_blob_label="Data/Lore/Encyclopedia.h8bin",
-                expected_source_dir_label="Docs/Lore",
-            )
-
-    def test_manifest_source_dir_label_mismatch_is_rejected_when_expected(self) -> None:
-        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
-        blob = VerifyLore.bake_blob(entries)
-        records = VerifyLore.parse_blob(blob)
-        manifest = VerifyLore.build_manifest_data(
-            "Data/Lore/Encyclopedia.h8bin",
-            blob,
-            records,
-            entries,
-            "Docs/Design",
-        )
-
-        with self.assertRaises(ValueError):
-            VerifyLore.verify_manifest_data(
-                blob,
-                records,
-                entries,
-                manifest,
-                expected_blob_label="Data/Lore/Encyclopedia.h8bin",
-                expected_source_dir_label="Docs/Lore",
-            )
-
-    def test_source_path_outside_repo_is_rejected(self) -> None:
-        with self.assertRaises(ValueError):
-            VerifyLore.canonicalize_path(Path.cwd().parent)
-
-    def test_current_artifact_verifies_against_current_sources(self) -> None:
-        VerifyLore.verify_against_sources(VerifyLore.DEFAULT_BLOB, VerifyLore.PRIMARY_SOURCE_DIR)
-        VerifyLore.verify_manifest(
-            VerifyLore.DEFAULT_BLOB,
-            VerifyLore.DEFAULT_MANIFEST,
-            VerifyLore.PRIMARY_SOURCE_DIR,
-        )
+    def test_verify_lore_uses_lore_packer_main(self) -> None:
+        with mock.patch.object(LorePacker, "main", return_value=0) as patched:
+            self.assertEqual(0, VerifyLore.main(["--check"]))
+        patched.assert_called_once()
 
 
 if __name__ == "__main__":

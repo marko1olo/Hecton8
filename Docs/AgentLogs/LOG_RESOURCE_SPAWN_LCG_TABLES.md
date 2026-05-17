@@ -153,3 +153,71 @@ Verification:
 
 In-game result:
 - PENDING VERIFICATION. Static verification is stronger; Unity import, Play Mode, profiler, GCMonitor, target hardware, and player build evidence remain absent.
+
+## 2026-05-17 - Toaster Binary Payload And Global Hygiene Re-audit
+
+What was wrong:
+- Active `Docs/Tasks/CURRENT_BATCH.md` no longer contains `RESOURCE_SPAWN_LCG_TABLES`; the original XML had moved to `Docs/Archive/Batch_GIT_SYNC_REBASE/CURRENT_BATCH_local_auxiliary_20260517.md`.
+- The ore JSON toaster contract listed `weight_matrix_u8_flat`, but the minimal binary section needed explicit proof that it also carried the 150-byte flat weight table.
+- Global binary hygiene had real adjacent debt: lore blob trailing bytes, `Data/Balance/Baked/Babel_Dictionary.h8bin` at `1284` bytes, and `.binlog` diagnostic files being counted as game binaries.
+
+What was done:
+- Re-extracted the original XML from archive and kept the task identity as `RESOURCE_SPAWN_LCG_TABLES | DATA/ECONOMY | 15`.
+- Regenerated/verified `Ore_Distribution.h8bin` as `1776` bytes with minimal LOD payload `190` bytes, aligned section `192` bytes, `minimal_weight_matrix_bytes=150`, ultra offset `1616`, CRC `2957493204`, SHA-256 `60f9a95ec619b4c9b7c168a01ac308415190df44b545fb1f722a11e983709c06`.
+- Re-baked lore with `VerifyLore.py --bake`, then `VerifyLore.py --check` passed.
+- Padded `Data/Balance/Baked/Babel_Dictionary.h8bin` to `1296` bytes and updated its header file length and payload CRC.
+- Patched `Tools/VerifyBinaryHygiene.py` to scan only `.bin` and `.h8bin` suffixes, not arbitrary `.binlog` evidence.
+- Removed temporary ore scratch paths under `.codex_tmp` and `Data/Economy`.
+
+Cinematic Cheats used:
+- Ore clumping remains a hydrostatic-pressure-derived byte proxy. No neighbor physics, per-node geology simulation, or runtime ore clustering truth was added.
+- Ultra fields remain visual-only: deterministic seed, high-res gradient bands, and harmonic noise. They do not alter resource authority.
+
+Exact microseconds saved:
+- Runtime path is still not integrated. Static estimate only: low tier can read one compact minimal LOD block instead of scanning resource records or parsing JSON.
+- New binary ingest payload is `1776` bytes total; startup/frame savings remain pending Data Monolith integration and profiler proof.
+
+Verification:
+- Original XML: found in `Docs/Archive/Batch_GIT_SYNC_REBASE/CURRENT_BATCH_local_auxiliary_20260517.md`.
+- `python -B Tools\VerifyOreLcgBaker.py --root .`: exit 0, binary bytes `1776`, hash collisions `0`, runtime proof `PENDING_VERIFICATION`.
+- `python -B Tools\VerifyOreLcgBinaryIndependent.py --root .`: exit 0, resource records checked `150`, binary bytes `1776`.
+- `python -B -m unittest Tools.test_ore_lcg_baker`: exit 0, 2 tests OK.
+- `python -B Tools\EconomyValidator.py --root . --negative-tests`: exit 0, `STATUS: ECONOMY BALANCED`, `monte_carlo_steps=1000000`, negative cases `6`.
+- `python -B Tools\EconomyRecipeGraphAudit.py --root .`: exit 0, `cycle_count=0`, `is_dag=true`, `status=ECONOMY SECURED`.
+- Full `Verify*.py` sweep: `33` scripts, `VERIFY_FAILURE_COUNT 0`.
+- `python Tools\CalculateHPhi.py --workers 2 --json-output Docs\AgentLogs\HPhi_RESOURCE_SPAWN_LCG_TABLES.json`: exit 0, `domain_index_count=85`, `DataSovereignty=0.019743027`, `MemoryAlignment=0.516657853`, `BinarySafeRatio=0.018508726`, `HPhiStatic=6.7481e-05`.
+
+In-game result:
+- PENDING VERIFICATION. Static data is colder and stricter; Unity import, scene wiring, Play Mode, profiler, GCMonitor, target hardware, and player build evidence remain absent.
+
+## 2026-05-17 - Final Verify Sweep Contract Repair
+
+What was wrong:
+- The archived XML extraction regex used during the reset was too narrow for `<AGENT_PROMPT id="RESOURCE_SPAWN_LCG_TABLES" role="..." chat_name="...">`. Attribute-tolerant extraction confirmed `TASK_COUNT=15`.
+- A broad manual verifier sweep found current evidence debt outside the ore table: `VerifyMetricPhiDataTruth.py` and `VerifyQuestDagDataTruth.py` failed after the Metric Phi sweep report was stale/failed.
+- Root cause: `VerifyMetricPhiDataTruth.py` required exactly `35` commands even for `RunMetricPhiVerifySweep.py`'s intentional pre-final self-check payload, where `selfCheckPending=true` and only `34` non-self commands have completed.
+
+What was done:
+- Patched `Tools/VerifyMetricPhiDataTruth.py` so the command count check accepts final `35`, or pre-final `34` only when `selfCheckPending=true`; `requiredFailures` still must be `0`.
+- Reran `python -B Tools\RunMetricPhiVerifySweep.py --xxhash-path Temp\h8_xxhash_ref`; it exited 0 with `commands=35`, `required_failures=0`, `VERIFY_SWEEP_PASS`.
+- Reran standalone `python -B Tools\VerifyMetricPhiDataTruth.py`; it exited 0 with `checks=37 failed=0`, `binary_files=46`, `struct_format_sites=133`, `endian_failures=0`.
+- Reran standalone `python -B Tools\VerifyQuestDagDataTruth.py`; it exited 0 with `checks=10 failed=0`.
+- Reran the enumerated `Verify*.py` sweep over `33` scripts, including `Tools\Taxonomy\verify_taxonomy.py`; final result `VERIFY_FAILURE_COUNT 0`.
+- Removed `.codex_tmp\OreLcgBakerTests` after unit tests recreated it. Other `.codex_tmp` directories owned by concurrent agents were not touched.
+
+Cinematic Cheats used:
+- None added. This was verification contract repair. Ore clump remains a hydrostatic-pressure-derived byte proxy, and Ultra ore fields remain visual-only.
+
+Exact microseconds saved:
+- Runtime: `0` proven. This pass repaired static evidence flow only.
+- Static review cost saved: future sweep runs no longer poison `METRIC_PHI_VERIFY_SWEEP.json` with a false self-check failure.
+
+Verification:
+- `python -B -m py_compile Tools\VerifyMetricPhiDataTruth.py Tools\RunMetricPhiVerifySweep.py Tools\VerifyQuestDagDataTruth.py`: exit 0.
+- `python -B Tools\RunMetricPhiVerifySweep.py --xxhash-path Temp\h8_xxhash_ref`: exit 0, `commands=35 required_failures=0`.
+- `python -B Tools\VerifyMetricPhiDataTruth.py`: exit 0, `checks=37 failed=0`.
+- `python -B Tools\VerifyQuestDagDataTruth.py`: exit 0, `checks=10 failed=0`.
+- Final enumerated `Verify*.py` sweep: `VERIFY_TOTAL 33`, `VERIFY_FAILURE_COUNT 0`.
+
+In-game result:
+- PENDING VERIFICATION. CLI/static data gates are clean; Unity import, Play Mode, profiler, GCMonitor, target hardware, and player build evidence remain absent.

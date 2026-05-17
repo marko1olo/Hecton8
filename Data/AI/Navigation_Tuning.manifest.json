@@ -1,94 +1,96 @@
 {
+  "atlasDomains": [
+    19,
+    25
+  ],
   "binary": {
     "alignmentBytes": 16,
-    "byteLength": 1280,
     "endianness": "little",
+    "fileBytes": 1280,
+    "hashAudit": {
+      "algorithm": "FNV-1a32 ASCII-lower semantic IDs",
+      "collisionCount": 0,
+      "recordCount": 76,
+      "semanticIdsUnique": true,
+      "sortedHashes": true
+    },
     "headerAudit": {
-      "byteLengthAligned16": true,
-      "headerCrc32": "0xBE84D9E5",
-      "payloadCrc32": "0x38446875",
-      "payloadOffsetAligned16": true,
-      "recordHashesStrictlyIncreasing": true,
-      "reservedBytesZero": true,
-      "semanticIdsUnique": true
+      "flags": 1,
+      "headerCrc32": "0xEDC63F65",
+      "payloadCrc32": "0x89810120",
+      "reservedZero": true,
+      "semanticHashCrc32": "0xBC8A06A3"
     },
     "headerBytes": 64,
     "headerStruct": "<4sHHIIIIIIII24s",
     "magic": "H8AN",
+    "manifestPath": "Data/AI/Navigation_Tuning.manifest.json",
     "path": "Data/AI/Navigation_Tuning.h8bin",
     "payloadBytes": 1216,
-    "payloadOffset": 64,
+    "payloadOffsetBytes": 64,
     "recordCount": 76,
     "recordStrideBytes": 16,
     "recordStruct": "<IHHfI",
+    "runtimeLookupContract": "stateless FNV-1a record lookup into DataVault-owned NativeArray records; no private managed dictionaries in Tick.",
     "sections": {
       "Header": {
         "alignmentBytes": 16,
-        "length": 64,
-        "offset": 0
+        "offsetBytes": 0,
+        "sizeBytes": 64
       },
-      "Records": {
+      "RecordPayload": {
         "alignmentBytes": 16,
-        "length": 1216,
-        "offset": 64,
+        "offsetBytes": 64,
         "recordCount": 76,
-        "recordStrideBytes": 16
+        "recordStrideBytes": 16,
+        "sizeBytes": 1216
       }
     },
-    "sha256": "0187CA1B5E198A99EBEB8C8B1672BDFCF76427D1B2DA8669D1AE0D024ABCDD68",
+    "sha256": "70EAD237B6241E4B23FB9AECF47B045DE1EE16B306D7820BA2DCDD1877C0A947",
     "version": 1
   },
+  "binarySha256": "70EAD237B6241E4B23FB9AECF47B045DE1EE16B306D7820BA2DCDD1877C0A947",
   "dataSovereigntyAudit": {
-    "atlasDomains": [
-      19,
-      25
-    ],
-    "dataSovereigntyDelta": "adds JSON + h8bin cache artifacts for baked steering constants; runtime owner can request a DataVault buffer and avoid per-agent private state.",
-    "fitsProjectAtlas85DomainMap": true,
-    "hPhiRisk": "Evidence remains STATIC_SOURCE/PY_TOOL until Unity import, Burst profiler, and GCMonitor prove the runtime port.",
-    "runtimeLookupContract": "stateless FNV-1a record lookup into DataVault-owned NativeArray records; no private managed dictionaries in Tick."
+    "dependencyBoundary": "no concrete fluid, voxel, player, or economy class references in hot path",
+    "hPhiImpact": "increases sovereignty by moving tuning into fixed binary records with standalone manifest metadata",
+    "runtimeLookupContract": "stateless FNV-1a record lookup into DataVault-owned NativeArray records; no private managed dictionaries in Tick.",
+    "stateOwnership": "AI movement owner consumes read-only flow/SDF/cognition snapshots and writes steering output plus black-box telemetry."
   },
-  "hashing": {
+  "hashAudit": {
     "algorithm": "FNV-1a32 ASCII-lower semantic IDs",
     "collisionCount": 0,
-    "recordCount": 76
+    "recordCount": 76,
+    "semanticIdsUnique": true,
+    "sortedHashes": true
   },
-  "manifestPath": "Data/AI/Navigation_Tuning.manifest.json",
-  "projectAtlasDomains": [
-    19,
-    25
-  ],
   "promptId": "AI_POTENTIAL_FIELD_NAVIGATOR",
   "rtxOverkillData": {
-    "extraDataFields": {
-      "flowWakeRibbonSamples": 16,
-      "harmonicFlowBands": 4,
-      "sdfCentralDifferenceGradientSamples": 6,
-      "visualBankingCurvatureSamples": 8,
-      "vortexInterestProbeRadiusMeters": 15.0
-    },
-    "profileId": "RTX_GOD_MODE_FLOW_STEERING",
-    "runtimeGuard": "visual overkill consumes saved cycles only after frame pressure and VRAM graduation guards pass."
+    "extraDataFields": [
+      "harmonicFlowBand0",
+      "harmonicFlowBand1",
+      "harmonicFlowBand2",
+      "sdfGradientSample8",
+      "bankingCurvatureSamples",
+      "wakeRibbonSamples",
+      "currentAnomalySonarPulse"
+    ],
+    "profile": "Ultra/God-Mode visuals",
+    "runtimeBoundary": "presentation-only visual overkill; gameplay steering truth stays the fixed potential-field record set"
   },
   "runtimeContract": "stateless FNV-1a record lookup into DataVault-owned NativeArray records; no private managed dictionaries in Tick.",
   "schema": "H8.NavigationTuning.BinaryManifest.v1",
-  "sourceJsonPath": "Data/AI/Navigation_Tuning.json",
-  "sourceJsonSha256": "AE5937C6451E883F0899486FBE0DCC67D161751172FC3909B55E6DA4A4096C6C",
+  "sourceJson": "Data/AI/Navigation_Tuning.json",
+  "sourceJsonSha256": "354C251D2DCD23038D6C22482D51468006761E74B8230C5A2879DD3C820EE8CD",
   "status": "NAVIGATION_BINARY_VERIFIED",
   "toasterData": {
-    "cadenceHz": 10,
-    "flowSamplesPerSolve": 1,
-    "gpuReadback": false,
-    "profileId": "TOASTER_STRIPPED",
-    "recordPayload": [
-      "fnv1a32",
-      "tierCode",
-      "valueKind",
-      "floatValue",
-      "flags"
+    "maxBinaryBytes": 1280,
+    "profile": "Low/MX350/Celeron-i3",
+    "records": [
+      "selectedWeights",
+      "search cadence",
+      "smoothed metrics",
+      "tier hysteresis"
     ],
-    "sdfProxyChecksPerSolve": 1,
-    "stringsInRuntime": false,
-    "targetHardware": "Celeron/i3/MX350-class fallback"
+    "runtimeShape": "one flow sample, one nearest SDF/bounds sample, 10Hz solve, no strings in hot path"
   }
 }

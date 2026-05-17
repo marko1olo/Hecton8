@@ -1,31 +1,84 @@
 {
-  "magic": "H8LR",
-  "version": 1,
-  "hash_algorithm": "FNV-1a 32-bit over repository-relative ASCII path, A-Z folded to lowercase",
-  "compression": "zlib",
   "alignment_bytes": 16,
-  "record_layout": "uint32 hash, uint64 absolute_offset, uint32 compressed_length",
   "blob": "Data/Lore/Encyclopedia.h8bin",
-  "blob_length": 16128,
-  "blob_sha256": "C3D7C2F7F914DC4C90BDAA0B35B0E8D9EA33D839E2733BF27C1324B4D9E44B33",
-  "source_dir": "Docs/Lore",
-  "entry_count": 2,
+  "blob_length": 41920,
+  "blob_sha256": "649C2123D884A9E009309A1AC07F29475DAFFEF4DF8B251FC629BD0099A1505A",
+  "compression": "none/raw-utf8",
+  "endianness": "little",
   "entries": [
     {
-      "hash": "0x448D68AF",
-      "canonical_id": "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.md",
-      "offset": 64,
-      "compressed_length": 5772,
-      "decompressed_length": 16861,
-      "sha256": "F4F3A50320BA26268F9C97900D12684E3BC7E905A35651779D15B3F0E6C94A37"
+      "hash": "0xAEC57EAC",
+      "id": "Lore_Bible",
+      "length": 25003,
+      "offset": 48,
+      "pad": 0,
+      "sha256": "6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD",
+      "source": "Docs/Lore/Lore_Bible.md"
     },
     {
-      "hash": "0xD1880394",
-      "canonical_id": "Docs/Lore/Lore_Bible.md",
-      "offset": 5840,
-      "compressed_length": 10281,
-      "decompressed_length": 25003,
-      "sha256": "6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD"
+      "hash": "0xBC52DB39",
+      "id": "DeepReach_ColonyFailureArchive",
+      "length": 16861,
+      "offset": 25056,
+      "pad": 0,
+      "sha256": "F4F3A50320BA26268F9C97900D12684E3BC7E905A35651779D15B3F0E6C94A37",
+      "source": "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.md"
     }
-  ]
+  ],
+  "entry_count": 2,
+  "h_phi_audit": {
+    "data_sovereignty_static_score": 1.0,
+    "lookup_model": "stateless binary search over sorted 16-byte records; payload is raw UTF-8 slice",
+    "private_runtime_state_required": false,
+    "unity_runtime_proof": "PENDING VERIFICATION"
+  },
+  "hash_algorithm": "FNV-1a 32-bit over filename stem, ASCII A-Z folded to lowercase",
+  "header_struct_format": "<4sIII",
+  "lore_audit": {
+    "noir_signal_counts": {
+      "abyss": 28,
+      "black": 10,
+      "bulkhead": 0,
+      "fault": 66,
+      "hull": 12,
+      "oil": 0,
+      "pressure": 65,
+      "relay": 13,
+      "rust": 2
+    },
+    "sterile_terms_rejected": [
+      "quantum veil",
+      "crystal palace",
+      "utopian",
+      "pristine",
+      "sparklefield",
+      "aether"
+    ]
+  },
+  "magic": "H8LR",
+  "project_atlas_fit": {
+    "artifact": "Data/Lore/Encyclopedia.h8bin",
+    "domain": "PDA Encyclopedia Streaming",
+    "domain_id": 72,
+    "source": "Docs/Lore"
+  },
+  "record_layout": "uint32 hash, uint32 raw_offset, uint32 raw_length, uint32 pad",
+  "record_struct_format": "<IIII",
+  "scalability_profiles": {
+    "rtx_overkill": {
+      "extra_data": [
+        "high_res_gradient_4096",
+        "complex_harmonic_noise_tags",
+        "noir_signal_density"
+      ],
+      "lookup": "prefetch adjacent raw slices"
+    },
+    "toaster": {
+      "lookup": "binary-search 16-byte records; stream one raw UTF-8 slice",
+      "preview_bytes": 512
+    }
+  },
+  "source_dir": "Docs/Lore",
+  "struct_pack_prefix": "<",
+  "version": 1
 }

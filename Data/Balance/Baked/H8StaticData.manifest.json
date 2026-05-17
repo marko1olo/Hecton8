@@ -1,0 +1,25 @@
+{
+  "alignmentBytes": 16,
+  "binary": "Data/Balance/Baked/H8StaticData.bin",
+  "binaryBytes": 896,
+  "domain": "DATA/BALANCE",
+  "endianness": "little",
+  "headerFormat": "<IHHHHIIIIIIIIIIIII",
+  "headerLayout": "H8StaticDataHeader: uint32 magic, uint16 version, uint16 headerSize, uint16 schemaMajor, uint16 schemaMinor, uint32 fileByteLength, uint32 payloadCrc32, uint32 lookupCount, uint32 recordCount, uint32 lookupOffset, uint32 recordsOffset, uint32 recordBytes, uint32 babelCrc32, uint32 flags, uint32 schemaHash, uint32 reserved0, uint32 reserved1, uint32 reserved2",
+  "magic": "H8SD",
+  "recordFormats": [
+    "<IHHq",
+    "<IIIiHHffIIII",
+    "<IIIfffffIII",
+    "<IIIffffIIII",
+    "<IIIfffffIII"
+  ],
+  "recordLayout": "lookup records are H8StaticDataLookupEntry; payload records are Pack=1 fixed-size balance DTOs",
+  "runtimeContract": "static balance data is read by offset/type from H8StaticDataLookupEntry without runtime JSON parsing",
+  "sha256": "54163C6F26E36CE43AD49D9526C770A7D2F1ED67F71228B971AE7D06049A6BC1",
+  "sourceEvidence": [
+    "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs:H8StaticDataHeader Pack=1 Size=64",
+    "Assets/_Project/Scripts/Core/Data/H8DataBaker.cs:WriteStaticData sets LittleEndianFlag"
+  ],
+  "status": "BALANCE_STATIC_ENDIAN_VERIFIED"
+}

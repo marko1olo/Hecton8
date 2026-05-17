@@ -1091,3 +1091,115 @@ Verification status:
 - `HectonPhiAudit.ps1 -Summary -Json -CoreGraphOnly`: completed as `STATIC_SOURCE`.
 - Recovery hygiene: targeted `git diff --check` passed with LF/CRLF warnings only; `py_compile` passed; cache readback returned `cacheFiles=0`, `cacheDirs=0`, `activePython=0`; no tracked `Tools` paths remain deleted.
 - Unity import, Play Mode, GCMonitor, profiler, platform build, and runtime packet profiling remain PENDING TOOLCHAIN.
+
+---
+
+## 2026-05-17 - Eighth Reset Payload Inventory Drift
+
+What was wrong:
+- Current disk payload inventory advanced from the recovered `44`-payload state to `46` aligned `.bin` / `.h8bin` payloads.
+- The new payloads are `Data/Balance/Baked/Babel_Dictionary.h8bin` (`1296` bytes) and `Data/Balance/Baked/H8StaticData.bin` (`896` bytes).
+- The latest CTO log still ended on `44`, so the audit trail was stale even though current NET docs and gate terms already required `46`.
+
+What was done:
+- Updated the rationale ledger with Decision 055 for the 46-payload current state.
+- Kept historical `44` entries untouched as prior evidence snapshots.
+- Scheduled a fresh post-log rerun of NET, data-truth, binary, economy, hash, lore, hard-science, replay, H-Phi static, diff, and cache hygiene gates.
+
+Cinematic Cheats used:
+- Sparse Merkle repair remains the active network cheat: compare roots, branches, and leaves instead of resending full world state.
+- Toaster and Ultra payloads remain stateless data lookups; no runtime solver or private authority store was added.
+
+Exact Microseconds saved:
+- Runtime added now: `0 us`.
+- Existing design estimates remain unmeasured: `3 us` corrupt-header early reject and `120 us` sparse mismatch narrowing.
+
+Verification status before post-log rerun:
+- Current NET architecture/modding exports require `BINARY_PAYLOADS_ALIGNED=46` and `binary_files=46`.
+- Current status Loop 71 records `BINARY_PAYLOADS_ALIGNED=46`, `binary_files=46`, `binaries=46`, and `binaryCount=46`.
+- Unity import, Play Mode, GCMonitor, profiler, platform build, and runtime packet profiling remain PENDING TOOLCHAIN.
+
+---
+
+## 2026-05-17 - Balance Binary Endian Proof Repair
+
+What was wrong:
+- `Tools/Economy/DataTruthInquisition.py --root .` still classified `Data/Balance/Baked/Babel_Dictionary.h8bin` and `Data/Balance/Baked/H8StaticData.bin` as endian-unknown.
+- Alignment was clean, but unknown endian status blocks zero-cost SHINOBU ingest.
+
+What was done:
+- Patched `Tools/Economy/DataTruthInquisition.py` to infer `H8AB` and `H8SD` headers by little-endian fixed fields, file length, aligned offsets, and `LittleEndianFlag`.
+- Kept the check source-backed: `H8DataBaker` rejects non-little-endian hosts, writes Pack=1 headers, and the runtime stores reject missing endian flags.
+
+Cinematic Cheats used:
+- None added. Existing sparse Merkle repair and stateless toaster/Ultra payload split are unchanged.
+
+Exact Microseconds saved:
+- Runtime added now: `0 us`.
+- Existing unmeasured design estimates remain: `3 us` corrupt-header early reject and `120 us` sparse mismatch narrowing.
+
+Verification status:
+- `Tools/Economy/DataTruthInquisition.py --root .`: `status=PASS`, `binary_endian_unknown=0`, `binary_unaligned=0`, `struct_format_failures=0`.
+- `Tools/RunMetricPhiVerifySweep.py --xxhash-path %TEMP%\h8_xxhash_ref`: `VERIFY_SWEEP_PASS`, `35` commands, `0` required failures.
+- `Tools/VerifyMetricPhiDataTruth.py`: `DATA_TRUTH_VERIFIED`, `checks=37`, `binary_files=46`, `struct_format_sites=274`, `endian_failures=0`.
+- `Tools/NetProtocolGate.py`: `NETWORK PROTOCOL READY`, failures `[]`, scenarios `baseline`, `rollback_stress`, `four_client`, unit tests `8`.
+- `Tools/Architecture/VerifyNetSyncMerkleProtocol.py`: `PASS`, `BINARY_PAYLOADS_ALIGNED=46`, `HEADER_CRC16_SAMPLE=0x220C`.
+- `Tools/VerifyBinaryHygiene.py`: `BINARY_HYGIENE_VERIFIED`, `binaryCount=46`, `misalignedCount=0`.
+- `Tools/VerifyDataInquisition.py`: `binaries=46`, `aligned16=true`, `structFormats=273`, `hashCollisions=0`, `atlasDomains=85`.
+- `Tools/CraftingEconomyMonteCarlo.py --steps 1000000`: `profit_steps=0`.
+- `Tools/VerifyH8HashCollisions.py`: `1046` records, `HASH COLLISIONS: 0`.
+- `HectonPhiAudit.ps1 -Summary -Json -CoreGraphOnly`: completed as `STATIC_SOURCE`.
+- Post-verifier cache cleanup: removed `42` generated `.pyc` files and `4` `__pycache__` directories under verified `C:\Hecton8\Tools`; 5-second no-Python readback returned `cacheFiles=0`, `cacheDirs=0`, `errors=0`.
+- Active external Python processes after cleanup: initial `6`, latest no-Python readback `4`; stable global cache-zero remains conditional on those writers.
+- External cache volatility retry: removed `7` regenerated `.pyc` files and `2` cache directories under verified `C:\Hecton8\Tools`; 2-second readback returned `cacheFiles=0`, `cacheDirs=0`, `errors=0`, with `activePython=8`.
+- Unity import, Play Mode, GCMonitor, profiler, platform build, and runtime packet profiling remain PENDING TOOLCHAIN.
+
+---
+
+## 2026-05-17 - Final Syntax And Diff Hygiene
+
+What was wrong:
+- The final verifier pass and `py_compile` syntax check regenerated Python bytecode after the previous cache cleanup.
+- The handoff needed a current whitespace/diff hygiene readback after the `46`-payload and Balance endian verifier changes.
+
+What was done:
+- Ran `python -B -m py_compile` for `Tools/NetProtocolGate.py`, `Tools/Economy/DataTruthInquisition.py`, `Tools/Architecture/VerifyNetSyncMerkleProtocol.py`, and `Tools/RunMetricPhiVerifySweep.py`.
+- Removed generated cache paths only after resolving them under `C:\Hecton8\Tools`.
+- Ran targeted `git diff --check` across the NET-owned docs/logs and changed verifier/gate tools.
+
+Cinematic Cheats used:
+- None added in this hygiene pass. Sparse Merkle repair and stateless toaster/Ultra payload split remain unchanged.
+
+Exact Microseconds saved:
+- Runtime added now: `0 us`.
+
+Verification status:
+- `py_compile`: passed for the NET gate, economy inquisition, Merkle verifier, and Metric Phi sweep scripts.
+- Final cache readback after syntax check: removed `8` generated cache files and `1` cache directory; `CACHE_FILES_LEFT=0`, `PYCACHE_DIRS_LEFT=0`, `ACTIVE_PYTHON=7`.
+- Targeted `git diff --check`: exit code `0`; LF/CRLF warnings only for NET status/rationale/log files.
+- Unity import, Play Mode, GCMonitor, profiler, platform build, and runtime packet profiling remain PENDING TOOLCHAIN.
+
+---
+
+## 2026-05-17 - Shared Cache Volatility Boundary
+
+What was wrong:
+- A later readback found non-NET bytecode regenerated by active external Python writers (`SabineBaker`, `VisualLodMatrix`, `DataTruthInquisition`).
+- Stable global cache-zero cannot be asserted while those writers are still active.
+
+What was done:
+- Removed only generated `.pyc` and `__pycache__` paths whose resolved locations stayed under `C:\Hecton8\Tools`.
+- Recorded the boundary as blocked by active external Python processes instead of killing shared processes or claiming false stability.
+
+Cinematic Cheats used:
+- None. This is handoff hygiene only.
+
+Exact Microseconds saved:
+- Runtime added now: `0 us`.
+
+Verification status:
+- Final cleanup removed `12` generated cache files and `2` cache directories.
+- Immediate readback: `CACHE_FILES_LEFT=0`, `PYCACHE_DIRS_LEFT=0`, `REMOVE_ERRORS=0`, `ACTIVE_PYTHON=11`.
+- Last pre-handoff cleanup removed `4` regenerated cache files and `1` cache directory; immediate readback: `LAST_CACHE_FILES_LEFT=0`, `LAST_PYCACHE_DIRS_LEFT=0`, `LAST_ACTIVE_PYTHON=5`.
+- NET gates remain green from current direct reruns: `NETWORK PROTOCOL READY`, `BINARY_PAYLOADS_ALIGNED=46`, Metric Phi `DATA_TRUTH_VERIFIED`, Data Inquisition `binaries=46`, economy inquisition `status=PASS`.
+- Unity import, Play Mode, GCMonitor, profiler, platform build, and runtime packet profiling remain PENDING TOOLCHAIN.

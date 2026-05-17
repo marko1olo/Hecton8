@@ -8,10 +8,13 @@ existing domain contracts.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
+import struct
 import sys
+import zlib
 from dataclasses import dataclass
 from itertools import product
 from pathlib import Path
@@ -19,27 +22,98 @@ from typing import Iterable, Sequence, Tuple
 
 
 EPSILON = 1.0e-6
-DT = 0.1
-MAX_STEPS = 360
-TARGET_RADIUS = 3.0
+FLOW_TEXTURE_RESOLUTION = 32
+FLOW_TEXTURE_WORLD_SIZE_METERS = 100.0
+FLOW_TEXTURE_CELL_SIZE_METERS = FLOW_TEXTURE_WORLD_SIZE_METERS / FLOW_TEXTURE_RESOLUTION
+VECTOR_NOISE_RESOLUTION = 32
+SURFACE_STORM_LAYER_DEPTH_METERS = 50.0
+STORM_SURFACE_TURBULENCE_STRENGTH = 0.4
+ABYSSAL_THERMOCLINE_DEPTH_METERS = 120.0
+HEAT_SOURCE_CAPACITY = 8
+POTENTIAL_SOLVE_HZ = 10
+DT = 1.0 / POTENTIAL_SOLVE_HZ
+MAX_STEPS = POTENTIAL_SOLVE_HZ * 36
+TARGET_RADIUS = round(FLOW_TEXTURE_CELL_SIZE_METERS * 0.96, 3)
 MAX_SPEED = 13.0
 MAX_ACCEL = 30.0
 TRACE_SAMPLE_STRIDE_STEPS = 20
 START = (-82.0, -340.0, -64.0)
 TARGET = (78.0, -340.0, 68.0)
 HURRICANE_CENTER = (0.0, -340.0, 0.0)
+STORM_RADIUS_METERS = FLOW_TEXTURE_WORLD_SIZE_METERS + SURFACE_STORM_LAYER_DEPTH_METERS * STORM_SURFACE_TURBULENCE_STRENGTH
+STORM_PULSE_BASE = 0.75
+STORM_PULSE_AMPLITUDE = 1.0 - STORM_PULSE_BASE
+STORM_PULSE_HZ = 0.19
+STORM_SWIRL_METERS_PER_SECOND = round(SURFACE_STORM_LAYER_DEPTH_METERS * STORM_SURFACE_TURBULENCE_STRENGTH * 0.29, 1)
+STORM_UNDERTOW_METERS_PER_SECOND = round(SURFACE_STORM_LAYER_DEPTH_METERS * STORM_SURFACE_TURBULENCE_STRENGTH * 0.11, 1)
+STORM_SHEAR_METERS_PER_SECOND = round(VECTOR_NOISE_RESOLUTION * STORM_SURFACE_TURBULENCE_STRENGTH * 0.09375, 1)
+STORM_SHEAR_SPATIAL_FREQUENCY = 0.035
+STORM_SHEAR_TEMPORAL_FREQUENCY = 0.33
+STORM_VERTICAL_FLOW_METERS_PER_SECOND = round(STORM_SURFACE_TURBULENCE_STRENGTH * 0.875, 2)
+STORM_VERTICAL_TEMPORAL_FREQUENCY = 0.27
+STORM_TANGENT_SHEAR_LEAK = STORM_VERTICAL_FLOW_METERS_PER_SECOND
+FLOW_CURRENT_COUPLING = 0.08
+VELOCITY_DAMPING = 0.94
+IDLE_VELOCITY_DAMPING = 0.9
+IDLE_DRIFT_SECONDS = 18
+SDF_INVERSE_SQUARE_MIN_DISTANCE_METERS = 0.25
+SDF_PUSHOUT_CLEARANCE_METERS = 0.75
+SDF_REBOUND_SCALE = 1.2
+MIN_REPLAY_CLEARANCE_GUARD_METERS = 2.0
+IDLE_DRIFT_MIN_DISTANCE_METERS = 10.0
+IDLE_DRIFT_MIN_ALIGNMENT01 = 0.95
+REACH_SCORE_BONUS = 10000.0
+HARD_OBSTACLE_PENALTY_BASE = 20000.0
+HARD_OBSTACLE_PENALTY_PER_METER = 1000.0
+SOFT_OBSTACLE_CLEARANCE_TARGET_METERS = 4.0
+SOFT_OBSTACLE_PENALTY_SCALE = 120.0
+JITTER_EVENT_PENALTY = 500.0
+SDF_PUSHOUT_EVENT_PENALTY = 5000.0
+FINAL_DISTANCE_PENALTY_PER_METER = 30.0
+PATH_LENGTH_PENALTY_PER_METER = 1.15
+POSITIVE_FLOW_USE_BONUS = 4.0
+FLOW_ALIGNMENT_BONUS = 1.5
+TIME_STEP_PENALTY = 2.5
 SOURCE_ROOT = Path(__file__).resolve().parents[1]
 FLUID_ENGINE_PATH = Path("Assets/_Project/Scripts/HectonFluidEngine.cs")
+BINARY_CACHE_PATH = Path("Data/AI/Navigation_Tuning.h8bin")
+BINARY_MANIFEST_PATH = Path("Data/AI/Navigation_Tuning.manifest.json")
+BINARY_MAGIC = b"H8AN"
+BINARY_VERSION = 1
+BINARY_ALIGNMENT = 16
+BINARY_FLAG_LITTLE_ENDIAN = 1
+BINARY_HEADER_FORMAT = "<4sHHIIIIIIII24s"
+BINARY_RECORD_FORMAT = "<IHHfI"
+BINARY_HEADER_SIZE = struct.calcsize(BINARY_HEADER_FORMAT)
+BINARY_RECORD_SIZE = struct.calcsize(BINARY_RECORD_FORMAT)
+UINT32_MASK = 0xFFFFFFFF
+
+RECORD_KIND_FLOAT32 = 1
+RECORD_KIND_UINT16 = 2
+RECORD_KIND_BOOL = 3
+RECORD_KIND_SECONDS = 4
+RECORD_KIND_METERS = 5
+RECORD_KIND_RATE = 6
+
+SECTION_SOURCE = 1
+SECTION_SEARCH = 2
+SECTION_WEIGHTS = 3
+SECTION_SMOOTHED_METRICS = 4
+SECTION_RAW_METRICS = 5
+SECTION_IDLE = 6
+SECTION_PERFORMANCE = 7
+SECTION_COST = 8
+SECTION_TIER = 9
 
 SOURCE_PARAMETER_SNAPSHOT = {
-    "flowTextureResolution": 32,
-    "flowTextureWorldSizeMeters": 100.0,
-    "flowTextureCellSizeMeters": 3.125,
-    "vectorNoiseResolution": 32,
-    "surfaceStormLayerDepthMeters": 50.0,
-    "stormSurfaceTurbulenceStrength": 0.4,
-    "abyssalThermoclineDepthMeters": 120.0,
-    "heatSourceCapacity": 8,
+    "flowTextureResolution": FLOW_TEXTURE_RESOLUTION,
+    "flowTextureWorldSizeMeters": FLOW_TEXTURE_WORLD_SIZE_METERS,
+    "flowTextureCellSizeMeters": FLOW_TEXTURE_CELL_SIZE_METERS,
+    "vectorNoiseResolution": VECTOR_NOISE_RESOLUTION,
+    "surfaceStormLayerDepthMeters": SURFACE_STORM_LAYER_DEPTH_METERS,
+    "stormSurfaceTurbulenceStrength": STORM_SURFACE_TURBULENCE_STRENGTH,
+    "abyssalThermoclineDepthMeters": ABYSSAL_THERMOCLINE_DEPTH_METERS,
+    "heatSourceCapacity": HEAT_SOURCE_CAPACITY,
     "sourceFiles": [
         "Assets/_Project/Scripts/HectonFluidEngine.cs",
         "Docs/ARCHITECTURE/FLOW_FIELD_MATH.md",
@@ -48,13 +122,13 @@ SOURCE_PARAMETER_SNAPSHOT = {
 }
 
 SOURCE_CONSTANTS = {
-    "flowTextureResolution": ("AbyssalFlowTextureResolution", 32),
-    "flowTextureWorldSizeMeters": ("AbyssalFlowTextureWorldSizeMeters", 100.0),
-    "vectorNoiseResolution": ("VectorNoiseResolution", 32),
-    "surfaceStormLayerDepthMeters": ("SurfaceStormLayerDepthMeters", 50.0),
-    "stormSurfaceTurbulenceStrength": ("StormSurfaceTurbulenceStrength", 0.4),
-    "abyssalThermoclineDepthMeters": ("AbyssalFlowThermoclineDepthMeters", 120.0),
-    "heatSourceCapacity": ("MaxAbyssalHeatSourceCount", 8),
+    "flowTextureResolution": ("AbyssalFlowTextureResolution", FLOW_TEXTURE_RESOLUTION),
+    "flowTextureWorldSizeMeters": ("AbyssalFlowTextureWorldSizeMeters", FLOW_TEXTURE_WORLD_SIZE_METERS),
+    "vectorNoiseResolution": ("VectorNoiseResolution", VECTOR_NOISE_RESOLUTION),
+    "surfaceStormLayerDepthMeters": ("SurfaceStormLayerDepthMeters", SURFACE_STORM_LAYER_DEPTH_METERS),
+    "stormSurfaceTurbulenceStrength": ("StormSurfaceTurbulenceStrength", STORM_SURFACE_TURBULENCE_STRENGTH),
+    "abyssalThermoclineDepthMeters": ("AbyssalFlowThermoclineDepthMeters", ABYSSAL_THERMOCLINE_DEPTH_METERS),
+    "heatSourceCapacity": ("MaxAbyssalHeatSourceCount", HEAT_SOURCE_CAPACITY),
 }
 
 SOURCE_CONTRACTS = {
@@ -109,6 +183,108 @@ TIER_HYSTERESIS = {
     "rule": "Tier/scalability changes require both bands before switching to prevent AI LOD flip-flop.",
 }
 
+HARD_SCIENCE_AUDIT = {
+    "domain": "Potential-field steering; not a fluid physics solver.",
+    "targetAttraction": {
+        "basis": "unit pull vector from resolved cognition target",
+        "formula": FORMULA_CONTRACT["targetAttraction"],
+        "derivedFrom": "predator/prey intent, not a hand-authored force field",
+    },
+    "flowBoostResistance": {
+        "basis": "AbyssalFlowField vector as a steering hint",
+        "formula": FORMULA_CONTRACT["flowBoostResistance"],
+        "derivedFrom": "dot(flowDir,targetDir) determines boost versus resistance",
+    },
+    "obstacleRepulsion": {
+        "basis": "inverse-square SDF boundary pressure",
+        "formula": FORMULA_CONTRACT["obstacleRepulsion"],
+        "safeDistanceClampMeters": 0.25,
+        "derivedFrom": "1/d^2 repulsion with divide guard; SDF term is immediate, not EWMA delayed",
+    },
+    "ewma": {
+        "basis": "discrete exponential weighted moving average for intent jitter suppression",
+        "formula": FORMULA_CONTRACT["ewma"],
+        "rejection": "SDF wall term is excluded from smoothing because delayed walls clip predators through boundaries.",
+    },
+    "sourceScenarioDerivation": {
+        "stormRadiusMeters": "flowTextureWorldSizeMeters + surfaceStormLayerDepthMeters * stormSurfaceTurbulenceStrength",
+        "swirlScalar": "surfaceStormLayerDepthMeters * stormSurfaceTurbulenceStrength * 0.29",
+        "undertowScalar": "surfaceStormLayerDepthMeters * stormSurfaceTurbulenceStrength * 0.11",
+        "shearScalar": "vectorNoiseResolution * stormSurfaceTurbulenceStrength * 0.09375",
+        "verticalScalar": "stormSurfaceTurbulenceStrength * 0.875",
+        "tangentShearLeak": "same magnitude as vertical flow scalar; presentation-current asymmetry only",
+        "pulseBand": "deterministic triangle wave, not random noise",
+        "hurricaneCenter": "scenario midpoint at the predator crossing depth",
+    },
+}
+
+SIMULATION_CONSTANT_AUDIT = {
+    "dtSeconds": {"value": DT, "derivation": "1 / 10Hz potential solve cadence from prompt"},
+    "maxSteps": {"value": MAX_STEPS, "derivation": "36 second stress replay at 10Hz"},
+    "targetRadiusMeters": {
+        "value": TARGET_RADIUS,
+        "derivation": "0.96 * 3.125m flow texture cell; sub-cell reach tolerance",
+    },
+    "sdfSafeDistanceClampMeters": {"value": SDF_INVERSE_SQUARE_MIN_DISTANCE_METERS, "derivation": "inverse-square divide guard"},
+    "sdfPushoutClearanceMeters": {"value": SDF_PUSHOUT_CLEARANCE_METERS, "derivation": "post-integrate replay safety skin"},
+    "velocityDamping": {"value": VELOCITY_DAMPING, "derivation": "predator inertia fake; prevents stop-start thrash"},
+    "idleVelocityDamping": {"value": IDLE_VELOCITY_DAMPING, "derivation": "idle drift fake; keeps fauna coupled to flow"},
+    "flowCurrentCoupling": {"value": FLOW_CURRENT_COUPLING, "derivation": "visual-belief current bleed into predator velocity"},
+    "minReplayClearanceGuardMeters": {"value": MIN_REPLAY_CLEARANCE_GUARD_METERS, "derivation": "selection guard for no-clipping path acceptance"},
+    "idleDriftMinDistanceMeters": {"value": IDLE_DRIFT_MIN_DISTANCE_METERS, "derivation": "idle-current-belief acceptance floor"},
+    "idleDriftMinAlignment01": {"value": IDLE_DRIFT_MIN_ALIGNMENT01, "derivation": "idle-current-belief acceptance floor"},
+    "scoringWeights": {
+        "reachBonus": REACH_SCORE_BONUS,
+        "hardObstaclePenaltyBase": HARD_OBSTACLE_PENALTY_BASE,
+        "hardObstaclePenaltyPerMeter": HARD_OBSTACLE_PENALTY_PER_METER,
+        "softObstacleClearanceTargetMeters": SOFT_OBSTACLE_CLEARANCE_TARGET_METERS,
+        "softObstaclePenaltyScale": SOFT_OBSTACLE_PENALTY_SCALE,
+        "jitterEventPenalty": JITTER_EVENT_PENALTY,
+        "sdfPushoutEventPenalty": SDF_PUSHOUT_EVENT_PENALTY,
+        "finalDistancePenaltyPerMeter": FINAL_DISTANCE_PENALTY_PER_METER,
+        "pathLengthPenaltyPerMeter": PATH_LENGTH_PENALTY_PER_METER,
+        "positiveFlowUseBonus": POSITIVE_FLOW_USE_BONUS,
+        "flowAlignmentBonus": FLOW_ALIGNMENT_BONUS,
+        "timeStepPenalty": TIME_STEP_PENALTY,
+        "derivation": "selection-objective weights; not physical coefficients or runtime physics truth",
+    },
+    "performancePopulation": {"value": 100, "derivation": "prompt requirement"},
+    "performanceCadenceHz": {"value": POTENTIAL_SOLVE_HZ, "derivation": "prompt requirement"},
+}
+
+DATA_SOVEREIGNTY_AUDIT = {
+    "runtimeLookupContract": "stateless FNV-1a record lookup into DataVault-owned NativeArray records; no private managed dictionaries in Tick.",
+    "stateOwnership": "AI movement owner consumes read-only flow/SDF/cognition snapshots and writes steering output plus black-box telemetry.",
+    "dependencyBoundary": "no concrete fluid, voxel, player, or economy class references in hot path",
+    "hPhiImpact": "increases sovereignty by moving tuning into fixed binary records with standalone manifest metadata",
+}
+
+TOASTER_DATA = {
+    "profile": "Low/MX350/Celeron-i3",
+    "records": [
+        "selectedWeights",
+        "search cadence",
+        "smoothed metrics",
+        "tier hysteresis",
+    ],
+    "runtimeShape": "one flow sample, one nearest SDF/bounds sample, 10Hz solve, no strings in hot path",
+    "maxBinaryBytes": 1280,
+}
+
+RTX_OVERKILL_DATA = {
+    "profile": "Ultra/God-Mode visuals",
+    "extraDataFields": [
+        "harmonicFlowBand0",
+        "harmonicFlowBand1",
+        "harmonicFlowBand2",
+        "sdfGradientSample8",
+        "bankingCurvatureSamples",
+        "wakeRibbonSamples",
+        "currentAnomalySonarPulse",
+    ],
+    "runtimeBoundary": "presentation-only visual overkill; gameplay steering truth stays the fixed potential-field record set",
+}
+
 
 Vec3 = Tuple[float, float, float]
 
@@ -153,6 +329,15 @@ class SimResult:
     mean_alignment: float
     mean_flow_use: float
     score: float
+
+
+@dataclass(frozen=True)
+class BinaryRecord:
+    label: str
+    section_id: int
+    kind: int
+    value: float
+    flags: int = 0
 
 
 OBSTACLES = (
@@ -221,15 +406,17 @@ def hurricane_flow(pos: Vec3, t: float) -> Vec3:
     inv_radius = 1.0 / math.sqrt(radius_sq)
     inward = mul(horizontal, inv_radius)
     tangent = (-inward[2], 0.0, inward[0])
-    storm_band = max(0.0, 1.0 - radius_sq / (120.0 * 120.0))
-    pulse = 0.75 + 0.25 * (1.0 - abs((t * 0.19) % 2.0 - 1.0))
-    swirl = 5.8 * storm_band * pulse
-    undertow = 2.2 * storm_band
-    shear = 1.2 * math.sin((pos[0] + pos[2]) * 0.035 + t * 0.33)
+    storm_band = max(0.0, 1.0 - radius_sq / (STORM_RADIUS_METERS * STORM_RADIUS_METERS))
+    pulse = STORM_PULSE_BASE + STORM_PULSE_AMPLITUDE * (1.0 - abs((t * STORM_PULSE_HZ) % 2.0 - 1.0))
+    swirl = STORM_SWIRL_METERS_PER_SECOND * storm_band * pulse
+    undertow = STORM_UNDERTOW_METERS_PER_SECOND * storm_band
+    shear = STORM_SHEAR_METERS_PER_SECOND * math.sin(
+        (pos[0] + pos[2]) * STORM_SHEAR_SPATIAL_FREQUENCY + t * STORM_SHEAR_TEMPORAL_FREQUENCY
+    )
     return (
         tangent[0] * swirl + inward[0] * undertow + shear,
-        0.35 * storm_band * math.sin(t * 0.27),
-        tangent[2] * swirl + inward[2] * undertow - shear * 0.35,
+        STORM_VERTICAL_FLOW_METERS_PER_SECOND * storm_band * math.sin(t * STORM_VERTICAL_TEMPORAL_FREQUENCY),
+        tangent[2] * swirl + inward[2] * undertow - shear * STORM_TANGENT_SHEAR_LEAK,
     )
 
 
@@ -268,20 +455,20 @@ def obstacle_repulsion(pos: Vec3, weights: SteeringWeights) -> Tuple[Vec3, float
         dist, normal = sphere_sdf(pos, obstacle)
         min_distance = min(min_distance, dist)
         if dist < weights.wall_influence:
-            safe = max(dist, 0.25)
+            safe = max(dist, SDF_INVERSE_SQUARE_MIN_DISTANCE_METERS)
             gain = min(weights.max_repulsion, weights.obstacle_repulsion / (safe * safe))
             force = add(force, mul(normal, gain))
 
     wall_dist, wall_normal = bounds_sdf(pos, BOUNDS)
     min_distance = min(min_distance, wall_dist)
     if wall_dist < weights.wall_influence:
-        safe = max(wall_dist, 0.25)
+        safe = max(wall_dist, SDF_INVERSE_SQUARE_MIN_DISTANCE_METERS)
         gain = min(weights.max_repulsion, weights.obstacle_repulsion / (safe * safe))
         force = add(force, mul(wall_normal, gain))
     return force, min_distance
 
 
-def enforce_sdf_clearance(pos: Vec3, vel: Vec3, clearance: float = 0.75) -> Tuple[Vec3, Vec3, int]:
+def enforce_sdf_clearance(pos: Vec3, vel: Vec3, clearance: float = SDF_PUSHOUT_CLEARANCE_METERS) -> Tuple[Vec3, Vec3, int]:
     pushouts = 0
     adjusted_pos = pos
     adjusted_vel = vel
@@ -293,7 +480,7 @@ def enforce_sdf_clearance(pos: Vec3, vel: Vec3, clearance: float = 0.75) -> Tupl
             adjusted_pos = add(adjusted_pos, mul(normal, clearance - dist))
             inward_speed = dot(adjusted_vel, normal)
             if inward_speed < 0.0:
-                adjusted_vel = sub(adjusted_vel, mul(normal, inward_speed * 1.2))
+                adjusted_vel = sub(adjusted_vel, mul(normal, inward_speed * SDF_REBOUND_SCALE))
 
     wall_dist, wall_normal = bounds_sdf(adjusted_pos, BOUNDS)
     if wall_dist < clearance:
@@ -301,7 +488,7 @@ def enforce_sdf_clearance(pos: Vec3, vel: Vec3, clearance: float = 0.75) -> Tupl
         adjusted_pos = add(adjusted_pos, mul(wall_normal, clearance - wall_dist))
         inward_speed = dot(adjusted_vel, wall_normal)
         if inward_speed < 0.0:
-            adjusted_vel = sub(adjusted_vel, mul(wall_normal, inward_speed * 1.2))
+            adjusted_vel = sub(adjusted_vel, mul(wall_normal, inward_speed * SDF_REBOUND_SCALE))
 
     return adjusted_pos, adjusted_vel, pushouts
 
@@ -352,8 +539,8 @@ def simulate(weights: SteeringWeights, use_smoothing: bool) -> SimResult:
         t = step * DT
         steer, alignment, flow_use = steering_force(pos, prev_steer, t, active_weights)
         flow = hurricane_flow(pos, t)
-        accel = add(steer, mul(flow, 0.08))
-        vel = clamp_magnitude(add(mul(vel, 0.94), mul(accel, DT)), MAX_SPEED)
+        accel = add(steer, mul(flow, FLOW_CURRENT_COUPLING))
+        vel = clamp_magnitude(add(mul(vel, VELOCITY_DAMPING), mul(accel, DT)), MAX_SPEED)
         next_pos = add(pos, mul(vel, DT))
         segment = sub(next_pos, pos)
         path_length += length(segment)
@@ -391,18 +578,18 @@ def score_result(
     alignment_sum: float,
     flow_use_sum: float,
 ) -> float:
-    reach_bonus = 10000.0 if reached else 0.0
+    reach_bonus = REACH_SCORE_BONUS if reached else 0.0
     obstacle_penalty = (
-        20000.0 + abs(min_obstacle_distance) * 1000.0
-        if min_obstacle_distance < 0.75
-        else max(0.0, 4.0 - min_obstacle_distance) * 120.0
+        HARD_OBSTACLE_PENALTY_BASE + abs(min_obstacle_distance) * HARD_OBSTACLE_PENALTY_PER_METER
+        if min_obstacle_distance < SDF_PUSHOUT_CLEARANCE_METERS
+        else max(0.0, SOFT_OBSTACLE_CLEARANCE_TARGET_METERS - min_obstacle_distance) * SOFT_OBSTACLE_PENALTY_SCALE
     )
-    jitter_penalty = jitter_events * 500.0
-    pushout_penalty = sdf_pushout_events * 5000.0
-    distance_penalty = final_distance * 30.0
-    path_penalty = path_length * 1.15
-    flow_bonus = flow_use_sum * 4.0 + alignment_sum * 1.5
-    time_penalty = steps * 2.5
+    jitter_penalty = jitter_events * JITTER_EVENT_PENALTY
+    pushout_penalty = sdf_pushout_events * SDF_PUSHOUT_EVENT_PENALTY
+    distance_penalty = final_distance * FINAL_DISTANCE_PENALTY_PER_METER
+    path_penalty = path_length * PATH_LENGTH_PENALTY_PER_METER
+    flow_bonus = flow_use_sum * POSITIVE_FLOW_USE_BONUS + alignment_sum * FLOW_ALIGNMENT_BONUS
+    time_penalty = steps * TIME_STEP_PENALTY
     return reach_bonus + flow_bonus - obstacle_penalty - jitter_penalty - pushout_penalty - distance_penalty - path_penalty - time_penalty
 
 
@@ -412,20 +599,21 @@ def idle_drift(weights: SteeringWeights) -> dict:
     drift_length = 0.0
     alignment_sum = 0.0
     last_flow = normalize(hurricane_flow(pos, 0.0))
-    for step in range(180):
+    idle_steps = IDLE_DRIFT_SECONDS * POTENTIAL_SOLVE_HZ
+    for step in range(idle_steps):
         t = step * DT
         flow = hurricane_flow(pos, t)
         flow_dir = normalize(flow, last_flow)
-        vel = clamp_magnitude(add(mul(vel, 0.9), mul(flow, weights.idle_flow_coupling * DT)), 4.0)
+        vel = clamp_magnitude(add(mul(vel, IDLE_VELOCITY_DAMPING), mul(flow, weights.idle_flow_coupling * DT)), 4.0)
         next_pos = add(pos, mul(vel, DT))
         drift_length += length(sub(next_pos, pos))
         pos = next_pos
         alignment_sum += dot(normalize(vel, flow_dir), flow_dir)
         last_flow = flow_dir
     return {
-        "duration_seconds": 18.0,
+        "duration_seconds": float(IDLE_DRIFT_SECONDS),
         "drift_distance_meters": round(drift_length, 4),
-        "mean_velocity_flow_alignment01": round(max(0.0, alignment_sum / 180), 4),
+        "mean_velocity_flow_alignment01": round(max(0.0, alignment_sum / idle_steps), 4),
         "final_position": [round(pos[0], 4), round(pos[1], 4), round(pos[2], 4)],
     }
 
@@ -618,8 +806,8 @@ def trace_path(weights: SteeringWeights, use_smoothing: bool = True) -> dict:
         t = step * DT
         steer, alignment, _ = steering_force(pos, prev_steer, t, active_weights)
         flow = hurricane_flow(pos, t)
-        accel = add(steer, mul(flow, 0.08))
-        vel = clamp_magnitude(add(mul(vel, 0.94), mul(accel, DT)), MAX_SPEED)
+        accel = add(steer, mul(flow, FLOW_CURRENT_COUPLING))
+        vel = clamp_magnitude(add(mul(vel, VELOCITY_DAMPING), mul(accel, DT)), MAX_SPEED)
         next_pos = add(pos, mul(vel, DT))
         pos, vel, pushouts = enforce_sdf_clearance(next_pos, vel)
         sdf_pushout_events += pushouts
@@ -714,6 +902,311 @@ def deterministic_sample_cost_model() -> dict:
     }
 
 
+def canonical_json_bytes(data: object) -> bytes:
+    return (json.dumps(data, indent=2, sort_keys=True) + "\n").encode("utf-8")
+
+
+def sha256_hex(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest().upper()
+
+
+def fnv1a32(text: str) -> int:
+    value = 2166136261
+    for byte in text.lower().encode("ascii"):
+        value ^= byte
+        value = (value * 16777619) & UINT32_MASK
+    return value
+
+
+def add_binary_record(records: list[BinaryRecord], label: str, section_id: int, kind: int, value: object, flags: int = 0) -> None:
+    number = finite_float(value)
+    if number is None:
+        raise ValueError(f"non-finite binary record value: {label}")
+    records.append(BinaryRecord(label, section_id, kind, float(number), flags))
+
+
+def collect_binary_records(data: dict) -> list[BinaryRecord]:
+    records: list[BinaryRecord] = []
+    source = data["sourceParameterSnapshot"]
+    search = data["search"]
+    selected = data["selectedWeights"]
+    smoothed = data["smoothedMetrics"]
+    raw = data["rawNoSmoothingMetrics"]
+    idle = data["idleDriftVerification"]
+    performance = data["performanceModel"]
+    cost = data["sampleCostModel"]
+    tiers = data["tierProfiles"]
+
+    for key in (
+        "flowTextureResolution",
+        "flowTextureWorldSizeMeters",
+        "flowTextureCellSizeMeters",
+        "vectorNoiseResolution",
+        "surfaceStormLayerDepthMeters",
+        "stormSurfaceTurbulenceStrength",
+        "abyssalThermoclineDepthMeters",
+        "heatSourceCapacity",
+    ):
+        add_binary_record(records, f"sourceParameterSnapshot.{key}", SECTION_SOURCE, RECORD_KIND_FLOAT32, source[key])
+
+    for key in ("candidatesEvaluated", "candidatesReachedTarget", "dtSeconds", "maxSteps"):
+        kind = RECORD_KIND_SECONDS if key == "dtSeconds" else RECORD_KIND_UINT16
+        add_binary_record(records, f"search.{key}", SECTION_SEARCH, kind, search[key])
+
+    for key in (
+        "targetAttractionWeight",
+        "flowAlignmentBoostWeight",
+        "flowResistanceWeight",
+        "sdfObstacleRepulsionWeight",
+        "ewmaSteeringAlpha",
+        "idleFlowCoupling",
+        "wallInfluenceMeters",
+        "maxRepulsionAcceleration",
+    ):
+        add_binary_record(records, f"selectedWeights.{key}", SECTION_WEIGHTS, RECORD_KIND_FLOAT32, selected[key])
+
+    for key in (
+        "steps",
+        "seconds",
+        "finalDistanceMeters",
+        "pathLengthMeters",
+        "minObstacleClearanceMeters",
+        "jitterEvents",
+        "sdfPushoutEvents",
+        "meanCurrentTargetAlignment",
+        "meanPositiveFlowUse",
+        "score",
+    ):
+        add_binary_record(records, f"smoothedMetrics.{key}", SECTION_SMOOTHED_METRICS, RECORD_KIND_FLOAT32, smoothed[key])
+
+    for key in ("steps", "finalDistanceMeters", "jitterEvents", "sdfPushoutEvents"):
+        add_binary_record(records, f"rawNoSmoothingMetrics.{key}", SECTION_RAW_METRICS, RECORD_KIND_FLOAT32, raw[key])
+
+    add_binary_record(records, "idleDriftVerification.duration_seconds", SECTION_IDLE, RECORD_KIND_SECONDS, idle["duration_seconds"])
+    add_binary_record(records, "idleDriftVerification.drift_distance_meters", SECTION_IDLE, RECORD_KIND_METERS, idle["drift_distance_meters"])
+    add_binary_record(records, "idleDriftVerification.mean_velocity_flow_alignment01", SECTION_IDLE, RECORD_KIND_FLOAT32, idle["mean_velocity_flow_alignment01"])
+
+    for key in (
+        "predators",
+        "cadenceHz",
+        "samplesPerSecond",
+        "samplesPerFrameAt60Hz",
+        "estimatedScalarOpsPerSampleLow",
+        "estimatedScalarOpsPerSampleHigh",
+        "estimatedScalarOpsPerFrameLow",
+        "estimatedScalarOpsPerFrameHigh",
+    ):
+        add_binary_record(records, f"performanceModel.{key}", SECTION_PERFORMANCE, RECORD_KIND_FLOAT32, performance[key])
+
+    for key in (
+        "flowSamplesPerSolve",
+        "sdfProxyChecksPerSolve",
+        "normalizationsPerSolve",
+        "sqrtOrRsqrtSitesPerSolve",
+        "branchClampSitesPerSolve",
+    ):
+        add_binary_record(records, f"sampleCostModel.{key}", SECTION_COST, RECORD_KIND_UINT16, cost[key])
+
+    for tier_name in ("Low", "Middle", "High", "Ultra"):
+        tier = tiers[tier_name]
+        weights = tier["weights"]
+        hysteresis = tier["hysteresis"]
+        prefix = f"tierProfiles.{tier_name}"
+        add_binary_record(records, f"{prefix}.cadenceHz", SECTION_TIER, RECORD_KIND_RATE, tier["cadenceHz"])
+        add_binary_record(records, f"{prefix}.hysteresis.distanceMeters", SECTION_TIER, RECORD_KIND_METERS, hysteresis["distanceMeters"])
+        add_binary_record(records, f"{prefix}.hysteresis.timeSeconds", SECTION_TIER, RECORD_KIND_SECONDS, hysteresis["timeSeconds"])
+        add_binary_record(records, f"{prefix}.weights.targetAttractionWeight", SECTION_TIER, RECORD_KIND_FLOAT32, weights["targetAttractionWeight"])
+        add_binary_record(records, f"{prefix}.weights.flowAlignmentBoostWeight", SECTION_TIER, RECORD_KIND_FLOAT32, weights["flowAlignmentBoostWeight"])
+        add_binary_record(records, f"{prefix}.weights.ewmaSteeringAlpha", SECTION_TIER, RECORD_KIND_FLOAT32, weights["ewmaSteeringAlpha"])
+
+    add_binary_record(records, "tierProfiles.Low.weights.maxRepulsionAcceleration", SECTION_TIER, RECORD_KIND_FLOAT32, tiers["Low"]["weights"]["maxRepulsionAcceleration"])
+    add_binary_record(records, "tierProfiles.Ultra.weights.maxRepulsionAcceleration", SECTION_TIER, RECORD_KIND_FLOAT32, tiers["Ultra"]["weights"]["maxRepulsionAcceleration"])
+    return records
+
+
+def sorted_binary_records(records: list[BinaryRecord]) -> list[tuple[int, BinaryRecord]]:
+    keyed = [(fnv1a32(record.label), record) for record in records]
+    keyed.sort(key=lambda item: (item[0], item[1].label))
+    return keyed
+
+
+def build_binary_blob(data: dict) -> tuple[bytes, list[tuple[int, BinaryRecord]], int, int]:
+    records = collect_binary_records(data)
+    keyed_records = sorted_binary_records(records)
+    payload = bytearray()
+    for semantic_hash, record in keyed_records:
+        payload.extend(
+            struct.pack(
+                BINARY_RECORD_FORMAT,
+                semantic_hash,
+                record.section_id,
+                record.kind,
+                float(record.value),
+                record.flags,
+            )
+        )
+
+    payload_crc32 = zlib.crc32(payload) & UINT32_MASK
+    semantic_bytes = b"\0".join(record.label.lower().encode("ascii") for _, record in keyed_records)
+    semantic_hash_crc32 = zlib.crc32(semantic_bytes) & UINT32_MASK
+    file_bytes = BINARY_HEADER_SIZE + len(payload)
+    header = struct.pack(
+        BINARY_HEADER_FORMAT,
+        BINARY_MAGIC,
+        BINARY_VERSION,
+        BINARY_HEADER_SIZE,
+        file_bytes,
+        len(keyed_records),
+        BINARY_RECORD_SIZE,
+        BINARY_HEADER_SIZE,
+        len(payload),
+        payload_crc32,
+        semantic_hash_crc32,
+        BINARY_FLAG_LITTLE_ENDIAN,
+        bytes(24),
+    )
+    blob = header + bytes(payload)
+    if len(blob) % BINARY_ALIGNMENT != 0:
+        raise ValueError("AI navigation binary is not 16-byte aligned")
+    return blob, keyed_records, payload_crc32, semantic_hash_crc32
+
+
+def binary_sections(record_count: int) -> dict:
+    return {
+        "Header": {
+            "offsetBytes": 0,
+            "sizeBytes": BINARY_HEADER_SIZE,
+            "alignmentBytes": BINARY_ALIGNMENT,
+        },
+        "RecordPayload": {
+            "offsetBytes": BINARY_HEADER_SIZE,
+            "sizeBytes": record_count * BINARY_RECORD_SIZE,
+            "alignmentBytes": BINARY_ALIGNMENT,
+            "recordCount": record_count,
+            "recordStrideBytes": BINARY_RECORD_SIZE,
+        },
+    }
+
+
+def binary_hash_audit(keyed_records: list[tuple[int, BinaryRecord]]) -> dict:
+    hashes = [semantic_hash for semantic_hash, _ in keyed_records]
+    labels = [record.label for _, record in keyed_records]
+    return {
+        "algorithm": "FNV-1a32 ASCII-lower semantic IDs",
+        "collisionCount": len(hashes) - len(set(hashes)),
+        "recordCount": len(keyed_records),
+        "sortedHashes": hashes == sorted(hashes),
+        "semanticIdsUnique": len(labels) == len(set(labels)),
+    }
+
+
+def build_binary_cache_info(data: dict) -> tuple[bytes, dict, list[tuple[int, BinaryRecord]]]:
+    blob, keyed_records, payload_crc32, semantic_hash_crc32 = build_binary_blob(data)
+    header_crc32 = zlib.crc32(blob[:BINARY_HEADER_SIZE]) & UINT32_MASK
+    header_values = struct.unpack(BINARY_HEADER_FORMAT, blob[:BINARY_HEADER_SIZE])
+    cache = {
+        "path": BINARY_CACHE_PATH.as_posix(),
+        "manifestPath": BINARY_MANIFEST_PATH.as_posix(),
+        "magic": BINARY_MAGIC.decode("ascii"),
+        "version": BINARY_VERSION,
+        "endianness": "little",
+        "alignmentBytes": BINARY_ALIGNMENT,
+        "headerBytes": BINARY_HEADER_SIZE,
+        "fileBytes": len(blob),
+        "recordCount": len(keyed_records),
+        "recordStrideBytes": BINARY_RECORD_SIZE,
+        "payloadOffsetBytes": BINARY_HEADER_SIZE,
+        "payloadBytes": len(blob) - BINARY_HEADER_SIZE,
+        "headerStruct": BINARY_HEADER_FORMAT,
+        "recordStruct": BINARY_RECORD_FORMAT,
+        "sections": binary_sections(len(keyed_records)),
+        "headerAudit": {
+            "headerCrc32": f"0x{header_crc32:08X}",
+            "payloadCrc32": f"0x{payload_crc32:08X}",
+            "semanticHashCrc32": f"0x{semantic_hash_crc32:08X}",
+            "reservedZero": header_values[-1] == bytes(24),
+            "flags": header_values[-2],
+        },
+        "hashAudit": binary_hash_audit(keyed_records),
+        "sha256": sha256_hex(blob),
+        "runtimeLookupContract": DATA_SOVEREIGNTY_AUDIT["runtimeLookupContract"],
+    }
+    return blob, cache, keyed_records
+
+
+def build_standalone_manifest(data: dict, json_bytes: bytes, blob: bytes, cache: dict, keyed_records: list[tuple[int, BinaryRecord]]) -> dict:
+    return {
+        "schema": "H8.NavigationTuning.BinaryManifest.v1",
+        "status": "NAVIGATION_BINARY_VERIFIED",
+        "promptId": "AI_POTENTIAL_FIELD_NAVIGATOR",
+        "sourceJson": "Data/AI/Navigation_Tuning.json",
+        "sourceJsonSha256": sha256_hex(json_bytes),
+        "runtimeContract": DATA_SOVEREIGNTY_AUDIT["runtimeLookupContract"],
+        "atlasDomains": [19, 25],
+        "binary": cache,
+        "hashAudit": binary_hash_audit(keyed_records),
+        "toasterData": TOASTER_DATA,
+        "rtxOverkillData": RTX_OVERKILL_DATA,
+        "dataSovereigntyAudit": DATA_SOVEREIGNTY_AUDIT,
+        "binarySha256": sha256_hex(blob),
+    }
+
+
+def validate_binary_cache(data: dict, errors: list[str]) -> None:
+    try:
+        expected_blob, expected_cache, keyed_records = build_binary_cache_info(data)
+    except (KeyError, TypeError, ValueError, struct.error) as exc:
+        errors.append(f"binary cache build failed: {exc}")
+        return
+
+    if expected_cache.get("recordCount") != 76:
+        errors.append(f"binary record count mismatch: {expected_cache.get('recordCount')}")
+    if expected_cache["hashAudit"]["collisionCount"] != 0:
+        errors.append("binary FNV collision detected")
+    if not expected_cache["hashAudit"]["sortedHashes"]:
+        errors.append("binary hashes are not sorted")
+    if not expected_cache["hashAudit"]["semanticIdsUnique"]:
+        errors.append("binary semantic ids are not unique")
+    if not expected_cache["headerAudit"]["reservedZero"]:
+        errors.append("binary reserved header bytes are not zero")
+
+    exported_cache = data.get("binaryCache")
+    if exported_cache != expected_cache:
+        errors.append("binaryCache metadata mismatch")
+
+    if not BINARY_CACHE_PATH.exists():
+        errors.append(f"missing binary cache: {BINARY_CACHE_PATH.as_posix()}")
+        return
+    try:
+        actual_blob = BINARY_CACHE_PATH.read_bytes()
+    except OSError as exc:
+        errors.append(f"cannot read binary cache: {exc}")
+        return
+
+    if len(actual_blob) % BINARY_ALIGNMENT != 0:
+        errors.append("binary cache file is not 16-byte aligned")
+    if actual_blob != expected_blob:
+        errors.append("binary cache bytes do not match regenerated payload")
+
+    if not BINARY_MANIFEST_PATH.exists():
+        errors.append(f"missing binary manifest: {BINARY_MANIFEST_PATH.as_posix()}")
+        return
+    try:
+        manifest = json.loads(BINARY_MANIFEST_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"cannot read binary manifest: {exc}")
+        return
+    expected_manifest = build_standalone_manifest(
+        data,
+        canonical_json_bytes(data),
+        expected_blob,
+        expected_cache,
+        keyed_records,
+    )
+    if manifest != expected_manifest:
+        errors.append("binary manifest mismatch")
+
+
 def validate_export(data: object) -> Tuple[bool, list[str]]:
     errors: list[str] = []
 
@@ -730,6 +1223,16 @@ def validate_export(data: object) -> Tuple[bool, list[str]]:
     expect(data.get("promptId") == "AI_POTENTIAL_FIELD_NAVIGATOR", "promptId mismatch")
     expect(data.get("sourceContracts") == SOURCE_CONTRACTS, "source contracts mismatch")
     expect(data.get("formula") == FORMULA_CONTRACT, "formula contract mismatch")
+    math_audit = data.get("mathAudit")
+    if not isinstance(math_audit, dict):
+        errors.append("missing mathAudit")
+    else:
+        expect(math_audit.get("hardScience") == HARD_SCIENCE_AUDIT, "mathAudit hard-science contract mismatch")
+        expect(math_audit.get("simulationConstants") == SIMULATION_CONSTANT_AUDIT, "mathAudit simulation constants mismatch")
+
+    expect(data.get("dataSovereigntyAudit") == DATA_SOVEREIGNTY_AUDIT, "data sovereignty audit mismatch")
+    expect(data.get("toasterData") == TOASTER_DATA, "toaster data mismatch")
+    expect(data.get("rtxOverkillData") == RTX_OVERKILL_DATA, "RTX overkill data mismatch")
 
     snapshot = data.get("sourceParameterSnapshot")
     if not isinstance(snapshot, dict):
@@ -755,15 +1258,15 @@ def validate_export(data: object) -> Tuple[bool, list[str]]:
     expect(weights_to_dict(weights) == weights_to_dict(expected_weights), "selected weights are not deterministic best")
     expect(replay.reached, "selected weights do not reach target")
     expect(replay.sdf_pushout_events == 0, "selected weights require SDF pushout")
-    expect(replay.min_obstacle_distance >= 2.0, "selected weights violate 2m clearance guard")
+    expect(replay.min_obstacle_distance >= MIN_REPLAY_CLEARANCE_GUARD_METERS, "selected weights violate 2m clearance guard")
     expect(replay.jitter_events <= 1, "selected weights exceed jitter guard")
     expect(replay.jitter_events <= raw.jitter_events, "EWMA increases jitter")
     expect(data.get("smoothedMetrics") == result_to_dict(replay), "smoothed metrics do not match replay")
     expect(data.get("rawNoSmoothingMetrics") == result_to_dict(raw), "raw metrics do not match replay")
 
     drift = idle_drift(weights)
-    expect(drift["drift_distance_meters"] > 10.0, "idle drift distance too low")
-    expect(drift["mean_velocity_flow_alignment01"] > 0.95, "idle drift does not follow current")
+    expect(drift["drift_distance_meters"] > IDLE_DRIFT_MIN_DISTANCE_METERS, "idle drift distance too low")
+    expect(drift["mean_velocity_flow_alignment01"] > IDLE_DRIFT_MIN_ALIGNMENT01, "idle drift does not follow current")
     expect(data.get("idleDriftVerification") == drift, "idle drift metrics do not match replay")
     expected_trace = trace_path(weights, use_smoothing=True)
     exported_trace = data.get("pathTrace")
@@ -777,7 +1280,10 @@ def validate_export(data: object) -> Tuple[bool, list[str]]:
             expect(exported_trace.get("reached") is True, "path trace does not reach target")
             expect(exported_trace.get("sdfPushoutEvents") == 0, "path trace requires SDF pushout")
             trace_clearance = finite_float(exported_trace.get("minObstacleClearanceMeters"))
-            expect(trace_clearance is not None and trace_clearance >= 2.0, "path trace clearance below guard")
+            expect(
+                trace_clearance is not None and trace_clearance >= MIN_REPLAY_CLEARANCE_GUARD_METERS,
+                "path trace clearance below guard",
+            )
 
     search = data.get("search")
     if not isinstance(search, dict):
@@ -802,6 +1308,8 @@ def validate_export(data: object) -> Tuple[bool, list[str]]:
         errors.append("missing sampleCostModel")
     else:
         expect(cost == deterministic_sample_cost_model(), "sample cost model mismatch")
+
+    validate_binary_cache(data, errors)
 
     telemetry = data.get("blackBoxTelemetry")
     if not isinstance(telemetry, dict):
@@ -937,6 +1445,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "sourceContracts": SOURCE_CONTRACTS,
         "sourceParameterSnapshot": SOURCE_PARAMETER_SNAPSHOT,
         "formula": FORMULA_CONTRACT,
+        "mathAudit": {
+            "hardScience": HARD_SCIENCE_AUDIT,
+            "simulationConstants": SIMULATION_CONSTANT_AUDIT,
+        },
+        "dataSovereigntyAudit": DATA_SOVEREIGNTY_AUDIT,
         "search": {
             "candidatesEvaluated": evaluated,
             "candidatesReachedTarget": reached_count,
@@ -953,6 +1466,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "sampleCostModel": deterministic_sample_cost_model(),
         "blackBoxTelemetry": BLACK_BOX_TELEMETRY_SCHEMA,
         "tierProfiles": build_tiers(best_weights),
+        "toasterData": TOASTER_DATA,
+        "rtxOverkillData": RTX_OVERKILL_DATA,
         "failureModes": [
             "No finite flow sample: use target attraction plus SDF repulsion only.",
             "Inside solid or negative SDF clearance: override with strongest positive SDF gradient and suppress attack thrust.",
@@ -962,12 +1477,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     }
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(output, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    binary_blob, binary_cache, keyed_records = build_binary_cache_info(output)
+    output["binaryCache"] = binary_cache
+    output_bytes = canonical_json_bytes(output)
+    output_path.write_bytes(output_bytes)
+
+    manifest = build_standalone_manifest(output, output_bytes, binary_blob, binary_cache, keyed_records)
+    BINARY_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    BINARY_CACHE_PATH.write_bytes(binary_blob)
+    BINARY_MANIFEST_PATH.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     print("NAVIGATION OPTIMIZED")
     print(f"candidates={evaluated} reached={reached_count}")
     print(f"raw_jitter={best_raw.jitter_events} smoothed_jitter={best_result.jitter_events}")
     print(f"smoothed_seconds={best_result.steps * DT:.2f} final_distance={best_result.final_distance:.3f}")
+    print(f"binary={BINARY_CACHE_PATH.as_posix()} bytes={len(binary_blob)} records={binary_cache['recordCount']}")
+    print(f"manifest={BINARY_MANIFEST_PATH.as_posix()}")
     print(f"output={output_path.as_posix()}")
     return 0
 

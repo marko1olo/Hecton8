@@ -1,12 +1,13 @@
 {
   "alignmentBytes": 16,
-  "binaryCount": 42,
+  "binaryCount": 46,
   "excludedParts": [
     "Build",
     "Builds",
     "Library",
     "Obj",
-    "Temp"
+    "Temp",
+    "__pycache__"
   ],
   "excludedPrefixes": [
     ".git/",
@@ -20,7 +21,7 @@
     {
       "aligned16": true,
       "alignmentRemainder": 0,
-      "bytes": 1530592,
+      "bytes": 1534512,
       "path": "Assets/_Project/Data/Localization/Babel_Dictionary.h8bin"
     },
     {
@@ -38,6 +39,18 @@
     {
       "aligned16": true,
       "alignmentRemainder": 0,
+      "bytes": 1296,
+      "path": "Data/Balance/Baked/Babel_Dictionary.h8bin"
+    },
+    {
+      "aligned16": true,
+      "alignmentRemainder": 0,
+      "bytes": 896,
+      "path": "Data/Balance/Baked/H8StaticData.bin"
+    },
+    {
+      "aligned16": true,
+      "alignmentRemainder": 0,
       "bytes": 7424,
       "path": "Data/Economy/Crafting_Costs.h8bin"
     },
@@ -50,7 +63,7 @@
     {
       "aligned16": true,
       "alignmentRemainder": 0,
-      "bytes": 1632,
+      "bytes": 1776,
       "path": "Data/Economy/Ore_Distribution.h8bin"
     },
     {
@@ -70,6 +83,12 @@
       "alignmentRemainder": 0,
       "bytes": 9600,
       "path": "Data/Environment/Tide_Harmonics.bin"
+    },
+    {
+      "aligned16": true,
+      "alignmentRemainder": 0,
+      "bytes": 96,
+      "path": "Data/Environment/Tide_Harmonics.index.h8bin"
     },
     {
       "aligned16": true,
@@ -110,7 +129,7 @@
     {
       "aligned16": true,
       "alignmentRemainder": 0,
-      "bytes": 41488,
+      "bytes": 41920,
       "path": "Data/Lore/Encyclopedia.h8bin"
     },
     {
@@ -118,6 +137,12 @@
       "alignmentRemainder": 0,
       "bytes": 59120,
       "path": "Data/Lore/PdaTechnicalLogs.h8bin"
+    },
+    {
+      "aligned16": true,
+      "alignmentRemainder": 0,
+      "bytes": 19120,
+      "path": "Data/Lore/PdaTechnicalLogs_Toaster.h8bin"
     },
     {
       "aligned16": true,
@@ -194,7 +219,7 @@
     {
       "aligned16": true,
       "alignmentRemainder": 0,
-      "bytes": 2016,
+      "bytes": 2048,
       "path": "Data/System/Visual_Scalability_Matrix.bin"
     },
     {

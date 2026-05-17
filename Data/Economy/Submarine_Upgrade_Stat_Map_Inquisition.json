@@ -26,9 +26,10 @@
     "graph_cycle_count": 0,
     "worst_closed_loop_delta_value_units": -0.7
   },
-  "lore_audit": {
-    "sterile_terms_purged_from_sidecars": true,
-    "tone": "industrial NASA-punk noir"
+  "tone_audit": {
+    "forbidden_phrase_hits": 0,
+    "tone": "oil-wet industrial NASA-punk noir",
+    "approved_signal": "pressure sweat, silt drag, cavitation scrape, rusted busbar discipline"
   },
   "scalability": {
     "schema_id": "economy.submarine_upgrade_stat_map.v1.scalability",

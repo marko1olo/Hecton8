@@ -67,3 +67,17 @@ Verification -> `VerifyBabelDictionary.py` PASS: 45 sources, 32,579 entries, 17 
 Exact Microseconds saved -> 0 us measured in Unity. Static repair removes stale binary-cache load failure risk and keeps data loaders on direct aligned reads.
 
 Regression model -> CPU: deterministic cache rebuild only, no runtime code added. GC: no C# runtime allocation path added. Memory: Babel 1,523,792 bytes, taxonomy 27,536 bytes, lore 41,488 bytes, all aligned. Cadence: no per-frame system added. Correctness: all affected verifiers pass in CLI.
+
+## 2026-05-17 - Corrective Data Truth Rerun
+
+What was wrong -> Disk truth had drifted again. `Tools/DaltonGasToxicityBaker.py` was absent despite a prior pass claim, `Status_ENCYCLOPEDIA_LORE_BAKER.md` still reported a 41,488-byte H8LR blob, and the current raw lore artifact is 41,920 bytes. The first full Metric Phi sweep exposed a real final-gate failure in `VerifyMetricPhiDataTruth`.
+
+What was done -> Added `Tools/DaltonGasToxicityBaker.py`; hardened `Tools/VerifyMetricPhiDataTruth.py`; patched `Tools/H8VerifyCore.py` to exclude external JPEG/PSD container headers from HECTON binary endian checks; reran lore, physics, economy, hash, binary hygiene, Metric Phi, and taxonomy verifier suites. Updated status/rationale to remove runtime overclaiming.
+
+Cinematic Cheats used -> Raw H8LR keeps lore as aligned UTF-8 span data instead of zlib decompression. Optics stays a Beer-Lambert LUT. Sabine and Dalton remain precomputed binary truth tables. High-tier visuals consume extra metadata/gradients/noise fields; low-tier paths use stripped aligned lookups.
+
+Verification -> `LorePacker --check --hash-audit --list` PASS: 2 entries, 41,920 bytes, 0 collisions. `VerifyLore --check --verify-source --verify-manifest --list` PASS. `python -B -m unittest Tools.test_verify_lore -v` PASS: 12 tests. `CraftingEconomyMonteCarlo --steps 1000000` PASS: profit_steps=0. `VerifyH8HashCollisions.py` PASS: 1,046 records, 0 collisions. `VerifyBinaryHygiene.py` PASS: 46 binaries, 0 misaligned. `VerifyDataInquisition.py` PASS: 46 binaries, 11 manifests, endian `<`, structFormats=273, atlasDomains=85. `OpticsBaker --verify` PASS: 393,216 bytes. `DaltonGasToxicityBaker --verify` PASS: 128,128-byte main, 4,080-byte toaster, 96,112-byte overkill. `SabineBaker --verify-only` and `VerifySabineBaker.py` PASS: 524,288 bytes, `<ff`. `RunMetricPhiVerifySweep.py` PASS: 35/35 commands, required_failures=0. `VerifyMetricPhiDataTruth.py` PASS: 37 checks, 46 binaries, 133 relevant struct sites, endian_failures=0. `Taxonomy/run_verify_sweep.py` PASS: 25/25. `git diff --check` returned only CRLF conversion warnings.
+
+Exact Microseconds saved -> 0 us measured in Unity. Static estimates only: removed zlib/runtime hash risk on lore lookup, kept direct aligned reads for SHINOBU ingest, and prevented false final-gate passes/failures in Metric Phi data truth. Runtime CPU/GC/frame savings require Unity Profiler or GCMonitor artifacts.
+
+Regression model -> CPU: no runtime code changed; offline validators stronger. GC: no gameplay allocation path added; H8LR remains raw span-ready data. Memory: current lore blob is 41,920 bytes; 46 data binaries are aligned16. Cadence: no Tick/Update system added. Correctness: current CLI/static suite is green; Unity import, Play Mode, Profiler, GCMonitor, player build, and visual runtime checks remain PENDING VERIFICATION.

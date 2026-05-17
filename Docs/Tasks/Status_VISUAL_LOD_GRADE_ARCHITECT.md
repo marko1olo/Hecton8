@@ -47,6 +47,9 @@ Status: PENDING VERIFICATION
 - [x] Loop 13 - Rebind Ore and MetricPhi data truth | Justification: stale sweep captured `Ore_Distribution.h8bin` at 1,632 bytes, while current disk rebake is 1,776 bytes and both Ore verifiers pass; the VISUAL-owned MetricPhi sweep then passed 35 commands with 0 required failures and standalone data-truth passed. Alternatives rejected: trusting stale failure evidence or rerunning only the final verifier. Estimate: 0 us runtime.
 - [x] Loop 14 - Rebound VISUAL-owned MetricPhi evidence | Justification: reran the full VISUAL-owned sweep after the user's renewed inquisition; result was 35 commands, 0 required failures, `selfCheckPending=False`, and standalone data-truth passed. Alternatives rejected: trusting the older CURRENT sweep or shared canonical report. Estimate: 0 us runtime.
 - [x] Loop 14 - Rebound focused visual/economy/binary checks | Justification: reran visual bake/verify, binary hygiene, focused regression tests, and economy DataTruth from current disk. Alternatives rejected: reporting Loop 13 evidence after new verifier artifacts existed. Estimate: 0 us runtime.
+- [x] Loop 15 - Restore visual baker authority | Justification: `Tools/VisualLodMatrixBaker.py` and `Tools/test_visual_lod_matrix_baker.py` were missing while `VerifyVisualLodMatrix.py` was a print-only stub; restored deterministic bake/verify and negative tests. Alternatives rejected: accepting a stub verifier or treating the existing binary as proof without source authority. Estimate: 0 us runtime.
+- [x] Loop 15 - Repair SHINOBU endian evidence | Justification: Economy DataTruth found 2 unknown-endian balance binaries; added manifest sidecars for `Data/Balance/Baked/H8StaticData.bin` and `Babel_Dictionary.h8bin` bound to C# layout contracts without changing payload bytes. Alternatives rejected: weakening the scanner or editing binary payloads by hand. Estimate: 0 us runtime.
+- [x] Loop 15 - Rebound full verifier chain | Justification: reran visual bake/verify, focused tests, Economy DataTruth, BinaryHygiene, VISUAL-owned MetricPhi sweep, and standalone MetricPhi data-truth. Alternatives rejected: reporting Loop 14 evidence after toolchain repair. Estimate: 0 us runtime.
 
 ## Verification Evidence
 
@@ -128,6 +131,14 @@ Status: PENDING VERIFICATION
 - [x] Loop 14 `python Tools\VerifyBinaryHygiene.py` | PASS: 44 binaries, 0 misaligned.
 - [x] Loop 14 `python -m unittest Tools.test_metric_phi_verify_sweep Tools.test_visual_lod_matrix_baker Tools.test_visual_stress_sim Tools.Economy.test_monte_carlo_economy_sim` | PASS: 21 tests.
 - [x] Loop 14 `python Tools\Economy\DataTruthInquisition.py --root .` | PASS: Monte Carlo steps 1,078,223, FNV collisions 0, recipe cycles 0, binary unaligned 0, endian unknown 0, struct format failures 0.
+- [x] Loop 15 `python Tools\VisualLodMatrixBaker.py` | PASS: binary 2048 bytes, little-endian, aligned16 true, FNV rows 76, hash collisions 0, God Mode density ratio 9.097.
+- [x] Loop 15 `python Tools\VisualLodMatrixBaker.py --verify` | PASS: deterministic binary and manifest match current JSON source.
+- [x] Loop 15 `python Tools\VerifyVisualLodMatrix.py` | PASS: 4 tiers, 4 extra records, 2048 bytes, little-endian, aligned16 true, hash collisions 0, God Mode density ratio 9.097.
+- [x] Loop 15 `python -m unittest Tools.test_metric_phi_verify_sweep Tools.test_visual_lod_matrix_baker Tools.test_visual_stress_sim Tools.Economy.test_monte_carlo_economy_sim` | PASS: 23 tests.
+- [x] Loop 15 `python Tools\Economy\DataTruthInquisition.py --root .` | PASS: Monte Carlo steps 1,539,943, FNV collisions 0, recipe cycles 0, binary unaligned 0, endian unknown 0, struct format failures 0.
+- [x] Loop 15 `python Tools\VerifyBinaryHygiene.py` | PASS: 46 binaries, 0 misaligned.
+- [x] Loop 15 `python Tools\RunMetricPhiVerifySweep.py --xxhash-path C:\Users\User\AppData\Local\Temp\metric_phi_xxhash_ref --json-output Docs\AgentLogs\MetricPhiVerifySweep_VISUAL_LOD_GRADE_ARCHITECT_LOOP15.json --markdown-output Docs\AgentLogs\MetricPhiVerifySweep_VISUAL_LOD_GRADE_ARCHITECT_LOOP15.md` | PASS: 35 commands, 0 required failures, `selfCheckPending=False`.
+- [x] Loop 15 `python Tools\VerifyMetricPhiDataTruth.py --sweep-input Docs\AgentLogs\MetricPhiVerifySweep_VISUAL_LOD_GRADE_ARCHITECT_LOOP15.json --json-output Docs\AgentLogs\MetricPhiDataTruth_VISUAL_LOD_GRADE_ARCHITECT_LOOP15.json --markdown-output Docs\AgentLogs\MetricPhiDataTruth_VISUAL_LOD_GRADE_ARCHITECT_LOOP15.md` | PASS: 37 checks, 0 failed, 46 binaries aligned, 274 struct format sites, 0 endian failures.
 
 ## Mandates Followed
 

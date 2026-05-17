@@ -124,3 +124,27 @@ Solution: Re-run local-only evidence: Sabine bake and verifier, economy Monte Ca
 Rejected Alternatives: Re-running the network-backed full sweep was rejected because the current sandbox blocks network and the replay reference dependency has already been proven; current local invariants are the valid evidence surface.
 Scalability potential: The runtime contract remains stateless binary/JSON lookup, not private manager state; toaster and RTX-overkill paths are recorded in `Acoustic_LUT.manifest.json`.
 Hardware Impact: No runtime path changed. Loop 15 revalidation kept the audio binary SHA256 stable and verified 0 binary misalignment, 0 endian failures, and 0 hash collisions in current local reports.
+
+## Decision 15 - Reproducible Baker Restored After Batch Drift
+
+Problem: The current active `Docs\Tasks\CURRENT_BATCH.md` has been replaced and no longer contains `SABINE_REVERB_MATRIX_GEN`; disk state also lacked `Tools\SabineBaker.py` while the audio binary and manifest remained.
+Solution: Re-extract the original SABINE XML from `Docs\Archive\Batch_GIT_SYNC_REBASE\CURRENT_BATCH_local_auxiliary_20260517.md`, restore `Tools\SabineBaker.py` as the reproducible pure-Python baker, and upgrade `Tools\VerifySabineBaker.py` from static printouts to real binary, manifest, FNV, and provenance checks.
+Rejected Alternatives: Trusting stale chat memory, treating the current batch's unrelated prompt as SABINE, or leaving `Acoustic_LUT.bin` without its baker.
+Scalability potential: Low and Middle keep raw `<ff>` lookups; High and Ultra keep the same stateless authority and use manifest `extraData` to drive richer early reflection and harmonic-noise presentation.
+Hardware Impact: Runtime binary size remains 524288 bytes. Rebuilt SHA256 stayed `F0C1EFB278901AE7D1E29E9FCBFD82C82507DA853C8A3130ADBCCB626F7D90CB`; no runtime reader cost changed.
+
+## Decision 16 - Balance Endian Sidecars For Repo-Wide Hygiene
+
+Problem: The repo-wide data truth audit was blocked by two aligned but unknown-endian balance blobs: `Data\Balance\Baked\Babel_Dictionary.h8bin` and `Data\Balance\Baked\H8StaticData.bin`.
+Solution: Add cold sidecar manifests beside those blobs with explicit little-endian header/record formats, SHA256, source evidence from `H8StaticDataContracts.cs`, and `H8DataBaker.cs` LittleEndianFlag writes.
+Rejected Alternatives: Padding or rewriting foreign balance binaries was rejected because the payloads were already aligned and live readers own their ABI. Patching the audit to ignore those paths was rejected because the user demanded global binary hygiene proof.
+Scalability potential: The manifests increase data sovereignty by making binary ingest contracts inspectable without touching runtime code or creating private state.
+Hardware Impact: Binary payloads unchanged. DataTruth went from `binary_endian_unknown=2` to `binary_endian_unknown=0`; runtime impact is 0 us/frame.
+
+## Decision 17 - Compile Proof Blocked By Missing Toolchain
+
+Problem: The protocol asks for compile verification, but this machine cannot run `dotnet`.
+Solution: Run the build command and then check the two default install paths. `dotnet build Hecton8.Core.csproj --no-restore -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` failed before project load because `dotnet` is not recognized; both `C:\Program Files\dotnet\dotnet.exe` and `C:\Program Files (x86)\dotnet\dotnet.exe` are absent.
+Rejected Alternatives: Claiming compile success from Python-only validation or mutating Unity/C# code from this DATA/AUDIO task.
+Scalability potential: No runtime scalability claim depends on compile proof. Offline data proof remains valid; Unity/runtime import remains pending local toolchain availability.
+Hardware Impact: No runtime change. Compile validation is blocked by host environment, not by the Sabine binary or Python baker.

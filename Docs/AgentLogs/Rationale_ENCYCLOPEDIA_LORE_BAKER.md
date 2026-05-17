@@ -1,6 +1,6 @@
 # Rationale_ENCYCLOPEDIA_LORE_BAKER
 
-Status: VERIFIED MASTER GRADE
+Status: STATIC DATA VERIFIED / UNITY RUNTIME PENDING VERIFICATION
 
 Problem: Live status and rationale files for `ENCYCLOPEDIA_LORE_BAKER` were missing.
 Solution: Create fresh live task memory files and treat archived `AI_POTENTIAL_FIELD_NAVIGATOR` as closed Batch006 evidence, not current scope.
@@ -67,3 +67,33 @@ Solution: Rebuilt the Babel dictionary with `Tools/BabelCompiler.py` and verifie
 Rejected Alternatives: Ignore non-lore verifier failures; hand-edit generated JSON; mutate runtime C# to hide stale data.
 Scalability potential: Toaster paths keep compact stateless binary caches; high-end profiles retain Babel/Taxonomy/Optics extra-data metadata without private runtime state.
 Hardware Impact: Babel, taxonomy, and optics remain aligned little-endian data artifacts. Runtime profiler savings remain PENDING VERIFICATION.
+
+Problem: The persistent status/rationale claimed a 41,488-byte lore blob and `VERIFIED MASTER GRADE`, but current disk truth after the reset is a 41,920-byte raw H8LR blob and no Unity runtime evidence.
+Solution: Supersede stale numbers in status/rationale/log, keep the evidence boundary as CLI/static data verification, and mark Unity import/Play Mode/Profiler/GCMonitor as PENDING VERIFICATION.
+Rejected Alternatives: Preserve old status wording; claim runtime readiness from Python tools; rewrite unrelated agent files.
+Scalability potential: Low tier still uses one aligned raw UTF-8 slice lookup; high tier still has RTX-overkill metadata for richer PDA presentation without changing truth data.
+Hardware Impact: Runtime saving remains an unmeasured static expectation: no zlib inflate and no runtime lore string hashing. Exact frame-time and GC impact require Unity profiler evidence.
+
+Problem: `Tools/DaltonGasToxicityBaker.py` was missing while the status file claimed it had passed.
+Solution: Restore a verification-capable baker entrypoint that validates the existing Dalton manifest/binaries: `<4sIIIIIffffffIIII` header, `<ffffffffffffffff` rows, SHA-256, 16-byte alignment, FNV rows, toaster/overkill binaries, and sampled Dalton/hydrostatic rows.
+Rejected Alternatives: Treat `VerifyDaltonGasToxicity.py` as enough; regenerate toxicology constants without source authority; accept a claimed pass for an absent file.
+Scalability potential: Toaster path uses coarse danger buckets; RTX-overkill binary carries gradients/noise/presentation channels while gameplay truth stays the same scalar table.
+Hardware Impact: No runtime code added. Static data remains aligned for direct lookup: main 128,128 bytes, toaster 4,080 bytes, overkill 96,112 bytes.
+
+Problem: `VerifyMetricPhiDataTruth.py` used legacy sweep keys and filler static guard rows, so it could fail or pass for the wrong reason.
+Solution: Read `summary.requiredFailures`, `summary.totalCommands`, actual binary alignment, relevant struct endianness, hash reports, data inquisition output, and named artifact checks. Patch `H8VerifyCore.py` so external JPEG/PSD big-endian image headers do not count as HECTON binary DTO endian failures.
+Rejected Alternatives: Leave the old final sweep failure; weaken endian checks globally; count external container parsing as project binary layout debt.
+Scalability potential: Better data-truth gate protects stateless aligned caches across low and high tiers.
+Hardware Impact: No runtime impact. Static verifier now reports 46 binaries, 133 relevant struct sites, and 0 endian failures after excluding external image container parsing.
+
+Problem: User requested proof for binary/cache hygiene, FNV collisions, economy loops, hard-science math, and 85-domain atlas fit after the reset.
+Solution: Re-ran `LorePacker`, `VerifyLore`, lore unit tests, `VerifyDataInquisition`, `VerifyBinaryHygiene`, `VerifyH8HashCollisions`, `CraftingEconomyMonteCarlo`, `OpticsBaker --verify`, `VerifyOpticsBaker`, `DaltonGasToxicityBaker --verify`, `VerifyDaltonGasToxicity`, `SabineBaker --verify-only`, `VerifySabineBaker`, `RunMetricPhiVerifySweep`, `VerifyMetricPhiDataTruth`, and `Taxonomy/run_verify_sweep.py`.
+Rejected Alternatives: Stop after isolated green commands; trust old reports; hide the first Metric Phi sweep failure.
+Scalability potential: Toaster data and RTX-overkill metadata are present across lore, optics, Dalton, Sabine, crafting, and visual scalability data artifacts.
+Hardware Impact: Static evidence only: 46 binaries aligned16, 1,046 global hash records with 0 collisions, 1,000,000 economy Monte Carlo steps with profit_steps=0, Metric Phi sweep 35/35, taxonomy sweep 25/25.
+
+Problem: Python execution created transient source-tree cache state.
+Solution: Resolve `Tools\__pycache__` under `C:\Hecton8`, delete only that directory, and rescan for remaining `Tools/**/__pycache__`.
+Rejected Alternatives: Broad deletion; leave transient cache directories.
+Scalability potential: Cleaner SHINOBU/offline ingest surface.
+Hardware Impact: No runtime impact.

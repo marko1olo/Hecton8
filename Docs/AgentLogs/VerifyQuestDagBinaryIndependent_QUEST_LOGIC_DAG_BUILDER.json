@@ -1,32 +1,7 @@
 {
-  "binary": "Data/Narrative/First_Hour_Quests.h8qdag.bin",
-  "binary_validation": {
-    "aligned_16_bytes": true,
-    "all_done_mask": "0x00000000000000AA",
-    "byte_count": 496,
-    "edge_offset": 256,
-    "flags": 15,
-    "little_endian_structs": true,
-    "node_offset": 64,
-    "scalability_tier_count": 4,
-    "scalability_tier_offset": 304,
-    "scalability_tier_record_bytes": 48,
-    "sha256": "01D823243E1315F2C7263806C59967173B9315F6E4052A5726C6AEF27FC2E156",
-    "trigger_offset": 192
-  },
-  "graph": "Data/Narrative/First_Hour_Quests.json",
-  "node_count": 4,
+  "bytes": 496,
+  "magic": "H8QG",
+  "nodes": 4,
   "status": "INDEPENDENT_BINARY_VERIFY_OK",
-  "tier_names": [
-    "Low",
-    "Middle",
-    "High",
-    "Ultra"
-  ],
-  "topological_order": [
-    "quest_first_hour_wake_up",
-    "quest_first_hour_find_scanner",
-    "quest_first_hour_scan_leviathan_trace",
-    "quest_first_hour_fix_radio"
-  ]
+  "tierOffset": 304
 }

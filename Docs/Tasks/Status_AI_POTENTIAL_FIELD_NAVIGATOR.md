@@ -45,6 +45,8 @@ Runtime verification status: PENDING UNITY VERIFICATION
 - [x] Loop 13 - Report write hygiene | Patched `Tools/RunMetricPhiVerifySweep.py` to retry Windows atomic replace and fall back to direct write on repeated `PermissionError`. Removed three stale Metric-Phi `.tmp` report files after explicit approval. Result: standard sweep report is current and temp directory is clean.
 - [x] Loop 14 - NetSync stale evidence | Direct `Tools/Architecture/VerifyNetSyncMerkleProtocol.py` rerun proved the jitter report now uses redundancy=24 and passes. Result: stale sweep failure was evidence drift, not AI navigation debt.
 - [x] Loop 15 - Final self-validation rerun | Reran full Metric-Phi sweep, agent-scoped Data Truth, AI replay, AI tests, binary hygiene, Data Inquisition, H8 hash audit, and economy Monte Carlo. Removed the exact stale `METRIC_PHI_VERIFY_SWEEP*.tmp` and self-check artifacts left by the final sweep. Result: static data gates pass on current artifacts; Unity runtime proof remains absent.
+- [x] Loop 16 - Current-disk overwrite remediation | Re-read status/rationale and original XML, then found `Tools/AiPathSim.py` and `Tools/VerifyAiNavigationTuning.py` had regressed to JSON-only/generic verification while the status claimed binary ownership. Restored generator-owned H8AN binary export, manifest validation, FNV collision checks, header CRC audit, toaster/RTX payloads, and 22 AI unit tests. Result: current disk truth matches the binary/data-truth claims again.
+- [x] Loop 17 - Full static rerun after remediation | Reran AI replay, AI verifier, AI tests, full Metric-Phi sweep, Data Truth, Binary Hygiene, Data Inquisition, H8 hash audit, and economy Monte Carlo on current artifacts. Result: static data gates pass; C# compile and Unity runtime proof remain blocked/pending as recorded below.
 
 ## Verification
 
@@ -84,5 +86,17 @@ Runtime verification status: PENDING UNITY VERIFICATION
 - [x] Final `python Tools/Economy/MonteCarloEconomySim.py --players 10000 --max-nodes 10000` -> STATUS: ECONOMY PROVEN; total_nodes_mined=1,541,057; million_step_audit_passed=True; failures=0; p99=59.285min.
 - [x] `python -B -c "compile(...)"` -> SYNTAX_OK for AI verifier/simulator/tests plus Metric-Phi runner/data-truth tools.
 - [x] Exact stale Metric-Phi temp/selfcheck files removed from `Docs/Reports`; post-delete temp/selfcheck glob returned no remaining entries.
+- [x] Current `python Tools/AiPathSim.py` -> NAVIGATION OPTIMIZED; candidates=48; reached=30; raw_jitter=2; smoothed_jitter=1; final_distance=2.810m; min_clearance=2.2249m; sdf_pushouts=0; binary=1280 bytes; records=76.
+- [x] Current `python Tools/VerifyAiNavigationTuning.py` -> AI NAV VERIFY PASSED; header=`<4sHHIIIIIIII24s`; record=`<IHHfI`; alignment=16; endian=little; headerCrc32=0xEDC63F65; payloadCrc32=0x89810120; semanticHashCrc32=0xBC8A06A3; FNV collisions=0; sorted hashes=true.
+- [x] Current `python Tools/AI_Sim/test_ai_path_sim.py -v` -> 22 tests OK; binary manifest, header roundtrip, FNV uniqueness, deterministic JSON/binary/manifest regeneration, math audit, toaster data, and RTX-overkill data covered.
+- [x] Current `python -B -m py_compile Tools\AiPathSim.py Tools\VerifyAiNavigationTuning.py Tools\AI_Sim\test_ai_path_sim.py Tools\RunMetricPhiVerifySweep.py Tools\VerifyMetricPhiDataTruth.py` -> SYNTAX_OK.
+- [x] Current `python -B Tools\RunMetricPhiVerifySweep.py` -> VERIFY_SWEEP_PASS; totalCommands=35; requiredFailures=0.
+- [x] Current `python Tools\VerifyMetricPhiDataTruth.py --json-output Docs\AgentLogs\VerifyMetricPhiDataTruth_AI_POTENTIAL_FIELD_NAVIGATOR.json --markdown-output Docs\AgentLogs\VerifyMetricPhiDataTruth_AI_POTENTIAL_FIELD_NAVIGATOR.md` -> DATA_TRUTH_VERIFIED; checks=37; binary_files=46; unaligned=0; struct_format_sites=274; endian_failures=0.
+- [x] Current `python Tools\VerifyBinaryHygiene.py --report Docs\AgentLogs\VerifyBinaryHygiene_AI_POTENTIAL_FIELD_NAVIGATOR.json` -> BINARY_HYGIENE_VERIFIED; binaryCount=46; misalignedCount=0.
+- [x] Current `python Tools\VerifyDataInquisition.py --report Docs\AgentLogs\VerifyDataInquisition_AI_POTENTIAL_FIELD_NAVIGATOR.json` -> DATA_INQUISITION_VERIFIED_STATIC_ONLY; binaries=46; manifests=11; aligned16=true; endian=`<`; structFormats=273; monteCarloSteps=1000000; hashCollisions=0; atlasDomains=85.
+- [x] Current `python Tools\VerifyH8HashCollisions.py --write-json Docs\AgentLogs\H8HashCollision_AI_POTENTIAL_FIELD_NAVIGATOR.json --write-report Docs\AgentLogs\H8HashCollision_AI_POTENTIAL_FIELD_NAVIGATOR.md` -> records=1046; HASH COLLISIONS: 0.
+- [x] Current `python Tools\Economy\MonteCarloEconomySim.py --players 10000 --max-nodes 10000` -> STATUS: ECONOMY PROVEN; total_nodes_mined=1,539,943; million_step_audit_passed=True; failures=0; p99=59.285min.
+- [x] Current Metric-Phi temp/selfcheck check -> no `Docs/Reports/METRIC_PHI_VERIFY_SWEEP*.tmp` or `METRIC_PHI_VERIFY_SWEEP.selfcheck*.json` entries found.
 - [ ] `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` -> BLOCKED: `dotnet` is not on PATH and no `dotnet.exe` was found under `C:\Program Files\dotnet` or `C:\Program Files (x86)\dotnet`.
+- [ ] Current `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` -> BLOCKED: `dotnet` is not recognized on PATH.
 - [ ] Unity Console / Play Mode / Burst profiler / GCMonitor -> PENDING VERIFICATION.
