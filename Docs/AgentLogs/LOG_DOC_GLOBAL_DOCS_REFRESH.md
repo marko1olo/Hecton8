@@ -49,3 +49,13 @@ What was done: Committed the narrow ledger evidence as `2d41e66dd docs: add conc
 Cinematic Cheats used: Not applicable. Git evidence only.
 
 Exact Microseconds saved: 0 us runtime claimed.
+
+## 2026-05-17 R3 Documentation Integration
+
+What was wrong: Root documentation still had `COMPUTE_AUDIT_BRIEF.md` as a fourth markdown file, new architecture contracts were not fully indexed, and the latest 2026-05-17 report surfaces were not all reachable from stable navigation.
+
+What was done: Moved the compute brief to `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md`, updated governance/root/report/architecture indexes, wrote `Docs/Reports/2026-05-17_DOCUMENTATION_INTEGRATION_R3.md`, verified root markdown count `3`, architecture index missing entries `0`, stable `.md` / `.txt` header failures `0`, and changed JSON parse failures `0`.
+
+Cinematic Cheats used: Not applicable. Static documentation integration only.
+
+Exact Microseconds saved: 0 us runtime claimed.

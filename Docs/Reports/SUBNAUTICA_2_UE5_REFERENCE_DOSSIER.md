@@ -290,7 +290,9 @@ Non-negotiable HECTON-8 signatures:
 
 P0:
 
-1. Finish content authority payload generation: Addressables groups, hash maps, VFX prewarm manifest.
+1. Finish ContentAuthority payload generation: DataMonolith/static-data artifact, sector payload
+   manifests, Unity object asset groups where deliberately chosen, hash maps, and VFX prewarm
+   manifest.
 2. Decide authoritative static-data path and make `static_data.h8bin` mandatory for production builds.
 3. Promote first-hour route validation from menu/warning to build or preplay gate.
 4. Add missing black-box rings for atmosphere, organic destruction, and vegetation/abyssal path.

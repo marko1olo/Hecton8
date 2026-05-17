@@ -8,10 +8,10 @@ Purpose: prevent workspace documentation from collapsing back into root-level no
 Current-state boundary:
 
 - 2026-05-17 DOC_GLOBAL_DOCS_REFRESH override: read `Docs/Reports/2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md` before using May 13/May 15 documentation and source counters. Current static scan sees `2788` markdown/text files in the non-Library/Temp/Logs/obj/igra documentation surface, `149` stable docs, `257` dated reports, `2079` archive files, `123` deprecated files, and `144 / 144` tracked stable active `Docs` files with both `Date:` and `Status:` headers after this pass. These are static filesystem facts only, not runtime proof.
-- Current root text scan sees `4` root markdown files: `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md`, and `COMPUTE_AUDIT_BRIEF.md`. `COMPUTE_AUDIT_BRIEF.md` is root drift against the May 15 three-anchor rule and must be moved or deprecated by the compute-report owner, not treated as a fourth authority anchor.
+- Current root text scan after the R3 documentation integration sees `3` root markdown files: `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`. The former root `COMPUTE_AUDIT_BRIEF.md` now lives at `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md`.
 - 2026-05-14 DOC_AUDIT override: read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using May 11 counters or build-artifact links as current proof.
 - The May 11 `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.*` proof files cited by several docs are absent from the current filesystem. Treat those references as stale report text. Current May 14/R43 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist, not Unity runtime proof.
-- 2026-05-15 root text scan after the cleanup saw `3` root `.md`, `0` root `.log`, `0` root `.json`, and `0` root `.txt` files in the documentation/evidence scope. The 2026-05-17 scan supersedes that count and records one root drift file: `COMPUTE_AUDIT_BRIEF.md`.
+- 2026-05-15 root text scan after the cleanup saw `3` root `.md`, `0` root `.log`, `0` root `.json`, and `0` root `.txt` files in the documentation/evidence scope. The 2026-05-17 R3 pass restores that target after moving the compute brief into the compute report bundle.
 - Former non-anchor root markdown files were moved: `BROKEN_PREFABS.md` to `Docs/Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md`, and root `PROJECT_ATLAS.md` / `TERRAIN_AND_BIOME_REALITY_MAP.md` to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`.
 - `Docs/PROJECT_ATLAS.md` is a static first-party asmdef graph snapshot only. It is not package/config/runtime authority.
 - Former root raw logs, JSON, XML, PNG, zip, and `clean_project.py` were moved to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Evidence_2026-05-15/`.
@@ -26,7 +26,7 @@ Current-state boundary:
 - Current `.agents-skills` visual-fake doctrine is promoted into `../AGENTS.md`, `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`; `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is supporting evidence.
 - Current documentation synchronization counters are overridden by `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`; `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` and `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` remain historical May 11 evidence and manifest structure, not current numeric truth where May 13/R41/R42/R43/R45 conflicts.
 - Current documentation sorting authority starts at this file plus `Docs/README.md`. `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` and later synchronization reports are evidence for why the sorting changed.
-- Current project truth starts at `../AGENTS.md`, `.agents-skills/README.md`, task-relevant `.agents-skills/*`, `Docs/README.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, current source files, and fresh verification logs. Dated reports support these files; they do not outrank them.
+- Current project truth starts at `../AGENTS.md`, `.agents-skills/README.md`, task-relevant `.agents-skills/*`, `Docs/README.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, current source files, and fresh verification logs. Dated reports support these files; they do not outrank them.
 - Current warning-cleanup evidence starts at `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`; current Omega build warning classification is scoped in `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`.
 
 ## Authority Order
@@ -41,20 +41,21 @@ Current-state boundary:
 8. `Docs/SYSTEMS_CONTRACTS.md`
 9. `Docs/QUALITY_GATES.md`
 10. `Docs/ARCHITECTURE/README.md`
-11. `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
-12. `Docs/DOC_GOVERNANCE.md`
-13. `Docs/ROOT_DOCS_REFERENCE.md`
-14. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`
-15. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md`
-16. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
-17. current source files
-18. fresh verification logs and artifacts
-19. `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md`
-20. dated reports under `Docs/Reports/` and `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/`
-21. active execution docs under `Docs/`
-22. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
-23. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
-24. archive bundles under `Docs/_Archive/`
+11. `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+12. `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+13. `Docs/DOC_GOVERNANCE.md`
+14. `Docs/ROOT_DOCS_REFERENCE.md`
+15. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`
+16. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md`
+17. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
+18. current source files
+19. fresh verification logs and artifacts
+20. `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md`
+21. dated reports under `Docs/Reports/` and `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/`
+22. active execution docs under `Docs/`
+23. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
+24. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
+25. archive bundles under `Docs/_Archive/`
 
 ## What Belongs In Root
 
@@ -66,7 +67,7 @@ Only the smallest active anchors:
 
 If a document is not one of those, it should have a strong reason to remain in root.
 
-Current exception / drift: `COMPUTE_AUDIT_BRIEF.md` is present in root as of 2026-05-17. It is a compute report surface, not a governance anchor. Do not cite it as root authority; route readers to the matching `Docs/Reports/2026-05-15_COMPUTE_AUDIT/` or `Docs/Reports/2026-05-16_COMPUTE_AUDIT/` bundle until the compute owner moves or reconciles it.
+Current exception / drift: none in root text scope after R3. The concise compute snapshot is `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md`; do not recreate a root compute brief.
 
 ## What Belongs In Docs
 

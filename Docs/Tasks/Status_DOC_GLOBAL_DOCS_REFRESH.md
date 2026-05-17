@@ -2,8 +2,8 @@
 
 Agent: DOC_GLOBAL_DOCS_REFRESH
 Domain: Echelon 9.83 Chronicler / Project Documentation Currency
-Status: COMPLETE / STATIC DOC AUDIT R2 / PUSHED
-Task Count: 12
+Status: COMPLETE / STATIC DOC AUDIT R3 / INTEGRATION READY
+Task Count: 17
 Evidence class: STATIC_DOC / STATIC_SOURCE / GIT_CLI
 
 ## Mandates Read Before Documentation Operations
@@ -46,3 +46,13 @@ The R2 ledger is a static documentation reconciliation artifact. It does not cla
 - Ledger commit: `2d41e66dd docs: add concurrent delta ledger`.
 - Push verification: `git push origin main` succeeded, followed by `git fetch origin main` and `git rev-list --left-right --count origin/main...HEAD` = `0 0`.
 - R2 closeout modifies only this status file and `LOG_DOC_GLOBAL_DOCS_REFRESH.md`.
+
+## Continuation Checklist - 2026-05-17 R3
+- [x] 13. Reopen after repeated user directive. | DOD: kept DOC_GLOBAL_DOCS_REFRESH ownership, preserved prior R1/R2 evidence, and shifted from ledger-only reporting to concrete documentation integration. | Alternative rejected: answering "already done" while visible doc drift remained. | Estimate: 0 us runtime.
+- [x] 14. Resolve root compute brief drift. | DOD: moved `COMPUTE_AUDIT_BRIEF.md` to `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md`; root markdown count is now `3` (`AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md`). | Alternative rejected: keeping a fourth root markdown file after governance said root should stay three-anchor. | Estimate: 0 us runtime.
+- [x] 15. Refresh stable navigation indexes. | DOD: updated `Docs/ARCHITECTURE/README.md` so `46 / 46` architecture markdown contracts are indexed, and updated `Docs/README.md` / `Docs/Reports/README.md` with the 2026-05-17 refresh, concurrent ledger, R3 integration, Subnautica actuality report, actuality manifest, mod ecosystem report, and moved compute brief. | Alternative rejected: leaving new current docs discoverable only by `git status`. | Estimate: 0 us runtime.
+- [x] 16. Validate documentation-only integration. | DOD: wrote `Docs/Reports/2026-05-17_DOCUMENTATION_INTEGRATION_R3.md`; checked root markdown count `3`, stable active `.md` / `.txt` headers `150 / 150`, changed/untracked JSON parse `2 / 2`, architecture missing index entries `0`, and source/shader dirty boundary `8`. | Alternative rejected: runtime-proof wording without Unity/profiler/player evidence. | Estimate: 0 us runtime.
+- [x] 17. Prepare docs-only staging boundary. | DOD: source/shader edits remain outside this documentation pass; R3 evidence names the remaining dirty source files and will stage only documentation/report/task/log files. | Alternative rejected: staging code while doing documentation governance. | Estimate: 0 us runtime.
+
+## R3 Evidence Boundary
+R3 is STATIC_DOC / FILESYSTEM / GIT_CLI evidence only. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual route proof exists for this pass.

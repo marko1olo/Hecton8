@@ -18,7 +18,13 @@ Status: PENDING VERIFICATION
 - Deterministic from seed: base terrain, unmodified SDF, biome membership, default loot placement, default flora/fauna distribution, HLOD identity, non-mutated lore placement.
 - Rebuild from seed and hash registry; never serialize duplicate meshes, materials, or textures into save slots.
 
+## Static Data And Sector Payloads
+- `static_data.h8bin` / DataMonolith owns immutable static tables and generated DB authority.
+- Sector payloads own baked base-world cache families: object batches, visibility/physics proxies, biome sidecars, audio/discovery sidecars, and other non-player-delta world cache data.
+- These payloads are not save-slot data and are not made authoritative by cached Addressables handles.
+
 ## Asset Registry Rule
 - Save data stores stable uint hashes only.
-- `ContentAssetHashMap` resolves those hashes to Addressables/prefab/mesh bindings during load.
+- `ContentAssetHashMap` resolves those hashes to Unity object/visual/audio asset bindings during load where the project deliberately uses Addressables-style delivery.
+- Immutable static data and baked world cache truth resolve through DataMonolith/sector payload manifests, not through save files or cached Addressables handles.
 - Missing required hash is a build blocker, not a runtime fallback.

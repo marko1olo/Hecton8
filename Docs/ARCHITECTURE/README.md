@@ -1,6 +1,6 @@
 # HECTON-8 Architecture Index
 
-Date: 2026-05-15
+Date: 2026-05-17
 Status: PENDING VERIFICATION
 Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
@@ -14,6 +14,18 @@ Purpose: stable index for `Docs/ARCHITECTURE`. These files are long-lived system
 - This folder owns stable architecture contracts and the cinematic-cheat ledger.
 - `.diff` files in this folder are evidence/provenance only. They are not policy by themselves.
 - Dated reports under `../Reports/` and `../ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/` are evidence snapshots. Promote durable policy into stable files before treating it as project doctrine.
+
+## 2026-05-17 Actuality Overlay
+
+Start with `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` when touching save versions, DataMonolith, ContentAuthority, Addressables, Subnautica/Subnautica 2 comparison, modding, or co-op state contracts. Use `HECTON8_P0_FOUNDATION_PROOF_MATRIX.md`, `SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md`, and `SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md` as clean-room production pressure references, not runtime proof.
+
+Current hard corrections:
+
+- `SAVE_V8_BINARY_SPEC.md` and `SAVE_PAGING_PROTOCOL.md` are legacy indexed-sector design snapshots for version authority. Current source writes save container `0x0009`; staged hash-v10 uses `0x000A`.
+- `DataMonolith` and sector payloads own immutable world/static data. Addressables-style groups are object/visual/audio delivery tools, not the world truth store.
+- `HectonNetworkManager.cs` is still a placeholder. `COOP_MERKLE_STATE_DELTA_PROTOCOL.md` is a static design contract until a loopback/runtime harness exists.
+- Subnautica/Subnautica 2 docs are clean-room reference pressure only. Do not copy proprietary game files, assets, binaries, UI, story, cache data, Unreal internals, or decompiled code.
+- `CONTENT_SAVE_SLOT_TOPOLOGY.md`, `SUBNAUTICA2_HECTON8_IMPLEMENTATION_HANDOFF.md`, and `SUBNAUTICA2_TO_HECTON8_TACTICAL_BACKLOG.md` are current navigation aids only where they agree with the actuality ledger and current source.
 
 ## Current Proof Boundary
 
@@ -33,8 +45,9 @@ Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCM
 4. `DISPATCH_PIPELINE.md` - runtime dispatch, tick ownership, and update boundaries.
 5. `AUP_PRECISION_STANDARDS.md` and `KINEMATICS_AUP_INTEGRATION.md` - floating-origin and movement correctness.
 6. `ZERO_GC_FABRICATION.md` and `ZERO_GC_UI_PIPELINE.md` - allocation discipline for fabrication and UI.
-7. `SAVE_V8_BINARY_SPEC.md` and `SAVE_PAGING_PROTOCOL.md` - persistence architecture.
-8. Domain docs such as `FLOW_FIELD_MATH.md`, `AUDIO_DSP_PIPELINE.md`, `HABITAT_LOGISTICS_GRAPH.md`, `SUBMARINE_OS_MANUAL.md`, and `URP_SCREENSHOT_PIPELINE.md` as needed by the task.
+7. `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, `CONTENT_SAVE_SLOT_TOPOLOGY.md`, then `SAVE_V8_BINARY_SPEC.md` and `SAVE_PAGING_PROTOCOL.md` as legacy indexed-sector references - persistence architecture.
+8. `HECTON8_P0_FOUNDATION_PROOF_MATRIX.md`, `SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md`, and `SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md` - clean-room production pressure and gap framing.
+9. Domain docs such as `FLOW_FIELD_MATH.md`, `AUDIO_DSP_PIPELINE.md`, `HABITAT_LOGISTICS_GRAPH.md`, `SUBMARINE_OS_MANUAL.md`, and `URP_SCREENSHOT_PIPELINE.md` as needed by the task.
 
 ## Complete Contract Inventory
 
@@ -44,6 +57,7 @@ Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCM
 - [AUP_PRECISION_STANDARDS.md](AUP_PRECISION_STANDARDS.md)
 - [BOOT_SEQUENCE_TOPOLOGY.md](BOOT_SEQUENCE_TOPOLOGY.md)
 - [CINEMATIC_CHEATS_LEDGER.md](CINEMATIC_CHEATS_LEDGER.md)
+- [CONTENT_SAVE_SLOT_TOPOLOGY.md](CONTENT_SAVE_SLOT_TOPOLOGY.md)
 - [CORE_REPLAY_DETERMINISM.md](CORE_REPLAY_DETERMINISM.md)
 - [DATA_MONOLITH_H8BIN_SPEC.md](DATA_MONOLITH_H8BIN_SPEC.md)
 - [DISPATCH_PIPELINE.md](DISPATCH_PIPELINE.md)
@@ -54,6 +68,8 @@ Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCM
 - [GLOBAL_REGISTRY_SERVICE_LOCATOR.md](GLOBAL_REGISTRY_SERVICE_LOCATOR.md)
 - [GLOBAL_SIGNAL_CORRIDOR.md](GLOBAL_SIGNAL_CORRIDOR.md)
 - [HABITAT_LOGISTICS_GRAPH.md](HABITAT_LOGISTICS_GRAPH.md)
+- [HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md](HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md)
+- [HECTON8_P0_FOUNDATION_PROOF_MATRIX.md](HECTON8_P0_FOUNDATION_PROOF_MATRIX.md)
 - [HEADLESS_ECOSYSTEM_SIMULATION.md](HEADLESS_ECOSYSTEM_SIMULATION.md)
 - [KINEMATICS_AUP_INTEGRATION.md](KINEMATICS_AUP_INTEGRATION.md)
 - [KINETIC_ENTANGLEMENT.md](KINETIC_ENTANGLEMENT.md)
@@ -67,6 +83,10 @@ Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCM
 - [SCALABILITY_MATRIX.md](SCALABILITY_MATRIX.md)
 - [SCANNER_DATA_MINING.md](SCANNER_DATA_MINING.md)
 - [SEISMIC_GEOLOGY_SYSTEM.md](SEISMIC_GEOLOGY_SYSTEM.md)
+- [SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md](SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md)
+- [SUBNAUTICA2_HECTON8_IMPLEMENTATION_HANDOFF.md](SUBNAUTICA2_HECTON8_IMPLEMENTATION_HANDOFF.md)
+- [SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md](SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md)
+- [SUBNAUTICA2_TO_HECTON8_TACTICAL_BACKLOG.md](SUBNAUTICA2_TO_HECTON8_TACTICAL_BACKLOG.md)
 - [SUBMARINE_OS_MANUAL.md](SUBMARINE_OS_MANUAL.md)
 - [SYSTEM_INTERCONNECT_MATRIX.md](SYSTEM_INTERCONNECT_MATRIX.md)
 - [THIRD_PARTY_POISON.md](THIRD_PARTY_POISON.md)

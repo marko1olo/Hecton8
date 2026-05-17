@@ -228,8 +228,9 @@ Ultra:
 The dream is blocked by foundation gaps already identified in the research logs:
 
 - `static_data.h8bin` must become a real production payload, not an optional missing boot artifact.
-- ContentAuthority must generate or validate actual Addressables groups, hash maps, VFX manifests,
-  and object-batch payloads.
+- ContentAuthority must generate or validate actual Unity object asset groups, hash maps, VFX
+  manifests, and object-batch payloads. Addressables-style delivery is not the world/static-data
+  truth path.
 - First-hour scan/craft/repair route validation must become a build or preplay gate.
 - Biome visual authority must be data, not scattered scene taste.
 - Typed stimulus lanes must exist before creature reactivity is claimed.

@@ -1,14 +1,33 @@
-# SAVE_PAGING_PROTOCOL
+﻿# SAVE_PAGING_PROTOCOL
 Date: 2026-05-07
 
 Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
-## 2026-05-11 Current-State Override
+## 2026-05-17 Live-Version Supersession
 
-- Current data boundary: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
-- Current manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
-- Current visual-realistic-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
+Status: LEGACY SPEC SNAPSHOT FOR VERSION AUTHORITY.
+
+This document still preserves useful dirty-sector and indexed-paging design history, but its
+`Container version: 0x0008` line is not the current runtime truth.
+
+Current source-backed authority:
+
+- `SaveBinaryStorage.CurrentVersion = 0x0009`.
+- `SaveBinaryStorage.CurrentHeaderSize = 56`.
+- `SaveMasterHashV10.HeaderVersion = 0x000A`.
+
+Use `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` and
+`SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md` before changing save code or reporting live
+save compatibility. Do not use this file alone to claim the current save container version.
+
+## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
+
+- Historical data boundary snapshot: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+- Historical manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+- Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
+- Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
 - May 14 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat that May 11 compile-success line as stale report text. R43 rechecked the current external root `Hecton8*.csproj` no-restore CLI compile surface at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; full restore graphs still carry vendor/package warnings, and shared `Temp\obj` locks can create transient evidence noise. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
@@ -25,7 +44,8 @@ Owner files:
 - `Assets/_Project/Scripts/SaveBinaryStorage.cs`
 - `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`
 
-Container version: `0x0008`
+Historical container version snapshot: `0x0008`.
+Current runtime version authority is listed in the 2026-05-17 live-version supersession above.
 
 This document defines dirty-sector commit behavior for the fixed-slot `4096` entry FileStream/native-window save container.
 

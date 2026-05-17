@@ -36,14 +36,18 @@ cannot be generated and validated repeatedly.
 Problem:
 
 Addressables package is installed, but `Assets/AddressableAssetsData` is empty and expected
-Core/High_Res/Overkill content authority payloads are not populated.
+Core/High_Res/Overkill Unity object payloads are not populated. This is separate from
+DataMonolith/world-static truth.
 
 Required result:
 
-- Generated or manually authored Addressables settings/groups for Core, High_Res, and Overkill.
-- `ContentAssetHashMap` assets for runtime lookup.
+- Generated or manually authored Addressables-style settings/groups for Core, High_Res, and
+  Overkill object/visual/audio assets only where that delivery path is deliberately chosen.
+- `ContentAssetHashMap` assets for Unity object asset lookup.
 - `ContentVfxPrewarmManifest` coverage.
 - Object-batch payloads for flora/debris/wreck dressing.
+- `static_data.h8bin` and sector payload manifests remain the authority for static tables and
+  baked world cache data.
 - Build gate proves dependencies, tier membership, and missing-reference state.
 
 Why Subnautica 2 matters:

@@ -71,3 +71,15 @@ Rejected Alternatives: Staging every dirty documentation file was rejected becau
 Scalability potential: Low/Middle readers get a current owner-action list instead of stale uncertainty. High/Ultra review can consume a precise path-level ledger and decide which owner commits, archives, or supersedes each delta.
 
 Hardware Impact: Runtime 0 us/frame. Documentation reconciliation only.
+
+## Decision 6: R3 Root Drift Closure And Index Integration
+
+Problem: The repeated user directive left a concrete documentation drift unresolved: `COMPUTE_AUDIT_BRIEF.md` still lived in repository root, current architecture files were not fully indexed in `Docs/ARCHITECTURE/README.md`, and the new R2/Subnautica documentation reports were not all visible from stable navigation.
+
+Solution: Move the concise compute brief into `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md`, update root governance/reference files to restore the three-anchor root, update architecture/report/root docs indexes, and write `Docs/Reports/2026-05-17_DOCUMENTATION_INTEGRATION_R3.md` as the verification record.
+
+Rejected Alternatives: Keeping the root drift was rejected because it contradicted governance. Moving or staging dirty source/shader files was rejected because the user requested documentation and those files are outside DOC_GLOBAL_DOCS_REFRESH authority. Leaving new architecture docs unindexed was rejected because undiscoverable docs become stale immediately.
+
+Scalability potential: Low/Middle agents now start from stable indexes instead of root noise. High/Ultra review can trace root cleanup, report movement, architecture inventory, JSON validity, and dirty source boundaries from one R3 report.
+
+Hardware Impact: Runtime 0 us/frame. Documentation routing only.

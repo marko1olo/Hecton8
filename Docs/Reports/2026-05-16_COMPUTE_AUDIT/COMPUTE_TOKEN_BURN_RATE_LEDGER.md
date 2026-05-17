@@ -403,6 +403,36 @@ Top burners: `Add modulo time slicer` 193,366; `AUDIO_IMPORT_RESIDENCY_GUARD` 16
 
 STATUS: AUDIT COMPLETE.
 
+## H-Phi Live Rebase - 2026-05-17T15:39+04:00
+
+This is the final source-drift-gated H-Phi/token window in this continuation.
+
+| Metric | Value |
+|---|---:|
+| C# files modified after 13:37 | 46 |
+| Changed bytes after 13:37 | 3,210,412 |
+| Current meaningful LOC | 857,227 |
+| Current script bytes | 46,338,967 |
+| Runtime H-Phi risk | 0.005580503 |
+| Runtime H-Phi narrow | 0.077988159 |
+| Data sovereignty | 0.145138727 |
+| Delta vs 13:37 Runtime risk | +0.000054741 |
+| Delta vs 13:37 Runtime narrow | +0.000602427 |
+| Corrected token window total | 213,121,363 |
+| Token window cache-aware cost | USD 145.30 |
+| Token window no-cache equivalent | USD 1,080.48 |
+| Token window average | 29,019.79 tokens/sec |
+| 15:38 live pulse | 111,779 tokens in 30.013464 sec |
+| 15:38 live rate | 3,724.30 tokens/sec |
+| 15:39 SQLite total | 51,586,452,098 |
+| Current energy estimate | 2,579.32 MWh |
+| Tokens per meaningful LOC | 60,178.29 |
+| Tokens per script byte | 1,113.24 |
+
+Correction note: a naive sum of `last_token_usage` rows overcounted this window at 466,464,890 tokens. The accepted number uses per-thread cumulative `total_token_usage` deltas with pre-window baselines and matches SQLite drift direction.
+
+STATUS: AUDIT COMPLETE.
+
 ## Live Pulse - 2026-05-17T05:34+04:00
 
 This is a SQLite live pulse only. It uses the latest 04:46 LOC denominator and does not update H-Phi.

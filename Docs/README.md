@@ -1,9 +1,26 @@
 # Docs Index
 
-Date: 2026-05-15
+Date: 2026-05-17
 Status: PENDING VERIFICATION
 
 Purpose: stable documentation entry point. Dated reports are evidence snapshots and counters, not the permanent project brain. If a dated report changes policy, promote the rule into `AGENTS.md`, `.agents-skills`, or one of the stable authority docs below.
+
+## 2026-05-17 Documentation Actuality Boundary
+
+Read `ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` before using older save, content-pipeline, Subnautica, Subnautica 2, modding, or co-op documents as current truth.
+
+Current sweep report: `Reports/2026-05-17_DOCUMENTATION_ACTUALITY_SUBNAUTICA_RESEARCHER.md`.
+Machine-readable actuality manifest: `Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
+Broad global refresh: `Reports/2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md`.
+Concurrent delta ledger and R3 handoff: `Reports/2026-05-17_DOCUMENTATION_CONCURRENT_DELTA_LEDGER.md`.
+R3 integration report: `Reports/2026-05-17_DOCUMENTATION_INTEGRATION_R3.md`.
+
+Key active corrections:
+
+- Save version authority is no longer `SAVE_V8_BINARY_SPEC.md` by title. Current source writes `SaveBinaryStorage.CurrentVersion = 0x0009`; staged hash-v10 uses `0x000A`.
+- `DataMonolith` and sector payloads own immutable world/static data. Addressables-style groups are only for Unity object/visual/audio asset delivery where deliberately chosen.
+- `HectonNetworkManager.cs` remains a placeholder; co-op Merkle docs are static design, not runtime proof.
+- Subnautica 2 is an Early Access public reference, not an implementation source. Borrow product-contract pressure and clean-room architecture lessons only.
 
 ## 2026-05-15 Current-Disk Build / H-Phi Boundary
 
@@ -68,7 +85,13 @@ Evidence class is STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK plus R2
 ## Current Evidence Snapshots
 
 - `Reports/2026-05-13_DOC_AUDIT_XRAY.md` - current documentation reality override; demotes missing May 11 build artifacts, root/doc surface drift, source-count drift, stale `Current compile-only evidence` lines, interface-count drift, Archivarius path drift, asmdef count drift, package/player-settings drift, world/scatter wiring proof gaps, root mirror/atlas scope confusion, stale manifest authority, gameplay resource-loop proof gaps, AI/Fauna data-vs-runtime-wiring proof gaps, and Tools/PDA first-hour proof gaps.
+- `Reports/2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md` - current broad DOC_GLOBAL_DOCS_REFRESH scan and stable metadata pass; static documentation/source evidence only.
+- `Reports/2026-05-17_DOCUMENTATION_CONCURRENT_DELTA_LEDGER.md` - second-pass reconciliation ledger for the 2026-05-17 concurrent documentation wave.
+- `Reports/2026-05-17_DOCUMENTATION_INTEGRATION_R3.md` - root compute-brief relocation, architecture/report index integration, and R3 verification snapshot.
+- `Reports/2026-05-17_DOCUMENTATION_ACTUALITY_SUBNAUTICA_RESEARCHER.md` - active actuality overlay for save versions, DataMonolith/static data, modding, co-op placeholder status, and Subnautica/Subnautica 2 clean-room pressure.
+- `Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json` - machine-readable snapshot for the 2026-05-17 actuality lane; report evidence, not runtime proof.
 - `Reports/2026-05-15_COMPUTE_AUDIT/README.md` - grouped compute-cost report bundle moved out of repository root; static/report evidence only.
+- `Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md` - concise compute audit brief, moved out of repository root during the R3 documentation integration pass.
 - `Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md` - generated prefab snapshot moved out of repository root; not Unity import, Console, Play Mode, or player-build proof.
 - `PROJECT_STATE_STATIC_XRAY.md` - current durable static audit anchor for runtime-spine, large-file, scatter, Addressables, audio-memory, third-party contamination, gameplay economy/resource acquisition, AI/Fauna data-vs-runtime-wiring, Tools/PDA first-hour route hygiene, test-depth, and verification-gap findings.
 - `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` - historical May 11 documentation/data boundary; superseded by the May 13 X-Ray for current counters and missing-artifact evidence.
@@ -229,12 +252,15 @@ Current verification boundary:
 - `ARCHITECTURE/AUP_PRECISION_STANDARDS.md`
 - `ARCHITECTURE/AUDIO_DSP_PIPELINE.md`
 - `ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+- `ARCHITECTURE/CONTENT_SAVE_SLOT_TOPOLOGY.md`
 - `ARCHITECTURE/DISPATCH_PIPELINE.md`
 - `ARCHITECTURE/DRONE_FLEET_PROTOCOL.md`
 - `ARCHITECTURE/ECS_DOTS_ADOPTION_PLAN.md`
 - `ARCHITECTURE/EQUIPMENT_SOA_LAYOUT.md`
 - `ARCHITECTURE/FLOW_FIELD_MATH.md`
 - `ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md`
+- `ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- `ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md`
 - `ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md`
 - `ARCHITECTURE/HEADLESS_ECOSYSTEM_SIMULATION.md`
 - `ARCHITECTURE/KINEMATICS_AUP_INTEGRATION.md`
@@ -248,6 +274,10 @@ Current verification boundary:
 - `ARCHITECTURE/SAVE_V8_BINARY_SPEC.md`
 - `ARCHITECTURE/SCANNER_DATA_MINING.md`
 - `ARCHITECTURE/SEISMIC_GEOLOGY_SYSTEM.md`
+- `ARCHITECTURE/SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md`
+- `ARCHITECTURE/SUBNAUTICA2_HECTON8_IMPLEMENTATION_HANDOFF.md`
+- `ARCHITECTURE/SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md`
+- `ARCHITECTURE/SUBNAUTICA2_TO_HECTON8_TACTICAL_BACKLOG.md`
 - `ARCHITECTURE/SUBMARINE_OS_MANUAL.md`
 - `ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
 - `ARCHITECTURE/THIRD_PARTY_POISON.md`

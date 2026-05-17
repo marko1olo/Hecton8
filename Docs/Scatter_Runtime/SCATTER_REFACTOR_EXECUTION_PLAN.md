@@ -1,4 +1,4 @@
-# Scatter Refactor Execution Plan
+﻿# Scatter Refactor Execution Plan
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
@@ -6,11 +6,13 @@ Verification: `PENDING VERIFICATION`
 Owner: `Codex`
 Scope: `WorldProceduralScatterDirector` follow-up against `Docs/Scatter_Runtime/SCATTER_REFACTORING_MANIFESTO_V2.md`
 
-## 2026-05-11 Current-State Override
+## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 
-- Current data boundary: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
-- Current manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
-- Current visual-realistic-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
+- Historical data boundary snapshot: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+- Historical manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+- Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
+- Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
 - May 14 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat that May 11 compile-success line as stale report text. R43 rechecked the current external root `Hecton8*.csproj` no-restore CLI compile surface at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; full restore graphs still carry vendor/package warnings, and shared `Temp\obj` locks can create transient evidence noise. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
@@ -79,7 +81,7 @@ Still missing or incomplete:
 
 ## Execution Order
 
-### Phase 1 â€” Low-Risk Structural Fixes
+### Phase 1 Ã¢â‚¬â€ Low-Risk Structural Fixes
 
 Status: `IN PROGRESS`
 
@@ -93,7 +95,7 @@ Status: `IN PROGRESS`
 - [x] remove nested snapshot type from pipeline partial
 - [x] wire pipeline to use snapshot data only, not implicit future transform reads
 
-### Phase 2 â€” Diagnostics Extraction
+### Phase 2 Ã¢â‚¬â€ Diagnostics Extraction
 
 Status: `PENDING`
 
@@ -102,7 +104,7 @@ Status: `PENDING`
 - [ ] keep serialized debug inspector state in director until safe migration path exists
 - [ ] do not break inspector references
 
-### Phase 3 â€” Spawning/Reconcile Extraction
+### Phase 3 Ã¢â‚¬â€ Spawning/Reconcile Extraction
 
 Status: `PENDING`
 
@@ -111,7 +113,7 @@ Status: `PENDING`
 - [ ] avoid fake service wrapper with no ownership gain
 - [ ] preserve GPUI path and generated geology path
 
-### Phase 4 â€” Heuristics Extraction
+### Phase 4 Ã¢â‚¬â€ Heuristics Extraction
 
 Status: `PENDING`
 
@@ -121,7 +123,7 @@ Status: `PENDING`
 - [ ] keep zero-GC static methods only
 - [ ] leave stateful/runtime owner logic in director
 
-### Phase 5 â€” Dead Branch Cleanup
+### Phase 5 Ã¢â‚¬â€ Dead Branch Cleanup
 
 Status: `PENDING`
 
@@ -132,7 +134,7 @@ Status: `PENDING`
   - delete
 - [ ] do not keep two competing scatter architectures alive
 
-### Phase 6 â€” Verification
+### Phase 6 Ã¢â‚¬â€ Verification
 
 Status: `PENDING`
 
@@ -145,7 +147,7 @@ Status: `PENDING`
   - GC alloc
   - active placement count
 
-### Phase 7 â€” API / Ownership Gaps
+### Phase 7 Ã¢â‚¬â€ API / Ownership Gaps
 
 Status: `PENDING`
 
@@ -176,4 +178,3 @@ Status: `PENDING`
 
 Work started with Phase 1 and first low-risk Phase 2 extraction.
 Goal: make architecture more truthful with low blast radius, not pretend full manifesto complete in one jump.
-

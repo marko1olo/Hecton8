@@ -9,9 +9,29 @@ Dated reports are evidence snapshots. Durable project policy belongs in `AGENTS.
 
 ## 2026-05-17 Documentation Global Refresh
 
-`2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md` is the latest broad documentation currency report. It reruns static doc/source/package/root counts, records the current root drift file `COMPUTE_AUDIT_BRIEF.md`, normalizes tracked stable active `Docs` headers to `144 / 144` with `Date:` and `Status:`, and classifies dated reports/archives/deprecated folders as evidence rather than rewriting them.
+`2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md` is the latest broad documentation currency report. It reruns static doc/source/package/root counts, records the then-current root drift file `COMPUTE_AUDIT_BRIEF.md`, normalizes tracked stable active `Docs` headers to `144 / 144` with `Date:` and `Status:`, and classifies dated reports/archives/deprecated folders as evidence rather than rewriting them.
 
 It is not Unity import, Unity Console, Play Mode, profiler, GCMonitor, player-build, scene-wiring, save/load, frame-time, memory, or visual proof.
+
+R2/R3 continuation:
+
+- `2026-05-17_DOCUMENTATION_CONCURRENT_DELTA_LEDGER.md` records the concurrent documentation wave visible after the global refresh and the ownership boundary for active logs/tasks, archives, reports, root drift, and stable/domain docs.
+- `2026-05-17_DOCUMENTATION_INTEGRATION_R3.md` records the R3 root compute-brief relocation, architecture/report index integration, stable header gate, changed JSON parse gate, and dirty source boundary.
+- `2026-05-17` R3 moved the concise compute brief to `2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md`, restoring the three-anchor root documentation target.
+
+## 2026-05-17 Subnautica / Actuality Overlay
+
+`2026-05-17_DOCUMENTATION_ACTUALITY_SUBNAUTICA_RESEARCHER.md` records the active source-of-truth corrections created by the Subnautica research lane after the global refresh: save v9/v10 authority, DataMonolith versus Addressables-style object delivery, mod SDK/runtime mismatch, co-op placeholder status, and Subnautica 2 public roadmap pressure.
+
+Machine-readable companion: `2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
+
+Stable authority overlay: `../ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+
+This is documentation/source evidence only. It is not Unity import, Play Mode, profiler, GCMonitor, player-build, platform build, or visual proof.
+
+Related clean-room reference:
+
+- `SUBNAUTICA_PUBLIC_MOD_ECOSYSTEM_DEEPDIVE.md` summarizes public mod ecosystem pressure and API-shape lessons. It is reference evidence only and does not authorize importing GPL/AGPL code or proprietary assets.
 
 ## 2026-05-13 Evidence Override
 
@@ -74,6 +94,12 @@ DOC_AUDIT R39/R40/R41/R42/R43/R45 adds a generated-project/asmdef drift boundary
 ## Current Evidence Snapshots
 
 - `2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md`
+- `2026-05-17_DOCUMENTATION_CONCURRENT_DELTA_LEDGER.md`
+- `2026-05-17_DOCUMENTATION_INTEGRATION_R3.md`
+- `2026-05-17_DOCUMENTATION_ACTUALITY_SUBNAUTICA_RESEARCHER.md`
+- `2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`
+- `2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md`
+- `SUBNAUTICA_PUBLIC_MOD_ECOSYSTEM_DEEPDIVE.md`
 - `2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`
 - `2026-05-15_COMPUTE_AUDIT/README.md`
 - `2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md`

@@ -1,14 +1,34 @@
-# SAVE_V8_BINARY_SPEC
+﻿# SAVE_V8_BINARY_SPEC
 Date: 2026-05-07
 
 Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
-## 2026-05-11 Current-State Override
+## 2026-05-17 Live-Version Supersession
 
-- Current data boundary: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
-- Current manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
-- Current visual-realistic-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
+Status: LEGACY SPEC SNAPSHOT FOR VERSION AUTHORITY.
+
+This document still preserves useful indexed-sector layout history, but its `0x0008` and
+`CurrentHeaderSize = 52` claims are not the current runtime truth.
+
+Current source-backed authority:
+
+- `SaveBinaryStorage.CurrentVersion = 0x0009`.
+- `SaveBinaryStorage.CurrentHeaderSize = 56`.
+- `SaveMasterHashV10.HeaderVersion = 0x000A`.
+
+Use `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` and
+`SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md` before changing save code or reporting live
+save compatibility. Do not use this file alone to claim current save version, header size, or
+future-version rejection behavior.
+
+## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
+
+- Historical data boundary snapshot: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+- Historical manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+- Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
+- Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
 - May 14 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat that May 11 compile-success line as stale report text. R43 rechecked the current external root `Hecton8*.csproj` no-restore CLI compile surface at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; full restore graphs still carry vendor/package warnings, and shared `Temp\obj` locks can create transient evidence noise. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
@@ -20,7 +40,8 @@ Historical 2026-05-04 boundary:
 
 ## Scope
 
-HECTON-8 save container `0x0008` (`SaveBinaryStorage.CurrentVersion`).
+Historical HECTON-8 save container snapshot `0x0008`.
+Current runtime version authority is listed in the 2026-05-17 live-version supersession above.
 Owner: `Assets/_Project/Scripts/SaveBinaryStorage.cs`.
 
 This document describes the indexed-block storage container used for FileStream/native-window random access to persistent-world sectors. Older memory-mapped wording in this file is stale unless explicitly marked historical.
@@ -64,13 +85,13 @@ Important fields for indexed paging:
 - `HashPayload64`
 - `HashHeader64`
 
-Validation rules:
+Historical v8 validation rules:
 
 - `MagicValue == 0x48454354`
-- `Version == 0x0008` for indexed block reads
+- `Version == 0x0008` for indexed block reads in this historical snapshot
 - `Flags` must contain `FlagIndexedSectorBlocks`
 - `HashHeader64` must match recomputed header hash
-- future versions (`> 0x0008`) are rejected by `TryValidateHeader(...)`
+- future versions (`> 0x0008`) were rejected by the v8-era `TryValidateHeader(...)` contract; re-check current source before reporting live behavior
 
 ### IndexedSectorDirectoryHeader
 

@@ -1,14 +1,16 @@
-# QUEST DAG Protocol
+﻿# QUEST DAG Protocol
 Date: 2026-05-07
 
 Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
-## 2026-05-11 Current-State Override
+## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 
-- Current data boundary: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
-- Current manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
-- Current visual-realistic-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
+- Historical data boundary snapshot: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+- Historical manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+- Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
+- Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
 - May 14 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat that May 11 compile-success line as stale report text. R43 rechecked the current external root `Hecton8*.csproj` no-restore CLI compile surface at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; full restore graphs still carry vendor/package warnings, and shared `Temp\obj` locks can create transient evidence noise. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
@@ -177,9 +179,9 @@ Signal-driven activation already carries phase prerequisites through compiled no
 ```
 
 Current authored locks:
-- `quest_atlas_signal_detected` Ã¢â€ â€™ `Abyssal`
-- `quest_atlas_signal_decoded` Ã¢â€ â€™ `Thermal`
-- `quest_atlas_core_reached` Ã¢â€ â€™ `Thermal`
+- `quest_atlas_signal_detected` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ `Abyssal`
+- `quest_atlas_signal_decoded` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ `Thermal`
+- `quest_atlas_core_reached` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ `Thermal`
 
 Rationale:
 - `quest_atlas_signal_detected` is gated behind deep-abandonment progression.

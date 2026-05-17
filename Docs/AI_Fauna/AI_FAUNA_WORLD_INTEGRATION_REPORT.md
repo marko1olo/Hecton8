@@ -1,14 +1,16 @@
-# AI Fauna World Integration Report
+﻿# AI Fauna World Integration Report
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
-## 2026-05-11 Current-State Override
+## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 
-- Current data boundary: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
-- Current manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
-- Current visual-realistic-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
+- Historical data boundary snapshot: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+- Historical manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+- Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
+- Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
 - May 14 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat that May 11 compile-success line as stale report text. R43 rechecked the current external root `Hecton8*.csproj` no-restore CLI compile surface at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; full restore graphs still carry vendor/package warnings, and shared `Temp\obj` locks can create transient evidence noise. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 - May 13 DOC_AUDIT R15 fauna override: this report's biome coverage is still useful orientation, but it is not evidence that active scenes run visible fauna. Current static inventory found `22` recursive creature archetype assets, `22` fauna data templates, `108` fauna biome datasets, `13` fauna family profiles, `432` `possibleCreatures` entries with non-null prefab references, `17` large-threat macro-zone archetype refs, and `6` generated proxy prefabs.
 - R15 runtime boundary: `EcosystemRuntimeInstaller` creates genetics/health/migration ecosystem managers only. It does not instantiate `FaunaDirector` or `WorldFaunaSpawnRegistry`. `GameBootstrapper.EnsureFaunaSimulationRegistered()` uses active `FaunaDirector` if present, otherwise registers `DemiurgeFaunaSimulationService.Shared`, a ready headless sentinel with `ResidentSlotCapacity = 0`.
@@ -109,4 +111,3 @@ Verification: PENDING VERIFICATION
 ## Skew Warnings
 
 - None.
-

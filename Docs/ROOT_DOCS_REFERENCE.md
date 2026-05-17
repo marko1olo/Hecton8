@@ -14,7 +14,7 @@ Current root text scan:
 
 | Class | Count | Handling |
 |---|---:|---|
-| root `.md` | 4 | three active anchors plus one compute-report drift file |
+| root `.md` | 3 | active anchors only |
 | root `.log` | 0 | none in root text scope |
 | root `.json` | 0 | none in root text scope |
 | root `.txt` | 0 | none in root text scope |
@@ -24,13 +24,16 @@ Current root markdown files:
 - `AGENTS.md` - active operating contract.
 - `MASTER_RELEASE_WORK_PLAN.md` - active production roadmap anchor.
 - `BUILD_PLAYTEST_ISSUES.md` - active validation/build observation ledger.
-- `COMPUTE_AUDIT_BRIEF.md` - root drift; not a fourth authority anchor. Route compute evidence through `Docs/Reports/2026-05-15_COMPUTE_AUDIT/` or `Docs/Reports/2026-05-16_COMPUTE_AUDIT/` until the compute owner reconciles the duplicate root surface.
+
+Former root compute drift:
+
+- `COMPUTE_AUDIT_BRIEF.md` moved to `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md` during the 2026-05-17 R3 documentation integration pass. Do not treat it as a root authority anchor.
 
 Latest broad documentation refresh:
 
 - `Docs/Reports/2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md`
 
-The May 15 three-anchor root state remains the target governance state, but it is no longer the current filesystem count.
+The May 15 three-anchor root state is again the current filesystem target after the R3 compute-brief move.
 
 ## 2026-05-15 Check
 
@@ -84,8 +87,13 @@ Proof-reference warning:
 Flat redirect stubs for flora and scatter documents were moved out of root `Docs/`.
 The current root `Docs/` folder is reduced to broad active anchors and indexes:
 
-- `Docs/README.md`
+- `Docs/Actual Domains of Project.txt`
+- `Docs/ARCHITECT_HANDBOOK.md`
+- `Docs/DEPENDENCY_GRAPH.cache.json`
+- `Docs/DEPENDENCY_GRAPH.json`
+- `Docs/DEPENDENCY_GRAPH.md`
 - `Docs/DOC_GOVERNANCE.md`
+- `Docs/H8_GLOSSARY.md`
 - `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`
 - `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`
 - `Docs/PROCEDURAL_ASSET_PIPELINE.md`
@@ -93,9 +101,11 @@ The current root `Docs/` folder is reduced to broad active anchors and indexes:
 - `Docs/PROJECT_ATLAS.md`
 - `Docs/PROJECT_STATE_STATIC_XRAY.md`
 - `Docs/QUALITY_GATES.md`
+- `Docs/README.md`
 - `Docs/SYSTEMS_CONTRACTS.md`
 - `Docs/ROOT_DOCS_REFERENCE.md`
-- `Docs/Actual Domains of Project.txt`
+- `Docs/TECH_ART_PBR_SURFACE_DOCTRINE.md`
+- `Docs/TECHNICAL_FAQ.md`
 
 ## Deprecated Root Redirect Stubs
 
@@ -118,8 +128,9 @@ Current canonical bundle entry points:
 
 ## Future Cleanup Candidate
 
-The repository root text surface is currently three markdown files, all active anchors.
-If new root text files appear, classify them before treating them as current authority.
+The repository root text surface is currently three markdown files: `AGENTS.md`,
+`MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`. If new root text files
+appear, classify them before treating them as current authority.
 
 ## 2026-05-13 Check
 

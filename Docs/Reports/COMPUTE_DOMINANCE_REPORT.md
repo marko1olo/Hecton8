@@ -599,6 +599,54 @@ Process microseconds saved: not claimed. There is no profiler for management con
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-17 H-Phi Live Rebase 15:39
+
+Source drift after the 13:37 H-Phi artifact: 46 C# files modified, 3,210,412 bytes touched. Current first-party script surface: 1,585 files, 1,037,942 physical LOC, 857,227 meaningful LOC.
+
+H-Phi scan time: 52,698 ms. Artifact: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_CURRENT_20260517_1539.json`.
+
+| Metric | 13:37 | 15:39 | Delta |
+|---|---:|---:|---:|
+| Runtime H-Phi risk | 0.005525762 | 0.005580503 | +0.000054741 |
+| Runtime H-Phi narrow | 0.077385732 | 0.077988159 | +0.000602427 |
+| Data sovereignty | 0.144331092 | 0.145138727 | +0.000807635 |
+| Memory alignment | 0.536168133 | 0.537335286 | +0.001167153 |
+| NativeArray refs | 7,381 | 7,333 | -48 |
+| Owner-blocked NativeArray refs | 4,941 | 4,902 | -39 |
+| Primary native ownership risk | 5,578 | 5,537 | -41 |
+| Managed format surface | 569 | 569 | 0 |
+| Primary managed runtime risk | 183 | 183 | 0 |
+
+Corrected token window 13:37-15:39:
+
+| Metric | Value |
+|---|---:|
+| Total tokens | 213,121,363 |
+| Average rate | 29,019.79 tokens/sec |
+| Cache ratio | 97.7842% |
+| Cache-aware cost | USD 145.30 |
+| No-cache equivalent | USD 1,080.48 |
+| Prompt rows | 26 |
+| Peak token minute | 8,310,130 at 2026-05-17T14:46+04:00 |
+| Tokens per +0.001 Runtime H-Phi risk | 3,893,267,624 |
+| USD per +0.001 Runtime H-Phi risk | USD 2,654.31 |
+
+SQLite live pulse 15:38:
+
+| Metric | Value |
+|---|---:|
+| 30-second delta | 111,779 |
+| Tokens/sec | 3,724.30 |
+| Tokens/min | 223,457.71 |
+| Current SQLite tokens | 51,586,452,098 |
+| Current energy estimate | 2,579.32 MWh |
+| Tokens per meaningful LOC | 60,178.29 |
+| Tokens per script byte | 1,113.24 |
+
+Verdict: the final interval is cleaner in managed-risk counters, but the H-Phi risk-score ROI worsened to 3.893B tokens per +0.001 risk. Integration is still moving; efficiency is weak.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-16 Continuation Addendum
 
 Status: AUDIT COMPLETE
@@ -690,7 +738,7 @@ H-Phi/token correlation remains NOT PROVEN. "Compute Thief" convictions remain N
 
 Canonical current files:
 
-- `COMPUTE_AUDIT_BRIEF.md`
+- `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_INDEX.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_BURN_RATE_LEDGER.md`
 

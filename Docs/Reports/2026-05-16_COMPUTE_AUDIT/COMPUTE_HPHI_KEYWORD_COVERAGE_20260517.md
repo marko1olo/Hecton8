@@ -31,7 +31,7 @@ The high missing count is expected: many hits are unrelated agent logs, generate
 
 Active compute audit trail:
 
-- `COMPUTE_AUDIT_BRIEF.md`
+- `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md`
 - `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_INDEX.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_BURN_RATE_LEDGER.md`

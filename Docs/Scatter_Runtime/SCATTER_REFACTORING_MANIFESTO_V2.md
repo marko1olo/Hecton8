@@ -1,14 +1,16 @@
-# SCATTER REFACTORING MANIFESTO v2.0
+﻿# SCATTER REFACTORING MANIFESTO v2.0
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
-## 2026-05-11 Current-State Override
+## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 
-- Current data boundary: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
-- Current manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
-- Current visual-realistic-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
+- Historical data boundary snapshot: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+- Historical manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+- Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
+- Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
 - May 14 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat that May 11 compile-success line as stale report text. R43 rechecked the current external root `Hecton8*.csproj` no-restore CLI compile surface at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; full restore graphs still carry vendor/package warnings, and shared `Temp\obj` locks can create transient evidence noise. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 - R46 DOC_AUDIT source recheck: the `4000+ lines` phrase below is historical scale language, not current inventory. Current `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs` is `539165` bytes / `11907` lines, with several helper files already split out but no runtime/profiler proof.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
@@ -19,7 +21,7 @@ Verification: PENDING VERIFICATION
 - This manifesto is a refactor reference, not a runtime proof or current mandate override.
 - Any `Complete()` / `Dispose()` teardown examples below are superseded by `OPT_Native_Memory_Collections_JobSystem_Protocol.txt` and `AGENTS.md`: prefer owner-safe deferred disposal and do not introduce local gameplay barriers without current source proof.
 - `WorldProceduralScatterDirector` remains the runtime owner; do not create a parallel scatter/flora owner.
-# WorldProceduralScatterDirector.cs â€” Deep Architectural Refactoring
+# WorldProceduralScatterDirector.cs Ã¢â‚¬â€ Deep Architectural Refactoring
 # Target: Data-Oriented Pipeline, Zero-GC Hot Paths, Burst-Compatible Jobs
 
 ---
@@ -37,27 +39,27 @@ CONSTRAINTS (NON-NEGOTIABLE):
 
 ---
 
-## SECTION 1 â€” ABSOLUTE RULES (VIOLATION = HARD REJECT)
+## SECTION 1 Ã¢â‚¬â€ ABSOLUTE RULES (VIOLATION = HARD REJECT)
 
 ### 1.1 NO NEW MonoBehaviour COMPONENTS
 
 WorldProceduralScatterDirector remains THE ONLY scene component.
 Do NOT split into independent scripts with their own Update() or SlowTick().
 Director becomes a coordinator that calls services and utilities in strict sequence.
-All new files are plain C# classes, static utilities, or structs â€” never MonoBehaviour.
+All new files are plain C# classes, static utilities, or structs Ã¢â‚¬â€ never MonoBehaviour.
 
 ### 1.2 STRICT ZERO-GC (ALL TICK AND HOT PATHS)
 
 FORBIDDEN:
 - Any LINQ: .Where() .Select() .FirstOrDefault() .Any() .Count() .ToList() .ToArray()
-- Closures or lambdas in sort comparisons â€” use IComparable<T> on structs instead
+- Closures or lambdas in sort comparisons Ã¢â‚¬â€ use IComparable<T> on structs instead
 - String concatenation or interpolation ($"") outside debug guards
 - boxing of any value type in hot paths
 
 REQUIRED:
 - Classical indexed loops: for (int i = 0; i < count; i++)
 - foreach ONLY on structs with struct enumerators (e.g. Dictionary<K,V>.Enumerator)
-  to avoid boxing â€” confirm enumerator is a struct before use
+  to avoid boxing Ã¢â‚¬â€ confirm enumerator is a struct before use
 - All debug strings wrapped: #if UNITY_EDITOR || DEVELOPMENT_BUILD
 
 ### 1.3 SERIALIZATION SAFETY
@@ -65,9 +67,9 @@ REQUIRED:
 DO NOT touch the inspector layout.
 All [SerializeField] fields (prefabs, settings, manager references) STAY in Director.
 If ANY variable is renamed: add [FormerlySerializedAs("OldName")] attribute.
-New services receive settings via constructor or Init() â€” they never own SerializeField.
+New services receive settings via constructor or Init() Ã¢â‚¬â€ they never own SerializeField.
 
-### 1.4 MATH DETERMINISM â€” SACRED CODE
+### 1.4 MATH DETERMINISM Ã¢â‚¬â€ SACRED CODE
 
 The following methods must be copied BYTE FOR BYTE. Zero logic changes.
 Zero constant changes. Zero bitshift changes:
@@ -79,13 +81,13 @@ Zero constant changes. Zero bitshift changes:
 These functions define world generation determinism.
 Any modification breaks all existing saved worlds. NEVER TOUCH.
 
-### 1.5 GPU INSTANCER BUFFER â€” NO TYPE CHANGE
+### 1.5 GPU INSTANCER BUFFER Ã¢â‚¬â€ NO TYPE CHANGE
 
 When extracting FloraGPUInstancingService logic:
 DO NOT change Matrix4x4[] to List<Matrix4x4> or NativeArray<Matrix4x4>.
-Manual resize via Array.Copy is REQUIRED â€” it is a hard constraint of the GPUInstancer plugin API.
+Manual resize via Array.Copy is REQUIRED Ã¢â‚¬â€ it is a hard constraint of the GPUInstancer plugin API.
 The Director owns the Matrix4x4[] buffer via SerializeField or field.
-The service receives it by reference and returns it â€” it does not own it.
+The service receives it by reference and returns it Ã¢â‚¬â€ it does not own it.
 
 ### 1.6 JOB SYSTEM CONCURRENCY SAFETY
 
@@ -96,7 +98,7 @@ OnDisable/OnDestroy teardown must follow current `OPT_Native_Memory_Collections_
 Do not add local `.Complete()` barriers from this manifesto without rechecking source ownership; prefer owner-safe deferred disposal when a job may still reference the collection.
 Unsafe disposal while a job owns the memory still causes native memory corruption.
 
-### 1.7 ref struct LIFETIME â€” HARD CONSTRAINT
+### 1.7 ref struct LIFETIME Ã¢â‚¬â€ HARD CONSTRAINT
 
 ScatterRescueContext is a ref struct.
 It CANNOT be stored in a class field.
@@ -116,14 +118,14 @@ Managed arrays can be relocated by GC. NativeArray memory is pinned. Use it.
 
 ---
 
-## SECTION 2 â€” STATE MACHINE (JOB PIPELINE FIX)
+## SECTION 2 Ã¢â‚¬â€ STATE MACHINE (JOB PIPELINE FIX)
 
 ### 2.1 PROBLEM
 
 Current: ScheduleCellSamplingJob() and Complete() called sequentially in one method.
 Main thread freezes waiting for workers. Job System provides zero benefit.
 
-### 2.2 SOLUTION â€” TWO-TICK PIPELINE STATE MACHINE
+### 2.2 SOLUTION Ã¢â‚¬â€ TWO-TICK PIPELINE STATE MACHINE
 
 Add to Director:
 
@@ -139,38 +141,38 @@ STATE MACHINE FLOW IN SlowTick():
 
 ```
 ScatterState.Idle:
-    â†’ Populate _cellSamplingInputs NativeArray
-    â†’ Capture SamplingSnapshot (see Section 5)
-    â†’ Call Schedule() â†’ store JobHandle
-    â†’ Set _isSamplingJobRunning = true
-    â†’ Set _scatterState = ScatterState.Sampling
-    â†’ RETURN (exit SlowTick, do not block)
+    Ã¢â€ â€™ Populate _cellSamplingInputs NativeArray
+    Ã¢â€ â€™ Capture SamplingSnapshot (see Section 5)
+    Ã¢â€ â€™ Call Schedule() Ã¢â€ â€™ store JobHandle
+    Ã¢â€ â€™ Set _isSamplingJobRunning = true
+    Ã¢â€ â€™ Set _scatterState = ScatterState.Sampling
+    Ã¢â€ â€™ RETURN (exit SlowTick, do not block)
 
 ScatterState.Sampling:
-    â†’ Check: if (!_samplingJobHandle.IsCompleted) RETURN immediately
-    â†’ Call _samplingJobHandle.Complete()
-    â†’ Set _isSamplingJobRunning = false
-    â†’ Set _scatterState = ScatterState.Processing
-    â†’ FALL THROUGH to Processing in same tick (data is ready now)
+    Ã¢â€ â€™ Check: if (!_samplingJobHandle.IsCompleted) RETURN immediately
+    Ã¢â€ â€™ Call _samplingJobHandle.Complete()
+    Ã¢â€ â€™ Set _isSamplingJobRunning = false
+    Ã¢â€ â€™ Set _scatterState = ScatterState.Processing
+    Ã¢â€ â€™ FALL THROUGH to Processing in same tick (data is ready now)
 
 ScatterState.Processing:
-    â†’ Read _cellSamplingOutputs
-    â†’ Run budget calculations using _samplingSnapshot (NOT current player position)
-    â†’ Check IsPlacementSuppressed() per candidate (see Section 8)
-    â†’ Build _desiredPlacements list
-    â†’ Create ScatterRescueContext (ref struct, stack only)
-    â†’ Run InjectRescuePlacements via context
-    â†’ Set _scatterState = ScatterState.Spawning
+    Ã¢â€ â€™ Read _cellSamplingOutputs
+    Ã¢â€ â€™ Run budget calculations using _samplingSnapshot (NOT current player position)
+    Ã¢â€ â€™ Check IsPlacementSuppressed() per candidate (see Section 8)
+    Ã¢â€ â€™ Build _desiredPlacements list
+    Ã¢â€ â€™ Create ScatterRescueContext (ref struct, stack only)
+    Ã¢â€ â€™ Run InjectRescuePlacements via context
+    Ã¢â€ â€™ Set _scatterState = ScatterState.Spawning
 
 ScatterState.Spawning:
-    â†’ Call ScatterSpawningService.ProcessBatch()
-    â†’ If spawning complete: _scatterState = ScatterState.Idle
-    â†’ If not complete: RETURN, continue next SlowTick
+    Ã¢â€ â€™ Call ScatterSpawningService.ProcessBatch()
+    Ã¢â€ â€™ If spawning complete: _scatterState = ScatterState.Idle
+    Ã¢â€ â€™ If not complete: RETURN, continue next SlowTick
 ```
 
 ---
 
-## SECTION 3 â€” FastCandidateMap (O(1) HASH MAP)
+## SECTION 3 Ã¢â‚¬â€ FastCandidateMap (O(1) HASH MAP)
 
 ### 3.1 PROBLEM
 
@@ -210,7 +212,7 @@ internal struct FastCandidateMap
 LOAD FACTOR RULE (CRITICAL):
 Linear probing degrades to O(N) above 70% fill rate due to clustering.
 Rule: caller MUST pass capacity = desiredMaxElements * 2 (minimum).
-This ensures max fill rate â‰¤ 50% under normal operation.
+This ensures max fill rate Ã¢â€°Â¤ 50% under normal operation.
 Document this clearly in Init() XML summary.
 If count reaches capacity * 3 / 4: emit Warning (dev build only), block further inserts.
 
@@ -242,7 +244,7 @@ TrySet can reuse tombstone slots.
 
 ---
 
-## SECTION 4 â€” ScatterWorkingMemory
+## SECTION 4 Ã¢â‚¬â€ ScatterWorkingMemory
 
 ### 4.1 RESPONSIBILITY
 
@@ -259,14 +261,14 @@ Director does NOT own these. Director holds one reference: `ScatterWorkingMemory
 ```csharp
 internal sealed class ScatterWorkingMemory : IDisposable
 {
-    // NativeArrays â€” Burst-compatible, allocated with Allocator.Persistent
+    // NativeArrays Ã¢â‚¬â€ Burst-compatible, allocated with Allocator.Persistent
     public NativeArray<CellSamplingInput>  CellSamplingInputs;
     public NativeArray<CellSamplingOutput> CellSamplingOutputs;
 
-    // FastCandidateMap â€” O(1) lookup
+    // FastCandidateMap Ã¢â‚¬â€ O(1) lookup
     public FastCandidateMap CandidateMap;
 
-    // Desired placements buffer â€” pre-allocated, reused
+    // Desired placements buffer Ã¢â‚¬â€ pre-allocated, reused
     public ScatterPlacement[] DesiredPlacements;
     public int DesiredPlacementsCount;
 
@@ -277,7 +279,7 @@ internal sealed class ScatterWorkingMemory : IDisposable
         // Current rule: dispose only after producer ownership is recovered, or use deferred Dispose(JobHandle).
         if (CellSamplingInputs.IsCreated)  CellSamplingInputs.Dispose();
         if (CellSamplingOutputs.IsCreated) CellSamplingOutputs.Dispose();
-        // FastCandidateMap arrays are managed â€” GC handles them
+        // FastCandidateMap arrays are managed Ã¢â‚¬â€ GC handles them
     }
 }
 ```
@@ -291,7 +293,7 @@ _memory.Dispose();
 
 ---
 
-## SECTION 5 â€” SamplingSnapshot
+## SECTION 5 Ã¢â‚¬â€ SamplingSnapshot
 
 ### 5.1 PROBLEM
 
@@ -306,18 +308,18 @@ internal struct SamplingSnapshot
     public int     CenterCellX;
     public int     CenterCellZ;
     public Vector3 PlayerPosition;
-    public float   CaptureTime;     // Time.time at capture â€” for diagnostics only
+    public float   CaptureTime;     // Time.time at capture Ã¢â‚¬â€ for diagnostics only
 }
 ```
 
-RULE: Snapshot is captured in Idleâ†’Sampling transition, BEFORE Schedule().
+RULE: Snapshot is captured in IdleÃ¢â€ â€™Sampling transition, BEFORE Schedule().
 ALL distance calculations and cell selection in Processing phase MUST use
 _samplingSnapshot.PlayerPosition, never playerTransform.position.
 This guarantees mathematical integrity of generation and frame-independence.
 
 ---
 
-## SECTION 6 â€” ScatterRescueContext (ref struct)
+## SECTION 6 Ã¢â‚¬â€ ScatterRescueContext (ref struct)
 
 ### 6.1 SPEC
 
@@ -329,7 +331,7 @@ public ref struct ScatterRescueContext
     public Span<CellSamplingOutput> SamplingOutputs;  // from NativeArray.AsSpan()
     public int                    MaxRescuePlacements;
     public SamplingSnapshot       Snapshot;
-    // Add other required data fields here â€” all value types or Span
+    // Add other required data fields here Ã¢â‚¬â€ all value types or Span
 }
 ```
 
@@ -337,11 +339,11 @@ LIFETIME RULE:
 Created at start of Processing phase. Destroyed at end of same method.
 Never stored. Never passed to another class as field.
 Only passed as `ref ScatterRescueContext ctx` parameter between static methods
-within the same call stack â€” this is valid and safe.
+within the same call stack Ã¢â‚¬â€ this is valid and safe.
 
 ---
 
-## SECTION 7 â€” ScatterHeuristicsUtility
+## SECTION 7 Ã¢â‚¬â€ ScatterHeuristicsUtility
 
 ### 7.1 SPEC
 
@@ -367,9 +369,9 @@ RULES:
 
 ---
 
-## SECTION 8 â€” IsPlacementSuppressed CHECK
+## SECTION 8 Ã¢â‚¬â€ IsPlacementSuppressed CHECK
 
-### 8.1 RULE â€” CRITICAL
+### 8.1 RULE Ã¢â‚¬â€ CRITICAL
 
 proceduralStateRegistry.IsPlacementSuppressed(key) accesses a managed C# object.
 It CANNOT run inside a Burst Job or be scheduled on worker threads.
@@ -392,7 +394,7 @@ Zero items marked as "collected" in WorldProceduralStateRegistry may appear in s
 
 ---
 
-## SECTION 9 â€” ScatterSpawningService
+## SECTION 9 Ã¢â‚¬â€ ScatterSpawningService
 
 ### 9.1 STATELESS BATCH INTERFACE
 
@@ -424,8 +426,8 @@ internal static class ScatterSpawningService
 ### 9.2 PRIORITY SYSTEM
 
 Two-pass within single ProcessBatch call:
-Pass 1: family.expectsInteraction == true (resources, quest items) â€” spawn first
-Pass 2: decoration (flora, corals, ambient) â€” spawn up to remaining frame budget
+Pass 1: family.expectsInteraction == true (resources, quest items) Ã¢â‚¬â€ spawn first
+Pass 2: decoration (flora, corals, ambient) Ã¢â‚¬â€ spawn up to remaining frame budget
 
 If frame budget exhausted after Pass 1: return. Decorations wait for next SlowTick.
 Resources are NEVER deferred. Decorations are ALWAYS deferrable.
@@ -442,7 +444,7 @@ Continue until all placements spawned, then _scatterState = ScatterState.Idle.
 
 ---
 
-## SECTION 10 â€” MULTI-FLOOR CELL SUPPORT
+## SECTION 10 Ã¢â‚¬â€ MULTI-FLOOR CELL SUPPORT
 
 ### 10.1 RULE
 
@@ -451,7 +453,7 @@ One XZ grid cell can have MULTIPLE valid placement heights (surface + cave floor
 
 FORBIDDEN logic pattern:
 ```csharp
-// WRONG â€” assumes one height per cell
+// WRONG Ã¢â‚¬â€ assumes one height per cell
 if (cellAlreadyHasPlacement[cellKey]) continue;
 ```
 
@@ -462,21 +464,21 @@ caveProximity and seafloorHeight to determine which vertical domain is being eva
 
 ---
 
-## SECTION 11 â€” FILE STRUCTURE
+## SECTION 11 Ã¢â‚¬â€ FILE STRUCTURE
 
 All new files are plain C# (no MonoBehaviour). Director stays as single scene component.
 
 ```
-WorldProceduralScatterDirector.cs   â† coordinator only, owns all [SerializeField]
-ScatterWorkingMemory.cs             â† IDisposable, owns NativeArrays and buffers
-FastCandidateMap.cs                 â† Linear probing hash map, zero-alloc
-ScatterHeuristicsUtility.cs         â† Pure static math, all biome/pattern logic
-ScatterSpawningService.cs           â† Static batch spawner, stateless
-ScatterDiagnosticsTracker.cs        â† ALL debug fields and methods
+WorldProceduralScatterDirector.cs   Ã¢â€ Â coordinator only, owns all [SerializeField]
+ScatterWorkingMemory.cs             Ã¢â€ Â IDisposable, owns NativeArrays and buffers
+FastCandidateMap.cs                 Ã¢â€ Â Linear probing hash map, zero-alloc
+ScatterHeuristicsUtility.cs         Ã¢â€ Â Pure static math, all biome/pattern logic
+ScatterSpawningService.cs           Ã¢â€ Â Static batch spawner, stateless
+ScatterDiagnosticsTracker.cs        Ã¢â€ Â ALL debug fields and methods
                                        ENTIRE FILE wrapped in:
                                        #if UNITY_EDITOR || DEVELOPMENT_BUILD
-SamplingSnapshot.cs                 â† Plain struct, capture at Schedule time
-ScatterRescueContext.cs             â† ref struct, Processing phase only
+SamplingSnapshot.cs                 Ã¢â€ Â Plain struct, capture at Schedule time
+ScatterRescueContext.cs             Ã¢â€ Â ref struct, Processing phase only
 ```
 
 Director passes settings to services via Init() parameters or method arguments.
@@ -484,7 +486,7 @@ Services NEVER have [SerializeField]. Director is the single source of truth for
 
 ---
 
-## SECTION 12 â€” BURST JOB CONSTRAINTS
+## SECTION 12 Ã¢â‚¬â€ BURST JOB CONSTRAINTS
 
 ### 12.1 WHAT RUNS IN BURST JOBS
 
@@ -512,7 +514,7 @@ public struct CellSamplingJob : IJobParallelFor
 
 ---
 
-## SECTION 13 â€” LIFECYCLE AND SAFETY SEQUENCE
+## SECTION 13 Ã¢â‚¬â€ LIFECYCLE AND SAFETY SEQUENCE
 
 ### 13.1 INIT SEQUENCE (Awake / Start)
 
@@ -539,7 +541,7 @@ Add guard: `if (_memoryDisposed) return;` with bool flag.
 
 ---
 
-## SECTION 14 â€” DIAGNOSTICS (EDITOR/DEV ONLY)
+## SECTION 14 Ã¢â‚¬â€ DIAGNOSTICS (EDITOR/DEV ONLY)
 
 ```csharp
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -561,7 +563,7 @@ Director holds: `#if UNITY_EDITOR || DEVELOPMENT_BUILD ScatterDiagnosticsTracker
 
 ---
 
-## SECTION 15 â€” WHAT IS EXPLICITLY OUT OF SCOPE
+## SECTION 15 Ã¢â‚¬â€ WHAT IS EXPLICITLY OUT OF SCOPE
 
 Narrative AI (Atlas-6) systems are a SEPARATE refactoring task.
 Do NOT modify GetNearestUndiscoveredPOI or any NarrativeEvent code in this task.
@@ -599,7 +601,7 @@ STEP 4: CellSamplingJob refactor
   - Verify no managed references
 
 STEP 5: State machine in Director.SlowTick()
-  - Idle â†’ Sampling â†’ Processing â†’ Spawning â†’ Idle
+  - Idle Ã¢â€ â€™ Sampling Ã¢â€ â€™ Processing Ã¢â€ â€™ Spawning Ã¢â€ â€™ Idle
   - _isSamplingJobRunning guard
   - SamplingSnapshot capture before Schedule()
 
@@ -621,7 +623,7 @@ STEP 9: IsPlacementSuppressed integration
   - Verify check is ONLY in Processing phase
   - Verify no suppressed item can reach DesiredPlacements
 
-STEP 10: FloraGPUInstancingService (OPTIONAL â€” only if API allows clean separation)
+STEP 10: FloraGPUInstancingService (OPTIONAL Ã¢â‚¬â€ only if API allows clean separation)
   - If Matrix4x4[] must stay in Director: keep as private methods in Director
   - Do NOT create a fake service wrapper that just passes arrays back and forth
   - Only extract if it provides real encapsulation
@@ -645,22 +647,22 @@ STEP 13: Final audit
 
 ---
 
-## ANTI-PATTERNS â€” INSTANT REJECT LIST
+## ANTI-PATTERNS Ã¢â‚¬â€ INSTANT REJECT LIST
 
 ```
-âŒ new List<T>() inside SlowTick or any tick method
-âŒ .Where() .Select() .FirstOrDefault() anywhere in runtime code
-âŒ Lambda in sort: array.Sort((a,b) => ...) â€” use IComparable<T>
-âŒ string.Format() or $"" outside #if UNITY_EDITOR || DEVELOPMENT_BUILD
-âŒ NativeArray access after Complete() has not been called
-âŒ ScatterRescueContext stored in class field
-âŒ Span<T> over managed T[] inside ref struct
-âŒ ScatterSpawningService with internal spawn-progress state
-âŒ FloraGPUInstancingService that just wraps Director's own array
-âŒ IsPlacementSuppressed() called inside Burst job
-âŒ playerTransform.position read in Processing phase (use Snapshot)
-âŒ Single-height assumption per XZ cell (breaks cave multi-floor)
-âŒ Any modification to StableRandom01 / ComputeStableHash / ComposeKey
-âŒ Array.Resize() in FastCandidateMap after Init()
-âŒ New [SerializeField] in any file except WorldProceduralScatterDirector.cs
+Ã¢ÂÅ’ new List<T>() inside SlowTick or any tick method
+Ã¢ÂÅ’ .Where() .Select() .FirstOrDefault() anywhere in runtime code
+Ã¢ÂÅ’ Lambda in sort: array.Sort((a,b) => ...) Ã¢â‚¬â€ use IComparable<T>
+Ã¢ÂÅ’ string.Format() or $"" outside #if UNITY_EDITOR || DEVELOPMENT_BUILD
+Ã¢ÂÅ’ NativeArray access after Complete() has not been called
+Ã¢ÂÅ’ ScatterRescueContext stored in class field
+Ã¢ÂÅ’ Span<T> over managed T[] inside ref struct
+Ã¢ÂÅ’ ScatterSpawningService with internal spawn-progress state
+Ã¢ÂÅ’ FloraGPUInstancingService that just wraps Director's own array
+Ã¢ÂÅ’ IsPlacementSuppressed() called inside Burst job
+Ã¢ÂÅ’ playerTransform.position read in Processing phase (use Snapshot)
+Ã¢ÂÅ’ Single-height assumption per XZ cell (breaks cave multi-floor)
+Ã¢ÂÅ’ Any modification to StableRandom01 / ComputeStableHash / ComposeKey
+Ã¢ÂÅ’ Array.Resize() in FastCandidateMap after Init()
+Ã¢ÂÅ’ New [SerializeField] in any file except WorldProceduralScatterDirector.cs
 ``

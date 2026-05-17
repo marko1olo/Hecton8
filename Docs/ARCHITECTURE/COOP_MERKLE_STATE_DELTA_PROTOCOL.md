@@ -36,7 +36,8 @@ Task count in active XML: `0`. Task count in archived XML: `7`.
 - `.agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
 - `Docs/PROJECT_ATLAS.md`
 - `Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md`
-- `Docs/ARCHITECTURE/SAVE_V8_BINARY_SPEC.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- `Docs/ARCHITECTURE/SAVE_V8_BINARY_SPEC.md` as legacy indexed-sector reference only
 - `Docs/ARCHITECTURE/CORE_REPLAY_DETERMINISM.md`
 
 ## Existing Source Facts
