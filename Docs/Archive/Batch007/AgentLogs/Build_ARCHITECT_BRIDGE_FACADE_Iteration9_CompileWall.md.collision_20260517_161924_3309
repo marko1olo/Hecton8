@@ -1,0 +1,25 @@
+# Build_ARCHITECT_BRIDGE_FACADE_Iteration9_CompileWall
+
+2026-05-17 active closure compile record:
+
+- `dotnet build Hecton8.Core.csproj --no-restore`
+  - Exit code: 0
+  - Result: Build succeeded
+  - Warnings: 0
+  - Errors: 0
+  - Time elapsed: 00:01:19.23
+
+- `dotnet build Hecton8.Editor.csproj --no-restore`
+  - Exit code: 1
+  - Reason: `NETSDK1004` missing `Temp\obj\Hecton8.Editor\project.assets.json`
+  - Classification: restore state issue, not Bridge code compile failure
+
+- `dotnet build Hecton8.Editor.csproj`
+  - Exit code: 0
+  - Result: Build succeeded
+  - Warnings: 48
+  - Errors: 0
+  - Time elapsed: 00:02:17.63
+  - Warning scope: package/third-party dependencies (`Den.Tools`, Unity URP/Core/ShaderGraph, GPUInstancer, Crest/WaveHarmonic), not Bridge source.
+
+No `dotnet rebuild` was run.

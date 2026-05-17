@@ -1,0 +1,7 @@
+# Build_ARCHITECT_BRIDGE_FACADE_Iteration9_CompileWall
+
+2026-05-17 active closure note:
+
+- User requested not to run rebuild repeatedly.
+- No rebuild was run during the static closure pass.
+- Planned final verification is one targeted `dotnet build` pass, not repeated rebuild churn.

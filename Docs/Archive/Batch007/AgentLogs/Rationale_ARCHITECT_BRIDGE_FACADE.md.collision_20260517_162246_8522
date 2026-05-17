@@ -1,0 +1,89 @@
+# Rationale_ARCHITECT_BRIDGE_FACADE
+
+## Decision 001 - Prefab Binder As DataVault Setter
+
+Problem: Designers need to drag prefabs without manually maintaining hashes, while GPU scatter consumers need stable numeric IDs.
+
+Solution: Use H8PrefabRegistry for authoring and H8PrefabRegistryRuntimeBinder to compact active entries into DataVault buffers. FNV-1a hashes are generated at authoring/sync time, not in draw paths.
+
+Rejected Alternatives: runtime prefab-name lookup, manual hash tables, direct concrete references to scatter systems.
+
+Scalability potential: Low/MX350 reads dense packed records and can drop visual flags. Middle reads lore/acoustic links. High enables high-tier visual hashes. Ultra can attach richer presentation consumers without changing gameplay authority.
+
+Hardware Impact: Low-end avoids string hashing and object lookup during rendering. Runtime impact after sync is 0 us for facade authoring because consumers read raw Vault bits.
+
+## Decision 002 - Design Facade Is Setter-Only
+
+Problem: ScriptableObjects are designer-friendly but unsafe as runtime authority and can mutate persistent editor state.
+
+Solution: H8DesignDataFacade sanitizes inspector values and writes packed float values to BridgeDesignFacadeValues. Runtime systems consume byte-offset values from DataVault and typed DataVaultUpdateSignal notifications.
+
+Rejected Alternatives: polling ScriptableObject fields in gameplay, reflection-based binding, Update sync pump.
+
+Scalability potential: Low uses cheap values such as 1D LUT swaps, triangle noise, and dot-product masks. Middle enables fuller texture settings. High enables raymarch/POM/SSS/particle overkill fields. Ultra keeps same packed contract with more expensive consumers.
+
+Hardware Impact: i3/MX350 receives no per-frame facade cost. Sync cost occurs only on edit/boot/manual push.
+
+## Decision 003 - Pack=1 ABI Discipline
+
+Problem: Quest/ARM64/Mac/PC can disagree on implicit struct padding if DTOs cross binary, native, or DataVault boundaries.
+
+Solution: All Bridge DTOs use explicit StructLayout Pack=1 Size=..., and H8BridgeBinaryLayoutVerifier checks size and field offsets before scene load.
+
+Rejected Alternatives: relying on C# default sequential layout or comments without boot verification.
+
+Scalability potential: Same ABI supports Android/Quest, Metal/Mac, Steam Deck, and PC without per-platform DTO forks.
+
+Hardware Impact: boot-only sentinel cost; hot path avoids defensive conversion.
+
+## Decision 004 - Telemetry Ring And Dump Header
+
+Problem: Live tuning and NaN vaccination must leave forensic evidence, not vague crash reports.
+
+Solution: Store old->new deltas in a 300-entry DataVault-owned telemetry ring and write a self-describing binary dump header with magic/version/count/entry size/cursor/capacity/hash.
+
+Rejected Alternatives: text logs only, unbounded log lists, or chat-only reporting.
+
+Scalability potential: Low keeps compact 40 B entries. High/Ultra can decode richer presentation state from hashes without changing ring shape.
+
+Hardware Impact: fixed 12 KB ring plus 32 B header. Dump is fault path only. Runtime profiler proof is pending.
+
+## Decision 005 - Stress Gate For Live Tuning
+
+Problem: Inspector live tuning during frame stress can add avoidable CPU and signal pressure.
+
+Solution: LiveTuningBlockedByStress checks SignalBus registry stress and homeostasis pressure, disabling live tuning above 0.9 unless designer override is active.
+
+Rejected Alternatives: always-on tuning traffic, hidden quality downgrades, and global throttling that ignores explicit design override.
+
+Scalability potential: Low saves CPU under pressure. Middle/High can keep live authoring when stable. Ultra can carry visual overkill fields without touching gameplay truth.
+
+Hardware Impact: one sync-time branch; no steady-state cost.
+
+## Decision 006 - Generated Default Contracts
+
+Problem: If no H8DesignDataFacade asset exists, the generated contract file can be empty while built-in defaults still exist in code.
+
+Solution: H8BridgeContractGenerator emits built-in default constants first, then appends asset-specific constants. The generated file now includes typed offsets and hashes for SubSpeed, AddedMass, LUT, triangle noise, dot-product vision, silt wake, hull dents, raymarch, POM, SSS, particles, and visor salt growth.
+
+Rejected Alternatives: requiring designers to create an asset before contracts exist, or hardcoding typed constants outside the generator.
+
+Scalability potential: Low gets cheap fake controls. Middle gets texture/visual gates. High/Ultra get overkill controls without hot-path strings.
+
+Hardware Impact: editor generation only; 0 us runtime.
+
+## Decision 007 - Final Compile Without Rebuild Loop
+
+Problem: Task 20 requires compile evidence, but the user explicitly rejected repeated rebuild churn.
+
+Solution: Run one targeted runtime build and one editor build. Hecton8.Core.csproj --no-restore validates runtime Bridge sources. Hecton8.Editor.csproj validates editor windows and generator; it required restore because its assets file was absent, then exited 0.
+
+Rejected Alternatives: full solution rebuild loop, skipping compile evidence, or claiming Unity runtime verification from static scans.
+
+Scalability potential: keeps compile validation focused on Bridge-owned assemblies while avoiding unnecessary broad solution churn.
+
+Hardware Impact: no runtime impact; build-time only.
+
+## Verification Boundary
+
+Unity Editor import, Play Mode, Profiler, GCMonitor, and player build are pending because no Unity MCP tools are exposed. Local static scans and dotnet build are evidence for source/assembly hygiene only, not runtime performance proof.
