@@ -2,8 +2,8 @@
 
 Agent: DOC_GLOBAL_DOCS_REFRESH
 Domain: Echelon 9.83 Chronicler / Project Documentation Currency
-Status: COMPLETE / STATIC DOC AUDIT / PUSHED
-Task Count: 8
+Status: COMPLETE / STATIC DOC AUDIT R2 / LEDGER READY
+Task Count: 12
 Evidence class: STATIC_DOC / STATIC_SOURCE / GIT_CLI
 
 ## Mandates Read Before Documentation Operations
@@ -32,3 +32,12 @@ No Unity Editor, Play Mode, profiler, GCMonitor, Frame Debugger, or Player Build
 - Refresh commit: `e4e42fad7 docs: refresh documentation currency`.
 - Push verification: `git push origin main` succeeded, followed by `git fetch origin main` and `git rev-list --left-right --count origin/main...HEAD` = `0 0`.
 - Closeout commit modifies only this status file, `Rationale_DOC_GLOBAL_DOCS_REFRESH.md`, and `LOG_DOC_GLOBAL_DOCS_REFRESH.md`.
+
+## Continuation Checklist - 2026-05-17 R2
+- [x] 9. Reopen documentation refresh after repeated user directive. | DOD: re-read this status and rationale file before continuing; kept the same DOC_GLOBAL_DOCS_REFRESH identity and domain. | Alternative rejected: claiming the previous push closed the new instruction without a second pass. | Estimate: 0 us runtime.
+- [x] 10. Inventory current concurrent documentation delta. | DOD: scanned tracked and untracked documentation candidates; found `71` documentation candidates before writing the R2 ledger, split as `54` tracked changes and `17` untracked files, plus `8` dirty source/shader files outside docs. | Alternative rejected: staging all dirty docs as this agent's work. | Estimate: 0 us runtime.
+- [x] 11. Preserve active/archival evidence boundaries. | DOD: classified current deltas as active agent evidence, archive/deprecated evidence, dated report/generated manifests, root doc drift, stable indexes, and stable/domain docs; stable `.md` / `.txt` metadata gate remains `150 / 150` clean, while `16` JSON docs remain excluded from Markdown header injection. | Alternative rejected: corrupting JSON with text headers or rewriting archive logs. | Estimate: 0 us runtime.
+- [x] 12. Generate second-pass reconciliation ledger. | DOD: wrote `Docs/Reports/2026-05-17_DOCUMENTATION_CONCURRENT_DELTA_LEDGER.md` with exact paths, ownership boundary, dirty source blockers, required owner actions, and verification commands. | Alternative rejected: chat-only status report. | Estimate: 0 us runtime.
+
+## R2 Evidence Boundary
+The R2 ledger is a static documentation reconciliation artifact. It does not claim ownership of concurrent writers' dirty files and does not provide Unity runtime, compile, profiler, or player-build proof.

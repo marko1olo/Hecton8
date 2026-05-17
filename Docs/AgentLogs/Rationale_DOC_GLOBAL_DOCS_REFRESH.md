@@ -59,3 +59,15 @@ Rejected Alternatives: Staging the whole dirty tree was rejected. Force push was
 Scalability potential: Low/Middle agents get current docs without losing parallel work. High/Ultra forensic review can correlate the report, status, rationale, and Git commits.
 
 Hardware Impact: Runtime 0 us/frame.
+
+## Decision 5: Concurrent Delta Ledger Instead Of Ownership Theft
+
+Problem: After the first pushed documentation refresh, the working tree contained a new wave of documentation and source deltas from other active agents. Treating those edits as this agent's final documentation update would erase ownership and make later blame/audit unreliable.
+
+Solution: Generate `Docs/Reports/2026-05-17_DOCUMENTATION_CONCURRENT_DELTA_LEDGER.md` as a second-pass reconciliation artifact. The ledger records `71` documentation candidates visible before ledger creation, `8` dirty source/shader blockers, the active `.md` / `.txt` header gate (`150 / 150` clean), and the `16` JSON files intentionally excluded from Markdown header injection.
+
+Rejected Alternatives: Staging every dirty documentation file was rejected because other agents own the content. Rewriting active AgentLogs/Tasks was rejected because they are evidence streams. Adding textual headers to JSON was rejected because it would corrupt schema/config files.
+
+Scalability potential: Low/Middle readers get a current owner-action list instead of stale uncertainty. High/Ultra review can consume a precise path-level ledger and decide which owner commits, archives, or supersedes each delta.
+
+Hardware Impact: Runtime 0 us/frame. Documentation reconciliation only.
