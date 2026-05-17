@@ -2,7 +2,7 @@
   "all_source": {
     "counters": {
       "files": 4901,
-      "lines": 1704369
+      "lines": 1704372
     }
   },
   "artifacts": {
@@ -1967,7 +1967,7 @@
   "domain_index_count": 85,
   "elapsed_seconds": 943.018,
   "evidence_class": "STATIC_SOURCE/STATIC_DOC/PY_TOOL",
-  "generated_at": "2026-05-17T11:05:38",
+  "generated_at": "2026-05-17T12:41:25",
   "graph": {
     "edges": 158,
     "engine": "networkx/matplotlib",

@@ -39,6 +39,9 @@ from CraftingCostsBaker import (
     VERSION,
     fnv1a32,
 )
+from CraftingEconomyMonteCarlo import DEFAULT_STEPS
+from VerifyCraftingCosts import ENERGY_TERM_TOLERANCE, MASS_TOLERANCE_KG, TOTAL_KWH_TOLERANCE
+import EconomyValidator
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,6 +49,7 @@ REPORT_PATH = ROOT / "Docs" / "AgentLogs" / "Crafting_SourceContract_Audit.json"
 OWNED_CONSUMER_FILES = (
     ROOT / "Tools" / "VerifyCraftingCosts.py",
     ROOT / "Tools" / "CraftingEconomyMonteCarlo.py",
+    ROOT / "Tools" / "EconomyValidator.py",
 )
 FORBIDDEN_LITERAL_PATTERNS = (
     re.compile(r"\*\s*1000\.0"),
@@ -55,6 +59,12 @@ FORBIDDEN_LITERAL_PATTERNS = (
     re.compile(r"2\.0\s*/\s*3\.0"),
     re.compile(r"0\.0000001"),
     re.compile(r"%\s*16"),
+    re.compile(r"<=\s*0\.001"),
+    re.compile(r"else\s+0\.000001"),
+    re.compile(r"\+\s*0\.25"),
+    re.compile(r">=\s*1_000_000"),
+    re.compile(r"/\s*1000\.0"),
+    re.compile(r"\*\s*3\.0"),
 )
 
 
@@ -112,6 +122,11 @@ def main() -> None:
     require(float(binary_scale_model["seconds_to_deciseconds"]) == SECONDS_TO_DECISECONDS, "time scale drift")
     require(float(binary_scale_model["ratio_to_basis_points"]) == RATIO_TO_BASIS_POINTS, "ratio scale drift")
     require(abs(float(power_model["surface_area_volume_exponent"]) - SURFACE_AREA_VOLUME_EXPONENT) <= float(power_model.get("rounding_epsilon", 0.0000001)), "surface exponent drift")
+    require(EconomyValidator.ECONOMY_FLOAT_TOLERANCE == MASS_TOLERANCE_KG, "economy mass tolerance drift")
+    require(EconomyValidator.ECONOMY_FLOAT_TOLERANCE == TOTAL_KWH_TOLERANCE, "economy total kWh tolerance drift")
+    require(EconomyValidator.ENERGY_TERM_TOLERANCE == ENERGY_TERM_TOLERANCE, "economy energy term tolerance drift")
+    require(EconomyValidator.CRAFTING_MONTE_CARLO_MIN_STEPS == DEFAULT_STEPS, "economy Monte Carlo minimum drift")
+    require(EconomyValidator.FIRST_SUB_BATCH_MAX == TARGET_RECIPE_COUNT, "first-sub batch max must track crafting recipe count")
     constants = {
         "UINT32_MASK": UINT32_MASK,
         "UINT32_BITS": UINT32_BITS,

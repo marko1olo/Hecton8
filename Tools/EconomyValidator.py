@@ -851,15 +851,15 @@ def rebuild_first_submarine_report(data: dict[str, Any], recipes_data: dict[str,
     generator_kw = float(data["assumptions"]["generator_power_kw"])
     static_minutes = float(data["assumptions"]["static_path_minutes_excluding_energy_wait"])
     totals = data["totals"]
-    totals["top_level_target_only_fabrication_kwh"] = round(top_level_kwh, 3)
-    totals["top_level_target_only_craft_time_seconds"] = round(top_level_seconds, 3)
-    totals["top_level_energy_wait_minutes_at_30kw"] = round(top_level_kwh / generator_kw * 60.0, 3)
+    totals["top_level_target_only_fabrication_kwh"] = round(top_level_kwh, RATIO_ROUND_DIGITS)
+    totals["top_level_target_only_craft_time_seconds"] = round(top_level_seconds, RATIO_ROUND_DIGITS)
+    totals["top_level_energy_wait_minutes_at_30kw"] = round(top_level_kwh / generator_kw * 60.0, RATIO_ROUND_DIGITS)
     totals["recursive_recipe_batches"] = sum(recipe_batches.values())
     totals["unique_recursive_recipes"] = len(recipe_batches)
-    totals["recursive_fabrication_kwh"] = round(recursive_kwh, 3)
-    totals["recursive_craft_time_seconds"] = round(recursive_seconds, 3)
-    totals["recursive_energy_wait_minutes_at_30kw"] = round(recursive_kwh / generator_kw * 60.0, 3)
-    totals["literal_total_minutes_at_30kw"] = round(static_minutes + recursive_kwh / generator_kw * 60.0, 3)
+    totals["recursive_fabrication_kwh"] = round(recursive_kwh, RATIO_ROUND_DIGITS)
+    totals["recursive_craft_time_seconds"] = round(recursive_seconds, RATIO_ROUND_DIGITS)
+    totals["recursive_energy_wait_minutes_at_30kw"] = round(recursive_kwh / generator_kw * 60.0, RATIO_ROUND_DIGITS)
+    totals["literal_total_minutes_at_30kw"] = round(static_minutes + recursive_kwh / generator_kw * 60.0, RATIO_ROUND_DIGITS)
 
 
 def mutate_first_sub_result_item(tmp_dir: Path) -> None:
@@ -945,7 +945,7 @@ def mutate_crafting_output_mass(tmp_dir: Path) -> None:
     data = load_json(path)
     recipes = data.get("recipes")
     require(isinstance(recipes, list) and recipes, "negative crafting mass test requires recipes")
-    recipes[0]["output_mass_kg"] = round(float(recipes[0]["output_mass_kg"]) + 0.25, 3)
+    recipes[0]["output_mass_kg"] = round(float(recipes[0]["output_mass_kg"]) + NEGATIVE_MASS_DRIFT_KG, RATIO_ROUND_DIGITS)
     write_json(path, data)
 
 
@@ -988,13 +988,13 @@ def validate_crafting_costs(economy_dir: Path) -> dict[str, Any]:
     catalog = crafting_verify.build_catalog(data)
     power_model = data["power_model"]
     hash_checks = len(crafting_verify.collect_id_hashes(data))
-    require(len(recipes) == crafting_verify.TARGET_RECIPE_COUNT, "Crafting_Costs.json must contain 50 recipes")
+    require(len(recipes) == crafting_verify.TARGET_RECIPE_COUNT, f"Crafting_Costs.json must contain {crafting_verify.TARGET_RECIPE_COUNT} recipes")
     require(data["status_id"] == "economy.crafting_costs.balanced", "Crafting_Costs status mismatch")
     for recipe in recipes:
         recipe_id = recipe["recipe_id"]
         input_mass = sum(float(ingredient["total_mass_kg"]) for ingredient in recipe["ingredients"])
-        require(abs(float(recipe["input_mass_kg"]) - input_mass) <= 0.001, f"{recipe_id} crafting input mass mismatch")
-        require(abs(float(recipe["output_mass_kg"]) - input_mass) <= 0.001, f"{recipe_id} crafting output mass mismatch")
+        require(abs(float(recipe["input_mass_kg"]) - input_mass) <= ECONOMY_FLOAT_TOLERANCE, f"{recipe_id} crafting input mass mismatch")
+        require(abs(float(recipe["output_mass_kg"]) - input_mass) <= ECONOMY_FLOAT_TOLERANCE, f"{recipe_id} crafting output mass mismatch")
         require(float(recipe["PowerCost_kWh"]) > 0.0, f"{recipe_id} crafting power must be positive")
         require(float(recipe["FabricationTimeSeconds"]) > 0.0, f"{recipe_id} crafting time must be positive")
         require(float(recipe["deconstruct_reclaim_ratio"]) < 1.0, f"{recipe_id} crafting reclaim must stay below break-even")
@@ -1003,14 +1003,14 @@ def validate_crafting_costs(economy_dir: Path) -> dict[str, Any]:
             require(has_tier1_tool, f"{recipe_id} tier 2 recipe missing tier 1 tool")
         energy_terms = crafting_verify.compute_energy_terms(recipe, catalog, power_model)
         for key, expected in energy_terms.items():
-            tolerance = 0.001 if key == "total_kwh" else 0.000001
+            tolerance = ECONOMY_FLOAT_TOLERANCE if key == "total_kwh" else ENERGY_TERM_TOLERANCE
             require(abs(float(recipe["physical_energy_terms_kwh"][key]) - expected) <= tolerance, f"{recipe_id} crafting energy term mismatch {key}")
     full_binary = crafting_verify.verify_full_binary(data)
     toaster_binary = crafting_verify.verify_toaster_binary(data)
     monte_carlo_path = economy_dir / "Crafting_MonteCarlo_Audit.json"
     monte_carlo = load_json(monte_carlo_path)
     require(monte_carlo["data_sha256"] == hashlib.sha256(path.read_bytes()).hexdigest(), "Crafting Monte Carlo report is stale")
-    require(int(monte_carlo["steps"]) >= 1_000_000, "Crafting Monte Carlo must run at least 1,000,000 steps")
+    require(int(monte_carlo["steps"]) >= CRAFTING_MONTE_CARLO_MIN_STEPS, f"Crafting Monte Carlo must run at least {CRAFTING_MONTE_CARLO_MIN_STEPS:,} steps")
     require(int(monte_carlo["profit_steps"]) == 0, "Crafting Monte Carlo found profit steps")
     require(str(monte_carlo["status"]) == "NO_INFINITE_RESOURCE_OR_ENERGY_LOOP", "Crafting Monte Carlo status mismatch")
     medians = data["tier_medians"]
@@ -1044,7 +1044,7 @@ def run_negative_tests(economy_dir: Path) -> list[str]:
             "first_sub_batch_band_overflow",
             mutate_first_sub_batch_band_overflow,
             lambda tmp_dir: validate_first_submarine_path(tmp_dir / "Time_To_First_Submarine.json", tmp_dir / "Recipes.json"),
-            "outside [5, 50]",
+            f"outside [{FIRST_SUB_BATCH_MIN}, {FIRST_SUB_BATCH_MAX}]",
         ),
         (
             "matrix_recipe_value_drift",

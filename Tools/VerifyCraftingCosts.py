@@ -52,6 +52,9 @@ JSON_PATH = ROOT / "Data" / "Economy" / "Crafting_Costs.json"
 HASH_AUDIT_PATH = ROOT / "Data" / "Economy" / "Crafting_Hash_Audit.json"
 SOVEREIGNTY_AUDIT_PATH = ROOT / "Data" / "Economy" / "Crafting_DataSovereignty_Audit.json"
 PROJECT_ATLAS_PATH = ROOT / "Docs" / "PROJECT_ATLAS.md"
+MASS_TOLERANCE_KG = 0.001
+TOTAL_KWH_TOLERANCE = 0.001
+ENERGY_TERM_TOLERANCE = 0.000001
 
 
 def fail(message: str) -> None:
@@ -252,7 +255,7 @@ def verify_toaster_binary(data: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     data = load_json(JSON_PATH)
     recipes = data["recipes"]
-    require(len(recipes) == TARGET_RECIPE_COUNT, "recipe count must be 50")
+    require(len(recipes) == TARGET_RECIPE_COUNT, f"recipe count must be {TARGET_RECIPE_COUNT}")
     require(data["status_id"] == "economy.crafting_costs.balanced", "status mismatch")
     hash_pairs = collect_id_hashes(data)
     catalog = build_catalog(data)
@@ -260,21 +263,21 @@ def main() -> None:
     require(power_model["model_id"] == "craft.power.material_process_energy.v2", "power model mismatch")
     for recipe in recipes:
         input_mass = sum(float(ingredient["total_mass_kg"]) for ingredient in recipe["ingredients"])
-        require(abs(float(recipe["input_mass_kg"]) - input_mass) <= 0.001, f"mass input mismatch {recipe['recipe_id']}")
-        require(abs(float(recipe["output_mass_kg"]) - input_mass) <= 0.001, f"mass output mismatch {recipe['recipe_id']}")
+        require(abs(float(recipe["input_mass_kg"]) - input_mass) <= MASS_TOLERANCE_KG, f"mass input mismatch {recipe['recipe_id']}")
+        require(abs(float(recipe["output_mass_kg"]) - input_mass) <= MASS_TOLERANCE_KG, f"mass output mismatch {recipe['recipe_id']}")
         energy_terms = compute_energy_terms(recipe, catalog, power_model)
         for key, expected in energy_terms.items():
-            tolerance = 0.001 if key == "total_kwh" else 0.000001
+            tolerance = TOTAL_KWH_TOLERANCE if key == "total_kwh" else ENERGY_TERM_TOLERANCE
             require(abs(float(recipe["physical_energy_terms_kwh"][key]) - expected) <= tolerance, f"energy term mismatch {recipe['recipe_id']} {key}")
     full_info = verify_full_binary(data)
     toaster_info = verify_toaster_binary(data)
     project_atlas = PROJECT_ATLAS_PATH.read_text(encoding="utf-8", errors="replace")
     require("Data Monolith" in project_atlas and "Crafting Fast-Fail Validator" in project_atlas and "DataSovereignty" in project_atlas, "PROJECT_ATLAS missing required data domains")
     HASH_AUDIT_PATH.write_text(json.dumps({"schema_id": "economy.crafting_hash_audit.v1", "data_path": "Data/Economy/Crafting_Costs.json", "binary_path": "Data/Economy/Crafting_Costs.h8bin", "toaster_binary_path": "Data/Economy/Crafting_Costs_Toaster.h8bin", "data_sha256": hashlib.sha256(JSON_PATH.read_bytes()).hexdigest(), "binary_sha256": full_info["sha256"], "toaster_binary_sha256": toaster_info["sha256"], "hash_algorithm": data["hash_algorithm"], "hash_pairs": len(hash_pairs), "collisions": 0, "status": "CRAFTING_HASHES_COLLISION_FREE"}, separators=(",", ":")) + "\n", encoding="utf-8")
-    SOVEREIGNTY_AUDIT_PATH.write_text(json.dumps({"schema_id": "economy.crafting_data_sovereignty_audit.v1", "evidence_class": "STATIC_DOC+CLI_PYTHON", "runtime_authority_path": "Data Monolith parses Crafting_Costs.h8bin into native/static database records", "toaster_runtime_path": "Celeron/i3 ingest can parse Crafting_Costs_Toaster.h8bin fixed records without ingredient/tool/God-Mode tables", "lookup_shape": "stateless hash-indexed records", "private_runtime_state_required": False, "binary_alignment_bytes": 16, "residual_risk": "Unity Data Monolith import remains PENDING VERIFICATION"}, separators=(",", ":")) + "\n", encoding="utf-8")
+    SOVEREIGNTY_AUDIT_PATH.write_text(json.dumps({"schema_id": "economy.crafting_data_sovereignty_audit.v1", "evidence_class": "STATIC_DOC+CLI_PYTHON", "runtime_authority_path": "Data Monolith parses Crafting_Costs.h8bin into native/static database records", "toaster_runtime_path": "Celeron/i3 ingest can parse Crafting_Costs_Toaster.h8bin fixed records without ingredient/tool/God-Mode tables", "lookup_shape": "stateless hash-indexed records", "private_runtime_state_required": False, "binary_alignment_bytes": BINARY_ALIGNMENT_BYTES, "residual_risk": "Unity Data Monolith import remains PENDING VERIFICATION"}, separators=(",", ":")) + "\n", encoding="utf-8")
     print("CRAFTING COST VERIFY OK")
     print(f"binary_bytes={full_info['bytes']} toaster_binary_bytes={toaster_info['bytes']} recipe_count={full_info['recipe_count']} ingredient_count={full_info['ingredient_count']} tool_count={full_info['tool_count']} godmode_visual_count={full_info['godmode_visual_count']}")
-    print(f"alignment=16 endian=< payload_crc32={full_info['payload_crc32']}")
+    print(f"alignment={BINARY_ALIGNMENT_BYTES} endian=< payload_crc32={full_info['payload_crc32']}")
     print(f"hash_pairs={len(hash_pairs)} collisions=0")
     print("project_atlas=Data Monolith + Crafting Fast-Fail Validator")
 

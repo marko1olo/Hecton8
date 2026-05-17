@@ -719,3 +719,27 @@ Rejected Alternatives: Killing unrelated Python processes was rejected because t
 Scalability potential: Offline handoff hygiene only. Runtime data remains fixed, little-endian, 16-byte aligned, and stateless.
 
 Hardware Impact: 0 us runtime. Cache cleanup only; no Unity runtime code, packet schema, binary layout, public API, native allocation, or hot path changed.
+
+## Decision 061 - Atlas Counter And Sweep Sidecar Race Repair
+
+Problem: Fresh reset evidence showed two verifier defects. `Docs/Reports/METRIC_PHI_VERIFY_SWEEP.json` had been overwritten to `VERIFY_SWEEP_FAIL`, and `H8VerifyCore.count_atlas_domains()` returned `88` because it counted the PROJECT_ATLAS file summary table plus the authoritative `### 85 Identified Domains` table. `RunMetricPhiVerifySweep.py` also still deleted every `.selfcheck.*` sidecar at startup, which is unsafe under the mandated parallel-agent workspace.
+
+Solution: Patch `H8VerifyCore.count_atlas_domains()` to count rows only inside the `### 85 Identified Domains` section. Patch `RunMetricPhiVerifySweep.py` so startup cleanup removes only stale sidecars, and final cleanup removes only the current process sidecar. Extend `Tools/test_metric_phi_verify_sweep.py` to prove stale cleanup, fresh foreign preservation, current-pid cleanup, final-report behavior, and pending sidecar marking.
+
+Rejected Alternatives: Treating `DOMAIN_INDEX_COUNT=88` as harmless was rejected because the user explicitly demanded fit against the 85-domain map. Deleting all self-check sidecars was rejected because it can corrupt another active agent's sweep. Hand-editing `METRIC_PHI_VERIFY_SWEEP.json` was rejected because it would fake the evidence chain.
+
+Scalability potential: Offline verifier infrastructure only. Low/toaster and SHINOBU ingest keep aligned, little-endian, stateless data; Ultra/God-Mode payloads remain data-only visual extras.
+
+Hardware Impact: 0 us runtime. Offline verifier repair only; no Unity runtime code, packet schema, binary layout, public API, native allocation, or hot path changed.
+
+## Decision 062 - Final Cleanup And Tracked File Readback
+
+Problem: Post-verifier cache cleanup correctly removed generated Python bytecode, but a debug-artifact cleanup also removed three tracked report files. Leaving tracked deletions would corrupt the repository state even if the NET gates were green.
+
+Solution: Restore only the three exact tracked report paths, then re-run the deletion readback and targeted diff check. Final readback: no tracked deleted paths under `Tools`, `Docs`, or `Data`; `Tools/**/*.pyc=0`; `Tools/**/__pycache__=0`; active Hecton8 Python processes `0`.
+
+Rejected Alternatives: Leaving tracked report deletions was rejected. Restoring the whole reports tree was rejected because it could overwrite unrelated agent output. Claiming global cache hygiene before checking active Python and tracked deletions was rejected.
+
+Scalability potential: Offline handoff hygiene only. Runtime data remains fixed, little-endian, 16-byte aligned, and stateless.
+
+Hardware Impact: 0 us runtime. Cleanup/readback only; no Unity runtime code, packet schema, binary layout, public API, native allocation, or hot path changed.

@@ -396,3 +396,46 @@ Regression Model:
 - Memory: visual binary grew from 2016 to 2048 bytes because deterministic hash rows increased from 74 to 76; still 16-byte aligned.
 - Cadence: no gameplay cadence path changed.
 - Correctness: visual binary proof is now source-backed, negative-tested, and rebound through the full MetricPhi chain.
+
+## 2026-05-17 local shell time - Eleventh Inquisition Pass / Loop 16 ABI Regression Hardening
+
+What was wrong:
+- The visual baker tests still leaned on the same verifier they were meant to police.
+- `Data/System/Visual_Scalability_Matrix.json` carried stale `bakedDate` metadata.
+- A broad table-row scan produced a misleading 88-domain count by including 3 non-domain table rows.
+
+What was done:
+- Added raw-byte ABI tests that unpack the visual binary header, offsets, strides, first tier record, first extra record, all 76 FNV rows, and source SHA16 using literal little-endian formats.
+- Added binary-byte-drift and manifest-drift rejection tests.
+- Fixed two hardening-test mistakes during the pass: Toaster frame budget is encoded as 16667 fixed micro-ms, and duplicate FNV rows are allowed only for the same normalized label across categories.
+- Updated visual source `bakedDate` to `2026-05-17` and regenerated the binary/manifest through `Tools/VisualLodMatrixBaker.py`.
+- Rechecked the atlas through the project helper and reran H-Phi; authoritative domain count is 85.
+- Ran VISUAL-owned Loop 16 MetricPhi sweep and bound it with standalone MetricPhi data-truth.
+
+Cinematic Cheats used:
+- Runtime simulation remains rejected. The matrix remains a deterministic presentation fake contract: Toaster uses cheap fog/LUT/impostor/baked-AO paths; God Mode spends fixed extra records on raymarch density, harmonic noise, SSR/POM, particles, and texture detail.
+
+Exact Microseconds saved:
+- 0 us measured. Runtime unchanged. The gain is ingestion confidence: raw SHINOBU ABI assumptions are now executable tests instead of prose.
+
+Verification:
+- `python Tools/VisualLodMatrixBaker.py`: PASS, 2048 bytes, little-endian, aligned16 true, FNV rows 76, collisions 0, God Mode density ratio 9.097.
+- `python -m py_compile Tools/VisualLodMatrixBaker.py Tools/VerifyVisualLodMatrix.py Tools/test_visual_lod_matrix_baker.py`: PASS.
+- `python Tools/VisualLodMatrixBaker.py --verify`: PASS.
+- `python Tools/VerifyVisualLodMatrix.py`: PASS, 4 tiers, 4 extra records, 2048 bytes, little-endian, aligned16 true, hash collisions 0.
+- `python -m unittest Tools.test_visual_lod_matrix_baker`: PASS, 7 tests.
+- `python -m unittest Tools.test_metric_phi_verify_sweep Tools.test_visual_lod_matrix_baker Tools.test_visual_stress_sim Tools.Economy.test_monte_carlo_economy_sim`: PASS, 26 tests.
+- `python Tools/Economy/DataTruthInquisition.py --root .`: PASS, Monte Carlo steps 1,539,943, recipe cycles 0, FNV collisions 0, binary endian/alignment failures 0.
+- `python Tools/VerifyBinaryHygiene.py`: PASS, 46 binaries, 0 misaligned.
+- `python Tools/CalculateHPhi.py --workers 8 --json-output Docs/AgentLogs/HPhi_VISUAL_LOD_GRADE_ARCHITECT_LOOP16.json`: PASS, 4,901 files scanned, 85 domains, H-Phi static `6.7481e-05`.
+- `python Tools/RunMetricPhiVerifySweep.py --xxhash-path C:\Users\User\AppData\Local\Temp\metric_phi_xxhash_ref --json-output Docs/AgentLogs/MetricPhiVerifySweep_VISUAL_LOD_GRADE_ARCHITECT_LOOP16.json --markdown-output Docs/AgentLogs/MetricPhiVerifySweep_VISUAL_LOD_GRADE_ARCHITECT_LOOP16.md`: PASS, 35 commands, 0 required failures.
+- `python Tools/VerifyMetricPhiDataTruth.py --sweep-input Docs/AgentLogs/MetricPhiVerifySweep_VISUAL_LOD_GRADE_ARCHITECT_LOOP16.json --json-output Docs/AgentLogs/MetricPhiDataTruth_VISUAL_LOD_GRADE_ARCHITECT_LOOP16.json --markdown-output Docs/AgentLogs/MetricPhiDataTruth_VISUAL_LOD_GRADE_ARCHITECT_LOOP16.md`: PASS, 37 checks, 0 failures, 46 aligned binaries, 133 struct format sites, 0 endian failures.
+- `python -m json.tool` on visual source/manifest and Loop 16 reports: PASS.
+- Scoped `git diff --check`: PASS.
+
+Regression Model:
+- CPU: no runtime CPU path changed.
+- GC: Unity hot-path GC unchanged by scope; GCMonitor proof absent.
+- Memory: visual binary remains 2048 bytes and 16-byte aligned.
+- Cadence: no gameplay cadence path changed.
+- Correctness: raw visual ABI now has independent regression coverage; atlas count is confirmed through project helper, not broad table grep.

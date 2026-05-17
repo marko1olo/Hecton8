@@ -199,3 +199,9 @@ Solution: Reran `py_compile`, `VerifyCraftingSourceContracts.py`, `VerifyCraftin
 Rejected Alternatives: Keeping the earlier passing sweep was rejected because the validator source changed afterward.
 Scalability potential: Fresh binary/hash/data inquisition confirms 46 aligned binary artifacts and 0 hash collisions for current static data.
 Hardware Impact: Static tooling only. Monte Carlo stayed `profit_steps=0`; worst deltas remained negative (`-1000` milli-value, `-400000 mg`, `-133000 mWh`).
+
+Problem: The restored 10-case economy validator became a critical crafting gate, but the source-contract audit did not scan it and therefore could not prove its constants were named and traceable.
+Solution: Promoted validator thresholds to constants (`ECONOMY_FLOAT_TOLERANCE`, `ENERGY_TERM_TOLERANCE`, `RARITY_DISTANCE_NORMALIZER_M`, first-sub batch bounds, negative mass drift, and Monte Carlo minimum steps), promoted `VerifyCraftingCosts.py` tolerances, and expanded `VerifyCraftingSourceContracts.py` to scan `EconomyValidator.py`.
+Rejected Alternatives: Leaving constants in the validator as raw literals was rejected because the user explicitly demanded a magic-number audit; relying on `rg` alone was rejected because it does not persist evidence.
+Scalability potential: Low tier and Ultra now share one audited contract path: full H8CR, Toaster H8CT, validator, simulator, and verifier all draw critical counts/tolerances from named constants.
+Hardware Impact: Runtime cost unchanged. The updated source-contract report lists three consumer files and `literal_hit_count=0`; full sweep still reports 29 scripts and 0 failures.

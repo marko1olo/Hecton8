@@ -221,3 +221,45 @@ Verification:
 
 In-game result:
 - PENDING VERIFICATION. CLI/static data gates are clean; Unity import, Play Mode, profiler, GCMonitor, target hardware, and player build evidence remain absent.
+
+## 2026-05-17 - Loop 11 Renewed Data Truth Inquisition
+
+What was wrong:
+- The user demanded another reset and current-disk proof. Previous verifier output was not treated as current proof.
+- A manual binary-header read made during this pass initially used the wrong field mapping; the verifier-declared labels were re-read and the header was parsed again correctly.
+- H-Phi JSON schema shifted from the older `runtime_scores` shape to `h_phi_audit`; reports had to read the current schema instead of assuming stale keys.
+
+What was done:
+- Re-read `Docs/Tasks/Status_RESOURCE_SPAWN_LCG_TABLES.md`, `Docs/AgentLogs/Rationale_RESOURCE_SPAWN_LCG_TABLES.md`, and the archived XML directive. Extracted `TASK_COUNT=15`.
+- Re-read relevant mandates and the domain map: data-oriented resources, deterministic RNG slot-machine law, zero-GC evidence boundary, anti-lie evidence filter, `Actual Domains of Project`, and PROJECT_ATLAS rows for domains `4`, `17`, and `38`.
+- Re-baked ore data with `python -B Tools\OreLcgBaker.py --root . --iterations 1000000`.
+- Reran economy, recipe graph, ore direct verifier, independent ore binary verifier, binary hygiene, data inquisition, FNV collision, lore, optics, Dalton, Sabine, Snell, H-Phi, Metric Phi data truth, and the full `Verify*.py` enumeration.
+- Used RESOURCE-scoped Metric Phi output `Docs\AgentLogs\MetricPhiDataTruth_RESOURCE_SPAWN_LCG_TABLES_LOOP11_FULL.json` to avoid unnecessary global report churn where the tool allowed it.
+- Removed `.codex_tmp\OreLcgBakerTests` after the full verifier run recreated it. Concurrent-agent scratch under `.codex_tmp\metric_phi_selfcheck` and `.codex_tmp\net_float_crime` was not touched.
+
+Cinematic Cheats used:
+- Ore clumping remains a hydrostatic-pressure-derived byte proxy, not per-node neighbor physics.
+- Beer-Lambert, Dalton, and Sabine were not falsely applied to ore probability. Their owner LUTs were verified separately.
+- Ultra ore fields remain visual-only: seed, gradient bands, and harmonic noise after deterministic resource selection.
+
+Exact microseconds saved:
+- Runtime: `0` measured. Unity/Profiler/GCMonitor proof is absent.
+- Static ingest shape remains cheaper: `Ore_Distribution.h8bin` is `1776` bytes, little-endian, 16-byte aligned, with a compact toaster section containing density, clump, totals, and `150` flat weights.
+
+Verification:
+- `python -B Tools\OreLcgBaker.py --root . --iterations 1000000`: exit 0, `STATUS: LCG BAKED`, `binaryBytes=1776`, `safeShallowsTitaniumBp=5000`.
+- `python -B Tools\EconomyValidator.py --root . --negative-tests`: exit 0, `STATUS: ECONOMY BALANCED`, `monte_carlo_steps=1000000`, `negative_cases=10`.
+- `python -B Tools\EconomyRecipeGraphAudit.py --root .`: exit 0, `cycle_count=0`, `is_dag=true`, `status=ECONOMY SECURED`.
+- `python -B Tools\VerifyOreLcgBaker.py --root .`: exit 0, `binaryBytes=1776`, `hashCollisions=0`.
+- `python -B Tools\VerifyOreLcgBinaryIndependent.py --root .`: exit 0, `resourceRecordsChecked=150`.
+- Correct binary header parse: `magic=H8OL`, `headerBytes=64`, `endianMarker=0x01020304`, offsets `64/224/1424/1616`, `payloadCrc32=2957493204`, `fnvCollisionCount=0`, SHA-256 `60f9a95ec619b4c9b7c168a01ac308415190df44b545fb1f722a11e983709c06`.
+- `python -B Tools\VerifyBinaryHygiene.py`: exit 0, `binaryCount=46`, `misalignedCount=0`.
+- `python -B Tools\VerifyDataInquisition.py`: exit 0, `atlasDomains=85`, `structFormats=273`, `monteCarloSteps=1000000`, `hashCollisions=0`.
+- `python -B Tools\VerifyH8HashCollisions.py`: exit 0, `H8 hash records=1046`, `HASH COLLISIONS=0`.
+- `python -B Tools\VerifyLore.py --check`: exit 0, `CHECK OK`.
+- Hard-science owner gates: optics, Dalton, Sabine, and Snell verifiers all exited 0.
+- `python Tools\CalculateHPhi.py --workers 2 --json-output Docs\AgentLogs\HPhi_RESOURCE_SPAWN_LCG_TABLES.json`: exit 0, `DOMAIN_INDEX_COUNT=85`, `RUNTIME_H_PHI_STATIC=6.7481e-05`; current JSON reports `runtime_data_sovereignty_increased_by_this_pass=false`, `runtime_data_sovereignty_score=0.019743027`.
+- Full `Verify*.py` enumeration: `VERIFY_TOTAL 33`, `VERIFY_FAILURE_COUNT 0`.
+
+In-game result:
+- PENDING VERIFICATION. Static data is verified; Unity import, scene wiring, Play Mode, profiler, GCMonitor, target hardware, and player build evidence remain absent.

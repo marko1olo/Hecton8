@@ -266,3 +266,15 @@ Rejected Alternatives: Weakening `DataTruthInquisition.py` was rejected because 
 Scalability potential: Data Sovereignty increases because static balance and Babel payloads are now self-describing fixed-layout blobs. Low-end hardware reads the same stateless layout without runtime JSON; high-end hardware does not require private mutable state.
 
 Hardware Impact: 0 us runtime. Offline metadata only. Current DataTruth evidence: 1,539,943 Monte Carlo steps, 0 FNV collisions, 0 recipe cycles, 46 binary blobs, 0 unaligned, 0 unknown endian, 0 struct format failures.
+
+## Decision 23 - Independent Visual ABI Regression Coverage
+
+Problem: The restored visual matrix verifier was source-backed, but the regression test still trusted `verify_existing()` for most binary claims. That left a blind spot where the baker and verifier could drift together while raw SHINOBU layout assumptions stayed untested. The source JSON also still carried `bakedDate` `2026-05-15` despite the current bake occurring on 2026-05-17.
+
+Solution: Add raw-byte ABI tests to `Tools/test_visual_lod_matrix_baker.py` using literal little-endian formats (`<4sHHIIIIIIIIII16s`, `<32I`, `<16I`, `<4I`). The test now unpacks the header, source SHA16, tier/extra offsets, strides, first Toaster tier, first extra row, all 76 hash rows, and duplicate-hash semantics. Add byte-drift and manifest-drift rejection tests. Update `Visual_Scalability_Matrix.json` baked date to `2026-05-17`, rebuild the 2048-byte binary/manifest through the owner baker, and rerun the verifier chain. A suspicious broad row count produced 88, but `H8VerifyCore.count_atlas_domains()` and rerun `CalculateHPhi.py` confirm the authoritative atlas remains 85 domains.
+
+Rejected Alternatives: Trusting the deterministic verifier alone was rejected because it is not an independent ABI read. Manually reading the binary was rejected because it would not stay in CI. Treating the broad PowerShell table-row count as atlas truth was rejected because it included 3 non-domain rows from `Lowest Purity Files`.
+
+Scalability potential: Toaster still reads stripped fixed tier/extra rows with no JSON parse in `VISUAL_SYNC`. God Mode still reads extra fixed records for high-res gradients, harmonic noise, particles, POM, SSR, and material detail without creating private mutable runtime state.
+
+Hardware Impact: 0 us runtime. Offline regression coverage only. Current evidence: 7 visual baker tests and 26 focused regression tests pass; visual binary remains 2048 bytes, little-endian, 16-byte aligned, 76 FNV rows, 0 collisions; Economy DataTruth remains 1,539,943 Monte Carlo steps with 0 recipe cycles; MetricPhi Loop 16 reports 35 commands, 0 required failures, 46 aligned binaries, 0 endian failures.

@@ -94,6 +94,38 @@ Verification:
 
 STATUS: VERIFIED MASTER GRADE for offline CLI artifacts. Unity runtime remains PENDING VERIFICATION.
 
+## 2026-05-17 - Source Contract Hardening Pass
+
+What was wrong:
+- The restored 10-case economy validator enforced core crafting invariants but was not included in `VerifyCraftingSourceContracts.py`.
+- Raw threshold values remained in validator/verifier expressions after the negative-test restoration.
+
+What was done:
+- Added named constants to `Tools\EconomyValidator.py` for matrix size, primary recipe count, tolerances, rarity distance normalization, first-sub batch bounds, negative-test mass drift, and Monte Carlo minimum steps.
+- Added named tolerance constants to `Tools\VerifyCraftingCosts.py`.
+- Expanded `Tools\VerifyCraftingSourceContracts.py` to scan `Tools\EconomyValidator.py` in addition to `VerifyCraftingCosts.py` and `CraftingEconomyMonteCarlo.py`.
+
+Cinematic Cheats used:
+- No runtime derivation added. The game still reads precomputed scalar/binary records; all physical/economy derivation remains offline tooling.
+
+Exact Microseconds saved:
+- Runtime measured savings: 0 us claimed. Static source hygiene only.
+- Import-side stability improved by keeping Toaster and full binary contracts guarded by the same validator/source-contract chain.
+
+Verification:
+- `python -B -m py_compile Tools\EconomyValidator.py Tools\VerifyCraftingCosts.py Tools\VerifyCraftingSourceContracts.py Tools\CraftingEconomyMonteCarlo.py Tools\CraftingCostsBaker.py Tools\RunFullVerifySweep.py` -> passed.
+- `python -B Tools\VerifyCraftingSourceContracts.py` -> `literal_hit_count=0`, consumers: `VerifyCraftingCosts.py`, `CraftingEconomyMonteCarlo.py`, `EconomyValidator.py`.
+- `python -B Tools\VerifyCraftingCosts.py` -> 50 recipes, 342 hash pairs, 0 collisions, aligned endian `<`.
+- `python -B Tools\CraftingEconomyMonteCarlo.py --steps 1000000` -> `profit_steps=0`.
+- `python -B Tools\EconomyValidator.py --root . --negative-tests` -> `STATUS: ECONOMY BALANCED`, `negative_cases=10`.
+- `python -B Tools\VerifyDataInquisition.py --report Docs\AgentLogs\Data_Inquisition_CRAFTING_COST_BALANCER.json` -> 46 binaries, aligned16 true, endian `<`, atlas domains `85`, hash collisions `0`.
+- `python -B Tools\VerifyH8HashCollisions.py --write-json Docs\AgentLogs\H8Hash_Collision_CRAFTING_COST_BALANCER.json` -> 1046 records, 0 collisions.
+- `python -B Tools\VerifyBinaryHygiene.py --report Docs\AgentLogs\BinaryHygiene_CRAFTING_COST_BALANCER.json` -> 46 binaries, 0 misaligned.
+- `python -B Tools\RunFullVerifySweep.py` -> 29 verifier scripts, `failed_count=0`.
+- `git diff --check` and trailing-whitespace scan -> passed.
+
+STATUS: VERIFIED MASTER GRADE for offline CLI artifacts. Unity runtime remains PENDING VERIFICATION.
+
 ## 2026-05-17 - OSHINO Static Evidence Revalidation
 
 What was wrong:

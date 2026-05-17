@@ -9,203 +9,203 @@
     {
       "returncode": 0,
       "script": "Tools/VerifyAiNavigationTuning.py",
-      "seconds": 19.758,
+      "seconds": 5.12,
       "stderr_tail": "",
       "stdout_tail": "AI NAV VERIFY PASSED\njson=Data/AI/Navigation_Tuning.json\nbinary=Data/AI/Navigation_Tuning.h8bin bytes=1280 records=76\nmanifest=Data/AI/Navigation_Tuning.manifest.json\nlayout=header=<4sHHIIIIIIII24s record=<IHHfI alignment=16 endian=little\ncrc=header=0xEDC63F65 payload=0x89810120 semantic=0xBC8A06A3 reservedZero=True\nhash=algorithm=FNV-1a32 ASCII-lower semantic IDs records=76 fnvCollisions=0 sorted=True\nperformance=predators=100 cadenceHz=10 samplesPerSecond=1000 scalarOpsFrameHigh=7166.67\nmath=flowBasis=AbyssalFlowField vector as a steering hint sdfBasis=inverse-square SDF boundary pressure\nscalability=toaster=Low/MX350/Celeron-i3 rtx=Ultra/God-Mode visuals extraFields=7\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyBabel.py",
-      "seconds": 3.812,
+      "seconds": 0.476,
       "stderr_tail": "",
       "stdout_tail": "VERIFY BABEL OK: records=32672 sources=45 bytes=1534512 alignment=16 endian=little hashCollisions=0\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyBabelDictionary.py",
-      "seconds": 3.037,
+      "seconds": 0.316,
       "stderr_tail": "",
       "stdout_tail": "BABEL VERIFIED sources=45 entries=32672 languages=17 bytes=1534512 word_count=170779 constants=12768 endian=< alignment=16 collisions_resolved=0\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyBinaryHygiene.py",
-      "seconds": 12.938,
+      "seconds": 3.295,
       "stderr_tail": "",
       "stdout_tail": "VERIFY_BINARY_HYGIENE: status=BINARY_HYGIENE_VERIFIED\nVERIFY_BINARY_HYGIENE: binaryCount=46\nVERIFY_BINARY_HYGIENE: misalignedCount=0\nVERIFY_BINARY_HYGIENE: report=Docs/AgentLogs/BinaryHygiene_CRAFTING_COST_BALANCER.json\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyCraftingCosts.py",
-      "seconds": 1.544,
+      "seconds": 0.51,
       "stderr_tail": "",
       "stdout_tail": "CRAFTING COST VERIFY OK\nbinary_bytes=7424 toaster_binary_bytes=2464 recipe_count=50 ingredient_count=171 tool_count=38 godmode_visual_count=50\nalignment=16 endian=< payload_crc32=1295072744\nhash_pairs=342 collisions=0\nproject_atlas=Data Monolith + Crafting Fast-Fail Validator\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyCraftingSourceContracts.py",
-      "seconds": 4.569,
+      "seconds": 0.633,
       "stderr_tail": "",
       "stdout_tail": "CRAFTING SOURCE CONTRACT VERIFY OK\nliteral_hit_count=0\nreport=Docs\\AgentLogs\\Crafting_SourceContract_Audit.json\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyDaltonGasToxicity.py",
-      "seconds": 1.81,
+      "seconds": 0.301,
       "stderr_tail": "",
       "stdout_tail": "{\n  \"aligned16\": true,\n  \"binary\": \"Data/Precomputed/dalton_gas_toxicity.bin\",\n  \"bytes\": 128128,\n  \"endianness\": \"<\",\n  \"fnvCollisionCount\": 0,\n  \"overkillBytes\": 96112,\n  \"status\": \"VERIFY_DALTON_GAS_TOXICITY_PASS\",\n  \"toasterBytes\": 4080\n}\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyDataInquisition.py",
-      "seconds": 7.051,
+      "seconds": 1.46,
       "stderr_tail": "",
       "stdout_tail": "DATA INQUISITION OK\nbinaries=46 aligned16=true manifests=11 endian=< structFormats=273 monteCarloSteps=1000000 hashCollisions=0 atlasDomains=85 status=DATA_INQUISITION_VERIFIED_STATIC_ONLY\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyH8HashCollisions.py",
-      "seconds": 109.545,
+      "seconds": 28.773,
       "stderr_tail": "",
       "stdout_tail": "H8 hash records: 1046\nItems: 209\nBiomes: 523\nSignals: 314\nWrote Docs/AgentLogs/H8Hash_Collision_CRAFTING_COST_BALANCER.json\nHASH COLLISIONS: 0\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyHullStressBudget.py",
-      "seconds": 2.393,
+      "seconds": 0.489,
       "stderr_tail": "",
       "stdout_tail": "verification_report=C:\\Hecton8\\Data\\Habitat\\HabitatPressureBudget_Verification.json\nstatus=PASS\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyLore.py",
-      "seconds": 4.533,
+      "seconds": 0.777,
       "stderr_tail": "",
       "stdout_tail": "LORE BAKED: entries=2 bytes=41920 output=Data/Lore/Encyclopedia.h8bin\nCHECK OK\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyMetricPhiDataTruth.py",
-      "seconds": 10.668,
+      "seconds": 2.592,
       "stderr_tail": "",
       "stdout_tail": "METRIC_PHI_DATA_TRUTH_STATUS: DATA_TRUTH_VERIFIED\nchecks=37 failed=0\nbinary_files=46 unaligned=0\nstruct_format_sites=133 endian_failures=0\nreport=Docs/Reports/METRIC_PHI_DATA_TRUTH_AUDIT.json\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyOpticsBaker.py",
-      "seconds": 4.908,
+      "seconds": 1.858,
       "stderr_tail": "",
       "stdout_tail": "VERIFY_OPTICS: status=OPTICS_LUT_VERIFIED\nVERIFY_OPTICS: matrixBytes=393216\nVERIFY_OPTICS: aligned16=True\nVERIFY_OPTICS: byteOrder=little-endian\nVERIFY_OPTICS: pack=<e\nVERIFY_OPTICS: fnvCollisions=0\nVERIFY_OPTICS: dataSovereignty=stateless_binary_lookup\nVERIFY_OPTICS: report=Docs/AgentLogs/OpticsVerification_OPTICAL_EXTINCTION_LUT_BAKER.json\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyOreLcgBaker.py",
-      "seconds": 3.558,
+      "seconds": 0.852,
       "stderr_tail": "",
       "stdout_tail": "VERIFY_ORE_LCG_STATUS: ORE_LCG_VERIFIED_STATIC_ONLY\nreport=C:\\Hecton8\\Docs\\AgentLogs\\VerifyOreLcg_RESOURCE_SPAWN_LCG_TABLES.json\nbinaryBytes=1776\nhashCollisions=0\nruntimeProof=PENDING_VERIFICATION\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyOreLcgBinaryIndependent.py",
-      "seconds": 3.123,
+      "seconds": 0.91,
       "stderr_tail": "",
       "stdout_tail": "VERIFY_ORE_LCG_BINARY_INDEPENDENT_STATUS: ORE_LCG_BINARY_INDEPENDENT_VERIFIED_STATIC_ONLY\nreport=C:\\Hecton8\\Docs\\AgentLogs\\VerifyOreLcgBinaryIndependent_RESOURCE_SPAWN_LCG_TABLES.json\nbinaryBytes=1776\nresourceRecordsChecked=150\nruntimeProof=PENDING_VERIFICATION\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyOrganicEntropy.py",
-      "seconds": 2.849,
+      "seconds": 0.411,
       "stderr_tail": "",
       "stdout_tail": "{\"bytes\": 195344, \"cell_records\": 4096, \"curve_records\": 4004, \"day_count\": 1000, \"hash_collisions\": 0, \"status\": \"ORGANIC ENTROPY VERIFIED\"}\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyPdaTechnicalLogs.py",
-      "seconds": 4.082,
+      "seconds": 1.205,
       "stderr_tail": "",
       "stdout_tail": "VERIFY_PDA_TECH_LOGS: entries=100 binaryBytes=59120 toasterBytes=19120 alignment=16 endian=< hashCollisions=0 hPhiDataSovereignty=1.0\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyQuestDag.py",
-      "seconds": 5.074,
+      "seconds": 0.636,
       "stderr_tail": "",
       "stdout_tail": "VERIFY OK: nodes=4 hashes=31 binaryBytes=496 constants=123\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyQuestDagBinaryIndependent.py",
-      "seconds": 2.858,
+      "seconds": 0.427,
       "stderr_tail": "",
       "stdout_tail": "INDEPENDENT BINARY VERIFY OK: nodes=4 bytes=496 tierOffset=304 magic=b'H8QG'\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyQuestDagDataTruth.py",
-      "seconds": 8.119,
+      "seconds": 1.019,
       "stderr_tail": "",
       "stdout_tail": "QUEST_DAG_DATA_TRUTH_VERIFIED\nchecks=10 failed=0 report=Docs/AgentLogs/VerifyQuestDagDataTruth_QUEST_LOGIC_DAG_BUILDER.json\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifySabineBaker.py",
-      "seconds": 9.258,
+      "seconds": 0.992,
       "stderr_tail": "",
       "stdout_tail": "VERIFY_SABINE: binaryBytes=524288\nVERIFY_SABINE: recordFormat=<ff\nVERIFY_SABINE: simdGroupFormat=<ffff\nVERIFY_SABINE: rt60Range=0.05839461..10.00000000\nVERIFY_SABINE: dampingRange=0.09852124..0.99430436\nVERIFY_SABINE: manifest=Data/Audio/Acoustic_LUT.manifest.json\nVERIFY_SABINE: fnvIds=11\nVERIFY_SABINE: fnvCollisions=0\nVERIFY_SABINE: materialPresetSource=Data/Audio/Acoustic_Material_Profiles.json\nVERIFY_SABINE: constantProvenance=8\nVERIFY_SABINE: tiers=high,middle,rtx_overkill,toaster_i3\nVERIFY_SABINE: atlasFamily=Audio\nVERIFY_SABINE: dataSovereignty=stateless_binary_lookup\nVERIFY_SABINE: mathAudit=Sabine+Thorp+BeerLambert+HydrostaticPressure\nSTATUS: SABINE_LUT_VERIFIED\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifySnellRefractionLut.py",
-      "seconds": 3.86,
+      "seconds": 0.279,
       "stderr_tail": "",
       "stdout_tail": "VERIFY_SNELL_REFRACTION_LUT: PASS\nbytes=524288\nmaxAbsOffset=0.09997559\ncriticalAngleDegrees=48.753467\nzeroPerpendicular=True\nfnvCollisionCount=0\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifySubmarineHydrodynamicsData.py",
-      "seconds": 8.04,
+      "seconds": 0.986,
       "stderr_tail": "",
       "stdout_tail": "VERIFY_SUBMARINE_HYDRODYNAMICS PASS\nstatus=HYDRODYNAMICS DEFINED\nhulls=5\nruntime_pack_bytes=1152\nruntime_records=5\nruntime_header=(b'H8HYDRO\\x00', 1, 5, 53, 224, 32, 16)\nalignment_bytes=16\nfnv_collisions=0\nconstant_pedigree=15\npng_big_endian_sites_allowed=4\ndata_sovereignty=stateless_binary_lookup\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyTideBaker.py",
-      "seconds": 5.494,
+      "seconds": 0.51,
       "stderr_tail": "",
       "stdout_tail": "{\n  \"errors\": [],\n  \"report\": \"Docs/AgentLogs/VerifyTideBaker_TIDE_FOURIER_BAKER.json\",\n  \"status\": \"PASS\"\n}\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyTideInquisition.py",
-      "seconds": 2.971,
+      "seconds": 0.354,
       "stderr_tail": "",
       "stdout_tail": "{\n  \"status\": \"PASS\",\n  \"errors\": [],\n  \"report\": \"Docs\\\\AgentLogs\\\\VerifyTideInquisition_TIDE_FOURIER_BAKER.json\",\n  \"runtimeProof\": \"PENDING_VERIFICATION\",\n  \"commandCount\": 14\n}\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyUpgradeCurveBaker.py",
-      "seconds": 5.592,
+      "seconds": 0.9,
       "stderr_tail": "",
       "stdout_tail": "{\n  \"status\": \"PASS\",\n  \"runtime_rows\": 9,\n  \"binary_bytes\": 176,\n  \"binary_mod16\": 0,\n  \"monte_carlo_steps\": 1000000,\n  \"power_growth_ratios\": [\n    2.190318,\n    2.121422\n  ],\n  \"atlas_domains\": [\n    4,\n    52,\n    54,\n    57,\n    58\n  ],\n  \"failures\": []\n}\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyVisualLodMatrix.py",
-      "seconds": 3.545,
+      "seconds": 0.556,
       "stderr_tail": "",
       "stdout_tail": "VERIFY_VISUAL_LOD_MATRIX_OK\nbinary=Data/System/Visual_Scalability_Matrix.bin\nmanifest=Data/System/Visual_Scalability_Matrix.manifest.json\nbytes=2048\nendianness=little\naligned16=True\nhash_collisions=0\ntiers=4\nextra_records=4\ngod_mode_density_ratio_vs_pro=9.097\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyVramBudgets.py",
-      "seconds": 3.171,
+      "seconds": 0.661,
       "stderr_tail": "",
       "stdout_tail": "VFX_VRAM_BUDGETS_OK TOASTER=474272B DECK=2539680B PRO=10010784B GOD_MODE=16128160B HASH_COLLISIONS=0 BINARY=Data/System/VFX_Budgets.h8bin MANIFEST=Data/System/VFX_Budgets.manifest.json\n"
     },
     {
       "returncode": 0,
       "script": "Tools/VerifyVrComfortData.py",
-      "seconds": 2.15,
+      "seconds": 0.441,
       "stderr_tail": "",
       "stdout_tail": "{\n  \"binary\": {\n    \"alignmentBytes\": 16,\n    \"endianness\": \"little\",\n    \"lengthBytes\": 1472,\n    \"path\": \"Data/UX/VR_Comfort_Profiles.h8bin\",\n    \"status\": \"PASS\"\n  },\n  \"hashes\": {\n    \"collisionCount\": 0,\n    \"status\": \"PASS\"\n  },\n  \"owner\": \"VR_JERK_THRESHOLD_AUDIT\",\n  \"rtxOverkillBinary\": {\n    \"lengthBytes\": 560,\n    \"path\": \"Data/UX/VR_Comfort_RTXOverkill.h8bin\",\n    \"status\": \"PASS\"\n  },\n  \"runtimeProof\": \"PENDING_VERIFICATION\",\n  \"schema\": \"hecton8.vr_comfort_verify.v1\",\n  \"status\": \"PASS\",\n  \"toasterBinary\": {\n    \"lengthBytes\": 1120,\n    \"path\": \"Data/UX/VR_Comfort_Profiles_Toaster.h8bin\",\n    \"status\": \"PASS\"\n  }\n}\n"
     }

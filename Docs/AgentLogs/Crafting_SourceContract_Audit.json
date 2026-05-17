@@ -3,7 +3,8 @@
   "binary_path": "Data/Economy/Crafting_Costs.h8bin",
   "consumer_files_checked": [
     "Tools/VerifyCraftingCosts.py",
-    "Tools/CraftingEconomyMonteCarlo.py"
+    "Tools/CraftingEconomyMonteCarlo.py",
+    "Tools/EconomyValidator.py"
   ],
   "csv_path": "Data/Economy/Crafting_Costs.csv",
   "domain": "DATA/ECONOMY",
