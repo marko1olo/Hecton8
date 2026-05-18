@@ -108,4 +108,5 @@ What was done: moved `HullIntegrity*` to `70080..70089`, moved `ConstructionPrev
 Cinematic Cheats used: none. This is native registry hygiene, not simulation.
 Exact Microseconds saved: 0 runtime us. The fix prevents DataVault alias corruption, not a frame-time optimization.
 Verification: static only. `git diff --check -- Assets/_Project/Scripts/Core/Memory/H8Memory.cs` clean. `dotnet build` not launched because CPU snapshot was 60%, above local guardrail.
+Git: pushed `7110cdceb` to `origin/main`.
 Status: pending compile / Unity import verification.
