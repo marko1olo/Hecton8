@@ -1,6 +1,6 @@
 # Rationale_UNASSIGNED_GIT_OPERATOR
 
-Status: VERIFIED
+Status: PENDING VERIFICATION
 Domain: Git Operations / Integration Hygiene
 
 Problem: `dotnet build .\Hecton8.slnx` attempted to compile `RealtimeCSG.csproj`, but `Assets/RealtimeCSG` was deleted earlier. The remaining references were stale solution/project/define residue, not live first-party gameplay code.
@@ -98,3 +98,9 @@ Solution: Pushed only scoped commit `23c5b933d` to `origin/main` and left unrela
 Rejected Alternatives: Pull/rebase gymnastics were not needed because the push was fast-forward. Force-push was not considered.
 Scalability potential: Low/Middle/High/Ultra unchanged; source-control evidence only.
 Hardware Impact: 0 us runtime.
+
+Problem: The active dirty `H8Memory.cs` registry accumulated cross-agent buffer ranges that collided: `HullIntegrity*` overlapped `VerletCable*` on `575..584`, and `ConstructionPreview*` overlapped the already-pushed `SaveWorldPager*` IDs on `70200..70202`.
+Solution: Kept `VerletCable*` on `575..586`, kept `SaveWorldPager*` on `70200..70209`, moved `HullIntegrity*` to the free `70080..70089` block, and moved `ConstructionPreview*` to free `70320..70322`. A focused enum scan now reports no duplicate `BufferID` values in the working `H8Memory.cs`.
+Rejected Alternatives: Moving save pager IDs was rejected because those IDs are already pushed and consumed by `H8BinaryWorldPager`. Broad `git add -A` was rejected because the tree has 1027 dirty entries. Starting `dotnet build` was rejected at this step because CPU snapshot was 60%, above the local no-build threshold.
+Scalability potential: Low/Middle/High/Ultra unchanged visually. The value is registry determinism: DataVault handles no longer alias two unrelated buffers to one integer.
+Hardware Impact: 0 us runtime. Prevents memory-lane identity corruption; no hot-path math changed.

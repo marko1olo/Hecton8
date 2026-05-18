@@ -100,3 +100,12 @@ What was done: committed scoped capsule as `23c5b933d` (`fix(save): move pager b
 Cinematic Cheats used: none.
 Exact Microseconds saved: 0 runtime us.
 Status: pushed.
+
+## 2026-05-19 H8Memory BufferID collision sweep
+
+What was wrong: dirty `H8Memory.cs` had two real `BufferID` collision groups: `HullIntegrity*` shared `575..584` with `VerletCable*`, and `ConstructionPreview*` shared `70200..70202` with `SaveWorldPager*`.
+What was done: moved `HullIntegrity*` to `70080..70089`, moved `ConstructionPreview*` to `70320..70322`, left `VerletCable*` and `SaveWorldPager*` stable, removed `Pack=1` from three H8Memory runtime structs already present in the dirty capsule, and verified no duplicate `BufferID` values remain in `H8Memory.cs`.
+Cinematic Cheats used: none. This is native registry hygiene, not simulation.
+Exact Microseconds saved: 0 runtime us. The fix prevents DataVault alias corruption, not a frame-time optimization.
+Verification: static only. `git diff --check -- Assets/_Project/Scripts/Core/Memory/H8Memory.cs` clean. `dotnet build` not launched because CPU snapshot was 60%, above local guardrail.
+Status: pending compile / Unity import verification.
