@@ -457,7 +457,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 return;
 
             ApplyQualityAndEditorTuning(vault);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             uint frame = unchecked(_lastDispatcherFrame + 1u);
             if ((frame & (CsvPollCadenceFrames - 1)) == 0u)
                 MonitorBeamCsv(vault);
@@ -891,7 +891,7 @@ namespace Hecton8.VFX.PlasmaBeam
             _lockedBufferMask = 0;
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private void MonitorBeamCsv(IDataVault vault)
         {
             if (!File.Exists(_csvPath))

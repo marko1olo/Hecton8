@@ -47,6 +47,7 @@ Core constraints:
 - Shader flow uses `_H8PlasmaFrameTime` from dispatcher frame/fixed tick, not Unity `_Time`.
 - Vault handles and DTO layout validation are cold-path cached after initialization; steady dispatcher phases use generation-checked handle `Resolve` instead of repeating `GetBufferHandle`.
 - Editor tuning and SceneView mesh snapshot APIs refuse vault access while `_simulationScheduled` is true; pending designer edits are staged and applied at the next pre-simulation boundary.
+- CSV hot reload is editor-only; player and development gameplay builds do not poll the filesystem from pre-simulation.
 - Standard tools use the Dear Lie: a UV-scrolled procedural tube, not true plasma simulation.
 
 Fault path: non-finite beam math writes a 300-frame telemetry ring dump to `Docs/AgentLogs/Dump_LASER_SURGEON.bin`.

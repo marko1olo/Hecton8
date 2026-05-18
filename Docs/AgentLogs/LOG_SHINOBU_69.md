@@ -79,3 +79,13 @@ What was done: Added `_simulationScheduled` guards to editor tuning read/write a
 Cinematic Cheats used: None; this is safety around the human-control facade. The VFX cheat remains the UV-scrolled procedural tube.
 
 Exact Microseconds saved: No runtime saving claimed. Avoids editor-induced job serialization and unsafe vault reads without adding another persistent debug snapshot buffer.
+
+## 2026-05-19 - CSV Runtime File-I/O Firewall
+
+What was wrong: CSV hot reload was compiled for `DEVELOPMENT_BUILD`, which allowed periodic filesystem polling from `PreSimulationTick` in development players.
+
+What was done: Restricted CSV polling and file reads to `UNITY_EDITOR` only. The editor designer bridge remains active, and runtime players keep scalar DTO tuning without file probes.
+
+Cinematic Cheats used: None; this is hot-path hygiene around the human-control bridge.
+
+Exact Microseconds saved: Not measured. Static work removed from development players: one CSV existence/write-time probe every 64 frames and any accidental `FileStream` read during gameplay captures.

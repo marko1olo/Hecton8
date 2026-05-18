@@ -86,6 +86,11 @@ Status: ACTIVE - BLOCKED BY EXISTING CORE COMPILE ERRORS; UNITY/BURST IMPORT OF 
 - [x] Editor mesh snapshot fence | DOD: `TryGetEditorMeshSnapshot` returns false while `_simulationScheduled` is true, so SceneView wireframe inspection never exposes the active vertex buffer while Burst meshing can mutate it | Rejected: live gizmo reads of back-buffer geometry | Estimate: editor-only; avoids safety violation
 - [x] Editor write deferral | DOD: `TryWriteEditorTuning` still stages sanitized pending values but refuses immediate vault mutation while `_simulationScheduled` is true; pending values apply at the next pre-simulation boundary | Rejected: writing designer scalars into vault memory while the scheduled job may read them | Estimate: editor-only; preserves zero-GC staged tuning
 
+## Loop 10 - CSV Runtime File-I/O Firewall
+
+- [x] CSV polling editor-only | DOD: `MonitorBeamCsv` and its pre-simulation polling call are now compiled under `#if UNITY_EDITOR` only, not `DEVELOPMENT_BUILD`; player/dev gameplay builds do not perform periodic file probes | Rejected: polling `File.Exists`/`File.GetLastWriteTimeUtc`/`FileStream` from a development gameplay build | Estimate: saves one filesystem probe every 64 frames in dev players
+- [x] Designer bridge preserved | DOD: editor hot reload still parses bytes from vault-owned scratch and writes unmanaged scalar DTOs without runtime strings | Rejected: deleting the facade parser and forcing C# recompiles for tuning | Estimate: editor-only
+
 ## Compile Wall Record
 
 - [blocked] `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` | Result: 6 errors outside SHINOBU_69 domain: `ShinobuFloraFaunaSymbiosisSolver.cs` missing `math.reversebytes`, `HomeostasisBrain.ScalabilityDictator.cs` unassigned `sanitizedWeight`, `SaveBinaryPayloadCodec.cs` missing `IndustrialLoreBitMask`, two Visor features missing `HectonDrsRenderFeatureGate` | Note: generated `Hecton8.Core.csproj` has not imported new `Assets/_Project/Scripts/VFX/PlasmaBeam` files yet

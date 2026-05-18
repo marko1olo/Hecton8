@@ -147,3 +147,15 @@ Rejected Alternatives: Calling `JobHandle.Complete()` from editor code was rejec
 Scalability potential: Low/Middle/High/Ultra rendering is unchanged. Designer control remains live, but it now obeys the same safe phase boundary as runtime quality changes.
 
 Hardware Impact: No runtime frame-time saving is claimed. This removes an editor/development safety race without adding hot-path allocation or main-thread blocking.
+
+## Decision 12 - CSV Runtime File-I/O Firewall
+
+Problem: CSV hot-reload was guarded by `UNITY_EDITOR || DEVELOPMENT_BUILD`, so a development player could execute periodic `File.Exists`, `File.GetLastWriteTimeUtc`, and `FileStream` work from `PreSimulationTick`. The parser itself is byte/span based, but the filesystem probe is still disallowed in gameplay runtime cadence.
+
+Solution: Restrict `MonitorBeamCsv` and its pre-simulation polling call to `#if UNITY_EDITOR` only. The human-facing editor bridge remains intact; player and development gameplay builds keep the unmanaged scalar DTO path but do not poll the filesystem.
+
+Rejected Alternatives: Keeping `DEVELOPMENT_BUILD` polling was rejected because dev builds are often profiler/reference captures and must preserve hot-path shape. Deleting CSV support was rejected because the task requires designer tuning without recompiling C#. Moving file polling to VisualSync was rejected because it is still a frame phase.
+
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The editor can still tune all tiers through the same `GlobalQualityWeight`, radius, noise, and radial override scalars.
+
+Hardware Impact: Removes one filesystem existence/write-time probe every 64 frames from development players. No measured microsecond claim; impact depends on platform filesystem cache, but the correctness gain is eliminating runtime file-I/O cadence.
