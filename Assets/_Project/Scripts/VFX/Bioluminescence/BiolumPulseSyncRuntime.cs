@@ -176,9 +176,7 @@ namespace Hecton8.VFX.Bioluminescence
         private const int BiolumJobInnerLoopBatchCount = 64; // 64 uint writes = 256 bytes; avoids cache-line boundary churn.
         private const int CsvWorkerIdle = 0;
         private const int CsvWorkerRequested = 1;
-        private const int CsvWorkerLoading = 2;
-        private const int CsvWorkerReady = 3;
-        private const int CsvWorkerApplying = 4;
+        private const int CsvWorkerApplying = 2;
         private const float StrobeDurationSeconds = 0.1f;
         private const float StrobeFadeSeconds = 0.16f;
         private const float OverloadUpdateIntervalSeconds = 1f / 15f;
@@ -205,7 +203,6 @@ namespace Hecton8.VFX.Bioluminescence
 
         private static readonly ProfilerMarker _tickMarker = new ProfilerMarker("H8.VFX.BiolumPulseSync.Tick");
         private static readonly ProfilerMarker _lateFrameMarker = new ProfilerMarker("H8.VFX.BiolumPulseSync.LateFrame");
-        private static readonly int _GlobalBiolumStatesId = Shader.PropertyToID("_GlobalBiolumStates");
         private static readonly int _GlobalBiolumDearLieGroupsId = Shader.PropertyToID("_GlobalBiolumDearLieGroups");
         private static readonly int _GlobalBiolumParamsId = Shader.PropertyToID("_GlobalBiolumParams");
         private static readonly int _GlobalBiolumClockId = Shader.PropertyToID("_GlobalBiolumClock");
@@ -213,9 +210,6 @@ namespace Hecton8.VFX.Bioluminescence
         private static readonly int _BiolumIntensityId = Shader.PropertyToID("_BiolumIntensity");
         private static readonly int _BiolumGpuColorBufferId = Shader.PropertyToID("_BiolumGpuColorBuffer");
         private static int s_runtimeClaimed;
-
-        // COLD ALLOC: Vector4[16] - fixed global shader pulse upload payload - owner: BIOLUM_PULSE_SYNC
-        private readonly Vector4[] _managedStates = new Vector4[MaxGlobalBiolumStates];
 
         private IDataVault _dataVault;
         private VaultBufferHandle<float> _profileFloatsHandle;
@@ -237,9 +231,6 @@ namespace Hecton8.VFX.Bioluminescence
         private GraphicsBuffer _gpuColorBufferB;
         private string _csvOverridePath;
         private FileSystemWatcher _csvWatcher;
-        private Thread _csvWorkerThread;
-        // COLD ALLOC: byte[16384] - background CSV staging, never parsed from managed strings - owner: BIOLUM_PULSE_SYNC
-        private byte[] _csvWorkerScratch;
         private JobHandle _stateJobHandle;
         private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private float3 _aupOriginOffset;
@@ -273,8 +264,6 @@ namespace Hecton8.VFX.Bioluminescence
         private long _csvLastWriteTicks;
         private int _gpuColorFrontIndex;
         private int _csvWorkerState;
-        private int _csvWorkerBytesRead;
-        private long _csvWorkerWriteTicks;
         private int _lastGlobalDamageSignalSequence;
         private int _lastGlobalLightLevelSignalSequence;
         private int _lastGlobalSurvivalVitalsSequence;
@@ -287,7 +276,6 @@ namespace Hecton8.VFX.Bioluminescence
         private bool _jobLocksHeld;
         private bool _mockGlowsInitialized;
         private bool _gpuColorBufferUploaded;
-        private int _csvWorkerStopRequested;
         private bool _disposed;
         private bool _dumpedFault;
         private bool _forceSchedule = true;
@@ -2258,23 +2246,14 @@ namespace Hecton8.VFX.Bioluminescence
 
         private void EnsureCsvBackgroundWatcher()
         {
-            if (_csvWorkerThread != null)
+            if (_csvWatcher != null)
                 return;
 
             string path = ResolveCsvOverridePath();
             if (string.IsNullOrEmpty(path))
                 return;
 
-            if (_csvWorkerScratch == null || _csvWorkerScratch.Length < CsvScratchByteCount)
-                _csvWorkerScratch = new byte[CsvScratchByteCount];
-
-            Volatile.Write(ref _csvWorkerStopRequested, 0);
-            _csvWorkerThread = new Thread(CsvWorkerLoop)
-            {
-                IsBackground = true,
-                Name = "H8 Biolum CSV Worker"
-            };
-            _csvWorkerThread.Start();
+            Volatile.Write(ref _csvWorkerState, CsvWorkerIdle);
 
             string directory = Path.GetDirectoryName(path);
             if (string.IsNullOrEmpty(directory))
@@ -2313,14 +2292,6 @@ namespace Hecton8.VFX.Bioluminescence
                 watcher.Dispose();
                 _csvWatcher = null;
             }
-
-            Volatile.Write(ref _csvWorkerStopRequested, 1);
-            Thread worker = _csvWorkerThread;
-            if (worker != null)
-            {
-                if (worker.Join(500))
-                    _csvWorkerThread = null;
-            }
         }
 
         private void OnCsvFileChanged(object sender, FileSystemEventArgs args)
@@ -2336,55 +2307,15 @@ namespace Hecton8.VFX.Bioluminescence
         private void RequestCsvReload()
         {
             int state = Volatile.Read(ref _csvWorkerState);
-            if (state == CsvWorkerLoading || state == CsvWorkerApplying)
+            if (state == CsvWorkerApplying)
                 return;
 
             Interlocked.Exchange(ref _csvWorkerState, CsvWorkerRequested);
         }
 
-        private void CsvWorkerLoop()
-        {
-            while (Volatile.Read(ref _csvWorkerStopRequested) == 0)
-            {
-                if (Interlocked.CompareExchange(ref _csvWorkerState, CsvWorkerLoading, CsvWorkerRequested) == CsvWorkerRequested)
-                    LoadCsvOnWorkerThread();
-                else
-                    Thread.Sleep(100);
-            }
-        }
-
-        private void LoadCsvOnWorkerThread()
-        {
-            int bytesRead = 0;
-            long writeTicks = 0L;
-            try
-            {
-                string path = _csvOverridePath;
-                byte[] scratch = _csvWorkerScratch;
-                if (!string.IsNullOrEmpty(path) && scratch != null && File.Exists(path))
-                {
-                    writeTicks = File.GetLastWriteTimeUtc(path).Ticks;
-                    if (writeTicks != Volatile.Read(ref _csvLastWriteTicks))
-                    {
-                        using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, scratch.Length, FileOptions.SequentialScan))
-                            bytesRead = stream.Read(scratch, 0, scratch.Length);
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                bytesRead = 0;
-                writeTicks = 0L;
-            }
-
-            Volatile.Write(ref _csvWorkerBytesRead, bytesRead);
-            Volatile.Write(ref _csvWorkerWriteTicks, writeTicks);
-            Interlocked.Exchange(ref _csvWorkerState, bytesRead > 0 ? CsvWorkerReady : CsvWorkerIdle);
-        }
-
         private unsafe void ApplyCsvOverridesIfReady()
         {
-            if (Interlocked.CompareExchange(ref _csvWorkerState, CsvWorkerApplying, CsvWorkerReady) != CsvWorkerReady)
+            if (Interlocked.CompareExchange(ref _csvWorkerState, CsvWorkerApplying, CsvWorkerRequested) != CsvWorkerRequested)
                 return;
 
             IDataVault vault = _dataVault;
@@ -2418,19 +2349,12 @@ namespace Hecton8.VFX.Bioluminescence
                 NativeArray<byte> scratch = _csvScratchHandle.Resolve(vault);
                 NativeArray<GlowStateDTO> glowStates = lockedGlowStates ? _glowStatesHandle.Resolve(vault) : default;
                 NativeArray<BiolumSpeciesTuningDTO> species = _speciesTuningHandle.Resolve(vault);
-                byte[] workerScratch = _csvWorkerScratch;
-                int bytesRead = math.min(Volatile.Read(ref _csvWorkerBytesRead), scratch.IsCreated ? scratch.Length : 0);
-                if (!scratch.IsCreated || !species.IsCreated || workerScratch == null || bytesRead <= 0)
+                int bytesRead = TryReadCsvOverrideIntoScratch(scratch, out long writeTicks);
+                if (!scratch.IsCreated || !species.IsCreated || bytesRead <= 0)
                     return;
 
-                fixed (byte* sourcePtr = workerScratch)
-                {
-                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                    UnsafeUtility.MemCpy(destinationPtr, sourcePtr, bytesRead);
-                }
-
                 ParseCsvOverrides(scratch, bytesRead, species, glowStates);
-                Volatile.Write(ref _csvLastWriteTicks, Volatile.Read(ref _csvWorkerWriteTicks));
+                Volatile.Write(ref _csvLastWriteTicks, writeTicks);
                 _forceSchedule = true;
             }
             finally
@@ -2443,8 +2367,40 @@ namespace Hecton8.VFX.Bioluminescence
                     vault.TryUnlockBuffer(BufferID.BiolumCsvScratch, SystemID.Vfx);
                 Interlocked.CompareExchange(
                     ref _csvWorkerState,
-                    retryWhenVaultUnlocks ? CsvWorkerReady : CsvWorkerIdle,
+                    retryWhenVaultUnlocks ? CsvWorkerRequested : CsvWorkerIdle,
                     CsvWorkerApplying);
+            }
+        }
+
+        private unsafe int TryReadCsvOverrideIntoScratch(NativeArray<byte> scratch, out long writeTicks)
+        {
+            writeTicks = 0L;
+            if (!scratch.IsCreated)
+                return 0;
+
+            string path = _csvOverridePath;
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return 0;
+
+            try
+            {
+                writeTicks = File.GetLastWriteTimeUtc(path).Ticks;
+                if (writeTicks == Volatile.Read(ref _csvLastWriteTicks))
+                    return 0;
+
+                int capacity = math.min(CsvScratchByteCount, scratch.Length);
+                if (capacity <= 0)
+                    return 0;
+
+                void* scratchPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
+                Span<byte> destination = new Span<byte>(scratchPtr, capacity);
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, capacity, FileOptions.SequentialScan))
+                    return stream.Read(destination);
+            }
+            catch (Exception)
+            {
+                writeTicks = 0L;
+                return 0;
             }
         }
 
@@ -2892,6 +2848,7 @@ namespace Hecton8.VFX.Bioluminescence
             bool finite = true;
             int activeCount = SyncGroupCount;
             _publishedGlobalStateCount = activeCount;
+            _dearLieGroupMatrix = Matrix4x4.zero;
             float strongest = 0f;
             int strongestProfile = 0;
             IDataVault vault = _dataVault;
@@ -2899,13 +2856,10 @@ namespace Hecton8.VFX.Bioluminescence
             if (!jobStates.IsCreated)
                 return false;
 
-            for (int i = 0; i < MaxGlobalBiolumStates; i++)
+            for (int i = 0; i < SyncGroupCount; i++)
             {
                 if (i >= activeCount)
-                {
-                    _managedStates[i] = Vector4.zero;
                     continue;
-                }
 
                 float4 state = jobStates[i];
                 if (!math.all(math.isfinite(state)))
@@ -2916,7 +2870,7 @@ namespace Hecton8.VFX.Bioluminescence
 
                 state.xyz = math.clamp(state.xyz, float3.zero, new float3(MaxHdrIntensity));
                 state.w = math.clamp(state.w, 0f, MaxHdrIntensity);
-                _managedStates[i] = new Vector4(state.x, state.y, state.z, state.w);
+                _dearLieGroupMatrix.SetRow(i, new Vector4(state.x, state.y, state.z, state.w));
 
                 if (i < activeCount && state.w > strongest)
                 {
@@ -2961,34 +2915,29 @@ namespace Hecton8.VFX.Bioluminescence
 
         private void EvaluateColdStartStates()
         {
+            _dearLieGroupMatrix = Matrix4x4.zero;
             if (!TryLockProfileBuffer(out IDataVault vault, out NativeArray<float> profileFloats))
             {
-                for (int i = 0; i < MaxGlobalBiolumStates; i++)
-                    _managedStates[i] = Vector4.zero;
-
                 _publishedGlobalStateCount = 0;
                 return;
             }
 
-            int activeCount = math.clamp(_activeStateCount, 1, MaxGlobalBiolumStates);
+            int activeCount = math.min(math.clamp(_activeStateCount, 1, MaxGlobalBiolumStates), SyncGroupCount);
             _publishedGlobalStateCount = activeCount;
             try
             {
-                for (int i = 0; i < MaxGlobalBiolumStates; i++)
+                for (int i = 0; i < SyncGroupCount; i++)
                 {
                     if (i >= activeCount)
-                    {
-                        _managedStates[i] = Vector4.zero;
                         continue;
-                    }
 
                     int offset = i * ProfileFloatStride;
                     float intensity = math.clamp(profileFloats[offset + 4], 0f, MaxHdrIntensity);
-                    _managedStates[i] = new Vector4(
+                    _dearLieGroupMatrix.SetRow(i, new Vector4(
                         math.saturate(profileFloats[offset + 5]),
                         math.saturate(profileFloats[offset + 6]),
                         math.saturate(profileFloats[offset + 7]),
-                        intensity);
+                        intensity));
                 }
             }
             finally
@@ -3001,7 +2950,6 @@ namespace Hecton8.VFX.Bioluminescence
         {
             if (forceStateArray)
             {
-                Shader.SetGlobalVectorArray(_GlobalBiolumStatesId, _managedStates);
                 PublishDearLieGroups();
             }
 
@@ -3010,10 +2958,6 @@ namespace Hecton8.VFX.Bioluminescence
 
         private void PublishDearLieGroups()
         {
-            _dearLieGroupMatrix.SetRow(0, _managedStates[0]);
-            _dearLieGroupMatrix.SetRow(1, _managedStates[1]);
-            _dearLieGroupMatrix.SetRow(2, _managedStates[2]);
-            _dearLieGroupMatrix.SetRow(3, _managedStates[3]);
             Shader.SetGlobalMatrix(_GlobalBiolumDearLieGroupsId, _dearLieGroupMatrix);
         }
 
@@ -3024,7 +2968,7 @@ namespace Hecton8.VFX.Bioluminescence
             float cadence = ResolveUpdateCadenceSeconds(_globalQualityWeight, _overloadHoldSeconds);
             float timeFloat = (float)(_localTimeSeconds % 65536d);
             float masterPhase = math.frac(timeFloat * 0.045f);
-            int globalStateCount = math.clamp(_publishedGlobalStateCount, 0, MaxGlobalBiolumStates);
+            int globalStateCount = math.clamp(_publishedGlobalStateCount, 0, SyncGroupCount);
             int publishedGpuColorCount = _gpuColorBufferUploaded
                 ? math.clamp(_publishedGpuColorCount, 0, MaxGlowInstances)
                 : 0;
@@ -3045,7 +2989,7 @@ namespace Hecton8.VFX.Bioluminescence
             float resolved = math.clamp(strobe01 * MaxHdrIntensity, 0f, MaxHdrIntensity);
             for (int i = 0; i < activeCount; i++)
             {
-                float intensity = _managedStates[i].w;
+                float intensity = _dearLieGroupMatrix.GetRow(i).w;
                 if (math.isfinite(intensity))
                     resolved = math.max(resolved, math.clamp(intensity, 0f, MaxHdrIntensity));
             }
@@ -3055,11 +2999,8 @@ namespace Hecton8.VFX.Bioluminescence
 
         private void ClearShaderGlobals()
         {
-            for (int i = 0; i < MaxGlobalBiolumStates; i++)
-                _managedStates[i] = Vector4.zero;
-
+            _dearLieGroupMatrix = Matrix4x4.zero;
             _publishedGlobalStateCount = 0;
-            Shader.SetGlobalVectorArray(_GlobalBiolumStatesId, _managedStates);
             Shader.SetGlobalVector(_GlobalBiolumParamsId, Vector4.zero);
             Shader.SetGlobalVector(_GlobalBiolumClockId, Vector4.zero);
             Shader.SetGlobalVector(_GlobalBiolumAupOffsetId, Vector4.zero);
@@ -3075,7 +3016,7 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                Vector4 primaryState = _managedStates[0];
+                Vector4 primaryState = _dearLieGroupMatrix.GetRow(0);
                 int telemetryGlowCount = _gpuColorBufferUploaded && _publishedGpuColorCount > SyncGroupCount
                     ? _publishedGpuColorCount
                     : SyncGroupCount;

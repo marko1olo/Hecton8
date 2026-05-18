@@ -379,6 +379,35 @@ namespace Hecton8.Core
             return math.isfinite(configured) && configured > 0f ? configured : fpsFrameMs;
         }
 
+        private static float SanitizeTunerTargetFrameMs(float targetFrameMs)
+        {
+            return math.isfinite(targetFrameMs)
+                ? math.clamp(targetFrameMs, 4f, 50f)
+                : ScalabilityContract.TargetFrameMilliseconds;
+        }
+
+        private static float SanitizeTunerEmergencyThreshold(float emergencyThreshold)
+        {
+            return math.isfinite(emergencyThreshold)
+                ? math.clamp(emergencyThreshold, 0.1f, 1f)
+                : DefaultEmergencyThreshold;
+        }
+
+        private static int SanitizeTunerHysteresisFrames(int hysteresisFrames)
+        {
+            return math.clamp(hysteresisFrames, 1, 3600);
+        }
+
+        private static bool TrySanitizeForcedQualityWeight(float qualityWeight, out float sanitizedWeight)
+        {
+            sanitizedWeight = 0f;
+            if (!math.isfinite(qualityWeight))
+                return false;
+
+            sanitizedWeight = math.saturate(qualityWeight);
+            return true;
+        }
+
         private static float SampleStopwatchFrameMilliseconds(float fallbackDeltaTime, float targetFps)
         {
             long now = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -979,9 +1008,9 @@ namespace Hecton8.Core
                 NativeArray<ScalabilityTuningDTO> tuningArray = _scalabilityTuningHandle.Resolve(vault);
                 MemClearIfCreated(tuningArray);
                 ref ScalabilityTuningDTO tuning = ref _scalabilityTuningHandle.GetElementAsRef(vault, 0);
-                tuning.TargetFrameMs = math.clamp(_targetFrameMsOverride, 4f, 50f);
-                tuning.EmergencyThreshold = math.clamp(_emergencyThresholdOverride, 0.1f, 1f);
-                tuning.HysteresisReleaseFrames = math.clamp(_hysteresisReleaseFrames, 1, 3600);
+                tuning.TargetFrameMs = SanitizeTunerTargetFrameMs(_targetFrameMsOverride);
+                tuning.EmergencyThreshold = SanitizeTunerEmergencyThreshold(_emergencyThresholdOverride);
+                tuning.HysteresisReleaseFrames = SanitizeTunerHysteresisFrames(_hysteresisReleaseFrames);
                 tuning.Flags = 0u;
             }
 
@@ -995,9 +1024,9 @@ namespace Hecton8.Core
                 return;
 
             ref ScalabilityTuningDTO tuning = ref _scalabilityTuningHandle.GetElementAsRef(vault, 0);
-            tuning.TargetFrameMs = math.clamp(_targetFrameMsOverride, 4f, 50f);
-            tuning.EmergencyThreshold = math.clamp(_emergencyThresholdOverride, 0.1f, 1f);
-            tuning.HysteresisReleaseFrames = math.clamp(_hysteresisReleaseFrames, 1, 3600);
+            tuning.TargetFrameMs = SanitizeTunerTargetFrameMs(_targetFrameMsOverride);
+            tuning.EmergencyThreshold = SanitizeTunerEmergencyThreshold(_emergencyThresholdOverride);
+            tuning.HysteresisReleaseFrames = SanitizeTunerHysteresisFrames(_hysteresisReleaseFrames);
             tuning.Flags = 0u;
         }
 
@@ -1861,9 +1890,9 @@ namespace Hecton8.Core
         /// </summary>
         public static void ApplyHardwareDictatorTuner(float targetFrameMs, float emergencyThreshold, int hysteresisFrames)
         {
-            _targetFrameMsOverride = math.clamp(targetFrameMs, 4f, 50f);
-            _emergencyThresholdOverride = math.clamp(emergencyThreshold, 0.1f, 1f);
-            _hysteresisReleaseFrames = math.clamp(hysteresisFrames, 1, 3600);
+            _targetFrameMsOverride = SanitizeTunerTargetFrameMs(targetFrameMs);
+            _emergencyThresholdOverride = SanitizeTunerEmergencyThreshold(emergencyThreshold);
+            _hysteresisReleaseFrames = SanitizeTunerHysteresisFrames(hysteresisFrames);
             WriteCurrentTuningStateToVault(_dataVault);
 
             float frameMs = 0f;
@@ -1893,7 +1922,12 @@ namespace Hecton8.Core
                 return false;
             }
 
-            tuning = _scalabilityTuningHandle.GetElementAsRef(vault, 0);
+            ref ScalabilityTuningDTO vaultTuning = ref _scalabilityTuningHandle.GetElementAsRef(vault, 0);
+            vaultTuning.TargetFrameMs = SanitizeTunerTargetFrameMs(vaultTuning.TargetFrameMs);
+            vaultTuning.EmergencyThreshold = SanitizeTunerEmergencyThreshold(vaultTuning.EmergencyThreshold);
+            vaultTuning.HysteresisReleaseFrames = SanitizeTunerHysteresisFrames(vaultTuning.HysteresisReleaseFrames);
+            vaultTuning.Flags = 0u;
+            tuning = vaultTuning;
             return true;
         }
 
@@ -1902,9 +1936,10 @@ namespace Hecton8.Core
         /// </summary>
         public static void SetForcedGlobalQualityWeightForTuner(float qualityWeight, bool enabled)
         {
-            _forceGlobalQualityWeightOverride = enabled;
-            _forcedGlobalQualityWeight = enabled ? math.saturate(qualityWeight) : ForcedQualityWeightDisabled;
-            if (enabled)
+            bool validOverride = enabled && TrySanitizeForcedQualityWeight(qualityWeight, out float sanitizedWeight);
+            _forceGlobalQualityWeightOverride = validOverride;
+            _forcedGlobalQualityWeight = validOverride ? sanitizedWeight : ForcedQualityWeightDisabled;
+            if (validOverride)
                 _globalQualityWeightSeeded = false;
         }
 

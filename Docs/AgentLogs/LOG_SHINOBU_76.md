@@ -100,6 +100,32 @@ Verification:
   <COMPILE>Hecton8.Core build succeeded: 0 errors, 9 unrelated warnings.</COMPILE>
 </SELF_AUDIT>
 
+## 2026-05-19 - Task 13 Five-Frame Cadence Repair
+
+What was wrong:
+- The previous low-tier time-slice floor was 1024 rows. That avoided spikes but violated the original Task 13 cadence of roughly 10,000 rows per frame for 50,000 entities.
+- Over-slicing can leave distant local caches stale for too many frames, creating a visible fog-hidden desync corridor that lasts too long.
+
+What was done:
+- Added `MinimumTimeSliceBatchSize = 10000`.
+- `ResolveBatchSize` now clamps configured AUP batches to 10k..50k.
+- `ResolveQualityScaledBatchSize` now uses a continuous floor of `max(10000, activeCount * 0.2)` and still transitions with `math.lerp`, `math.step`, and the smooth polynomial quality curve.
+
+Cinematic Cheats used:
+- The camera/critical hot rows shift immediately; distant rows and historical visual buffers finish in bounded slices over about five frames at 50k scale. Fog/micro-desync hides the finite continuation without resimulating physics.
+
+Exact Microseconds saved:
+- No measured claim. This repair intentionally spends more per low-tier slice than the prior 1024 floor to reduce stale-frame exposure and match Task 13. Profiler proof is still pending.
+
+<SELF_AUDIT agent="SHINOBU_76" date="2026-05-19" pass="five_frame_cadence">
+  <TASKS_01_20>Task 13 repaired: low-quality time slicing now follows the original 10k/5-frame cadence while preserving continuous GlobalQualityWeight scaling. Other task statuses unchanged.</TASKS_01_20>
+  <STRUCT_LAYOUT>No DTO layout changed in this pass. AUP_StateDTO remains 64B; runtime state 120B; padded counter 64B.</STRUCT_LAYOUT>
+  <SCALABILITY>q near 0 uses about max(10k, activeCount*0.2) rows per slice; q rising lerps toward configured/full active count with a smooth polynomial; no hardware class branch.</SCALABILITY>
+  <H_PHI>No new arrays, no new handles, no local NativeArray ownership.</H_PHI>
+  <DEPENDENCY_GRAPH>Initial shift still returns JobHandle. Continuation remains bounded synchronous ranges until a dispatcher fence API exists.</DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef or public API changes. Build deliberately not run by explicit user instruction.</COMPILE_GUARD>
+</SELF_AUDIT>
+
 ## 2026-05-19 - Stutter Corridor Run/Complete Audit (Bottom Append)
 
 What was wrong:
@@ -516,7 +542,7 @@ What was done:
 - Removed the SHINOBU `PublishMemoryAddressShiftSignal` method and HFO call site. AUP coordinate shifts now use `AupShiftSignal` only; DataVault relocation remains in `SystemDispatcher.PublishMemoryAddressShiftSignals`.
 - Recorded Task 04 and Task 08 supersessions in `Status_SHINOBU_76.md` and `Rationale_SHINOBU_76.md`: active `AUP_StateDTO` is 64B, and active coordinate signal is `AupShiftSignal`.
 - Classified `.Run()` sites as cold init or bounded continuation slices. Static scan found no direct `.Complete()` in the SHINOBU/HFO corridor.
-- Verified first-frame hot-row coverage: low-tier batch floor is 1024 and `VaultHotEntityData` default capacity is 1024.
+- Verified first-frame hot-row coverage: low-tier batch floor is 10,000 rows and `VaultHotEntityData` default capacity is 1024.
 
 Cinematic Cheats used:
 - Keep origin shift as mathematical epoch translation of local caches, hot rows, and visual history. No physics replay, no terrain movement truth, no false memory relocation broadcast.
@@ -527,9 +553,37 @@ Exact Microseconds saved:
 <SELF_AUDIT agent="SHINOBU_76" date="2026-05-19" pass="bottom_signal_stutter">
   <TASKS_01_20>PASS with supersessions: Task 04 original 48B row is replaced by active 64B rollback row; Task 08 original MemoryAddressShiftSignal wording is replaced by actual project ABI using AupShiftSignal for ShiftDelta and reserving MemoryAddressShiftSignal for DataVault relocation.</TASKS_01_20>
   <STRUCT_LAYOUT>AUP_StateDTO=64B: 0 double3 GlobalPosition(24), 24 float3 LocalPosition(12), 36 uint SectorHash(4), 40 uint ShiftFrameId(4), 44 int3 LocalMillimeters(12), 56 uint FiniteFlags(4), 60 uint SourceSystemId(4). AupShiftSignal=32B. MemoryAddressShiftSignal remains 32B pointer relocation. AupPaddedAtomicCounter=64B.</STRUCT_LAYOUT>
-  <SCALABILITY>Low q resolves near 1024-row bounded slices; middle grows continuously; high/ultra converge toward full/few-frame rebase. No binary low/high branch remains in batch sizing.</SCALABILITY>
+  <SCALABILITY>Low q resolves near 10,000-row bounded slices; middle grows continuously; high/ultra converge toward full/few-frame rebase. No binary low/high branch remains in batch sizing.</SCALABILITY>
   <H_PHI>Vault handles unchanged: 73030 states, 73031 velocities, 73032 historical, 73033 telemetry, 73034 runtime, 73035 mock camera, 73036 CSV scratch, 73037 padded counter. No new private NativeArray/NativeList/NativeHashMap.</H_PHI>
   <DEPENDENCY_GRAPH>Initial shift returns a JobHandle and HFO combines it with presentation. Continuation slices are synchronous bounded runs until a dispatcher fence API exists. No orphaned async jobs and no direct `.Complete()`.</DEPENDENCY_GRAPH>
   <COMPILE_GUARD>SHINOBU coordinator adds no sibling runtime dependency or asmdef edit. Existing HFO/Core asmdef sibling fan-out is pre-existing shared debt and was not expanded.</COMPILE_GUARD>
   <BUILD_CHECK>Post-delta build deliberately not run by explicit user instruction. Evidence class: STATIC_SOURCE / PENDING RUNTIME VERIFICATION.</BUILD_CHECK>
+</SELF_AUDIT>
+
+## 2026-05-19 - True Bottom Five-Frame Cadence Recheck
+
+What was wrong:
+- The previous five-frame report landed above older log history. This block is the current physical bottom append.
+- The old 1024-row low-tier floor conflicted with Task 13's 10,000 rows/frame target for a 50,000-entity origin shift.
+
+What was done:
+- `MinimumTimeSliceBatchSize = 10000` was added to `AupOriginShiftCoordinator`.
+- `ResolveBatchSize` now clamps AUP batches to 10k..50k.
+- `ResolveQualityScaledBatchSize` now uses `max(10000, activeCount * 0.2)` as the low-q floor, then smooth polynomial `math.lerp` and `math.step` to converge toward configured/full active count.
+- Static scan still clears false `MemoryAddressShiftSignal`, direct `Transform.position`, `FloatMode.Fast`, `NativeDisableContainerSafetyRestriction`, hard `qualityWeight <`, stale full-length historical schedules, and stale rebase-count generation paths.
+
+Cinematic Cheats used:
+- Camera and hot rows shift immediately; distant rows and historical visual buffers finish over about five bounded slices at 50k scale. Fog absorbs the short-lived visual mismatch. No terrain movement truth or physics replay.
+
+Exact Microseconds saved:
+- No measured claim. This is a cadence/correctness repair, not a profiler claim. `dotnet build` was not launched by explicit user instruction.
+
+<SELF_AUDIT agent="SHINOBU_76" date="2026-05-19" pass="true_bottom_five_frame">
+  <TASKS_01_20>Task 13 PASS after repair: low-quality time slicing now matches the original 10k/5-frame cadence while keeping continuous GlobalQualityWeight math. Task 04 and Task 08 supersessions remain documented.</TASKS_01_20>
+  <STRUCT_LAYOUT>No layout changed in this patch. AUP_StateDTO=64B; AupOriginShiftRuntimeState=120B; AupPaddedAtomicCounter=64B.</STRUCT_LAYOUT>
+  <SCALABILITY>q near 0 resolves roughly max(10k, activeCount*0.2) rows per slice; q toward 1 converges toward full active count. Uses math.lerp, math.step, and polynomial quality curve; no binary hardware switch.</SCALABILITY>
+  <H_PHI>Zero new arrays and zero new Vault handles. Existing handles remain 73030-73037.</H_PHI>
+  <DEPENDENCY_GRAPH>Initial shift still returns JobHandle. Continuation stays bounded synchronous slices because no dispatcher fence API exists for multi-frame background AUP readers.</DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef change, no new sibling dependency, no public signal ABI mutation.</COMPILE_GUARD>
+  <BUILD_CHECK>Build deliberately not run by user instruction. Evidence class: STATIC_SOURCE / PENDING RUNTIME VERIFICATION.</BUILD_CHECK>
 </SELF_AUDIT>

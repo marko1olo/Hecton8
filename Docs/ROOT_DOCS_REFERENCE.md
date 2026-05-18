@@ -198,7 +198,7 @@ No root `.txt`, `.log`, or `.json` authority file is promoted by this R5 pass.
 
 ## 2026-05-13 R9 Check
 
-Latest DOC_GLOBAL correction is `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`. R22 remains the current source-counter/validation boundary; R21/R20/R19/R18/R17/R16/R15 remain subordinate source-counter/report-index, proof-residue, Marketing/EventBus/counter, R4, report-vault, and navigation correction layers; May 13/R9 are historical where newer layers conflict.
+Latest DOC_GLOBAL correction is `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`. R23 remains the proof-language/navigation boundary; R22/R21/R20/R19/R18/R17/R16/R15 remain subordinate source-counter/report-index, proof-residue, Marketing/EventBus/counter, R4, report-vault, and navigation correction layers; May 13/R9 are historical where newer layers conflict.
 
 Current root scan:
 

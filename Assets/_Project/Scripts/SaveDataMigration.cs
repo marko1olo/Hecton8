@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Core.Contracts;
-using Hecton8.Gameplay;
 using Hecton.Localization;
 using Hecton8.Narrative;
 using Unity.Mathematics;
@@ -1592,9 +1591,12 @@ namespace Hecton8.SaveSystem
                 steps.Add("industrial lore bit words created");
             }
 
-            if (!DataArchaeologyDiscoveryBitMask.HasExpectedCapacity(data.dataArchaeologyDiscoveryBitWords))
+            if (data.dataArchaeologyDiscoveryBitWords == null ||
+                data.dataArchaeologyDiscoveryBitWords.Length != SaveData.MaxDataArchaeologyDiscoveryWords)
             {
-                DataArchaeologyDiscoveryBitMask.EnsureCapacity(ref data.dataArchaeologyDiscoveryBitWords);
+                SaveData.EnsureExactArrayCapacity(
+                    ref data.dataArchaeologyDiscoveryBitWords,
+                    SaveData.MaxDataArchaeologyDiscoveryWords);
                 changed = true;
                 steps.Add("data archaeology bit words created");
             }

@@ -107,3 +107,9 @@ Status: LOCKSTEP ARM64 PACKED DTO POLISH APPLIED; build deferred by CPU guard
 ## Active Rollback Lane Pointer - 2026-05-19 Reasserted
 - Current user directive in this session is explicitly `SHINOBU_LOCKSTEP_ROLLBACK_NETCODE`; volcanic pointer above is duplicate-ID contamination from another lane.
 - Latest rollback state: AUP-local visual DTO and ARM64 lockstep DTO polish are applied; no `Pack=1` remains in rollback networking or `LockstepStateValidator.cs`; latest build is deferred by repeated CPU/compiler guard samples.
+
+## Active Volcanic Lane Pointer - 2026-05-19 Dispatcher Polish
+- Latest active user directive in this session is `SHINOBU_64` / `THERMAL_UPDRAFT_AND_VOLCANIC_DIRECTOR`.
+- Authoritative volcanic checklist remains `Docs/Tasks/Status_SHINOBU_64_VOLCANIC_UPDRAFT.md`.
+- Latest volcanic polish: `VolcanicUpdraftDirector` now participates in the dispatcher fixed pipeline through `IDispatcherFixedSystem`, returns its combined `JobHandle`, and keeps completion centralized in the master fixed bridge. The local `.Complete()` is cold disable-only teardown.
+- Fresh volcanic build is deferred by guard: `CPU=100,100,99.2`, no compiler process active.

@@ -236,7 +236,7 @@ namespace Hecton8.SaveSystem
             public MemoryCorruptionException(string message) : base(message) { }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct AsyncPersistenceTelemetryEntry
         {
             public uint Frame;
@@ -249,7 +249,7 @@ namespace Hecton8.SaveSystem
             public uint Reserved;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 8)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct WfcOutpostSnapshotCacheEntry
         {
             public ulong SectorHash;
@@ -258,7 +258,7 @@ namespace Hecton8.SaveSystem
             public uint LastAppendFrame;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct WfcOutpostTelemetryEntry
         {
             public uint Frame;
@@ -276,7 +276,7 @@ namespace Hecton8.SaveSystem
             public uint Reserved0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct SaveStagingHeader
         {
             public uint OperationId;
@@ -289,7 +289,7 @@ namespace Hecton8.SaveSystem
             public uint Frame;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
         private readonly struct SaveLoadCandidate
         {
             private const int BackupFlag = 1 << 0;
@@ -3015,7 +3015,7 @@ namespace Hecton8.SaveSystem
                 $"Budget is {MainThreadSnapshotBudgetMs}ms. Snapshot purity is pending verification.");
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 4)]
+        [StructLayout(LayoutKind.Sequential, Size = 4)]
         private readonly struct SaveContextFrameData
         {
             public readonly int FrameCount;

@@ -187,8 +187,11 @@ namespace Hecton8.Visor
             private FeatureSettings _settings;
             private Material _material;
             private RuntimeState _runtimeState;
-            private GraphicsBuffer _visorFluidGlobalsBuffer;
+            private GraphicsBuffer _visorFluidGlobalsBufferA;
+            private GraphicsBuffer _visorFluidGlobalsBufferB;
+            private GraphicsBuffer _activeVisorFluidGlobalsBuffer;
             private VisorFluidGlobalsDTO _lastVisorFluidGlobals;
+            private int _visorFluidGlobalsWriteIndex;
             private bool _hasVisorFluidGlobals;
 
             public VisorFluidPass()
@@ -205,7 +208,6 @@ namespace Hecton8.Visor
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Color | ScriptableRenderPassInput.Depth);
                 requiresIntermediateTexture = true;
-                EnsureVisorFluidGlobalsBuffer();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -278,12 +280,20 @@ namespace Hecton8.Visor
 
             public void Dispose()
             {
-                _visorFluidGlobalsBuffer?.Release();
-                _visorFluidGlobalsBuffer = null;
+                _visorFluidGlobalsBufferA?.Release();
+                _visorFluidGlobalsBufferB?.Release();
+                _visorFluidGlobalsBufferA = null;
+                _visorFluidGlobalsBufferB = null;
+                _activeVisorFluidGlobalsBuffer = null;
                 _hasVisorFluidGlobals = false;
             }
 
-            private bool EnsureVisorFluidGlobalsBuffer()
+            public bool PrewarmVisorFluidGlobalsBuffer()
+            {
+                return EnsureVisorFluidGlobalsBuffer(allowAllocation: true);
+            }
+
+            private bool EnsureVisorFluidGlobalsBuffer(bool allowAllocation)
             {
                 if (!SystemInfo.supportsSetConstantBuffer)
                 {
@@ -291,22 +301,24 @@ namespace Hecton8.Visor
                     return false;
                 }
 
-                if (_visorFluidGlobalsBuffer != null && _visorFluidGlobalsBuffer.IsValid())
+                if (_visorFluidGlobalsBufferA != null && _visorFluidGlobalsBufferA.IsValid() &&
+                    _visorFluidGlobalsBufferB != null && _visorFluidGlobalsBufferB.IsValid())
                     return true;
 
-                _visorFluidGlobalsBuffer?.Release();
-                _visorFluidGlobalsBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.Constant,
-                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                    1,
-                    VisorFluidGlobalsStrideBytes);
+                if (!allowAllocation)
+                    return false;
+
+                Dispose();
+                // COLD ALLOC: GraphicsBuffer[2] - ping-pong visor fluid RenderGraph CBuffers - owner: HectonVisorFluidDistortionFeature
+                _visorFluidGlobalsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, VisorFluidGlobalsStrideBytes);
+                _visorFluidGlobalsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, VisorFluidGlobalsStrideBytes);
                 _hasVisorFluidGlobals = false;
-                return _visorFluidGlobalsBuffer.IsValid();
+                return _visorFluidGlobalsBufferA.IsValid() && _visorFluidGlobalsBufferB.IsValid();
             }
 
             private bool UpdateVisorFluidGlobals(FeatureSettings settings, RuntimeState runtimeState)
             {
-                if (!EnsureVisorFluidGlobalsBuffer())
+                if (!EnsureVisorFluidGlobalsBuffer(allowAllocation: false))
                     return false;
 
                 float effectIntensity = Sanitize01(runtimeState.EffectIntensity);
@@ -356,17 +368,28 @@ namespace Hecton8.Visor
                         0f));
                 if (_hasVisorFluidGlobals && VisorFluidGlobalsEqual(in _lastVisorFluidGlobals, in globals))
                 {
-                    Shader.SetGlobalConstantBuffer(ShaderConstants.VisorFluidGlobalsBufferId, _visorFluidGlobalsBuffer, 0, VisorFluidGlobalsStrideBytes);
+                    if (_activeVisorFluidGlobalsBuffer == null || !_activeVisorFluidGlobalsBuffer.IsValid())
+                        return false;
+
+                    Shader.SetGlobalConstantBuffer(ShaderConstants.VisorFluidGlobalsBufferId, _activeVisorFluidGlobalsBuffer, 0, VisorFluidGlobalsStrideBytes);
                     return true;
                 }
 
-                NativeArray<VisorFluidGlobalsDTO> mapped = _visorFluidGlobalsBuffer.LockBufferForWrite<VisorFluidGlobalsDTO>(0, 1);
+                GraphicsBuffer writeBuffer = ResolveNextVisorFluidGlobalsBuffer();
+                NativeArray<VisorFluidGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<VisorFluidGlobalsDTO>(0, 1);
                 mapped[0] = globals;
-                _visorFluidGlobalsBuffer.UnlockBufferAfterWrite<VisorFluidGlobalsDTO>(1);
+                writeBuffer.UnlockBufferAfterWrite<VisorFluidGlobalsDTO>(1);
+                _activeVisorFluidGlobalsBuffer = writeBuffer;
                 _lastVisorFluidGlobals = globals;
                 _hasVisorFluidGlobals = true;
-                Shader.SetGlobalConstantBuffer(ShaderConstants.VisorFluidGlobalsBufferId, _visorFluidGlobalsBuffer, 0, VisorFluidGlobalsStrideBytes);
+                Shader.SetGlobalConstantBuffer(ShaderConstants.VisorFluidGlobalsBufferId, _activeVisorFluidGlobalsBuffer, 0, VisorFluidGlobalsStrideBytes);
                 return true;
+            }
+
+            private GraphicsBuffer ResolveNextVisorFluidGlobalsBuffer()
+            {
+                _visorFluidGlobalsWriteIndex ^= 1;
+                return _visorFluidGlobalsWriteIndex == 0 ? _visorFluidGlobalsBufferA : _visorFluidGlobalsBufferB;
             }
 
             private static bool VisorFluidGlobalsEqual(in VisorFluidGlobalsDTO left, in VisorFluidGlobalsDTO right)
@@ -457,6 +480,7 @@ namespace Hecton8.Visor
 #endif
 
             _pass ??= new VisorFluidPass();
+            _pass.PrewarmVisorFluidGlobalsBuffer();
             Shader shader = settings != null ? settings.shader : null;
             if (shader == null)
             {

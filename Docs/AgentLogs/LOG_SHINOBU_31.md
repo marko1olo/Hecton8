@@ -964,3 +964,48 @@ Evidence class: STATIC_SOURCE / FILESYSTEM
 - Forbidden-pattern scan returned no `Directory.GetFiles`, `JsonUtility`, whole-file read APIs, `StreamReader`, `ReadLine()`, `.ToString()`, LINQ chain, `foreach`, Unity find/getcomponent calls, `UnityEngine.Random`, `Time.deltaTime`, or `JobHandle.Complete`.
 - Trailing whitespace and >180-character line scans returned clean.
 - Compile probe was not run because the user forbade builds unless needed and this change is Editor cold-path path-allocation hardening.
+
+## 2026-05-19 - GUID Reference Lookup Allocation Closure
+
+Status: PENDING VERIFICATION / OWNED TOOLING STATIC-CLEAN / COMPILE PROBE NOT NEEDED
+Evidence class: STATIC_SOURCE / FILESYSTEM
+
+### What Was Wrong
+
+- `ResolveReferenceName()` sliced every Unity asmdef `GUID:...` reference with `Substring`.
+- The graph edge pass can see hundreds of references, so this kept allocation pressure in the hottest part of the Editor scan.
+
+### What Was Done
+
+- Added a `GuidReferencePrefix` constant.
+- Built `byGuidReference` once per scan using keys shaped as `GUID:` plus the meta GUID.
+- Changed `ResolveReferenceName()` to direct-lookup the original reference string instead of allocating a stripped GUID.
+
+### Struct Layout Evidence
+
+- No runtime contract DTO layout changed.
+- `GlobalSignalPayload` remains 128 bytes and `Pack=8`.
+- `CompileWallBlackBoxEntry` remains 40 bytes and `Pack=8`.
+
+### SELF_AUDIT Delta
+
+- Task 02 PASS: dependency edge construction no longer slices GUID strings per reference.
+- Task 07 PASS: build gate graph resolution keeps the same semantics with lower allocation pressure.
+- Task 18 PASS: X-Ray edge graph uses direct `GUID:` reference lookup.
+
+### Cinematic Cheats Used
+
+- Tooling fake: reuse Unity's existing `GUID:` reference string as the dictionary key instead of building a stripped intermediate string for every edge.
+
+### Exact Microseconds Saved
+
+- Measured runtime microseconds saved: 0 us. No player runtime/profiler was run.
+- Measured build-time saved: 0 us. No compile or build was launched.
+- Editor allocation reduction is source-shape verified only.
+
+### Verification Evidence
+
+- `rg` found no `reference.Substring`, `guidPrefix`, old raw `byGuid` resolver, `normalizedPath`, or `ToProjectPath(GetProjectRoot` in `CompileWallXRayWindow.cs`.
+- Forbidden-pattern scan returned no `.ToString()`, LINQ chain, `foreach`, Unity find/getcomponent calls, `UnityEngine.Random`, `Time.deltaTime`, or `JobHandle.Complete`.
+- Trailing whitespace and >180-character line scans returned clean.
+- Compile probe was not run because the user forbade builds unless needed and this change is Editor cold-path GUID lookup hardening.

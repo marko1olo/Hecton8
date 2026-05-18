@@ -1002,7 +1002,7 @@ namespace Hecton8.Core
     /// Blittable gameplay audio request consumed by the central audio service queue.
     /// EventID maps to an authored clip-table slot owned by the audio runtime.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public readonly struct AudioEvent
     {
         public readonly uint EventID;

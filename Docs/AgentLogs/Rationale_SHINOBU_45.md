@@ -567,5 +567,5 @@ Hardware Impact: CPU delta is one `long` multiply and a few scalar guards per di
   <pointer_aliasing_dependency_graph>No job graph change; this is a cold dispatch gate around compute shader launches.</pointer_aliasing_dependency_graph>
   <compile_guard>No assembly reference, sibling dependency, managed collection, interface array, or DTO property was added.</compile_guard>
   <dear_lie>Dear Lie remains the render-culling fake; this patch prevents compute side work from stealing the thermal headroom that fake buys.</dear_lie>
-  <verification>Runtime banned-pattern scan passed. Targeted `git diff --check` passed for touched runtime files. Roslyn compile remains gated by CPU load; latest probe reported CPU 97%, `dotnet/csc` false.</verification>
+  <verification>Runtime banned-pattern scan passed. Targeted `git diff --check` passed for touched runtime files. Roslyn compile remains gated by CPU load; latest probe reported CPU 100%, `dotnet/csc` true.</verification>
 </SELF_AUDIT>

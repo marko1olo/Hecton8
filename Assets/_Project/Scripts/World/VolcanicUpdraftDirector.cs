@@ -1055,6 +1055,7 @@ namespace Hecton8.World
             settings.Frame = ++_frame;
             settings.GlobalQualityWeight = ResolveGlobalQualityWeight();
             settingsArray[0] = settings;
+            float fixedDeltaTime = math.clamp(timing.FixedDelta, 0.001f, 0.05f);
 
             JobHandle initialDependency = JobHandle.CombineDependencies(dependsOn, VolcanicUpdraftVault.ConsumePendingVentReaders());
             JobHandle handle = new VolcanicCountersResetJob
@@ -1242,7 +1243,7 @@ namespace Hecton8.World
 
         public bool TryUpsertAuthoredVent(uint sourceHash, double3 aup, float radius, float thrustPower, float maxHeight, float heatOutput, float timer01)
         {
-            if (_jobPending || !ResolveDataVault())
+            if (_fixedPipelineScheduled || !ResolveDataVault())
                 return false;
 
             NativeArray<VentStateDTO> vents = _ventHandle.Resolve(_dataVault);
@@ -1826,7 +1827,7 @@ namespace Hecton8.World
 
         private void TryApplyCsvOverrides()
         {
-            if (!_buffersReady || _jobPending || !ResolveDataVault())
+            if (!_buffersReady || _fixedPipelineScheduled || !ResolveDataVault())
                 return;
 
             if (string.IsNullOrEmpty(_csvPath))

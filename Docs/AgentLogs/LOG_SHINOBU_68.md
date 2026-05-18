@@ -74,6 +74,12 @@ Verification -> Post-P05 rerun: `dotnet build Hecton8.Core.csproj --no-restore -
   </DEAR_LIE>
 </SELF_AUDIT>
 
+## 2026-05-19 ABSOLUTE BOTTOM Procedural Bone GraphicsBuffer Cold Allocation Note
+
+What was wrong -> Double `GraphicsBuffer` allocation could still occur inside the first matrix upload path. That is not CPU skinning, but it is still a first-frame graphics allocation risk.
+
+What was done -> `EnsureGraphicsBuffers()` now runs immediately after successful Vault setup in Awake, OnEnable, and DataVault hot-swap. Late-frame upload remains `LockBufferForWrite` + `UnsafeUtility.MemCpy` + shader binding. Full build and post-polish csc remain unlaunched because CPU load reported 100%.
+
 ## 2026-05-19 ABSOLUTE BOTTOM DRS Cache-Gate Re-Audit
 
 What was wrong -> The previous absolute bottom of this duplicate-ID log was overwritten by procedural-bone material, even though the active user request is DRS/TAA/PostProcess/URP. A fresh source audit also found the survival post-process gate was functionally correct but architecturally sloppy: SSDO, half-res particles, and scooter volumetric shafts each polled `GlobalRegistry.ResolutionScaler` inside `AddRenderPasses`, multiplying service lookups per camera/render feature.
@@ -1946,3 +1952,52 @@ Verification -> Static forbidden scan over DRS/touched files found no `Screen.Se
   <COMPILE_GUARD>No direct UI concrete dependency, no Agent 44 concrete dependency, and no new DRS assembly reference to a sibling runtime. Visor changes are localized to existing renderer features plus a Visor-local helper.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Before: native world pixels or low-scale post effects still paying O(pass pixels/taps/render-list work). After: O(1) scalar DRS lowers internal pixel area by scale squared and survival post gates turn heavy feature cost into O(1) checks.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
+
+## 2026-05-19 FINAL BOTTOM Procedural Bone Matrix Blender Polish Guard
+
+What was wrong -> The current SHINOBU_68 request is procedural bone blending, but the duplicate-ID DRS lane kept overwriting status, rationale, and log tail. Re-audit found three real procedural defects: fallback/mock input time could freeze sine phase at zero, the cheap sine approximation was edge-biased near wrap boundaries, and GPU matrix upload was marked dirty after every solve without a matrix-state hash.
+
+What was done -> Kept edits inside `Assets/_Project/Scripts/Animation/FaunaProcedural`. `ProceduralBoneSolveJob` now treats input simulation time as authoritative only when finite and greater than zero, otherwise using the deterministic runtime simulation clock. The sine Dear Lie uses a bounded parabolic approximation with a non-finite guard. Jaw nlerp now guards finite/zero quaternion blends. Telemetry state hash now includes local simulation time, wave speed, amplitude, quality, active bone count, root position, computed count, and flags. Runtime uploads `float4x4` matrices to `GraphicsBuffer` only when buffer validity, upload count, or matrix-state hash changes; shader constants can republish without remapping matrix memory.
+
+Cinematic Cheats used -> Damped oscillator + cheap sine wave replaces clips, Animator, Transform hierarchy, and CPU skinning. Analytical jaw aim replaces iterative IK. Low-quality secondary rows collapse to parent/root matrices. Unchanged-state dirty hashing avoids wasting PCIe/UMA bandwidth on identical matrix pages.
+
+Exact Microseconds saved -> No profiler capture. Static savings: unchanged frames skip one contiguous `count * 64B` matrix copy and one `GraphicsBuffer.LockBufferForWrite` map/unmap pair. A full 150-bone leviathan skips up to 9.6KB of upload on unchanged state; 5,000 three-bone fish would skip up to 960KB of redundant upload if their page hash is stable. Unity profiler proof remains pending.
+
+Verification -> Static forbidden scan over `Assets/_Project/Scripts/Animation/FaunaProcedural` found no `Animator`, `SkinnedMeshRenderer`, `SetData`, `ComputeBuffer`, `Pack=1`, `double3`, Unity time reads, UnityEngine.Random, LINQ, `foreach`, `.Split`, `.ToArray`, or hot DTO properties. Runtime scoped csc PASS exists from pre-polish; post-polish csc was not launched because CPU load reported 100%, above the project gate. Full `dotnet build` was not launched.
+
+<SELF_AUDIT agent_id="SHINOBU_68" domain="PROCEDURAL_BONE_MATRIX_BLENDER" pass="POST_POLISH_GUARD_2026_05_19">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">No live skeletal binary dependency; emergency 5-bone aligned rig fallback remains.</TASK>
+    <TASK id="02" status="PASS">No Animator, SkinnedMeshRenderer, or Transform hierarchy path in procedural domain.</TASK>
+    <TASK id="03" status="PASS">Hot DTOs are public fields; no hot `{ get; set; }` accessors found.</TASK>
+    <TASK id="04" status="PASS">`BoneStateDTO` 80B and related DTOs are aligned; no `Pack=1`.</TASK>
+    <TASK id="05" status="PASS">`MockAiVelocitySignalJob` is deterministic and decoupled from Agent 61.</TASK>
+    <TASK id="06" status="PASS">Burst DHO spine solve uses velocity-scaled wave speed and guarded sine fake.</TASK>
+    <TASK id="07" status="PASS">Flat parent-to-child matrix chain resolves hierarchy without recursion.</TASK>
+    <TASK id="08" status="PASS">Final matrices upload via `GraphicsBuffer.LockBufferForWrite` + `UnsafeUtility.MemCpy`; unchanged matrix-state hash skips copy.</TASK>
+    <TASK id="09" status="PASS">Analytical jaw IK uses local target, quality gate, and finite nlerp guard.</TASK>
+    <TASK id="10" status="PASS">Damped oscillator controls wave speed/amplitude decay.</TASK>
+    <TASK id="11" status="PASS">`GlobalQualityWeight` controls cadence, amplitude, active secondary count, jaw, and harmonic gates continuously.</TASK>
+    <TASK id="12" status="PASS">Current input visibility gates solve; hidden rigs are O(1).</TASK>
+    <TASK id="13" status="PASS">No `double3` or absolute AUP enters the bone hierarchy.</TASK>
+    <TASK id="14" status="PASS">Trauma impulse injects procedural root flinch for 0.5s.</TASK>
+    <TASK id="15" status="PASS">Base scale applies at root and propagates through child matrices.</TASK>
+    <TASK id="16" status="PASS">Large Vault buffers use `UninitializedMemory` where correct; no private persistent native containers.</TASK>
+    <TASK id="17" status="PASS">300-frame telemetry ring records active skeletons, matrices, compute estimate, quality, state hash, flags, roots.</TASK>
+    <TASK id="18" status="PASS">Procedural Rig Tuner editor window exists.</TASK>
+    <TASK id="19" status="PASS">`skeletal_profiles.csv` path uses span/FNV/manual parsing; editor file read is cold-only.</TASK>
+    <TASK id="20" status="PASS">SceneView/runtime selected gizmo draws parent-child matrix lines.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>`BoneStateDTO`: offset0 `float4x4 LocalMatrix` 64B; offset64 `float Phase` 4B; offset68 `uint BoneHash` 4B; offset72 `ulong _pad0` 8B; total 80B, `80 % 16 = 0`. `ProceduralBoneCounter64` is explicit 64B false-sharing row. `ProceduralBoneRigDTO` 96B, `ProceduralBoneFrameInputDTO` 80B, tuning/mock/stats/telemetry rows 64B or aligned multiples.</STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>Below quality 0.3, update cadence moves toward low Hz, secondary rows collapse to parent/root matrices and reset state, jaw/harmonic gates stay off, amplitude is reduced through polynomial quality curves, and upload skips unchanged matrix-state hashes. Middle progressively restores secondary rows. High/Ultra evaluate full bones, jaw, harmonic detail, trauma response, and publish full GPU matrices.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Zero private persistent gameplay `NativeArray`, `NativeList`, or `NativeHashMap` fields. Vault IDs: 71680 Rigs, 71681 FrameInputs, 71682 ParentIndices, 71683 BindPoses, 71684 BoneStates, 71685 BoneMatrices, 71686 FrameStats, 71687 TelemetryRing, 71688 TelemetryCursor, 71689 Tuning, 71690 MockAiSignals.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>`MockAiVelocitySignalJob` -> `ProceduralBoneSolveJob` -> `ProceduralBoneTelemetryReduceJob`; job fields use `[NoAlias]`; output handle is `_pendingHandle`; completion occurs in late-frame readiness or forced lifecycle teardown only.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>`Hecton8.Animation.FaunaProcedural.asmdef` references Core/Core.Contracts/Core.Memory and Unity packages only; no direct AI, World, Physics, Graphics, UI, or sibling runtime dependency was added.</COMPILE_GUARD>
+  <THE_DEAR_LIE_CONFIRMATION>Before: Animator/Transform/CPU-skinned vertices would be O(bones + skinned vertices) and upload every frame. After: O(activeBones) Burst DHO matrix solve, O(1) hidden skip, secondary collapse under low quality, and O(changedMatrixPrefix) contiguous GPU matrix upload.</THE_DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
+## 2026-05-19 ABSOLUTE BOTTOM Procedural Bone GraphicsBuffer Cold Allocation Note
+
+What was wrong -> Double `GraphicsBuffer` allocation could still occur inside the first matrix upload path. That is not CPU skinning, but it is still a first-frame graphics allocation risk.
+
+What was done -> `EnsureGraphicsBuffers()` now runs immediately after successful Vault setup in Awake, OnEnable, and DataVault hot-swap. Late-frame upload remains `LockBufferForWrite` + `UnsafeUtility.MemCpy` + shader binding. Full build and post-polish csc remain unlaunched because CPU load reported 100%.

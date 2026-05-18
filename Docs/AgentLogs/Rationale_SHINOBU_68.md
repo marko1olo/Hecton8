@@ -1,41 +1,55 @@
 # Rationale_SHINOBU_68
 
-## 2026-05-19 DRS Lane Reassertion
+## 2026-05-19 Procedural Bone Lane Reassertion
 
-Problem: `CURRENT_BATCH.md` contains two `SHINOBU_68` XML blocks. The working status/rationale had drifted to the later procedural-bone duplicate even though the user's active request names DRS, TAA, post-processing, and URP Pipeline Assets.
-Solution: Use the first CLI-extracted `SHINOBU_68` block at line 1524 as authority for this turn: `DYNAMIC_RESOLUTION_AND_FSR_DIRECTOR`, 20 task lines. Restore status/rationale to DRS-only.
-Rejected Alternatives: Mixing procedural animation evidence into the DRS report or trusting chat memory.
-Scalability potential: Low/MX350 and Quest survive through lower internal render scale and cheap bilinear+TAA. Middle uses steadier smoothing and conservative post. High/Ultra keep visual overkill feature weights and FSR/TAA reconstruction.
-Hardware Impact: 0 us runtime; prevents wrong-domain edits and compile churn.
+Problem: `CURRENT_BATCH.md` contains duplicate `SHINOBU_68` XML blocks and disk memory was overwritten by the DRS lane. The active user request is procedural creature bone blending: Damped Harmonic Oscillator, flat `float4x4` output, direct `GraphicsBuffer`, GPU skinning, and low-quality secondary-bone shedding.
+Solution: Treat `role="PROCEDURAL_BONE_MATRIX_BLENDER"` as authority for this pass. Keep edits inside `Assets/_Project/Scripts/Animation/FaunaProcedural` and restore SHINOBU_68 status/rationale to procedural animation.
+Rejected Alternatives: Mixing DRS evidence into the animation report, editing render-scale code, or trusting chat memory over CLI-extracted XML.
+Scalability potential: Low keeps primary spine/static secondary collapse; Middle restores selected secondary rows; High restores jaw/harmonics; Ultra spends saved CPU on shader/GPU visual overkill, not CPU skinning.
+Hardware Impact: 0 us runtime; prevents wrong-domain compile churn.
 
-## 2026-05-19 TargetRenderScale And URP Asset Polish
+## 2026-05-19 Solver Determinism And Phase Polish
 
-Problem: Fixed display-resolution changes and abrupt render-scale jumps would reallocate buffers, damage VR comfort, and expose resolution loss.
-Solution: Keep DRS inside URP/dynamic-resolution APIs. Target scale is `lerp(minScale, 1.0, GlobalQualityWeight)` plus stress collapse, thermal collapse, panic drop, and EWMA smoothing for current scale. PC URP assets use FSR override sharpness; mobile/Quest stays bilinear/TAA to avoid compute overhead.
-Rejected Alternatives: `Screen.SetResolution`, `new RenderTexture`, binary low/high switches, and direct shader-specific dependencies.
-Scalability potential: Low clamps near 0.6 and increases Dear Lie reconstruction. Middle smooths toward 0.7+. High/Ultra preserve visual overkill features and richer shader globals while staying continuous.
-Hardware Impact: Avoids display-buffer reallocations; fill-rate saving is proportional to `1 - scale^2` once Unity runtime proof confirms active DRS.
+Problem: `ProceduralBoneSolveJob` accepted `input.SimulationTime == 0` as authoritative. In fallback/mock rigs, the seeded input stayed zero and could freeze sine phase even while `_simulationTime` advanced.
+Solution: Treat input simulation time as authoritative only when finite and greater than zero; otherwise use the runtime deterministic simulation clock passed into the job. The fallback path now moves without requiring Agent 61 to populate time on frame zero.
+Rejected Alternatives: Keeping default zero as live authority, or reading Unity `Time` inside the job.
+Scalability potential: Low/Middle/High/Ultra all keep deterministic phase progression without double precision or world-space AUP injection.
+Hardware Impact: No extra containers; one scalar predicate in the job.
 
-## 2026-05-19 ARM64 DTO And Vault Audit
+Problem: The previous `FastSin` was a low-order Taylor approximation over the wrapped `[-pi,pi]` domain. It is cheap but edge-biased and discontinuity-prone near the wrap boundary.
+Solution: Replace it with a bounded parabolic sine approximation plus non-finite guard. It remains a deterministic Dear Lie trig fake and avoids calling `math.sin` in the hot spine loop.
+Rejected Alternatives: Full transcendental sine per active bone, a managed LUT, or leaving NaN propagation possible for bad phases.
+Scalability potential: Low gets cheap stable wave motion; Ultra keeps harmonic overtones on top of the same stable base.
+Hardware Impact: Similar ALU class, less pathological edge error; no memory traffic increase.
 
-Problem: DRS state crosses DataVault, contracts, telemetry, and shader upload paths. Misaligned payloads would be hostile to Quest/ARM64.
-Solution: `DrsStateDTO` remains 16B (`float,float,uint,uint`). `ResolutionScaleState` is 64B explicit layout. `DrsTelemetryEntry` is 48B explicit layout. `ValidateAbiLayout()` checks sizes before runtime activation. Persistent memory is requested through Vault handles, not private NativeArray fields.
-Rejected Alternatives: `[StructLayout(Pack=1)]`, runtime bool fields in hot DTOs, private persistent NativeArray ownership.
-Scalability potential: Stable layout lets low/mobile and high/desktop consume the same state with different visual budgets.
-Hardware Impact: Avoids unaligned access traps and keeps hot state in compact cache-aligned rows.
+## 2026-05-19 GPU Upload Bandwidth Gate
 
-## 2026-05-19 Heavy Post-Processing Survival Gate
+Problem: Runtime marked `_gpuUploadDirty` after every completed solve, forcing a whole `float4x4` `GraphicsBuffer` copy even when telemetry/matrix state did not change. That violates the bandwidth-discipline mandate.
+Solution: Expand telemetry state hash to include matrix-affecting scalars: local simulation time, wave speed, amplitude, quality, active bone count, root position, computed count, and flags. Runtime now uploads matrices only when count, buffer validity, or state hash changes. Shader constants can be republished without remapping/copying matrix memory.
+Rejected Alternatives: Blind upload every frame, `GraphicsBuffer.SetData`, or per-bone managed dirty lists.
+Scalability potential: Low cadence and hidden/static rigs skip redundant copies; High/Ultra still upload every animated state change because the hash evolves with phase.
+Hardware Impact: Saves one contiguous matrix upload on unchanged frames; exact microseconds require Unity profiler/Frame Debugger proof.
 
-Problem: At survival render scale, keeping SSDO, half-res transparent composition, and scooter volumetric shafts enqueued wastes RenderGraph setup and shader cost when the renderer is already fighting for frame time.
-Solution: Add DRS survival gates to `HectonAbyssalSsdoFeature`, `HectonHalfResParticlesFeature`, and `HectonScooterVolumetricShaftsFeature`. Then remove duplicate per-feature `GlobalRegistry.ResolutionScaler` polling by centralizing the check in `HectonDrsRenderFeatureGate`, which caches the `IResolutionScalerService` contract and invalidates when state read fails.
-Rejected Alternatives: Per-camera registry lookup in each feature, blanket disabling effects by hardware tier, or hard-coded renderer asset variants.
-Scalability potential: Low/survival drops heavy post passes below 0.6001. Middle/High/Ultra keep passes available and are governed by global feature weights.
-Hardware Impact: Reduces redundant service lookups after cache warmup and skips render-pass enqueue under survival pressure.
+## 2026-05-19 NaN Guard And Jaw Nlerp Polish
 
-## 2026-05-19 Compile And Static Verification
+Problem: Quaternion nlerp normalized the blended quaternion without an explicit finite/zero guard. Degenerate IK direction or future bad input could produce non-finite orientation.
+Solution: Add finite and length-squared guard before `rsqrt`; fallback to sanitized source rotation when the blend degenerates.
+Rejected Alternatives: Trusting `LookRotationSafe` alone or allowing the later matrix finite guard to clean up after corrupt local rotation.
+Scalability potential: All tiers get same failure containment; lower tiers often skip jaw IK entirely via quality gate.
+Hardware Impact: One guard only on jaw blend path, not on every secondary collapsed bone.
 
-Problem: Full project build would be noisy and expensive in a dirty 20-agent tree, but edited assemblies still need evidence.
-Solution: Run scoped Roslyn csc only where needed. `Hecton8.Graphics.Scalability.rsp` passes. `Hecton8.Core.Contracts.rsp` plus `DrsContracts.cs` passes. `Hecton8.Core.rsp` with the new Visor helper reaches a pre-existing compile wall in unrelated construction/localization/netcode/geyser dependencies and emits no new DRS/Visor helper error.
-Rejected Alternatives: Full `dotnet build`, ignoring compile evidence, or fixing unrelated owner domains.
-Scalability potential: Static DRS lane remains decoupled; unresolved dependencies are outside DRS contract boundaries.
-Hardware Impact: Developer machine protected; no full rebuild churn.
+## 2026-05-19 GraphicsBuffer Cold Allocation Polish
+
+Problem: Double-buffered `GraphicsBuffer` allocation was lazy in the first upload path. That keeps CPU skinning out, but first matrix publish could still pay managed/native graphics allocation cost in a gameplay frame.
+Solution: Call `EnsureGraphicsBuffers()` after successful Vault setup in Awake, OnEnable, and DataVault hot-swap. LateFrame upload now normally performs only `LockBufferForWrite`, `MemCpy`, unlock, and shader binding.
+Rejected Alternatives: Keeping first-upload lazy allocation or using `SetData`.
+Scalability potential: Low-tier avoids a first visible hitch; High/Ultra keep the same double-buffered GPU upload path.
+Hardware Impact: Moves allocation from first publish to lifecycle/cold path; exact hitch reduction requires Unity profiler proof.
+
+## 2026-05-19 Verification Position
+
+Problem: After polish, runtime compile evidence is stale, but the user explicitly forbids unnecessary builds and AGENTS forbids compile when CPU >50%.
+Solution: Static forbidden scan passed after polish. CPU check reported 100%, so post-polish csc and full `dotnet build` were not launched.
+Rejected Alternatives: Violating CPU/build gate for a scoped compile, or claiming stale compile as current proof.
+Scalability potential: No runtime behavior change from this decision.
+Hardware Impact: Developer machine protected under parallel-agent load.

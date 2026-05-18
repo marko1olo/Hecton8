@@ -697,6 +697,18 @@ Scalability potential: Low L0 is unchanged. Middle/High/Ultra get more stable di
 
 Hardware Impact: CPU cost unchanged except for gated work above; visual stability improves and reduces blackbox fault risk.
 
+## Decision 60 - Quality Fallback Must Remain Continuous
+
+Problem: `ResolveQualityWeight` consumed `HomeostasisBrain.GlobalQualityWeight`, but its non-finite fallback used a binary `Mx350/Low ? 0.1 : 1.0` branch. That violates the project rule that quality selection must be a scalar continuum, even when the primary quality source is invalid.
+
+Solution: Map `HectonQualityTier` to a normalized scalar from Low/Mx350/Mid/High/Ultra, run it through `Smooth01`, then `math.lerp(0.1f, 1f, curved)`. The fallback is still cold/error-path logic, but it feeds the same continuous math as the normal `GlobalQualityWeight`.
+
+Rejected Alternatives: Keeping the branch was rejected because it creates a hidden low/ultra dichotomy. Returning a fixed 0.5 was rejected because it ignores boot-time hardware facts.
+
+Scalability potential: Weak devices fall back near 0.1-0.24, middle devices near the midpoint, and high/ultra near 0.84-1.0 without changing solver code paths.
+
+Hardware Impact: Negligible runtime cost; prevents an invalid quality source from forcing a full 32^3 L2 solve on mid/high-class hardware by accident.
+
 ## Decision 56 - Stale-Route Patch Compile Wall Drift
 
 Problem: After stale-route invalidation, the Core build still fails outside SHINOBU.

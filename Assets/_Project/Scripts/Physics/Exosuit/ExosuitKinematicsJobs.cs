@@ -549,11 +549,12 @@ namespace Hecton8.Physics.Exosuit
             if (probePenetration <= 0.0f)
                 return;
 
-            correction += sample.Normal * probePenetration;
+            float3 safeNormal = NormalizeWithFallback(sample.Normal, strongestNormal);
+            correction += safeNormal * probePenetration;
             if (probePenetration > strongestPush)
             {
                 strongestPush = probePenetration;
-                strongestNormal = sample.Normal;
+                strongestNormal = safeNormal;
             }
         }
 

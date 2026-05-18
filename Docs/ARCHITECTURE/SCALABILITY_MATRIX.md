@@ -158,6 +158,8 @@ The oscilloscope copy path also rejects invalid frame samples after both raw and
 
 The human tuning facade is backed by `BufferID.ShinobuScalabilityTunerState`, not editor-local truth. `ScalabilityTuningDTO` is 16 bytes: offset 0 `TargetFrameMs`, offset 4 `EmergencyThreshold`, offset 8 `HysteresisReleaseFrames`, offset 12 `Flags`. Hot runtime mirrors these values into scalar fields after a tuner/CSV change.
 
+Tuner values are finite-sanitized at every facade boundary. Invalid target frame time falls back to the contract target, invalid emergency threshold falls back to the default threshold, and invalid forced quality disables the override instead of feeding NaN into `GlobalQualityWeight`.
+
 Frame-time samples that are not finite and positive are not accepted as proof of headroom. The dictator falls back to target frame time for controller, DTO, and DRS publication rather than allowing cleared `0ms` state to accelerate recovery.
 
 Deterministic stochastic decimation has exact endpoints: `GlobalQualityWeight <= 0` executes no optional stochastic work, `>= 1` executes all optional stochastic work, and intermediate weights use strict probability comparison.

@@ -68,6 +68,9 @@ namespace Hecton8.AI.Ecosystem
         private const string CsvRelativePath = "symbiosis_links.csv";
         private const string CsvPrecomputedRelativePath = "Data/Precomputed/symbiosis_links.csv";
         private const string LegacyLinksFile = "symbiosis_chemical_links.h8bin";
+        private const uint LegacyLinksMagicLittleEndian = 0x4C323653u; // S62L
+        private const uint LegacyLinksMagicBigEndian = 0x42323653u; // S62B
+        private const int LegacyLinksHeaderBytes = 16;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_62.bin";
         private const string DumpSymbiosisRelativePath = "Docs/AgentLogs/Dump_SYMBIOSIS.bin";
         private const ulong DumpMagic = 0x5348594D42493632UL; // SHYMBI62
@@ -730,16 +733,18 @@ namespace Hecton8.AI.Ecosystem
                     return false;
 
                 int stride = UnsafeUtility.SizeOf<SymbiosisChemicalLinkDTO>();
-                int count = math.min(links.Length, bytesRead / stride);
+                ResolveLegacyLinkEncoding(scratch, bytesRead, out bool bigEndian, out int payloadOffset);
+                int payloadBytes = math.max(0, bytesRead - payloadOffset);
+                int count = math.min(links.Length, payloadBytes / stride);
                 for (int i = 0; i < count; i++)
                 {
-                    int offset = i * stride;
+                    int offset = payloadOffset + (i * stride);
                     links[i] = new SymbiosisChemicalLinkDTO
                     {
-                        FloraHash = ReadUIntLE(scratch, offset),
-                        FaunaHash = ReadUIntLE(scratch, offset + 4),
-                        ChemicalTransferRate = ReadFloatLE(scratch, offset + 8, 0.01f),
-                        Flags = ReadUIntLE(scratch, offset + 12)
+                        FloraHash = ReadUInt32(scratch, offset, bigEndian),
+                        FaunaHash = ReadUInt32(scratch, offset + 4, bigEndian),
+                        ChemicalTransferRate = ReadFloat32(scratch, offset + 8, bigEndian, 0.01f),
+                        Flags = ReadUInt32(scratch, offset + 12, bigEndian)
                     };
                 }
 
@@ -1317,20 +1322,42 @@ namespace Hecton8.AI.Ecosystem
             return hash;
         }
 
-        private static uint ReadUIntLE(NativeArray<byte> bytes, int offset)
+        private static void ResolveLegacyLinkEncoding(NativeArray<byte> bytes, int bytesRead, out bool bigEndian, out int payloadOffset)
+        {
+            bigEndian = false;
+            payloadOffset = 0;
+            if (!bytes.IsCreated || bytesRead < LegacyLinksHeaderBytes)
+                return;
+
+            uint marker = ReadUInt32(bytes, 0, false);
+            if (marker == LegacyLinksMagicLittleEndian)
+            {
+                payloadOffset = LegacyLinksHeaderBytes;
+                return;
+            }
+
+            if (marker == LegacyLinksMagicBigEndian)
+            {
+                bigEndian = true;
+                payloadOffset = LegacyLinksHeaderBytes;
+            }
+        }
+
+        private static uint ReadUInt32(NativeArray<byte> bytes, int offset, bool bigEndian)
         {
             if (!bytes.IsCreated || offset < 0 || offset > bytes.Length - 4)
                 return 0u;
 
-            return (uint)(bytes[offset] |
-                          (bytes[offset + 1] << 8) |
-                          (bytes[offset + 2] << 16) |
-                          (bytes[offset + 3] << 24));
+            uint raw = (uint)(bytes[offset] |
+                              (bytes[offset + 1] << 8) |
+                              (bytes[offset + 2] << 16) |
+                              (bytes[offset + 3] << 24));
+            return bigEndian ? math.reversebytes(raw) : raw;
         }
 
-        private static float ReadFloatLE(NativeArray<byte> bytes, int offset, float fallback)
+        private static float ReadFloat32(NativeArray<byte> bytes, int offset, bool bigEndian, float fallback)
         {
-            uint raw = ReadUIntLE(bytes, offset);
+            uint raw = ReadUInt32(bytes, offset, bigEndian);
             float value = math.asfloat(raw);
             return math.isfinite(value) ? value : fallback;
         }

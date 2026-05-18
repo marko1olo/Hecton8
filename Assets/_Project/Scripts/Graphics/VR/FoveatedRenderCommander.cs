@@ -139,7 +139,7 @@ namespace Hecton8.Graphics.VR
             UiExempted = 3
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = TelemetryRecordSizeBytes)]
+        [StructLayout(LayoutKind.Sequential, Size = TelemetryRecordSizeBytes)]
         private struct FoveatedRenderTelemetryEntry
         {
             public uint Frame;
@@ -161,6 +161,7 @@ namespace Hecton8.Graphics.VR
             public byte ThermalSeverity;
             public ushort DisplayCount;
             public uint VaultGeneration;
+            private ulong _pad0;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

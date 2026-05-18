@@ -390,4 +390,4 @@ Exact microseconds saved:
 Verification:
 - Runtime banned-pattern scan: PASS.
 - Touched runtime files pass `git diff --check`.
-- Roslyn compile retry skipped by CPU gate: latest probe reported CPU 97%, `dotnet/csc` false.
+- Roslyn compile retry skipped by CPU gate: latest probe reported CPU 100%, `dotnet/csc` true.

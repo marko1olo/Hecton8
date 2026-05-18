@@ -29,10 +29,10 @@ namespace Hecton8.SaveSystem
 
     [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Size = 32)]
-    internal struct SectorEntry
+    internal struct SectorEntryDTO
     {
-        public long SectorHash;
-        public long ByteOffset;
+        public ulong SectorHash;
+        public ulong ByteOffset;
         public int CompressedSize;
         public int DecompressedSize;
         public uint Checksum;
@@ -234,6 +234,7 @@ namespace Hecton8.SaveSystem
         internal const uint Lz4BlockFlagCompressed = 1u;
         internal const uint Lz4BlockFlagRaw = 1u << 1;
         internal const uint Lz4BlockFlagModPayload = 1u << 2;
+        internal const uint Lz4BlockFlagRle = 1u << 3;
         internal const uint TelemetryFlagHashOverBudget = 1u << 0;
         internal const uint TelemetryFlagIoException = 1u << 1;
         internal const uint TelemetryFlagCrcFailure = 1u << 2;
@@ -502,7 +503,7 @@ namespace Hecton8.SaveSystem
                 TimestampTicks = 0UL,
                 RootHashLo = 0UL,
                 RootHashHi = 0UL,
-                SectorEntryBytes = (uint)UnsafeUtility.SizeOf<SectorEntry>(),
+                SectorEntryBytes = (uint)UnsafeUtility.SizeOf<SectorEntryDTO>(),
                 MerkleNodeBytes = (uint)UnsafeUtility.SizeOf<MerkleNodeDTO>(),
                 Flags = 1u,
                 Checksum = 0u,
@@ -1127,8 +1128,10 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                uint storageFlags = header.Flags & (Lz4BlockFlagRaw | Lz4BlockFlagCompressed);
-                if (storageFlags != Lz4BlockFlagRaw && storageFlags != Lz4BlockFlagCompressed)
+                uint storageFlags = header.Flags & (Lz4BlockFlagRaw | Lz4BlockFlagCompressed | Lz4BlockFlagRle);
+                if (storageFlags != Lz4BlockFlagRaw &&
+                    storageFlags != Lz4BlockFlagCompressed &&
+                    storageFlags != Lz4BlockFlagRle)
                     return false;
 
                 uint crc = 0xFFFFFFFFu;
@@ -1711,13 +1714,30 @@ namespace Hecton8.SaveSystem
                         break;
                     }
 
-                    ClearHashTable();
-                    int compressedBytes = rawBytes >= SaveDeltaCompression.MinimumLz4PayloadBytes
-                        ? CompressBlock(blockStart, rawBytes, payloadOffset, Destination.Length - payloadOffset)
-                        : -1;
+                    int destinationCapacity = Destination.Length - payloadOffset;
+                    int rleBytes = CompressRleBlock(blockStart, rawBytes, payloadOffset, destinationCapacity);
+                    uint storageFlag = Lz4BlockFlagRaw;
+                    int storedBytes = rawBytes;
+                    bool useRaw = true;
 
-                    bool useRaw = compressedBytes <= 0 || compressedBytes >= rawBytes;
-                    int storedBytes = useRaw ? rawBytes : compressedBytes;
+                    if (rleBytes > 0 && rleBytes < rawBytes)
+                    {
+                        storedBytes = rleBytes;
+                        storageFlag = Lz4BlockFlagRle;
+                        useRaw = false;
+                    }
+                    else
+                    {
+                        ClearHashTable();
+                        int compressedBytes = rawBytes >= SaveDeltaCompression.MinimumLz4PayloadBytes
+                            ? CompressBlock(blockStart, rawBytes, payloadOffset, destinationCapacity)
+                            : -1;
+
+                        useRaw = compressedBytes <= 0 || compressedBytes >= rawBytes;
+                        storedBytes = useRaw ? rawBytes : compressedBytes;
+                        storageFlag = useRaw ? Lz4BlockFlagRaw : Lz4BlockFlagCompressed;
+                    }
+
                     if (payloadOffset > Destination.Length - storedBytes)
                     {
                         failed = true;
@@ -1737,7 +1757,7 @@ namespace Hecton8.SaveSystem
                         StoredBytes = storedBytes,
                         SourceOffsetBytes = blockStart,
                         Crc32 = crc,
-                        Flags = useRaw ? Lz4BlockFlagRaw : Lz4BlockFlagCompressed,
+                        Flags = storageFlag,
                         _pad0 = 0u
                     };
 
@@ -1773,6 +1793,34 @@ namespace Hecton8.SaveSystem
             {
                 for (int i = 0; i < HashTable.Length; i++)
                     HashTable[i] = -1;
+            }
+
+            private int CompressRleBlock(int sourceOffset, int sourceLength, int destinationOffset, int destinationCapacity)
+            {
+                int read = 0;
+                int write = 0;
+                while (read < sourceLength)
+                {
+                    byte value = Source[sourceOffset + read];
+                    int run = 1;
+                    while (read + run < sourceLength &&
+                           run < ushort.MaxValue &&
+                           Source[sourceOffset + read + run] == value)
+                    {
+                        run++;
+                    }
+
+                    if (destinationCapacity - write < 3)
+                        return -1;
+
+                    Destination[destinationOffset + write++] = value;
+                    ushort run16 = (ushort)run;
+                    Destination[destinationOffset + write++] = unchecked((byte)run16);
+                    Destination[destinationOffset + write++] = unchecked((byte)(run16 >> 8));
+                    read += run;
+                }
+
+                return write > 0 && write < sourceLength ? write : -1;
             }
 
             private int CompressBlock(int sourceOffset, int sourceLength, int destinationOffset, int destinationCapacity)

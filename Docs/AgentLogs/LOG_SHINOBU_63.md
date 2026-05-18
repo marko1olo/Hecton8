@@ -526,3 +526,49 @@ Exact Microseconds saved:
 Verification:
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` still fails outside SHINOBU: `SaveBinaryPayloadCodec.cs` missing `DataArchaeologyDiscoveryBitMask`, and two visor render features missing `HectonDrsRenderFeatureGate`.
 - No SHINOBU runtime diagnostics were reported in that build.
+
+## 2026-05-19 - Interior GI Low-Tier ALU And AUP Hash Hardening
+
+What was wrong:
+- The continuous quality weights collapsed GI to L0 at low quality, but hot SH helpers still spent work on zeroed L1/L2 paths.
+- `HashAup` cast absolute double AUP through `float`, reintroducing large-world precision loss in root/source room identity.
+- Directional source SH multiplied by source gain twice, increasing HDR emergency/flashlight coefficient spike risk.
+
+What was done:
+- Re-extracted the later `CURRENT_BATCH.md` `SHINOBU_63` block at line 2388 and continued GI-only despite stale Dynamic Trade log contamination.
+- Replaced float AUP hashing with 32m quantized double-to-long hashing over low/high halves.
+- Gated `AddScaled` and `AddDirectional` so L1/L2 writes are skipped when `GlobalQualityWeight` has zeroed `DirectionalWeight`/`L2Weight`.
+- Changed `PackTexture` to skip the L1 `sqrt` when L1 energy is zero.
+- Linearized directional SH source gain so L0/L1/L2 share the same radiance scale.
+- Updated `Status_SHINOBU_63.md`, `Rationale_SHINOBU_63.md`, and `SelfAudit_SHINOBU_63_GI.xml`.
+
+Cinematic Cheats used:
+- Unchanged Dear Lie: cellular SH diffusion, SDF/wall-bit transfer gates, water attenuation, emergency/flora/flashlight source injection, and RGBAHalf 3D texture handoff to shaders.
+
+Exact Microseconds saved:
+- Estimated 20-80 us per low-quality 12-16 resolution solve from avoiding dead L1/L2 basis writes and normalization.
+- Additional small upload-packing saving from zero-energy `sqrt` bypass.
+- AUP hash repair is correctness/hygiene, not steady-frame savings.
+
+Verification:
+- Static source inspection confirms no old float-cast AUP hash path and no quadratic `gain * l1Weight` / `gain * l2Weight` SH scaling.
+- `dotnet build` was not launched by explicit user order.
+
+## 2026-05-19 - Interior GI Continuous Quality Fallback Repair
+
+What was wrong:
+- `ResolveQualityWeight` used `GlobalQualityWeight` normally, but the non-finite fallback was still a binary `Mx350/Low` versus all-other selection.
+
+What was done:
+- Replaced the binary fallback with `ResolveFallbackQualityWeight`, mapping `HectonQualityTier` into a scalar, applying `Smooth01`, and feeding `math.lerp(0.1f, 1f, curved)`.
+- Updated status, rationale, and GI self-audit.
+
+Cinematic Cheats used:
+- Same SH cellular automaton GI fake. This change only repairs the quality-control input path.
+
+Exact Microseconds saved:
+- No direct steady-frame saving. It prevents invalid quality telemetry from accidentally selecting full high-tier work.
+
+Verification:
+- Static scan target now shows no Mx350/Low ternary fallback in `InteriorGIProbeVolumeRuntime.cs`.
+- `dotnet build` was not launched by explicit user order.

@@ -99,7 +99,7 @@ These are new enough and important enough to stay active.
 | `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior Marketing/EventBus/counter correction boundary for this file. |
 | `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior R4/Archivarius/forensic long-tail correction boundary. |
 | `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior report-vault/status/navigation correction boundary. |
-| `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior R15-navigation supersession boundary; read after R23/R22/R21/R20/R19/R18/R17. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior R15-navigation supersession boundary; read after R24/R23/R22/R21/R20/R19/R18/R17. |
 | `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Active entrypoint read-order correction boundary for this file. |
 | `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Batch008 binary hygiene correction boundary for this file. |
 | `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Generic report boundary and proof-label cleanup boundary. |

@@ -167,4 +167,4 @@ Status law: PENDING VERIFICATION until Unity Editor/Play Mode/profiler confirms 
 - [x] DivCeil overflow repair - group count calculation now uses `1 + (value - 1) / divisor`, avoiding `value + divisor - 1` overflow.
 - [x] Static scan - runtime banned-pattern scan passed after compute-boundary repair.
 - [x] Targeted diff hygiene - touched runtime files pass `git diff --check`.
-- [ ] Re-verification - isolated Roslyn compile skipped by CPU gate: latest probe reported CPU 97%, `dotnet/csc` false.
+- [ ] Re-verification - isolated Roslyn compile skipped by CPU gate: latest probe reported CPU 100%, `dotnet/csc` true.

@@ -1745,8 +1745,10 @@ namespace Hecton8.Optimization
 
         private float ResolveAdaptiveTtlSeconds(uint assetHash, byte flags)
         {
-            float quality = ResolveGlobalQualityWeight();
-            float curve = quality * quality * (3f - 2f * quality);
+            float quality = math.saturate(ResolveGlobalQualityWeight());
+            float normalizedQuality = math.saturate((quality - 0.3f) * math.rcp(0.7f));
+            float polynomial = normalizedQuality * normalizedQuality * (3f - 2f * normalizedQuality);
+            float curve = math.step(0.3f, quality) * polynomial;
             float highTtl = math.clamp(baseAddressableTtlSeconds, MinimumAdaptiveTtlSeconds, DefaultHighEndTtlSeconds);
             float ttl = math.lerp(MinimumAdaptiveTtlSeconds, highTtl, curve);
 

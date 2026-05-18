@@ -58,7 +58,9 @@ namespace Hecton8.Visor
         private VaultBufferHandle<byte> _csvBytesHandle;
         private VaultBufferHandle<byte> _binaryProbeBytesHandle;
         private VaultBufferHandle<int> _nanFlagsHandle;
-        private GraphicsBuffer _gpuGlobalsBuffer;
+        private GraphicsBuffer _gpuGlobalsBufferA;
+        private GraphicsBuffer _gpuGlobalsBufferB;
+        private GraphicsBuffer _activeGpuGlobalsBuffer;
         private DiegeticVisorLensGpuGlobalsDTO _lastGpuGlobals;
         private DiegeticVisorLensGpuGlobalsDTO _uploadedGpuGlobals;
         private JobHandle _scheduledHandle;
@@ -78,6 +80,7 @@ namespace Hecton8.Visor
         private float _pendingWipeCommand01;
         private uint _lastShaderUpdateComputeTimeNs;
         private uint _frameCounter;
+        private int _gpuGlobalsWriteIndex;
         private ushort _breachSequence;
         private bool _hasScheduledWork;
         private bool _hasLastCameraRotation;
@@ -93,13 +96,13 @@ namespace Hecton8.Visor
         private bool _hasPendingEnvironment;
         private bool _pendingMockReset;
 
-        public ref VisorStateDTO GetStateRef()
+        private ref VisorStateDTO GetStateRefUnsafe()
         {
             EnsureNativeState();
             return ref _stateHandle.GetElementAsRef(EnsureVault(), 0);
         }
 
-        public ref VisorLensTuningDTO GetTuningRef()
+        private ref VisorLensTuningDTO GetTuningRefUnsafe()
         {
             EnsureNativeState();
             return ref _tuningHandle.GetElementAsRef(EnsureVault(), 0);
@@ -134,7 +137,7 @@ namespace Hecton8.Visor
             if (_hasScheduledWork)
                 return false;
 
-            ref VisorStateDTO stateRef = ref _stateHandle.GetElementAsRef(EnsureVault(), 0);
+            ref VisorStateDTO stateRef = ref GetStateRefUnsafe();
             stateRef.CondensationLevel = Sanitize01(state.CondensationLevel);
             stateRef.WaterDropletIntensity = Sanitize01(state.WaterDropletIntensity);
             stateRef.CrackSeverity = Sanitize01(state.CrackSeverity);
@@ -152,7 +155,7 @@ namespace Hecton8.Visor
             if (_hasScheduledWork)
                 return false;
 
-            _tuningHandle.GetElementAsRef(EnsureVault(), 0) = tuning;
+            GetTuningRefUnsafe() = tuning;
             _forceImmediateSimulation = true;
             return true;
         }
@@ -572,17 +575,19 @@ namespace Hecton8.Visor
                 PublishGpuGlobalVectors(in _lastGpuGlobals);
                 if (bufferAvailable)
                 {
-                    NativeArray<DiegeticVisorLensGpuGlobalsDTO> mapped = _gpuGlobalsBuffer.LockBufferForWrite<DiegeticVisorLensGpuGlobalsDTO>(0, 1);
+                    GraphicsBuffer writeBuffer = ResolveNextGpuGlobalsBuffer();
+                    NativeArray<DiegeticVisorLensGpuGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<DiegeticVisorLensGpuGlobalsDTO>(0, 1);
                     mapped[0] = _lastGpuGlobals;
-                    _gpuGlobalsBuffer.UnlockBufferAfterWrite<DiegeticVisorLensGpuGlobalsDTO>(1);
+                    writeBuffer.UnlockBufferAfterWrite<DiegeticVisorLensGpuGlobalsDTO>(1);
+                    _activeGpuGlobalsBuffer = writeBuffer;
                 }
 
                 _uploadedGpuGlobals = _lastGpuGlobals;
                 _hasUploadedGpuGlobals = true;
             }
 
-            if (bufferAvailable)
-                Shader.SetGlobalConstantBuffer(GpuGlobalsNameId, _gpuGlobalsBuffer, 0, GpuGlobalsStrideBytes);
+            if (bufferAvailable && _activeGpuGlobalsBuffer != null && _activeGpuGlobalsBuffer.IsValid())
+                Shader.SetGlobalConstantBuffer(GpuGlobalsNameId, _activeGpuGlobalsBuffer, 0, GpuGlobalsStrideBytes);
 
             long uploadTicks = System.Diagnostics.Stopwatch.GetTimestamp() - uploadStartTicks;
             _lastShaderUpdateComputeTimeNs = TicksToNanoseconds(uploadTicks);
@@ -597,25 +602,32 @@ namespace Hecton8.Visor
                 return false;
             }
 
-            if (_gpuGlobalsBuffer != null && _gpuGlobalsBuffer.IsValid())
+            if (_gpuGlobalsBufferA != null && _gpuGlobalsBufferA.IsValid() &&
+                _gpuGlobalsBufferB != null && _gpuGlobalsBufferB.IsValid())
                 return true;
 
-            _gpuGlobalsBuffer?.Release();
-            // COLD ALLOC: GraphicsBuffer[1] - visor lens scalar CBuffer uploaded by DiegeticVisorLensRuntime - owner: DiegeticVisorLensRuntime
-            _gpuGlobalsBuffer = new GraphicsBuffer(
-                GraphicsBuffer.Target.Constant,
-                GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                1,
-                GpuGlobalsStrideBytes);
+            ReleaseGpuBuffer();
+            // COLD ALLOC: GraphicsBuffer[2] - ping-pong visor lens scalar CBuffers - owner: DiegeticVisorLensRuntime
+            _gpuGlobalsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GpuGlobalsStrideBytes);
+            _gpuGlobalsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GpuGlobalsStrideBytes);
             _hasUploadedGpuGlobals = false;
-            return _gpuGlobalsBuffer.IsValid();
+            return _gpuGlobalsBufferA.IsValid() && _gpuGlobalsBufferB.IsValid();
         }
 
         private void ReleaseGpuBuffer()
         {
-            _gpuGlobalsBuffer?.Release();
-            _gpuGlobalsBuffer = null;
+            _gpuGlobalsBufferA?.Release();
+            _gpuGlobalsBufferB?.Release();
+            _gpuGlobalsBufferA = null;
+            _gpuGlobalsBufferB = null;
+            _activeGpuGlobalsBuffer = null;
             _hasUploadedGpuGlobals = false;
+        }
+
+        private GraphicsBuffer ResolveNextGpuGlobalsBuffer()
+        {
+            _gpuGlobalsWriteIndex ^= 1;
+            return _gpuGlobalsWriteIndex == 0 ? _gpuGlobalsBufferA : _gpuGlobalsBufferB;
         }
 
         private static void PublishGpuGlobalVectors(in DiegeticVisorLensGpuGlobalsDTO globals)
@@ -632,12 +644,17 @@ namespace Hecton8.Visor
             globals.Params0.w = 1f;
             globals.Params1.x = 1f;
             PublishGpuGlobalVectors(in globals);
-            if (_gpuGlobalsBuffer != null && _gpuGlobalsBuffer.IsValid())
+            if (_gpuGlobalsBufferA != null && _gpuGlobalsBufferA.IsValid() &&
+                _gpuGlobalsBufferB != null && _gpuGlobalsBufferB.IsValid())
             {
-                NativeArray<DiegeticVisorLensGpuGlobalsDTO> mapped = _gpuGlobalsBuffer.LockBufferForWrite<DiegeticVisorLensGpuGlobalsDTO>(0, 1);
-                mapped[0] = globals;
-                _gpuGlobalsBuffer.UnlockBufferAfterWrite<DiegeticVisorLensGpuGlobalsDTO>(1);
-                Shader.SetGlobalConstantBuffer(GpuGlobalsNameId, _gpuGlobalsBuffer, 0, GpuGlobalsStrideBytes);
+                NativeArray<DiegeticVisorLensGpuGlobalsDTO> mappedA = _gpuGlobalsBufferA.LockBufferForWrite<DiegeticVisorLensGpuGlobalsDTO>(0, 1);
+                mappedA[0] = globals;
+                _gpuGlobalsBufferA.UnlockBufferAfterWrite<DiegeticVisorLensGpuGlobalsDTO>(1);
+                NativeArray<DiegeticVisorLensGpuGlobalsDTO> mappedB = _gpuGlobalsBufferB.LockBufferForWrite<DiegeticVisorLensGpuGlobalsDTO>(0, 1);
+                mappedB[0] = globals;
+                _gpuGlobalsBufferB.UnlockBufferAfterWrite<DiegeticVisorLensGpuGlobalsDTO>(1);
+                _activeGpuGlobalsBuffer = _gpuGlobalsBufferA;
+                Shader.SetGlobalConstantBuffer(GpuGlobalsNameId, _activeGpuGlobalsBuffer, 0, GpuGlobalsStrideBytes);
             }
 
             _uploadedGpuGlobals = globals;

@@ -907,6 +907,7 @@ namespace Hecton8.Core.Memory
         ConstructionBuilderTuning = 70197,
         ConstructionBuilderTelemetry = 70198,
         ConstructionBuilderBounds = 70199,
+        ConstructionBuilderOccupancy = 70200,
         ConstructionPreviewWrite = 70320,
         ConstructionPreviewBuild = 70321,
         ConstructionPreviewMatrices = 70322,

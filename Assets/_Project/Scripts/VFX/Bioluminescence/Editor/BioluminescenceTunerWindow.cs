@@ -6,7 +6,7 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Hecton8.Editor
+namespace Hecton8.VFX.Bioluminescence.Editor
 {
     public sealed class BioluminescenceTunerWindow : EditorWindow
     {
@@ -258,9 +258,9 @@ namespace Hecton8.Editor
             return new Color(rgb.x, rgb.y, rgb.z, alpha);
         }
 
-        private static string FormatSpeciesHash(uint speciesHash)
+        private static string FormatSpeciesHash(uint hash)
         {
-            return "0x" + speciesHash.ToString("X8");
+            return "0x" + hash.ToString("X8");
         }
 
         private static double3 ResolveSceneAup()
@@ -268,8 +268,8 @@ namespace Hecton8.Editor
             SceneView view = SceneView.lastActiveSceneView;
             if (view != null && view.camera != null)
             {
-                Vector3 position = view.camera.transform.position;
-                return new double3(position.x, position.y, position.z);
+                Vector3 p = view.camera.transform.position;
+                return new double3(p.x, p.y, p.z);
             }
 
             return double3.zero;

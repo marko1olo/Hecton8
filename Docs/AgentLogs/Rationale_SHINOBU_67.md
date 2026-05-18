@@ -1,7 +1,7 @@
 # SHINOBU_67 Rationale - Modular Base Construction Validator
 
 Date: 2026-05-19
-Status: PENDING VERIFICATION - STRICT H-PHI PREVIEW PURGE ADDED, BUILD NOT RERUN BY USER ORDER
+Status: PENDING VERIFICATION - VAULT OCCUPANCY HASH TABLE ADDED, BUILD NOT RERUN BY USER ORDER
 
 ## Session Boundary
 
@@ -128,6 +128,12 @@ Solution: Removed `_writeInstances`, `_buildInstances`, and `_matrices` fields f
 Rejected Alternatives: Treating private aliases as harmless because Vault owns backing memory, blocking the main thread with a mid-frame forced Complete for preview every frame, relying on undocumented DataVault non-compaction, or using a binary low/high quality switch.
 Scalability potential: Low tier processes one preview packet/matrix and one SDF probe; middle/high/ultra increase preview packet capacity and SDF evidence through the same Vault lanes and curve without adding memory owners.
 Hardware Impact: Removes three private native-array field surfaces and one Vault-compaction race from the construction preview path. Measured profiler proof remains absent; expected frame delta is small, but the ownership and relocation risk are materially reduced on constrained devices.
+
+Problem: Live occupied-cell rejection was still a direct `ConstructionManager.SpawnedModules` list comparison after the no-physics pass. It was zero-allocation and AUP-local, but it did not leave an unmanaged Vault occupancy surface for the validator and did not meet the spirit of Task 02/06 grid hash validation.
+Solution: Added `BufferID.ConstructionBuilderOccupancy`, `OccupancyHashTableCapacity=4096`, and frame-stamped fixed hash helpers over `NativeArray<BaseModuleOccupancyDTO>`. `PlayerBuilder.TryFindOccupiedConstructionGridCell` now resolves the Vault table, hydrates module grid cells into it with `TryInsertOccupancyCell`, and rejects the candidate through `TryFindOccupiedCell`. The old direct list compare remains only as a fallback if the Vault is unavailable or the fixed table overflows.
+Rejected Alternatives: Private persistent `NativeParallelMultiHashMap` in PlayerBuilder was rejected by the Vault law. Per-frame `NativeParallelMultiHashMap` allocation was rejected by Zero-GC. Reintroducing collider overlap was rejected because it does not solve non-collider mountain/base clipping.
+Scalability potential: Low tier uses the same 4096-slot fixed table and one SDF probe; middle/high/ultra can increase table capacity later by one Vault constant without changing builder logic. The grid truth stays deterministic and independent of visual meshes.
+Hardware Impact: Removes the normal-path O(moduleCount) comparison after hydration; candidate rejection is fixed-table O(1). Hydration still walks registered modules because no authoritative construction graph export exists in this domain, but it performs no managed allocation or Unity physics query.
 
 Problem: Task 14 requested `AcousticEchoTap`, but source scan shows multiple incompatible `AcousticEchoTap` structs in AI, Exosuit, Audio Virtualization, and UI namespaces. Importing any one would create sibling-domain coupling or another duplicate contract collision.
 Solution: Build commit now emits the canonical global `AcousticPingSignal` with `ChannelMetalStress`, AUP center, radius derived from module extents, intensity, and folded entity/module source hash.
@@ -279,3 +285,9 @@ Solution: Added `MaxTrackedAddressableCapacity = 8192` and `MaxAddressableHandle
 Rejected Alternatives: Leaving the 512-entry containers and relying on average-case content was rejected because streaming boundaries are adversarial. Replacing the managed registry with a pure native handle table was rejected for this pass because Unity `AsyncOperationHandle` is not blittable and the existing managed `AssetRecord` carries owner/retry/blind-frame metadata outside Burst.
 Scalability potential: Low-tier devices can run the default 1024 slot table without a managed resize; middle/high/ultra can raise the sanitizer to 8192 tracked handles and still avoid runtime growth. The native map remains a fixed 2x open-address Vault lane, so cache-hit cost remains bounded.
 Hardware Impact: Prevents managed array/dictionary growth and rehash spikes during heavy chunk streaming. Worst-case cold managed bridge memory rises deliberately at boot; in exchange, runtime capacity churn is removed inside the sanitizer ceiling. Build proof is deferred after this patch because CPU guard sampled 100%, 100%, 100%, 100% with no compiler process.
+
+Problem: `ResolveAdaptiveTtlSeconds` used a smooth polynomial over raw `GlobalQualityWeight`, so a weak-device weight of 0.1 still produced a TTL above the prompt's explicit 10 second floor. That is mathematically softer than the required low-tier collapse and also missed the ultra mandate's explicit `math.step` term.
+Solution: Changed the curve to `math.step(0.3f, q) * smoothPolynomial(saturate((q - 0.3) / 0.7))`, then kept `math.lerp(10s, highTtl, curve)`. Below 0.3 the cache TTL is exactly 10 seconds; from 0.3 to 1.0 it scales continuously to the high-end 300 second cache window.
+Rejected Alternatives: A binary `if (quality < 0.3f)` branch was rejected because the scalability pillar forbids dichotomy. Keeping the old curve was rejected because it quietly retained too much memory on weak I/O hardware.
+Scalability potential: Low tier gets strict minimum TTL; middle tier ramps without a visual/cache pop; high/ultra can retain visited chunks for long traversal returns and spend RAM to buy seamless streaming.
+Hardware Impact: Weak devices release unused assets sooner after the blind-frame gate instead of carrying an accidental 18s+ hold at quality 0.1. High hardware behavior remains capped by `baseAddressableTtlSeconds` and profile overrides.

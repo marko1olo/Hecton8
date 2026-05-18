@@ -4,7 +4,7 @@ Agent: SHINOBU_64
 Role: THERMAL_UPDRAFT_AND_VOLCANIC_DIRECTOR
 Domain: Thermal Updrafts / Volcanic Geysers
 Task Count: 20
-Status: POLISH PASS APPLIED; SHINOBU volcanic sources are statically clean. Fresh Core compile is currently deferred by CPU/build guard.
+Status: DISPATCHER FIXED-PIPELINE POLISH APPLIED; SHINOBU volcanic sources are statically clean. Fresh Core compile is currently deferred by CPU/build guard.
 
 ## Duplicate-ID Collision
 - `Docs/Tasks/CURRENT_BATCH.md` contains two `SHINOBU_64` prompts: volcanic updrafts and rollback netcode.
@@ -20,8 +20,9 @@ Status: POLISH PASS APPLIED; SHINOBU volcanic sources are statically clean. Fres
 - [x] `ThermalGeyser` no longer reads `VolcanicUpdraftDirector.ActiveRuntimeInstance` from its fixed-tick publish path. It caches the director in `Awake`, `OnEnable`, `Start`, and `Configure`, then fixed tick uses the cached pointer only.
 - [x] Compile-wall audit rechecked `VolcanicUpdraftDirector` imports. The only live leviathan force path still consumes `Hecton8.AI.Cognition` DTOs because the owner buffer is registered with those exact types and the existing `Hecton8.Core.asmdef` already references `Hecton8.AI.Cognition`; no new asmdef edge was added by this polish pass.
 - [x] Task 11 recheck applied: `ResolveDebrisLiftWeight()` and turbulence gating now use explicit `math.step(0.3f, q)` multiplied by the polynomial smooth curve. When debris lift weight is zero, the mock debris path skips the vent loop entirely instead of running cylinder/cone intersections and multiplying the result by zero.
+- [x] Dispatcher recheck applied: `VolcanicUpdraftDirector` now registers as `IDispatcherFixedSystem`, returns the combined fixed simulation `JobHandle`, consumes submarine read handles through `JobHandle.CombineDependencies`, and leaves fixed-batch completion to the master dispatcher bridge. The only local `.Complete()` remains the cold `OnDisable()` teardown guard to avoid unlocking buffers while a job is still live.
 - [x] SHINOBU static scans are clean for forbidden Unity force paths, hot LINQ/foreach/string.Format, `Pack=1`, hot `{ get; set; }`, and hot NativeArray allocation.
-- [DEFERRED BY CPU GUARD] Fresh Core build was not launched on 2026-05-19 because guard sampled `CPU=100/100/100` with active `dotnet` process `50592`.
+- [DEFERRED BY CPU GUARD] Fresh Core build was not launched after dispatcher polish on 2026-05-19 because guard sampled `CPU=100,100,99.2`; no compiler process was active, but CPU remains above the project threshold.
 
 ## Current Evidence
 - `Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs`: deterministic Vault/Burst updraft truth.

@@ -176,8 +176,10 @@ namespace Hecton8.Construction
     {
         public const int TelemetryCapacity = 300;
         public const int BoundsOverrideCapacity = 512;
+        public const int OccupancyHashTableCapacity = 4096;
         public const int EmergencyMockBoundsCount = 16;
         public const string DefaultDumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_SHINOBU_67.bin";
+        public const uint OccupancyFlagOccupied = 1u;
         public const int ConstructionRequestSizeBytes = 64;
         public const int StructuralBoundsSizeBytes = 32;
         public const int ConstructionValidationSettingsSizeBytes = 32;
@@ -203,6 +205,7 @@ namespace Hecton8.Construction
         private static VaultBufferHandle<ConstructionValidationSettingsDTO> s_TuningHandle;
         private static VaultBufferHandle<ConstructionTelemetryEntry> s_TelemetryHandle;
         private static VaultBufferHandle<StructuralBoundsDTO> s_BoundsOverrideHandle;
+        private static VaultBufferHandle<BaseModuleOccupancyDTO> s_OccupancyHandle;
 
         public static bool ValidateStructLayout()
         {
@@ -230,6 +233,7 @@ namespace Hecton8.Construction
             if (!TryReadTunerSettingsFromVault(vault, out _))
                 WriteTunerSettingsToVault(vault);
             TryResolveTelemetryRing(vault, out _);
+            TryResolveOccupancyHashTable(vault, out _);
             if (TryResolveBoundsOverrideBuffer(vault, out NativeArray<StructuralBoundsDTO> boundsBuffer) &&
                 boundsBuffer.Length > 0 &&
                 boundsBuffer[0].BoundsHash == 0u)
@@ -576,6 +580,92 @@ namespace Hecton8.Construction
 
             boundsBuffer = s_BoundsOverrideHandle.Resolve(vault);
             return boundsBuffer.IsCreated && boundsBuffer.Length > 0;
+        }
+
+        public static bool TryResolveOccupancyHashTable(
+            IDataVault vault,
+            out NativeArray<BaseModuleOccupancyDTO> occupancyTable)
+        {
+            occupancyTable = default;
+            if (vault == null)
+                return false;
+
+            if (!s_OccupancyHandle.IsCreated || !vault.ResolveBuffer(ref s_OccupancyHandle))
+            {
+                s_OccupancyHandle = vault.GetBufferHandle<BaseModuleOccupancyDTO>(
+                    BufferID.ConstructionBuilderOccupancy,
+                    OccupancyHashTableCapacity,
+                    SystemID.Construction,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            occupancyTable = s_OccupancyHandle.Resolve(vault);
+            return occupancyTable.IsCreated && occupancyTable.Length > 0;
+        }
+
+        public static bool TryInsertOccupancyCell(
+            NativeArray<BaseModuleOccupancyDTO> occupancyTable,
+            in BaseModuleOccupancyDTO entry,
+            uint frame)
+        {
+            if (!occupancyTable.IsCreated || occupancyTable.Length <= 0)
+                return false;
+
+            int length = occupancyTable.Length;
+            int frameStamp = unchecked((int)frame);
+            int start = (int)((uint)HashGrid(entry.GridPos) % (uint)length);
+            for (int probe = 0; probe < length; probe++)
+            {
+                int index = start + probe;
+                if (index >= length)
+                    index -= length;
+
+                BaseModuleOccupancyDTO current = occupancyTable[index];
+                bool stale = (current.Flags & OccupancyFlagOccupied) == 0u || current.NodeIndex != frameStamp;
+                if (stale || math.all(current.GridPos == entry.GridPos))
+                {
+                    BaseModuleOccupancyDTO stored = entry;
+                    stored.NodeIndex = frameStamp;
+                    stored.Flags |= OccupancyFlagOccupied;
+                    occupancyTable[index] = stored;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool TryFindOccupiedCell(
+            NativeArray<BaseModuleOccupancyDTO> occupancyTable,
+            int3 gridPos,
+            uint frame,
+            out int occupiedCellHash)
+        {
+            occupiedCellHash = 0;
+            if (!occupancyTable.IsCreated || occupancyTable.Length <= 0)
+                return false;
+
+            int length = occupancyTable.Length;
+            int frameStamp = unchecked((int)frame);
+            int start = (int)((uint)HashGrid(gridPos) % (uint)length);
+            for (int probe = 0; probe < length; probe++)
+            {
+                int index = start + probe;
+                if (index >= length)
+                    index -= length;
+
+                BaseModuleOccupancyDTO current = occupancyTable[index];
+                if ((current.Flags & OccupancyFlagOccupied) == 0u || current.NodeIndex != frameStamp)
+                    return false;
+
+                if (!math.all(current.GridPos == gridPos))
+                    continue;
+
+                occupiedCellHash = HashGrid(gridPos);
+                return true;
+            }
+
+            return false;
         }
 
         public static void WriteTelemetry(

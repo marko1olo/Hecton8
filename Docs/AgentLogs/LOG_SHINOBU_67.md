@@ -171,3 +171,15 @@ Cinematic Cheats used -> No new physical simulation. The cheat remains predictiv
 Exact Microseconds saved -> Profiler proof unavailable. Static saving is removal of dictionary/queue growth and dictionary rehash from the gameplay streaming path inside the 8192-handle ceiling. The trade is a deliberate cold boot managed allocation sized for worst-case sanitizer capacity.
 
 Verification -> Static scan found no `private NativeArray`, `NativeHashMap`, `new NativeArray`, `job.Run()`, LINQ, `foreach`, `string.Format`, `Resources.UnloadUnusedAssets`, `UnityEngine.Random`, `CompleteTtlEvaluationForMutation`, or queue `Contains()` in sanitizer files. `git diff --check` reports only LF/CRLF warnings. Build was deferred after this patch because CPU guard sampled 100%, 100%, 100%, 100% with no compiler process.
+
+# SHINOBU_67 Addressables TTL Step Curve Recheck - 2026-05-19
+
+What was wrong -> `ResolveAdaptiveTtlSeconds` used a smooth polynomial over raw `GlobalQualityWeight`. At weight 0.1 it still returned more than the required 10 seconds, which violates the explicit weak-device cache-collapse target.
+
+What was done -> Inserted `math.step(0.3f, quality)` and normalized the polynomial over the 0.3..1.0 range before `math.lerp(10s, highTtl, curve)`. Low hardware now pins to the minimum TTL; middle/high/ultra remain continuous.
+
+Cinematic Cheats used -> The Dear Lie remains hold-and-delay caching. The curve now decides how much RAM can be spent on the cheat without pretending slow storage is fast.
+
+Exact Microseconds saved -> No profiler measurement. Static impact: weak hardware carries fewer zero-ref assets after the blind-frame gate, reducing resident handle pressure and future GC/VRAM stress. Arithmetic cost is three extra scalar ops in a 1Hz/cold-path TTL calculation.
+
+Verification -> Source patch only. Build remains deferred until CPU guard permits it.

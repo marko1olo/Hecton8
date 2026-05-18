@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
-  "status": "ATLAS GENERATED STATIC SOURCE / ATLASCHECK REQUIRED / RUNTIME PENDING",
+  "status": "ATLAS GENERATED STATIC SOURCE / ATLASCHECK SEPARATE GATE REQUIRED / RUNTIME PENDING",
   "evidence_class": "STATIC_SOURCE/STATIC_DOC/FILESYSTEM/PY_TOOL",
-  "generated": "2026-05-19 01:08:05",
+  "generated": "2026-05-19 01:36:40",
   "summary": {
-    "source_file_count": 5079,
-    "source_line_count": 1853193,
-    "first_party_source_file_count": 1758,
-    "first_party_source_line_count": 1180338,
-    "asmdef_count": 178,
-    "first_party_asmdef_count": 118,
-    "exact_core_dependent_count": 55,
-    "core_family_dependent_count": 85,
+    "source_file_count": 5081,
+    "source_line_count": 1855334,
+    "first_party_source_file_count": 1760,
+    "first_party_source_line_count": 1182412,
+    "asmdef_count": 181,
+    "first_party_asmdef_count": 121,
+    "exact_core_dependent_count": 56,
+    "core_family_dependent_count": 86,
     "signal_count": 254,
     "queue_lane_count": 56,
     "sherst_hit_count": 8,
@@ -264,7 +264,12 @@
         "path": "Assets/_Project/Scripts/Graphics/Materials/Hecton8.Graphics.Materials.asmdef",
         "refs": [
           "Hecton8.Core.Contracts",
-          "Hecton8.Core"
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
         ]
       },
       {
@@ -625,6 +630,20 @@
           "Unity.Mathematics",
           "Unity.Collections",
           "Unity.Jobs"
+        ]
+      },
+      {
+        "name": "Hecton8.VFX.Bioluminescence.Runtime",
+        "path": "Assets/_Project/Scripts/VFX/Bioluminescence/Hecton8.VFX.Bioluminescence.Runtime.asmdef",
+        "refs": [
+          "Hecton8.Core.Contracts",
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics",
+          "Unity.Profiling.Core"
         ]
       },
       {
@@ -1165,7 +1184,12 @@
         "path": "Assets/_Project/Scripts/Graphics/Materials/Hecton8.Graphics.Materials.asmdef",
         "refs": [
           "Hecton8.Core.Contracts",
-          "Hecton8.Core"
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
         ]
       },
       {
@@ -1612,6 +1636,20 @@
           "Unity.Mathematics",
           "Unity.Collections",
           "Unity.Jobs"
+        ]
+      },
+      {
+        "name": "Hecton8.VFX.Bioluminescence.Runtime",
+        "path": "Assets/_Project/Scripts/VFX/Bioluminescence/Hecton8.VFX.Bioluminescence.Runtime.asmdef",
+        "refs": [
+          "Hecton8.Core.Contracts",
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics",
+          "Unity.Profiling.Core"
         ]
       },
       {
@@ -2419,7 +2457,19 @@
         "path": "Assets/_Project/Scripts/Graphics/Materials/Hecton8.Graphics.Materials.asmdef",
         "refs": [
           "Hecton8.Core.Contracts",
-          "Hecton8.Core"
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.Graphics.Materials.Editor",
+        "path": "Assets/_Project/Scripts/Graphics/Materials/Editor/Hecton8.Graphics.Materials.Editor.asmdef",
+        "refs": [
+          "Hecton8.Graphics.Materials"
         ]
       },
       {
@@ -3003,6 +3053,28 @@
         "name": "Hecton8.UI.VR.Contracts",
         "path": "Assets/_Project/Scripts/UI/VR/Contracts/Hecton8.UI.VR.Contracts.asmdef",
         "refs": []
+      },
+      {
+        "name": "Hecton8.VFX.Bioluminescence.Editor",
+        "path": "Assets/_Project/Scripts/VFX/Bioluminescence/Editor/Hecton8.VFX.Bioluminescence.Editor.asmdef",
+        "refs": [
+          "Hecton8.VFX.Bioluminescence.Runtime",
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.VFX.Bioluminescence.Runtime",
+        "path": "Assets/_Project/Scripts/VFX/Bioluminescence/Hecton8.VFX.Bioluminescence.Runtime.asmdef",
+        "refs": [
+          "Hecton8.Core.Contracts",
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics",
+          "Unity.Profiling.Core"
+        ]
       },
       {
         "name": "Hecton8.VFX.Debris",
@@ -3626,7 +3698,7 @@
       ],
       "producers": [
         "Assets/_Project/Scripts/Core/GlobalSignals.cs:5184",
-        "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2383",
+        "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2440",
         "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1285",
         "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1446",
         "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:703",
@@ -3636,7 +3708,7 @@
       "consumers": [
         "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs:659",
         "Assets/_Project/Scripts/HectonBoidController.cs:1655",
-        "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1893",
+        "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1882",
         "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:4349",
         "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6067"
       ]
@@ -3799,7 +3871,7 @@
         "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:545",
         "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs:489",
         "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:734",
-        "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1761",
+        "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1750",
         "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:1655",
         "Assets/_Project/Scripts/Visor/SpectrumSystem.cs:2758",
         "Assets/_Project/Scripts/World/AbyssalThermalManager.cs:2263",
@@ -3990,7 +4062,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1075",
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:584",
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:587",
         "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1008"
       ]
     },
@@ -4033,7 +4105,7 @@
       ],
       "producers": [
         "Assets/_Project/Scripts/Core/GlobalSignals.cs:4875",
-        "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs:264",
+        "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs:267",
         "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1334",
         "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:998"
       ],
@@ -4097,7 +4169,7 @@
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs:312"
+        "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs:337"
       ]
     },
     {
@@ -4768,7 +4840,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1237",
-        "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1876"
+        "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1865"
       ]
     },
     {
@@ -4820,7 +4892,7 @@
       ],
       "producers": [
         "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs:554",
-        "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2367"
+        "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2424"
       ],
       "consumers": []
     },
@@ -4995,7 +5067,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs:589",
-        "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:587",
+        "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:588",
         "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:1620",
         "Assets/_Project/Scripts/UI/InteractionUI.cs:889",
         "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5795"
@@ -5213,7 +5285,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:983"
+        "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:984"
       ],
       "consumers": []
     },
@@ -5378,7 +5450,7 @@
       "declaration": {
         "namespace": "Hecton8.Modding",
         "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
-        "line": 179
+        "line": 180
       },
       "methods": [],
       "producers": [],
@@ -5444,7 +5516,7 @@
       "declaration": {
         "namespace": "Hecton8.Modding",
         "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
-        "line": 193
+        "line": 194
       },
       "methods": [
         "Push"
@@ -5487,7 +5559,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2357"
+        "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2414"
       ],
       "consumers": []
     },
@@ -5647,7 +5719,7 @@
       "declaration": {
         "namespace": "Hecton8.Modding",
         "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
-        "line": 165
+        "line": 166
       },
       "methods": [],
       "producers": [],
@@ -5658,7 +5730,7 @@
       "declaration": {
         "namespace": "Hecton8.Modding",
         "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
-        "line": 207
+        "line": 208
       },
       "methods": [],
       "producers": [],
@@ -5669,7 +5741,7 @@
       "declaration": {
         "namespace": "Hecton8.Modding",
         "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
-        "line": 152
+        "line": 153
       },
       "methods": [],
       "producers": [],
@@ -5755,7 +5827,7 @@
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:832",
+        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:847",
         "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:810"
       ]
     },
@@ -5951,7 +6023,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs:6071",
-        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:541",
+        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:678",
         "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs:318"
       ]
     },
@@ -5971,7 +6043,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/UI/HectonOSBootManager.cs:215",
-        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:562"
+        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:699"
       ]
     },
     {
@@ -6017,8 +6089,8 @@
         "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:331",
         "Assets/_Project/Scripts/MainMenuController.cs:897",
         "Assets/_Project/Scripts/MainMenuController.cs:913",
-        "Assets/_Project/Scripts/PlayerBuilder.cs:668",
-        "Assets/_Project/Scripts/PlayerBuilder.cs:685",
+        "Assets/_Project/Scripts/PlayerBuilder.cs:669",
+        "Assets/_Project/Scripts/PlayerBuilder.cs:686",
         "Assets/_Project/Scripts/PlayerFlashlight.cs:882",
         "Assets/_Project/Scripts/PlayerFlashlight.cs:899",
         "Assets/_Project/Scripts/PlayerPDA.cs:1606",
@@ -6081,7 +6153,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1064",
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:576",
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:579",
         "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2030",
         "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2483",
         "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2584",
@@ -6141,7 +6213,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs:1024",
-        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:549"
+        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:686"
       ]
     },
     {
@@ -6819,7 +6891,7 @@
         "Assets/_Project/Scripts/Core/GlobalSignals.cs:5678"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:597",
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:600",
         "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:2431",
         "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:4221"
       ]
@@ -6907,10 +6979,10 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:1081"
+        "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:1082"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:569"
+        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:706"
       ]
     },
     {
@@ -6927,7 +6999,7 @@
       "producers": [
         "Assets/_Project/Scripts/Core/GlobalSignals.cs:5167",
         "Assets/_Project/Scripts/Core/HomeostasisBrain.cs:892",
-        "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs:1064"
+        "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs:1070"
       ],
       "consumers": [
         "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1133",
@@ -6942,7 +7014,7 @@
         "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:989",
         "Assets/_Project/Scripts/LaserCutter.cs:1615",
         "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:387",
-        "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs:1649",
+        "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs:1661",
         "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:736",
         "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:263",
         "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs:784",
@@ -6967,7 +7039,7 @@
       "consumers": [
         "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1229",
         "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:770",
-        "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:402",
+        "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:403",
         "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:842",
         "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs:1536",
         "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:726",
@@ -7101,7 +7173,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:800",
-        "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:424"
+        "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:425"
       ]
     },
     {
@@ -7423,13 +7495,13 @@
       "declaration": {
         "namespace": "Hecton8.Atmosphere",
         "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs",
-        "line": 855
+        "line": 875
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:789"
+        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:804"
       ],
       "consumers": []
     },
@@ -24510,7 +24582,7 @@
     },
     {
       "path": "Docs/AgentLogs/LOG_SHINOBU_64.md",
-      "line": 475,
+      "line": 575,
       "text": "What was wrong: `HectonNetworkManager` was a placeholder with debug logging and transform/message-oriented TODOs. There was no rollback state ring, no input mismatch detector, n..."
     },
     {

@@ -1,6 +1,6 @@
 # SHINOBU_61 Voxel Surface Nets
 
-Date: 2026-05-18
+Date: 2026-05-19
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-18 R4 Interior Actuality Boundary
@@ -39,7 +39,8 @@ Local-cast BufferID range: `70780-70797`.
 2. `SurfaceNetExtractionJob` scans sign-crossing cells, computes one centroid vertex per cell, samples tetrahedral SDF gradients, packs normals/tangents/material blend, and writes indices.
 3. `SurfaceNetExtractionJob` writes indirect draw args into vault memory.
 4. Caller owns the returned `JobHandle`; this module does not call `Complete()`.
-5. After dependency completion, a boot-prewarmed `VoxelSurfaceNetsGpuUploadDispatcher` uploads vertices/indices/args through `GraphicsBuffer.LockBufferForWrite` and `UnsafeUtility.MemCpy`. The dispatcher creates vertex, index, and indirect-args buffers with `GraphicsBuffer.UsageFlags.LockBufferForWrite`; indirect args use `IndirectArguments | Raw`.
+5. A boot-prewarmed `VoxelSurfaceNetsGpuUploadDispatcher` starts upload with `TryBeginUpload`: it locks vertex/index/indirect `GraphicsBuffer` objects with `LockBufferForWrite` and schedules `VoxelSurfaceGpuUploadCopyJob` to copy vault vertices, indices, and indirect args directly into the mapped buffer views.
+6. The caller chains the upload `JobHandle` through the frame graph. `TryFinalizeUpload` only unlocks and publishes the buffer after the caller-supplied dependency is already completed. The dispatcher does not perform a caller-thread bulk copy and does not call `JobHandle.Complete()`.
 
 ## Quality Curve
 
@@ -53,4 +54,4 @@ Interior rock cells do not exist geometrically: fully solid or fully empty cells
 
 Static scans are reported for forbidden Mesh APIs, properties in new hot DTOs, `Pack=1`, `LayoutKind.Sequential`, direct sibling domain references, `foreach`, `Time.deltaTime`, `UnityEngine.Random`, private runtime native container ownership, and arbitrary `JobHandle.Complete`; link the command output before treating this as current proof.
 
-Compiler proof is pending because CPU/process guard reported 100% CPU at the latest verification sample, above the allowed 50% threshold. No `dotnet build` was launched.
+Static forbidden API scan after the mapped-buffer copy pass found no managed Mesh API, `Pack=1`, `LayoutKind.Sequential`, hot DTO properties, `JobHandle.Complete`, LINQ/`foreach`, Physics casts, runtime private native collection ownership, binary hardware switches, or sibling runtime domain references. Burst scan found 8 jobs and 8 mandated BurstCompile flag sets. Compiler proof is pending because the latest CPU sample was 100%, above the allowed 50% threshold. No `dotnet build` was launched.

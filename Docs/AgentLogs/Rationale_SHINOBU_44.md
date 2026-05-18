@@ -187,6 +187,22 @@ Rejected Alternatives: Treat every enabled mock as always including 20ms. The XM
 Scalability potential: Low/Mobile can test thermal frame pressure and memory pressure independently; Middle/High/Ultra can reproduce mixed pressure only when both lanes are explicitly active or already armed.  
 Hardware Impact: Editor/CSV facade adds two scalar branches on mock changes only. No hot steady-state runtime allocation or DTO size change.
 
+## Decision 23 - Tuner NaN Vaccination
+
+Problem: The human-control plane used `math.clamp` directly for target frame time, emergency threshold, and forced quality. If an editor/test hook or corrupted vault supplied NaN, the clamp path could preserve invalid data and contaminate PID recovery or emergency hysteresis.
+Solution: Add explicit finite-safe sanitizer helpers. Target frame time falls back to the contract target, emergency threshold falls back to `DefaultEmergencyThreshold`, hysteresis clamps as an int, and invalid forced quality disables the override instead of entering the solver. Tuning DTO creation, writes, and editor reads now use the same sanitizer path.
+Rejected Alternatives: Assume Unity sliders and CSV parser are the only callers. The public test facade is still a runtime API; it must defend itself against bad input and stale vault memory.
+Scalability potential: Low/Mobile cannot be held in a false no-emergency state by NaN threshold data; Middle/High/Ultra forced-quality tests remain deterministic and bounded.
+Hardware Impact: Scalar finite checks only on editor/CSV/tuner calls. No hot steady-state allocation and no DTO size change.
+
+## Decision 24 - Tuner Vault Read-Repair
+
+Problem: Returning a sanitized copy from `TryGetHardwareDictatorTuning` protected the editor window, but it left a corrupt unmanaged DTO in the vault. That creates parallel truth: UI looks sane while the authoritative memory slot is still dirty.
+Solution: Read the tuning DTO by ref, sanitize fields in place, clear flags, then return the repaired struct copy. The editor facade and vault now see the same finite values after a read.
+Rejected Alternatives: Leave read paths side-effect free. For this tiny singleton DTO, read-repair is safer than preserving corrupt control-plane memory for the next caller.
+Scalability potential: All hardware tiers use one finite tuning source; weak-device emergency clamps cannot be defeated by stale NaN in the vault.
+Hardware Impact: Editor/read facade only. One 16-byte ref mutation when the tuner is queried; no hot frame-loop cost.
+
 <SELF_AUDIT>
 1. Did I output a boolean like `IsLowQuality`? No public contract was added; output is `GlobalQualityWeight`, `FractionalTimeSlice`, render scale, shader floats, and stochastic threshold. Legacy masks remain compatibility/fault containment, not the new scalability contract.
 2. Is `ScalabilityStateDTO` ARM64 aligned? Yes: byte 0 `GlobalQualityWeight`, byte 4 `FractionalTimeSlice`, byte 8 `VramPressure`, byte 12 `ThermalIndex`, total 16 bytes, no `Pack=1`.

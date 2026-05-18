@@ -60,7 +60,7 @@ Hardware Impact: MX350/i3 avoids duplicate writer/input work and removes a poten
 
 Decision 08 - Build guard result
 Problem: The project rules forbid launching dotnet/Unity builds while CPU exceeds 50 percent or csc.exe is active.
-Solution: The latest guard sample is CPU=100.00 percent with csc.exe count 1, so compilation remains blocked by policy. A separate target scan found no Hecton8.QA.Headless.csproj or sln entry for these QA Headless files. Static scans covered forbidden logging APIs, properties, Pack=1, AutoPlayer, asmdef references, generated target presence, and active code paths.
+Solution: The latest guard sample is CPU=99.22 percent with csc.exe count 0, so compilation remains blocked by policy on CPU load. A separate target scan found no Hecton8.QA.Headless.csproj or sln entry for these QA Headless files. Static scans covered forbidden logging APIs, properties, Pack=1, AutoPlayer, asmdef references, generated target presence, and active code paths.
 Rejected Alternatives: Forcing a broad dotnet build was rejected because it would not verify the ungenerated QA Headless assembly and the user explicitly ordered not to launch dotnet build until necessary.
 Scalability potential: Low/Middle/High/Ultra unaffected; this is a workstation contention guard.
 Hardware Impact: MX350/i3 avoids compounding compiler workload or running irrelevant builds; no runtime microsecond gain claimed.
@@ -127,3 +127,10 @@ Solution: Subtract intended vault.CurrentAUP from actual BodyAup first, cast the
 Rejected Alternatives: Reconstruction-only auditing was rejected because it proves float precision but not the prompt's intended-path-versus-actual-position requirement. Absolute double comparisons were rejected because AUP rules require subtracting before float math.
 Scalability potential: Low and Middle catch coarse KCC drift. High and Ultra still get float precision reconstruction telemetry for overkill forensic detail.
 Hardware Impact: Adds one local vector length on frames with KCC output; estimated 1 us on low-end CPUs, unmeasured because build/playmode remains blocked.
+
+Decision 18 - Wall-clock audit gate
+Problem: The watchdog could reach the 10km distance target under fast-forwarded simulation time before the real five-minute GlobalQualityWeight clamp and one-minute recovery had elapsed. That would create a false positive endurance report and skip the thermal transition the task exists to test. The same defect affected the five-minute memory leak slope window because it was advanced by simulated frame time.
+Solution: Successful exit now requires three conditions: distance >= target, Stopwatch wall-clock >= 360 seconds, and VaultFlagStressRecoveryObserved. The memory leak window now compares _qualityWallSeconds against _memoryWindowStartWallSeconds. CSV rows include WallSeconds, and result JSON writes wallSeconds plus qualityAuditObserved.
+Rejected Alternatives: Lowering fast-forward or increasing route length was rejected because CI tuning would still be able to bypass the quality audit. Using SignalBus snapshot state to prove recovery was rejected because manual batch driving can run without a normal pre-simulation signal flush cadence.
+Scalability potential: Low spends a real 300 seconds in survival quality. Middle validates the 60-second recovery curve. High and Ultra prove the engine does not stay pinned after the audit window.
+Hardware Impact: Adds two float comparisons and one flag check to the success gate; estimated below 1 us/frame. It removes the larger risk: a false green endurance run that never tested thermal load shedding.

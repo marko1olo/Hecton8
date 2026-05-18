@@ -46,6 +46,7 @@ using Hecton8.Construction;
 using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.World;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using ConstructionMockWorldSampler = Hecton8.Construction.MockWorldSampler;
@@ -2135,6 +2136,57 @@ namespace Hecton8.Building
 
             float gridSize = settings.GridSizeMeters > 0.001f ? settings.GridSizeMeters : ResolveConstructionGridSize();
             int moduleCount = modules.Count;
+            uint frame = settings.Frame != 0u ? settings.Frame : unchecked((uint)Time.frameCount);
+            if (ModularBaseConstructionValidator.TryResolveOccupancyHashTable(
+                    GlobalRegistry.DataVault,
+                    out NativeArray<BaseModuleOccupancyDTO> occupancyTable))
+            {
+                bool hydrated = true;
+                for (int i = 0; i < moduleCount; i++)
+                {
+                    GameObject module = modules[i];
+                    if (module == null)
+                        continue;
+
+                    Transform moduleTransform = module.transform;
+                    if (moduleTransform == null)
+                        continue;
+
+                    double3 moduleAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(moduleTransform.position);
+                    if (!ModularBaseConstructionValidator.TryBuildRequestFromAup(
+                            request.RootAUP,
+                            moduleAup,
+                            0u,
+                            0u,
+                            gridSize,
+                            out ConstructionRequestDTO existing))
+                    {
+                        continue;
+                    }
+
+                    BaseModuleOccupancyDTO entry;
+                    entry.GridPos = existing.GridPos;
+                    entry.ModuleHash = existing.ModuleHash;
+                    entry.PortMask = ConstructionPortMask.AllCardinal;
+                    entry.NodeIndex = 0;
+                    entry.Flags = 0u;
+                    entry._pad0 = 0u;
+                    hydrated &= ModularBaseConstructionValidator.TryInsertOccupancyCell(
+                        occupancyTable,
+                        in entry,
+                        frame);
+                }
+
+                if (hydrated)
+                {
+                    return ModularBaseConstructionValidator.TryFindOccupiedCell(
+                        occupancyTable,
+                        request.GridPos,
+                        frame,
+                        out occupiedCellHash);
+                }
+            }
+
             for (int i = 0; i < moduleCount; i++)
             {
                 GameObject module = modules[i];

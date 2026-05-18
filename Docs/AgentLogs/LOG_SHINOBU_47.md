@@ -394,6 +394,31 @@ Verification:
 - `git diff --check` over touched exosuit code passed.
 - Build deferred: latest CPU guard reported 83% load with no active `csc`/`dotnet`, still above the mandated 50% build ceiling.
 
+## 2026-05-19 - Loop 20 Corner MTV And Clamp Range Patch
+
+What was wrong:
+- Secondary SDF shell probes selected one maximum penetration normal. In wall-floor or wall-ceiling corners, that can leave an adjacent enabled shell face inside the SDF and create the next-frame texture-sticking correction.
+- Clamp wallness existed, but the raw acquire/release distance was still evaluated separately instead of being continuously contracted by wallness.
+
+What was done:
+- Secondary probes now accumulate penetration vectors into a bounded MTV, with the strongest penetration kept as fallback and cap.
+- Added one secondary residual pass after real contact on quality tiers where shell probes are enabled.
+- Clamp acquire/release distance now contracts through continuous wallness before setting the boolean clamp state.
+- Clamp residual correction updates the anchor normal and re-samples after the residual clear.
+
+Cinematic Cheats used:
+- Still one SDF sphere plus bounded shell probes. No colliders, joints, raycasts, limb contact buffers, or contact manifold DTO.
+- Wall grab remains a mathematical fake; animation owns the visual arm reach.
+
+Exact Microseconds saved:
+- No profiler-backed raw speed claim.
+- Expected benefit is fewer repeated correction frames in cave corners and less stuck-in-texture recovery churn, with no allocation or persistent memory increase.
+
+Verification:
+- Static forbidden-token audit over `Assets/_Project/Scripts/Physics/Exosuit` returned no matches for Rigidbody/Joints/Raycast/Overlap, `Time.*`, LINQ/foreach, local `new NativeArray`, runtime `Pack=1`, direct sibling-domain usings, concrete presentation calls, `BinaryWriter`, or `Math.Pow`.
+- `git diff --check` over the touched solver passed.
+- Build deferred: WMI CPU guard reported 100% load with no active `csc`/`dotnet`, above the mandated 50% build ceiling.
+
 ## 2026-05-19 - Loop 19 Wall-Only SDF Clamp Patch
 
 What was wrong:
@@ -413,4 +438,4 @@ Exact Microseconds saved:
 
 Verification:
 - Static forbidden-token audit over `Assets/_Project/Scripts/Physics/Exosuit` returned no matches.
-- Build deferred: CPU guard reported 100% load with no active `csc`/`dotnet`, above the mandated 50% build ceiling.
+- Build deferred: final CPU guard reported 100% load with active `csc`/`dotnet`, above the mandated 50% build ceiling.

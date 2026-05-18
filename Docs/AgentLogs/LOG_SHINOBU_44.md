@@ -238,3 +238,34 @@ Exact Microseconds saved -> No FPS claim. Added scalar branch checks occur only 
 20_TASK_RECONCILIATION: Task 05 and Task 19 were tightened. The fallback mock remains 20ms-capable while CSV lane-specific tests no longer silently combine pressure sources.
 COMPILE_GUARD: No new using directive and no sibling runtime dependency were added.
 </SELF_AUDIT_DELTA>
+
+## 2026-05-19 Tuner NaN Vaccination
+
+What was wrong -> The tuner and forced-quality facade trusted direct `math.clamp`/`math.saturate` on external floats. A NaN from a corrupt vault slot or external editor/test hook could survive into `ScalabilityTuningDTO` or `_forcedGlobalQualityWeight`, then poison PID/emergency decisions.
+
+What was done -> Added finite-safe sanitizer helpers for target frame time, emergency threshold, hysteresis frames, and forced quality. Tuning DTO creation, vault writes, editor reads, and `ApplyHardwareDictatorTuner` now share the same clamps. Invalid forced quality disables the override instead of writing NaN into the solver.
+
+Cinematic Cheats used -> No simulation. This protects the human-control surface that drives the continuous presentation fake.
+
+Exact Microseconds saved -> No FPS claim. Added scalar finite checks only on editor/CSV/tuner calls. No `dotnet build` was launched per explicit user instruction.
+
+<SELF_AUDIT_DELTA>
+20_TASK_RECONCILIATION: Task 12, Task 18, and Task 19 were tightened. PID/hysteresis tuning can no longer ingest NaN through the editor/CSV facade.
+STRUCT_LAYOUT_VERIFICATION: No DTO size changed. `ScalabilityTuningDTO` remains 16 bytes: offsets 0, 4, 8, 12.
+NaN_VACCINATION: Invalid forced quality now disables the override rather than contaminating `GlobalQualityWeight`.
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Tuner Vault Read-Repair
+
+What was wrong -> `TryGetHardwareDictatorTuning` could return a sanitized DTO copy while leaving the unmanaged vault slot dirty. That is parallel truth in the human-control plane.
+
+What was done -> The method now reads `ScalabilityTuningDTO` by ref, sanitizes `TargetFrameMs`, `EmergencyThreshold`, and `HysteresisReleaseFrames` in place, clears flags, then returns the repaired value.
+
+Cinematic Cheats used -> No simulation. This keeps the designer-facing control surface deterministic and vault-owned.
+
+Exact Microseconds saved -> No FPS claim. One 16-byte ref write on editor/tuner reads only. No `dotnet build` was launched per explicit user instruction.
+
+<SELF_AUDIT_DELTA>
+H_PHI_VAULT_STATUS: `BufferID.ShinobuScalabilityTunerState` is repaired in place; no editor-local truth is introduced.
+NaN_VACCINATION: Corrupt tuner DTO values cannot persist after the editor facade reads them.
+</SELF_AUDIT_DELTA>

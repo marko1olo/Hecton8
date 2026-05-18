@@ -82,6 +82,7 @@ Status: PENDING VERIFICATION / OWNED SLICE CLEAN / FULL UNITY COMPILE BLOCKED BY
 - Loop 19: Root-level asmdef property hardening. Tightened the bounded asmdef parser so `name`, `references`, and `includePlatforms` are accepted only as root object properties followed by a colon, preventing nested `versionDefines[].name` or top-level string values from poisoning graph identity.
 - Loop 20: Filesystem enumeration allocation closure. Replaced `Directory.GetFiles(...AllDirectories)` array materialization in asmdef graph scan, archaeology scan, Bee ref artifact index, and Pack=1 source scan with streaming `Directory.EnumerateFiles()` enumerators and explicit `while` loops.
 - Loop 21: Path classifier allocation closure. Replaced per-asmdef `assetPath.Replace('\\', '/')` classification with constant forward/backslash path-token probes and passed cached `projectRoot` into archaeology rows instead of recalculating it per hit.
+- Loop 22: GUID edge lookup allocation closure. Replaced per-edge GUID `Substring` resolution with a prebuilt `GUID:` reference dictionary so asmdef edge construction reuses the original reference string.
 
 ## Verification
 
@@ -130,6 +131,8 @@ Status: PENDING VERIFICATION / OWNED SLICE CLEAN / FULL UNITY COMPILE BLOCKED BY
 - Static after Loop 20: trailing whitespace, >180-character line, and `git diff --check` scans returned clean. Compile probe was not run because this was Editor cold-path file enumeration hardening and the user forbade builds unless needed.
 - Static after Loop 21: `rg` found no `normalizedPath`, `ToProjectPath(GetProjectRoot`, `Directory.GetFiles`, `JsonUtility`, whole-file read APIs, `StreamReader`, `ReadLine()`, `.ToString()`, LINQ chain, `foreach`, Unity find/getcomponent calls, `UnityEngine.Random`, `Time.deltaTime`, or `JobHandle.Complete` in `CompileWallXRayWindow.cs`.
 - Static after Loop 21: trailing whitespace and >180-character line scans returned clean. Compile probe was not run because this was Editor cold-path path-allocation hardening and the user forbade builds unless needed.
+- Static after Loop 22: `rg` found no `reference.Substring`, `guidPrefix`, old raw `byGuid` resolver, `normalizedPath`, or `ToProjectPath(GetProjectRoot` in `CompileWallXRayWindow.cs`.
+- Static after Loop 22: forbidden-pattern, trailing whitespace, and >180-character line scans returned clean. Compile probe was not run because this was Editor cold-path GUID lookup hardening and the user forbade builds unless needed.
 - Unity isolated syntax: `Hecton8.MockDomain.Authoring.rsp` compiled through Unity Roslyn from current source; result = 0 errors. Latest artifact timestamp: `2026-05-18 02:06:23`.
 - Static: compile-domain blackbox path present: 300-entry `NativeArray<CompileWallBlackBoxEntry>` and `Docs/AgentLogs/Dump_SHINOBU_31.h8dump` fatal dump route.
 - Unity partial: R3/R5 show Csc/ILPostProcess/CopyFiles for `Hecton8.Global.Contracts`, `Hecton8.MockDomain.Contracts`, and/or `Hecton8.MockDomain.Runtime`; latest runtime DLL timestamp `2026-05-17 23:19:50`.

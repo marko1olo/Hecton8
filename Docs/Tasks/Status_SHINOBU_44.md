@@ -202,3 +202,17 @@ Load-shed fallback: fast attack lowers `GlobalQualityWeight`; PID-like proportio
 - Fixed inactive partial mock semantics: `mock_vram_pressure` no longer inherits the dormant 20ms emergency payload when it is the first key that arms the mock.
 - Preserved active partial update behavior: once the mock is already armed, later partial CSV keys continue to update only their lane without clearing the other lane.
 - No DTO layout changed; `MockHeavyLoadSignal` remains 16 bytes. No `dotnet build` was launched per explicit user instruction.
+
+### Loop 20 - Tuner NaN Vaccination
+
+- Audited the editor/CSV control plane for NaN propagation after the mock-isolation pass.
+- Added sanitizer helpers for target frame time, emergency threshold, hysteresis frames, and forced `GlobalQualityWeight`.
+- `ApplyHardwareDictatorTuner`, `WriteCurrentTuningStateToVault`, tuning DTO handle creation, and `TryGetHardwareDictatorTuning` now use the same finite-safe clamps instead of trusting `math.clamp` on invalid floats.
+- Invalid forced-quality input now disables the override rather than writing NaN into the continuous quality solver.
+- No DTO layout changed; `ScalabilityTuningDTO` remains 16 bytes. No `dotnet build` was launched per explicit user instruction.
+
+### Loop 21 - Tuner Vault Read-Repair
+
+- Tightened `TryGetHardwareDictatorTuning`: corrupted tuner DTO values are now sanitized through a ref and written back to `BufferID.ShinobuScalabilityTunerState` before returning to the editor facade.
+- This prevents the editor from masking a dirty vault slot while leaving the unmanaged source of truth corrupted.
+- No DTO layout changed. No `dotnet build` was launched per explicit user instruction.

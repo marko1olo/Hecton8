@@ -87,7 +87,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Lightweight frame snapshot emitted by the simulation bucketer and black-box telemetry.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct SimulationBucketFrameState
     {
         /// <summary>Monotonic frame count owned by the bucketer, independent of Unity frame wrapping.</summary>
@@ -141,7 +141,7 @@ namespace Hecton8.Core
         /// <summary>Non-zero when an AUP shift barrier is active.</summary>
         public byte AupBarrierActive;
 
-        /// <summary>Explicit tail pad. Keeps Pack=1 contract at 64 bytes with no implicit platform padding.</summary>
+        /// <summary>Explicit tail pad. Keeps the contract at 64 bytes with no implicit platform padding.</summary>
         public ushort ReservedPadding;
     }
 

@@ -231,6 +231,7 @@ namespace Hecton8.Core
         private const float EmergencyRebaseLimitMeters = 4000f;
         private const float DefaultSectorSizeMeters = 5000f;
         private const int DefaultBatchSize = 10000;
+        private const int MinimumTimeSliceBatchSize = 10000;
         private const double MockCameraSimulationTickSeconds = 1.0d / 60.0d;
         private const double MockCameraSpeedMetersPerSecond = 125.0d;
         private const float RebaseWatchdogMs = 1.0f;
@@ -1388,7 +1389,7 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int ResolveBatchSize(int batchSize)
         {
-            return math.clamp(batchSize <= 0 ? DefaultBatchSize : batchSize, 1024, MockEntityCapacity);
+            return math.clamp(batchSize <= 0 ? DefaultBatchSize : batchSize, MinimumTimeSliceBatchSize, MockEntityCapacity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1400,7 +1401,9 @@ namespace Hecton8.Core
             int configured = ResolveBatchSize(configuredBatchSize);
             float q = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 1f);
             float polynomialQuality = q * q * (3f - (2f * q));
-            float lowTierBatch = math.lerp(1024f, (float)configured, polynomialQuality);
+            float promptSliceFloor = math.ceil((float)activeCount * 0.2f);
+            float lowTierFloor = math.min((float)configured, math.max((float)MinimumTimeSliceBatchSize, promptSliceFloor));
+            float lowTierBatch = math.lerp(lowTierFloor, (float)configured, polynomialQuality);
             float overkillBlend = polynomialQuality * polynomialQuality;
             float desiredBatch = math.lerp(lowTierBatch, (float)activeCount, overkillBlend);
             float activeGate = math.step(1f, (float)activeCount);

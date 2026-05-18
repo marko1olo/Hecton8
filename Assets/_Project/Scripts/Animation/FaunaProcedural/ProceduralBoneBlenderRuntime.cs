@@ -180,7 +180,8 @@ namespace Hecton8.Animation.FaunaProcedural
                 _activeRuntimeInstance = this;
 
             RefreshColdDependencies();
-            EnsureVaultBuffers();
+            if (EnsureVaultBuffers())
+                EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
                 GenerateEmergencyMockRigs();
         }
@@ -192,7 +193,8 @@ namespace Hecton8.Animation.FaunaProcedural
 
             CompletePendingSolver(true);
             RefreshColdDependencies();
-            EnsureVaultBuffers();
+            if (EnsureVaultBuffers())
+                EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
                 GenerateEmergencyMockRigs();
             TryRegister();
@@ -346,7 +348,8 @@ namespace Hecton8.Animation.FaunaProcedural
             CompletePendingSolver(true);
             _dataVault = currentService as IDataVault;
             ClearHandles();
-            EnsureVaultBuffers();
+            if (EnsureVaultBuffers())
+                EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
                 GenerateEmergencyMockRigs();
         }

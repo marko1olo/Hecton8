@@ -14,7 +14,7 @@ using UnityEngine;
 namespace Hecton8.Atmosphere
 {
     [DisallowMultipleComponent]
-    public sealed unsafe class ShinobuOceanSurfaceAtmosphereRuntime : MonoBehaviour, IOceanKinematics, IUpdatable, ISlowTickable, ILateFrameTickable
+    public sealed unsafe class ShinobuOceanSurfaceAtmosphereRuntime : MonoBehaviour, IHectonOceanKinematics, IUpdatable, ISlowTickable, ILateFrameTickable
     {
         private const int CsvScratchBytes = 16 * 1024;
         private const int DumpScratchBytes = 32 + (OceanSurfaceAtmosphereConstants.TelemetryFrameCount * 64);
@@ -42,7 +42,7 @@ namespace Hecton8.Atmosphere
         [Header("Ocean Authority")]
         [Tooltip("Optional camera transform used for AUP-local wave projection and waterline breach checks.")]
         [SerializeField] private Transform cameraTransform;
-        [Tooltip("Registers this runtime as the active ocean kinematics provider through HectonOceanRegistry.")]
+        [Tooltip("Registers this runtime as the active ocean kinematics provider through the Core OceanKinematicsRuntimeService.")]
         [SerializeField] private bool registerAsOceanAuthority = true;
         [Tooltip("Loads weather_profiles.csv once through the native byte parser when the runtime is active.")]
         [SerializeField] private bool loadWeatherProfilesCsv = true;
@@ -101,7 +101,7 @@ namespace Hecton8.Atmosphere
 
             if (registerAsOceanAuthority && !_registeredOcean)
             {
-                HectonOceanRegistry.Register(this);
+                OceanKinematicsRuntimeService.RegisterProvider(this);
                 _registeredOcean = true;
             }
 
@@ -115,7 +115,7 @@ namespace Hecton8.Atmosphere
         {
             if (_registeredOcean)
             {
-                HectonOceanRegistry.Unregister(this);
+                OceanKinematicsRuntimeService.UnregisterProvider(this);
                 _registeredOcean = false;
             }
 

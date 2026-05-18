@@ -48,7 +48,7 @@
     </STRUCT>
   </STRUCT_LAYOUT_VERIFICATION>
   <SCALABILITY_CURVE_EXPLANATION>
-    ResolveAdaptiveTtlSeconds reads HomeostasisBrain.GlobalQualityWeight, applies smoothstep polynomial q*q*(3-2*q), and lerps TTL from 10 seconds to the high-end configured 300 seconds. Below 0.3 effective hardware pressure the sanitizer behaves as hold-and-delay with short residency; at 1.0 it allows long visited-map retention. VRAM pressure at or above threshold forces unused TTL to zero regardless of quality to prevent mobile OS memory kill. No binary quality branch controls the cache size.
+    ResolveAdaptiveTtlSeconds reads HomeostasisBrain.GlobalQualityWeight, applies math.step(0.3,q) multiplied by a normalized smooth polynomial over the 0.3..1.0 range, then lerps TTL from 10 seconds to the high-end configured 300 seconds. Below 0.3 the sanitizer collapses to the exact 10 second weak-device TTL; at 1.0 it allows long visited-map retention. VRAM pressure at or above threshold forces unused TTL to zero regardless of quality to prevent mobile OS memory kill. No binary branch controls cache size.
   </SCALABILITY_CURVE_EXPLANATION>
   <H_PHI_VAULT_STATUS private_native_allocations="0">
     <BUFFER id="AddressableHeapTrackers" type="AssetTrackerDTO" owner="SystemID.WorldStreaming" />
@@ -81,7 +81,7 @@
   <BUILD status="DEFERRED_BY_CPU_GUARD_AFTER_MANAGED_CAPACITY_SEAL">
     <PREVIOUS_COMMAND>dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false /p:UseSharedCompilation=false /v:minimal</PREVIOUS_COMMAND>
     <PREVIOUS_RESULT>Before the alias-purge pass: 0 errors, 8 pre-existing CS0649 warnings in GlobalPhysicsStateManager.PhysicsDistanceCullingJob.</PREVIOUS_RESULT>
-    <CURRENT_GUARD>After the managed capacity seal, CPU guard sampled 100 percent, 100 percent, 100 percent, and 100 percent with no active dotnet/csc/VBCSCompiler process. Build was not launched.</CURRENT_GUARD>
+    <CURRENT_GUARD>After the managed capacity seal and TTL step-curve patch, CPU guard sampled 100 percent, 100 percent, 99.2 percent, and 100 percent with no active dotnet/csc/VBCSCompiler process. Build was not launched.</CURRENT_GUARD>
   </BUILD>
   <UNVERIFIED>
     Unity import, Play Mode, GCMonitor, Memory Profiler, Burst Inspector, frame-time, and real Addressables residency soak were not run in this terminal pass.

@@ -215,7 +215,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _PredatorAUPParams;
             float4 _BiolumFlashBangAUP;
             float4 _BiolumFlashBangParams;
-            float4 _GlobalBiolumStates[16];
+            float4x4 _GlobalBiolumDearLieGroups;
             float4 _GlobalBiolumParams;
             float4 _GlobalBiolumClock;
             float4 _GlobalBiolumAupOffset;
@@ -1366,14 +1366,14 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
                 float4 safeParams = all(isfinite(_GlobalBiolumParams)) ? _GlobalBiolumParams : float4(0.0, 0.0, 0.0, 0.0);
                 float safeClock = isfinite(_GlobalBiolumClock.x) ? _GlobalBiolumClock.x : 0.0;
-                int activeCount = min(max((int)floor(SanitizeNonNegativeFinite(safeParams.x)), 0), 16);
+                int activeCount = min(max((int)floor(SanitizeNonNegativeFinite(safeParams.x)), 0), 4);
                 if (activeCount <= 0)
                     return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
                 float groupRaw = floor(SanitizeNonNegativeFinite((float)biolumSyncGroup));
                 int stateIndex = min((int)fmod(groupRaw, (float)activeCount), activeCount - 1);
                 float selector = (groupRaw + 0.5) / max((float)activeCount, 1.0);
-                float4 stateRaw = _GlobalBiolumStates[stateIndex];
+                float4 stateRaw = _GlobalBiolumDearLieGroups[stateIndex];
                 float4 state = all(isfinite(stateRaw)) ? stateRaw : float4(0.0, 0.0, 0.0, 0.0);
                 half strobe = saturate((half)SanitizeNonNegativeFinite(safeParams.z));
                 half highTier = step(4.0h, (half)SanitizeNonNegativeFinite(safeParams.y));
@@ -1381,7 +1381,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 if (secondaryIndex >= activeCount)
                     secondaryIndex = 0;
 
-                float4 secondaryStateRaw = _GlobalBiolumStates[secondaryIndex];
+                float4 secondaryStateRaw = _GlobalBiolumDearLieGroups[secondaryIndex];
                 float4 secondaryState = all(isfinite(secondaryStateRaw)) ? secondaryStateRaw : float4(0.0, 0.0, 0.0, 0.0);
                 half overdrive = 0.0h;
                 half godSpark = 0.0h;

@@ -2,7 +2,7 @@
 
 Agent: SHINOBU_41
 Domain: ECHELON 2 WORLD GENERATION & TERRAIN / GEOLOGICAL_SYNTHESIS_SURGEON
-Status: IMPLEMENTED / DATAVAULT BLACKBOX PASS / REFLECTION ABI DEBT ISOLATED / CORE BUILD BLOCKED OUTSIDE SHINOBU / UNITY RUNTIME PENDING
+Status: IMPLEMENTED / DATAVAULT SCRATCH+BLACKBOX PASS / REFLECTION ABI DEBT ISOLATED / CORE BUILD BLOCKED OUTSIDE SHINOBU / UNITY RUNTIME PENDING
 Task Count: 20
 Assignment Source: Docs/Tasks/CURRENT_BATCH.md <AGENT_PROMPT id="SHINOBU_41">
 
@@ -56,7 +56,7 @@ Assignment Source: Docs/Tasks/CURRENT_BATCH.md <AGENT_PROMPT id="SHINOBU_41">
 - [x] Task 19 CSV_BIOME_OVERRIDE_INGESTOR | Justification: `biome_atlas_overrides.csv` hot reload uses a DataVault-backed byte buffer, spans, ASCII hashes, no `Split`/`ReadAllLines`. | Alternatives Rejected: private managed byte arrays and per-parse string arrays. | Estimate: 5-30us saved per editor reload vs string split, runtime 0.
 - [x] Task 20 LIVE_LOD_SLIDER_DEBUGGER | Justification: EditorWindow slider `Force Quality Weight` overrides `GlobalQualityWeight` continuously from 0..1. | Alternatives Rejected: Force low toggle and quality enum. | Estimate: editor-only, 0us runtime.
 - [x] Self-Audit Pass | Justification: rg audit found no Physics/MeshCollider/Terrain.GetHeights/new NativeArray/List/Dictionary/Split/ReadAllLines in sampler. | Alternatives Rejected: relying on visual inspection only. | Estimate: 0us runtime.
-- [x] Compile / Static Verification | Justification: latest SHINOBU static audit found no forbidden runtime terrain patterns in `GlobalWorldSampler.cs`, `HybridTerrainSeamJobs.cs`, or `WorldGenerativeGeologyTerrainSeamApplier.cs`. Latest `dotnet build Hecton8.Core.csproj --no-restore /clp:ErrorsOnly` failed after 1:11.25 on unrelated `Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs` missing `DataArchaeologyDiscoveryBitMask` at lines 890, 892, 900, 931, 932, and 956; no compiler error references SHINOBU_41 terrain files. | Alternatives Rejected: editing unrelated Save/Binary payload ownership to create a cleaner SHINOBU report. | Estimate: 0us runtime.
+- [x] Compile / Static Verification | Justification: latest SHINOBU static audit found no forbidden runtime terrain patterns and no private `new NativeArray` allocations in `GlobalWorldSampler.cs`, `HybridTerrainSeamJobs.cs`, or `WorldGenerativeGeologyTerrainSeamApplier.cs`. Latest `dotnet build Hecton8.Core.csproj --no-restore /clp:ErrorsOnly` failed after 1:19.46 on unrelated `SaveBinaryPayloadCodec.cs`, `VolcanicUpdraftDirector.cs`, and Visor feature symbols; no compiler error references SHINOBU_41 terrain files. | Alternatives Rejected: editing unrelated Save/Volcanic/Visor ownership to create a cleaner SHINOBU report. | Estimate: 0us runtime.
 
 ## Ultra-Think Polish Pass
 
@@ -89,4 +89,6 @@ Assignment Source: Docs/Tasks/CURRENT_BATCH.md <AGENT_PROMPT id="SHINOBU_41">
 - [x] Reflection purge attempt executed and failed against the generated Core compile lane: direct `GlobalQualityWeight`/valid field writes produce CS0117 because local `Hecton8.Core.csproj` still resolves a stale `Hecton8.World.Terrain.dll`. The direct-field chunk was reverted under the 3-strike protocol; cold reflection remains only as an ABI bridge until Unity regenerates the terrain source assembly. This is recorded as `[BLOCKED BY GENERATED ASSEMBLY ABI]`, not a clean architectural pass.
 - [x] `Time.frameCount` was removed from the SHINOBU seam event/black-box path. `WorldGenerativeGeologyTerrainSeamApplier` now advances a local monotonic seam frame counter and writes that frame to `VoxelChunkModifiedEvent` plus `TerrainSeamTelemetryEntry`.
 - [x] Seam black-box telemetry was evicted from a private persistent `NativeArray<TerrainSeamTelemetryEntry>` into `GlobalDataVault` handle `BufferID 0x530421` owned by `SystemID.TerrainSeams`; record and dump paths resolve the vault alias and no longer allocate/register/unregister a private black-box ring.
-- [x] Latest `dotnet build Hecton8.Core.csproj --no-restore /clp:ErrorsOnly` is currently blocked outside SHINOBU_41 by `SaveBinaryPayloadCodec.cs` missing `DataArchaeologyDiscoveryBitMask`; SHINOBU static grep remains clean.
+- [x] Hybrid seam scratch buffers moved from `Allocator.TempJob` arrays to `GlobalDataVault`: native plans `0x530422`, patch heights `0x530423`, blend mask `0x530424`, normals `0x530425`.
+- [x] Terrain baseline height cache moved from private persistent `NativeArray<float>` to per-terrain `VaultBufferHandle<float>` under `BufferID 0x531000 + (terrain instance id & 0x000FFFFF)`; `TerrainApplyState.baselineHeights` is now only a resolved vault alias.
+- [x] Latest `dotnet build Hecton8.Core.csproj --no-restore /clp:ErrorsOnly` is currently blocked outside SHINOBU_41 by unrelated Save/Volcanic/Visor compile errors listed above; SHINOBU static grep remains clean.

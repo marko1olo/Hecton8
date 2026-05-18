@@ -1062,9 +1062,17 @@ namespace Hecton8.Lighting
 
             float weight = HomeostasisBrain.GlobalQualityWeight;
             if (!math.isfinite(weight))
-                weight = _cachedQualityTier == HectonQualityTier.Mx350 || _cachedQualityTier == HectonQualityTier.Low ? 0.1f : 1f;
+                weight = ResolveFallbackQualityWeight(_cachedQualityTier);
 
             return math.saturate(weight);
+        }
+
+        private static float ResolveFallbackQualityWeight(HectonQualityTier tier)
+        {
+            float tierIndex = math.clamp((float)tier, (float)HectonQualityTier.Low, (float)HectonQualityTier.Ultra);
+            float normalized = math.saturate((tierIndex - (float)HectonQualityTier.Low) / math.max(0.0001f, (float)HectonQualityTier.Ultra - (float)HectonQualityTier.Low));
+            float curved = Smooth01(normalized);
+            return math.lerp(0.1f, 1f, curved);
         }
 
         private void ResolveActiveResolution(float quality)

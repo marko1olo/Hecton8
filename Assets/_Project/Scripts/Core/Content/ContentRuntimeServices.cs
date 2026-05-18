@@ -15,7 +15,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 namespace Hecton8.Core.Content
 {
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
     public struct ContentBundleRefState
     {
         public uint Hash;
@@ -28,7 +28,7 @@ namespace Hecton8.Core.Content
         public byte Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct ContentAuthorityTelemetryEntry
     {
         public uint Frame;
@@ -48,7 +48,7 @@ namespace Hecton8.Core.Content
         public uint Reserved4;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public struct ContentPendingLoadState
     {
         public uint Hash;
@@ -57,7 +57,7 @@ namespace Hecton8.Core.Content
         public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public struct ContentVisualFeatureBudget
     {
         public uint FeatureMask;

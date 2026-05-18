@@ -1,6 +1,6 @@
 # SHINOBU_41 Geological Synthesis
 
-Status: STATIC SOURCE ORIENTATION / DATAVAULT BLACKBOX SOURCE NOTES / REFLECTION ABI DEBT ISOLATED / CORE BUILD BLOCKED OUTSIDE SHINOBU / UNITY RUNTIME PENDING
+Status: STATIC SOURCE ORIENTATION / DATAVAULT SCRATCH+BLACKBOX SOURCE NOTES / REFLECTION ABI DEBT ISOLATED / CORE BUILD BLOCKED OUTSIDE SHINOBU / UNITY RUNTIME PENDING
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## R4 Interior Actuality Boundary
@@ -69,7 +69,7 @@ The sampler writes a 300-entry ring and dumps to `Docs/AgentLogs/Dump_TERRAIN_SP
 
 Normal-enabled logical queries do not always cost one terrain sample. `ResolveTerrainSampleCost()` charges cost 1 below the expensive-quality ramp and cost 5 above it when tetrahedron normal estimation executes the four extra distance probes. Batch jobs accumulate this true cost before the atomic counter write, and `ShouldTripThroughputWarning(previousTotal, total)` detects threshold crossings even when the counter jumps past 800001.
 
-The Unity Terrain seam bridge no longer owns its 300-frame black-box as a private persistent `NativeArray`. `WorldGenerativeGeologyTerrainSeamApplier` requests `VaultBufferHandle<TerrainSeamTelemetryEntry>` from `GlobalDataVault` with domain-local `BufferID 0x530421`, length 300, owner `SystemID.TerrainSeams`. Record and dump paths resolve the vault alias; dispose does not unregister/free a private telemetry allocation.
+The Unity Terrain seam bridge no longer owns native seam allocations. `WorldGenerativeGeologyTerrainSeamApplier` requests `VaultBufferHandle<TerrainSeamTelemetryEntry>` from `GlobalDataVault` with domain-local `BufferID 0x530421`, length 300, owner `SystemID.TerrainSeams`. Hybrid scratch uses vault buffers `0x530422` native plans, `0x530423` patch heights, `0x530424` blend mask, and `0x530425` normals. Terrain baseline heights use per-terrain `VaultBufferHandle<float>` at `0x531000 + (terrain instance id & 0x000FFFFF)`. Record, dump, baseline, and scratch paths resolve vault aliases; dispose does not unregister/free private native arrays.
 
 ## Hybrid Seam Writeback
 
@@ -81,7 +81,7 @@ The Unity Terrain seam bridge no longer owns its 300-frame black-box as a privat
 - The old byte field is retained only as a stale generated-csproj fallback. A direct-field purge was attempted and failed with CS0117 because the generated Core compile lane still resolves stale `Hecton8.World.Terrain.dll` metadata. Until Unity regenerates that assembly or a contracts-level facade replaces the stale ABI, the applier uses cold reflection to inject continuous quality into newer source jobs. This is explicit integration debt, not a clean compile-wall pass.
 - `VoxelChunkModifiedEvent.Frame` and `TerrainSeamTelemetryEntry.Frame` now use a local monotonic seam frame counter instead of `Time.frameCount`.
 - `TerrainSeamTelemetryEntry` is a natural sequential 64-byte row with explicit `Reserved4` tail padding; no manual `Pack` is used.
-- The seam black-box ring is vault-owned (`BufferID 0x530421`, 300 rows, 19,200 bytes) rather than a private persistent `NativeArray`.
+- The seam black-box ring, hybrid scratch buffers, and baseline height cache are vault-owned rather than private `NativeArray` allocations.
 
 ## Editor Facade
 
@@ -92,5 +92,5 @@ The Unity Terrain seam bridge no longer owns its 300-frame black-box as a privat
 - Forbidden-pattern grep on `GlobalWorldSampler.cs` and `HybridTerrainSeamJobs.cs`: latest run found no Physics/MeshCollider/Terrain.GetHeights/Raycast/UnityEngine.Random/ReadAllLines/Split/Pack=1/low Burst precision/Time.deltaTime/property hot-path patterns.
 - Seam quality grep: `WorldGenerativeGeologyTerrainSeamApplier.cs` no longer contains `GlobalRegistry.ScalabilityTier`, `ScalabilityTierProfileByte`, or tier resolver methods for seam quality. The only remaining `ForceMathLodLow` text in SHINOBU terrain code is the documented legacy ABI enum bit in `GlobalWorldSamplerConfigFlags`.
 - Direct-field reflection purge attempt: failed with CS0117 because the local generated Core project resolves stale `Hecton8.World.Terrain.dll` job metadata without `GlobalQualityWeight` fields. The direct-field chunk was reverted under fail-fast rules.
-- `dotnet build Hecton8.Core.csproj --no-restore /clp:ErrorsOnly`: latest local run failed outside SHINOBU_41 on `Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs` lines 890, 892, 900, 931, 932, and 956 missing `DataArchaeologyDiscoveryBitMask`. No compiler error references SHINOBU_41 terrain files.
+- `dotnet build Hecton8.Core.csproj --no-restore /clp:ErrorsOnly`: latest local run failed outside SHINOBU_41 on `SaveBinaryPayloadCodec.cs` missing `IndustrialLoreBitMask`, `VolcanicUpdraftDirector.cs` missing `fixedDeltaTime`/`_jobPending`, and Visor features missing `HectonDrsRenderFeatureGate`. No compiler error references SHINOBU_41 terrain files.
 - `Assembly-CSharp.csproj`: attempted, timed out after 129.7s; no pass claimed.

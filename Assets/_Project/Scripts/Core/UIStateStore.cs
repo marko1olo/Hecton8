@@ -30,7 +30,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable UI state snapshot owned by core simulation and read by visual UI renderers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct UIStateData
     {
         public uint Version;
@@ -42,6 +42,7 @@ namespace Hecton8.Core
         public uint LogEntryCount;
         public uint LatestLogEventHash;
         public float OpenDurationSeconds;
+        private uint _padding0;
     }
 
     /// <summary>
@@ -77,7 +78,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable scalar UI value written by simulation and read by visual presenters.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
     public struct UIValueSlot
     {
         public uint Version;
@@ -85,6 +86,7 @@ namespace Hecton8.Core
         public float Value;
         public float PreviousValue;
         public float LastWriteUnscaledTime;
+        private uint _padding0;
     }
 
     /// <summary>

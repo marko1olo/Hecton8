@@ -1,8 +1,8 @@
 # HECTON-8 Architecture Atlas - Dependency Graph
 
-Generated: 2026-05-19 01:08:05
+Generated: 2026-05-19 01:36:40
 Date: 2026-05-19
-Status: ATLAS GENERATED STATIC SOURCE / ATLASCHECK REQUIRED / RUNTIME PENDING
+Status: ATLAS GENERATED STATIC SOURCE / ATLASCHECK SEPARATE GATE REQUIRED / RUNTIME PENDING
 Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PY_TOOL. No Unity Editor, Play Mode, Memory Profiler, Frame Debugger, or player build evidence is claimed here.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
@@ -44,13 +44,13 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 
 ## Repository Scale
 
-- C# source files scanned under `Assets/` and `Packages/`: 5079
-- C# line count scanned under `Assets/` and `Packages/`: 1,853,193
-- First-party C# source files under `Assets/_Project/Scripts/`: 1758
-- First-party C# line count under `Assets/_Project/Scripts/`: 1,180,338
-- Assembly definitions scanned: 178
-- First-party assembly definitions under `Assets/_Project/`: 118
-- Markdown docs under `Docs/`: 2280
+- C# source files scanned under `Assets/` and `Packages/`: 5081
+- C# line count scanned under `Assets/` and `Packages/`: 1,855,334
+- First-party C# source files under `Assets/_Project/Scripts/`: 1760
+- First-party C# line count under `Assets/_Project/Scripts/`: 1,182,412
+- Assembly definitions scanned: 181
+- First-party assembly definitions under `Assets/_Project/`: 121
+- Markdown docs under `Docs/`: 2328
 
 ## Assembly Dependency Graph
 
@@ -103,7 +103,7 @@ Core assembly: `Assets/_Project/Scripts/Hecton8.Core.asmdef`
 
 Core contracts assembly: `Assets/_Project/Scripts/Core/Contracts/Hecton8.Core.Contracts.asmdef` references `Unity.Collections`, `Unity.Mathematics`.
 
-Assemblies directly depending on exact `Hecton8.Core`: 55
+Assemblies directly depending on exact `Hecton8.Core`: 56
 
 | Assembly | Path |
 |---|---|
@@ -153,6 +153,7 @@ Assemblies directly depending on exact `Hecton8.Core`: 55
 | `Hecton8.UI.Navigation` | `Assets/_Project/Scripts/UI/Navigation/Hecton8.UI.Navigation.asmdef` |
 | `Hecton8.UI.Tools` | `Assets/_Project/Scripts/UI/Tools/Hecton8.UI.Tools.asmdef` |
 | `Hecton8.UI.VR` | `Assets/_Project/Scripts/UI/VR/Hecton8.UI.VR.asmdef` |
+| `Hecton8.VFX.Bioluminescence.Runtime` | `Assets/_Project/Scripts/VFX/Bioluminescence/Hecton8.VFX.Bioluminescence.Runtime.asmdef` |
 | `Hecton8.VFX.Debris` | `Assets/_Project/Scripts/VFX/Debris/Hecton8.VFX.Debris.asmdef` |
 | `Hecton8.VFX.Materials` | `Assets/_Project/Scripts/VFX/Materials/Hecton8.VFX.Materials.asmdef` |
 | `Hecton8.Vehicles.VFX` | `Assets/_Project/Scripts/Vehicles/VFX/Hecton8.Vehicles.VFX.asmdef` |
@@ -163,7 +164,7 @@ Assemblies directly depending on exact `Hecton8.Core`: 55
 | `Hecton8.World.Streaming` | `Assets/_Project/Scripts/World/Streaming/Hecton8.World.Streaming.asmdef` |
 | `Hecton8.World.VoxelSurfaceNets.Editor` | `Assets/_Project/Scripts/World/VoxelSurfaceNets/Editor/Hecton8.World.VoxelSurfaceNets.Editor.asmdef` |
 
-Assemblies depending on any `Hecton8.Core*` assembly: 85
+Assemblies depending on any `Hecton8.Core*` assembly: 86
 
 | Assembly | Core-family references | Path |
 |---|---|---|
@@ -201,7 +202,7 @@ Assemblies depending on any `Hecton8.Core*` assembly: 85
 | `Hecton8.Gameplay.Mining` | `Hecton8.Core`, `Hecton8.Core.Contracts`, `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Gameplay/Mining/Hecton8.Gameplay.Mining.asmdef` |
 | `Hecton8.Graphics.Caustics` | `Hecton8.Core`, `Hecton8.Core.Contracts`, `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Graphics/Caustics/Hecton8.Graphics.Caustics.asmdef` |
 | `Hecton8.Graphics.Culling` | `Hecton8.Core`, `Hecton8.Core.Contracts`, `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Graphics/Culling/Hecton8.Graphics.Culling.asmdef` |
-| `Hecton8.Graphics.Materials` | `Hecton8.Core.Contracts`, `Hecton8.Core` | `Assets/_Project/Scripts/Graphics/Materials/Hecton8.Graphics.Materials.asmdef` |
+| `Hecton8.Graphics.Materials` | `Hecton8.Core.Contracts`, `Hecton8.Core`, `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Graphics/Materials/Hecton8.Graphics.Materials.asmdef` |
 | `Hecton8.Graphics.Scalability` | `Hecton8.Core`, `Hecton8.Core.Contracts`, `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Graphics/Scalability/Hecton8.Graphics.Scalability.asmdef` |
 | `Hecton8.Habitat.Deformation` | `Hecton8.Core`, `Hecton8.Core.Contracts`, `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Habitat/Deformation/Runtime/Hecton8.Habitat.Deformation.asmdef` |
 | `Hecton8.Input.Determinism` | `Hecton8.Core.Contracts` | `Assets/_Project/Scripts/Input/Determinism/Hecton8.Input.Determinism.asmdef` |
@@ -240,6 +241,7 @@ Assemblies depending on any `Hecton8.Core*` assembly: 85
 | `Hecton8.UI.Navigation` | `Hecton8.Core`, `Hecton8.Core.Contracts`, `Hecton8.Core.Memory` | `Assets/_Project/Scripts/UI/Navigation/Hecton8.UI.Navigation.asmdef` |
 | `Hecton8.UI.Tools` | `Hecton8.Core`, `Hecton8.Core.Contracts` | `Assets/_Project/Scripts/UI/Tools/Hecton8.UI.Tools.asmdef` |
 | `Hecton8.UI.VR` | `Hecton8.Core`, `Hecton8.Core.Contracts` | `Assets/_Project/Scripts/UI/VR/Hecton8.UI.VR.asmdef` |
+| `Hecton8.VFX.Bioluminescence.Runtime` | `Hecton8.Core.Contracts`, `Hecton8.Core`, `Hecton8.Core.Memory` | `Assets/_Project/Scripts/VFX/Bioluminescence/Hecton8.VFX.Bioluminescence.Runtime.asmdef` |
 | `Hecton8.VFX.Debris` | `Hecton8.Core.Contracts`, `Hecton8.Core`, `Hecton8.Core.Memory` | `Assets/_Project/Scripts/VFX/Debris/Hecton8.VFX.Debris.asmdef` |
 | `Hecton8.VFX.Materials` | `Hecton8.Core.Contracts`, `Hecton8.Core`, `Hecton8.Core.Memory` | `Assets/_Project/Scripts/VFX/Materials/Hecton8.VFX.Materials.asmdef` |
 | `Hecton8.VFX.Sonar` | `Hecton8.Core.Contracts` | `Assets/_Project/Scripts/VFX/Sonar/Hecton8.VFX.Sonar.asmdef` |
@@ -264,12 +266,12 @@ Static `using Hecton8.*` edges from first-party source. This exposes compile-tim
 | `Gameplay` | `Core` | 141 |
 | `UI` | `Core` | 121 |
 | `RootScripts` | `World` | 88 |
-| `RootScripts` | `Gameplay` | 64 |
 | `Editor` | `World` | 63 |
-| `Editor` | `Core` | 55 |
+| `RootScripts` | `Gameplay` | 62 |
+| `Editor` | `Core` | 54 |
 | `Gameplay` | `World` | 42 |
-| `Visor` | `Core` | 42 |
 | `Construction` | `Core` | 41 |
+| `Visor` | `Core` | 41 |
 | `RootScripts` | `Items` | 38 |
 | `RootScripts` | `Bootstrap` | 37 |
 | `RootScripts` | `Physics` | 33 |
@@ -300,12 +302,12 @@ Static `using Hecton8.*` edges from first-party source. This exposes compile-tim
 | `Construction` | `World` | 18 |
 | `RootScripts` | `AI` | 18 |
 | `Gameplay` | `Interaction` | 18 |
+| `Graphics` | `Core` | 18 |
 | `UI` | `Bootstrap` | 18 |
 | `RootScripts` | `Audio` | 17 |
 | `Editor` | `Gameplay` | 17 |
 | `Interaction` | `Core` | 17 |
 | `Optimization` | `Core` | 17 |
-| `Graphics` | `Core` | 16 |
 | `Construction` | `Power` | 15 |
 | `Power` | `Core` | 15 |
 | `Quest` | `Core` | 15 |
@@ -337,18 +339,18 @@ Static `using Hecton8.*` edges from first-party source. This exposes compile-tim
 | `Dev` | `Core` | 9 |
 | `Gameplay` | `Tools` | 9 |
 | `RootScripts` | `Optimization` | 9 |
-| `Rendering` | `Core` | 9 |
 | `Construction` | `Building` | 8 |
+| `Construction` | `SaveSystem` | 8 |
 
 ## SignalBus<T> Flow Map
 
 `ISignal` structs declared: 249. `SignalBus<T>` lanes observed in producer/consumer calls: 161. Union listed below: 254 signals.
-Legacy `GlobalSignals.Publish(...)` call sites found: 256. Many use local variables and are not type-resolved by this static pass; they remain a migration/integrator risk.
+Legacy `GlobalSignals.Publish(...)` call sites found: 255. Many use local variables and are not type-resolved by this static pass; they remain a migration/integrator risk.
 
 | Signal | Declared at | Producers (`SignalBus<T>.Push/Publish`) | Consumers (`GetFrameSnapshot`) |
 |---|---|---|---|
 | `AcousticEchoTap` | `Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs:194` | `Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:617` | none found |
-| `AcousticPingSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7507` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5184`<br>`Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2383`<br>`Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1285`<br>`Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1446`<br>`Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:703`<br>`Assets/_Project/Scripts/SubmarineFluidDynamics.cs:4365`<br>`Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:5401` | `Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs:659`<br>`Assets/_Project/Scripts/HectonBoidController.cs:1655`<br>`Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1893`<br>`Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:4349`<br>`Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6067` |
+| `AcousticPingSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7507` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5184`<br>`Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2440`<br>`Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1285`<br>`Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1446`<br>`Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:703`<br>`Assets/_Project/Scripts/SubmarineFluidDynamics.cs:4365`<br>`Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:5401` | `Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs:659`<br>`Assets/_Project/Scripts/HectonBoidController.cs:1655`<br>`Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1882`<br>`Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:4349`<br>`Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6067` |
 | `AcousticShockwaveSignal` | `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:2364` | `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1276` | none found |
 | `AcousticZoneChangedEvent` | `Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:649` | `Assets/_Project/Scripts/AcousticZoneController.cs:29`<br>`Assets/_Project/Scripts/AcousticZoneController.cs:93`<br>`Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:651` | `Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:404`<br>`Assets/_Project/Scripts/Audio/HectonMusicDirector.cs:1339` |
 | `AnomalyProximitySignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7265` | `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:104` | `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:698` |
@@ -357,7 +359,7 @@ Legacy `GlobalSignals.Publish(...)` call sites found: 256. Many use local variab
 | `AtmosphericReentrySignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7933` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5468` | `Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs:219`<br>`Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:193`<br>`Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs:360` |
 | `AudioEvent` | `Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:639` | `Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:633`<br>`Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs:589` | `Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:249`<br>`Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:5057` |
 | `AupPreShiftSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6921` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4972` | `Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2399` |
-| `AupShiftSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6931` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4981` | `Assets/_Project/Scripts/Core/Content/ContentRuntimeServices.cs:1001`<br>`Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1039`<br>`Assets/_Project/Scripts/Core/GlobalSignals.cs:5993`<br>`Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:1325`<br>`Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:807`<br>`Assets/_Project/Scripts/HectonFluidEngine.cs:3235`<br>`Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:545`<br>`Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs:489`<br>`Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:734`<br>`Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1761`<br>`Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:1655`<br>`Assets/_Project/Scripts/Visor/SpectrumSystem.cs:2758`<br>... +5 more |
+| `AupShiftSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6931` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4981` | `Assets/_Project/Scripts/Core/Content/ContentRuntimeServices.cs:1001`<br>`Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1039`<br>`Assets/_Project/Scripts/Core/GlobalSignals.cs:5993`<br>`Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:1325`<br>`Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:807`<br>`Assets/_Project/Scripts/HectonFluidEngine.cs:3235`<br>`Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:545`<br>`Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs:489`<br>`Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:734`<br>`Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1750`<br>`Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:1655`<br>`Assets/_Project/Scripts/Visor/SpectrumSystem.cs:2758`<br>... +5 more |
 | `BaseModuleCompromisedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8457` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4944`<br>`Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:743` | none found |
 | `BatteryLevelSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8094` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5395`<br>`Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs:631` | none found |
 | `BiomeChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7022` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5764` | `Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs:667`<br>`Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:798`<br>`Assets/_Project/Scripts/Graphics/Materials/ProceduralFloraBiomeTintBridge.cs:70`<br>`Assets/_Project/Scripts/PlayerInventory.cs:4145` |
@@ -368,14 +370,14 @@ Legacy `GlobalSignals.Publish(...)` call sites found: 256. Many use local variab
 | `BulletTimeVisualSignal` | `Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:173` | none found | none found |
 | `CameraFrustumSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8383` | `Assets/_Project/Scripts/Core/SystemDispatcher.cs:5540` | `Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1021`<br>`Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs:1512` |
 | `CameraJuiceImpactSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:472` | `Assets/_Project/Scripts/Core/CameraJuiceSignals.cs:45` | none found |
-| `CameraPositionSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8373` | `Assets/_Project/Scripts/Core/SystemDispatcher.cs:5529` | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1075`<br>`Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:584`<br>`Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1008` |
+| `CameraPositionSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8373` | `Assets/_Project/Scripts/Core/SystemDispatcher.cs:5529` | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1075`<br>`Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:587`<br>`Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1008` |
 | `CardiacPulseSignal` | `Assets/_Project/Scripts/Physiology/ShinobuPhysiologyData.cs:287` | none found | none found |
 | `ChunkDehydratedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7589` | `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4599` | none found |
-| `CombatDamageSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8396` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4875`<br>`Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs:264`<br>`Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1334`<br>`Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:998` | `Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:784`<br>`Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:995`<br>`Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs:682`<br>`Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:620`<br>`Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs:171` |
+| `CombatDamageSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8396` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4875`<br>`Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs:267`<br>`Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1334`<br>`Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:998` | `Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:784`<br>`Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:995`<br>`Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs:682`<br>`Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:620`<br>`Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs:171` |
 | `CombatDamageSignalAupShiftTransformer` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8567` | none found | none found |
 | `CompassCalibratedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7277` | `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:81` | `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:711` |
 | `ComplianceViolationSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8212` | none found | none found |
-| `ConstructionPreviewSignal` | `Assets/_Project/Scripts/Construction/ConstructionSignals.cs:14` | none found | `Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs:312` |
+| `ConstructionPreviewSignal` | `Assets/_Project/Scripts/Construction/ConstructionSignals.cs:14` | none found | `Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs:337` |
 | `ControlSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7240` | none found | none found |
 | `CoreCombatDamageSignal` | not found as local `ISignal` declaration | none found | `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs:1240` |
 | `CoreHackedSignal` | `Assets/_Project/Scripts/Core/Contracts/SeedShipAnomalySignals.cs:40` | none found | `Assets/_Project/Scripts/World/SeedShipAnomaly/SeedShipAnomalyRuntime.cs:913` |
@@ -420,11 +422,11 @@ Legacy `GlobalSignals.Publish(...)` call sites found: 256. Many use local variab
 | `FluidIncursionSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7662` | `Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:742` | none found |
 | `FocusBrokenSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7078` | none found | none found |
 | `FramePacingWarningSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8547` | `Assets/_Project/Scripts/Core/SystemDispatcher.cs:3910` | none found |
-| `FrameTimeSignal` | `Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:15` | `Assets/_Project/Scripts/Core/HomeostasisBrain.cs:865` | `Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1237`<br>`Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1876` |
+| `FrameTimeSignal` | `Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:15` | `Assets/_Project/Scripts/Core/HomeostasisBrain.cs:865` | `Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1237`<br>`Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1865` |
 | `GlobalPanicSignal` | `Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs:407` | `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1225` | none found |
 | `GlobalTimeSyncSignal` | `Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:129` | none found | none found |
 | `GlobalWorldStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7001` | none found | none found |
-| `HUDNotificationSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7992` | `Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs:554`<br>`Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2367` | none found |
+| `HUDNotificationSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7992` | `Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs:554`<br>`Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2424` | none found |
 | `HabitatConstructionSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7313` | none found | none found |
 | `HapticRequest` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6676` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4902`<br>`Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1462`<br>`Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:588`<br>`Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:371` | none found |
 | `HashDeltaUpdateSignal` | `Assets/_Project/Scripts/Core/Contracts/MemorySentinelSignals.cs:30` | `Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:398` | `Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:1189` |
@@ -434,7 +436,7 @@ Legacy `GlobalSignals.Publish(...)` call sites found: 256. Many use local variab
 | `HypoxiaSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7615` | none found | none found |
 | `ImpactSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6620` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4888`<br>`Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1294`<br>`Assets/_Project/Scripts/SubmarineFluidDynamics.cs:4998`<br>`Assets/_Project/Scripts/SubmarineFluidDynamics.cs:5068` | `Assets/_Project/Scripts/World/SoundscapeSystem.cs:739` |
 | `InputSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:275` | `Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs:66` | none found |
-| `InputStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:522` | `Assets/_Project/Scripts/Core/InputDispatcher.cs:616` | `Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs:589`<br>`Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:587`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:1620`<br>`Assets/_Project/Scripts/UI/InteractionUI.cs:889`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5795` |
+| `InputStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:522` | `Assets/_Project/Scripts/Core/InputDispatcher.cs:616` | `Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs:589`<br>`Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:588`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:1620`<br>`Assets/_Project/Scripts/UI/InteractionUI.cs:889`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5795` |
 | `InteractionUiSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7639` | none found | none found |
 | `InventoryChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6819` | `Assets/_Project/Scripts/PlayerInventory.cs:3995` | `Assets/_Project/Scripts/Gameplay/PDAExchangeSystem.cs:669`<br>`Assets/_Project/Scripts/Gameplay/SuitUpgradeManager.cs:874`<br>`Assets/_Project/Scripts/HectonPlayerMovement.cs:4683`<br>`Assets/_Project/Scripts/PDAInventoryTab.cs:449`<br>`Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:378`<br>`Assets/_Project/Scripts/PlayerToolManager.cs:1922`<br>`Assets/_Project/Scripts/SubmarineFluidDynamics.cs:2829`<br>`Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs:205`<br>`Assets/_Project/Scripts/UI/PDAConstructionTab.cs:326`<br>`Assets/_Project/Scripts/UI/PDALoadoutTab.cs:288`<br>`Assets/_Project/Scripts/UI/PDAShellChrome.cs:509`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5773` |
 | `InventoryCommandSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6808` | `Assets/_Project/Scripts/PlayerInventory.cs:2015` | `Assets/_Project/Scripts/PlayerInventory.cs:2083` |
@@ -447,7 +449,7 @@ Legacy `GlobalSignals.Publish(...)` call sites found: 256. Many use local variab
 | `LaserCutterEventPayloadSignal` | not found as local `ISignal` declaration | `Assets/_Project/Scripts/LaserCutter.cs:288`<br>`Assets/_Project/Scripts/LaserCutter.cs:300` | `Assets/_Project/Scripts/LaserCutter.cs:115` |
 | `LightLevelSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8271` | none found | none found |
 | `LocalizationLanguageChangedSignal` | `Assets/_Project/Scripts/LocRegistry.cs:408` | `Assets/_Project/Scripts/LocRegistry.cs:1586` | none found |
-| `LockstepSnapshotSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:535` | `Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:983` | none found |
+| `LockstepSnapshotSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:535` | `Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:984` | none found |
 | `LoreFragmentScannedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7771` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5302` | none found |
 | `MacroCollisionSignal` | `Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs:616` | none found | none found |
 | `MacroDatabaseSectorHydrationSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8130` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5503` | `Assets/_Project/Scripts/SaveManager.cs:1412`<br>`Assets/_Project/Scripts/World/EcosystemDirector.cs:3777`<br>`Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs:543` |
@@ -458,16 +460,16 @@ Legacy `GlobalSignals.Publish(...)` call sites found: 256. Many use local variab
 | `MemoryPressureSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7428` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5146` | `Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:700`<br>`Assets/_Project/Scripts/UI/PDAShellChrome.cs:480`<br>`Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:3983` |
 | `MemorySentinelRollbackSignal` | `Assets/_Project/Scripts/Core/Contracts/MemorySentinelSignals.cs:51` | `Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:1400` | none found |
 | `MixerStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7091` | none found | none found |
-| `MockAcousticSignal` | `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs:179` | none found | none found |
+| `MockAcousticSignal` | `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs:180` | none found | none found |
 | `MockAupRebaseSignal` | `Assets/_Project/Scripts/Core/Contracts/SeedShipAnomalySignals.cs:16` | none found | none found |
 | `MockCarveRequestSignal` | `Assets/_Project/Scripts/Tools/ToolKinematics/Contracts/ToolKinematicsContracts.cs:190` | none found | none found |
 | `MockCombatDamageSignal` | `Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs:389` | none found | none found |
 | `MockConsumeSignal` | `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs:140` | none found | none found |
 | `MockCraftingRequestSignal` | `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs:128` | none found | none found |
-| `MockDamageSignal` | `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs:193` | `Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:974` | none found |
+| `MockDamageSignal` | `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs:194` | `Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:974` | none found |
 | `MockHotbarSelectSignal` | `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs:201` | none found | none found |
 | `MockHudSignal` | `Assets/_Project/Scripts/Core/Contracts/SeedShipAnomalySignals.cs:54` | none found | none found |
-| `MockInventoryTransactionSignal` | `Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:290` | `Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2357` | none found |
+| `MockInventoryTransactionSignal` | `Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:290` | `Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2414` | none found |
 | `MockItemAcquiredSignal` | `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs:116` | none found | none found |
 | `MockLaserFireSignal` | `Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs:29` | none found | none found |
 | `MockModuleStateSignal` | `Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:72` | none found | none found |
@@ -481,15 +483,15 @@ Legacy `GlobalSignals.Publish(...)` call sites found: 256. Many use local variab
 | `MockTextRequestSignal` | `Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs:218` | none found | none found |
 | `MockToolUsedSignal` | `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs:152` | none found | none found |
 | `MockTriggerPullSignal` | `Assets/_Project/Scripts/Tools/ToolKinematics/Contracts/ToolKinematicsContracts.cs:181` | none found | none found |
-| `ModAssetReferenceSignal` | `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs:165` | none found | none found |
-| `ModFutureDevNullSignal` | `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs:207` | none found | none found |
-| `ModSpawnRequestSignal` | `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs:152` | none found | none found |
+| `ModAssetReferenceSignal` | `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs:166` | none found | none found |
+| `ModFutureDevNullSignal` | `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs:208` | none found | none found |
+| `ModSpawnRequestSignal` | `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs:153` | none found | none found |
 | `ModdedGameMaskSignal` | `Assets/_Project/Scripts/Core/Contracts/MemorySentinelSignals.cs:68` | none found | `Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:613` |
 | `ModuleDeconstructSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7353` | none found | none found |
 | `MovementAcousticSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7533` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5192` | `Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs:622`<br>`Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs:707`<br>`Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6040` |
 | `NarrativeFocusSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7057` | none found | none found |
 | `NarrativeHudWaypointSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7105` | none found | none found |
-| `NarrativePoiStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7128` | none found | `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:832`<br>`Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:810` |
+| `NarrativePoiStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7128` | none found | `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:847`<br>`Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:810` |
 | `OxygenCriticalSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7627` | none found | none found |
 | `PdaExchangeStateChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8040` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5437` | `Assets/_Project/Scripts/UI/PDABarterTab.cs:198`<br>`Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs:793` |
 | `PhysicsEventPayload` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:664` | `Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:245`<br>`Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:5002`<br>`Assets/_Project/Scripts/PhysicsApplySystem.cs:745`<br>`Assets/_Project/Scripts/PhysicsApplySystem.cs:779` | `Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:122`<br>`Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:244`<br>`Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:4963`<br>`Assets/_Project/Scripts/PhysicsApplySystem.cs:606`<br>`Assets/_Project/Scripts/SpatialAudioManager.cs:4517` |
@@ -501,16 +503,16 @@ Legacy `GlobalSignals.Publish(...)` call sites found: 256. Many use local variab
 | `PlayerActionProgressSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6752` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5409` | `Assets/_Project/Scripts/UI/ActionProgressHUD.cs:133` |
 | `PlayerBaseEnterSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8479` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4951` | none found |
 | `PlayerBaseExitSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8494` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4958` | none found |
-| `PlayerExhaleSignal` | `Assets/_Project/Scripts/Core/Signals/PlayerMovementPresentationSignals.cs:78` | `Assets/_Project/Scripts/HectonPlayerMovement.cs:10528` | `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs:6071`<br>`Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:541`<br>`Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs:318` |
-| `PlayerFatalPressureSignal` | `Assets/_Project/Scripts/Core/Signals/PlayerMovementPresentationSignals.cs:108` | `Assets/_Project/Scripts/HectonPlayerMovement.cs:10552` | `Assets/_Project/Scripts/UI/HectonOSBootManager.cs:215`<br>`Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:562` |
+| `PlayerExhaleSignal` | `Assets/_Project/Scripts/Core/Signals/PlayerMovementPresentationSignals.cs:78` | `Assets/_Project/Scripts/HectonPlayerMovement.cs:10528` | `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs:6071`<br>`Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:678`<br>`Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs:318` |
+| `PlayerFatalPressureSignal` | `Assets/_Project/Scripts/Core/Signals/PlayerMovementPresentationSignals.cs:108` | `Assets/_Project/Scripts/HectonPlayerMovement.cs:10552` | `Assets/_Project/Scripts/UI/HectonOSBootManager.cs:215`<br>`Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:699` |
 | `PlayerFootstepSignal` | `Assets/_Project/Scripts/Core/Signals/PlayerMovementPresentationSignals.cs:8` | `Assets/_Project/Scripts/HectonPlayerMovement.cs:10494` | `Assets/_Project/Scripts/PlayerFootstepAudio.cs:224` |
-| `PlayerInputSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:721` | `Assets/_Project/Scripts/Core/InputDispatcher.cs:3114` | `Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:564`<br>`Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:581`<br>`Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:2144`<br>`Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:2165`<br>`Assets/_Project/Scripts/HectonFabricatorUI.cs:625`<br>`Assets/_Project/Scripts/HectonFabricatorUI.cs:651`<br>`Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:314`<br>`Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:331`<br>`Assets/_Project/Scripts/MainMenuController.cs:897`<br>`Assets/_Project/Scripts/MainMenuController.cs:913`<br>`Assets/_Project/Scripts/PlayerBuilder.cs:668`<br>`Assets/_Project/Scripts/PlayerBuilder.cs:685`<br>... +7 more |
+| `PlayerInputSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:721` | `Assets/_Project/Scripts/Core/InputDispatcher.cs:3114` | `Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:564`<br>`Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:581`<br>`Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:2144`<br>`Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:2165`<br>`Assets/_Project/Scripts/HectonFabricatorUI.cs:625`<br>`Assets/_Project/Scripts/HectonFabricatorUI.cs:651`<br>`Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:314`<br>`Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:331`<br>`Assets/_Project/Scripts/MainMenuController.cs:897`<br>`Assets/_Project/Scripts/MainMenuController.cs:913`<br>`Assets/_Project/Scripts/PlayerBuilder.cs:669`<br>`Assets/_Project/Scripts/PlayerBuilder.cs:686`<br>... +7 more |
 | `PlayerLookTargetSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:740` | `Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:611`<br>`Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:631` | `Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs:461` |
 | `PlayerSprintStateSignal` | `Assets/_Project/Scripts/Core/Signals/PlayerMovementPresentationSignals.cs:93` | `Assets/_Project/Scripts/HectonPlayerMovement.cs:10540` | `Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs:1209` |
-| `PlayerStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6699` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4911` | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1064`<br>`Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:576`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2030`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2483`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2584`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5756` |
+| `PlayerStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6699` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4911` | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1064`<br>`Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:579`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2030`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2483`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2584`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5756` |
 | `PlayerStressSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8348` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5714` | `Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2501`<br>`Assets/_Project/Scripts/VFX/Materials/MaterialDecayRuntime.cs:321` |
 | `PlayerTransportBailoutSignal` | `Assets/_Project/Scripts/Core/Signals/PlayerMovementPresentationSignals.cs:120` | `Assets/_Project/Scripts/HectonPlayerMovement.cs:10568` | `Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:1338` |
-| `PlayerWaterSplashSignal` | `Assets/_Project/Scripts/Core/Signals/PlayerMovementPresentationSignals.cs:36` | `Assets/_Project/Scripts/HectonPlayerMovement.cs:10517` | `Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs:1024`<br>`Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:549` |
+| `PlayerWaterSplashSignal` | `Assets/_Project/Scripts/Core/Signals/PlayerMovementPresentationSignals.cs:36` | `Assets/_Project/Scripts/HectonPlayerMovement.cs:10517` | `Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs:1024`<br>`Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:686` |
 | `PowerDrainSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7876` | none found | none found |
 | `PrefabAcousticSignatureSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:158` | `Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistry.cs:345`<br>`Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistryRuntimeBinder.cs:85` | none found |
 | `PrefabLoreLinkSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:172` | `Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistry.cs:356`<br>`Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistryRuntimeBinder.cs:96` | none found |
@@ -555,14 +557,14 @@ Legacy `GlobalSignals.Publish(...)` call sites found: 256. Many use local variab
 | `StorageDebtSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7902` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5454` | none found |
 | `StreamingTurbulenceSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7921` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5461` | none found |
 | `SubmarineFloodStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7673` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5248`<br>`Assets/_Project/Scripts/SubmarineFluidDynamics.cs:2674` | `Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:956`<br>`Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:410` |
-| `SubmarineLightsChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8296` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5678` | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:597`<br>`Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:2431`<br>`Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:4221` |
+| `SubmarineLightsChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8296` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5678` | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:600`<br>`Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:2431`<br>`Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:4221` |
 | `SubtitleSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7393` | none found | `Assets/_Project/Scripts/UI/SubtitleManager.cs:740` |
 | `SurvivalVitalsChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6738` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4924` | `Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:791`<br>`Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:718`<br>`Assets/_Project/Scripts/UI/SuitAdvisoryController.cs:161`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:4517`<br>`Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs:764`<br>`Assets/_Project/Scripts/Visor/VisorHUDController.cs:1322` |
 | `SwarmDispersedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7546` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5199`<br>`Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs:555`<br>`Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6119` | none found |
 | `SyncFenceSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:314` | `Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs:1051`<br>`Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs:87` | none found |
-| `SystemGlitchSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:550` | `Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:1081` | `Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:569` |
-| `SystemHealthIndexSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7477` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5167`<br>`Assets/_Project/Scripts/Core/HomeostasisBrain.cs:892`<br>`Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs:1064` | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1133`<br>`Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:773`<br>`Assets/_Project/Scripts/Core/InputDispatcher.cs:3406`<br>`Assets/_Project/Scripts/Core/SystemDispatcher.cs:2571`<br>`Assets/_Project/Scripts/Core/SystemDispatcher.cs:3563`<br>`Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs:912`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2554`<br>`Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs:491`<br>`Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:987`<br>`Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:989`<br>`Assets/_Project/Scripts/LaserCutter.cs:1615`<br>`Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:387`<br>... +6 more |
-| `SystemHealthSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:224` | `Assets/_Project/Scripts/Core/HomeostasisBrain.cs:838` | `Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1229`<br>`Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:770`<br>`Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:402`<br>`Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:842`<br>`Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs:1536`<br>`Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:726`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5813`<br>`Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:1832` |
+| `SystemGlitchSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:550` | `Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:1082` | `Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:706` |
+| `SystemHealthIndexSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7477` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5167`<br>`Assets/_Project/Scripts/Core/HomeostasisBrain.cs:892`<br>`Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs:1070` | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1133`<br>`Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:773`<br>`Assets/_Project/Scripts/Core/InputDispatcher.cs:3406`<br>`Assets/_Project/Scripts/Core/SystemDispatcher.cs:2571`<br>`Assets/_Project/Scripts/Core/SystemDispatcher.cs:3563`<br>`Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs:912`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2554`<br>`Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs:491`<br>`Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:987`<br>`Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:989`<br>`Assets/_Project/Scripts/LaserCutter.cs:1615`<br>`Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:387`<br>... +6 more |
+| `SystemHealthSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:224` | `Assets/_Project/Scripts/Core/HomeostasisBrain.cs:838` | `Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1229`<br>`Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:770`<br>`Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:403`<br>`Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:842`<br>`Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs:1536`<br>`Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:726`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5813`<br>`Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:1832` |
 | `SystemPauseSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8522` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5583`<br>`Assets/_Project/Scripts/Core/GlobalSignals.cs:5590`<br>`Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:734` | none found |
 | `TelemetryAnomalySignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7287` | none found | none found |
 | `TemperatureChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6877` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4995` | none found |
@@ -571,7 +573,7 @@ Legacy `GlobalSignals.Publish(...)` call sites found: 256. Many use local variab
 | `TetherFiredSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:375` | none found | none found |
 | `TetherSnappedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:360` | `Assets/_Project/Scripts/Physics/TetherSignals.cs:76` | `Assets/_Project/Scripts/Physics/TetherSignals.cs:89` |
 | `TetherTensionSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:343` | `Assets/_Project/Scripts/Physics/TetherSignals.cs:83` | none found |
-| `ThermalStateChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8078` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5388`<br>`Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs:618` | `Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:800`<br>`Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:424` |
+| `ThermalStateChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8078` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5388`<br>`Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs:618` | `Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:800`<br>`Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:425` |
 | `ThermalUpdraftSignal` | `Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardTypes.cs:70` | `Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:966` | none found |
 | `TimeDilationSignal` | `Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:143` | none found | none found |
 | `ToolAcousticSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:7859` | `Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:359`<br>`Assets/_Project/Scripts/VFX/Materials/MaterialDecayRuntime.cs:355` | none found |
@@ -595,7 +597,7 @@ Legacy `GlobalSignals.Publish(...)` call sites found: 256. Many use local variab
 | `WakeGeneratedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6951` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5728`<br>`Assets/_Project/Scripts/Gameplay/VehicleMotor.cs:1239`<br>`Assets/_Project/Scripts/World/FloraInteractionManager.cs:2255` | `Assets/_Project/Scripts/World/FloraInteractionManager.cs:2260` |
 | `WakeRequestSignal` | `Assets/_Project/Scripts/Core/Signals/PhysicsWakeSignalContracts.cs:12` | none found | none found |
 | `WaterTransitionSignal` | `Assets/_Project/Scripts/Core/Signals/PlayerMovementPresentationSignals.cs:58` | `Assets/_Project/Scripts/HectonPlayerMovement.cs:10612` | `Assets/_Project/Scripts/Gameplay/WaterTransitionHandler.cs:60` |
-| `WaterlineBreachSignal` | `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs:855` | `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:789` | none found |
+| `WaterlineBreachSignal` | `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs:875` | `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:804` | none found |
 | `WeatherChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8509` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5624` | none found |
 | `WeatherStrengthSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8238` | none found | none found |
 | `WfcOutpostDoorPowerSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8172` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5524`<br>`Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:477` | `Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs:949` |
@@ -1016,7 +1018,7 @@ Pattern scan: active `Docs/AgentLogs/` only; terms: `TODO`, `HACK`, `FIX LATER`.
 | File | Line | Text |
 |---|---:|---|
 | `Docs/AgentLogs/LOG_SHINOBU_48.md` | 16 | - Added typed signals: `RadarJamSignal`, `CoreHackedSignal`, `MockAupRebaseSignal`, `MockHudSignal`; reused anomaly, radiation and system glitch lanes. |
-| `Docs/AgentLogs/LOG_SHINOBU_64.md` | 475 | What was wrong: `HectonNetworkManager` was a placeholder with debug logging and transform/message-oriented TODOs. There was no rollback state ring, no input mismatch detector, n... |
+| `Docs/AgentLogs/LOG_SHINOBU_64.md` | 575 | What was wrong: `HectonNetworkManager` was a placeholder with debug logging and transform/message-oriented TODOs. There was no rollback state ring, no input mismatch detector, n... |
 | `Docs/AgentLogs/Rationale_SHINOBU_48.md` | 114 | Problem: Narrative hacking must heal the world mathematically. |
 | `Docs/AgentLogs/Rationale_SHINOBU_48.md` | 115 | Solution: `CoreHackedSignal` with the accepted code starts a 10-second scalar decay; gravity, shaders, predator frenzy and radiation converge as corruption falls. |
 | `Docs/AgentLogs/Rationale_SHINOBU_48.md` | 135 | Solution: `SeedShipAnomalyTunerWindow` reads/writes Vault handles for field/tuning/global rows in Play Mode and can inject `CoreHackedSignal`. |
@@ -1056,10 +1058,10 @@ Near-match active logs:
 | `PlayerActionCancelledSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6787` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5423` | `Assets/_Project/Scripts/UI/ActionProgressHUD.cs:141` |
 | `PdaExchangeStateChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8040` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5437` | `Assets/_Project/Scripts/UI/PDABarterTab.cs:198`<br>`Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs:793` |
 | `VehicleUpgradesChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:8061` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:5444` | none found |
-| `PlayerStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6699` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4911` | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1064`<br>`Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:576`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2030`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2483`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2584`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5756` |
+| `PlayerStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6699` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:4911` | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1064`<br>`Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:579`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2030`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2483`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2584`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5756` |
 | `InventoryChangedSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:6819` | `Assets/_Project/Scripts/PlayerInventory.cs:3995` | `Assets/_Project/Scripts/Gameplay/PDAExchangeSystem.cs:669`<br>`Assets/_Project/Scripts/Gameplay/SuitUpgradeManager.cs:874`<br>`Assets/_Project/Scripts/HectonPlayerMovement.cs:4683`<br>`Assets/_Project/Scripts/PDAInventoryTab.cs:449`<br>`Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:378`<br>`Assets/_Project/Scripts/PlayerToolManager.cs:1922`<br>`Assets/_Project/Scripts/SubmarineFluidDynamics.cs:2829`<br>`Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs:205` |
-| `InputStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:522` | `Assets/_Project/Scripts/Core/InputDispatcher.cs:616` | `Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs:589`<br>`Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:587`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:1620`<br>`Assets/_Project/Scripts/UI/InteractionUI.cs:889`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5795` |
-| `SystemHealthSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:224` | `Assets/_Project/Scripts/Core/HomeostasisBrain.cs:838` | `Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1229`<br>`Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:770`<br>`Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:402`<br>`Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:842`<br>`Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs:1536`<br>`Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:726`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5813`<br>`Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:1832` |
+| `InputStateSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:522` | `Assets/_Project/Scripts/Core/InputDispatcher.cs:616` | `Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs:589`<br>`Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:588`<br>`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:1620`<br>`Assets/_Project/Scripts/UI/InteractionUI.cs:889`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5795` |
+| `SystemHealthSignal` | `Assets/_Project/Scripts/Core/GlobalSignals.cs:224` | `Assets/_Project/Scripts/Core/HomeostasisBrain.cs:838` | `Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1229`<br>`Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:770`<br>`Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:403`<br>`Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:842`<br>`Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs:1536`<br>`Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:726`<br>`Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5813`<br>`Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:1832` |
 
 ## Phi-Resonance Connectivity Model
 

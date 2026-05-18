@@ -117,6 +117,7 @@ namespace Hecton8.Editor
         private const string StructLayoutToken = "StructLayout";
         private const string PackToken = "Pack";
         private const string GuidToken = "guid:";
+        private const string GuidReferencePrefix = "GUID:";
         private const string NameJsonProperty = "\"name\"";
         private const string ReferencesJsonProperty = "\"references\"";
         private const string IncludePlatformsJsonProperty = "\"includePlatforms\"";
@@ -139,12 +140,15 @@ namespace Hecton8.Editor
         private const string ClassToken = "class ";
         private const int UnityGuidHexLength = 32;
         private const string PackOneSnippet = "forbidden runtime struct pack-one layout";
+        private const string RefDllSuffix = ".ref.dll";
         private static readonly byte[] LegacyHeaderScratch = new byte[LegacyGraphHeaderBytes];
         private static readonly byte[] SourceScanScratch = new byte[SourceScanBufferBytes];
         private static readonly byte[] AsmdefJsonScratch = new byte[AsmdefJsonBytes];
         private static readonly byte[] TypeLineScratch = new byte[TypeSourceLineBytes];
         private static readonly char[] GuidScratch = new char[UnityGuidHexLength];
         private static readonly char[] IdentifierScratch = new char[TypeIdentifierChars];
+        private static readonly string PostProcessedPathToken =
+            Path.DirectorySeparatorChar + "post-processed" + Path.DirectorySeparatorChar;
 
         public static CompileWallGraphScan ScanProject()
         {
@@ -160,7 +164,7 @@ namespace Hecton8.Editor
             }
 
             var byName = new Dictionary<string, CompileWallAsmdefNode>(128);
-            var byGuid = new Dictionary<string, CompileWallAsmdefNode>(128);
+            var byGuidReference = new Dictionary<string, CompileWallAsmdefNode>(128);
             using (IEnumerator<string> files = Directory.EnumerateFiles(
                        absoluteAsmdefRoot,
                        "*.asmdef",
@@ -175,8 +179,12 @@ namespace Hecton8.Editor
                     scan.Nodes.Add(node);
                     if (!byName.ContainsKey(node.Name))
                         byName.Add(node.Name, node);
-                    if (!string.IsNullOrEmpty(node.Guid) && !byGuid.ContainsKey(node.Guid))
-                        byGuid.Add(node.Guid, node);
+                    if (!string.IsNullOrEmpty(node.Guid))
+                    {
+                        string guidReference = GuidReferencePrefix + node.Guid;
+                        if (!byGuidReference.ContainsKey(guidReference))
+                            byGuidReference.Add(guidReference, node);
+                    }
                 }
             }
 
@@ -189,7 +197,7 @@ namespace Hecton8.Editor
 
                 for (int r = 0; r < refs.Length; r++)
                 {
-                    string referenceName = ResolveReferenceName(refs[r], byGuid);
+                    string referenceName = ResolveReferenceName(refs[r], byGuidReference);
                     if (string.IsNullOrEmpty(referenceName))
                         continue;
 
@@ -562,17 +570,15 @@ namespace Hecton8.Editor
             return false;
         }
 
-        private static string ResolveReferenceName(string reference, Dictionary<string, CompileWallAsmdefNode> byGuid)
+        private static string ResolveReferenceName(
+            string reference,
+            Dictionary<string, CompileWallAsmdefNode> byGuidReference)
         {
             if (string.IsNullOrEmpty(reference))
                 return string.Empty;
 
-            const string guidPrefix = "GUID:";
-            if (reference.StartsWith(guidPrefix, StringComparison.Ordinal))
-            {
-                string guid = reference.Substring(guidPrefix.Length);
-                return byGuid.TryGetValue(guid, out CompileWallAsmdefNode node) ? node.Name : string.Empty;
-            }
+            if (reference.StartsWith(GuidReferencePrefix, StringComparison.Ordinal))
+                return byGuidReference.TryGetValue(reference, out CompileWallAsmdefNode node) ? node.Name : string.Empty;
 
             return reference;
         }
@@ -763,14 +769,12 @@ namespace Hecton8.Editor
                 while (files.MoveNext())
                 {
                     string path = files.Current;
-                    if (path.IndexOf(Path.DirectorySeparatorChar + "post-processed" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) >= 0)
+                    if (path.IndexOf(PostProcessedPathToken, StringComparison.OrdinalIgnoreCase) >= 0)
                         continue;
 
-                    string fileName = Path.GetFileName(path);
-                    if (string.IsNullOrEmpty(fileName) || !fileName.EndsWith(".ref.dll", StringComparison.Ordinal))
+                    if (!TryGetRefAssemblyName(path, out string assemblyName))
                         continue;
 
-                    string assemblyName = fileName.Substring(0, fileName.Length - 8);
                     long writeTimeTicks = File.GetLastWriteTimeUtc(path).Ticks;
                     if (!result.TryGetValue(assemblyName, out CompileWallRefArtifactRecord existing) ||
                         writeTimeTicks > existing.WriteTimeUtcTicks)
@@ -785,6 +789,33 @@ namespace Hecton8.Editor
             }
 
             return result;
+        }
+
+        private static bool TryGetRefAssemblyName(string path, out string assemblyName)
+        {
+            assemblyName = string.Empty;
+            if (string.IsNullOrEmpty(path) || !path.EndsWith(RefDllSuffix, StringComparison.Ordinal))
+                return false;
+
+            int suffixStart = path.Length - RefDllSuffix.Length;
+            int nameStart = LastIndexOfDirectorySeparator(path) + 1;
+            if (nameStart >= suffixStart)
+                return false;
+
+            assemblyName = path.Substring(nameStart, suffixStart - nameStart);
+            return true;
+        }
+
+        private static int LastIndexOfDirectorySeparator(string path)
+        {
+            for (int i = path.Length - 1; i >= 0; i--)
+            {
+                char value = path[i];
+                if (value == '/' || value == '\\')
+                    return i;
+            }
+
+            return -1;
         }
 
         private static void ScanRuntimePackViolations(string projectRoot, CompileWallGraphScan scan)

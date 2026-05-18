@@ -268,6 +268,7 @@ namespace Hecton8.QA.Headless
         private const float QualityClampWeight = 0.1f;
         private const float QualityClampSeconds = 300f;
         private const float QualityReleaseRampSeconds = 60f;
+        private const float MinimumQualityAuditSeconds = QualityClampSeconds + QualityReleaseRampSeconds;
         private const float QualityCycleSeconds = 600f;
         private const float QualityEpsilon = 0.0005f;
         private const float HealthStressPulseSeconds = 10f;
@@ -275,7 +276,6 @@ namespace Hecton8.QA.Headless
         private const float CatastrophicAupDeltaMeters = 500f;
         private const float AupJitterFailureMeters = 0.001f;
         private const float LowQualityNormalCollapseThreshold = 0.3f;
-        private const float StressRecoveryHealthThreshold = 0.9f;
         private const long BytesPerMegabyte = 1024L * 1024L;
         private const uint KccAupMaxFrameAge = 2u;
         private const uint InputMaskSprint = 1u << 4;
@@ -382,6 +382,7 @@ namespace Hecton8.QA.Headless
         private float _targetDistanceMeters = DefaultTargetDistanceMeters;
         private float _nextCsvTime;
         private float _memoryWindowElapsed;
+        private float _memoryWindowStartWallSeconds;
         private float _lowFpsElapsed;
         private float _lastDistanceForStuck;
         private float _stuckElapsed;
@@ -722,6 +723,7 @@ namespace Hecton8.QA.Headless
             _baselineGcUsedBytes = ReadRecorderBytes(_gcUsedRecorder, Profiler.GetMonoUsedSizeLong());
             _baselineReservedBytes = ReadRecorderBytes(_totalReservedRecorder, Profiler.GetTotalReservedMemoryLong());
             _memoryWindowStartBytes = _baselineReservedBytes;
+            _memoryWindowStartWallSeconds = 0f;
             _nextCsvTime = 0f;
             _qualityWallSeconds = 0f;
             _qualityClockTicks = Stopwatch.GetTimestamp();
@@ -897,7 +899,7 @@ namespace Hecton8.QA.Headless
             }
 
             _lastAvoidanceCorrections = (vault.FrameFlags & TelemetryFlagAvoidance) != 0u ? 1f : 0f;
-            _memoryWindowElapsed += snapshot.FrameTimeMs * 0.001f;
+            _memoryWindowElapsed = math.max(0f, _qualityWallSeconds - _memoryWindowStartWallSeconds);
             if (snapshot.FrameTimeMs > (1000f / FatalLowFpsThreshold))
                 _lowFpsElapsed += snapshot.FrameTimeMs * 0.001f;
             else
@@ -920,6 +922,7 @@ namespace Hecton8.QA.Headless
                 }
 
                 _memoryWindowStartBytes = _lastReservedBytes;
+                _memoryWindowStartWallSeconds = _qualityWallSeconds;
                 _memoryWindowElapsed = 0f;
             }
 
@@ -940,6 +943,7 @@ namespace Hecton8.QA.Headless
                     csvScratch,
                     _frame,
                     state.TestDuration,
+                    _qualityWallSeconds,
                     in vault.CurrentAUP,
                     snapshot.FrameTimeMs,
                     _lastGcUsedBytes,
@@ -975,8 +979,19 @@ namespace Hecton8.QA.Headless
                 return;
             }
 
-            if (state.DistanceTraveled >= _targetDistanceMeters)
+            if (ShouldFinishSuccessfully(in state, in vault))
                 Finish(ResultStatusComplete, EventHashComplete);
+        }
+
+        private bool ShouldFinishSuccessfully(in WatchdogStateDTO state, in Shinobu38MockVaultDTO vault)
+        {
+            if (state.DistanceTraveled < _targetDistanceMeters)
+                return false;
+
+            if (_qualityWallSeconds < MinimumQualityAuditSeconds)
+                return false;
+
+            return (vault.Flags & VaultFlagStressRecoveryObserved) != 0u;
         }
 
         private uint BuildTelemetryFlags(in Shinobu38MockVaultDTO vault)
@@ -1059,7 +1074,7 @@ namespace Hecton8.QA.Headless
                 return;
             }
 
-            if (_healthStressWasActive && ResolveSystemHealthIndex01() < StressRecoveryHealthThreshold)
+            if (_healthStressWasActive)
             {
                 vault.Flags &= ~VaultFlagLowTierEmergency;
                 vault.Flags |= VaultFlagStressRecoveryObserved;
@@ -1241,6 +1256,10 @@ namespace Hecton8.QA.Headless
             writer.AppendUInt(vault.Flags);
             writer.AppendAscii(",\"qualityWeight\":");
             writer.AppendFloat(_lastForcedQualityWeight);
+            writer.AppendAscii(",\"wallSeconds\":");
+            writer.AppendFloat(_qualityWallSeconds);
+            writer.AppendAscii(",\"qualityAuditObserved\":");
+            writer.AppendUInt(_qualityWallSeconds >= MinimumQualityAuditSeconds ? 1u : 0u);
             writer.AppendAscii(",\"catastrophicAupDeltaFrame\":");
             writer.AppendUInt(_catastrophicAupDeltaFrame);
             writer.AppendAscii(",\"lastEventHash\":");
@@ -2293,7 +2312,7 @@ namespace Hecton8.QA.Headless
         public static int WriteHeader(NativeArray<byte> scratch)
         {
             Shinobu38AsciiBuffer writer = new Shinobu38AsciiBuffer(scratch);
-            writer.AppendAscii("Timestamp,AUP_X,AUP_Y,AUP_Z,FrameTimeMs,GCUsedBytes,ReservedBytes,VRAMBytes,SHI,QualityWeight,Thermal,IO,AUPJitterMm,DistanceMeters,RebaseCount,HardwareFlags,VaultFlags\n");
+            writer.AppendAscii("Timestamp,WallSeconds,AUP_X,AUP_Y,AUP_Z,FrameTimeMs,GCUsedBytes,ReservedBytes,VRAMBytes,SHI,QualityWeight,Thermal,IO,AUPJitterMm,DistanceMeters,RebaseCount,HardwareFlags,VaultFlags\n");
             return writer.Length;
         }
 
@@ -2301,6 +2320,7 @@ namespace Hecton8.QA.Headless
             NativeArray<byte> scratch,
             uint frame,
             float timestamp,
+            float wallSeconds,
             in double3 aup,
             float frameTimeMs,
             long gcUsedBytes,
@@ -2318,6 +2338,8 @@ namespace Hecton8.QA.Headless
         {
             Shinobu38AsciiBuffer writer = new Shinobu38AsciiBuffer(scratch);
             writer.AppendFloat(timestamp);
+            writer.AppendComma();
+            writer.AppendFloat(wallSeconds);
             writer.AppendComma();
             writer.AppendDouble(aup.x);
             writer.AppendComma();

@@ -43,3 +43,9 @@ Titanium hardening pass:
 - What was done: Removed the local input DTO and requested VaultBufferHandle<InputStateDTO> for BufferID.ShinobuInputCurrentDto. BotNavigationJob writes the canonical input ABI. AUP audit now records max(actual position delta, float reconstruction error) and flags >1mm.
 - Cinematic Cheats used: Same Dear Lie path: unmanaged input bytes and PhysicsDeterminismSignals override instead of XR/Input Manager; SDF cave math instead of NavMesh/Raycast; deterministic thermal pressure instead of waiting for real throttling.
 - Exact Microseconds saved: No new measured proof. Contract fix has no intended hot-path cost change. AUP audit adds one local vector length when KCC output exists, estimated around 1 us. Latest guard sample is CPU=100.00 percent with csc.exe count 1, so build remains blocked.
+
+2026-05-19 wall-clock audit hardening pass:
+- What was wrong: The watchdog could reach 10km under fast-forwarded simulation time before the real 300s GlobalQualityWeight clamp and 60s recovery happened. That creates a false green QA report. The memory leak slope window was also advanced by simulated frame time, not real elapsed time.
+- What was done: Success now requires distance >= target, Stopwatch wall-clock >= 360s, and VaultFlagStressRecoveryObserved. The memory leak bloodhound compares wall seconds against _memoryWindowStartWallSeconds. CSV rows now include WallSeconds; result JSON includes wallSeconds and qualityAuditObserved.
+- Cinematic Cheats used: Thermal pressure remains deterministic fake load; the fake is now forced to last long enough to test the real load-shedding path. SDF cave steering remains the navigation Dear Lie.
+- Exact Microseconds saved: No measured runtime proof. The success gate adds two float comparisons and one bit check, estimated below 1 us/frame. Latest guard sample is CPU=99.22 percent with csc.exe count 0, so build remains blocked by CPU policy.

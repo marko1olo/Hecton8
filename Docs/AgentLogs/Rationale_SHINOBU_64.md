@@ -173,3 +173,10 @@ Solution: Reassert that the current user directive is `SHINOBU_LOCKSTEP_ROLLBACK
 Rejected Alternatives: Deleting volcanic entries, which would erase another lane's evidence trail.
 Scalability potential: None; this protects task identity.
 Hardware Impact: No runtime claim. Latest rollback build remains deferred by CPU/compiler guard.
+
+### Active Volcanic Lane Pointer - 2026-05-19 Dispatcher Polish
+Problem: Latest active user directive is volcanic updrafts, but this shared rationale remains polluted by duplicate-ID rollback state.
+Solution: Keep detailed volcanic reasoning in `Docs/AgentLogs/Rationale_SHINOBU_64_VOLCANIC_UPDRAFT.md` and append this pointer only. The volcanic director now uses `IDispatcherFixedSystem`, returns the fixed job handle to the master bridge, and avoids owner-side hot completion.
+Rejected Alternatives: Overwriting rollback evidence or keeping the legacy volcanic fixed/post-fixed scheduling path.
+Scalability potential: Low/Middle/High/Ultra behavior remains controlled by `GlobalQualityWeight`; weak quality skips debris vent intersections and collapses turbulence before the dispatcher job spends the ALU.
+Hardware Impact: Build remains deferred because guard sampled `CPU=100,100,99.2` with zero compiler processes.

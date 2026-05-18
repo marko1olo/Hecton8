@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_47
 
-Status: POLISH LOOP 20 CODE PATCHED / STATIC PASS / BUILD DEFERRED BY CPU GUARD / FULL BUILD BLOCKED BY UPSTREAM CORE DEPENDENCY
+Status: POLISH LOOP 21 CODE PATCHED / STATIC PASS / BUILD DEFERRED BY CPU GUARD / FULL BUILD BLOCKED BY UPSTREAM CORE DEPENDENCY
 
 ## Pre-Code Mandate Selection
 Problem: Exosuit must move as heavy machinery in caves without Rigidbody, Unity joints, or hot-path GC.
@@ -242,3 +242,17 @@ Solution: Ran the exosuit forbidden-token scan and `git diff --check` for the to
 Rejected Alternatives: Launching dotnet build under saturated CPU, or touching the known Core/Atmosphere `WaterlineBreachSignal` compile blocker from the exosuit lane.
 Scalability potential: None; this is workstation safety and evidence hygiene.
 Hardware Impact: Avoided adding compiler load while the host CPU was already saturated.
+
+## Decision 26 - Loop 21 Secondary Probe Normal Hardening
+Problem: The bounded multi-contact MTV introduced in the secondary shell path trusted each penetrating SDF sample normal. The current mock SDF returns unit finite normals, but the real terrain sampler may hand over a denormal, zero, or non-finite normal during streaming or sector-edge faults. That would turn a corner fix into a NaN source.
+Solution: Normalize every active penetrating probe normal through `NormalizeWithFallback(sample.Normal, strongestNormal)` before it contributes to the MTV or replaces the strongest fallback normal. Non-penetrating probes still return immediately and pay nothing.
+Rejected Alternatives: Trusting terrain ownership, clamping the final MTV only, or adding a persistent contact-manifold buffer. Trusting upstream hides a physics failure; final-only clamping still lets bad normals poison strongest-normal fallback; another buffer expands authority memory for a local math guard.
+Scalability potential: Low does not run secondary probes. Middle/High/Ultra get the NaN guard only on real penetrating shell probes, keeping weak-device collapse intact and preserving high-tier corner clearance.
+Hardware Impact: Adds one safe normalize only for active penetrating shell probes. No allocation, no new DataVault handles, and no sibling dependency.
+
+## Build Guard Note - Loop 21
+Problem: Loop 21 solver patch needs compile validation, but the workstation remains above the mandated build threshold.
+Solution: Ran static checks. CPU guard remained above the threshold and active dotnet/csc compiler processes were present, so no build was launched under the AGENTS 50% CPU ceiling.
+Rejected Alternatives: Launching dotnet build under saturated CPU, or touching the known Core/Atmosphere `WaterlineBreachSignal` compile blocker from the exosuit lane.
+Scalability potential: None; this is workstation safety and evidence hygiene.
+Hardware Impact: Avoided adding compiler load while the host CPU was saturated.

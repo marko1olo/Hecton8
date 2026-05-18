@@ -69,6 +69,7 @@ namespace Hecton8.EditorTools
             tuning.GlobalQualityWeightOverride = qualityForced
                 ? EditorGUILayout.Slider("Quality Weight", Mathf.Clamp01(qualityOverride < 0f ? 1f : qualityOverride), 0f, 1f)
                 : -1f;
+            tuning.CpuThermalPressure01 = EditorGUILayout.Slider("CPU Thermal Pressure", Mathf.Clamp01(tuning.CpuThermalPressure01), 0f, 1f);
             if (EditorGUI.EndChangeCheck())
                 FutureCommandSandboxValidator.ApplyTuning(in tuning);
 

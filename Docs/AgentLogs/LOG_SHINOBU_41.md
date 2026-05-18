@@ -315,27 +315,30 @@ Verification:
 - Direct-field compile attempt failed with four SHINOBU CS0117 errors against stale terrain job fields; the chunk was reverted under fail-fast rules.
 - `dotnet build Hecton8.Core.csproj --no-restore` then succeeded with 0 errors and 8 unrelated warnings in `GlobalPhysicsStateManager.PhysicsDistanceCullingJob`.
 - Static grep found no `Time.frameCount`, `Time.deltaTime`, `Time.fixedDeltaTime`, Physics, Raycast, MeshCollider, Terrain.GetHeights, tier resolver, `Pack=1`, `Pack=4`, `worldX`, or `worldZ` in SHINOBU sampler/seam source files.
-- Static grep still finds the known cold ABI debt: `System.Reflection` / `FieldInfo` / `SetValue` in `WorldGenerativeGeologyTerrainSeamApplier.cs`, plus cold `NativeArray` allocations and the bounded Unity Terrain writeback `Complete()`.
+- Static grep still finds the known cold ABI debt: `System.Reflection` / `FieldInfo` / `SetValue` in `WorldGenerativeGeologyTerrainSeamApplier.cs`, plus the bounded Unity Terrain writeback `Complete()`.
 
-## 2026-05-19 DataVault Seam Black-Box Eviction
+## 2026-05-19 DataVault Seam Native Memory Eviction
 
 What was wrong:
 - `WorldGenerativeGeologyTerrainSeamApplier` still owned the seam black-box as a private persistent `NativeArray<TerrainSeamTelemetryEntry>`.
-- That violated the DataVault ownership rule for critical telemetry memory even though the hot sampler itself was already stateless.
+- It also owned TempJob native plans/patch/blend/normal scratch arrays and a persistent baseline height `NativeArray<float>`.
+- That violated the DataVault ownership rule for critical terrain evidence/scratch memory even though the hot sampler itself was already stateless.
 
 What was done:
 - Replaced the private black-box `NativeArray` with `VaultBufferHandle<TerrainSeamTelemetryEntry>`.
 - Added domain-local `BufferID 0x530421` and `TryResolveTerrainSeamBlackBox()` to request 300 telemetry rows from `GlobalDataVault` under `SystemID.TerrainSeams`.
-- Record and dump paths now resolve the vault alias before writing/reading; dispose no longer frees or unregisters a local black-box array.
+- Moved hybrid scratch to vault buffers: native plans `0x530422`, patch heights `0x530423`, blend mask `0x530424`, normals `0x530425`.
+- Moved persistent terrain baseline heights to per-terrain `VaultBufferHandle<float>` using `0x531000 + (terrain instance id & 0x000FFFFF)`.
+- Record, dump, baseline, and scratch paths now resolve vault aliases; dispose no longer frees or unregisters local native arrays.
 
 Cinematic Cheats used:
 - No collider, Terrain query, or physical terrain simulation was added. The black-box now records the analytic smooth-min seam fake as vault-owned evidence.
 
 Exact Microseconds saved:
-- Direct frame-time saving is ~0us/frame. The useful gain is allocator/lifetime risk removal: 300 * 64 = 19,200 bytes of fixed telemetry is now vault-owned instead of a private persistent allocation.
+- Direct frame-time saving is small and patch-size dependent. The concrete gain is allocator/lifetime risk removal: 300 * 64 = 19,200 bytes of fixed telemetry, reusable scratch, and per-terrain baselines are now vault-owned instead of private native allocations.
 
 Verification:
-- Static grep found no private seam black-box allocation/register/unregister and no `Time.frameCount`, Physics, Raycast, MeshCollider, Terrain.GetHeights, `Pack=1`, `Pack=4`, `GlobalRegistry.ScalabilityTier`, or `ScalabilityTierProfileByte` in SHINOBU sampler/seam source files.
+- Static grep found no `new NativeArray`, private seam allocation/register/unregister, `Time.frameCount`, Physics, Raycast, MeshCollider, Terrain.GetHeights, `Pack=1`, `Pack=4`, `GlobalRegistry.ScalabilityTier`, or `ScalabilityTierProfileByte` in SHINOBU sampler/seam source files.
 - `git diff --check` passed for SHINOBU files/docs with only repository CRLF normalization warnings on source files.
-- `dotnet build Hecton8.Core.csproj --no-restore /clp:ErrorsOnly` failed after 1:11.25 on unrelated `Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs`: lines 890, 892, 900, 931, 932, and 956 cannot resolve `DataArchaeologyDiscoveryBitMask`.
+- `dotnet build Hecton8.Core.csproj --no-restore /clp:ErrorsOnly` failed after 1:19.46 on unrelated `SaveBinaryPayloadCodec.cs` missing `IndustrialLoreBitMask`, `VolcanicUpdraftDirector.cs` missing `fixedDeltaTime`/`_jobPending`, and Visor features missing `HectonDrsRenderFeatureGate`.
 - No compiler error references `GlobalWorldSampler.cs`, `HybridTerrainSeamJobs.cs`, or `WorldGenerativeGeologyTerrainSeamApplier.cs`.

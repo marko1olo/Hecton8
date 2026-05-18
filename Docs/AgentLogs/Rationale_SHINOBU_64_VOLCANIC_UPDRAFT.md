@@ -2,7 +2,7 @@
 
 Agent: SHINOBU_64
 Role: THERMAL_UPDRAFT_AND_VOLCANIC_DIRECTOR
-Status: DEBRIS QUALITY-GATE POLISH APPLIED; fresh compile deferred by CPU/build guard.
+Status: DISPATCHER FIXED-PIPELINE POLISH APPLIED; fresh compile deferred by CPU/build guard.
 
 ## Decision 011: Remove Legacy ThermalGeyser Unity Physics
 Problem: `ThermalGeyser` still used `UnityEngine.Physics.OverlapSphereNonAlloc`, `Rigidbody`, `ForceMode.Acceleration`, and `PhysicsForceRouter.QueueForce`, leaving a second nondeterministic geyser force system beside the new Burst director.
@@ -59,3 +59,17 @@ Solution: Multiply the quality curve by `math.step(0.3f, q)` and branch the debr
 Rejected Alternatives: Leaving the loop and relying on zero multiplier, or adding a binary hardware tier check. The former wastes ALU; the latter violates the continuous quality law.
 Scalability potential: Low = debris lift and debris cylinder queries collapse to zero; Middle = polynomial smooth ramp begins above 0.3; High/Ultra = full debris chimney with turbulent vectors and VFX wake scalars.
 Hardware Impact: For default mock capacity, low quality skips up to `64 debris * ventCount` `TryEvaluateVent()` calls per mock injection pass. With 8 active vents this removes up to 512 AUP-local cylinder/cone evaluations before considering real debris lanes.
+
+## Decision 019: Fixed Dispatcher Updraft Pipeline
+Problem: The volcanic director still followed the legacy fixed/post-fixed owner model and could only prove safety by completing its own handle before unlocking vault-owned buffers. That breaks the dispatcher dependency story and can create unpredictable stalls under contention.
+Solution: Register `VolcanicUpdraftDirector` as `IDispatcherFixedSystem`. `ScheduleFixedSimulation()` now combines the dispatcher dependency with pending submarine read handles, schedules reset/eruption/entity/player/leviathan/VFX/telemetry jobs, registers the final handle with `H8Memory`, and returns it to the master fixed bridge. `PostFixedSimulation()` now only clears bookkeeping and unlocks buffers after the master bridge has completed the fixed batch. `OnDisable()` keeps a cold `.Complete()` teardown guard because disabling while a job mutates vault buffers cannot unlock memory speculatively.
+Rejected Alternatives: Keeping `IFixedTickable`/`IPostFixedTickable` and relying on local completion, or letting hot code unlock buffers before the dispatcher completes. Both make the updraft system a private scheduler instead of a deterministic pipeline participant.
+Scalability potential: Low = dispatcher dependency chain still runs, but debris and turbulence are collapsed by `GlobalQualityWeight`; Middle = debris ramp resumes above 0.3; High/Ultra = full vent, leviathan ride, wake, thermodynamics, and telemetry signals with the same chain.
+Hardware Impact: Removes the volcanic owner's hot fixed-batch wait from normal execution. Exact microseconds depend on system count, but the structural saving is one owner-side synchronization point; dispatcher remains the sole fixed bridge completion site.
+
+## Decision 020: Compile Guard After Dispatcher Polish
+Problem: The dispatcher refactor changes interface wiring and should be compiler-verified, but the project guard forbids builds when CPU is above 50 percent.
+Solution: Run static scans and defer `dotnet build`. Guard sample after the patch was `CPU=100,100,99.2; compiler processes=0`.
+Rejected Alternatives: Starting `dotnet build` while CPU is saturated, or claiming compile verification from static scans.
+Scalability potential: None; this is local machine protection.
+Hardware Impact: Prevents adding a compiler workload to an already saturated machine and avoids misleading build diagnostics.

@@ -319,3 +319,15 @@ Rejected Alternatives: Keeping the normalization allocation was rejected because
 Scalability potential: Low-end developer machines avoid per-asmdef path normalization allocations when opening X-Ray or running the build gate. Middle/high/ultra machines get identical graph classification without adding runtime dependencies or widening the contract surface.
 
 Hardware Impact: Runtime microseconds saved: 0 us measured. Editor allocation reduction is source-shape verified: `normalizedPath` and `ToProjectPath(GetProjectRoot` no longer exist in `CompileWallXRayWindow.cs`.
+
+## Decision 23 - GUID Reference Lookup Without Per-Edge Substring
+
+Problem: Edge construction still resolved Unity asmdef GUID references by calling `Substring` on every `GUID:...` reference. That moved allocation pressure from file discovery into graph edge construction.
+
+Solution: Build a `byGuidReference` dictionary once per scan using keys shaped exactly like Unity asmdef references (`GUID:` plus the meta GUID). `ResolveReferenceName()` now tests the prefix and performs a direct dictionary lookup with the original reference string, so the edge loop does not allocate a stripped GUID string.
+
+Rejected Alternatives: Keeping raw GUID keys was rejected because it forces per-edge string slicing. Rewriting the asmdef parser to intern references was rejected because direct lookup with Unity's existing reference string is simpler and preserves graph semantics. Launching a compile probe was rejected because this is a narrow Editor cold-path allocation fix and the user explicitly forbade builds unless needed.
+
+Scalability potential: Low-end developer machines reduce allocation churn when the project has many asmdef references. Middle/high/ultra machines retain identical dependency graph output without adding runtime references or reflection.
+
+Hardware Impact: Runtime microseconds saved: 0 us measured. Editor allocation reduction is source-shape verified: `reference.Substring`, `guidPrefix`, and the raw `byGuid` resolver are gone from `CompileWallXRayWindow.cs`.

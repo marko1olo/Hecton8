@@ -67,6 +67,7 @@
     <ITEM name="aup_hash_quantization" result="PASS" evidence="Root/source RoomHash now quantizes double AUP to 32m integer cells and hashes low/high integer halves; no absolute AUP float cast remains in HashAup." />
     <ITEM name="low_tier_sh_alu_collapse" result="PASS" evidence="AddScaled and AddDirectional now skip L1/L2 coefficient writes when quality gates make DirectionalWeight/L2Weight zero; PackTexture skips the L1 sqrt when L1 energy is zero." />
     <ITEM name="directional_gain_linearized" result="PASS" evidence="Directional SH source coefficients now scale once by radiance gain rather than gain squared, reducing HDR emergency spike risk before SanitizeAndClamp." />
+    <ITEM name="continuous_quality_fallback" result="PASS" evidence="If HomeostasisBrain.GlobalQualityWeight is non-finite, HectonQualityTier is mapped to a scalar curve through Smooth01/math.lerp instead of Mx350/Low versus all-other binary selection." />
   </HARDENING_PASS_2026_05_19>
   <COMPILE_GUARD result="PASS">
     <RUNTIME_ASMDEF references="Hecton8.Core,Hecton8.Core.Contracts,Hecton8.Core.Memory,Unity.Burst,Unity.Collections,Unity.Mathematics,URP/Core" sibling_runtime_references="0" />
